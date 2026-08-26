@@ -5,7 +5,7 @@
 * { box-sizing: border-box; }
 
 /* The UA stylesheet gives [hidden] display:none at the lowest precedence, so any
-   author rule that sets display - .stage-loading needs display:grid to centre -
+   author rule that sets display - .stage-loading needs display:grid to center -
    silently outranks it and the element stays on screen. */
 [hidden] { display: none !important; }
 
@@ -227,8 +227,8 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .show-nav { font-size: 0.72rem; color: var(--pt-ink-faint); letter-spacing: 0.02em; }
 .show-src { margin-left: auto; font-size: 0.72rem; color: var(--pt-ink-faint); }
 
-/* Overlay drawn into the compiled SVG's own millimetre space. */
-/* Rings sit on the faceplate, which is dark grey in both page themes, so they
+/* Overlay drawn into the compiled SVG's own millimeter space. */
+/* Rings sit on the faceplate, which is dark gray in both page themes, so they
    use fixed values rather than theme tokens. Halo first, brass on top. */
 .pt-ring-halo      { fill: none; stroke: #06080A; stroke-width: 1.9; opacity: 0.85; }
 .pt-ring           { fill: none; stroke: #F0C68C; stroke-width: 0.85; }
@@ -257,6 +257,10 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 @media (max-width: 860px) { .how-grid { grid-template-columns: 1fr; } }
 .how-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.5rem; counter-reset: h; }
 .how-steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 1rem; }
+/* The step's content is one wrapped element, so it lands in the second column.
+   Left as bare siblings, an <h3> and a <p> become two grid items and the
+   paragraph wraps back under the counter, one word wide. */
+.how-steps li > div { min-width: 0; }
 .how-steps li::before {
   counter-increment: h; content: counter(h, decimal-leading-zero);
   font-family: var(--pt-font-mono); font-size: 0.78rem; color: var(--pt-brass); padding-top: 0.25rem;
@@ -339,3 +343,110 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .stage-export button:hover { border-color: var(--pt-brass); color: var(--pt-brass); }
 .stage-export button[disabled] { opacity: 0.6; cursor: progress; }
 .stage-export svg { width: 12px; height: 12px; flex: none; }
+
+/* ── What comes out ─────────────────────────────────────────────────────
+   The outputs are the argument of the How section: one authored source,
+   several writers over it. Given their own row so the fan-out reads. */
+.outputs-head { margin: clamp(2.5rem, 5vw, 3.5rem) 0 1.25rem; }
+.outputs {
+  display: grid; gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+.out {
+  border: 1px solid var(--pt-line); border-top: 2px solid var(--pt-brass);
+  border-radius: 0 0 var(--pt-radius) var(--pt-radius);
+  background: var(--pt-surface); padding: 1.2rem 1.35rem;
+  display: flex; flex-direction: column; gap: 0.6rem;
+}
+.out h3 { font-size: 1rem; font-weight: 600; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.out p { font-size: 0.86rem; color: var(--pt-ink-muted); }
+.tag {
+  font-family: var(--pt-font-mono); font-size: 0.62rem; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--pt-brass); border: 1px solid var(--pt-brass-dim);
+  border-radius: 2px; padding: 0.1rem 0.35rem;
+}
+
+/* ── Schema browser ─────────────────────────────────────────────────────
+   Rendered from the schema documents at runtime. Reuses the showcase shell so
+   the two pages read as one site. */
+.schema-head {
+  padding: 1.5rem clamp(1.1rem, 3vw, 1.75rem) 1.25rem;
+  border-bottom: 1px solid var(--pt-line);
+  background: var(--pt-surface-2);
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.sc-title { font-size: 1.2rem; font-weight: 600; }
+.sc-id { font-size: 0.72rem; color: var(--pt-ink-faint); overflow-wrap: anywhere; }
+.sc-counts { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+
+.schema-body { padding: 1.5rem clamp(1.1rem, 3vw, 1.75rem) 2rem; }
+.sc-loading { color: var(--pt-ink-faint); font-family: var(--pt-font-mono); font-size: 0.82rem; }
+
+.sc-section-label {
+  font-family: var(--pt-font-mono); font-size: 0.7rem;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--pt-ink-faint);
+  margin: 2rem 0 0.9rem;
+}
+.sc-section-label:first-child { margin-top: 0; }
+
+.sc-props { display: flex; flex-direction: column; gap: 0.15rem; }
+.sc-prop {
+  padding: 0.7rem 0 0.75rem 0.9rem;
+  border-left: 1px solid var(--pt-line-soft);
+  display: flex; flex-direction: column; gap: 0.4rem;
+}
+.sc-prop:hover { border-left-color: var(--pt-brass-dim); }
+
+.sc-prop-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.sc-name { font-family: var(--pt-font-mono); font-size: 0.86rem; color: var(--pt-ink); }
+.sc-name.is-req { color: var(--pt-brass); }
+.sc-type {
+  font-family: var(--pt-font-mono); font-size: 0.7rem;
+  color: var(--pt-ink-muted); background: var(--pt-surface-2);
+  border: 1px solid var(--pt-line-soft); border-radius: 2px; padding: 0.05rem 0.35rem;
+}
+.sc-req {
+  font-family: var(--pt-font-mono); font-size: 0.6rem; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--pt-brass);
+}
+.sc-desc { font-size: 0.86rem; color: var(--pt-ink-muted); max-width: 74ch; line-height: 1.6; }
+
+.sc-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.sc-chip, .sc-enum {
+  font-family: var(--pt-font-mono); font-size: 0.68rem;
+  border: 1px solid var(--pt-line); border-radius: 2px; padding: 0.1rem 0.4rem;
+  color: var(--pt-ink-muted); overflow-wrap: anywhere;
+}
+.sc-chip-k { color: var(--pt-ink-faint); margin-right: 0.35rem; }
+.sc-enum { color: var(--pt-brass); border-color: var(--pt-brass-dim); background: var(--pt-brass-wash); }
+
+.sc-ref { font-size: 0.78rem; color: var(--pt-ink-faint); font-family: var(--pt-font-mono); }
+.sc-ref-link { color: var(--pt-brass); }
+
+.sc-nest > summary, .sc-raw > summary {
+  cursor: pointer; font-family: var(--pt-font-mono); font-size: 0.7rem;
+  letter-spacing: 0.06em; color: var(--pt-ink-faint); padding: 0.2rem 0;
+}
+.sc-nest > summary:hover, .sc-raw > summary:hover { color: var(--pt-brass); }
+.sc-nest[open] > summary { color: var(--pt-ink-muted); }
+.sc-nest > .sc-props { margin-top: 0.4rem; }
+
+.sc-oneof { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.2rem; }
+.sc-branch { border-left: 2px solid var(--pt-brass-dim); padding-left: 0.8rem; }
+.sc-branch-head {
+  font-family: var(--pt-font-mono); font-size: 0.7rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--pt-brass);
+}
+
+.sc-raw pre {
+  margin: 0.35rem 0 0; padding: 0.7rem 0.85rem; overflow-x: auto;
+  background: var(--pt-surface-2); border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius-sm);
+  font-family: var(--pt-font-mono); font-size: 0.72rem; color: var(--pt-ink-muted);
+}
+
+.sc-def { padding-top: 1.1rem; border-top: 1px solid var(--pt-line-soft); margin-top: 1.1rem; }
+.sc-def:target { background: var(--pt-brass-wash); border-radius: var(--pt-radius-sm); padding: 1.1rem 0.9rem 0.9rem; }
+.sc-def-name { font-size: 1rem; font-weight: 600; display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.45rem; }
+.sc-def-name code { font-family: var(--pt-font-mono); color: var(--pt-brass); }

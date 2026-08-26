@@ -32,6 +32,7 @@
       <a href="#showcase">Showcase</a>
       <a href="#different">Why</a>
       <a href="#how">How it works</a>
+      <a href="schema.html">Schema</a>
       <a href="#status">Status</a>
       <a class="gh" href="https://github.com/roc-ops/Portrayal">GitHub</a>
     </nav>
@@ -43,12 +44,13 @@
   <!-- ── Hero ───────────────────────────────────────────────────────── -->
   <section class="hero">
     <div class="wrap">
-      <p class="eyebrow">v0 · schemas will change · <span class="on">11 devices, 7 vendors</span></p>
+      <p class="eyebrow"><span data-stat="schema">v0</span> · schemas will change ·
+          <span class="on"><span data-stat="devices">—</span> devices, <span data-stat="vendors">—</span> vendors</span></p>
       <h1>Every physical thing,<br>individually addressable.</h1>
       <p class="lede">
         Portrayal turns a YAML device manifest into one flat SVG in real
-        millimetres, where every port, PSU, fan, LED, bay and region carries a
-        stable DOM id and a <code>data-path</code>. Colour a port from telemetry,
+        millimeters, where every port, PSU, fan, LED, bay and region carries a
+        stable DOM id and a <code>data-path</code>. Color a port from telemetry,
         light a failed PSU, link a region to a ticket, export the whole thing to
         a DCIM or a diagram tool.
       </p>
@@ -69,14 +71,14 @@
         <p class="eyebrow">The showcase</p>
         <h2>One source of truth. Seven ways to use it.</h2>
         <p class="sub">
-          Six of the tabs below drive a single compiled artefact — an
+          Six of the tabs below drive a single compiled artifact — an
           <strong>Edgecore AS7726-32X</strong> — six different ways. The seventh
           stacks <strong>six real devices</strong> into a rack and renders that
           same stack as a 2D elevation and as a 3D rack you can walk round.
         </p>
         <p class="sub">
           Nothing here is a mockup or a screenshot. Change the face or the
-          configuration and the drawing is recompiled, not recoloured: DC power
+          configuration and the drawing is recompiled, not recolored: DC power
           swaps the modules and the airflow stripe follows. Swap an MPA in the
           rack and it changes in both views, because both resolve it against the
           same compiled faces. Hover it, click it, swap it, orbit it.
@@ -121,13 +123,20 @@
   <section class="section" id="different">
     <div class="wrap">
       <div class="section-head">
-        <p class="eyebrow">Why it is not the other thing</p>
-        <h2>The chassis view has been built five times. Always closed, always per-SKU.</h2>
+        <p class="eyebrow">The gap</p>
+        <h2>The drawing always belongs to somebody else's tool.</h2>
         <p class="sub">
-          CiscoView, EPN Manager, Meraki Switch Port View, Juniper Mist front
-          panels, Arista CloudVision. And no standard anywhere — ENTITY-MIB,
-          RFC 8348, OpenConfig, Redfish, DMTF CIM — says where a component
-          physically <em>is</em> on a faceplate.
+          Plenty of tools have one, and inside that tool, on that vendor's
+          hardware, they work well. What's rare is being able to use one anywhere
+          else: they're drawn per SKU, kept in closed formats and tied to the
+          product they ship in, so none of it reaches your documentation, your
+          monitoring or your DCIM. CiscoView, EPN Manager, Meraki, Mist and
+          CloudVision are simply the ones we went looking for.
+        </p>
+        <p class="sub">
+          The standards stop short too: ENTITY-MIB, RFC 8348, OpenConfig,
+          Redfish and DMTF CIM describe what a component <em>is</em> and what
+          state it's in — never where it is on the faceplate.
         </p>
       </div>
 
@@ -146,7 +155,7 @@
         </article>
 
         <article class="card">
-          <h3>Modelled the way the panel is made</h3>
+          <h3>Modeled the way the panel is made</h3>
           <p>
             Punched, then printed, then populated. Chassis silkscreen paints
             <em>under</em> the components that cover it, because that is what
@@ -184,31 +193,61 @@
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">How it works</p>
-        <h2>Three layers, one build artefact.</h2>
+        <h2>One set of facts. As many formats as you need.</h2>
+        <p class="sub">
+          A device is not a drawing. It is a set of versioned text files — a
+          contract per component, a manifest per device, an overlay per operating
+          system — with every field recording where it came from. The drawing is
+          one thing you can compile out of that. It is not the only one.
+        </p>
       </div>
 
       <div class="how-grid">
-        <ol class="how-steps">
-          <li>
-            <h3>Skins</h3>
-            <p>Plain SVG in real millimetres, one per component face. Artist
-               territory. The only obligation is to expose the contracted element
-               ids at the contracted geometry.</p>
-          </li>
-          <li>
-            <h3>Contracts and manifests</h3>
-            <p>YAML, validated by JSON Schema. A component contract declares
-               dimensions, sub-element boxes, connection points, states. A device
-               manifest places instances of them. A NOS overlay maps names on top
-               without ever being drawn.</p>
-          </li>
-          <li>
-            <h3>Compiled SVG</h3>
-            <p>Flat, components inline-expanded, stable hierarchical ids,
-               <code>data-*</code> semantics, a <code>.state-*</code> stylesheet,
-               and the full source definition embedded in <code>&lt;metadata&gt;</code>.</p>
-          </li>
-        </ol>
+        <div>
+          <p class="panel-title" style="margin-bottom:1.25rem">What you author</p>
+          <ol class="how-steps">
+            <li>
+              <div>
+                <h3>A contract per component</h3>
+                <p>Its own file, for a cage or a PSU or a lamp: dimensions,
+                   sub-element boxes, connection points, the states it is allowed
+                   to be in, and which skins draw it. Written once, placed
+                   everywhere it appears.</p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <h3>A manifest per device</h3>
+                <p>Places instances of those components and declares the bays,
+                   regions, views and label text around them. A configuration
+                   says what is seated in each bay, so one manifest covers AC and
+                   DC, front-to-back and back-to-front.</p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <h3>An overlay per operating system</h3>
+                <p>Per-NOS naming, logical interfaces including breakout, and the
+                   rules that join ENTITY-MIB or OpenConfig names onto physical
+                   ids. Never drawn — only joined — because two operating systems
+                   on the same hardware disagree and the hardware does not care.</p>
+              </div>
+            </li>
+            <li>
+              <div>
+                <h3>Skins, in real millimeters</h3>
+                <p>Plain SVG, one per component face. Artist territory. The only
+                   obligation is to expose the contracted element ids at the
+                   contracted geometry.</p>
+              </div>
+            </li>
+          </ol>
+          <p class="how-note" style="margin-top:1.5rem">
+            All of it plain text under version control: diffable, reviewable, and
+            carrying per-field provenance, so the linter can hold a device to the
+            maturity it claims.
+          </p>
+        </div>
 
         <div class="how-code">
           <div class="code-block">
@@ -238,6 +277,35 @@
           </p>
         </div>
       </div>
+
+      <p class="panel-title outputs-head">What comes out</p>
+      <div class="outputs">
+        <article class="out">
+          <h3>Addressable SVG</h3>
+          <p>Flat, in real millimeters, every port, PSU, fan, LED, bay and region
+             carrying a stable id and a <code>data-path</code>, with a
+             <code>.state-*</code> stylesheet and the source definition embedded
+             in <code>&lt;metadata&gt;</code>.</p>
+        </article>
+        <article class="out">
+          <h3>3D — GLB, USDZ, OBJ</h3>
+          <p>Depth and relief come from the model rather than from an artist:
+             cavities, walls and vents are declared per element. Take the model
+             into a renderer, a game engine or Quick Look.</p>
+        </article>
+        <article class="out">
+          <h3>Nautobot &amp; NetBox device types</h3>
+          <p>The logical view, generated per operating system from the same
+             physical source — so <code>DCP-SC-28P-sonic</code> and
+             <code>-arcos</code> are two exports of one device, not two devices.</p>
+        </article>
+        <article class="out">
+          <h3>Diagram tools <span class="tag">planned</span></h3>
+          <p>Visio, draw.io and Lucidchart. The geometry and the connection points
+             are already in the model; what is missing is the writer for each
+             format, not the facts it would need.</p>
+        </article>
+      </div>
     </div>
   </section>
 
@@ -251,25 +319,30 @@
       <div class="status-grid">
         <div class="prose">
           <p>
-            The schemas are at <strong>v0 and will change</strong>. Eleven devices
-            are modelled across seven vendors, at varying maturity. The API is not
-            stable and nothing here should be built against yet without expecting
-            to follow it.
+            The schemas are at <strong>v0 and will change</strong>. Devices are
+            modeled at varying maturity and the linter holds each to the level it
+            declares, so "how far can I trust this one" is a question the tooling
+            answers rather than a question you ask the author. The API is not
+            stable; anything built against it should expect to follow it.
           </p>
           <p>
             The public repository at
             <a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a>
             exists but is still being populated — development is happening in a
             private tree until the schema settles. This page is driven by a
-            vendored snapshot of the compiled output, not a live build.
+            vendored snapshot of the compiled library, not a live build, and the
+            figures beside it are counted from that snapshot rather than typed in.
           </p>
         </div>
         <dl class="facts">
-          <div><dt>Schemas</dt><dd>v0 — breaking changes expected</dd></div>
-          <div><dt>Devices</dt><dd>11 modelled, 7 vendors</dd></div>
-          <div><dt>Licence</dt><dd>Apache-2.0 tooling · CC-BY-SA content</dd></div>
-          <div><dt>Units</dt><dd>Real millimetres, y-down, origin top-left</dd></div>
-          <div><dt>Exports</dt><dd>SVG · GLB · USDZ</dd></div>
+          <div><dt>Schemas</dt><dd><span data-stat="schema">v0</span> — breaking changes expected</dd></div>
+          <div><dt>Devices</dt><dd><span data-stat="devices">—</span> across <span data-stat="vendors">—</span> vendors</dd></div>
+          <div><dt>Components</dt><dd><span data-stat="components">—</span> contracts, <span data-stat="lineCards">—</span> of them line cards</dd></div>
+          <div><dt>Configurations</dt><dd><span data-stat="configurations">—</span> populated bay layouts</dd></div>
+          <div><dt>License</dt><dd>Apache-2.0 throughout — tooling, library and compiled output alike</dd></div>
+          <div><dt>Units</dt><dd>Real millimeters, y-down, origin top-left</dd></div>
+          <div><dt>Exports</dt><dd>SVG · PNG · GIF · GLB · USDZ · OBJ · NetBox&nbsp;/&nbsp;Nautobot YAML<br><span class="quiet">Visio, draw.io and Lucidchart planned</span></dd></div>
+          <div><dt>Snapshot</dt><dd><span data-stat="generated">—</span></dd></div>
         </dl>
       </div>
     </div>
@@ -285,12 +358,13 @@
     </div>
     <p>
       Device drawings on this page are compiled output from the Portrayal
-      library, CC-BY-SA 4.0. No vendor material is redistributed.
+      library, Apache-2.0. No vendor material is redistributed.
     </p>
     <p><a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a></p>
   </div>
 </footer>
 
+<script type="module" src="site/stats.js"></script>
 <script type="module" src="site/showcase.js"></script>
 </body>
 </html>
