@@ -27,6 +27,9 @@ export const esc = s => String(s ?? '').replace(/[&<>"]/g,
 export const SHELL_CSS = `
   :root { --bg:#16181b; --panel:#1c2024; --line:#2b3035; --ink:#d7dbdf; --dim:#8d939a;
           --accent:#4c9aff; --warn:#f59e0b;
+          --control:#23272c; --control-line:#3a4046; --control-hover:#2c3137;
+          --on-bg:#2f4a6d; --on-ink:#eaf1fb; --stage:#101214; --sel-ink:#fff;
+          --kid-line:#262b30;
           /* selection colour. Deliberately NOT --accent: the halo has to stand out
              against the faceplate it is drawn on, and a chassis can be any colour,
              so this is user-settable and remembered. */
@@ -37,14 +40,14 @@ export const SHELL_CSS = `
   header { display:flex; gap:0.7rem; align-items:center; flex-wrap:wrap;
            padding:0.55rem 0.9rem; border-bottom:1px solid var(--line); background:var(--panel); }
   header h1 { font-size:0.86rem; margin:0 0.5rem 0 0; font-weight:600; letter-spacing:0.02em; }
-  select, button, input { font:inherit; font-size:0.78rem; background:#23272c; color:var(--ink);
-                   border:1px solid #3a4046; border-radius:6px; padding:0.26rem 0.5rem; }
+  select, button, input { font:inherit; font-size:0.78rem; background:var(--control); color:var(--ink);
+                   border:1px solid var(--control-line); border-radius:6px; padding:0.26rem 0.5rem; }
   button { cursor:pointer; }
-  button:hover { background:#2c3137; }
-  button.on { background:#2f4a6d; border-color:#4c9aff; color:#eaf1fb; }
+  button:hover { background:var(--control-hover); }
+  button.on { background:var(--on-bg); border-color:var(--accent); color:var(--on-ink); }
   label.f { font-size:0.72rem; color:var(--dim); display:flex; gap:0.32rem; align-items:center; }
   main { flex:1; display:flex; min-height:0; }
-  #stage { flex:1; position:relative; overflow:hidden; background:#101214; min-width:0; }
+  #stage { flex:1; position:relative; overflow:hidden; background:var(--stage); min-width:0; }
   /* the SVG lives in its own host so a page can put another stage - a 3D canvas -
      beside it and swap which one is showing without the two fighting over
      pointer events or over #stage's children */
@@ -60,8 +63,8 @@ export const SHELL_CSS = `
   #tree { flex:1; overflow:auto; padding:0.4rem 0.2rem 1rem; }
   .node { display:flex; align-items:center; gap:0.3rem; padding:0.12rem 0.5rem;
           font-size:0.76rem; cursor:pointer; border-radius:4px; white-space:nowrap; }
-  .node:hover { background:#23272c; }
-  .node.sel { background:var(--hl); color:#fff; }
+  .node:hover { background:var(--control); }
+  .node.sel { background:var(--hl); color:var(--sel-ink); }
   .node.grp { color:var(--dim); text-transform:uppercase; font-size:0.68rem;
               letter-spacing:0.05em; margin-top:0.25rem; }
   .node.grp .cls { text-transform:none; letter-spacing:0; }
@@ -77,7 +80,7 @@ export const SHELL_CSS = `
   /* a target in another view: the row cannot nest under it, so it says it */
   .node .xref { color:var(--dim); font-size:0.68rem; padding-left:0.5rem;
             white-space:nowrap; }
-  .kids { margin-left:0.72rem; border-left:1px solid #262b30; }
+  .kids { margin-left:0.72rem; border-left:1px solid var(--kid-line); }
   .kids.hid { display:none; }
   /* the About panel is long, and the tree above it must not be squeezed to a
      sliver by it - so the inspector scrolls in its own right */
@@ -232,10 +235,45 @@ export function createShell(opts = {}) {
       // binding is not dropped: xrefOf() below puts the qualified target on the
       // row as text, so a front-panel PSU lamp reads "led-ps0 → rear/psu-0"
       // rather than sitting silently unexplained among the unbound lamps.
+      // A HOLE THAT SOMETHING FILLS IS THAT THING'S APERTURE, NOT A PEER OF IT.
+      // Panel cutouts get a namespaced path, `cutout:<id>`, which has no parent
+      // component in it, so every one of them landed at the root. On the AGR420
+      // that was 74 rows - `cutout:port-0` to `cutout:port-73` - each naming a
+      // hole the port listed three rows above already accounts for.
+      //
+      // The manifest says which is which without being asked: a cutout is
+      // declared, then a component is placed in it under THE SAME id. So a
+      // cutout whose id is also a path is that node's aperture and nests under
+      // it, exactly as a component's own `port-1/aperture/opening` already does.
+      // A cutout nothing names is a feature in its own right and stays - which
+      // is every cutout on every Cisco chassis, where `shelf-0`, `ft-0` and
+      // `esd` are real openings with no module modelled behind them and this row
+      // is the only place the tree admits they exist.
+      if (!parent && n.path.startsWith('cutout:')) {
+        const filled = byPath.get(n.path.slice(7));
+        if (filled && filled !== n) parent = filled;
+      }
       if (!parent && n.el.dataset.for) {
         const here = n.el.dataset.for.split(' ').find(t => t[0] !== '/');
         const owner = here && byPath.get(here);
         if (owner && owner !== n) parent = owner;
+        // AN INDICATOR WITH ONLY CROSS-VIEW TARGETS STILL BELONGS TO SOMETHING.
+        // Leaving it at the root made it a SIBLING of the chassis row, while the
+        // lamps beside it on the same faceplate - the ones naming a local target
+        // - nested INSIDE that row. One declared group then rendered as two
+        // headings in two places, which is what "why are there two LED sections"
+        // was seeing: DIAG and Location inside the chassis, Fan and the two PSU
+        // lamps outside it, split by nothing more than where the thing each one
+        // watches happens to live.
+        //
+        // The panel is the answer. A lamp pointing at `/rear/psu-1` is screwed to
+        // THIS faceplate and reports on something behind it; the target being
+        // elsewhere says what it watches, never where it is. So fall back to the
+        // chassis - not to the root, which is not a place on the device.
+        if (!parent) {
+          const body = byPath.get('chassis');
+          if (body && body !== n) parent = body;
+        }
       }
       (parent ? parent.kids : roots).push(n);
     }
@@ -337,7 +375,7 @@ export function createShell(opts = {}) {
   // Fold a flat list into one row per data-group. Groups were always in the data
   // - the renderer has emitted data-group for a long time - the tree just never
   // read them, so 118 placements became 118 rows.
-  function groupNodes(list) {
+  function groupNodes(list, atRoot = true) {
     const out = [], seen = new Map();
     for (const n of list.sort(cmpNode)) {
       const g = n.el.dataset.group;
@@ -353,8 +391,21 @@ export function createShell(opts = {}) {
       head.doc = Math.min(head.doc, n.el.__docIdx ?? Infinity);
     }
     const docOf = x => x.doc ?? x.el?.__docIdx ?? Infinity;
-    return out.sort((a, b) => (a.tier ?? tierOf(a.el)) - (b.tier ?? tierOf(b.el))
-                            || docOf(a) - docOf(b));
+    const ordered = out.sort((a, b) => (a.tier ?? tierOf(a.el)) - (b.tier ?? tierOf(b.el))
+                                     || docOf(a) - docOf(b));
+    // A HEADING THAT NAMES ONE ROW EARNS NOTHING. Nested under the thing it
+    // belongs to, `sfp28-leds > led-p1` says what `led-p1` already said and
+    // charges a fold and a level of indent to say it. On the AS7326-56X that was
+    // 48 such headings over one lamp each - and, on the same device, a second and
+    // third `mgmt` heading over a single management lamp on each of two ports.
+    // That is the SAME "why is this group listed three times" the chassis lamps
+    // were reported for, arriving from nesting rather than from parenting.
+    //
+    // At the ROOT a one-member group still earns its row, because nothing else up
+    // there says what category it is: `grounding 1` and `doors 1` are the only
+    // word the tree ever offers for those. Under a parent, the parent is that word.
+    return atRoot ? ordered
+                  : ordered.map(n => (!n.el && n.kids.length === 1) ? n.kids[0] : n);
   }
 
   function renderTree(roots) {
@@ -363,7 +414,7 @@ export function createShell(opts = {}) {
     // all carry the same data-group, so folding them again would build the same
     // head again, and again. That is the crash the first version of this had.
     const draw = (list, into, depth, fold = true) => {
-      for (const n of (fold ? groupNodes(list) : list.sort(cmpNode))) {
+      for (const n of (fold ? groupNodes(list, depth === 0) : list.sort(cmpNode))) {
         const row = document.createElement('div');
         row.className = 'node';
         // a group row is a fold, not a thing - it has no element and selects nothing

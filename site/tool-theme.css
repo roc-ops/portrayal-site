@@ -1,10 +1,7 @@
 /* Making the shell follow the site's theme.
  *
- * shell.js is ~70% themeable already: it declares --bg, --panel, --line, --ink,
- * --dim, --accent and --warn on :root and uses them 25 times. Mapping those
- * seven onto our tokens does most of the work in one step.
- *
- * TWO THINGS MAKE THIS FIDDLIER THAN IT LOOKS.
+ * shell.js declares its palette on :root and uses it throughout, so theming the
+ * tool is a matter of mapping its variables onto ours - fifteen of them.
  *
  * Order. SHELL_CSS is injected into <head> when createShell() runs, which is
  * after every <link> in the document, so a plain `:root { }` here would lose
@@ -12,12 +9,12 @@
  * (0,1,0) and wins regardless of when either arrives - no JS, no injection
  * timing to get wrong.
  *
- * The stragglers. Nine values in six rules are hard-coded rather than tokenised,
- * so a host that themes the variables still gets those. They are overridden
- * below with a `body.tool` prefix, again to beat the tie on specificity rather
- * than order. This is the part that will drift if the shell is restyled, and it
- * is exactly what roc-ops/ndv#19 asks them to tokenise. When that lands, delete
- * everything under "STRAGGLERS" and keep the mapping.
+ * shell.js is now fully tokenised - roc-ops/ndv#19 routed its last eight colours
+ * through variables - so for the shell this file is nothing but a mapping, and
+ * no selector of theirs is re-specified here.
+ *
+ * devsel.js is NOT, and is covered separately below. That half of the issue is
+ * still open.
  */
 
 :root:root {
@@ -28,33 +25,32 @@
   --dim:    var(--pt-ink-muted);
   --accent: var(--pt-brass);
   --warn:   var(--pt-warn);
+
+  /* The eight roc-ops/ndv#19 added. Controls, the stage floor and the child
+     indent, which used to need element-level overrides from here. */
+  --control:       var(--pt-surface-2);
+  --control-line:  var(--pt-line);
+  --control-hover: var(--pt-line-soft);
+  --on-bg:         var(--pt-brass-wash);
+  --on-ink:        var(--pt-brass);
+  --stage:         var(--pt-ground);
+  --kid-line:      var(--pt-line-soft);
+  /* --sel-ink is deliberately NOT mapped. It is a token now, but it paints the
+     selected row's text over --hl, the highlight colour the user picks, so its
+     #fff default is the right answer at any theme. Same reasoning keeps
+     `#hl .sw` hard-coded in the shell. */
 }
 
-/* ── STRAGGLERS — delete when roc-ops/ndv#19 lands ────────────────────────── */
+/* ── devsel.js — still the open half of roc-ops/ndv#19 ────────────────────
+   The device picker injects its own stylesheet with no tokens at all: seven
+   hard-coded colours, zero var(). It is the one control on every shell page AND
+   on pages that call createDevicePicker without a shell, which the DCIM export
+   viewer does. Overriding its background alone is not enough - its own
+   color:#d7dbdf survives and lands light-grey text on a near-white field at
+   1.28:1, which is exactly how this was found.
 
-body.tool select,
-body.tool button,
-body.tool input {
-  background: var(--pt-surface-2);
-  border-color: var(--pt-line);
-}
-body.tool button:hover { background: var(--pt-line-soft); }
-body.tool button.on {
-  background: var(--pt-brass-wash);
-  border-color: var(--pt-brass);
-  color: var(--pt-brass);
-}
-body.tool #stage { background: var(--pt-ground); }
-body.tool .node:hover { background: var(--pt-surface-2); }
-body.tool .kids { border-left-color: var(--pt-line-soft); }
-
-/* devsel.js injects its own stylesheet and has NO tokens at all - seven
-   hard-coded colors, zero var() uses. It is the one control that appears on
-   every shell page and on pages that call createDevicePicker directly, so it
-   needs covering separately. `body .devpick x` is (0,2,1) against its (0,2,0).
-   Its `color` is what produced the only contrast failure our audit caught:
-   overriding the background alone left #d7dbdf on a near-white field at
-   1.28:1. */
+   `body .devpick x` is (0,2,1) against its (0,2,0). Delete this block when the
+   module answers to variables. */
 body .devpick label { color: var(--pt-ink-muted); }
 body .devpick select,
 body .devpick input {
