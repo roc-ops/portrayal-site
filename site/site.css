@@ -1,0 +1,341 @@
+/* portrayal.dev — landing page.
+ * Palette and type come from brand/tokens.css; this file is layout only.
+ */
+
+* { box-sizing: border-box; }
+
+/* The UA stylesheet gives [hidden] display:none at the lowest precedence, so any
+   author rule that sets display - .stage-loading needs display:grid to centre -
+   silently outranks it and the element stays on screen. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--pt-ground);
+  color: var(--pt-ink);
+  font-family: var(--pt-font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--pt-font-display);
+  margin: 0;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+p { margin: 0; }
+
+a { color: var(--pt-brass); text-underline-offset: 3px; }
+a:hover { color: var(--pt-brass-light); }
+
+code, .mono, pre {
+  font-family: var(--pt-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+code { font-size: 0.875em; color: var(--pt-ink); }
+
+:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 3px; }
+
+.wrap { max-width: 1160px; margin: 0 auto; padding: 0 clamp(1.15rem, 4vw, 2.75rem); }
+
+.skip {
+  position: absolute; left: -9999px;
+  background: var(--pt-surface); color: var(--pt-ink);
+  padding: 0.6rem 1rem; border: 1px solid var(--pt-brass); border-radius: var(--pt-radius);
+}
+.skip:focus { left: 1rem; top: 1rem; z-index: 60; }
+
+.eyebrow {
+  font-family: var(--pt-font-mono);
+  font-size: 0.76rem; font-weight: 500;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--pt-ink-faint);
+}
+.eyebrow .on { color: var(--pt-brass); }
+
+/* ── Masthead ───────────────────────────────────────────────────────── */
+.masthead {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--pt-ground) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--pt-line-soft);
+}
+.masthead-in { display: flex; align-items: center; gap: 2rem; height: 58px; }
+.brand { display: flex; align-items: center; gap: 0.55rem; text-decoration: none; color: var(--pt-ink); }
+.brand-name { font-family: var(--pt-font-display); font-weight: 700; font-size: 1.05rem; letter-spacing: -0.035em; }
+.tld { color: var(--pt-brass); }
+.masthead-nav { margin-left: auto; display: flex; gap: 1.4rem; align-items: center; }
+.masthead-nav a { color: var(--pt-ink-muted); text-decoration: none; font-size: 0.9rem; }
+.masthead-nav a:hover { color: var(--pt-ink); }
+.masthead-nav .gh {
+  color: var(--pt-ink); border: 1px solid var(--pt-line);
+  padding: 0.3rem 0.75rem; border-radius: var(--pt-radius);
+}
+.masthead-nav .gh:hover { border-color: var(--pt-brass); color: var(--pt-brass); }
+@media (max-width: 720px) {
+  .masthead-nav a:not(.gh) { display: none; }
+}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.hero { padding: clamp(3.5rem, 9vw, 7rem) 0 clamp(2.5rem, 6vw, 4rem); }
+.hero h1 {
+  font-size: clamp(2.5rem, 7vw, 4.4rem);
+  font-weight: 800; letter-spacing: -0.045em;
+  margin: 1.15rem 0 1.4rem;
+}
+.lede { font-size: clamp(1.02rem, 1.6vw, 1.18rem); color: var(--pt-ink-muted); max-width: 60ch; }
+.lede-2 { margin-top: 0.9rem; color: var(--pt-ink-faint); }
+.cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2.25rem; }
+.btn {
+  display: inline-block; text-decoration: none;
+  padding: 0.6rem 1.3rem; border-radius: var(--pt-radius);
+  border: 1px solid var(--pt-line); color: var(--pt-ink);
+  font-size: 0.94rem; font-weight: 500;
+}
+.btn:hover { border-color: var(--pt-brass); color: var(--pt-brass); }
+.btn-primary { background: var(--pt-brass); border-color: var(--pt-brass); color: #0E1013; }
+.btn-primary:hover { background: var(--pt-brass-light); border-color: var(--pt-brass-light); color: #0E1013; }
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+.section { padding: clamp(3.5rem, 8vw, 6rem) 0; border-top: 1px solid var(--pt-line-soft); }
+.section-head { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 2.5rem; max-width: 70ch; }
+.section-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.35rem); font-weight: 700; }
+.section-head .sub { color: var(--pt-ink-muted); max-width: 66ch; }
+.section-head .sub strong { color: var(--pt-ink); font-weight: 600; }
+
+/* ── Showcase ───────────────────────────────────────────────────────── */
+.show {
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius);
+  background: var(--pt-surface);
+  overflow: hidden;
+}
+.show-tabs {
+  display: flex; gap: 0.15rem; overflow-x: auto;
+  padding: 0 0.5rem; background: var(--pt-surface-2);
+  border-bottom: 1px solid var(--pt-line);
+}
+.show-tabs button {
+  flex: none;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--pt-ink-muted); cursor: pointer;
+  font: inherit; font-size: 0.9rem;
+  padding: 0.8rem 1rem 0.7rem;
+}
+.show-tabs button:hover { color: var(--pt-ink); }
+.show-tabs button[aria-selected="true"] { color: var(--pt-ink); border-bottom-color: var(--pt-brass); }
+
+.show-body { display: grid; grid-template-columns: minmax(0, 1fr) 330px; }
+@media (max-width: 900px) { .show-body { grid-template-columns: 1fr; min-height: 0; } }
+
+.show-stage {
+  position: relative;
+  /* An explicit height, and each stage layer absolutely positioned to fill it.
+     Laying the layers out as grid rows lets their content size the row - the
+     rack elevation grew the stage to 1534px and it never came back - and leaves
+     height:100% on the SVG indefinite, which is what broke zoom in the first
+     place. Absolute inset makes both dimensions definite. */
+  height: 520px;
+  background: var(--pt-ground);
+}
+.stage-2d, .stage-3d, .stage-rack {
+  position: absolute;
+  inset: clamp(1rem, 3vw, 2.25rem);
+}
+.stage-2d svg, .stage-rack svg { width: 100%; height: 100%; display: block; }
+.stage-3d canvas { display: block; border-radius: var(--pt-radius-sm); }
+.stage-loading {
+  position: absolute; inset: 0; margin: 0; z-index: 2;
+  /* Opaque: building a 3D scene is visible work, and watching a rack assemble
+     itself piece by piece reads as a glitch rather than as progress. */
+  background: var(--pt-ground);
+  display: grid; place-items: center; pointer-events: none;
+  color: var(--pt-ink-faint); font-family: var(--pt-font-mono);
+  font-size: 0.8rem; text-align: center;
+}
+@media (max-width: 900px) {
+  .show-stage { height: 360px; }
+}
+
+.show-side {
+  border-left: 1px solid var(--pt-line);
+  background: var(--pt-surface);
+  min-width: 0;
+  /* The panels are different heights - a seven-step runbook against a two-line
+     readout. Scroll the panel instead of resizing the stage, so the drawing
+     does not jump every time you change tab. */
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 900px) { .show-side { max-height: 340px; } }
+@media (max-width: 900px) { .show-side { border-left: none; border-top: 1px solid var(--pt-line); } }
+.side-panel { padding: 1.15rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+
+.panel-title {
+  font-family: var(--pt-font-mono); font-size: 0.7rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--pt-ink-faint);
+}
+.panel-lead { font-size: 0.88rem; color: var(--pt-ink-muted); line-height: 1.55; }
+
+.readout { min-height: 108px; }
+
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.3rem 0.85rem; font-size: 0.8rem; }
+.kv dt { font-family: var(--pt-font-mono); color: var(--pt-ink-faint); }
+.kv dd { margin: 0; font-family: var(--pt-font-mono); color: var(--pt-ink); overflow-wrap: anywhere; }
+.kv dd.hi { color: var(--pt-brass); }
+
+.ctl { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ctl button {
+  background: var(--pt-surface-2); color: var(--pt-ink-muted);
+  border: 1px solid var(--pt-line); border-radius: var(--pt-radius-sm);
+  font: inherit; font-size: 0.78rem; padding: 0.32rem 0.65rem; cursor: pointer;
+}
+.ctl button:hover { border-color: var(--pt-brass-dim); color: var(--pt-ink); }
+.ctl button[aria-pressed="true"] { border-color: var(--pt-brass); color: var(--pt-brass); }
+
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; counter-reset: s; }
+.steps li {
+  display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: 0.65rem;
+  padding: 0.55rem 0.65rem; border: 1px solid transparent; border-radius: var(--pt-radius-sm);
+  font-size: 0.86rem; line-height: 1.6; color: var(--pt-ink-muted); cursor: pointer;
+}
+.steps li > span { min-width: 0; }
+.steps li::before {
+  counter-increment: s; content: counter(s);
+  font-family: var(--pt-font-mono); font-size: 0.72rem; color: var(--pt-ink-faint);
+  text-align: right;
+}
+.steps li:hover { border-color: var(--pt-line); }
+.steps li[aria-current="step"] { border-color: var(--pt-brass); color: var(--pt-ink); background: var(--pt-brass-wash); }
+.steps li[aria-current="step"]::before { color: var(--pt-brass); }
+.steps code { color: var(--pt-brass); white-space: nowrap; font-size: 0.9em; }
+
+.legend { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.78rem; color: var(--pt-ink-muted); }
+.legend span { display: flex; align-items: center; gap: 0.5rem; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+
+.show-foot {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: baseline;
+  padding: 0.7rem 1.25rem; border-top: 1px solid var(--pt-line);
+  background: var(--pt-surface-2);
+}
+.show-hint { font-size: 0.8rem; color: var(--pt-ink-muted); }
+.show-nav { font-size: 0.72rem; color: var(--pt-ink-faint); letter-spacing: 0.02em; }
+.show-src { margin-left: auto; font-size: 0.72rem; color: var(--pt-ink-faint); }
+
+/* Overlay drawn into the compiled SVG's own millimetre space. */
+/* Rings sit on the faceplate, which is dark grey in both page themes, so they
+   use fixed values rather than theme tokens. Halo first, brass on top. */
+.pt-ring-halo      { fill: none; stroke: #06080A; stroke-width: 1.9; opacity: 0.85; }
+.pt-ring           { fill: none; stroke: #F0C68C; stroke-width: 0.85; }
+.pt-ring-soft-halo { fill: none; stroke: #06080A; stroke-width: 1.5; opacity: 0.7; }
+.pt-ring-soft      { fill: none; stroke: #E3BC84; stroke-width: 0.7; }
+.pt-leader { fill: none; stroke: var(--pt-brass); stroke-width: 0.5; }
+.pt-dot { fill: var(--pt-brass); }
+.pt-label { font-family: var(--pt-font-mono); font-size: 7px; font-weight: 500; fill: var(--pt-ink); }
+.pt-label-sub { font-family: var(--pt-font-mono); font-size: 5px; fill: var(--pt-ink-muted); }
+.pt-dim { fill: none; stroke: var(--pt-ink-faint); stroke-width: 0.35; }
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.cards { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+.card {
+  border: 1px solid var(--pt-line); border-left: 2px solid var(--pt-brass);
+  border-radius: 0 var(--pt-radius) var(--pt-radius) 0;
+  background: var(--pt-surface); padding: 1.35rem 1.5rem;
+  display: flex; flex-direction: column; gap: 0.7rem;
+}
+.card h3 { font-size: 1.08rem; font-weight: 600; }
+.card p { font-size: 0.9rem; color: var(--pt-ink-muted); }
+.card-kicker { color: var(--pt-brass) !important; font-size: 0.85rem !important; }
+
+/* ── How ────────────────────────────────────────────────────────────── */
+.how-grid { display: grid; gap: clamp(1.5rem, 4vw, 3rem); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 860px) { .how-grid { grid-template-columns: 1fr; } }
+.how-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.5rem; counter-reset: h; }
+.how-steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 1rem; }
+.how-steps li::before {
+  counter-increment: h; content: counter(h, decimal-leading-zero);
+  font-family: var(--pt-font-mono); font-size: 0.78rem; color: var(--pt-brass); padding-top: 0.25rem;
+}
+.how-steps h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.35rem; }
+.how-steps p { font-size: 0.9rem; color: var(--pt-ink-muted); }
+
+.how-code { display: flex; flex-direction: column; gap: 0.75rem; }
+.code-block { border: 1px solid var(--pt-line); border-radius: var(--pt-radius); background: var(--pt-surface); overflow: hidden; }
+.code-cap { padding: 0.5rem 0.9rem; border-bottom: 1px solid var(--pt-line-soft); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pt-ink-faint); }
+.code-block pre { margin: 0; padding: 0.9rem; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; color: var(--pt-ink-muted); }
+.code-arrow { text-align: center; color: var(--pt-brass); font-size: 1.1rem; }
+.how-note { font-size: 0.84rem; color: var(--pt-ink-faint); }
+
+/* ── Status ─────────────────────────────────────────────────────────── */
+.status-grid { display: grid; gap: clamp(1.5rem, 4vw, 3rem); grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); }
+@media (max-width: 860px) { .status-grid { grid-template-columns: 1fr; } }
+.prose { display: flex; flex-direction: column; gap: 1rem; max-width: 62ch; color: var(--pt-ink-muted); }
+.prose strong { color: var(--pt-ink); font-weight: 600; }
+.facts { margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.facts div { display: flex; flex-direction: column; gap: 0.1rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--pt-line-soft); }
+.facts dt { font-family: var(--pt-font-mono); font-size: 0.7rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--pt-ink-faint); }
+.facts dd { margin: 0; font-size: 0.88rem; color: var(--pt-ink); }
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+.footer { border-top: 1px solid var(--pt-line-soft); padding: 2.5rem 0 3.5rem; }
+.footer-in { display: flex; flex-wrap: wrap; gap: 0.6rem 2rem; align-items: center; font-size: 0.82rem; color: var(--pt-ink-faint); }
+.footer-brand { display: flex; align-items: center; gap: 0.5rem; font-family: var(--pt-font-display); font-weight: 700; color: var(--pt-ink); letter-spacing: -0.03em; }
+.footer-in p { max-width: 48ch; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ── 3D dimension overlay ───────────────────────────────────────────────
+   An SVG layer over the canvas, redrawn each frame from projected scene
+   coordinates. Screen-space so the text stays upright and legible at any
+   camera angle. */
+.dim-layer {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.dim-witness { fill: none; stroke: var(--pt-brass); stroke-width: 1; opacity: 0.5; }
+.dim-line    { fill: none; stroke: var(--pt-brass); stroke-width: 1.2; }
+.dim-head    { fill: var(--pt-brass); stroke: none; }
+.dim-text {
+  font-family: var(--pt-font-mono); font-size: 12px; font-weight: 500;
+  fill: var(--pt-brass-light);
+  paint-order: stroke; stroke: #0A0C0E; stroke-width: 3px; stroke-linejoin: round;
+}
+
+/* Bay occupant pickers on the Rack tab. */
+.bay-select {
+  background: var(--pt-surface-2); color: var(--pt-ink);
+  border: 1px solid var(--pt-line); border-radius: var(--pt-radius-sm);
+  font: inherit; font-family: var(--pt-font-mono); font-size: 0.76rem;
+  padding: 0.3rem 0.4rem; width: 100%;
+}
+.bay-select:hover { border-color: var(--pt-brass-dim); }
+
+/* ── Export control ─────────────────────────────────────────────────────
+   Top-right of the stage. What comes out is the state on screen: the current
+   frame, the applied states, the swapped modules, the drawn callouts. */
+.stage-export {
+  position: absolute; top: 0.85rem; right: 0.85rem; z-index: 3;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.stage-export:empty { display: none; }
+.stage-export button {
+  display: inline-flex; align-items: center; gap: 0.38rem;
+  background: color-mix(in srgb, var(--pt-surface) 88%, transparent);
+  color: var(--pt-ink-muted);
+  border: 1px solid var(--pt-line); border-radius: var(--pt-radius-sm);
+  font: inherit; font-family: var(--pt-font-mono);
+  font-size: 0.72rem; letter-spacing: 0.04em;
+  padding: 0.34rem 0.6rem; cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.stage-export button:hover { border-color: var(--pt-brass); color: var(--pt-brass); }
+.stage-export button[disabled] { opacity: 0.6; cursor: progress; }
+.stage-export svg { width: 12px; height: 12px; flex: none; }

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50.5mm" height="40.2mm" viewBox="0 0 50.5 40.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/psu-401-dc@'] .state-fail { --led-color: #ef4444; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-no-dc { --led-color: #ef4444; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-no-dc { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-warning { --led-color: #22c55e; --led-color-alt: #ef4444; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-warning { animation: portrayal-alternate 1s linear infinite; }</style>
+  <g id="psu-401-dc" data-path="psu-401-dc" data-class="psu" data-ref="ufispace/psu-401-dc@1:1.3.0" data-input="dc" data-model="PSU-401-DISB-1" data-power-output-w="400" transform="translate(0,0)">
+    <title>psu-401-dc</title>
+    <defs>
+      <pattern id="psu-401-dc--hex" width="4.43" height="2.555" patternUnits="userSpaceOnUse">
+        <path d="M 1.275 0 L 0.6375 1.104 L -0.6375 1.104 L -1.275 0 L -0.6375 -1.104 L 0.6375 -1.104 Z" fill="#0d0f11" />
+        <path d="M 5.705 0 L 5.0675 1.104 L 3.7925 1.104 L 3.155 0 L 3.7925 -1.104 L 5.0675 -1.104 Z" fill="#0d0f11" />
+        <path d="M 3.49 1.2775 L 2.8525 2.3815 L 1.5775 2.3815 L 0.94 1.2775 L 1.5775 0.1735 L 2.8525 0.1735 Z" fill="#0d0f11" />
+        <path d="M 1.275 2.555 L 0.6375 3.659 L -0.6375 3.659 L -1.275 2.555 L -0.6375 1.451 L 0.6375 1.451 Z" fill="#0d0f11" />
+        <path d="M 5.705 2.555 L 5.0675 3.659 L 3.7925 3.659 L 3.155 2.555 L 3.7925 1.451 L 5.0675 1.451 Z" fill="#0d0f11" />
+      </pattern>
+    </defs>
+    <rect id="psu-401-dc--body" x="0" y="0" width="50.5" height="40.2" rx="0.6" fill="#33373c" stroke="#22262a" stroke-width="0.4" />
+    <rect id="psu-401-dc--vent-field" x="5.8" y="1.8" width="31.0" height="17.5" fill="url(#psu-401-dc--hex)" data-z-vent="30" />
+    <rect id="psu-401-dc--latch" x="0.6" y="4.5" width="3.6" height="14" rx="0.8" fill="#2f66b5" stroke="#234b8c" stroke-width="0.3" data-path="psu-401-dc/latch" data-class="latch" data-z-out="2.2" />
+    <rect id="psu-401-dc--handle" x="38.6" y="6" width="3.4" height="26" rx="1.6" fill="#17191c" stroke="#0d0f11" stroke-width="0.3" data-path="psu-401-dc/handle" data-class="handle" data-z-uhandle="27" />
+    <g id="psu-401-dc--terminal-block" data-path="psu-401-dc/terminal-block" data-class="inlet" data-z-out="8">
+      <rect x="5.8" y="21" width="30.2" height="16.5" rx="0.8" fill="#1c1f23" stroke="#0d0f11" stroke-width="0.35" />
+      <circle cx="11.3" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="20.9" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="30.5" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+      <line x1="8.9" y1="29.2" x2="13.7" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+      <line x1="18.5" y1="29.2" x2="23.3" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+      <line x1="28.1" y1="29.2" x2="32.9" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+    </g>
+    <circle id="psu-401-dc--status-led" cx="45.8" cy="3.8" r="1.6" fill="var(--led-color, #3a3f44)" data-path="psu-401-dc/status-led" data-class="led" data-states="off ok fail standby no-dc warning" data-description="HIG PSU FRU LED table - Off (no DC power to any PSU), Green (DC output on and OK), Red (PSU failure), Flashing Green (DC present, only standby output on - poor contact), Flashing Red (no DC power to THIS PSU), Flashing between Green and Red (warning: working condition not satisfied, check voltage, current and temperature)" data-z-dome="0.4" />
+  </g>
+</svg>

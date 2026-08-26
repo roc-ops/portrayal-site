@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="41.4mm" height="395.7mm" viewBox="0 0 41.4 395.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-amber-blinking { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-amber-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/a9k-16x100ge-se@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="a9k-16x100ge-se" data-path="a9k-16x100ge-se" data-class="line-card" data-ref="cisco/a9k-16x100ge-se@1:1.0.0" data-body-depth="604.5" data-wall="#4a4f55" data-end-of-life="2029-06-15" data-end-of-sale="2024-06-15" data-eol="announced" data-eol-announced="2024-03-15" data-eol-announcement="https://www.cisco.com/c/en/us/products/collateral/routers/asr-9000-series-aggregation-services-routers/asr-9000-4th-gen-ethernet-lc-fam-eol.html" data-generation="4th" data-model="A9K-16X100GE-SE" data-qsfp28="16" data-role="line-card" transform="translate(0,0)">
+    <title>a9k-16x100ge-se</title>
+    <rect id="a9k-16x100ge-se--plate" x="0.0" y="18.78" width="41.4" height="358.77" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <circle id="a9k-16x100ge-se--pivot-top" cx="20.467" cy="22.21" r="3.0" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" />
+    <g id="a9k-16x100ge-se--silkscreen">
+      <rect x="0.596" y="27.21" width="40.208" height="4.0" fill="#ffef5c" />
+      <text x="20.7" y="30.33" font-family="sans-serif" font-size="3.26" font-weight="bold" text-anchor="middle" fill="#231f20">A9K-16X100GE-SE</text>
+      <rect x="24.707" y="20.01" width="12.711" height="6.13" fill="#ffef5c" />
+      <text x="31.06" y="22.71" font-family="sans-serif" font-size="2.18" font-weight="bold" text-anchor="middle" fill="#231f20">CLASS 1</text>
+      <text x="31.06" y="25.28" font-family="sans-serif" font-size="2.18" font-weight="bold" text-anchor="middle" fill="#231f20">LASER</text>
+      <text x="24.67" y="373.87" font-family="sans-serif" font-size="2.0" fill="#231f20">STATUS</text>
+      <text x="3.23" y="304.66" transform="rotate(90 3.23 304.66)" font-family="sans-serif" font-size="2.78" fill="#231f20">12</text>
+      <text x="3.23" y="323.47" transform="rotate(90 3.23 323.47)" font-family="sans-serif" font-size="2.78" fill="#231f20">13</text>
+      <text x="3.23" y="341.87" transform="rotate(90 3.23 341.87)" font-family="sans-serif" font-size="2.78" fill="#231f20">14</text>
+      <text x="3.23" y="360.28" transform="rotate(90 3.23 360.28)" font-family="sans-serif" font-size="2.78" fill="#231f20">15</text>
+      <text x="3.23" y="224.62" transform="rotate(90 3.23 224.62)" font-family="sans-serif" font-size="2.78" fill="#231f20">8</text>
+      <text x="3.23" y="243.43" transform="rotate(90 3.23 243.43)" font-family="sans-serif" font-size="2.78" fill="#231f20">9</text>
+      <text x="3.23" y="261.04" transform="rotate(90 3.23 261.04)" font-family="sans-serif" font-size="2.78" fill="#231f20">10</text>
+      <text x="3.23" y="279.45" transform="rotate(90 3.23 279.45)" font-family="sans-serif" font-size="2.78" fill="#231f20">11</text>
+      <text x="3.23" y="141.38" transform="rotate(90 3.23 141.38)" font-family="sans-serif" font-size="2.78" fill="#231f20">4</text>
+      <text x="3.23" y="160.19" transform="rotate(90 3.23 160.19)" font-family="sans-serif" font-size="2.78" fill="#231f20">5</text>
+      <text x="3.23" y="178.6" transform="rotate(90 3.23 178.6)" font-family="sans-serif" font-size="2.78" fill="#231f20">6</text>
+      <text x="3.23" y="197.0" transform="rotate(90 3.23 197.0)" font-family="sans-serif" font-size="2.78" fill="#231f20">7</text>
+      <text x="3.23" y="56.53" transform="rotate(90 3.23 56.53)" font-family="sans-serif" font-size="2.78" fill="#231f20">0</text>
+      <text x="3.23" y="75.34" transform="rotate(90 3.23 75.34)" font-family="sans-serif" font-size="2.78" fill="#231f20">1</text>
+      <text x="3.23" y="93.75" transform="rotate(90 3.23 93.75)" font-family="sans-serif" font-size="2.78" fill="#231f20">2</text>
+      <text x="3.23" y="112.16" transform="rotate(90 3.23 112.16)" font-family="sans-serif" font-size="2.78" fill="#231f20">3</text>
+    </g>
+    <g id="a9k-16x100ge-se--p0" data-path="a9k-16x100ge-se/p0" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,47.95) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p0</title>
+      <rect id="a9k-16x100ge-se--p0--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p0/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p0--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p0--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p0--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p1" data-path="a9k-16x100ge-se/p1" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,66.67) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p1</title>
+      <rect id="a9k-16x100ge-se--p1--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p1/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p1--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p1--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p1--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p2" data-path="a9k-16x100ge-se/p2" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,85.41) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p2</title>
+      <rect id="a9k-16x100ge-se--p2--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p2/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p2--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p2--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p2--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p3" data-path="a9k-16x100ge-se/p3" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,104.14) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p3</title>
+      <rect id="a9k-16x100ge-se--p3--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p3/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p3--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p3--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p3--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p4" data-path="a9k-16x100ge-se/p4" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,132.79) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p4</title>
+      <rect id="a9k-16x100ge-se--p4--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p4/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p4--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p4--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p4--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p5" data-path="a9k-16x100ge-se/p5" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,151.53) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p5</title>
+      <rect id="a9k-16x100ge-se--p5--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p5/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p5--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p5--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p5--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p6" data-path="a9k-16x100ge-se/p6" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,170.26) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p6</title>
+      <rect id="a9k-16x100ge-se--p6--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p6/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p6--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p6--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p6--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p7" data-path="a9k-16x100ge-se/p7" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,188.99) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p7</title>
+      <rect id="a9k-16x100ge-se--p7--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p7/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p7--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p7--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p7--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p8" data-path="a9k-16x100ge-se/p8" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,216.03) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p8</title>
+      <rect id="a9k-16x100ge-se--p8--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p8/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p8--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p8--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p8--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p9" data-path="a9k-16x100ge-se/p9" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,234.77) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p9</title>
+      <rect id="a9k-16x100ge-se--p9--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p9/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p9--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p9--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p9--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p10" data-path="a9k-16x100ge-se/p10" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,253.49) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p10</title>
+      <rect id="a9k-16x100ge-se--p10--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p10/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p10--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p10--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p10--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p11" data-path="a9k-16x100ge-se/p11" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,272.22) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p11</title>
+      <rect id="a9k-16x100ge-se--p11--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p11/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p11--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p11--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p11--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p12" data-path="a9k-16x100ge-se/p12" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,296.87) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p12</title>
+      <rect id="a9k-16x100ge-se--p12--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p12/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p12--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p12--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p12--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p13" data-path="a9k-16x100ge-se/p13" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,315.6) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p13</title>
+      <rect id="a9k-16x100ge-se--p13--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p13/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p13--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p13--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p13--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p14" data-path="a9k-16x100ge-se/p14" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,334.33) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p14</title>
+      <rect id="a9k-16x100ge-se--p14--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p14/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p14--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p14--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p14--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-16x100ge-se--p15" data-path="a9k-16x100ge-se/p15" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(5.26,353.07) rotate(90 9.25 4.79)">
+      <title>a9k-16x100ge-se--p15</title>
+      <rect id="a9k-16x100ge-se--p15--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-16x100ge-se/p15/opening" data-class="cutout" />
+      <rect id="a9k-16x100ge-se--p15--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-16x100ge-se--p15--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-16x100ge-se--p15--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <rect id="a9k-16x100ge-se--ejector-top" x="4.449" y="0.0" width="12.711" height="21.47" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a9k-16x100ge-se--ejector-bot" x="4.449" y="373.71" width="12.711" height="21.99" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a9k-16x100ge-se--lever-top" x="1.261" y="5.2" width="3.376" height="71.23" rx="1.69" fill="#4a4f55" data-z-out="4.2" />
+    <rect id="a9k-16x100ge-se--lever-bot" x="1.261" y="318.95" width="3.376" height="71.23" rx="1.69" fill="#4a4f55" data-z-out="4.2" />
+    <g id="a9k-16x100ge-se--screw-top" data-z-cyl="1.6">
+      <circle cx="24.359" cy="8.01" r="3.24" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.359" cy="8.01" r="1.46" fill="#6d7379" />
+      <path d="M 22.03 8.01 H 26.69 M 24.359 5.68 V 10.34" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <g id="a9k-16x100ge-se--screw-bot" data-z-cyl="1.6">
+      <circle cx="24.359" cy="387.39" r="3.24" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.359" cy="387.39" r="1.46" fill="#6d7379" />
+      <path d="M 22.03 387.39 H 26.69 M 24.359 385.06 V 389.72" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <rect id="a9k-16x100ge-se--asset-label" x="4.767" y="369.77" width="22.254" height="8.8" rx="0.5" fill="#2e7489" data-z-out="0.2" />
+    <rect id="a9k-16x100ge-se--led-p0" x="3.19" y="50.97" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p0" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p1" x="3.19" y="69.78" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p1" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p2" x="3.19" y="88.18" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p2" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p3" x="3.19" y="106.6" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p3" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p4" x="3.19" y="135.83" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p4" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p5" x="3.19" y="154.63" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p5" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p6" x="3.19" y="173.04" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p6" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p7" x="3.19" y="191.45" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p7" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p8" x="3.19" y="219.06" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p8" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p9" x="3.19" y="237.87" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p9" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p10" x="3.19" y="256.27" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p10" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p11" x="3.19" y="274.69" width="1.59" height="2.89" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p11" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p12" x="3.19" y="299.89" width="1.59" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p12" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p13" x="3.19" y="318.69" width="1.59" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p13" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p14" x="3.19" y="337.1" width="1.59" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p14" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a9k-16x100ge-se--led-p15" x="3.19" y="355.51" width="1.59" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-16x100ge-se/led-p15" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <circle id="a9k-16x100ge-se--status" cx="20.467" cy="372.97" r="1.86" fill="#39b54a" stroke="#9aa0a6" stroke-width="0.25" data-path="a9k-16x100ge-se/status" data-class="led" data-states="green amber amber-blinking red off" data-description="the single tristate card Status LED (Ethernet Line Card Installation Guide, Table 32)" data-z-dome="0.3" />
+  </g>
+</svg>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="13.5mm" height="8.5mm" viewBox="0 0 13.5 8.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sfp-lc-duplex" data-path="sfp-lc-duplex" data-class="transceiver" data-ref="common/sfp-lc-duplex@1:1.3.0" data-connector="lc-duplex" data-form-factor="sfp" data-media="sfp" data-mode="single-mode" data-reach="30km" data-speed="100m" transform="translate(0,0)">
+    <title>sfp-lc-duplex</title>
+    <g id="sfp-lc-duplex--lc-a" data-path="sfp-lc-duplex/lc-a" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.275,2.05)" data-z-lift="13.9">
+      <title>sfp-lc-duplex--lc-a</title>
+      <rect id="sfp-lc-duplex--lc-a--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="sfp-lc-duplex/lc-a/bore" data-class="cutout" />
+      <circle id="sfp-lc-duplex--lc-a--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="sfp-lc-duplex--lc-a--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="sfp-lc-duplex--lc-b" data-path="sfp-lc-duplex/lc-b" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.625,2.05)" data-z-lift="13.9">
+      <title>sfp-lc-duplex--lc-b</title>
+      <rect id="sfp-lc-duplex--lc-b--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="sfp-lc-duplex/lc-b/bore" data-class="cutout" />
+      <circle id="sfp-lc-duplex--lc-b--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="sfp-lc-duplex--lc-b--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="sfp-lc-duplex--body" fill-rule="evenodd" fill="#9aa0a8" stroke="#6e747c" stroke-width="0.25" d="     M 0.6 0 h 12.3 a 0.6 0.6 0 0 1 0.6 0.6 v 7.3 a 0.6 0.6 0 0 1 -0.6 0.6 h -12.3     a 0.6 0.6 0 0 1 -0.6 -0.6 v -7.3 a 0.6 0.6 0 0 1 0.6 -0.6 z     M 1.275 2.05 h 4.6 v 4.4 h -4.6 z     M 7.625 2.05 h 4.6 v 4.4 h -4.6 z" data-z-out="13.9" data-z-color="#6e747c" />
+    <rect id="sfp-lc-duplex--bail" x="0.5" y="0.55" width="12.5" height="1.05" rx="0.5" fill="#2f5fa8" stroke="#20406f" stroke-width="0.18" data-z-out="14.3" data-z-lift="13.9" data-z-color="#2f5fa8" />
+  </g>
+</svg>

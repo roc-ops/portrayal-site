@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="207.0mm" height="91.6mm" viewBox="0 0 207.0 91.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="pem" data-path="pem" data-class="power" data-ref="casa/pem@1:1.5.0" data-body-depth="250.0" data-wall="#4a4f55" data-current-per-feed="20 A nominal, 30 A rating" data-feeds="4" data-input-voltage="-42 to -60 VDC (-48 VDC nominal)" data-model="PEM" data-role="dc-power-entry" transform="translate(0,0)">
+    <title>pem</title>
+    <rect id="pem--plate" x="0" y="0" width="207.0" height="80.4" rx="6.0" fill="#8d949c" stroke="#6d6f71" stroke-width="0.4" />
+    <g id="pem--leaders" fill="none" stroke="#ffffff" stroke-width="1.0">
+      <path d="M 22.4 10.4 H 7.1 V 46.6 H 11.3" />
+      <path d="M 184.6 10.4 H 199.9 V 46.6 H 195.7" />
+      <path d="M 79.3 17.8 V 46.6 H 64.2" />
+      <path d="M 127.7 17.8 V 46.6 H 142.8" />
+    </g>
+    <g id="pem--breaker-4" data-path="pem/breaker-4" data-class="circuit-breaker" data-z-out="3.0">
+      <rect x="22.4" y="3.2" width="31.2" height="14.6" fill="#231f20" stroke="#ffffff" stroke-width="1.0" />
+      <rect x="24.6" y="5.4" width="26.8" height="10.2" fill="#8d949c" stroke="#e6e7e8" stroke-width="0.6" />
+      <circle cx="31.8" cy="10.5" r="2.3" fill="none" stroke="#231f20" stroke-width="0.7" />
+      <line x1="38.0" y1="5.9" x2="38.0" y2="15.1" stroke="#231f20" stroke-width="0.7" />
+      <line x1="43.9" y1="10.5" x2="46.6" y2="10.5" stroke="#231f20" stroke-width="1.1" />
+      <rect x="49.0" y="5.9" width="1.5" height="9.2" fill="#c9cbcd" stroke="#231f20" stroke-width="0.4" />
+    </g>
+    <g id="pem--breaker-3" data-path="pem/breaker-3" data-class="circuit-breaker" data-z-out="3.0">
+      <rect x="63.7" y="3.2" width="31.2" height="14.6" fill="#231f20" stroke="#ffffff" stroke-width="1.0" />
+      <rect x="65.9" y="5.4" width="26.8" height="10.2" fill="#8d949c" stroke="#e6e7e8" stroke-width="0.6" />
+      <circle cx="73.1" cy="10.5" r="2.3" fill="none" stroke="#231f20" stroke-width="0.7" />
+      <line x1="79.3" y1="5.9" x2="79.3" y2="15.1" stroke="#231f20" stroke-width="0.7" />
+      <line x1="85.2" y1="10.5" x2="87.9" y2="10.5" stroke="#231f20" stroke-width="1.1" />
+      <rect x="90.3" y="5.9" width="1.5" height="9.2" fill="#c9cbcd" stroke="#231f20" stroke-width="0.4" />
+    </g>
+    <g id="pem--breaker-2" data-path="pem/breaker-2" data-class="circuit-breaker" data-z-out="3.0">
+      <rect x="112.1" y="3.2" width="31.2" height="14.6" fill="#231f20" stroke="#ffffff" stroke-width="1.0" />
+      <rect x="114.3" y="5.4" width="26.8" height="10.2" fill="#8d949c" stroke="#e6e7e8" stroke-width="0.6" />
+      <circle cx="121.5" cy="10.5" r="2.3" fill="none" stroke="#231f20" stroke-width="0.7" />
+      <line x1="127.7" y1="5.9" x2="127.7" y2="15.1" stroke="#231f20" stroke-width="0.7" />
+      <line x1="133.6" y1="10.5" x2="136.3" y2="10.5" stroke="#231f20" stroke-width="1.1" />
+      <rect x="138.7" y="5.9" width="1.5" height="9.2" fill="#c9cbcd" stroke="#231f20" stroke-width="0.4" />
+    </g>
+    <g id="pem--breaker-1" data-path="pem/breaker-1" data-class="circuit-breaker" data-z-out="3.0">
+      <rect x="153.4" y="3.2" width="31.2" height="14.6" fill="#231f20" stroke="#ffffff" stroke-width="1.0" />
+      <rect x="155.6" y="5.4" width="26.8" height="10.2" fill="#8d949c" stroke="#e6e7e8" stroke-width="0.6" />
+      <circle cx="162.8" cy="10.5" r="2.3" fill="none" stroke="#231f20" stroke-width="0.7" />
+      <line x1="169.0" y1="5.9" x2="169.0" y2="15.1" stroke="#231f20" stroke-width="0.7" />
+      <line x1="174.9" y1="10.5" x2="177.6" y2="10.5" stroke="#231f20" stroke-width="1.1" />
+      <rect x="180.0" y="5.9" width="1.5" height="9.2" fill="#c9cbcd" stroke="#231f20" stroke-width="0.4" />
+    </g>
+    <g id="pem--terminal-block-1" data-z-out="6.0">
+      <rect x="14.9" y="26.4" width="44.5" height="40.4" rx="1.5" fill="#231f20" />
+      <rect x="17.5" y="29.0" width="39.3" height="35.2" fill="#5a5f65" stroke="#e6e7e8" stroke-width="0.7" />
+      <rect x="17.5" y="45.6" width="39.3" height="2.0" fill="#8d949c" />
+      <g id="pem--branch-4" data-path="pem/branch-4" data-class="dc-terminal">
+        <g id="pem--nut-b4-vdc" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="28.40,36.50 26.75,39.36 23.45,39.36 21.80,36.50 23.45,33.64 26.75,33.64" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="25.1" cy="36.5" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+        <g id="pem--nut-b4-rtn" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="28.40,56.70 26.75,59.56 23.45,59.56 21.80,56.70 23.45,53.84 26.75,53.84" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="25.1" cy="56.7" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="pem--branch-3" data-path="pem/branch-3" data-class="dc-terminal">
+        <g id="pem--nut-b3-vdc" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="52.50,36.50 50.85,39.36 47.55,39.36 45.90,36.50 47.55,33.64 50.85,33.64" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="49.2" cy="36.5" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+        <g id="pem--nut-b3-rtn" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="52.50,56.70 50.85,59.56 47.55,59.56 45.90,56.70 47.55,53.84 50.85,53.84" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="49.2" cy="56.7" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+      </g>
+    </g>
+    <g id="pem--terminal-block-2" data-z-out="6.0">
+      <rect x="147.6" y="26.4" width="44.5" height="40.4" rx="1.5" fill="#231f20" />
+      <rect x="150.2" y="29.0" width="39.3" height="35.2" fill="#5a5f65" stroke="#e6e7e8" stroke-width="0.7" />
+      <rect x="150.2" y="45.6" width="39.3" height="2.0" fill="#8d949c" />
+      <g id="pem--branch-2" data-path="pem/branch-2" data-class="dc-terminal">
+        <g id="pem--nut-b2-vdc" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="161.10,36.50 159.45,39.36 156.15,39.36 154.50,36.50 156.15,33.64 159.45,33.64" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="157.8" cy="36.5" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+        <g id="pem--nut-b2-rtn" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="161.10,56.70 159.45,59.56 156.15,59.56 154.50,56.70 156.15,53.84 159.45,53.84" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="157.8" cy="56.7" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="pem--branch-1" data-path="pem/branch-1" data-class="dc-terminal">
+        <g id="pem--nut-b1-vdc" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="185.20,36.50 183.55,39.36 180.25,39.36 178.60,36.50 180.25,33.64 183.55,33.64" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="181.9" cy="36.5" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+        <g id="pem--nut-b1-rtn" data-z-cyl="2.2" data-z-lift="6.0">
+          <polygon points="185.20,56.70 183.55,59.56 180.25,59.56 178.60,56.70 180.25,53.84 183.55,53.84" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+          <circle cx="181.9" cy="56.7" r="1.48" fill="none" stroke="#231f20" stroke-width="0.4" />
+        </g>
+      </g>
+    </g>
+    <circle id="pem--cover-screw-4" cx="11.3" cy="46.6" r="1.5" fill="#b8860b" stroke="#6b4e06" stroke-width="0.35" data-z-cyl="1.6" data-z-color="#b8860b" />
+    <circle id="pem--cover-screw-3" cx="64.2" cy="46.6" r="1.5" fill="#b8860b" stroke="#6b4e06" stroke-width="0.35" data-z-cyl="1.6" data-z-color="#b8860b" />
+    <circle id="pem--cover-screw-2" cx="142.8" cy="46.6" r="1.5" fill="#b8860b" stroke="#6b4e06" stroke-width="0.35" data-z-cyl="1.6" data-z-color="#b8860b" />
+    <circle id="pem--cover-screw-1" cx="195.7" cy="46.6" r="1.5" fill="#b8860b" stroke="#6b4e06" stroke-width="0.35" data-z-cyl="1.6" data-z-color="#b8860b" />
+    <g id="pem--branch-labels" font-family="sans-serif" fill="#ffffff">
+      <text x="2.0" y="8.4" font-size="2.9" text-anchor="start">Branch 4</text>
+      <text x="205.0" y="8.4" font-size="2.9" text-anchor="end">Branch 1</text>
+      <text x="71.75" y="51.3" font-size="2.6" text-anchor="middle">Branch 3</text>
+      <text x="135.25" y="51.3" font-size="2.6" text-anchor="middle">Branch 2</text>
+    </g>
+    <g id="pem--polarity-labels" font-family="sans-serif" font-size="2.8" fill="#ffffff" text-anchor="middle">
+      <text x="69.35" y="37.5">-48/-60VDC</text>
+      <text x="137.65" y="37.5">-48/-60VDC</text>
+      <text x="69.35" y="57.7">RTN</text>
+      <text x="137.65" y="57.7">RTN</text>
+    </g>
+    <g id="pem--indicators">
+      <circle id="pem--hs-button" cx="90.5" cy="58.0" r="3.4" fill="#231f20" stroke="#5f6469" stroke-width="0.4" data-z-cyl="1.2" />
+      <circle cx="90.5" cy="66.0" r="3.0" fill="none" stroke="#231f20" stroke-width="0.5" />
+      <text x="90.5" y="67.2" font-family="sans-serif" font-size="2.6" font-weight="bold" text-anchor="middle" fill="#231f20">HS</text>
+      <circle id="pem--hs" cx="99.8" cy="58.0" r="1.4" fill="#231f20" stroke="#5f6469" stroke-width="0.2" data-path="pem/hs" data-class="led" data-z-dome="0.3" />
+      <circle id="pem--alarm" cx="108.8" cy="58.0" r="1.4" fill="#231f20" stroke="#5f6469" stroke-width="0.2" data-path="pem/alarm" data-class="led" data-z-dome="0.3" />
+      <circle id="pem--ok" cx="117.8" cy="58.0" r="1.4" fill="#10b981" stroke="#5f6469" stroke-width="0.2" data-path="pem/ok" data-class="led" data-z-dome="0.3" />
+      <text x="99.8" y="66.4" font-family="sans-serif" font-size="2.8" font-weight="bold" text-anchor="middle" fill="#231f20">HS</text>
+      <path d="M 108.8 62.4 l 2.4 4.2 h -4.8 z" fill="none" stroke="#231f20" stroke-width="0.5" />
+      <text x="108.8" y="66.4" font-family="sans-serif" font-size="2.2" font-weight="bold" text-anchor="middle" fill="#231f20">!</text>
+      <rect x="113.8" y="62.6" width="8.0" height="4.6" fill="#ffffff" stroke="#231f20" stroke-width="0.4" />
+      <text x="117.8" y="66.2" font-family="sans-serif" font-size="2.8" font-weight="bold" text-anchor="middle" fill="#231f20">OK</text>
+    </g>
+    <g id="pem--rail">
+      <rect x="6.0" y="80.4" width="195.0" height="11.2" rx="1.2" fill="#999999" stroke="#6d6f71" stroke-width="0.4" />
+      <g id="pem--rail-screw-l" data-z-cyl="1.6">
+        <circle cx="19.3" cy="86.0" r="3.0" fill="#8d949c" stroke="#5f6469" stroke-width="0.35" />
+        <path d="M 17.2 83.9 l 4.2 4.2 M 17.2 88.1 l 4.2 -4.2" stroke="#3a4046" stroke-width="0.5" fill="none" />
+      </g>
+      <g id="pem--rail-screw-r" data-z-cyl="1.6">
+        <circle cx="193.1" cy="86.0" r="3.0" fill="#8d949c" stroke="#5f6469" stroke-width="0.35" />
+        <path d="M 191.0 83.9 l 4.2 4.2 M 191.0 88.1 l 4.2 -4.2" stroke="#3a4046" stroke-width="0.5" fill="none" />
+      </g>
+    </g>
+  </g>
+</svg>

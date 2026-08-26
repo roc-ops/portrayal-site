@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="118.0mm" height="19.0mm" viewBox="0 0 118.0 19.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="qsfp-drawing" data-path="qsfp-drawing" data-class="reference" data-ref="common/qsfp-drawing@1:1.0.0" data-role="drawing-study" transform="translate(0,0)">
+    <title>qsfp-drawing</title>
+    <g transform="translate(0 5.25)">
+      <path id="qsfp-drawing--tab" fill="#e8dcc0" stroke="#c4b898" stroke-width="0.25" d="M 0 1.70 C 3 1.70 4 0.35 7 0.35 C 10 0.35 11 1.70 14 1.70 C 17 1.70 18 0.35 21 0.35 C 25 0.35 28 0.70 34.8 0.70 V 4.10 C 28 4.10 25 3.75 21 3.75 C 18 3.75 17 5.10 14 5.10 C 11 5.10 10 3.75 7 3.75 C 4 3.75 3 5.10 0 5.10 Z" />
+      <rect id="qsfp-drawing--body-front" x="34.8" y="0" width="17.20" height="8.5" rx="0.5" fill="#a9b0b7" stroke="#767d84" stroke-width="0.25" />
+      <rect id="qsfp-drawing--body-rear" x="52.0" y="0.42" width="61.80" height="7.65" rx="0.4" fill="#a9b0b7" stroke="#767d84" stroke-width="0.25" />
+      <rect id="qsfp-drawing--rail" x="40.8" y="3.25" width="47.60" height="2.0" rx="0.4" fill="#8d949c" />
+      <rect id="qsfp-drawing--shoulder" x="88.4" y="0.4" width="0.9" height="7.7" fill="#8d949c" />
+      <rect id="qsfp-drawing--d-shell" x="113.80" y="0.42" width="4.20" height="2.94" fill="#8d949c" stroke="#767d84" stroke-width="0.2" />
+      <rect id="qsfp-drawing--d-pcb" x="113.80" y="5.01" width="2.35" height="1.24" fill="#c9b98a" stroke="#767d84" stroke-width="0.2" />
+      <rect id="qsfp-drawing--d-guide" x="113.80" y="7.14" width="1.11" height="0.93" fill="#6f767d" stroke="#767d84" stroke-width="0.2" />
+    </g>
+  </g>
+</svg>

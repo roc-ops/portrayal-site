@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.0mm" height="40.0mm" viewBox="0 0 54.0 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="psu-ac-650" data-path="psu-ac-650" data-class="psu" data-ref="common/psu-ac-650@2:2.3.0" data-input="ac" data-power-output-w="650" data-states="ok fail absent" transform="translate(0,0)">
+    <title>psu-ac-650</title>
+    <defs>
+      <pattern id="psu-ac-650--mesh" width="4.8" height="4.8" patternUnits="userSpaceOnUse">
+        <rect x="0.5" y="0.5" width="3.8" height="3.8" fill="#3c4046" />
+      </pattern>
+    </defs>
+    <g id="psu-ac-650--latch" data-path="psu-ac-650/latch" data-class="latch">
+      <path id="psu-ac-650--latch-body" d="M 1.2 8 h 5 a 1.6 1.6 0 0 1 1.6 1.6 v 20.8 a 1.6 1.6 0 0 1 -1.6 1.6 h -5 a 1.2 1.2 0 0 1 -1.2 -1.2 v -21.6 a 1.2 1.2 0 0 1 1.2 -1.2 z" fill="#3d7bd6" stroke="#234b8c" stroke-width="0.4" />
+      <line id="psu-ac-650--latch-line" x1="5.85" y1="17.6" x2="5.85" y2="27.2" stroke="#0d0f11" stroke-width="0.7" />
+    </g>
+    <rect id="psu-ac-650--body" x="8" y="0.8" width="45.2" height="38.4" rx="0.8" fill="#b9bec4" stroke="#7a8087" stroke-width="0.4" />
+    <rect id="psu-ac-650--vent-field" x="9" y="1.8" width="43.2" height="36.4" fill="url(#psu-ac-650--mesh)" />
+    <g id="psu-ac-650--handle" data-path="psu-ac-650/handle" data-class="handle">
+      <rect id="psu-ac-650--handle-bar" x="10" y="8" width="5" height="24" rx="1.8" fill="#1c1f23" stroke="#0d0f11" stroke-width="0.35" />
+      <rect id="psu-ac-650--handle-grip" x="11.2" y="10" width="2.6" height="20" rx="1.2" fill="#0d0f11" />
+    </g>
+    <g id="psu-ac-650--ac-inlet" data-path="psu-ac-650/ac-inlet" data-class="inlet">
+      <rect id="psu-ac-650--ac-inlet-frame" x="24" y="4" width="21" height="32" rx="1.0" fill="#e6e9ec" stroke="#7a8087" stroke-width="0.35" />
+      <rect id="psu-ac-650--ac-inlet-body" x="25.8" y="6" width="17.4" height="28" rx="1.0" fill="#0d0f11" stroke="#33373c" stroke-width="0.4" />
+      <path id="psu-ac-650--ac-inlet-face" d="M 28.5 13 l 2.8 -2.5 h 8.4 v 19 h -8.4 l -2.8 -2.5 z" fill="#1c1f23" />
+      <rect id="psu-ac-650--pin-earth" x="30.1" y="19" width="4" height="2" fill="#000000" />
+      <rect id="psu-ac-650--pin-line" x="35" y="13.4" width="4" height="2" fill="#000000" />
+      <rect id="psu-ac-650--pin-neutral" x="35" y="24.6" width="4" height="2" fill="#000000" />
+    </g>
+  </g>
+</svg>

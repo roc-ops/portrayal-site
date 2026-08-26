@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.47mm" height="345.5mm" viewBox="0 0 30.47 345.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="rfu-16x8" data-path="rfu-16x8" data-class="line-card" data-ref="casa/rfu-16x8@1:1.6.0" data-body-depth="380.0" data-wall="#4a4f55" data-channels-per-port="8" data-connector="f-type" data-media="coax" data-model="US IO" data-pairs-with="casa/us-16x8" data-rf-ports="16" data-role="upstream" transform="translate(0,0)">
+    <title>rfu-16x8</title>
+    <rect id="rfu-16x8--plate" x="0" y="0" width="30.47" height="345.5" fill="#a7a9ac" stroke="#6d6f71" stroke-width="0.25" />
+    <rect id="rfu-16x8--band-t" x="1.1" y="28.20" width="28.27" height="1.8" fill="#f7931d" />
+    <rect id="rfu-16x8--band-b" x="1.1" y="36.80" width="28.27" height="1.8" fill="#f7931d" />
+    <text id="rfu-16x8--model" x="15.23" y="34.90" font-family="sans-serif" font-size="2.9" font-weight="bold" text-anchor="middle" fill="#231f20">US IO</text>
+    <text x="11.39" y="53.79" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">0</text>
+    <text x="11.39" y="70.56" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">1</text>
+    <text x="11.39" y="87.33" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">2</text>
+    <text x="11.39" y="104.1" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">3</text>
+    <text x="11.39" y="120.87" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">4</text>
+    <text x="11.39" y="137.64" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">5</text>
+    <text x="11.39" y="154.41" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">6</text>
+    <text x="11.39" y="171.18" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">7</text>
+    <text x="11.39" y="187.95" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">8</text>
+    <text x="11.39" y="204.72" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">9</text>
+    <text x="11.39" y="221.49" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">10</text>
+    <text x="11.39" y="238.26" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">11</text>
+    <text x="11.39" y="255.03" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">12</text>
+    <text x="11.39" y="271.8" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">13</text>
+    <text x="11.39" y="288.57" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">14</text>
+    <text x="11.39" y="305.34" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#f2f2f2">15</text>
+    <g id="rfu-16x8--p0" data-path="rfu-16x8/p0" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,49.04)">
+      <title>rfu-16x8--p0</title>
+      <path id="rfu-16x8--p0--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p0/opening" data-class="cutout" />
+      <g id="rfu-16x8--p0--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p0--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p1" data-path="rfu-16x8/p1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,65.81)">
+      <title>rfu-16x8--p1</title>
+      <path id="rfu-16x8--p1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p1/opening" data-class="cutout" />
+      <g id="rfu-16x8--p1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p2" data-path="rfu-16x8/p2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,82.58)">
+      <title>rfu-16x8--p2</title>
+      <path id="rfu-16x8--p2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p2/opening" data-class="cutout" />
+      <g id="rfu-16x8--p2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p3" data-path="rfu-16x8/p3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,99.35)">
+      <title>rfu-16x8--p3</title>
+      <path id="rfu-16x8--p3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p3/opening" data-class="cutout" />
+      <g id="rfu-16x8--p3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p4" data-path="rfu-16x8/p4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,116.12)">
+      <title>rfu-16x8--p4</title>
+      <path id="rfu-16x8--p4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p4/opening" data-class="cutout" />
+      <g id="rfu-16x8--p4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p5" data-path="rfu-16x8/p5" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,132.89)">
+      <title>rfu-16x8--p5</title>
+      <path id="rfu-16x8--p5--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p5/opening" data-class="cutout" />
+      <g id="rfu-16x8--p5--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p5--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p6" data-path="rfu-16x8/p6" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,149.66)">
+      <title>rfu-16x8--p6</title>
+      <path id="rfu-16x8--p6--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p6/opening" data-class="cutout" />
+      <g id="rfu-16x8--p6--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p6--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p7" data-path="rfu-16x8/p7" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,166.43)">
+      <title>rfu-16x8--p7</title>
+      <path id="rfu-16x8--p7--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p7/opening" data-class="cutout" />
+      <g id="rfu-16x8--p7--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p7--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p8" data-path="rfu-16x8/p8" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,183.2)">
+      <title>rfu-16x8--p8</title>
+      <path id="rfu-16x8--p8--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p8/opening" data-class="cutout" />
+      <g id="rfu-16x8--p8--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p8--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p9" data-path="rfu-16x8/p9" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,199.97)">
+      <title>rfu-16x8--p9</title>
+      <path id="rfu-16x8--p9--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p9/opening" data-class="cutout" />
+      <g id="rfu-16x8--p9--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p9--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p10" data-path="rfu-16x8/p10" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,216.74)">
+      <title>rfu-16x8--p10</title>
+      <path id="rfu-16x8--p10--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p10/opening" data-class="cutout" />
+      <g id="rfu-16x8--p10--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p10--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p11" data-path="rfu-16x8/p11" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,233.51)">
+      <title>rfu-16x8--p11</title>
+      <path id="rfu-16x8--p11--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p11/opening" data-class="cutout" />
+      <g id="rfu-16x8--p11--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p11--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p12" data-path="rfu-16x8/p12" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,250.28)">
+      <title>rfu-16x8--p12</title>
+      <path id="rfu-16x8--p12--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p12/opening" data-class="cutout" />
+      <g id="rfu-16x8--p12--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p12--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p13" data-path="rfu-16x8/p13" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,267.05)">
+      <title>rfu-16x8--p13</title>
+      <path id="rfu-16x8--p13--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p13/opening" data-class="cutout" />
+      <g id="rfu-16x8--p13--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p13--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p14" data-path="rfu-16x8/p14" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,283.82)">
+      <title>rfu-16x8--p14</title>
+      <path id="rfu-16x8--p14--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p14/opening" data-class="cutout" />
+      <g id="rfu-16x8--p14--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p14--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--p15" data-path="rfu-16x8/p15" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(12.39,300.59)">
+      <title>rfu-16x8--p15</title>
+      <path id="rfu-16x8--p15--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="rfu-16x8/p15/opening" data-class="cutout" />
+      <g id="rfu-16x8--p15--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="rfu-16x8--p15--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="rfu-16x8--screw-t" data-z-cyl="1.6">
+      <circle cx="15.23" cy="6.00" r="2.4" fill="#8d949c" stroke="#5f6469" stroke-width="0.3" />
+      <circle cx="15.23" cy="6.00" r="1.5" fill="#6d7379" />
+      <path d="M 14.04 4.80 L 16.43 7.20 M 14.04 7.20 L 16.43 4.80" stroke="#3a4046" stroke-width="0.45" fill="none" />
+    </g>
+    <g id="rfu-16x8--screw-b" data-z-cyl="1.6">
+      <circle cx="15.23" cy="339.50" r="2.4" fill="#8d949c" stroke="#5f6469" stroke-width="0.3" />
+      <circle cx="15.23" cy="339.50" r="1.5" fill="#6d7379" />
+      <path d="M 14.04 338.30 L 16.43 340.70 M 14.04 340.70 L 16.43 338.30" stroke="#3a4046" stroke-width="0.45" fill="none" />
+    </g>
+    <g id="rfu-16x8--latch-t" data-z-out="4.2">
+      <rect x="25.27" y="11.00" width="3.2" height="16.00" rx="1.5" fill="#231f20" />
+      <circle cx="26.87" cy="11.00" r="1.5" fill="#3a4046" stroke="#15181b" stroke-width="0.25" />
+    </g>
+    <g id="rfu-16x8--latch-b" data-z-out="4.2">
+      <rect x="25.27" y="318.50" width="3.2" height="16.00" rx="1.5" fill="#231f20" />
+      <circle cx="26.87" cy="334.50" r="1.5" fill="#3a4046" stroke="#15181b" stroke-width="0.25" />
+    </g>
+  </g>
+</svg>

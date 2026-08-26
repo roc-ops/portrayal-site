@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="34.54mm" height="161.8mm" viewBox="0 0 34.54 161.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a9k-mpa-4x10ge@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-mpa-4x10ge@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="a9k-mpa-4x10ge" data-path="a9k-mpa-4x10ge" data-class="line-card" data-ref="cisco/a9k-mpa-4x10ge@1:1.0.0" data-body-depth="170.18" data-wall="#4a4f55" data-eol="none-announced" data-media="XFP, 10 Gigabit Ethernet" data-model="A9K-MPA-4X10GE" data-role="modular-port-adapter" data-weight-kg="0.87" data-xfp="4" transform="translate(0,0)">
+    <title>a9k-mpa-4x10ge</title>
+    <rect id="a9k-mpa-4x10ge--plate" x="0" y="0" width="34.54" height="161.8" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <g>
+      <circle cx="6.0" cy="5.06" r="2.8" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="6.0" cy="5.06" r="1.25" fill="#6d7379" />
+    </g>
+    <g>
+      <circle cx="6.0" cy="156.72" r="2.8" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="6.0" cy="156.72" r="1.25" fill="#6d7379" />
+    </g>
+    <g id="a9k-mpa-4x10ge--silkscreen">
+      <text x="27.28" y="29.91" transform="rotate(90 27.28 29.91)" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#231f20">0</text>
+      <text x="19.72" y="12.72" transform="rotate(90 19.72 12.72)" font-family="sans-serif" font-size="1.8" fill="#231f20">A/L</text>
+      <text x="27.28" y="63.57" transform="rotate(90 27.28 63.57)" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#231f20">1</text>
+      <text x="19.72" y="46.38" transform="rotate(90 19.72 46.38)" font-family="sans-serif" font-size="1.8" fill="#231f20">A/L</text>
+      <text x="27.28" y="97.25" transform="rotate(90 27.28 97.25)" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#231f20">2</text>
+      <text x="19.72" y="80.06" transform="rotate(90 19.72 80.06)" font-family="sans-serif" font-size="1.8" fill="#231f20">A/L</text>
+      <text x="27.28" y="130.79" transform="rotate(90 27.28 130.79)" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#231f20">3</text>
+      <text x="19.72" y="113.6" transform="rotate(90 19.72 113.6)" font-family="sans-serif" font-size="1.8" fill="#231f20">A/L</text>
+      <text x="14.1" y="148.23" font-family="sans-serif" font-size="2.2" fill="#231f20">STATUS</text>
+      <rect x="29.74" y="2.02" width="3.8" height="34.38" fill="#ffef5c" />
+      <text x="32.64" y="4.0" transform="rotate(90 32.64 4.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#231f20">A9K-MPA-4X10GE</text>
+    </g>
+    <g id="a9k-mpa-4x10ge--p0" data-path="a9k-mpa-4x10ge/p0" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(10.9,26.04) rotate(90 9.75 4.85)">
+      <title>a9k-mpa-4x10ge--p0</title>
+      <rect id="a9k-mpa-4x10ge--p0--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="a9k-mpa-4x10ge/p0/opening" data-class="cutout" />
+      <rect id="a9k-mpa-4x10ge--p0--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="a9k-mpa-4x10ge--p0--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-mpa-4x10ge--p0--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+    </g>
+    <g id="a9k-mpa-4x10ge--p1" data-path="a9k-mpa-4x10ge/p1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(10.9,59.7) rotate(90 9.75 4.85)">
+      <title>a9k-mpa-4x10ge--p1</title>
+      <rect id="a9k-mpa-4x10ge--p1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="a9k-mpa-4x10ge/p1/opening" data-class="cutout" />
+      <rect id="a9k-mpa-4x10ge--p1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="a9k-mpa-4x10ge--p1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-mpa-4x10ge--p1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+    </g>
+    <g id="a9k-mpa-4x10ge--p2" data-path="a9k-mpa-4x10ge/p2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(10.9,93.38) rotate(90 9.75 4.85)">
+      <title>a9k-mpa-4x10ge--p2</title>
+      <rect id="a9k-mpa-4x10ge--p2--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="a9k-mpa-4x10ge/p2/opening" data-class="cutout" />
+      <rect id="a9k-mpa-4x10ge--p2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="a9k-mpa-4x10ge--p2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-mpa-4x10ge--p2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+    </g>
+    <g id="a9k-mpa-4x10ge--p3" data-path="a9k-mpa-4x10ge/p3" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(10.9,126.92) rotate(90 9.75 4.85)">
+      <title>a9k-mpa-4x10ge--p3</title>
+      <rect id="a9k-mpa-4x10ge--p3--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="a9k-mpa-4x10ge/p3/opening" data-class="cutout" />
+      <rect id="a9k-mpa-4x10ge--p3--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="a9k-mpa-4x10ge--p3--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-mpa-4x10ge--p3--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+    </g>
+    <rect id="a9k-mpa-4x10ge--led-p0" x="21.62" y="11.23" width="3.44" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-mpa-4x10ge/led-p0" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Link) lamp. Table 22, '4-Port 10-Gigabit Ethernet MPA LEDs': off - port is not enabled; green on - port is enabled and the link is up; amber on - port is enabled and the link is down. Cisco adds a row without a colour of its own: 'The MPA A/L (Active/Link) LED will blink green and amber when there is traffic activity.' Blink is a modulation of the two states already named, not a fourth state, so it is recorded here and not added to the vocabulary. This one is port 0's. NOTE THE COLOUR: this card's table says the link-down state is amber, and the family's Table 33 and the sibling MPAs do not all agree with it. The card's own table wins." data-z-dome="0.3" />
+    <rect id="a9k-mpa-4x10ge--led-p1" x="21.62" y="44.89" width="3.44" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-mpa-4x10ge/led-p1" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Link) lamp. Table 22, '4-Port 10-Gigabit Ethernet MPA LEDs': off - port is not enabled; green on - port is enabled and the link is up; amber on - port is enabled and the link is down. Cisco adds a row without a colour of its own: 'The MPA A/L (Active/Link) LED will blink green and amber when there is traffic activity.' Blink is a modulation of the two states already named, not a fourth state, so it is recorded here and not added to the vocabulary. This one is port 1's. NOTE THE COLOUR: this card's table says the link-down state is amber, and the family's Table 33 and the sibling MPAs do not all agree with it. The card's own table wins." data-z-dome="0.3" />
+    <rect id="a9k-mpa-4x10ge--led-p2" x="21.62" y="78.57" width="3.44" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-mpa-4x10ge/led-p2" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Link) lamp. Table 22, '4-Port 10-Gigabit Ethernet MPA LEDs': off - port is not enabled; green on - port is enabled and the link is up; amber on - port is enabled and the link is down. Cisco adds a row without a colour of its own: 'The MPA A/L (Active/Link) LED will blink green and amber when there is traffic activity.' Blink is a modulation of the two states already named, not a fourth state, so it is recorded here and not added to the vocabulary. This one is port 2's. NOTE THE COLOUR: this card's table says the link-down state is amber, and the family's Table 33 and the sibling MPAs do not all agree with it. The card's own table wins." data-z-dome="0.3" />
+    <rect id="a9k-mpa-4x10ge--led-p3" x="21.62" y="112.11" width="3.44" height="2.91" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-mpa-4x10ge/led-p3" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Link) lamp. Table 22, '4-Port 10-Gigabit Ethernet MPA LEDs': off - port is not enabled; green on - port is enabled and the link is up; amber on - port is enabled and the link is down. Cisco adds a row without a colour of its own: 'The MPA A/L (Active/Link) LED will blink green and amber when there is traffic activity.' Blink is a modulation of the two states already named, not a fourth state, so it is recorded here and not added to the vocabulary. This one is port 3's. NOTE THE COLOUR: this card's table says the link-down state is amber, and the family's Table 33 and the sibling MPAs do not all agree with it. The card's own table wins." data-z-dome="0.3" />
+    <circle id="a9k-mpa-4x10ge--status" cx="10.52" cy="147.32" r="1.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-mpa-4x10ge/status" data-class="led" data-states="green amber off" data-description="the MPA's STATUS lamp. Table 22, '4-Port 10-Gigabit Ethernet MPA LEDs': off - modular port adapter power is off; green on - modular port adapter is ready and operational; amber on - modular port adapter power is on and good, and the modular port adapter is being configured." data-z-dome="0.3" />
+  </g>
+</svg>

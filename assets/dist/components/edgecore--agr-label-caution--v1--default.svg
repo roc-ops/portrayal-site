@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="26.0mm" height="62.0mm" viewBox="0 0 26.0 62.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="agr-label-caution" data-path="agr-label-caution" data-class="sticker" data-ref="edgecore/agr-label-caution@1:1.0.0" data-model="AGR caution label" transform="translate(0,0)">
+    <title>agr-label-caution</title>
+    <rect id="agr-label-caution--label" x="0" y="0" width="26.0" height="62.0" rx="1.0" fill="#eef0f2" stroke="#9aa1a8" stroke-width="0.4" data-z-out="0.2" />
+    <path id="agr-label-caution--warning" d="M 13.0 3.2 l 4.6 8.0 h -9.2 z" fill="none" stroke="#1c2024" stroke-width="0.6" />
+    <text x="13.0" y="10.4" font-family="sans-serif" font-size="3.4" font-weight="bold" text-anchor="middle" fill="#1c2024">!</text>
+    <text x="13.0" y="16.6" font-family="sans-serif" font-size="3.0" font-weight="bold" text-anchor="middle" fill="#1c2024">CAUTION</text>
+    <g id="agr-label-caution--text">
+      <rect x="2.4" y="20.00" width="18.61" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="23.00" width="18.94" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="26.00" width="15.05" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="29.00" width="12.47" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="32.00" width="9.46" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="35.00" width="17.11" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="38.00" width="14.88" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="41.00" width="18.22" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="44.00" width="13.76" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="47.00" width="18.35" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="50.00" width="12.60" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="53.00" width="18.71" height="1.26" fill="#5f6469" />
+      <rect x="2.4" y="56.00" width="17.88" height="1.26" fill="#5f6469" />
+    </g>
+  </g>
+</svg>

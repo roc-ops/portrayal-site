@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — every physical thing, individually addressable</title>
+<meta name="description" content="Declarative, Git-versioned hardware device definitions, compiled into SVG where every port, PSU, fan, LED, bay and region is individually addressable.">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/site.css">
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<a class="skip" href="#showcase">Skip to the showcase</a>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="#top">
+      <img src="brand/portrayal-mark.svg" alt="" width="26" height="26">
+      <span class="brand-name">portrayal<span class="tld">.dev</span></span>
+    </a>
+    <nav class="masthead-nav">
+      <a href="#showcase">Showcase</a>
+      <a href="#different">Why</a>
+      <a href="#how">How it works</a>
+      <a href="#status">Status</a>
+      <a class="gh" href="https://github.com/roc-ops/Portrayal">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ── Hero ───────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="wrap">
+      <p class="eyebrow">v0 · schemas will change · <span class="on">11 devices, 7 vendors</span></p>
+      <h1>Every physical thing,<br>individually addressable.</h1>
+      <p class="lede">
+        Portrayal turns a YAML device manifest into one flat SVG in real
+        millimetres, where every port, PSU, fan, LED, bay and region carries a
+        stable DOM id and a <code>data-path</code>. Colour a port from telemetry,
+        light a failed PSU, link a region to a ticket, export the whole thing to
+        a DCIM or a diagram tool.
+      </p>
+      <p class="lede lede-2">
+        The core is domain-neutral. Networking is the first profile, not the only one.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#showcase">See it working</a>
+        <a class="btn" href="https://github.com/roc-ops/Portrayal">Read the source</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Showcase ───────────────────────────────────────────────────── -->
+  <section class="section" id="showcase">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">The showcase</p>
+        <h2>One source of truth. Seven ways to use it.</h2>
+        <p class="sub">
+          Six of the tabs below drive a single compiled artefact — an
+          <strong>Edgecore AS7726-32X</strong> — six different ways. The seventh
+          stacks <strong>six real devices</strong> into a rack and renders that
+          same stack as a 2D elevation and as a 3D rack you can walk round.
+        </p>
+        <p class="sub">
+          Nothing here is a mockup or a screenshot. Change the face or the
+          configuration and the drawing is recompiled, not recoloured: DC power
+          swaps the modules and the airflow stripe follows. Swap an MPA in the
+          rack and it changes in both views, because both resolve it against the
+          same compiled faces. Hover it, click it, swap it, orbit it.
+        </p>
+      </div>
+
+      <div class="show" id="show">
+        <div class="show-tabs" role="tablist" aria-label="Showcase views">
+          <button role="tab" data-tab="inspect"  aria-selected="true">Inspect</button>
+          <button role="tab" data-tab="callouts" aria-selected="false">Callouts</button>
+          <button role="tab" data-tab="state"    aria-selected="false">Live state</button>
+          <button role="tab" data-tab="select"   aria-selected="false">Select &amp; regions</button>
+          <button role="tab" data-tab="runbook"  aria-selected="false">Runbook</button>
+          <button role="tab" data-tab="three"    aria-selected="false">3D</button>
+          <button role="tab" data-tab="rack"     aria-selected="false">Rack</button>
+        </div>
+
+        <div class="show-body">
+          <div class="show-stage">
+            <div class="stage-2d" id="stage2d" aria-label="Compiled device drawing"></div>
+            <div class="stage-3d" id="stage3d" hidden></div>
+            <div class="stage-rack" id="stageRack" hidden></div>
+            <div class="stage-export" id="stageExport"></div>
+            <p class="stage-loading" id="stageLoading">Loading the compiled drawing…</p>
+          </div>
+
+          <aside class="show-side">
+            <div class="side-panel" id="sidePanel"></div>
+          </aside>
+        </div>
+
+        <div class="show-foot">
+          <p class="show-hint" id="showHint"></p>
+          <p class="show-nav mono">wheel to zoom · drag to pan · double-click to fit</p>
+          <p class="show-src mono" id="showSrc">as7726-32x.ac-f2b.front.svg</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Why ────────────────────────────────────────────────────────── -->
+  <section class="section" id="different">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Why it is not the other thing</p>
+        <h2>The chassis view has been built five times. Always closed, always per-SKU.</h2>
+        <p class="sub">
+          CiscoView, EPN Manager, Meraki Switch Port View, Juniper Mist front
+          panels, Arista CloudVision. And no standard anywhere — ENTITY-MIB,
+          RFC 8348, OpenConfig, Redfish, DMTF CIM — says where a component
+          physically <em>is</em> on a faceplate.
+        </p>
+      </div>
+
+      <div class="cards">
+        <article class="card">
+          <h3>Provenance is a field, not a comment</h3>
+          <p>
+            Every dimension records where it came from — <code>datasheet</code>,
+            <code>drawing</code>, <code>measured</code>, <code>photo-measured</code>,
+            <code>estimated</code>. A device declares a <code>maturity</code> level
+            and the linter holds it to that standard: <code>verified</code> forbids
+            an estimated value anywhere in the assembly, including inside the
+            components it places.
+          </p>
+          <p class="card-kicker">"Is this model trustworthy" is a question the tooling answers.</p>
+        </article>
+
+        <article class="card">
+          <h3>Modelled the way the panel is made</h3>
+          <p>
+            Punched, then printed, then populated. Chassis silkscreen paints
+            <em>under</em> the components that cover it, because that is what
+            happens to the real panel. <code>--without silkscreen</code> gives you
+            the bare panel-and-components drawing to hand to whoever does the
+            artwork.
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>Physical ids follow the silkscreen</h3>
+          <p>
+            What the NOS calls an interface is an overlay. Two operating systems
+            on the same hardware disagree about naming, and the hardware does not
+            care. Physical ids are position-based and NOS-neutral; logical names
+            join on through <code>entity-map</code> rules.
+          </p>
+        </article>
+
+        <article class="card">
+          <h3>No vendor material is redistributed</h3>
+          <p>
+            Facts are transcribed and cited; the source documents stay out of the
+            repository. Datasheets are registered by title, URL and SHA-256 rather
+            than copied. Community skins carry no vendor logos — contracts reserve
+            a <code>logo-zone</code> instead.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How ────────────────────────────────────────────────────────── -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Three layers, one build artefact.</h2>
+      </div>
+
+      <div class="how-grid">
+        <ol class="how-steps">
+          <li>
+            <h3>Skins</h3>
+            <p>Plain SVG in real millimetres, one per component face. Artist
+               territory. The only obligation is to expose the contracted element
+               ids at the contracted geometry.</p>
+          </li>
+          <li>
+            <h3>Contracts and manifests</h3>
+            <p>YAML, validated by JSON Schema. A component contract declares
+               dimensions, sub-element boxes, connection points, states. A device
+               manifest places instances of them. A NOS overlay maps names on top
+               without ever being drawn.</p>
+          </li>
+          <li>
+            <h3>Compiled SVG</h3>
+            <p>Flat, components inline-expanded, stable hierarchical ids,
+               <code>data-*</code> semantics, a <code>.state-*</code> stylesheet,
+               and the full source definition embedded in <code>&lt;metadata&gt;</code>.</p>
+          </li>
+        </ol>
+
+        <div class="how-code">
+          <div class="code-block">
+            <p class="code-cap mono">device.yaml</p>
+<pre><code>placements:
+  - component: common/qsfp28-cage
+    id: port-1
+    at: [46, 10]
+    group: qsfp28
+    provenance:
+      source: measured
+      note: "cage pitch across 32 ports"</code></pre>
+          </div>
+          <div class="code-arrow" aria-hidden="true">↓</div>
+          <div class="code-block">
+            <p class="code-cap mono">as7726-32x.ac-f2b.front.svg</p>
+<pre><code>&lt;g id="port-1" data-path="port-1"
+   data-class="port" data-media="qsfp28"
+   data-speed="100g" data-lanes="4"
+   data-ref="common/qsfp28-cage@3:3.2.0"
+   transform="translate(46,10)"&gt;</code></pre>
+          </div>
+          <p class="how-note">
+            That is the actual output, copied out of the file this page is
+            driving. The id is CSS-safe, the path is hierarchical, and both are
+            stable across rebuilds.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Status ─────────────────────────────────────────────────────── -->
+  <section class="section" id="status">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Status</p>
+        <h2>Early, and saying so.</h2>
+      </div>
+      <div class="status-grid">
+        <div class="prose">
+          <p>
+            The schemas are at <strong>v0 and will change</strong>. Eleven devices
+            are modelled across seven vendors, at varying maturity. The API is not
+            stable and nothing here should be built against yet without expecting
+            to follow it.
+          </p>
+          <p>
+            The public repository at
+            <a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a>
+            exists but is still being populated — development is happening in a
+            private tree until the schema settles. This page is driven by a
+            vendored snapshot of the compiled output, not a live build.
+          </p>
+        </div>
+        <dl class="facts">
+          <div><dt>Schemas</dt><dd>v0 — breaking changes expected</dd></div>
+          <div><dt>Devices</dt><dd>11 modelled, 7 vendors</dd></div>
+          <div><dt>Licence</dt><dd>Apache-2.0 tooling · CC-BY-SA content</dd></div>
+          <div><dt>Units</dt><dd>Real millimetres, y-down, origin top-left</dd></div>
+          <div><dt>Exports</dt><dd>SVG · GLB · USDZ</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-in">
+    <div class="footer-brand">
+      <img src="brand/portrayal-mark-16.svg" alt="" width="16" height="16">
+      <span>portrayal<span class="tld">.dev</span></span>
+    </div>
+    <p>
+      Device drawings on this page are compiled output from the Portrayal
+      library, CC-BY-SA 4.0. No vendor material is redistributed.
+    </p>
+    <p><a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a></p>
+  </div>
+</footer>
+
+<script type="module" src="site/showcase.js"></script>
+</body>
+</html>

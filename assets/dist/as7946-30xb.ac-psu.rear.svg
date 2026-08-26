@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="87.0mm" viewBox="0 0 440.0 87.0" data-device="as7946-30xb" data-view="rear" data-config="ac-psu" data-weight="16 kg with PSUs and fans (datasheet); QSG says 14.5 kg" data-switching-capacity="2.4 Tb/s full duplex" data-packet-buffer="4 Gb integrated deep buffering" data-power-max-w="527 W" data-power-typical-w="186 W" data-psu-dc-input="-40 to -75 VDC, 40 A max per PSU" data-psu-ac-input="100-120 V 12 A or 200-240 V 7.5 A, 50-60 Hz per PSU" data-operating-temp="0 C to 45 C" data-storage-temp="-40 C to 70 C" data-humidity="operating 5-85 percent, storage 5-95 percent, non-condensing" data-asic="Broadcom BCM88823 Qumran-2C" data-cpu="Intel Xeon D-1548 8-core" data-memory="DDR4 SO-DIMM 32 GB (2 x 16 GB)" data-boot-flash="SPI, redundant 2 x 16 MB" data-storage="M.2 SSD 128 GB" data-bmc="ASPEED AST2600" data-software="ONIE preinstalled; ONL and commercial NOS supported">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"ac-psu","device":"Edgecore AS7946-30XB","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/rivet@1":"1.0.0","edgecore/agr-fan@1":"2.0.0","edgecore/agr-ground-plate@1":"1.0.0","edgecore/agr-psu-ac@1":"1.0.0","std/c13-inlet@1":"1.3.0"},"source":{"attrs":{"environmental":{"humidity":"operating 5-85 percent, storage 5-95 percent, non-condensing","storage-temp":"-40 C to 70 C"},"performance":{"packet-buffer":"4 Gb integrated deep buffering","switching-capacity":"2.4 Tb/s full duplex"},"physical":{"weight":"16 kg with PSUs and fans (datasheet); QSG says 14.5 kg"},"platform":{"asic":"Broadcom BCM88823 Qumran-2C","bmc":"ASPEED AST2600","boot-flash":"SPI, redundant 2 x 16 MB","cpu":"Intel Xeon D-1548 8-core","memory":"DDR4 SO-DIMM 32 GB (2 x 16 GB)","software":"ONIE preinstalled; ONL and commercial NOS supported","storage":"M.2 SSD 128 GB"},"power":{"power-max-w":"527 W","power-typical-w":"186 W","psu-ac-input":"100-120 V 12 A or 200-240 V 7.5 A, 50-60 Hz per PSU","psu-dc-input":"-40 to -75 VDC, 40 A max per PSU"},"thermal":{"operating-temp":"0 C to 45 C"}},"chassis":{"color":"#3f4449","depth":480.0,"height":87.0,"ru":2,"width":440.0},"configurations":{"ac-psu":{"bays":{"psu-0":"edgecore/agr-psu-ac@1","psu-1":"edgecore/agr-psu-ac@1"},"description":"Modular dual AC PSUs, front-to-back airflow. Same shell, IEC inlet instead of the terminal block.","part-numbers":{"AS7946-30XB-O-AC-F-EU":{"part":"FNPEC7946201Z","power-cord":"EU"},"AS7946-30XB-O-AC-F-JP":{"part":"FNPEC7946501Z","power-cord":"Japan"},"AS7946-30XB-O-AC-F-UK":{"part":"FNPEC7946301Z","power-cord":"UK"},"AS7946-30XB-O-AC-F-US":{"part":"FNPEC7946401Z","power-cord":"N. America"}}},"dc-psu":{"default":true,"description":"Modular dual DC PSUs, front-to-back airflow. This is the unit we photographed.","part-numbers":{"AS7946-30XB-O-48V-F":{"part":"FNPEC7946005Z"}}}},"description":"Edgecore AGR400 (AS7946-30XB) 100GbE aggregation router. 2RU, 30 fixed ports - 4 x 400G QSFP-DD, 18 x 100G QSFP28, 4 x 100G QSFP-DD and 4 x 1/10/25G SFP28 - with a timing block, 1+1 redundant PSUs and 4+1 redundant fans.","format":1,"gaps":[{"blocks":[],"note":"The datasheet states \"Power Consumption - Max: 527 W, Typical: 186 W\" with no ambient. The quick start guide for the same SKU states \"Power Consumption 638 W at 25 C, 695 W at 45 C\". This is not the usual measure-versus-measure difference that explains most such pairs: the QSG's LOWEST figure, at the cooler ambient, already exceeds the datasheet's stated MAXIMUM by 111 W, so neither typical-against-max nor an ambient axis accounts for it. Both rows are labelled Power Consumption and neither states a scope or a population. 527 W is kept because it is the datasheet's, which is the source of record for a spec-table fact; if the QSG is right the device draws 21 percent more than this manifest says.","reason":"sources-disagree","scope":["power-max-w"],"wanted":"a measurement from a running unit, or any Edgecore document stating what each figure covers - populated or bare, input power or system draw. Note that the AGR420's QSG gives 527 W at 25 C, the same number this datasheet gives as the AGR400's maximum, which may mean one of the four figures is a copy error","what":"power-consumption-sources"},{"blocks":[],"note":"Searched and absent, which is why this is asserted rather than left to L27 to imply. Both documents we hold - the datasheet and the QSG - rate the AGR PSUs by INPUT only (\"DC Input: -40 to -75V, 40 A, per PS\"; \"AC Input: 100-120 V 12 A or 200-240 V 7.5 A per PS\") and state no output wattage anywhere. The fan module gets no power figure at all. Unlike the Casa PEMs, these PSUs genuinely CONVERT, so `power-output-w` is the right key for them and the only thing missing is the number - which is exactly why it must not be derived from the input current, where 12 A at 100-120 V and 7.5 A at 200-240 V give different products and neither is an output rating.","reason":"vendor-silent","scope":["edgecore/agr-psu-ac@1","edgecore/agr-psu-dc@1","edgecore/agr-fan@1"],"wanted":"a photograph of either PSU's nameplate, which is where this figure normally lives, or an Edgecore part datasheet for the PSU and fan FRUs rather than for the chassis. The 550 W CRPS nameplate already in working/intake is the worked example of what would close it","what":"fru-power-unpublished"}],"groups":{"bracket-holes":{"index-origin":0,"term":"Hole"},"fans":{"index-origin":0,"term":"Fan"},"fasteners":{"index-origin":0,"term":"Rivet"},"filters":{"index-origin":0,"term":"Filter"},"grounding":{"index-origin":0,"term":"Point"},"labels":{"index-origin":0,"term":"Label"},"mgmt":{"index-origin":0,"mixed":"the management corner - out-of-band RJ45, RS-232 console on micro-USB-B, a USB-A service port and the recessed reset. One cluster on the faceplate, four media","term":"Port"},"mgmt-leds":{"description":"QSG Front LEDs callout 5 - RJ-45 OOB port, left (link), right (activity). The guide names no colours, so both lamps keep the component's plain off/on","index-origin":0,"term":"LED"},"port-link-leds":{"description":"QSG Front LEDs callouts 1 and 2 - LED2 - Blue (all lanes linked), Red (not all lanes linked), Blinking (activity). Blinking is a behaviour rather than a colour - the lamp flashes in whatever colour it is already showing, so `activity` declares the blink and no colour of its own","index-origin":0,"states":["off",{"color":"#3b82f6","name":"linked"},{"color":"#ef4444","name":"partial"},{"behavior":"blinking","name":"activity"}],"term":"LED"},"psus":{"index-origin":0,"term":"PSU"},"qsfp28":{"attrs":{"media":"qsfp28","speed":"100g"},"index-origin":0,"term":"Port"},"qsfp28-speed-leds":{"description":"QSG Front LEDs callout 2 - LED1 (left of each pair) - Blue (100G), Green (40G)","index-origin":0,"states":["off",{"color":"#3b82f6","name":"100g"},{"color":"#22c55e","name":"40g"}],"term":"LED"},"qsfpdd-100g":{"attrs":{"media":"qsfp-dd","speed":"100g"},"index-origin":0,"term":"Port"},"qsfpdd-400g":{"attrs":{"media":"qsfp-dd","speed":"400g"},"index-origin":0,"term":"Port"},"qsfpdd-speed-leds":{"description":"QSG Front LEDs callout 1 - LED1 (top) - Cyan (400G), Blue (100G). All eight QSFP-DD ports carry it, including the four wired at 100G","index-origin":0,"states":["off",{"color":"#22d3ee","name":"400g"},{"color":"#3b82f6","name":"100g"}],"term":"LED"},"sfp28":{"attrs":{"media":"sfp28","speed":"25g"},"index-origin":0,"term":"Port"},"sfp28-port-leds":{"description":"QSG Front LEDs callout 3 - Blue (25G), Green (10G), Blinking (activity). One lens per SFP28 port, speed and link on the same lamp","index-origin":0,"states":["off",{"color":"#3b82f6","name":"25g"},{"color":"#22c55e","name":"10g"},{"behavior":"blinking","name":"activity"}],"term":"LED"},"status-leds":{"description":"QSG Front LEDs callout 4 - Green (OK), Amber (fault). LOC does not follow this and overrides it on its own placement","index-origin":1,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#f59e0b","name":"fault"}],"term":"LED"},"timing":{"index-origin":0,"mixed":"the timing block - BITS and 1PPS/ToD on RJ45 beside 10MHz and 1PPS on coax SMB. What makes it one block is the clock, not the connector, and the faceplate legends it as one","term":"Port"}},"kind":"device","manufacturer":"Edgecore","maturity":"modelled","model":"AS7946-30XB","name":"as7946-30xb","portfolio":{"family":"Aggregation Router","line":"Service Provider","series":"AGR400"},"provenance":{"airflow":"datasheet - \"Supports front-to-back airflow SKUs\"; every listed SKU is F","chassis":"measured - 440 x 480 x 87 mm (2RU). The depth was contested and is now settled by measuring the hardware - both the AGR400 and the AGR420 measure 480 mm. The datasheet says 480; the QSG Chassis section says 524 (17.3 x 20.6 x 3.4 in, self-consistent in both units) and is simply wrong. An earlier pass here chose 524 on the grounds that the QSG was self-consistent, which it is - consistently wrong is still wrong, and internal consistency was never evidence about the metal. Three independent things agree on 480 - the tape measure, both AGR420 documents, and this device's own datasheet. The AGR420 model reached the same conclusion from photographs before the measurement, by matching the two bottom pans as one stamping and ruling out an over-the-handles reading (the rear handles project about 17 mm, not the 44 mm the difference would need)","depth-correction":"measured - the four faces whose size is the depth (top, bottom, left, right) were resized 524 -&gt; 480, and the 59 placements on them had their depth-axis coordinate rescaled by 480/524. Those positions were photo-measured off non-orthographic shots against the 524 assumption and were already flagged approximate - some had drifted past 498 mm, which a 480 mm chassis cannot have. Rescaling reproduces what the same method would have given with the right depth; it does not make them better than approximate. Re-derive them from an orthographic shot before this device goes to verified","grounding":"drawing - QSG rear callout 13. An IEC earth symbol at 73.2, 26.0 with TWO studs beneath it at y 39.5 and 54.2, immediately right of the PSU bay. Only the upper stud is modelled, because common/ground-lug carries one stud under its symbol; the second is recorded here rather than faked","labels":"photo - RECTANGULAR. common/device-label is an oval recess belonging to another platform and is deliberately not used here. The artwork is placeholder blocks: the real serial, SKU and MAC addresses are legible in IMG_6788 and are not transcribed","led-states":"QSG Front LEDs section, callouts 1 to 5, re-read off the 600dpi render. Every lens carries its function in attrs and its state vocabulary in structured states:, declared on the group where a block shares one - eight QSFP-DD speed lamps, eighteen QSFP28 speed lamps, twenty-six link lamps, four SFP28 lamps - and on the placement where it does not, which here is LOC alone. The sentence the guide prints sits beside them in description:. This was previously prose in attrs: {states: ...}, which no tool could read: the Explorer refuses a data-states value that is not a list of tokens, so what reached the chips was led-dot's generic default and the real 100G/40G vocabulary reached nobody. One correction from the re-read: the guide says LOC \"flashes Amber when the command is activated\" - the word \"locate\" was the modeller's gloss. Everything else transcribed correctly","mgmt-block":"drawing - a ganged 2x2 RJ-45 block at 356.0, 16.8 (32.3 x 25.1) carrying BITS 0 and BITS 2 above, BITS 1 and PPS/TOD below; two SMB jacks at 393.8; USB Type A on its side at 403.8; MGMT and CONSOLE 1 RJ-45s at 414-416; a micro-USB CONSOLE 0 and a recessed RST button","other-faces":"photo - the real-device photographs DO show these faces, which an earlier pass wrongly assumed they did not. Top (IMG_6788): two rectangular labels near the front right and a caution notice at the rear left. Bottom (IMG_6792): rivets and formed dimples, no labels. Sides (IMG_6790): a cluster of rack-bracket holes near the front and rivets along the length. Positions are photo-measured against the 440 mm width and are approximate - none of these shots is orthographic","port-classes":"datasheet - callouts 1 to 4 on the QSG overview map the groups: ports 0-3 are 400G QSFP-DD, 4-21 are 100G QSFP28, 22-25 are 100G QSFP-DD, 26-29 are SFP28","port-leds":"drawing - every QSFP port has two lenses and every SFP28 port one, and the ARRANGEMENT DIFFERS BY FAMILY. QSFP-DD: a stacked pair outside each block, at x 13.02 and 57.06 for the 400G and 265.21 and 309.15 for the 100G, with y 37.19/40.22 serving the top-row port and 47.46/50.45 the bottom - LED1 above is speed, LED2 below is link. QSFP28: four above each column on a 4.0 mm pitch at offsets 4.2/8.2/12.2/16.2, the left pair serving the top port and the right pair the bottom, each pair being speed then link. SFP28: two above each column at offsets 3.56 and 9.43, left for the top port and right for the bottom","port-legend-anchors":"drawing - CONSOLE 0 is centred under the micro-USB, per the QSG mgmt detail figure; its x already WAS the connector centre (404.0 + 7.5/2 = 407.75) and only the anchor was missing, so left-anchored it ran under the CONSOLE 1 jack. The pair arrows were also drawn 2.0mm tall against a 1.73mm digit cap; the datasheet front figure shows the arrow SHORTER than the digits, as the AGR420 legend has it, so they are redrawn at the AGR420 proportion. NOTE, unfixed: the figure prints TWO arrows between each pair of numbers (26 up down 27); this model draws one","port-numbering":"drawing - the pair legends read \"0 &lt;up&gt; &lt;down&gt; 1\" at 7x zoom on the 600dpi render: the up arrow belongs to the left number and the down arrow to the right. Numbering is column-major with the EVEN port on the TOP row and the odd port below it. The first pass had this inverted, from reading the legend at a resolution where the two arrows merged into one","ports":"drawing - 13 QSFP apertures 18.4 x 8.8 mm on a 19.15 mm pitch and 2 SFP apertures 13.5 x 8.6 on a 14.3 mm pitch, each in two rows 13.0 mm apart. 26 + 4 = 30 ports, matching the datasheet count and the model number","rear":"drawing - rear panel figure on the same page: two stacked PSUs in a 60.1 x 75.2 mm block at the left, then five fan bays on a 69.4 mm pitch, silkscreened FAN 4 down to FAN 0 left to right","rivets":"photo - the quick start guide draws diamonds along the rear edges. On the real chassis those are RIVET HEADS - the guide art is evidently a mock-up, not a finished unit. Placement follows the guide; appearance follows the photograph","rj45-choice":"Jason - use std/ before common/. std/rj45 is the IEC 60603-7 aperture; common/rj45-shielded is one we drew, and it puts its integrated LEDs on the CONTACTS side, which no real jack does - they always flank the keyway. All six jacks are std/rj45@1, and MGMT-s two LEDs are placed on top of it","rj45-orientation":"drawing - RJ-45 jacks are NOT all the same way up. BITS 0, BITS 2, MGMT and CONSOLE 1 are keyway-UP with their contacts along the bottom; only BITS 1 and PPS/TOD, the lower row of the ganged block, are keyway-down. A 2-high ganged jack mirrors its rows so both release tabs stay reachable. common/rj45-shielded draws keyway-down, so the other four carry rotate 180","scale":"drawing - the QSG page-1 panel figures are orthographic. The front panel measures 2248 x 444 px, an aspect of 5.063 against the datasheet 440/87 = 5.057, a 0.1 percent match, so the figure carries geometry and everything below is measured off it at 5.109 px/mm","sources":"datasheet AGR400-AS7946-30XB-DS-R05 and quick start guide AS7946-30XB_QSG-R04, both Edgecore, plus straight-on photographs of a real unit. No mechanical drawing was available","sources-disagree":"NOTE - guide art and real photographs disagree in three places on this device: the rear fasteners (diamonds vs rivets), the grounding landing (two diamonds vs a two-hole plate under an earth symbol) and the fan bay proportions (the figure reads taller than square). Where they conflict the REAL DEVICE wins. The stock renders show an AC PSU and our unit is DC, which is not a conflict - both variants exist, and both are modelled","spec-table":"datasheet - silicon, CPU, memory, flash, SSD, BMC, capacity, buffering, power and environmentals transcribed into attrs. Where the datasheet and the QSG disagree - weight 16 vs 14.5 kg, max power 527 vs 638 W - both numbers are carried rather than one being silently chosen","status-leds":"drawing - DIAG, LOC, FAN, PS0 and PS1 on a 5.1 mm pitch beneath the timing block, read off the upscaled QSG detail figure"},"version":"0.1.0","views":{"bottom":{"components":{"placements":[{"at":[24,54.96],"group":"fasteners","id":"rivet-b0","ref":"common/rivet@1","rel-pos":0},{"at":[118,54.96],"group":"fasteners","id":"rivet-b1","ref":"common/rivet@1","rel-pos":1},{"at":[212,54.96],"group":"fasteners","id":"rivet-b2","ref":"common/rivet@1","rel-pos":2},{"at":[306,54.96],"group":"fasteners","id":"rivet-b3","ref":"common/rivet@1","rel-pos":3},{"at":[400,54.96],"group":"fasteners","id":"rivet-b4","ref":"common/rivet@1","rel-pos":4},{"at":[24,137.4],"group":"fasteners","id":"rivet-b5","ref":"common/rivet@1","rel-pos":5},{"at":[118,137.4],"group":"fasteners","id":"rivet-b6","ref":"common/rivet@1","rel-pos":6},{"at":[212,137.4],"group":"fasteners","id":"rivet-b7","ref":"common/rivet@1","rel-pos":7},{"at":[306,137.4],"group":"fasteners","id":"rivet-b8","ref":"common/rivet@1","rel-pos":8},{"at":[400,137.4],"group":"fasteners","id":"rivet-b9","ref":"common/rivet@1","rel-pos":9},{"at":[24,219.85],"group":"fasteners","id":"rivet-b10","ref":"common/rivet@1","rel-pos":10},{"at":[118,219.85],"group":"fasteners","id":"rivet-b11","ref":"common/rivet@1","rel-pos":11},{"at":[212,219.85],"group":"fasteners","id":"rivet-b12","ref":"common/rivet@1","rel-pos":12},{"at":[306,219.85],"group":"fasteners","id":"rivet-b13","ref":"common/rivet@1","rel-pos":13},{"at":[400,219.85],"group":"fasteners","id":"rivet-b14","ref":"common/rivet@1","rel-pos":14},{"at":[24,302.29],"group":"fasteners","id":"rivet-b15","ref":"common/rivet@1","rel-pos":15},{"at":[118,302.29],"group":"fasteners","id":"rivet-b16","ref":"common/rivet@1","rel-pos":16},{"at":[212,302.29],"group":"fasteners","id":"rivet-b17","ref":"common/rivet@1","rel-pos":17},{"at":[306,302.29],"group":"fasteners","id":"rivet-b18","ref":"common/rivet@1","rel-pos":18},{"at":[400,302.29],"group":"fasteners","id":"rivet-b19","ref":"common/rivet@1","rel-pos":19},{"at":[24,384.73],"group":"fasteners","id":"rivet-b20","ref":"common/rivet@1","rel-pos":20},{"at":[118,384.73],"group":"fasteners","id":"rivet-b21","ref":"common/rivet@1","rel-pos":21},{"at":[212,384.73],"group":"fasteners","id":"rivet-b22","ref":"common/rivet@1","rel-pos":22},{"at":[306,384.73],"group":"fasteners","id":"rivet-b23","ref":"common/rivet@1","rel-pos":23},{"at":[400,384.73],"group":"fasteners","id":"rivet-b24","ref":"common/rivet@1","rel-pos":24},{"at":[24,452.52],"group":"fasteners","id":"rivet-b25","ref":"common/rivet@1","rel-pos":25},{"at":[118,452.52],"group":"fasteners","id":"rivet-b26","ref":"common/rivet@1","rel-pos":26},{"at":[212,452.52],"group":"fasteners","id":"rivet-b27","ref":"common/rivet@1","rel-pos":27},{"at":[306,452.52],"group":"fasteners","id":"rivet-b28","ref":"common/rivet@1","rel-pos":28},{"at":[400,452.52],"group":"fasteners","id":"rivet-b29","ref":"common/rivet@1","rel-pos":29}]},"size":{"h":480.0,"w":440.0}},"front":{"components":{"placements":[{"at":[1.4,8.4],"group":"filters","id":"filter-top","ref":"edgecore/agr-filter-top@1","rel-pos":0},{"at":[1.4,60.5],"group":"filters","id":"filter-bottom","ref":"edgecore/agr-filter-bottom@1","rel-pos":1},{"at":[15.1,33.0],"group":"qsfpdd-400g","id":"port-0","ref":"std/qsfp-ganged@1","rel-pos":0},{"at":[15.1,46.0],"group":"qsfpdd-400g","id":"port-1","ref":"std/qsfp-ganged@1","rel-pos":1},{"at":[34.3,33.0],"group":"qsfpdd-400g","id":"port-2","ref":"std/qsfp-ganged@1","rel-pos":2},{"at":[34.3,46.0],"group":"qsfpdd-400g","id":"port-3","ref":"std/qsfp-ganged@1","rel-pos":3},{"at":[63.8,33.0],"group":"qsfp28","id":"port-4","ref":"std/qsfp-ganged@1","rel-pos":4},{"at":[63.8,46.0],"group":"qsfp28","id":"port-5","ref":"std/qsfp-ganged@1","rel-pos":5},{"at":[83.0,33.0],"group":"qsfp28","id":"port-6","ref":"std/qsfp-ganged@1","rel-pos":6},{"at":[83.0,46.0],"group":"qsfp28","id":"port-7","ref":"std/qsfp-ganged@1","rel-pos":7},{"at":[102.0,33.0],"group":"qsfp28","id":"port-8","ref":"std/qsfp-ganged@1","rel-pos":8},{"at":[102.0,46.0],"group":"qsfp28","id":"port-9","ref":"std/qsfp-ganged@1","rel-pos":9},{"at":[132.3,33.0],"group":"qsfp28","id":"port-10","ref":"std/qsfp-ganged@1","rel-pos":10},{"at":[132.3,46.0],"group":"qsfp28","id":"port-11","ref":"std/qsfp-ganged@1","rel-pos":11},{"at":[151.4,33.0],"group":"qsfp28","id":"port-12","ref":"std/qsfp-ganged@1","rel-pos":12},{"at":[151.4,46.0],"group":"qsfp28","id":"port-13","ref":"std/qsfp-ganged@1","rel-pos":13},{"at":[170.5,33.0],"group":"qsfp28","id":"port-14","ref":"std/qsfp-ganged@1","rel-pos":14},{"at":[170.5,46.0],"group":"qsfp28","id":"port-15","ref":"std/qsfp-ganged@1","rel-pos":15},{"at":[200.6,33.0],"group":"qsfp28","id":"port-16","ref":"std/qsfp-ganged@1","rel-pos":16},{"at":[200.6,46.0],"group":"qsfp28","id":"port-17","ref":"std/qsfp-ganged@1","rel-pos":17},{"at":[219.8,33.0],"group":"qsfp28","id":"port-18","ref":"std/qsfp-ganged@1","rel-pos":18},{"at":[219.8,46.0],"group":"qsfp28","id":"port-19","ref":"std/qsfp-ganged@1","rel-pos":19},{"at":[239.0,33.0],"group":"qsfp28","id":"port-20","ref":"std/qsfp-ganged@1","rel-pos":20},{"at":[239.0,46.0],"group":"qsfp28","id":"port-21","ref":"std/qsfp-ganged@1","rel-pos":21},{"at":[268.7,33.0],"group":"qsfpdd-100g","id":"port-22","ref":"std/qsfp-ganged@1","rel-pos":22},{"at":[268.7,46.0],"group":"qsfpdd-100g","id":"port-23","ref":"std/qsfp-ganged@1","rel-pos":23},{"at":[287.9,33.0],"group":"qsfpdd-100g","id":"port-24","ref":"std/qsfp-ganged@1","rel-pos":24},{"at":[287.9,46.0],"group":"qsfpdd-100g","id":"port-25","ref":"std/qsfp-ganged@1","rel-pos":25},{"at":[314.5,33.0],"group":"sfp28","id":"port-26","ref":"std/sfp-ganged@1","rel-pos":26},{"at":[314.5,46.0],"group":"sfp28","id":"port-27","ref":"std/sfp-ganged@1","rel-pos":27},{"at":[328.8,33.0],"group":"sfp28","id":"port-28","ref":"std/sfp-ganged@1","rel-pos":28},{"at":[328.8,46.0],"group":"sfp28","id":"port-29","ref":"std/sfp-ganged@1","rel-pos":29},{"at":[12.02,36.19],"attrs":{"function":"speed"},"for":"port-0","group":"qsfpdd-speed-leds","id":"led-p0-a","ref":"common/led-dot@1","rel-pos":0},{"at":[12.02,39.22],"attrs":{"function":"link"},"for":"port-0","group":"port-link-leds","id":"led-p0-b","ref":"common/led-dot@1","rel-pos":0},{"at":[12.02,46.46],"attrs":{"function":"speed"},"for":"port-1","group":"qsfpdd-speed-leds","id":"led-p1-a","ref":"common/led-dot@1","rel-pos":1},{"at":[12.02,49.45],"attrs":{"function":"link"},"for":"port-1","group":"port-link-leds","id":"led-p1-b","ref":"common/led-dot@1","rel-pos":1},{"at":[56.06,36.19],"attrs":{"function":"speed"},"for":"port-2","group":"qsfpdd-speed-leds","id":"led-p2-a","ref":"common/led-dot@1","rel-pos":2},{"at":[56.06,39.22],"attrs":{"function":"link"},"for":"port-2","group":"port-link-leds","id":"led-p2-b","ref":"common/led-dot@1","rel-pos":2},{"at":[56.06,46.46],"attrs":{"function":"speed"},"for":"port-3","group":"qsfpdd-speed-leds","id":"led-p3-a","ref":"common/led-dot@1","rel-pos":3},{"at":[56.06,49.45],"attrs":{"function":"link"},"for":"port-3","group":"port-link-leds","id":"led-p3-b","ref":"common/led-dot@1","rel-pos":3},{"at":[264.21,36.19],"attrs":{"function":"speed"},"for":"port-22","group":"qsfpdd-speed-leds","id":"led-p22-a","ref":"common/led-dot@1","rel-pos":4},{"at":[264.21,39.22],"attrs":{"function":"link"},"for":"port-22","group":"port-link-leds","id":"led-p22-b","ref":"common/led-dot@1","rel-pos":22},{"at":[264.21,46.46],"attrs":{"function":"speed"},"for":"port-23","group":"qsfpdd-speed-leds","id":"led-p23-a","ref":"common/led-dot@1","rel-pos":5},{"at":[264.21,49.45],"attrs":{"function":"link"},"for":"port-23","group":"port-link-leds","id":"led-p23-b","ref":"common/led-dot@1","rel-pos":23},{"at":[308.15,36.19],"attrs":{"function":"speed"},"for":"port-24","group":"qsfpdd-speed-leds","id":"led-p24-a","ref":"common/led-dot@1","rel-pos":6},{"at":[308.15,39.22],"attrs":{"function":"link"},"for":"port-24","group":"port-link-leds","id":"led-p24-b","ref":"common/led-dot@1","rel-pos":24},{"at":[308.15,46.46],"attrs":{"function":"speed"},"for":"port-25","group":"qsfpdd-speed-leds","id":"led-p25-a","ref":"common/led-dot@1","rel-pos":7},{"at":[308.15,49.45],"attrs":{"function":"link"},"for":"port-25","group":"port-link-leds","id":"led-p25-b","ref":"common/led-dot@1","rel-pos":25},{"at":[67.0,28.35],"attrs":{"function":"speed"},"for":"port-4","group":"qsfp28-speed-leds","id":"led-p4-a","ref":"common/led-dot@1","rel-pos":0},{"at":[71.0,28.35],"attrs":{"function":"link"},"for":"port-4","group":"port-link-leds","id":"led-p4-b","ref":"common/led-dot@1","rel-pos":4},{"at":[75.0,28.35],"attrs":{"function":"speed"},"for":"port-5","group":"qsfp28-speed-leds","id":"led-p5-a","ref":"common/led-dot@1","rel-pos":1},{"at":[79.0,28.35],"attrs":{"function":"link"},"for":"port-5","group":"port-link-leds","id":"led-p5-b","ref":"common/led-dot@1","rel-pos":5},{"at":[86.2,28.35],"attrs":{"function":"speed"},"for":"port-6","group":"qsfp28-speed-leds","id":"led-p6-a","ref":"common/led-dot@1","rel-pos":2},{"at":[90.2,28.35],"attrs":{"function":"link"},"for":"port-6","group":"port-link-leds","id":"led-p6-b","ref":"common/led-dot@1","rel-pos":6},{"at":[94.2,28.35],"attrs":{"function":"speed"},"for":"port-7","group":"qsfp28-speed-leds","id":"led-p7-a","ref":"common/led-dot@1","rel-pos":3},{"at":[98.2,28.35],"attrs":{"function":"link"},"for":"port-7","group":"port-link-leds","id":"led-p7-b","ref":"common/led-dot@1","rel-pos":7},{"at":[105.2,28.35],"attrs":{"function":"speed"},"for":"port-8","group":"qsfp28-speed-leds","id":"led-p8-a","ref":"common/led-dot@1","rel-pos":4},{"at":[109.2,28.35],"attrs":{"function":"link"},"for":"port-8","group":"port-link-leds","id":"led-p8-b","ref":"common/led-dot@1","rel-pos":8},{"at":[113.2,28.35],"attrs":{"function":"speed"},"for":"port-9","group":"qsfp28-speed-leds","id":"led-p9-a","ref":"common/led-dot@1","rel-pos":5},{"at":[117.2,28.35],"attrs":{"function":"link"},"for":"port-9","group":"port-link-leds","id":"led-p9-b","ref":"common/led-dot@1","rel-pos":9},{"at":[135.5,28.35],"attrs":{"function":"speed"},"for":"port-10","group":"qsfp28-speed-leds","id":"led-p10-a","ref":"common/led-dot@1","rel-pos":6},{"at":[139.5,28.35],"attrs":{"function":"link"},"for":"port-10","group":"port-link-leds","id":"led-p10-b","ref":"common/led-dot@1","rel-pos":10},{"at":[143.5,28.35],"attrs":{"function":"speed"},"for":"port-11","group":"qsfp28-speed-leds","id":"led-p11-a","ref":"common/led-dot@1","rel-pos":7},{"at":[147.5,28.35],"attrs":{"function":"link"},"for":"port-11","group":"port-link-leds","id":"led-p11-b","ref":"common/led-dot@1","rel-pos":11},{"at":[154.6,28.35],"attrs":{"function":"speed"},"for":"port-12","group":"qsfp28-speed-leds","id":"led-p12-a","ref":"common/led-dot@1","rel-pos":8},{"at":[158.6,28.35],"attrs":{"function":"link"},"for":"port-12","group":"port-link-leds","id":"led-p12-b","ref":"common/led-dot@1","rel-pos":12},{"at":[162.6,28.35],"attrs":{"function":"speed"},"for":"port-13","group":"qsfp28-speed-leds","id":"led-p13-a","ref":"common/led-dot@1","rel-pos":9},{"at":[166.6,28.35],"attrs":{"function":"link"},"for":"port-13","group":"port-link-leds","id":"led-p13-b","ref":"common/led-dot@1","rel-pos":13},{"at":[173.7,28.35],"attrs":{"function":"speed"},"for":"port-14","group":"qsfp28-speed-leds","id":"led-p14-a","ref":"common/led-dot@1","rel-pos":10},{"at":[177.7,28.35],"attrs":{"function":"link"},"for":"port-14","group":"port-link-leds","id":"led-p14-b","ref":"common/led-dot@1","rel-pos":14},{"at":[181.7,28.35],"attrs":{"function":"speed"},"for":"port-15","group":"qsfp28-speed-leds","id":"led-p15-a","ref":"common/led-dot@1","rel-pos":11},{"at":[185.7,28.35],"attrs":{"function":"link"},"for":"port-15","group":"port-link-leds","id":"led-p15-b","ref":"common/led-dot@1","rel-pos":15},{"at":[203.8,28.35],"attrs":{"function":"speed"},"for":"port-16","group":"qsfp28-speed-leds","id":"led-p16-a","ref":"common/led-dot@1","rel-pos":12},{"at":[207.8,28.35],"attrs":{"function":"link"},"for":"port-16","group":"port-link-leds","id":"led-p16-b","ref":"common/led-dot@1","rel-pos":16},{"at":[211.8,28.35],"attrs":{"function":"speed"},"for":"port-17","group":"qsfp28-speed-leds","id":"led-p17-a","ref":"common/led-dot@1","rel-pos":13},{"at":[215.8,28.35],"attrs":{"function":"link"},"for":"port-17","group":"port-link-leds","id":"led-p17-b","ref":"common/led-dot@1","rel-pos":17},{"at":[223.0,28.35],"attrs":{"function":"speed"},"for":"port-18","group":"qsfp28-speed-leds","id":"led-p18-a","ref":"common/led-dot@1","rel-pos":14},{"at":[227.0,28.35],"attrs":{"function":"link"},"for":"port-18","group":"port-link-leds","id":"led-p18-b","ref":"common/led-dot@1","rel-pos":18},{"at":[231.0,28.35],"attrs":{"function":"speed"},"for":"port-19","group":"qsfp28-speed-leds","id":"led-p19-a","ref":"common/led-dot@1","rel-pos":15},{"at":[235.0,28.35],"attrs":{"function":"link"},"for":"port-19","group":"port-link-leds","id":"led-p19-b","ref":"common/led-dot@1","rel-pos":19},{"at":[242.2,28.35],"attrs":{"function":"speed"},"for":"port-20","group":"qsfp28-speed-leds","id":"led-p20-a","ref":"common/led-dot@1","rel-pos":16},{"at":[246.2,28.35],"attrs":{"function":"link"},"for":"port-20","group":"port-link-leds","id":"led-p20-b","ref":"common/led-dot@1","rel-pos":20},{"at":[250.2,28.35],"attrs":{"function":"speed"},"for":"port-21","group":"qsfp28-speed-leds","id":"led-p21-a","ref":"common/led-dot@1","rel-pos":17},{"at":[254.2,28.35],"attrs":{"function":"link"},"for":"port-21","group":"port-link-leds","id":"led-p21-b","ref":"common/led-dot@1","rel-pos":21},{"at":[317.06,26.06],"attrs":{"function":"speed/link"},"for":"port-26","group":"sfp28-port-leds","id":"led-p26","ref":"common/led-dot@1","rel-pos":0},{"at":[322.93,26.06],"attrs":{"function":"speed/link"},"for":"port-27","group":"sfp28-port-leds","id":"led-p27","ref":"common/led-dot@1","rel-pos":1},{"at":[331.36,26.06],"attrs":{"function":"speed/link"},"for":"port-28","group":"sfp28-port-leds","id":"led-p28","ref":"common/led-dot@1","rel-pos":2},{"at":[337.23,26.06],"attrs":{"function":"speed/link"},"for":"port-29","group":"sfp28-port-leds","id":"led-p29","ref":"common/led-dot@1","rel-pos":3},{"at":[356.2,14.4],"group":"timing","id":"bits-0","ref":"std/rj45@1","rel-pos":0,"rotate":180},{"at":[372.2,14.4],"group":"timing","id":"bits-2","ref":"std/rj45@1","rel-pos":1,"rotate":180},{"at":[356.2,28.4],"group":"timing","id":"bits-1","ref":"std/rj45@1","rel-pos":2},{"at":[372.2,28.4],"group":"timing","id":"pps-tod","ref":"std/rj45@1","rel-pos":3},{"at":[393.81,18.01],"group":"timing","id":"mhz-10-in","ref":"std/smb@1","rel-pos":4},{"at":[393.81,30.53],"group":"timing","id":"pps-1-out","ref":"std/smb@1","rel-pos":5},{"at":[403.79,28.77],"group":"mgmt","id":"usb","ref":"std/usb-a@1","rel-pos":0,"rotate":90},{"at":[415.7,28.3],"group":"mgmt","id":"mgmt-eth","ref":"std/rj45@1","rel-pos":1,"rotate":180},{"at":[417.2,29.3],"attrs":{"function":"link"},"description":"left lamp: link. The QSG gives it no colour","for":"mgmt-eth","group":"mgmt-leds","id":"led-mgmt-link","ref":"common/led-rect@1","rel-pos":0},{"at":[426.2,29.3],"attrs":{"function":"activity"},"description":"right lamp: activity. The QSG gives it no colour","for":"mgmt-eth","group":"mgmt-leds","id":"led-mgmt-act","ref":"common/led-rect@1","rel-pos":1,"states":["off",{"behavior":"blinking","name":"activity"}]},{"at":[415.7,45.3],"group":"mgmt","id":"console-1","ref":"std/rj45@1","rel-pos":3,"rotate":180},{"at":[404.0,46.4],"group":"mgmt","id":"console-0","ref":"std/micro-usb@1","rel-pos":2},{"at":[394.5,45.4],"for":"chassis","group":"mgmt","id":"reset","ref":"common/reset-button@1","rel-pos":4},{"at":[359.2,48.6],"attrs":{"function":"DIAG"},"description":"DIAG - Green (OK), Amber (fault detected)","for":"chassis","group":"status-leds","id":"led-diag","ref":"common/led-rect@1","rel-pos":0},{"at":[364.5,48.6],"attrs":{"function":"LOC"},"description":"LOC - flashes Amber when the command is activated. The only status lamp here that is not Green (OK) / Amber (fault)","for":"chassis","group":"status-leds","id":"led-loc","ref":"common/led-rect@1","rel-pos":1,"states":["off",{"color":"#f59e0b","name":"locate"}]},{"at":[369.7,48.6],"attrs":{"function":"FAN"},"for":["rear/fan-0","rear/fan-1","rear/fan-2","rear/fan-3","rear/fan-4"],"group":"status-leds","id":"led-fan","ref":"common/led-rect@1","rel-pos":2},{"at":[374.8,48.6],"attrs":{"function":"PS0"},"for":"rear/psu-0","group":"status-leds","id":"led-ps0","ref":"common/led-rect@1","rel-pos":3},{"at":[379.7,48.6],"attrs":{"function":"PS1"},"for":"rear/psu-1","group":"status-leds","id":"led-ps1","ref":"common/led-rect@1","rel-pos":4}]},"silkscreen":[{"anchor":"end","at":[22.35,58.4],"font-size":2.4,"for":["port-0","port-1"],"text":"0"},{"at":[24.35,58.4],"fill":"#c7ccd1","for":["port-0","port-1"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[26.35,58.4],"font-size":2.4,"for":["port-0","port-1"],"text":"1"},{"anchor":"end","at":[41.55,58.4],"font-size":2.4,"for":["port-2","port-3"],"text":"2"},{"at":[43.55,58.4],"fill":"#c7ccd1","for":["port-2","port-3"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[45.55,58.4],"font-size":2.4,"for":["port-2","port-3"],"text":"3"},{"anchor":"end","at":[71.05,58.4],"font-size":2.4,"for":["port-4","port-5"],"text":"4"},{"at":[73.05,58.4],"fill":"#c7ccd1","for":["port-4","port-5"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[75.05,58.4],"font-size":2.4,"for":["port-4","port-5"],"text":"5"},{"anchor":"end","at":[90.25,58.4],"font-size":2.4,"for":["port-6","port-7"],"text":"6"},{"at":[92.25,58.4],"fill":"#c7ccd1","for":["port-6","port-7"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[94.25,58.4],"font-size":2.4,"for":["port-6","port-7"],"text":"7"},{"anchor":"end","at":[109.25,58.4],"font-size":2.4,"for":["port-8","port-9"],"text":"8"},{"at":[111.25,58.4],"fill":"#c7ccd1","for":["port-8","port-9"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[113.25,58.4],"font-size":2.4,"for":["port-8","port-9"],"text":"9"},{"anchor":"end","at":[139.55,58.4],"font-size":2.4,"for":["port-10","port-11"],"text":"10"},{"at":[141.55,58.4],"fill":"#c7ccd1","for":["port-10","port-11"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[143.55,58.4],"font-size":2.4,"for":["port-10","port-11"],"text":"11"},{"anchor":"end","at":[158.65,58.4],"font-size":2.4,"for":["port-12","port-13"],"text":"12"},{"at":[160.65,58.4],"fill":"#c7ccd1","for":["port-12","port-13"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[162.65,58.4],"font-size":2.4,"for":["port-12","port-13"],"text":"13"},{"anchor":"end","at":[177.75,58.4],"font-size":2.4,"for":["port-14","port-15"],"text":"14"},{"at":[179.75,58.4],"fill":"#c7ccd1","for":["port-14","port-15"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[181.75,58.4],"font-size":2.4,"for":["port-14","port-15"],"text":"15"},{"anchor":"end","at":[207.85,58.4],"font-size":2.4,"for":["port-16","port-17"],"text":"16"},{"at":[209.85,58.4],"fill":"#c7ccd1","for":["port-16","port-17"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[211.85,58.4],"font-size":2.4,"for":["port-16","port-17"],"text":"17"},{"anchor":"end","at":[227.05,58.4],"font-size":2.4,"for":["port-18","port-19"],"text":"18"},{"at":[229.05,58.4],"fill":"#c7ccd1","for":["port-18","port-19"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[231.05,58.4],"font-size":2.4,"for":["port-18","port-19"],"text":"19"},{"anchor":"end","at":[246.25,58.4],"font-size":2.4,"for":["port-20","port-21"],"text":"20"},{"at":[248.25,58.4],"fill":"#c7ccd1","for":["port-20","port-21"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[250.25,58.4],"font-size":2.4,"for":["port-20","port-21"],"text":"21"},{"anchor":"end","at":[275.95,58.4],"font-size":2.4,"for":["port-22","port-23"],"text":"22"},{"at":[277.95,58.4],"fill":"#c7ccd1","for":["port-22","port-23"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[279.95,58.4],"font-size":2.4,"for":["port-22","port-23"],"text":"23"},{"anchor":"end","at":[295.15,58.4],"font-size":2.4,"for":["port-24","port-25"],"text":"24"},{"at":[297.15,58.4],"fill":"#c7ccd1","for":["port-24","port-25"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[299.15,58.4],"font-size":2.4,"for":["port-24","port-25"],"text":"25"},{"anchor":"end","at":[319.62,58.4],"font-size":2.4,"for":["port-26","port-27"],"text":"26"},{"at":[321.62,58.4],"fill":"#c7ccd1","for":["port-26","port-27"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[323.62,58.4],"font-size":2.4,"for":["port-26","port-27"],"text":"27"},{"anchor":"end","at":[333.93,58.4],"font-size":2.4,"for":["port-28","port-29"],"text":"28"},{"at":[335.93,58.4],"fill":"#c7ccd1","for":["port-28","port-29"],"path":"M -0.71 -0.33 L 0 -1.91 L 0.71 -0.33 Z","stroke-width":0.3},{"anchor":"start","at":[337.93,58.4],"font-size":2.4,"for":["port-28","port-29"],"text":"29"},{"at":[364.2,13.0],"font-size":2.2,"for":"bits-0","text":"BITS 0"},{"at":[380.2,13.0],"font-size":2.2,"for":"bits-2","text":"BITS 2"},{"at":[364.2,45.0],"font-size":2.2,"for":"bits-1","text":"BITS 1"},{"at":[380.2,45.0],"font-size":2.2,"for":"pps-tod","text":"PPS/TOD"},{"at":[397.5,15.9],"font-size":2.0,"for":"mhz-10-in","text":"10MHz IN"},{"at":[397.5,40.4],"font-size":2.0,"for":"pps-1-out","text":"1PPS OUT"},{"at":[423.7,26.6],"font-size":2.2,"for":"mgmt-eth","text":"MGMT"},{"at":[423.6,61.8],"font-size":2.0,"for":"console-1","text":"CONSOLE 1"},{"anchor":"middle","at":[407.8,52.6],"font-size":2.0,"for":"console-0","text":"CONSOLE 0"},{"at":[396.5,52.6],"font-size":2.0,"for":"reset","text":"RST"},{"at":[361.5,53.8],"font-size":1.9,"for":"led-diag","text":"DIAG"},{"at":[366.8,53.8],"font-size":1.9,"for":"led-loc","text":"LOC"},{"at":[372.0,53.8],"font-size":1.9,"for":"led-fan","text":"FAN"},{"at":[377.1,53.8],"font-size":1.9,"for":"led-ps0","text":"PS0"},{"at":[382.0,53.8],"font-size":1.9,"for":"led-ps1","text":"PS1"},{"at":[418.0,79.6],"font-size":2.4,"text":"AS7946-30XB"}],"size":{"h":87.0,"w":440.0}},"left":{"components":{"placements":[{"at":[23.82,30],"group":"bracket-holes","id":"bracket-hole-0","ref":"common/rivet@1","rel-pos":0},{"at":[23.82,46],"group":"bracket-holes","id":"bracket-hole-1","ref":"common/rivet@1","rel-pos":1},{"at":[42.14,30],"group":"bracket-holes","id":"bracket-hole-2","ref":"common/rivet@1","rel-pos":2},{"at":[42.14,46],"group":"bracket-holes","id":"bracket-hole-3","ref":"common/rivet@1","rel-pos":3},{"at":[60.46,30],"group":"bracket-holes","id":"bracket-hole-4","ref":"common/rivet@1","rel-pos":4},{"at":[60.46,46],"group":"bracket-holes","id":"bracket-hole-5","ref":"common/rivet@1","rel-pos":5},{"at":[78.78,30],"group":"bracket-holes","id":"bracket-hole-6","ref":"common/rivet@1","rel-pos":6},{"at":[78.78,46],"group":"bracket-holes","id":"bracket-hole-7","ref":"common/rivet@1","rel-pos":7},{"at":[155.73,42],"group":"fasteners","id":"rivet-s0","ref":"common/rivet@1","rel-pos":0},{"at":[229.01,42],"group":"fasteners","id":"rivet-s1","ref":"common/rivet@1","rel-pos":1},{"at":[302.29,42],"group":"fasteners","id":"rivet-s2","ref":"common/rivet@1","rel-pos":2},{"at":[375.57,42],"group":"fasteners","id":"rivet-s3","ref":"common/rivet@1","rel-pos":3},{"at":[439.69,42],"group":"fasteners","id":"rivet-s4","ref":"common/rivet@1","rel-pos":4}]},"size":{"h":87.0,"w":480.0}},"rear":{"components":{"bays":[{"accepts":["edgecore/agr-psu-dc@1","edgecore/agr-psu-ac@1"],"at":[6.26,11.74],"default":"edgecore/agr-psu-dc@1","group":"psus","id":"psu-0","rel-pos":0,"size":{"h":37.6,"w":60.1}},{"accepts":["edgecore/agr-psu-dc@1","edgecore/agr-psu-ac@1"],"at":[6.26,49.34],"default":"edgecore/agr-psu-dc@1","group":"psus","id":"psu-1","rel-pos":1,"size":{"h":37.6,"w":60.1}},{"accepts":["edgecore/agr-fan@1"],"at":[83.19,11.74],"default":"edgecore/agr-fan@1","group":"fans","id":"fan-4","rel-pos":4,"size":{"h":69.4,"w":69.4}},{"accepts":["edgecore/agr-fan@1"],"at":[153.59,11.74],"default":"edgecore/agr-fan@1","group":"fans","id":"fan-3","rel-pos":3,"size":{"h":69.4,"w":69.4}},{"accepts":["edgecore/agr-fan@1"],"at":[223.99,11.74],"default":"edgecore/agr-fan@1","group":"fans","id":"fan-2","rel-pos":2,"size":{"h":69.4,"w":69.4}},{"accepts":["edgecore/agr-fan@1"],"at":[294.39,11.74],"default":"edgecore/agr-fan@1","group":"fans","id":"fan-1","rel-pos":1,"size":{"h":69.4,"w":69.4}},{"accepts":["edgecore/agr-fan@1"],"at":[364.79,11.74],"default":"edgecore/agr-fan@1","group":"fans","id":"fan-0","rel-pos":0,"size":{"h":69.4,"w":69.4}}],"placements":[{"at":[69.6,24.0],"group":"grounding","id":"ground-plate","ref":"edgecore/agr-ground-plate@1","rel-pos":0},{"at":[76.0,3.4],"group":"fasteners","id":"rivet-0","ref":"common/rivet@1","rel-pos":0},{"at":[99.4,3.4],"group":"fasteners","id":"rivet-1","ref":"common/rivet@1","rel-pos":1},{"at":[122.8,3.4],"group":"fasteners","id":"rivet-2","ref":"common/rivet@1","rel-pos":2},{"at":[146.2,3.4],"group":"fasteners","id":"rivet-3","ref":"common/rivet@1","rel-pos":3},{"at":[169.6,3.4],"group":"fasteners","id":"rivet-4","ref":"common/rivet@1","rel-pos":4},{"at":[193.0,3.4],"group":"fasteners","id":"rivet-5","ref":"common/rivet@1","rel-pos":5},{"at":[216.4,3.4],"group":"fasteners","id":"rivet-6","ref":"common/rivet@1","rel-pos":6},{"at":[239.8,3.4],"group":"fasteners","id":"rivet-7","ref":"common/rivet@1","rel-pos":7},{"at":[263.2,3.4],"group":"fasteners","id":"rivet-8","ref":"common/rivet@1","rel-pos":8},{"at":[286.6,3.4],"group":"fasteners","id":"rivet-9","ref":"common/rivet@1","rel-pos":9},{"at":[310.0,3.4],"group":"fasteners","id":"rivet-10","ref":"common/rivet@1","rel-pos":10},{"at":[333.4,3.4],"group":"fasteners","id":"rivet-11","ref":"common/rivet@1","rel-pos":11},{"at":[356.8,3.4],"group":"fasteners","id":"rivet-12","ref":"common/rivet@1","rel-pos":12},{"at":[380.2,3.4],"group":"fasteners","id":"rivet-13","ref":"common/rivet@1","rel-pos":13},{"at":[403.6,3.4],"group":"fasteners","id":"rivet-14","ref":"common/rivet@1","rel-pos":14},{"at":[427.0,3.4],"group":"fasteners","id":"rivet-15","ref":"common/rivet@1","rel-pos":15},{"at":[81.69,82.6],"group":"fasteners","id":"rivet-16","ref":"common/rivet@1","rel-pos":16},{"at":[152.09,82.6],"group":"fasteners","id":"rivet-17","ref":"common/rivet@1","rel-pos":17},{"at":[222.49,82.6],"group":"fasteners","id":"rivet-18","ref":"common/rivet@1","rel-pos":18},{"at":[292.89,82.6],"group":"fasteners","id":"rivet-19","ref":"common/rivet@1","rel-pos":19},{"at":[363.29,82.6],"group":"fasteners","id":"rivet-20","ref":"common/rivet@1","rel-pos":20},{"at":[433.69,82.6],"group":"fasteners","id":"rivet-21","ref":"common/rivet@1","rel-pos":21}]},"silkscreen":[{"anchor":"start","at":[1.0,23.4],"font-size":1.8,"for":"psu-0","text":"PSU0"},{"at":[3.3,26.6],"fill":"#c7ccd1","for":"psu-0","path":"M -0.8 0.4 L 0 -1.0 L 0.8 0.4 Z","stroke-width":0.25},{"at":[3.3,29.4],"fill":"#c7ccd1","for":"psu-1","path":"M -0.8 -1.0 L 0 0.4 L 0.8 -1.0 Z","stroke-width":0.25},{"anchor":"start","at":[1.0,33.4],"font-size":1.8,"for":"psu-1","text":"PSU1"},{"anchor":"end","at":[115.69,84.0],"font-size":2.2,"for":"fan-4","text":"FAN 4"},{"at":[119.29,84.0],"fill":"#c7ccd1","for":"fan-4","path":"M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z","stroke-width":0.3},{"at":[89.19,80.6],"fill":"none","for":"fan-4","path":"M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4","stroke-width":0.4},{"anchor":"end","at":[186.09,84.0],"font-size":2.2,"for":"fan-3","text":"FAN 3"},{"at":[189.69,84.0],"fill":"#c7ccd1","for":"fan-3","path":"M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z","stroke-width":0.3},{"at":[159.59,80.6],"fill":"none","for":"fan-3","path":"M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4","stroke-width":0.4},{"anchor":"end","at":[256.49,84.0],"font-size":2.2,"for":"fan-2","text":"FAN 2"},{"at":[260.09,84.0],"fill":"#c7ccd1","for":"fan-2","path":"M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z","stroke-width":0.3},{"at":[229.99,80.6],"fill":"none","for":"fan-2","path":"M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4","stroke-width":0.4},{"anchor":"end","at":[326.89,84.0],"font-size":2.2,"for":"fan-1","text":"FAN 1"},{"at":[330.48999999999995,84.0],"fill":"#c7ccd1","for":"fan-1","path":"M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z","stroke-width":0.3},{"at":[300.39,80.6],"fill":"none","for":"fan-1","path":"M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4","stroke-width":0.4},{"anchor":"end","at":[397.29,84.0],"font-size":2.2,"for":"fan-0","text":"FAN 0"},{"at":[400.89,84.0],"fill":"#c7ccd1","for":"fan-0","path":"M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z","stroke-width":0.3},{"at":[370.79,80.6],"fill":"none","for":"fan-0","path":"M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4","stroke-width":0.4}],"size":{"h":87.0,"w":440.0}},"right":{"components":{"placements":[{"at":[456.18,30],"group":"bracket-holes","id":"bracket-hole-0","ref":"common/rivet@1","rel-pos":0},{"at":[456.18,46],"group":"bracket-holes","id":"bracket-hole-1","ref":"common/rivet@1","rel-pos":1},{"at":[437.86,30],"group":"bracket-holes","id":"bracket-hole-2","ref":"common/rivet@1","rel-pos":2},{"at":[437.86,46],"group":"bracket-holes","id":"bracket-hole-3","ref":"common/rivet@1","rel-pos":3},{"at":[419.54,30],"group":"bracket-holes","id":"bracket-hole-4","ref":"common/rivet@1","rel-pos":4},{"at":[419.54,46],"group":"bracket-holes","id":"bracket-hole-5","ref":"common/rivet@1","rel-pos":5},{"at":[401.22,30],"group":"bracket-holes","id":"bracket-hole-6","ref":"common/rivet@1","rel-pos":6},{"at":[401.22,46],"group":"bracket-holes","id":"bracket-hole-7","ref":"common/rivet@1","rel-pos":7},{"at":[324.27,42],"group":"fasteners","id":"rivet-s0","ref":"common/rivet@1","rel-pos":0},{"at":[250.99,42],"group":"fasteners","id":"rivet-s1","ref":"common/rivet@1","rel-pos":1},{"at":[177.71,42],"group":"fasteners","id":"rivet-s2","ref":"common/rivet@1","rel-pos":2},{"at":[104.43,42],"group":"fasteners","id":"rivet-s3","ref":"common/rivet@1","rel-pos":3},{"at":[40.31,42],"group":"fasteners","id":"rivet-s4","ref":"common/rivet@1","rel-pos":4}]},"size":{"h":87.0,"w":480.0}},"top":{"components":{"placements":[{"at":[352,274.81],"group":"labels","id":"label-spec","ref":"edgecore/agr-label-spec@1","rel-pos":0},{"at":[352,370.81],"group":"labels","id":"label-serial","ref":"edgecore/agr-label-serial@1","rel-pos":1},{"at":[16,23.82],"group":"labels","id":"label-caution","ref":"edgecore/agr-label-caution@1","rel-pos":2}]},"size":{"h":480.0,"w":440.0}}}},"view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="AS7946-30XB" x="0" y="0" width="440" height="87" rx="1.2" fill="#3f4449" stroke="#22262a" stroke-width="0.5" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="1" y="23.4" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#c7ccd1" data-for="psu-0">PSU0</text>
+    <path d="M -0.8 0.4 L 0 -1.0 L 0.8 0.4 Z" fill="none" stroke="#c7ccd1" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(3.3 26.6)" data-for="psu-0" />
+    <path d="M -0.8 -1.0 L 0 0.4 L 0.8 -1.0 Z" fill="none" stroke="#c7ccd1" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(3.3 29.4)" data-for="psu-1" />
+    <text x="1" y="33.4" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#c7ccd1" data-for="psu-1">PSU1</text>
+    <text x="115.69" y="84" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#c7ccd1" data-for="fan-4">FAN 4</text>
+    <path d="M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z" fill="none" stroke="#c7ccd1" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(119.29 84)" data-for="fan-4" />
+    <path d="M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4" fill="none" stroke="none" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(89.19 80.6)" data-for="fan-4" />
+    <text x="186.09" y="84" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#c7ccd1" data-for="fan-3">FAN 3</text>
+    <path d="M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z" fill="none" stroke="#c7ccd1" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(189.69 84)" data-for="fan-3" />
+    <path d="M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4" fill="none" stroke="none" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(159.59 80.6)" data-for="fan-3" />
+    <text x="256.49" y="84" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#c7ccd1" data-for="fan-2">FAN 2</text>
+    <path d="M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z" fill="none" stroke="#c7ccd1" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(260.09 84)" data-for="fan-2" />
+    <path d="M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4" fill="none" stroke="none" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(229.99 80.6)" data-for="fan-2" />
+    <text x="326.89" y="84" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#c7ccd1" data-for="fan-1">FAN 1</text>
+    <path d="M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z" fill="none" stroke="#c7ccd1" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(330.49 84)" data-for="fan-1" />
+    <path d="M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4" fill="none" stroke="none" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(300.39 80.6)" data-for="fan-1" />
+    <text x="397.29" y="84" font-family="sans-serif" font-size="2.2" text-anchor="end" fill="#c7ccd1" data-for="fan-0">FAN 0</text>
+    <path d="M -1.0 -0.3 L 0 -2.2 L 1.0 -0.3 Z" fill="none" stroke="#c7ccd1" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(400.89 84)" data-for="fan-0" />
+    <path d="M -3.0 0 H 2.0 M 0.4 -1.4 L 2.4 0 L 0.4 1.4" fill="none" stroke="none" stroke-width="0.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(370.79 80.6)" data-for="fan-0" />
+  </g>
+  <g id="ground-plate" data-path="ground-plate" data-class="ground" data-ref="edgecore/agr-ground-plate@1:1.0.0" data-model="Grounding Plate" data-group="grounding" data-rel-pos="0" transform="translate(69.6,24.0)">
+    <title>ground-plate</title>
+    <g id="ground-plate--body" data-z-out="1.5">
+      <rect id="ground-plate--plate" x="0.6" y="7.0" width="9.8" height="26.4" rx="0.8" fill="#8d949c" stroke="#5f6469" stroke-width="0.4" />
+      <g id="ground-plate--earth-symbol" stroke="#d7dbdf" fill="none" stroke-linecap="butt">
+        <circle cx="5.5" cy="3.4" r="2.8" stroke-width="0.35" />
+        <path d="M 5.5 1.4 V 3.2" stroke-width="0.4" />
+        <path d="M 3.9 3.4 H 7.1" stroke-width="0.5" />
+        <path d="M 4.4 4.2 H 6.6 M 4.9 4.9 H 6.1" stroke-width="0.4" />
+      </g>
+      <circle id="ground-plate--hole-a" cx="5.5" cy="14.5" r="2.5" fill="#15181b" stroke="#5f6469" stroke-width="0.35" />
+      <circle id="ground-plate--hole-b" cx="5.5" cy="26.5" r="2.5" fill="#15181b" stroke="#5f6469" stroke-width="0.35" />
+    </g>
+  </g>
+  <g id="rivet-0" data-path="rivet-0" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="0" transform="translate(76.0,3.4)">
+    <title>rivet-0</title>
+    <circle id="rivet-0--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-1" data-path="rivet-1" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="1" transform="translate(99.4,3.4)">
+    <title>rivet-1</title>
+    <circle id="rivet-1--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-2" data-path="rivet-2" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="2" transform="translate(122.8,3.4)">
+    <title>rivet-2</title>
+    <circle id="rivet-2--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-3" data-path="rivet-3" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="3" transform="translate(146.2,3.4)">
+    <title>rivet-3</title>
+    <circle id="rivet-3--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-4" data-path="rivet-4" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="4" transform="translate(169.6,3.4)">
+    <title>rivet-4</title>
+    <circle id="rivet-4--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-5" data-path="rivet-5" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="5" transform="translate(193.0,3.4)">
+    <title>rivet-5</title>
+    <circle id="rivet-5--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-6" data-path="rivet-6" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="6" transform="translate(216.4,3.4)">
+    <title>rivet-6</title>
+    <circle id="rivet-6--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-7" data-path="rivet-7" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="7" transform="translate(239.8,3.4)">
+    <title>rivet-7</title>
+    <circle id="rivet-7--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-8" data-path="rivet-8" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="8" transform="translate(263.2,3.4)">
+    <title>rivet-8</title>
+    <circle id="rivet-8--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-9" data-path="rivet-9" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="9" transform="translate(286.6,3.4)">
+    <title>rivet-9</title>
+    <circle id="rivet-9--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-10" data-path="rivet-10" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="10" transform="translate(310.0,3.4)">
+    <title>rivet-10</title>
+    <circle id="rivet-10--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-11" data-path="rivet-11" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="11" transform="translate(333.4,3.4)">
+    <title>rivet-11</title>
+    <circle id="rivet-11--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-12" data-path="rivet-12" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="12" transform="translate(356.8,3.4)">
+    <title>rivet-12</title>
+    <circle id="rivet-12--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-13" data-path="rivet-13" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="13" transform="translate(380.2,3.4)">
+    <title>rivet-13</title>
+    <circle id="rivet-13--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-14" data-path="rivet-14" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="14" transform="translate(403.6,3.4)">
+    <title>rivet-14</title>
+    <circle id="rivet-14--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-15" data-path="rivet-15" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="15" transform="translate(427.0,3.4)">
+    <title>rivet-15</title>
+    <circle id="rivet-15--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-16" data-path="rivet-16" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="16" transform="translate(81.69,82.6)">
+    <title>rivet-16</title>
+    <circle id="rivet-16--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-17" data-path="rivet-17" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="17" transform="translate(152.09,82.6)">
+    <title>rivet-17</title>
+    <circle id="rivet-17--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-18" data-path="rivet-18" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="18" transform="translate(222.49,82.6)">
+    <title>rivet-18</title>
+    <circle id="rivet-18--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-19" data-path="rivet-19" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="19" transform="translate(292.89,82.6)">
+    <title>rivet-19</title>
+    <circle id="rivet-19--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-20" data-path="rivet-20" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="20" transform="translate(363.29,82.6)">
+    <title>rivet-20</title>
+    <circle id="rivet-20--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="rivet-21" data-path="rivet-21" data-class="mechanical" data-ref="common/rivet@1:1.0.0" data-model="Rivet" data-group="fasteners" data-rel-pos="21" transform="translate(433.69,82.6)">
+    <title>rivet-21</title>
+    <circle id="rivet-21--head" cx="1.5" cy="1.5" r="1.4" fill="#4a4f55" stroke="#2b3035" stroke-width="0.22" />
+    <circle cx="1.5" cy="1.5" r="0.55" fill="#5f6469" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="6.26" y="11.74" width="60.1" height="37.6" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-ref="edgecore/agr-psu-ac@1:1.0.0" data-body-depth="360.7" data-wall="#4a4f55" data-input="100-120 V 12 A or 200-240 V 7.5 A, 50-60 Hz per PSU" data-model="AGR PSU (AC)" transform="translate(36.31,30.54) translate(-30.05,-18.8)">
+      <title>psu-0--module</title>
+      <rect id="psu-0--module--face" x="0" y="0" width="60.1" height="37.6" rx="1.0" fill="#b9bec3" stroke="#7d848c" stroke-width="0.4" />
+      <g id="psu-0--module--inlet" data-path="psu-0/module/inlet" data-class="inlet" data-ref="std/c13-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(12.0,8.8)">
+        <title>psu-0--module--inlet</title>
+        <rect id="psu-0--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-0/module/inlet/opening" data-class="cutout" />
+        <path id="psu-0--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-0--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-0--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      </g>
+      <g id="psu-0--module--handle" data-z-uhandle="9.0">
+        <rect id="psu-0--module--handle-bar" x="2.2" y="6.4" width="4.8" height="24.8" rx="2.2" fill="#2b2f33" stroke="#171a1d" stroke-width="0.35" />
+        <rect id="psu-0--module--handle-grip" x="3.4" y="8.6" width="2.4" height="20.4" rx="1.2" fill="#0d0f11" />
+      </g>
+      <g id="psu-0--module--latch" data-z-out="4.2">
+        <rect id="psu-0--module--latch-bar" x="47.0" y="7.6" width="5.0" height="22.4" rx="1.8" fill="#c22f2f" stroke="#7a1a1a" stroke-width="0.4" />
+        <rect id="psu-0--module--latch-lip" x="48.2" y="10.0" width="2.6" height="17.6" rx="1.0" fill="#8e2018" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="6.26" y="49.34" width="60.1" height="37.6" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-ref="edgecore/agr-psu-ac@1:1.0.0" data-body-depth="360.7" data-wall="#4a4f55" data-input="100-120 V 12 A or 200-240 V 7.5 A, 50-60 Hz per PSU" data-model="AGR PSU (AC)" transform="translate(36.31,68.14) translate(-30.05,-18.8)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--face" x="0" y="0" width="60.1" height="37.6" rx="1.0" fill="#b9bec3" stroke="#7d848c" stroke-width="0.4" />
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c13-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(12.0,8.8)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      </g>
+      <g id="psu-1--module--handle" data-z-uhandle="9.0">
+        <rect id="psu-1--module--handle-bar" x="2.2" y="6.4" width="4.8" height="24.8" rx="2.2" fill="#2b2f33" stroke="#171a1d" stroke-width="0.35" />
+        <rect id="psu-1--module--handle-grip" x="3.4" y="8.6" width="2.4" height="20.4" rx="1.2" fill="#0d0f11" />
+      </g>
+      <g id="psu-1--module--latch" data-z-out="4.2">
+        <rect id="psu-1--module--latch-bar" x="47.0" y="7.6" width="5.0" height="22.4" rx="1.8" fill="#c22f2f" stroke="#7a1a1a" stroke-width="0.4" />
+        <rect id="psu-1--module--latch-lip" x="48.2" y="10.0" width="2.6" height="17.6" rx="1.0" fill="#8e2018" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-4" data-path="fan-4" data-class="bay" data-group="fans" data-rel-pos="4">
+    <title>fan-4</title>
+    <rect id="fan-4--opening" x="83.19" y="11.74" width="69.4" height="69.4" fill="#101214" />
+    <g id="fan-4--module" data-path="fan-4/module" data-class="fan" data-ref="edgecore/agr-fan@1:2.0.0" data-body-depth="132.0" data-wall="#4a4f55" data-model="AGR Fan" transform="translate(117.89,46.44) translate(-34.7,-34.7)">
+      <title>fan-4--module</title>
+      <rect id="fan-4--module--face" x="0" y="0" width="69.4" height="69.4" rx="1.6" fill="#3f4449" stroke="#23272c" stroke-width="0.6" />
+      <rect x="1.6" y="1.6" width="66.2" height="66.2" rx="1.2" fill="none" stroke="#5f6469" stroke-width="0.4" />
+      <circle id="fan-4--module--grille-ring" cx="37.7" cy="34.7" r="27.5" fill="#15181b" stroke="#6d7379" stroke-width="0.6" />
+      <g id="fan-4--module--grille" fill="#8d949c" opacity="0.9" data-z-vent="26">
+        <polygon points="34.40,9.76 33.65,11.06 32.15,11.06 31.40,9.76 32.15,8.46 33.65,8.46" />
+        <polygon points="44.00,9.76 43.25,11.06 41.75,11.06 41.00,9.76 41.75,8.46 43.25,8.46" />
+        <polygon points="24.80,15.30 24.05,16.60 22.55,16.60 21.80,15.30 22.55,14.00 24.05,14.00" />
+        <polygon points="29.60,12.53 28.85,13.83 27.35,13.83 26.60,12.53 27.35,11.23 28.85,11.23" />
+        <polygon points="34.40,15.30 33.65,16.60 32.15,16.60 31.40,15.30 32.15,14.00 33.65,14.00" />
+        <polygon points="39.20,12.53 38.45,13.83 36.95,13.83 36.20,12.53 36.95,11.23 38.45,11.23" />
+        <polygon points="44.00,15.30 43.25,16.60 41.75,16.60 41.00,15.30 41.75,14.00 43.25,14.00" />
+        <polygon points="48.80,12.53 48.05,13.83 46.55,13.83 45.80,12.53 46.55,11.23 48.05,11.23" />
+        <polygon points="53.60,15.30 52.85,16.60 51.35,16.60 50.60,15.30 51.35,14.00 52.85,14.00" />
+        <polygon points="20.00,18.07 19.25,19.37 17.75,19.37 17.00,18.07 17.75,16.77 19.25,16.77" />
+        <polygon points="24.80,20.84 24.05,22.15 22.55,22.15 21.80,20.84 22.55,19.54 24.05,19.54" />
+        <polygon points="29.60,18.07 28.85,19.37 27.35,19.37 26.60,18.07 27.35,16.77 28.85,16.77" />
+        <polygon points="34.40,20.84 33.65,22.15 32.15,22.15 31.40,20.84 32.15,19.54 33.65,19.54" />
+        <polygon points="39.20,18.07 38.45,19.37 36.95,19.37 36.20,18.07 36.95,16.77 38.45,16.77" />
+        <polygon points="44.00,20.84 43.25,22.15 41.75,22.15 41.00,20.84 41.75,19.54 43.25,19.54" />
+        <polygon points="48.80,18.07 48.05,19.37 46.55,19.37 45.80,18.07 46.55,16.77 48.05,16.77" />
+        <polygon points="53.60,20.84 52.85,22.15 51.35,22.15 50.60,20.84 51.35,19.54 52.85,19.54" />
+        <polygon points="58.40,18.07 57.65,19.37 56.15,19.37 55.40,18.07 56.15,16.77 57.65,16.77" />
+        <polygon points="15.20,26.39 14.45,27.69 12.95,27.69 12.20,26.39 12.95,25.08 14.45,25.08" />
+        <polygon points="20.00,23.61 19.25,24.92 17.75,24.92 17.00,23.61 17.75,22.31 19.25,22.31" />
+        <polygon points="24.80,26.39 24.05,27.69 22.55,27.69 21.80,26.39 22.55,25.08 24.05,25.08" />
+        <polygon points="29.60,23.61 28.85,24.92 27.35,24.92 26.60,23.61 27.35,22.31 28.85,22.31" />
+        <polygon points="34.40,26.39 33.65,27.69 32.15,27.69 31.40,26.39 32.15,25.08 33.65,25.08" />
+        <polygon points="39.20,23.61 38.45,24.92 36.95,24.92 36.20,23.61 36.95,22.31 38.45,22.31" />
+        <polygon points="44.00,26.39 43.25,27.69 41.75,27.69 41.00,26.39 41.75,25.08 43.25,25.08" />
+        <polygon points="48.80,23.61 48.05,24.92 46.55,24.92 45.80,23.61 46.55,22.31 48.05,22.31" />
+        <polygon points="53.60,26.39 52.85,27.69 51.35,27.69 50.60,26.39 51.35,25.08 52.85,25.08" />
+        <polygon points="58.40,23.61 57.65,24.92 56.15,24.92 55.40,23.61 56.15,22.31 57.65,22.31" />
+        <polygon points="63.20,26.39 62.45,27.69 60.95,27.69 60.20,26.39 60.95,25.08 62.45,25.08" />
+        <polygon points="15.20,31.93 14.45,33.23 12.95,33.23 12.20,31.93 12.95,30.63 14.45,30.63" />
+        <polygon points="20.00,29.16 19.25,30.46 17.75,30.46 17.00,29.16 17.75,27.85 19.25,27.85" />
+        <polygon points="24.80,31.93 24.05,33.23 22.55,33.23 21.80,31.93 22.55,30.63 24.05,30.63" />
+        <polygon points="29.60,29.16 28.85,30.46 27.35,30.46 26.60,29.16 27.35,27.85 28.85,27.85" />
+        <polygon points="34.40,31.93 33.65,33.23 32.15,33.23 31.40,31.93 32.15,30.63 33.65,30.63" />
+        <polygon points="39.20,29.16 38.45,30.46 36.95,30.46 36.20,29.16 36.95,27.85 38.45,27.85" />
+        <polygon points="44.00,31.93 43.25,33.23 41.75,33.23 41.00,31.93 41.75,30.63 43.25,30.63" />
+        <polygon points="48.80,29.16 48.05,30.46 46.55,30.46 45.80,29.16 46.55,27.85 48.05,27.85" />
+        <polygon points="53.60,31.93 52.85,33.23 51.35,33.23 50.60,31.93 51.35,30.63 52.85,30.63" />
+        <polygon points="58.40,29.16 57.65,30.46 56.15,30.46 55.40,29.16 56.15,27.85 57.65,27.85" />
+        <polygon points="63.20,31.93 62.45,33.23 60.95,33.23 60.20,31.93 60.95,30.63 62.45,30.63" />
+        <polygon points="15.20,37.47 14.45,38.77 12.95,38.77 12.20,37.47 12.95,36.17 14.45,36.17" />
+        <polygon points="20.00,34.70 19.25,36.00 17.75,36.00 17.00,34.70 17.75,33.40 19.25,33.40" />
+        <polygon points="24.80,37.47 24.05,38.77 22.55,38.77 21.80,37.47 22.55,36.17 24.05,36.17" />
+        <polygon points="29.60,34.70 28.85,36.00 27.35,36.00 26.60,34.70 27.35,33.40 28.85,33.40" />
+        <polygon points="34.40,37.47 33.65,38.77 32.15,38.77 31.40,37.47 32.15,36.17 33.65,36.17" />
+        <polygon points="39.20,34.70 38.45,36.00 36.95,36.00 36.20,34.70 36.95,33.40 38.45,33.40" />
+        <polygon points="44.00,37.47 43.25,38.77 41.75,38.77 41.00,37.47 41.75,36.17 43.25,36.17" />
+        <polygon points="48.80,34.70 48.05,36.00 46.55,36.00 45.80,34.70 46.55,33.40 48.05,33.40" />
+        <polygon points="53.60,37.47 52.85,38.77 51.35,38.77 50.60,37.47 51.35,36.17 52.85,36.17" />
+        <polygon points="58.40,34.70 57.65,36.00 56.15,36.00 55.40,34.70 56.15,33.40 57.65,33.40" />
+        <polygon points="63.20,37.47 62.45,38.77 60.95,38.77 60.20,37.47 60.95,36.17 62.45,36.17" />
+        <polygon points="15.20,43.01 14.45,44.32 12.95,44.32 12.20,43.01 12.95,41.71 14.45,41.71" />
+        <polygon points="20.00,40.24 19.25,41.55 17.75,41.55 17.00,40.24 17.75,38.94 19.25,38.94" />
+        <polygon points="24.80,43.01 24.05,44.32 22.55,44.32 21.80,43.01 22.55,41.71 24.05,41.71" />
+        <polygon points="29.60,40.24 28.85,41.55 27.35,41.55 26.60,40.24 27.35,38.94 28.85,38.94" />
+        <polygon points="34.40,43.01 33.65,44.32 32.15,44.32 31.40,43.01 32.15,41.71 33.65,41.71" />
+        <polygon points="39.20,40.24 38.45,41.55 36.95,41.55 36.20,40.24 36.95,38.94 38.45,38.94" />
+        <polygon points="44.00,43.01 43.25,44.32 41.75,44.32 41.00,43.01 41.75,41.71 43.25,41.71" />
+        <polygon points="48.80,40.24 48.05,41.55 46.55,41.55 45.80,40.24 46.55,38.94 48.05,38.94" />
+        <polygon points="53.60,43.01 52.85,44.32 51.35,44.32 50.60,43.01 51.35,41.71 52.85,41.71" />
+        <polygon points="58.40,40.24 57.65,41.55 56.15,41.55 55.40,40.24 56.15,38.94 57.65,38.94" />
+        <polygon points="63.20,43.01 62.45,44.32 60.95,44.32 60.20,43.01 60.95,41.71 62.45,41.71" />
+        <polygon points="20.00,45.79 19.25,47.09 17.75,47.09 17.00,45.79 17.75,44.48 19.25,44.48" />
+        <polygon points="24.80,48.56 24.05,49.86 22.55,49.86 21.80,48.56 22.55,47.25 24.05,47.25" />
+        <polygon points="29.60,45.79 28.85,47.09 27.35,47.09 26.60,45.79 27.35,44.48 28.85,44.48" />
+        <polygon points="34.40,48.56 33.65,49.86 32.15,49.86 31.40,48.56 32.15,47.25 33.65,47.25" />
+        <polygon points="39.20,45.79 38.45,47.09 36.95,47.09 36.20,45.79 36.95,44.48 38.45,44.48" />
+        <polygon points="44.00,48.56 43.25,49.86 41.75,49.86 41.00,48.56 41.75,47.25 43.25,47.25" />
+        <polygon points="48.80,45.79 48.05,47.09 46.55,47.09 45.80,45.79 46.55,44.48 48.05,44.48" />
+        <polygon points="53.60,48.56 52.85,49.86 51.35,49.86 50.60,48.56 51.35,47.25 52.85,47.25" />
+        <polygon points="58.40,45.79 57.65,47.09 56.15,47.09 55.40,45.79 56.15,44.48 57.65,44.48" />
+        <polygon points="20.00,51.33 19.25,52.63 17.75,52.63 17.00,51.33 17.75,50.03 19.25,50.03" />
+        <polygon points="24.80,54.10 24.05,55.40 22.55,55.40 21.80,54.10 22.55,52.80 24.05,52.80" />
+        <polygon points="29.60,51.33 28.85,52.63 27.35,52.63 26.60,51.33 27.35,50.03 28.85,50.03" />
+        <polygon points="34.40,54.10 33.65,55.40 32.15,55.40 31.40,54.10 32.15,52.80 33.65,52.80" />
+        <polygon points="39.20,51.33 38.45,52.63 36.95,52.63 36.20,51.33 36.95,50.03 38.45,50.03" />
+        <polygon points="44.00,54.10 43.25,55.40 41.75,55.40 41.00,54.10 41.75,52.80 43.25,52.80" />
+        <polygon points="48.80,51.33 48.05,52.63 46.55,52.63 45.80,51.33 46.55,50.03 48.05,50.03" />
+        <polygon points="53.60,54.10 52.85,55.40 51.35,55.40 50.60,54.10 51.35,52.80 52.85,52.80" />
+        <polygon points="58.40,51.33 57.65,52.63 56.15,52.63 55.40,51.33 56.15,50.03 57.65,50.03" />
+        <polygon points="29.60,56.87 28.85,58.17 27.35,58.17 26.60,56.87 27.35,55.57 28.85,55.57" />
+        <polygon points="34.40,59.64 33.65,60.94 32.15,60.94 31.40,59.64 32.15,58.34 33.65,58.34" />
+        <polygon points="39.20,56.87 38.45,58.17 36.95,58.17 36.20,56.87 36.95,55.57 38.45,55.57" />
+        <polygon points="44.00,59.64 43.25,60.94 41.75,60.94 41.00,59.64 41.75,58.34 43.25,58.34" />
+        <polygon points="48.80,56.87 48.05,58.17 46.55,58.17 45.80,56.87 46.55,55.57 48.05,55.57" />
+      </g>
+      <g id="fan-4--module--handle" data-z-uhandle="8.0">
+        <rect id="fan-4--module--handle-bar" x="3.4" y="21.7" width="4.6" height="26.0" rx="2.0" fill="#c22f2f" stroke="#7d241a" stroke-width="0.35" />
+        <rect id="fan-4--module--handle-grip" x="4.6" y="24.1" width="2.2" height="21.2" rx="1.1" fill="#8e2018" />
+        <text x="5.7" y="50.9" font-family="sans-serif" font-size="2.0" text-anchor="middle" fill="#d7dbdf">FB</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="153.59" y="11.74" width="69.4" height="69.4" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-ref="edgecore/agr-fan@1:2.0.0" data-body-depth="132.0" data-wall="#4a4f55" data-model="AGR Fan" transform="translate(188.29,46.44) translate(-34.7,-34.7)">
+      <title>fan-3--module</title>
+      <rect id="fan-3--module--face" x="0" y="0" width="69.4" height="69.4" rx="1.6" fill="#3f4449" stroke="#23272c" stroke-width="0.6" />
+      <rect x="1.6" y="1.6" width="66.2" height="66.2" rx="1.2" fill="none" stroke="#5f6469" stroke-width="0.4" />
+      <circle id="fan-3--module--grille-ring" cx="37.7" cy="34.7" r="27.5" fill="#15181b" stroke="#6d7379" stroke-width="0.6" />
+      <g id="fan-3--module--grille" fill="#8d949c" opacity="0.9" data-z-vent="26">
+        <polygon points="34.40,9.76 33.65,11.06 32.15,11.06 31.40,9.76 32.15,8.46 33.65,8.46" />
+        <polygon points="44.00,9.76 43.25,11.06 41.75,11.06 41.00,9.76 41.75,8.46 43.25,8.46" />
+        <polygon points="24.80,15.30 24.05,16.60 22.55,16.60 21.80,15.30 22.55,14.00 24.05,14.00" />
+        <polygon points="29.60,12.53 28.85,13.83 27.35,13.83 26.60,12.53 27.35,11.23 28.85,11.23" />
+        <polygon points="34.40,15.30 33.65,16.60 32.15,16.60 31.40,15.30 32.15,14.00 33.65,14.00" />
+        <polygon points="39.20,12.53 38.45,13.83 36.95,13.83 36.20,12.53 36.95,11.23 38.45,11.23" />
+        <polygon points="44.00,15.30 43.25,16.60 41.75,16.60 41.00,15.30 41.75,14.00 43.25,14.00" />
+        <polygon points="48.80,12.53 48.05,13.83 46.55,13.83 45.80,12.53 46.55,11.23 48.05,11.23" />
+        <polygon points="53.60,15.30 52.85,16.60 51.35,16.60 50.60,15.30 51.35,14.00 52.85,14.00" />
+        <polygon points="20.00,18.07 19.25,19.37 17.75,19.37 17.00,18.07 17.75,16.77 19.25,16.77" />
+        <polygon points="24.80,20.84 24.05,22.15 22.55,22.15 21.80,20.84 22.55,19.54 24.05,19.54" />
+        <polygon points="29.60,18.07 28.85,19.37 27.35,19.37 26.60,18.07 27.35,16.77 28.85,16.77" />
+        <polygon points="34.40,20.84 33.65,22.15 32.15,22.15 31.40,20.84 32.15,19.54 33.65,19.54" />
+        <polygon points="39.20,18.07 38.45,19.37 36.95,19.37 36.20,18.07 36.95,16.77 38.45,16.77" />
+        <polygon points="44.00,20.84 43.25,22.15 41.75,22.15 41.00,20.84 41.75,19.54 43.25,19.54" />
+        <polygon points="48.80,18.07 48.05,19.37 46.55,19.37 45.80,18.07 46.55,16.77 48.05,16.77" />
+        <polygon points="53.60,20.84 52.85,22.15 51.35,22.15 50.60,20.84 51.35,19.54 52.85,19.54" />
+        <polygon points="58.40,18.07 57.65,19.37 56.15,19.37 55.40,18.07 56.15,16.77 57.65,16.77" />
+        <polygon points="15.20,26.39 14.45,27.69 12.95,27.69 12.20,26.39 12.95,25.08 14.45,25.08" />
+        <polygon points="20.00,23.61 19.25,24.92 17.75,24.92 17.00,23.61 17.75,22.31 19.25,22.31" />
+        <polygon points="24.80,26.39 24.05,27.69 22.55,27.69 21.80,26.39 22.55,25.08 24.05,25.08" />
+        <polygon points="29.60,23.61 28.85,24.92 27.35,24.92 26.60,23.61 27.35,22.31 28.85,22.31" />
+        <polygon points="34.40,26.39 33.65,27.69 32.15,27.69 31.40,26.39 32.15,25.08 33.65,25.08" />
+        <polygon points="39.20,23.61 38.45,24.92 36.95,24.92 36.20,23.61 36.95,22.31 38.45,22.31" />
+        <polygon points="44.00,26.39 43.25,27.69 41.75,27.69 41.00,26.39 41.75,25.08 43.25,25.08" />
+        <polygon points="48.80,23.61 48.05,24.92 46.55,24.92 45.80,23.61 46.55,22.31 48.05,22.31" />
+        <polygon points="53.60,26.39 52.85,27.69 51.35,27.69 50.60,26.39 51.35,25.08 52.85,25.08" />
+        <polygon points="58.40,23.61 57.65,24.92 56.15,24.92 55.40,23.61 56.15,22.31 57.65,22.31" />
+        <polygon points="63.20,26.39 62.45,27.69 60.95,27.69 60.20,26.39 60.95,25.08 62.45,25.08" />
+        <polygon points="15.20,31.93 14.45,33.23 12.95,33.23 12.20,31.93 12.95,30.63 14.45,30.63" />
+        <polygon points="20.00,29.16 19.25,30.46 17.75,30.46 17.00,29.16 17.75,27.85 19.25,27.85" />
+        <polygon points="24.80,31.93 24.05,33.23 22.55,33.23 21.80,31.93 22.55,30.63 24.05,30.63" />
+        <polygon points="29.60,29.16 28.85,30.46 27.35,30.46 26.60,29.16 27.35,27.85 28.85,27.85" />
+        <polygon points="34.40,31.93 33.65,33.23 32.15,33.23 31.40,31.93 32.15,30.63 33.65,30.63" />
+        <polygon points="39.20,29.16 38.45,30.46 36.95,30.46 36.20,29.16 36.95,27.85 38.45,27.85" />
+        <polygon points="44.00,31.93 43.25,33.23 41.75,33.23 41.00,31.93 41.75,30.63 43.25,30.63" />
+        <polygon points="48.80,29.16 48.05,30.46 46.55,30.46 45.80,29.16 46.55,27.85 48.05,27.85" />
+        <polygon points="53.60,31.93 52.85,33.23 51.35,33.23 50.60,31.93 51.35,30.63 52.85,30.63" />
+        <polygon points="58.40,29.16 57.65,30.46 56.15,30.46 55.40,29.16 56.15,27.85 57.65,27.85" />
+        <polygon points="63.20,31.93 62.45,33.23 60.95,33.23 60.20,31.93 60.95,30.63 62.45,30.63" />
+        <polygon points="15.20,37.47 14.45,38.77 12.95,38.77 12.20,37.47 12.95,36.17 14.45,36.17" />
+        <polygon points="20.00,34.70 19.25,36.00 17.75,36.00 17.00,34.70 17.75,33.40 19.25,33.40" />
+        <polygon points="24.80,37.47 24.05,38.77 22.55,38.77 21.80,37.47 22.55,36.17 24.05,36.17" />
+        <polygon points="29.60,34.70 28.85,36.00 27.35,36.00 26.60,34.70 27.35,33.40 28.85,33.40" />
+        <polygon points="34.40,37.47 33.65,38.77 32.15,38.77 31.40,37.47 32.15,36.17 33.65,36.17" />
+        <polygon points="39.20,34.70 38.45,36.00 36.95,36.00 36.20,34.70 36.95,33.40 38.45,33.40" />
+        <polygon points="44.00,37.47 43.25,38.77 41.75,38.77 41.00,37.47 41.75,36.17 43.25,36.17" />
+        <polygon points="48.80,34.70 48.05,36.00 46.55,36.00 45.80,34.70 46.55,33.40 48.05,33.40" />
+        <polygon points="53.60,37.47 52.85,38.77 51.35,38.77 50.60,37.47 51.35,36.17 52.85,36.17" />
+        <polygon points="58.40,34.70 57.65,36.00 56.15,36.00 55.40,34.70 56.15,33.40 57.65,33.40" />
+        <polygon points="63.20,37.47 62.45,38.77 60.95,38.77 60.20,37.47 60.95,36.17 62.45,36.17" />
+        <polygon points="15.20,43.01 14.45,44.32 12.95,44.32 12.20,43.01 12.95,41.71 14.45,41.71" />
+        <polygon points="20.00,40.24 19.25,41.55 17.75,41.55 17.00,40.24 17.75,38.94 19.25,38.94" />
+        <polygon points="24.80,43.01 24.05,44.32 22.55,44.32 21.80,43.01 22.55,41.71 24.05,41.71" />
+        <polygon points="29.60,40.24 28.85,41.55 27.35,41.55 26.60,40.24 27.35,38.94 28.85,38.94" />
+        <polygon points="34.40,43.01 33.65,44.32 32.15,44.32 31.40,43.01 32.15,41.71 33.65,41.71" />
+        <polygon points="39.20,40.24 38.45,41.55 36.95,41.55 36.20,40.24 36.95,38.94 38.45,38.94" />
+        <polygon points="44.00,43.01 43.25,44.32 41.75,44.32 41.00,43.01 41.75,41.71 43.25,41.71" />
+        <polygon points="48.80,40.24 48.05,41.55 46.55,41.55 45.80,40.24 46.55,38.94 48.05,38.94" />
+        <polygon points="53.60,43.01 52.85,44.32 51.35,44.32 50.60,43.01 51.35,41.71 52.85,41.71" />
+        <polygon points="58.40,40.24 57.65,41.55 56.15,41.55 55.40,40.24 56.15,38.94 57.65,38.94" />
+        <polygon points="63.20,43.01 62.45,44.32 60.95,44.32 60.20,43.01 60.95,41.71 62.45,41.71" />
+        <polygon points="20.00,45.79 19.25,47.09 17.75,47.09 17.00,45.79 17.75,44.48 19.25,44.48" />
+        <polygon points="24.80,48.56 24.05,49.86 22.55,49.86 21.80,48.56 22.55,47.25 24.05,47.25" />
+        <polygon points="29.60,45.79 28.85,47.09 27.35,47.09 26.60,45.79 27.35,44.48 28.85,44.48" />
+        <polygon points="34.40,48.56 33.65,49.86 32.15,49.86 31.40,48.56 32.15,47.25 33.65,47.25" />
+        <polygon points="39.20,45.79 38.45,47.09 36.95,47.09 36.20,45.79 36.95,44.48 38.45,44.48" />
+        <polygon points="44.00,48.56 43.25,49.86 41.75,49.86 41.00,48.56 41.75,47.25 43.25,47.25" />
+        <polygon points="48.80,45.79 48.05,47.09 46.55,47.09 45.80,45.79 46.55,44.48 48.05,44.48" />
+        <polygon points="53.60,48.56 52.85,49.86 51.35,49.86 50.60,48.56 51.35,47.25 52.85,47.25" />
+        <polygon points="58.40,45.79 57.65,47.09 56.15,47.09 55.40,45.79 56.15,44.48 57.65,44.48" />
+        <polygon points="20.00,51.33 19.25,52.63 17.75,52.63 17.00,51.33 17.75,50.03 19.25,50.03" />
+        <polygon points="24.80,54.10 24.05,55.40 22.55,55.40 21.80,54.10 22.55,52.80 24.05,52.80" />
+        <polygon points="29.60,51.33 28.85,52.63 27.35,52.63 26.60,51.33 27.35,50.03 28.85,50.03" />
+        <polygon points="34.40,54.10 33.65,55.40 32.15,55.40 31.40,54.10 32.15,52.80 33.65,52.80" />
+        <polygon points="39.20,51.33 38.45,52.63 36.95,52.63 36.20,51.33 36.95,50.03 38.45,50.03" />
+        <polygon points="44.00,54.10 43.25,55.40 41.75,55.40 41.00,54.10 41.75,52.80 43.25,52.80" />
+        <polygon points="48.80,51.33 48.05,52.63 46.55,52.63 45.80,51.33 46.55,50.03 48.05,50.03" />
+        <polygon points="53.60,54.10 52.85,55.40 51.35,55.40 50.60,54.10 51.35,52.80 52.85,52.80" />
+        <polygon points="58.40,51.33 57.65,52.63 56.15,52.63 55.40,51.33 56.15,50.03 57.65,50.03" />
+        <polygon points="29.60,56.87 28.85,58.17 27.35,58.17 26.60,56.87 27.35,55.57 28.85,55.57" />
+        <polygon points="34.40,59.64 33.65,60.94 32.15,60.94 31.40,59.64 32.15,58.34 33.65,58.34" />
+        <polygon points="39.20,56.87 38.45,58.17 36.95,58.17 36.20,56.87 36.95,55.57 38.45,55.57" />
+        <polygon points="44.00,59.64 43.25,60.94 41.75,60.94 41.00,59.64 41.75,58.34 43.25,58.34" />
+        <polygon points="48.80,56.87 48.05,58.17 46.55,58.17 45.80,56.87 46.55,55.57 48.05,55.57" />
+      </g>
+      <g id="fan-3--module--handle" data-z-uhandle="8.0">
+        <rect id="fan-3--module--handle-bar" x="3.4" y="21.7" width="4.6" height="26.0" rx="2.0" fill="#c22f2f" stroke="#7d241a" stroke-width="0.35" />
+        <rect id="fan-3--module--handle-grip" x="4.6" y="24.1" width="2.2" height="21.2" rx="1.1" fill="#8e2018" />
+        <text x="5.7" y="50.9" font-family="sans-serif" font-size="2.0" text-anchor="middle" fill="#d7dbdf">FB</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="223.99" y="11.74" width="69.4" height="69.4" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-ref="edgecore/agr-fan@1:2.0.0" data-body-depth="132.0" data-wall="#4a4f55" data-model="AGR Fan" transform="translate(258.69,46.44) translate(-34.7,-34.7)">
+      <title>fan-2--module</title>
+      <rect id="fan-2--module--face" x="0" y="0" width="69.4" height="69.4" rx="1.6" fill="#3f4449" stroke="#23272c" stroke-width="0.6" />
+      <rect x="1.6" y="1.6" width="66.2" height="66.2" rx="1.2" fill="none" stroke="#5f6469" stroke-width="0.4" />
+      <circle id="fan-2--module--grille-ring" cx="37.7" cy="34.7" r="27.5" fill="#15181b" stroke="#6d7379" stroke-width="0.6" />
+      <g id="fan-2--module--grille" fill="#8d949c" opacity="0.9" data-z-vent="26">
+        <polygon points="34.40,9.76 33.65,11.06 32.15,11.06 31.40,9.76 32.15,8.46 33.65,8.46" />
+        <polygon points="44.00,9.76 43.25,11.06 41.75,11.06 41.00,9.76 41.75,8.46 43.25,8.46" />
+        <polygon points="24.80,15.30 24.05,16.60 22.55,16.60 21.80,15.30 22.55,14.00 24.05,14.00" />
+        <polygon points="29.60,12.53 28.85,13.83 27.35,13.83 26.60,12.53 27.35,11.23 28.85,11.23" />
+        <polygon points="34.40,15.30 33.65,16.60 32.15,16.60 31.40,15.30 32.15,14.00 33.65,14.00" />
+        <polygon points="39.20,12.53 38.45,13.83 36.95,13.83 36.20,12.53 36.95,11.23 38.45,11.23" />
+        <polygon points="44.00,15.30 43.25,16.60 41.75,16.60 41.00,15.30 41.75,14.00 43.25,14.00" />
+        <polygon points="48.80,12.53 48.05,13.83 46.55,13.83 45.80,12.53 46.55,11.23 48.05,11.23" />
+        <polygon points="53.60,15.30 52.85,16.60 51.35,16.60 50.60,15.30 51.35,14.00 52.85,14.00" />
+        <polygon points="20.00,18.07 19.25,19.37 17.75,19.37 17.00,18.07 17.75,16.77 19.25,16.77" />
+        <polygon points="24.80,20.84 24.05,22.15 22.55,22.15 21.80,20.84 22.55,19.54 24.05,19.54" />
+        <polygon points="29.60,18.07 28.85,19.37 27.35,19.37 26.60,18.07 27.35,16.77 28.85,16.77" />
+        <polygon points="34.40,20.84 33.65,22.15 32.15,22.15 31.40,20.84 32.15,19.54 33.65,19.54" />
+        <polygon points="39.20,18.07 38.45,19.37 36.95,19.37 36.20,18.07 36.95,16.77 38.45,16.77" />
+        <polygon points="44.00,20.84 43.25,22.15 41.75,22.15 41.00,20.84 41.75,19.54 43.25,19.54" />
+        <polygon points="48.80,18.07 48.05,19.37 46.55,19.37 45.80,18.07 46.55,16.77 48.05,16.77" />
+        <polygon points="53.60,20.84 52.85,22.15 51.35,22.15 50.60,20.84 51.35,19.54 52.85,19.54" />
+        <polygon points="58.40,18.07 57.65,19.37 56.15,19.37 55.40,18.07 56.15,16.77 57.65,16.77" />
+        <polygon points="15.20,26.39 14.45,27.69 12.95,27.69 12.20,26.39 12.95,25.08 14.45,25.08" />
+        <polygon points="20.00,23.61 19.25,24.92 17.75,24.92 17.00,23.61 17.75,22.31 19.25,22.31" />
+        <polygon points="24.80,26.39 24.05,27.69 22.55,27.69 21.80,26.39 22.55,25.08 24.05,25.08" />
+        <polygon points="29.60,23.61 28.85,24.92 27.35,24.92 26.60,23.61 27.35,22.31 28.85,22.31" />
+        <polygon points="34.40,26.39 33.65,27.69 32.15,27.69 31.40,26.39 32.15,25.08 33.65,25.08" />
+        <polygon points="39.20,23.61 38.45,24.92 36.95,24.92 36.20,23.61 36.95,22.31 38.45,22.31" />
+        <polygon points="44.00,26.39 43.25,27.69 41.75,27.69 41.00,26.39 41.75,25.08 43.25,25.08" />
+        <polygon points="48.80,23.61 48.05,24.92 46.55,24.92 45.80,23.61 46.55,22.31 48.05,22.31" />
+        <polygon points="53.60,26.39 52.85,27.69 51.35,27.69 50.60,26.39 51.35,25.08 52.85,25.08" />
+        <polygon points="58.40,23.61 57.65,24.92 56.15,24.92 55.40,23.61 56.15,22.31 57.65,22.31" />
+        <polygon points="63.20,26.39 62.45,27.69 60.95,27.69 60.20,26.39 60.95,25.08 62.45,25.08" />
+        <polygon points="15.20,31.93 14.45,33.23 12.95,33.23 12.20,31.93 12.95,30.63 14.45,30.63" />
+        <polygon points="20.00,29.16 19.25,30.46 17.75,30.46 17.00,29.16 17.75,27.85 19.25,27.85" />
+        <polygon points="24.80,31.93 24.05,33.23 22.55,33.23 21.80,31.93 22.55,30.63 24.05,30.63" />
+        <polygon points="29.60,29.16 28.85,30.46 27.35,30.46 26.60,29.16 27.35,27.85 28.85,27.85" />
+        <polygon points="34.40,31.93 33.65,33.23 32.15,33.23 31.40,31.93 32.15,30.63 33.65,30.63" />
+        <polygon points="39.20,29.16 38.45,30.46 36.95,30.46 36.20,29.16 36.95,27.85 38.45,27.85" />
+        <polygon points="44.00,31.93 43.25,33.23 41.75,33.23 41.00,31.93 41.75,30.63 43.25,30.63" />
+        <polygon points="48.80,29.16 48.05,30.46 46.55,30.46 45.80,29.16 46.55,27.85 48.05,27.85" />
+        <polygon points="53.60,31.93 52.85,33.23 51.35,33.23 50.60,31.93 51.35,30.63 52.85,30.63" />
+        <polygon points="58.40,29.16 57.65,30.46 56.15,30.46 55.40,29.16 56.15,27.85 57.65,27.85" />
+        <polygon points="63.20,31.93 62.45,33.23 60.95,33.23 60.20,31.93 60.95,30.63 62.45,30.63" />
+        <polygon points="15.20,37.47 14.45,38.77 12.95,38.77 12.20,37.47 12.95,36.17 14.45,36.17" />
+        <polygon points="20.00,34.70 19.25,36.00 17.75,36.00 17.00,34.70 17.75,33.40 19.25,33.40" />
+        <polygon points="24.80,37.47 24.05,38.77 22.55,38.77 21.80,37.47 22.55,36.17 24.05,36.17" />
+        <polygon points="29.60,34.70 28.85,36.00 27.35,36.00 26.60,34.70 27.35,33.40 28.85,33.40" />
+        <polygon points="34.40,37.47 33.65,38.77 32.15,38.77 31.40,37.47 32.15,36.17 33.65,36.17" />
+        <polygon points="39.20,34.70 38.45,36.00 36.95,36.00 36.20,34.70 36.95,33.40 38.45,33.40" />
+        <polygon points="44.00,37.47 43.25,38.77 41.75,38.77 41.00,37.47 41.75,36.17 43.25,36.17" />
+        <polygon points="48.80,34.70 48.05,36.00 46.55,36.00 45.80,34.70 46.55,33.40 48.05,33.40" />
+        <polygon points="53.60,37.47 52.85,38.77 51.35,38.77 50.60,37.47 51.35,36.17 52.85,36.17" />
+        <polygon points="58.40,34.70 57.65,36.00 56.15,36.00 55.40,34.70 56.15,33.40 57.65,33.40" />
+        <polygon points="63.20,37.47 62.45,38.77 60.95,38.77 60.20,37.47 60.95,36.17 62.45,36.17" />
+        <polygon points="15.20,43.01 14.45,44.32 12.95,44.32 12.20,43.01 12.95,41.71 14.45,41.71" />
+        <polygon points="20.00,40.24 19.25,41.55 17.75,41.55 17.00,40.24 17.75,38.94 19.25,38.94" />
+        <polygon points="24.80,43.01 24.05,44.32 22.55,44.32 21.80,43.01 22.55,41.71 24.05,41.71" />
+        <polygon points="29.60,40.24 28.85,41.55 27.35,41.55 26.60,40.24 27.35,38.94 28.85,38.94" />
+        <polygon points="34.40,43.01 33.65,44.32 32.15,44.32 31.40,43.01 32.15,41.71 33.65,41.71" />
+        <polygon points="39.20,40.24 38.45,41.55 36.95,41.55 36.20,40.24 36.95,38.94 38.45,38.94" />
+        <polygon points="44.00,43.01 43.25,44.32 41.75,44.32 41.00,43.01 41.75,41.71 43.25,41.71" />
+        <polygon points="48.80,40.24 48.05,41.55 46.55,41.55 45.80,40.24 46.55,38.94 48.05,38.94" />
+        <polygon points="53.60,43.01 52.85,44.32 51.35,44.32 50.60,43.01 51.35,41.71 52.85,41.71" />
+        <polygon points="58.40,40.24 57.65,41.55 56.15,41.55 55.40,40.24 56.15,38.94 57.65,38.94" />
+        <polygon points="63.20,43.01 62.45,44.32 60.95,44.32 60.20,43.01 60.95,41.71 62.45,41.71" />
+        <polygon points="20.00,45.79 19.25,47.09 17.75,47.09 17.00,45.79 17.75,44.48 19.25,44.48" />
+        <polygon points="24.80,48.56 24.05,49.86 22.55,49.86 21.80,48.56 22.55,47.25 24.05,47.25" />
+        <polygon points="29.60,45.79 28.85,47.09 27.35,47.09 26.60,45.79 27.35,44.48 28.85,44.48" />
+        <polygon points="34.40,48.56 33.65,49.86 32.15,49.86 31.40,48.56 32.15,47.25 33.65,47.25" />
+        <polygon points="39.20,45.79 38.45,47.09 36.95,47.09 36.20,45.79 36.95,44.48 38.45,44.48" />
+        <polygon points="44.00,48.56 43.25,49.86 41.75,49.86 41.00,48.56 41.75,47.25 43.25,47.25" />
+        <polygon points="48.80,45.79 48.05,47.09 46.55,47.09 45.80,45.79 46.55,44.48 48.05,44.48" />
+        <polygon points="53.60,48.56 52.85,49.86 51.35,49.86 50.60,48.56 51.35,47.25 52.85,47.25" />
+        <polygon points="58.40,45.79 57.65,47.09 56.15,47.09 55.40,45.79 56.15,44.48 57.65,44.48" />
+        <polygon points="20.00,51.33 19.25,52.63 17.75,52.63 17.00,51.33 17.75,50.03 19.25,50.03" />
+        <polygon points="24.80,54.10 24.05,55.40 22.55,55.40 21.80,54.10 22.55,52.80 24.05,52.80" />
+        <polygon points="29.60,51.33 28.85,52.63 27.35,52.63 26.60,51.33 27.35,50.03 28.85,50.03" />
+        <polygon points="34.40,54.10 33.65,55.40 32.15,55.40 31.40,54.10 32.15,52.80 33.65,52.80" />
+        <polygon points="39.20,51.33 38.45,52.63 36.95,52.63 36.20,51.33 36.95,50.03 38.45,50.03" />
+        <polygon points="44.00,54.10 43.25,55.40 41.75,55.40 41.00,54.10 41.75,52.80 43.25,52.80" />
+        <polygon points="48.80,51.33 48.05,52.63 46.55,52.63 45.80,51.33 46.55,50.03 48.05,50.03" />
+        <polygon points="53.60,54.10 52.85,55.40 51.35,55.40 50.60,54.10 51.35,52.80 52.85,52.80" />
+        <polygon points="58.40,51.33 57.65,52.63 56.15,52.63 55.40,51.33 56.15,50.03 57.65,50.03" />
+        <polygon points="29.60,56.87 28.85,58.17 27.35,58.17 26.60,56.87 27.35,55.57 28.85,55.57" />
+        <polygon points="34.40,59.64 33.65,60.94 32.15,60.94 31.40,59.64 32.15,58.34 33.65,58.34" />
+        <polygon points="39.20,56.87 38.45,58.17 36.95,58.17 36.20,56.87 36.95,55.57 38.45,55.57" />
+        <polygon points="44.00,59.64 43.25,60.94 41.75,60.94 41.00,59.64 41.75,58.34 43.25,58.34" />
+        <polygon points="48.80,56.87 48.05,58.17 46.55,58.17 45.80,56.87 46.55,55.57 48.05,55.57" />
+      </g>
+      <g id="fan-2--module--handle" data-z-uhandle="8.0">
+        <rect id="fan-2--module--handle-bar" x="3.4" y="21.7" width="4.6" height="26.0" rx="2.0" fill="#c22f2f" stroke="#7d241a" stroke-width="0.35" />
+        <rect id="fan-2--module--handle-grip" x="4.6" y="24.1" width="2.2" height="21.2" rx="1.1" fill="#8e2018" />
+        <text x="5.7" y="50.9" font-family="sans-serif" font-size="2.0" text-anchor="middle" fill="#d7dbdf">FB</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="294.39" y="11.74" width="69.4" height="69.4" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-ref="edgecore/agr-fan@1:2.0.0" data-body-depth="132.0" data-wall="#4a4f55" data-model="AGR Fan" transform="translate(329.09,46.44) translate(-34.7,-34.7)">
+      <title>fan-1--module</title>
+      <rect id="fan-1--module--face" x="0" y="0" width="69.4" height="69.4" rx="1.6" fill="#3f4449" stroke="#23272c" stroke-width="0.6" />
+      <rect x="1.6" y="1.6" width="66.2" height="66.2" rx="1.2" fill="none" stroke="#5f6469" stroke-width="0.4" />
+      <circle id="fan-1--module--grille-ring" cx="37.7" cy="34.7" r="27.5" fill="#15181b" stroke="#6d7379" stroke-width="0.6" />
+      <g id="fan-1--module--grille" fill="#8d949c" opacity="0.9" data-z-vent="26">
+        <polygon points="34.40,9.76 33.65,11.06 32.15,11.06 31.40,9.76 32.15,8.46 33.65,8.46" />
+        <polygon points="44.00,9.76 43.25,11.06 41.75,11.06 41.00,9.76 41.75,8.46 43.25,8.46" />
+        <polygon points="24.80,15.30 24.05,16.60 22.55,16.60 21.80,15.30 22.55,14.00 24.05,14.00" />
+        <polygon points="29.60,12.53 28.85,13.83 27.35,13.83 26.60,12.53 27.35,11.23 28.85,11.23" />
+        <polygon points="34.40,15.30 33.65,16.60 32.15,16.60 31.40,15.30 32.15,14.00 33.65,14.00" />
+        <polygon points="39.20,12.53 38.45,13.83 36.95,13.83 36.20,12.53 36.95,11.23 38.45,11.23" />
+        <polygon points="44.00,15.30 43.25,16.60 41.75,16.60 41.00,15.30 41.75,14.00 43.25,14.00" />
+        <polygon points="48.80,12.53 48.05,13.83 46.55,13.83 45.80,12.53 46.55,11.23 48.05,11.23" />
+        <polygon points="53.60,15.30 52.85,16.60 51.35,16.60 50.60,15.30 51.35,14.00 52.85,14.00" />
+        <polygon points="20.00,18.07 19.25,19.37 17.75,19.37 17.00,18.07 17.75,16.77 19.25,16.77" />
+        <polygon points="24.80,20.84 24.05,22.15 22.55,22.15 21.80,20.84 22.55,19.54 24.05,19.54" />
+        <polygon points="29.60,18.07 28.85,19.37 27.35,19.37 26.60,18.07 27.35,16.77 28.85,16.77" />
+        <polygon points="34.40,20.84 33.65,22.15 32.15,22.15 31.40,20.84 32.15,19.54 33.65,19.54" />
+        <polygon points="39.20,18.07 38.45,19.37 36.95,19.37 36.20,18.07 36.95,16.77 38.45,16.77" />
+        <polygon points="44.00,20.84 43.25,22.15 41.75,22.15 41.00,20.84 41.75,19.54 43.25,19.54" />
+        <polygon points="48.80,18.07 48.05,19.37 46.55,19.37 45.80,18.07 46.55,16.77 48.05,16.77" />
+        <polygon points="53.60,20.84 52.85,22.15 51.35,22.15 50.60,20.84 51.35,19.54 52.85,19.54" />
+        <polygon points="58.40,18.07 57.65,19.37 56.15,19.37 55.40,18.07 56.15,16.77 57.65,16.77" />
+        <polygon points="15.20,26.39 14.45,27.69 12.95,27.69 12.20,26.39 12.95,25.08 14.45,25.08" />
+        <polygon points="20.00,23.61 19.25,24.92 17.75,24.92 17.00,23.61 17.75,22.31 19.25,22.31" />
+        <polygon points="24.80,26.39 24.05,27.69 22.55,27.69 21.80,26.39 22.55,25.08 24.05,25.08" />
+        <polygon points="29.60,23.61 28.85,24.92 27.35,24.92 26.60,23.61 27.35,22.31 28.85,22.31" />
+        <polygon points="34.40,26.39 33.65,27.69 32.15,27.69 31.40,26.39 32.15,25.08 33.65,25.08" />
+        <polygon points="39.20,23.61 38.45,24.92 36.95,24.92 36.20,23.61 36.95,22.31 38.45,22.31" />
+        <polygon points="44.00,26.39 43.25,27.69 41.75,27.69 41.00,26.39 41.75,25.08 43.25,25.08" />
+        <polygon points="48.80,23.61 48.05,24.92 46.55,24.92 45.80,23.61 46.55,22.31 48.05,22.31" />
+        <polygon points="53.60,26.39 52.85,27.69 51.35,27.69 50.60,26.39 51.35,25.08 52.85,25.08" />
+        <polygon points="58.40,23.61 57.65,24.92 56.15,24.92 55.40,23.61 56.15,22.31 57.65,22.31" />
+        <polygon points="63.20,26.39 62.45,27.69 60.95,27.69 60.20,26.39 60.95,25.08 62.45,25.08" />
+        <polygon points="15.20,31.93 14.45,33.23 12.95,33.23 12.20,31.93 12.95,30.63 14.45,30.63" />
+        <polygon points="20.00,29.16 19.25,30.46 17.75,30.46 17.00,29.16 17.75,27.85 19.25,27.85" />
+        <polygon points="24.80,31.93 24.05,33.23 22.55,33.23 21.80,31.93 22.55,30.63 24.05,30.63" />
+        <polygon points="29.60,29.16 28.85,30.46 27.35,30.46 26.60,29.16 27.35,27.85 28.85,27.85" />
+        <polygon points="34.40,31.93 33.65,33.23 32.15,33.23 31.40,31.93 32.15,30.63 33.65,30.63" />
+        <polygon points="39.20,29.16 38.45,30.46 36.95,30.46 36.20,29.16 36.95,27.85 38.45,27.85" />
+        <polygon points="44.00,31.93 43.25,33.23 41.75,33.23 41.00,31.93 41.75,30.63 43.25,30.63" />
+        <polygon points="48.80,29.16 48.05,30.46 46.55,30.46 45.80,29.16 46.55,27.85 48.05,27.85" />
+        <polygon points="53.60,31.93 52.85,33.23 51.35,33.23 50.60,31.93 51.35,30.63 52.85,30.63" />
+        <polygon points="58.40,29.16 57.65,30.46 56.15,30.46 55.40,29.16 56.15,27.85 57.65,27.85" />
+        <polygon points="63.20,31.93 62.45,33.23 60.95,33.23 60.20,31.93 60.95,30.63 62.45,30.63" />
+        <polygon points="15.20,37.47 14.45,38.77 12.95,38.77 12.20,37.47 12.95,36.17 14.45,36.17" />
+        <polygon points="20.00,34.70 19.25,36.00 17.75,36.00 17.00,34.70 17.75,33.40 19.25,33.40" />
+        <polygon points="24.80,37.47 24.05,38.77 22.55,38.77 21.80,37.47 22.55,36.17 24.05,36.17" />
+        <polygon points="29.60,34.70 28.85,36.00 27.35,36.00 26.60,34.70 27.35,33.40 28.85,33.40" />
+        <polygon points="34.40,37.47 33.65,38.77 32.15,38.77 31.40,37.47 32.15,36.17 33.65,36.17" />
+        <polygon points="39.20,34.70 38.45,36.00 36.95,36.00 36.20,34.70 36.95,33.40 38.45,33.40" />
+        <polygon points="44.00,37.47 43.25,38.77 41.75,38.77 41.00,37.47 41.75,36.17 43.25,36.17" />
+        <polygon points="48.80,34.70 48.05,36.00 46.55,36.00 45.80,34.70 46.55,33.40 48.05,33.40" />
+        <polygon points="53.60,37.47 52.85,38.77 51.35,38.77 50.60,37.47 51.35,36.17 52.85,36.17" />
+        <polygon points="58.40,34.70 57.65,36.00 56.15,36.00 55.40,34.70 56.15,33.40 57.65,33.40" />
+        <polygon points="63.20,37.47 62.45,38.77 60.95,38.77 60.20,37.47 60.95,36.17 62.45,36.17" />
+        <polygon points="15.20,43.01 14.45,44.32 12.95,44.32 12.20,43.01 12.95,41.71 14.45,41.71" />
+        <polygon points="20.00,40.24 19.25,41.55 17.75,41.55 17.00,40.24 17.75,38.94 19.25,38.94" />
+        <polygon points="24.80,43.01 24.05,44.32 22.55,44.32 21.80,43.01 22.55,41.71 24.05,41.71" />
+        <polygon points="29.60,40.24 28.85,41.55 27.35,41.55 26.60,40.24 27.35,38.94 28.85,38.94" />
+        <polygon points="34.40,43.01 33.65,44.32 32.15,44.32 31.40,43.01 32.15,41.71 33.65,41.71" />
+        <polygon points="39.20,40.24 38.45,41.55 36.95,41.55 36.20,40.24 36.95,38.94 38.45,38.94" />
+        <polygon points="44.00,43.01 43.25,44.32 41.75,44.32 41.00,43.01 41.75,41.71 43.25,41.71" />
+        <polygon points="48.80,40.24 48.05,41.55 46.55,41.55 45.80,40.24 46.55,38.94 48.05,38.94" />
+        <polygon points="53.60,43.01 52.85,44.32 51.35,44.32 50.60,43.01 51.35,41.71 52.85,41.71" />
+        <polygon points="58.40,40.24 57.65,41.55 56.15,41.55 55.40,40.24 56.15,38.94 57.65,38.94" />
+        <polygon points="63.20,43.01 62.45,44.32 60.95,44.32 60.20,43.01 60.95,41.71 62.45,41.71" />
+        <polygon points="20.00,45.79 19.25,47.09 17.75,47.09 17.00,45.79 17.75,44.48 19.25,44.48" />
+        <polygon points="24.80,48.56 24.05,49.86 22.55,49.86 21.80,48.56 22.55,47.25 24.05,47.25" />
+        <polygon points="29.60,45.79 28.85,47.09 27.35,47.09 26.60,45.79 27.35,44.48 28.85,44.48" />
+        <polygon points="34.40,48.56 33.65,49.86 32.15,49.86 31.40,48.56 32.15,47.25 33.65,47.25" />
+        <polygon points="39.20,45.79 38.45,47.09 36.95,47.09 36.20,45.79 36.95,44.48 38.45,44.48" />
+        <polygon points="44.00,48.56 43.25,49.86 41.75,49.86 41.00,48.56 41.75,47.25 43.25,47.25" />
+        <polygon points="48.80,45.79 48.05,47.09 46.55,47.09 45.80,45.79 46.55,44.48 48.05,44.48" />
+        <polygon points="53.60,48.56 52.85,49.86 51.35,49.86 50.60,48.56 51.35,47.25 52.85,47.25" />
+        <polygon points="58.40,45.79 57.65,47.09 56.15,47.09 55.40,45.79 56.15,44.48 57.65,44.48" />
+        <polygon points="20.00,51.33 19.25,52.63 17.75,52.63 17.00,51.33 17.75,50.03 19.25,50.03" />
+        <polygon points="24.80,54.10 24.05,55.40 22.55,55.40 21.80,54.10 22.55,52.80 24.05,52.80" />
+        <polygon points="29.60,51.33 28.85,52.63 27.35,52.63 26.60,51.33 27.35,50.03 28.85,50.03" />
+        <polygon points="34.40,54.10 33.65,55.40 32.15,55.40 31.40,54.10 32.15,52.80 33.65,52.80" />
+        <polygon points="39.20,51.33 38.45,52.63 36.95,52.63 36.20,51.33 36.95,50.03 38.45,50.03" />
+        <polygon points="44.00,54.10 43.25,55.40 41.75,55.40 41.00,54.10 41.75,52.80 43.25,52.80" />
+        <polygon points="48.80,51.33 48.05,52.63 46.55,52.63 45.80,51.33 46.55,50.03 48.05,50.03" />
+        <polygon points="53.60,54.10 52.85,55.40 51.35,55.40 50.60,54.10 51.35,52.80 52.85,52.80" />
+        <polygon points="58.40,51.33 57.65,52.63 56.15,52.63 55.40,51.33 56.15,50.03 57.65,50.03" />
+        <polygon points="29.60,56.87 28.85,58.17 27.35,58.17 26.60,56.87 27.35,55.57 28.85,55.57" />
+        <polygon points="34.40,59.64 33.65,60.94 32.15,60.94 31.40,59.64 32.15,58.34 33.65,58.34" />
+        <polygon points="39.20,56.87 38.45,58.17 36.95,58.17 36.20,56.87 36.95,55.57 38.45,55.57" />
+        <polygon points="44.00,59.64 43.25,60.94 41.75,60.94 41.00,59.64 41.75,58.34 43.25,58.34" />
+        <polygon points="48.80,56.87 48.05,58.17 46.55,58.17 45.80,56.87 46.55,55.57 48.05,55.57" />
+      </g>
+      <g id="fan-1--module--handle" data-z-uhandle="8.0">
+        <rect id="fan-1--module--handle-bar" x="3.4" y="21.7" width="4.6" height="26.0" rx="2.0" fill="#c22f2f" stroke="#7d241a" stroke-width="0.35" />
+        <rect id="fan-1--module--handle-grip" x="4.6" y="24.1" width="2.2" height="21.2" rx="1.1" fill="#8e2018" />
+        <text x="5.7" y="50.9" font-family="sans-serif" font-size="2.0" text-anchor="middle" fill="#d7dbdf">FB</text>
+      </g>
+    </g>
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="364.79" y="11.74" width="69.4" height="69.4" fill="#101214" />
+    <g id="fan-0--module" data-path="fan-0/module" data-class="fan" data-ref="edgecore/agr-fan@1:2.0.0" data-body-depth="132.0" data-wall="#4a4f55" data-model="AGR Fan" transform="translate(399.49,46.44) translate(-34.7,-34.7)">
+      <title>fan-0--module</title>
+      <rect id="fan-0--module--face" x="0" y="0" width="69.4" height="69.4" rx="1.6" fill="#3f4449" stroke="#23272c" stroke-width="0.6" />
+      <rect x="1.6" y="1.6" width="66.2" height="66.2" rx="1.2" fill="none" stroke="#5f6469" stroke-width="0.4" />
+      <circle id="fan-0--module--grille-ring" cx="37.7" cy="34.7" r="27.5" fill="#15181b" stroke="#6d7379" stroke-width="0.6" />
+      <g id="fan-0--module--grille" fill="#8d949c" opacity="0.9" data-z-vent="26">
+        <polygon points="34.40,9.76 33.65,11.06 32.15,11.06 31.40,9.76 32.15,8.46 33.65,8.46" />
+        <polygon points="44.00,9.76 43.25,11.06 41.75,11.06 41.00,9.76 41.75,8.46 43.25,8.46" />
+        <polygon points="24.80,15.30 24.05,16.60 22.55,16.60 21.80,15.30 22.55,14.00 24.05,14.00" />
+        <polygon points="29.60,12.53 28.85,13.83 27.35,13.83 26.60,12.53 27.35,11.23 28.85,11.23" />
+        <polygon points="34.40,15.30 33.65,16.60 32.15,16.60 31.40,15.30 32.15,14.00 33.65,14.00" />
+        <polygon points="39.20,12.53 38.45,13.83 36.95,13.83 36.20,12.53 36.95,11.23 38.45,11.23" />
+        <polygon points="44.00,15.30 43.25,16.60 41.75,16.60 41.00,15.30 41.75,14.00 43.25,14.00" />
+        <polygon points="48.80,12.53 48.05,13.83 46.55,13.83 45.80,12.53 46.55,11.23 48.05,11.23" />
+        <polygon points="53.60,15.30 52.85,16.60 51.35,16.60 50.60,15.30 51.35,14.00 52.85,14.00" />
+        <polygon points="20.00,18.07 19.25,19.37 17.75,19.37 17.00,18.07 17.75,16.77 19.25,16.77" />
+        <polygon points="24.80,20.84 24.05,22.15 22.55,22.15 21.80,20.84 22.55,19.54 24.05,19.54" />
+        <polygon points="29.60,18.07 28.85,19.37 27.35,19.37 26.60,18.07 27.35,16.77 28.85,16.77" />
+        <polygon points="34.40,20.84 33.65,22.15 32.15,22.15 31.40,20.84 32.15,19.54 33.65,19.54" />
+        <polygon points="39.20,18.07 38.45,19.37 36.95,19.37 36.20,18.07 36.95,16.77 38.45,16.77" />
+        <polygon points="44.00,20.84 43.25,22.15 41.75,22.15 41.00,20.84 41.75,19.54 43.25,19.54" />
+        <polygon points="48.80,18.07 48.05,19.37 46.55,19.37 45.80,18.07 46.55,16.77 48.05,16.77" />
+        <polygon points="53.60,20.84 52.85,22.15 51.35,22.15 50.60,20.84 51.35,19.54 52.85,19.54" />
+        <polygon points="58.40,18.07 57.65,19.37 56.15,19.37 55.40,18.07 56.15,16.77 57.65,16.77" />
+        <polygon points="15.20,26.39 14.45,27.69 12.95,27.69 12.20,26.39 12.95,25.08 14.45,25.08" />
+        <polygon points="20.00,23.61 19.25,24.92 17.75,24.92 17.00,23.61 17.75,22.31 19.25,22.31" />
+        <polygon points="24.80,26.39 24.05,27.69 22.55,27.69 21.80,26.39 22.55,25.08 24.05,25.08" />
+        <polygon points="29.60,23.61 28.85,24.92 27.35,24.92 26.60,23.61 27.35,22.31 28.85,22.31" />
+        <polygon points="34.40,26.39 33.65,27.69 32.15,27.69 31.40,26.39 32.15,25.08 33.65,25.08" />
+        <polygon points="39.20,23.61 38.45,24.92 36.95,24.92 36.20,23.61 36.95,22.31 38.45,22.31" />
+        <polygon points="44.00,26.39 43.25,27.69 41.75,27.69 41.00,26.39 41.75,25.08 43.25,25.08" />
+        <polygon points="48.80,23.61 48.05,24.92 46.55,24.92 45.80,23.61 46.55,22.31 48.05,22.31" />
+        <polygon points="53.60,26.39 52.85,27.69 51.35,27.69 50.60,26.39 51.35,25.08 52.85,25.08" />
+        <polygon points="58.40,23.61 57.65,24.92 56.15,24.92 55.40,23.61 56.15,22.31 57.65,22.31" />
+        <polygon points="63.20,26.39 62.45,27.69 60.95,27.69 60.20,26.39 60.95,25.08 62.45,25.08" />
+        <polygon points="15.20,31.93 14.45,33.23 12.95,33.23 12.20,31.93 12.95,30.63 14.45,30.63" />
+        <polygon points="20.00,29.16 19.25,30.46 17.75,30.46 17.00,29.16 17.75,27.85 19.25,27.85" />
+        <polygon points="24.80,31.93 24.05,33.23 22.55,33.23 21.80,31.93 22.55,30.63 24.05,30.63" />
+        <polygon points="29.60,29.16 28.85,30.46 27.35,30.46 26.60,29.16 27.35,27.85 28.85,27.85" />
+        <polygon points="34.40,31.93 33.65,33.23 32.15,33.23 31.40,31.93 32.15,30.63 33.65,30.63" />
+        <polygon points="39.20,29.16 38.45,30.46 36.95,30.46 36.20,29.16 36.95,27.85 38.45,27.85" />
+        <polygon points="44.00,31.93 43.25,33.23 41.75,33.23 41.00,31.93 41.75,30.63 43.25,30.63" />
+        <polygon points="48.80,29.16 48.05,30.46 46.55,30.46 45.80,29.16 46.55,27.85 48.05,27.85" />
+        <polygon points="53.60,31.93 52.85,33.23 51.35,33.23 50.60,31.93 51.35,30.63 52.85,30.63" />
+        <polygon points="58.40,29.16 57.65,30.46 56.15,30.46 55.40,29.16 56.15,27.85 57.65,27.85" />
+        <polygon points="63.20,31.93 62.45,33.23 60.95,33.23 60.20,31.93 60.95,30.63 62.45,30.63" />
+        <polygon points="15.20,37.47 14.45,38.77 12.95,38.77 12.20,37.47 12.95,36.17 14.45,36.17" />
+        <polygon points="20.00,34.70 19.25,36.00 17.75,36.00 17.00,34.70 17.75,33.40 19.25,33.40" />
+        <polygon points="24.80,37.47 24.05,38.77 22.55,38.77 21.80,37.47 22.55,36.17 24.05,36.17" />
+        <polygon points="29.60,34.70 28.85,36.00 27.35,36.00 26.60,34.70 27.35,33.40 28.85,33.40" />
+        <polygon points="34.40,37.47 33.65,38.77 32.15,38.77 31.40,37.47 32.15,36.17 33.65,36.17" />
+        <polygon points="39.20,34.70 38.45,36.00 36.95,36.00 36.20,34.70 36.95,33.40 38.45,33.40" />
+        <polygon points="44.00,37.47 43.25,38.77 41.75,38.77 41.00,37.47 41.75,36.17 43.25,36.17" />
+        <polygon points="48.80,34.70 48.05,36.00 46.55,36.00 45.80,34.70 46.55,33.40 48.05,33.40" />
+        <polygon points="53.60,37.47 52.85,38.77 51.35,38.77 50.60,37.47 51.35,36.17 52.85,36.17" />
+        <polygon points="58.40,34.70 57.65,36.00 56.15,36.00 55.40,34.70 56.15,33.40 57.65,33.40" />
+        <polygon points="63.20,37.47 62.45,38.77 60.95,38.77 60.20,37.47 60.95,36.17 62.45,36.17" />
+        <polygon points="15.20,43.01 14.45,44.32 12.95,44.32 12.20,43.01 12.95,41.71 14.45,41.71" />
+        <polygon points="20.00,40.24 19.25,41.55 17.75,41.55 17.00,40.24 17.75,38.94 19.25,38.94" />
+        <polygon points="24.80,43.01 24.05,44.32 22.55,44.32 21.80,43.01 22.55,41.71 24.05,41.71" />
+        <polygon points="29.60,40.24 28.85,41.55 27.35,41.55 26.60,40.24 27.35,38.94 28.85,38.94" />
+        <polygon points="34.40,43.01 33.65,44.32 32.15,44.32 31.40,43.01 32.15,41.71 33.65,41.71" />
+        <polygon points="39.20,40.24 38.45,41.55 36.95,41.55 36.20,40.24 36.95,38.94 38.45,38.94" />
+        <polygon points="44.00,43.01 43.25,44.32 41.75,44.32 41.00,43.01 41.75,41.71 43.25,41.71" />
+        <polygon points="48.80,40.24 48.05,41.55 46.55,41.55 45.80,40.24 46.55,38.94 48.05,38.94" />
+        <polygon points="53.60,43.01 52.85,44.32 51.35,44.32 50.60,43.01 51.35,41.71 52.85,41.71" />
+        <polygon points="58.40,40.24 57.65,41.55 56.15,41.55 55.40,40.24 56.15,38.94 57.65,38.94" />
+        <polygon points="63.20,43.01 62.45,44.32 60.95,44.32 60.20,43.01 60.95,41.71 62.45,41.71" />
+        <polygon points="20.00,45.79 19.25,47.09 17.75,47.09 17.00,45.79 17.75,44.48 19.25,44.48" />
+        <polygon points="24.80,48.56 24.05,49.86 22.55,49.86 21.80,48.56 22.55,47.25 24.05,47.25" />
+        <polygon points="29.60,45.79 28.85,47.09 27.35,47.09 26.60,45.79 27.35,44.48 28.85,44.48" />
+        <polygon points="34.40,48.56 33.65,49.86 32.15,49.86 31.40,48.56 32.15,47.25 33.65,47.25" />
+        <polygon points="39.20,45.79 38.45,47.09 36.95,47.09 36.20,45.79 36.95,44.48 38.45,44.48" />
+        <polygon points="44.00,48.56 43.25,49.86 41.75,49.86 41.00,48.56 41.75,47.25 43.25,47.25" />
+        <polygon points="48.80,45.79 48.05,47.09 46.55,47.09 45.80,45.79 46.55,44.48 48.05,44.48" />
+        <polygon points="53.60,48.56 52.85,49.86 51.35,49.86 50.60,48.56 51.35,47.25 52.85,47.25" />
+        <polygon points="58.40,45.79 57.65,47.09 56.15,47.09 55.40,45.79 56.15,44.48 57.65,44.48" />
+        <polygon points="20.00,51.33 19.25,52.63 17.75,52.63 17.00,51.33 17.75,50.03 19.25,50.03" />
+        <polygon points="24.80,54.10 24.05,55.40 22.55,55.40 21.80,54.10 22.55,52.80 24.05,52.80" />
+        <polygon points="29.60,51.33 28.85,52.63 27.35,52.63 26.60,51.33 27.35,50.03 28.85,50.03" />
+        <polygon points="34.40,54.10 33.65,55.40 32.15,55.40 31.40,54.10 32.15,52.80 33.65,52.80" />
+        <polygon points="39.20,51.33 38.45,52.63 36.95,52.63 36.20,51.33 36.95,50.03 38.45,50.03" />
+        <polygon points="44.00,54.10 43.25,55.40 41.75,55.40 41.00,54.10 41.75,52.80 43.25,52.80" />
+        <polygon points="48.80,51.33 48.05,52.63 46.55,52.63 45.80,51.33 46.55,50.03 48.05,50.03" />
+        <polygon points="53.60,54.10 52.85,55.40 51.35,55.40 50.60,54.10 51.35,52.80 52.85,52.80" />
+        <polygon points="58.40,51.33 57.65,52.63 56.15,52.63 55.40,51.33 56.15,50.03 57.65,50.03" />
+        <polygon points="29.60,56.87 28.85,58.17 27.35,58.17 26.60,56.87 27.35,55.57 28.85,55.57" />
+        <polygon points="34.40,59.64 33.65,60.94 32.15,60.94 31.40,59.64 32.15,58.34 33.65,58.34" />
+        <polygon points="39.20,56.87 38.45,58.17 36.95,58.17 36.20,56.87 36.95,55.57 38.45,55.57" />
+        <polygon points="44.00,59.64 43.25,60.94 41.75,60.94 41.00,59.64 41.75,58.34 43.25,58.34" />
+        <polygon points="48.80,56.87 48.05,58.17 46.55,58.17 45.80,56.87 46.55,55.57 48.05,55.57" />
+      </g>
+      <g id="fan-0--module--handle" data-z-uhandle="8.0">
+        <rect id="fan-0--module--handle-bar" x="3.4" y="21.7" width="4.6" height="26.0" rx="2.0" fill="#c22f2f" stroke="#7d241a" stroke-width="0.35" />
+        <rect id="fan-0--module--handle-grip" x="4.6" y="24.1" width="2.2" height="21.2" rx="1.1" fill="#8e2018" />
+        <text x="5.7" y="50.9" font-family="sans-serif" font-size="2.0" text-anchor="middle" fill="#d7dbdf">FB</text>
+      </g>
+    </g>
+  </g>
+</svg>

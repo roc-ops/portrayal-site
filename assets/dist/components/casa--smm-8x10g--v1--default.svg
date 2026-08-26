@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.47mm" height="345.5mm" viewBox="0 0 30.47 345.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/rj45-shielded@'] .state-activity { --led-color: #f59e0b; }
+    g[data-ref^='common/rj45-shielded@'] .state-link { --led-color: #22c55e; }</style>
+  <g id="smm-8x10g" data-path="smm-8x10g" data-class="supervisor" data-ref="casa/smm-8x10g@1:1.7.0" data-body-depth="380.0" data-wall="#4a4f55" data-console="RS-232" data-mgmt="10/100BASE-T" data-model="SMM 8x10G" data-power-draw-max-w="160" data-role="supervisor" data-sfp="2" data-sfp-plus="8" transform="translate(0,0)">
+    <title>smm-8x10g</title>
+    <rect id="smm-8x10g--plate" x="0" y="0" width="30.47" height="345.5" fill="#a7a9ac" stroke="#6d6f71" stroke-width="0.25" />
+    <rect id="smm-8x10g--band-top" x="1.16" y="20.42" width="28.13" height="2.28" fill="#f7931d" />
+    <rect id="smm-8x10g--band-low" x="1.16" y="33.76" width="28.13" height="2.36" fill="#f7931d" />
+    <text id="smm-8x10g--model" x="15.23" y="29.84" font-family="sans-serif" font-size="2.84" font-weight="bold" text-anchor="middle" fill="#231f20">SMM 8x10G</text>
+    <text x="21.8" y="48.16" font-family="sans-serif" font-size="1.3" fill="#231f20">10/100MI</text>
+    <text x="21.8" y="69.78" font-family="sans-serif" font-size="1.3" fill="#231f20">XG0</text>
+    <text x="21.8" y="87.13" font-family="sans-serif" font-size="1.3" fill="#231f20">XG1</text>
+    <text x="21.8" y="107.31" font-family="sans-serif" font-size="1.3" fill="#231f20">XG2</text>
+    <text x="21.8" y="124.51" font-family="sans-serif" font-size="1.3" fill="#231f20">XG3</text>
+    <text x="21.8" y="144.29" font-family="sans-serif" font-size="1.3" fill="#231f20">XG4</text>
+    <text x="21.8" y="161.49" font-family="sans-serif" font-size="1.3" fill="#231f20">XG5</text>
+    <text x="21.8" y="181.75" font-family="sans-serif" font-size="1.3" fill="#231f20">XG6</text>
+    <text x="21.8" y="199.02" font-family="sans-serif" font-size="1.3" fill="#231f20">XG7</text>
+    <text x="21.8" y="219.13" font-family="sans-serif" font-size="1.3" fill="#231f20">G0</text>
+    <text x="21.8" y="233.97" font-family="sans-serif" font-size="1.3" fill="#231f20">G1</text>
+    <text x="21.8" y="248.94" font-family="sans-serif" font-size="1.3" fill="#231f20">IOIOI</text>
+    <text x="8.90" y="273.35" font-family="sans-serif" font-size="1.9" fill="#231f20">STATUS</text>
+    <text x="8.90" y="277.00" font-family="sans-serif" font-size="1.9" fill="#231f20">ACTIVE</text>
+    <text x="8.90" y="280.65" font-family="sans-serif" font-size="1.9" fill="#231f20">ALARM</text>
+    <g id="smm-8x10g--mgmt" data-path="smm-8x10g/mgmt" data-class="port" data-ref="common/rj45-shielded@2:2.0.0" data-depth="12.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(7.33,41.46) rotate(90 7.9 6.25)">
+      <title>smm-8x10g--mgmt</title>
+      <rect id="smm-8x10g--mgmt--body" x="0" y="0" width="15.8" height="12.5" rx="0.4" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.3" />
+      <rect id="smm-8x10g--mgmt--jack" x="0.6" y="1.0" width="14.6" height="10.5" rx="0.4" fill="#17191c" data-path="smm-8x10g/mgmt/jack" data-class="cutout" />
+      <path id="smm-8x10g--mgmt--cavity" d="M 1.955 1.525 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="smm-8x10g--mgmt--pins" fill="#a8873c">
+        <rect x="4.034" y="2.175" width="0.62" height="2.3" />
+        <rect x="5.050" y="2.175" width="0.62" height="2.3" />
+        <rect x="6.066" y="2.175" width="0.62" height="2.3" />
+        <rect x="7.082" y="2.175" width="0.62" height="2.3" />
+        <rect x="8.098" y="2.175" width="0.62" height="2.3" />
+        <rect x="9.114" y="2.175" width="0.62" height="2.3" />
+        <rect x="10.130" y="2.175" width="0.62" height="2.3" />
+        <rect x="11.146" y="2.175" width="0.62" height="2.3" />
+      </g>
+      <rect id="smm-8x10g--mgmt--led-a" x="1.5" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-8x10g/mgmt/led-a" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+      <rect id="smm-8x10g--mgmt--led-b" x="11.7" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-8x10g/mgmt/led-b" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+    </g>
+    <g id="smm-8x10g--xg0" data-path="smm-8x10g/xg0" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,64.33) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg0</title>
+      <rect id="smm-8x10g--xg0--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg0--cage" data-path="smm-8x10g/xg0/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg0--cage</title>
+        <rect id="smm-8x10g--xg0--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg0/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg0--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg0--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg0--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg0--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg1" data-path="smm-8x10g/xg1" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,81.68) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg1</title>
+      <rect id="smm-8x10g--xg1--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg1--cage" data-path="smm-8x10g/xg1/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg1--cage</title>
+        <rect id="smm-8x10g--xg1--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg1/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg1--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg1--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg1--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg1--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg2" data-path="smm-8x10g/xg2" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,101.86) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg2</title>
+      <rect id="smm-8x10g--xg2--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg2--cage" data-path="smm-8x10g/xg2/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg2--cage</title>
+        <rect id="smm-8x10g--xg2--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg2/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg2--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg2--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg2--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg2--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg3" data-path="smm-8x10g/xg3" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,119.06) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg3</title>
+      <rect id="smm-8x10g--xg3--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg3--cage" data-path="smm-8x10g/xg3/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg3--cage</title>
+        <rect id="smm-8x10g--xg3--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg3/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg3--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg3--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg3--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg3--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg4" data-path="smm-8x10g/xg4" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,138.84) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg4</title>
+      <rect id="smm-8x10g--xg4--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg4--cage" data-path="smm-8x10g/xg4/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg4--cage</title>
+        <rect id="smm-8x10g--xg4--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg4/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg4--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg4--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg4--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg4--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg5" data-path="smm-8x10g/xg5" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,156.04) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg5</title>
+      <rect id="smm-8x10g--xg5--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg5--cage" data-path="smm-8x10g/xg5/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg5--cage</title>
+        <rect id="smm-8x10g--xg5--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg5/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg5--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg5--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg5--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg5--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg6" data-path="smm-8x10g/xg6" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,176.3) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg6</title>
+      <rect id="smm-8x10g--xg6--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg6--cage" data-path="smm-8x10g/xg6/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg6--cage</title>
+        <rect id="smm-8x10g--xg6--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg6/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg6--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg6--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg6--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg6--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--xg7" data-path="smm-8x10g/xg7" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,193.57) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--xg7</title>
+      <rect id="smm-8x10g--xg7--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--xg7--cage" data-path="smm-8x10g/xg7/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--xg7--cage</title>
+        <rect id="smm-8x10g--xg7--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/xg7/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--xg7--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--xg7--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--xg7--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--xg7--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--g0" data-path="smm-8x10g/g0" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,213.68) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--g0</title>
+      <rect id="smm-8x10g--g0--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--g0--cage" data-path="smm-8x10g/g0/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--g0--cage</title>
+        <rect id="smm-8x10g--g0--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/g0/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--g0--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--g0--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--g0--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--g0--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--g1" data-path="smm-8x10g/g1" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-media="sfp-plus" data-speed="10g" transform="translate(7.23,228.52) rotate(90 8.0 5.0)">
+      <title>smm-8x10g--g1</title>
+      <rect id="smm-8x10g--g1--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+      <g id="smm-8x10g--g1--cage" data-path="smm-8x10g/g1/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+        <title>smm-8x10g--g1--cage</title>
+        <rect id="smm-8x10g--g1--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="smm-8x10g/g1/cage/opening" data-class="cutout" />
+        <rect id="smm-8x10g--g1--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="smm-8x10g--g1--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="smm-8x10g--g1--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="smm-8x10g--g1--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+    <g id="smm-8x10g--console" data-path="smm-8x10g/console" data-class="port" data-ref="common/rj45-shielded@2:2.0.0" data-depth="12.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(7.33,242.24) rotate(90 7.9 6.25)">
+      <title>smm-8x10g--console</title>
+      <rect id="smm-8x10g--console--body" x="0" y="0" width="15.8" height="12.5" rx="0.4" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.3" />
+      <rect id="smm-8x10g--console--jack" x="0.6" y="1.0" width="14.6" height="10.5" rx="0.4" fill="#17191c" data-path="smm-8x10g/console/jack" data-class="cutout" />
+      <path id="smm-8x10g--console--cavity" d="M 1.955 1.525 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="smm-8x10g--console--pins" fill="#a8873c">
+        <rect x="4.034" y="2.175" width="0.62" height="2.3" />
+        <rect x="5.050" y="2.175" width="0.62" height="2.3" />
+        <rect x="6.066" y="2.175" width="0.62" height="2.3" />
+        <rect x="7.082" y="2.175" width="0.62" height="2.3" />
+        <rect x="8.098" y="2.175" width="0.62" height="2.3" />
+        <rect x="9.114" y="2.175" width="0.62" height="2.3" />
+        <rect x="10.130" y="2.175" width="0.62" height="2.3" />
+        <rect x="11.146" y="2.175" width="0.62" height="2.3" />
+      </g>
+      <rect id="smm-8x10g--console--led-a" x="1.5" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-8x10g/console/led-a" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+      <rect id="smm-8x10g--console--led-b" x="11.7" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-8x10g/console/led-b" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+    </g>
+    <g id="smm-8x10g--screw-t" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="15.23" cy="6.00" r="2.4" fill="#8d949c" stroke="#5f6469" stroke-width="0.3" />
+      <circle cx="15.23" cy="6.00" r="1.5" fill="#6d7379" />
+      <path d="M 14.04 4.80 L 16.43 7.20 M 14.04 7.20 L 16.43 4.80" stroke="#3a4046" stroke-width="0.45" fill="none" />
+    </g>
+    <g id="smm-8x10g--screw-b" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="15.23" cy="339.50" r="2.4" fill="#8d949c" stroke="#5f6469" stroke-width="0.3" />
+      <circle cx="15.23" cy="339.50" r="1.5" fill="#6d7379" />
+      <path d="M 14.04 338.30 L 16.43 340.70 M 14.04 340.70 L 16.43 338.30" stroke="#3a4046" stroke-width="0.45" fill="none" />
+    </g>
+    <g id="smm-8x10g--latch-t" data-z-out="4.2">
+      <rect x="2.0" y="11.00" width="3.2" height="16.00" rx="1.5" fill="#231f20" />
+      <circle cx="3.6" cy="11.00" r="1.5" fill="#3a4046" stroke="#15181b" stroke-width="0.25" />
+    </g>
+    <g id="smm-8x10g--latch-b" data-z-out="4.2">
+      <rect x="2.0" y="318.50" width="3.2" height="16.00" rx="1.5" fill="#231f20" />
+      <circle cx="3.6" cy="334.50" r="1.5" fill="#3a4046" stroke="#15181b" stroke-width="0.25" />
+    </g>
+    <circle id="smm-8x10g--status" cx="6.30" cy="272.60" r="1.5" fill="#39b54a" data-path="smm-8x10g/status" data-class="led" data-z-dome="0.3" />
+    <circle id="smm-8x10g--active" cx="6.30" cy="276.25" r="1.5" fill="#39b54a" data-path="smm-8x10g/active" data-class="led" data-z-dome="0.3" />
+    <circle id="smm-8x10g--alarm" cx="6.30" cy="279.90" r="1.5" fill="#231f20" data-path="smm-8x10g/alarm" data-class="led" data-z-dome="0.3" />
+  </g>
+</svg>

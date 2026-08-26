@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="34.54mm" height="161.8mm" viewBox="0 0 34.54 161.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a9k-mpa-1x40ge@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-mpa-1x40ge@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="a9k-mpa-1x40ge" data-path="a9k-mpa-1x40ge" data-class="line-card" data-ref="cisco/a9k-mpa-1x40ge@1:1.0.0" data-body-depth="170.18" data-wall="#4a4f55" data-eol="none-announced" data-media="QSFP+, 40 Gigabit Ethernet" data-model="A9K-MPA-1X40GE" data-qsfp-plus="1" data-role="modular-port-adapter" data-weight-kg="0.7" transform="translate(0,0)">
+    <title>a9k-mpa-1x40ge</title>
+    <rect id="a9k-mpa-1x40ge--plate" x="0" y="0" width="34.54" height="161.8" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <rect x="15.68" y="40.08" width="9.99" height="20.06" rx="0.5" fill="#3f4448" />
+    <g>
+      <circle cx="6.0" cy="5.06" r="2.8" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="6.0" cy="5.06" r="1.25" fill="#6d7379" />
+    </g>
+    <g>
+      <circle cx="6.0" cy="156.72" r="2.8" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="6.0" cy="156.72" r="1.25" fill="#6d7379" />
+    </g>
+    <g id="a9k-mpa-1x40ge--silkscreen">
+      <text x="27.49" y="51.11" transform="rotate(90 27.49 51.11)" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#231f20">0</text>
+      <text x="19.22" y="29.63" transform="rotate(90 19.22 29.63)" font-family="sans-serif" font-size="1.8" fill="#231f20">A/L</text>
+      <text x="17.26" y="148.23" font-family="sans-serif" font-size="2.2" fill="#231f20">STATUS</text>
+      <rect x="29.74" y="2.0" width="3.8" height="34.0" fill="#ffef5c" />
+      <text x="32.64" y="4.0" transform="rotate(90 32.64 4.0)" font-family="sans-serif" font-size="2.3" font-weight="bold" fill="#231f20">A9K-MPA-1X40GE</text>
+    </g>
+    <g id="a9k-mpa-1x40ge--p0" data-path="a9k-mpa-1x40ge/p0" data-class="port" data-ref="std/qsfp28@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" transform="translate(10.68,45.03) rotate(90 10.0 5.075)">
+      <title>a9k-mpa-1x40ge--p0</title>
+      <rect id="a9k-mpa-1x40ge--p0--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="a9k-mpa-1x40ge/p0/opening" data-class="cutout" />
+      <rect id="a9k-mpa-1x40ge--p0--cage-lip" x="0.8" y="1.25" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-mpa-1x40ge--p0--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="a9k-mpa-1x40ge--p0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    </g>
+    <rect id="a9k-mpa-1x40ge--led-p0" x="21.62" y="30.63" width="3.49" height="2.94" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="a9k-mpa-1x40ge/led-p0" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Link) lamp. Table 24, '1-Port 40-Gigabit Ethernet MPA LEDs': off - port is not enabled; green on - port is enabled and the link is up; amber on - port is enabled and the link is down. Cisco adds, on the sibling tables for the XFP and 20-port MPAs, that the A/L 'will blink green and amber when there is traffic activity'; this card's own table omits that row, so blink is not carried as a state here. This one is port 0's." data-z-dome="0.3" />
+    <circle id="a9k-mpa-1x40ge--status" cx="13.69" cy="147.32" r="1.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-mpa-1x40ge/status" data-class="led" data-states="green amber off" data-description="the MPA's STATUS lamp. Table 24: off - modular port adapter power is off; green on - modular port adapter is ready and operational; amber on - modular port adapter power is on and good, and the modular port adapter is being configured." data-z-dome="0.3" />
+  </g>
+</svg>

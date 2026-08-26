@@ -1,0 +1,834 @@
+<title>Portrayal Anodized</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+/* ── Tokens ───────────────────────────────────────────────────────────────
+   Dark-first by intent: the product is a dark canvas and the identity lives
+   next to it. :root carries the dark set; the light set is the swap.        */
+:root {
+  --ground:      #0E1013;
+  --surface:     #16181B;
+  --surface-2:   #1C1F23;
+  --line:        #2C3137;
+  --line-soft:   #21252A;
+  --ink:         #E4E7EA;
+  --ink-muted:   #9AA1A8;
+  --ink-faint:   #6B727A;
+  --brass:       #C79350;
+  --brass-hi:    #E3BC84;
+  --brass-dim:   #8A6432;
+  --brass-wash:  rgba(199,147,80,0.13);
+  --void:        #0A0C0E;
+  --shadow:      0 18px 40px -24px rgba(0,0,0,0.9);
+
+  --step--1: 0.78rem;
+  --step-0:  1rem;
+  --step-1:  1.2rem;
+  --step-2:  1.55rem;
+  --step-3:  2.1rem;
+  --step-4:  3.2rem;
+  --step-5:  4.6rem;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ground:     #EDEFF2;
+    --surface:    #FFFFFF;
+    --surface-2:  #F4F6F8;
+    --line:       #D2D8DE;
+    --line-soft:  #E4E8ED;
+    --ink:        #13171B;
+    --ink-muted:  #565E67;
+    --ink-faint:  #838B94;
+    --brass:      #8E6729;
+    --brass-hi:   #6E4E1C;
+    --brass-dim:  #C3A87D;
+    --brass-wash: rgba(142,103,41,0.10);
+    --void:       #DDE1E6;
+    --shadow:     0 18px 40px -28px rgba(20,26,32,0.45);
+  }
+}
+:root[data-theme="light"] {
+  --ground:     #EDEFF2;
+  --surface:    #FFFFFF;
+  --surface-2:  #F4F6F8;
+  --line:       #D2D8DE;
+  --line-soft:  #E4E8ED;
+  --ink:        #13171B;
+  --ink-muted:  #565E67;
+  --ink-faint:  #838B94;
+  --brass:      #8E6729;
+  --brass-hi:   #6E4E1C;
+  --brass-dim:  #C3A87D;
+  --brass-wash: rgba(142,103,41,0.10);
+  --void:       #DDE1E6;
+  --shadow:     0 18px 40px -28px rgba(20,26,32,0.45);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step-0);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 clamp(1.25rem, 4vw, 3rem);
+}
+
+h1, h2, h3 {
+  font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
+  text-wrap: balance;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+p { margin: 0; }
+
+a {
+  color: var(--brass);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 3px;
+}
+
+/* ── Utility type ───────────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.eyebrow .on { color: var(--brass); }
+
+.lede {
+  font-size: var(--step-1);
+  color: var(--ink-muted);
+  max-width: 62ch;
+}
+
+.prose { display: flex; flex-direction: column; gap: 1rem; max-width: 66ch; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose .quiet { color: var(--ink-muted); }
+
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Section frame ──────────────────────────────────────────────────────── */
+.section { padding: clamp(3.5rem, 8vw, 6rem) 0; border-top: 1px solid var(--line-soft); }
+.section-head { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 2.75rem; }
+.section-head h2 { font-size: var(--step-3); font-weight: 700; }
+.section-head .lede { font-size: var(--step-0); }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+.hero { padding: clamp(3.5rem, 9vw, 6.5rem) 0 clamp(3rem, 7vw, 5rem); }
+.hero-grid {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  align-items: center;
+}
+@media (max-width: 780px) { .hero-grid { grid-template-columns: 1fr; } }
+
+.hero h1 {
+  font-size: clamp(var(--step-4), 9vw, var(--step-5));
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  margin: 1.25rem 0 1.1rem;
+}
+.hero h1 .swap { color: var(--brass); }
+
+.hero-mark {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.hero-mark::after {
+  content: "01 · lead candidate";
+  position: absolute;
+  bottom: 0.85rem;
+  right: 1rem;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+.hero-mark svg { width: 58%; height: auto; }
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line-soft);
+}
+.hero-meta div { display: flex; flex-direction: column; gap: 0.15rem; }
+.hero-meta dt { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.hero-meta dd { margin: 0; font-size: var(--step--1); color: var(--ink-muted); }
+
+/* ── Mark cards ─────────────────────────────────────────────────────────── */
+.marks {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+}
+.mark-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mark-stage {
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1rem;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.mark-stage svg { width: 116px; height: 116px; }
+.mark-body { padding: 1.1rem 1.25rem 1.35rem; display: flex; flex-direction: column; gap: 0.55rem; }
+.mark-body h3 { font-size: var(--step-1); font-weight: 600; }
+.mark-body h3 .num { color: var(--brass); font-family: "IBM Plex Mono", monospace; font-size: 0.75em; margin-right: 0.5em; }
+.mark-body p { font-size: var(--step--1); color: var(--ink-muted); line-height: 1.6; }
+
+.mark-tests {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+.mark-tests svg { display: block; }
+.test-16 { width: 16px; height: 16px; }
+.test-24 { width: 24px; height: 24px; }
+.test-mono { width: 28px; height: 28px; color: var(--ink); }
+.mark-tests .label { margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+
+/* Mark colour modes — custom properties inherit into <use> content. */
+.m-color { --el: var(--ink-faint); --hi: var(--brass); --line-c: var(--brass); --recess: var(--void); }
+.m-mono  { --el: color-mix(in srgb, currentColor 32%, transparent); --hi: currentColor; --line-c: currentColor; --recess: color-mix(in srgb, currentColor 18%, transparent); }
+.m-invert { --el: color-mix(in srgb, var(--ground) 55%, transparent); --hi: var(--ground); --line-c: var(--ground); --recess: var(--brass-dim); }
+
+/* ── Palette ────────────────────────────────────────────────────────────── */
+.ramp { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.ramp-group { border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--surface); }
+.ramp-group h3 { font-size: var(--step--1); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.85rem 1rem; border-bottom: 1px solid var(--line); font-family: "IBM Plex Mono", monospace; color: var(--ink-muted); }
+.chip { display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1rem; border-bottom: 1px solid var(--line-soft); }
+.chip:last-child { border-bottom: none; }
+.chip .sw { width: 34px; height: 34px; border-radius: 2px; border: 1px solid var(--line); flex: none; }
+.chip .meta { display: flex; flex-direction: column; min-width: 0; }
+.chip .name { font-size: var(--step--1); font-weight: 500; }
+.chip .hex { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+.reserved { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.25rem; }
+.reserved .r { width: 30px; height: 30px; border-radius: 2px; border: 1px solid var(--line); }
+
+/* ── Type specimens ─────────────────────────────────────────────────────── */
+.specimens { display: flex; flex-direction: column; gap: 1.25rem; }
+.spec {
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--surface);
+  padding: 1.5rem 1.6rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 170px minmax(0, 1fr);
+}
+@media (max-width: 680px) { .spec { grid-template-columns: 1fr; } }
+.spec .role { display: flex; flex-direction: column; gap: 0.3rem; }
+.spec .role .n { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+.spec .role .d { font-size: var(--step--1); color: var(--ink-muted); }
+.spec-a { font-family: Archivo, sans-serif; font-weight: 700; font-size: var(--step-3); letter-spacing: -0.03em; }
+.spec-b { font-family: "IBM Plex Sans", sans-serif; font-size: var(--step-0); color: var(--ink-muted); }
+.spec-c { font-family: "IBM Plex Mono", monospace; font-size: var(--step--1); letter-spacing: 0.02em; }
+.spec-c .k { color: var(--brass); }
+
+.wordmarks { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 1.25rem; }
+.wm { border: 1px solid var(--line); border-radius: 3px; background: var(--surface); padding: 2rem 1.6rem 1.1rem; display: flex; flex-direction: column; gap: 1.5rem; align-items: flex-start; }
+.wm .note { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+.wm-lock { display: flex; align-items: center; gap: 0.7rem; }
+.wm-lock svg { width: 30px; height: 30px; flex: none; }
+.wm-a { font-family: Archivo, sans-serif; font-weight: 700; font-size: 1.7rem; letter-spacing: -0.04em; }
+.wm-b { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 1.1rem; letter-spacing: 0.22em; text-transform: uppercase; }
+.wm-c { font-family: Archivo, sans-serif; font-weight: 600; font-size: 1.55rem; letter-spacing: -0.02em; }
+.wm-c .dot { color: var(--brass); }
+
+/* ── Applications ───────────────────────────────────────────────────────── */
+.apps { display: flex; flex-direction: column; gap: 1.5rem; }
+.app { border: 1px solid var(--line); border-radius: 3px; background: var(--surface); overflow: hidden; }
+.app > .cap { padding: 0.75rem 1.1rem; border-top: 1px solid var(--line-soft); font-size: var(--step--1); color: var(--ink-muted); }
+.app-stage { padding: 1.75rem; background: var(--surface-2); display: grid; gap: 1rem; }
+
+.tabbar { display: flex; gap: 0.4rem; align-items: flex-end; }
+.tab { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.9rem; border-radius: 6px 6px 0 0; background: var(--surface); border: 1px solid var(--line); border-bottom: none; font-size: var(--step--1); color: var(--ink-muted); max-width: 190px; }
+.tab.on { color: var(--ink); background: var(--ground); }
+.tab svg { width: 16px; height: 16px; flex: none; }
+.tab .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabstrip-floor { height: 10px; background: var(--ground); border: 1px solid var(--line); border-top: none; }
+
+.chrome { background: var(--ground); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.chrome-nav { display: flex; align-items: center; gap: 1.1rem; padding: 0.6rem 1rem 0; background: var(--surface); border-bottom: 1px solid var(--line); }
+.chrome-brand { display: flex; align-items: center; gap: 0.55rem; padding-bottom: 0.6rem; }
+.chrome-brand svg { width: 20px; height: 20px; }
+.chrome-brand .t { font-family: Archivo, sans-serif; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.03em; }
+.chrome-tabs { display: flex; gap: 0.15rem; }
+.chrome-tabs span { padding: 0.45rem 0.9rem 0.55rem; font-size: var(--step--1); color: var(--ink-muted); border-bottom: 2px solid transparent; }
+.chrome-tabs span.on { color: var(--ink); border-bottom-color: var(--brass); }
+.chrome-swatches { margin-left: auto; display: flex; gap: 0.3rem; padding-bottom: 0.6rem; }
+.chrome-swatches i { width: 15px; height: 15px; border-radius: 3px; display: block; }
+.chrome-body { padding: 1.5rem; display: grid; place-items: center; }
+
+.callout-stage { padding: 2rem 1.25rem; background: var(--surface-2); display: grid; place-items: center; }
+.callout-stage svg { width: 100%; max-width: 620px; height: auto; }
+
+/* ── Decisions list ─────────────────────────────────────────────────────── */
+.decisions { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.dec { border: 1px solid var(--line); border-left: 2px solid var(--brass); border-radius: 0 3px 3px 0; background: var(--surface); padding: 1.15rem 1.3rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.dec h3 { font-size: var(--step-0); font-weight: 600; }
+.dec p { font-size: var(--step--1); color: var(--ink-muted); }
+
+footer { padding: 3rem 0 4rem; border-top: 1px solid var(--line-soft); color: var(--ink-faint); font-size: var(--step--1); display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .mark-card { transition: border-color 160ms ease; }
+  .mark-card:hover { border-color: var(--brass-dim); }
+}
+</style>
+
+<!-- ── Mark definitions ──────────────────────────────────────────────────
+     One field of elements, deliberately irregular so it reads as a device
+     rather than a grid. Each candidate singles one element out a different
+     way. Colours come from inherited custom properties, so the same symbol
+     renders in brass, in mono, or knocked out.                            -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="field-quiet">
+      <rect x="8"  y="14" width="15" height="16" rx="1.5" fill="var(--el)"/>
+      <rect x="8"  y="34" width="15" height="16" rx="1.5" fill="var(--el)"/>
+      <rect x="26" y="34" width="15" height="16" rx="1.5" fill="var(--el)"/>
+      <rect x="44" y="14" width="12" height="36" rx="1.5" fill="var(--el)"/>
+    </g>
+  </defs>
+
+  <symbol id="m1" viewBox="0 0 64 64">
+    <use href="#field-quiet"/>
+    <rect x="26" y="14" width="15" height="16" rx="1.5" fill="var(--hi)"/>
+    <rect x="22.25" y="10.25" width="22.5" height="23.5" rx="3" fill="none" stroke="var(--line-c)" stroke-width="1.5"/>
+  </symbol>
+
+  <symbol id="m2" viewBox="0 0 64 64">
+    <use href="#field-quiet"/>
+    <rect x="26" y="14" width="15" height="16" rx="1.5" fill="var(--el)"/>
+    <g fill="none" stroke="var(--line-c)" stroke-width="2.4" stroke-linecap="square">
+      <path d="M22 16.5 V10 H28.5"/>
+      <path d="M38.5 10 H45 V16.5"/>
+      <path d="M45 27.5 V34 H38.5"/>
+      <path d="M28.5 34 H22 V27.5"/>
+    </g>
+  </symbol>
+
+  <symbol id="m3" viewBox="0 0 64 64">
+    <use href="#field-quiet"/>
+    <rect x="26" y="14" width="15" height="16" rx="1.5" fill="var(--hi)"/>
+    <path d="M41 15 L50 6 H61" fill="none" stroke="var(--line-c)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="m4" viewBox="0 0 64 64">
+    <use href="#field-quiet"/>
+    <rect x="26" y="14" width="15" height="16" rx="1.5" fill="var(--recess)"/>
+    <rect x="21" y="8" width="15" height="16" rx="1.5" fill="var(--hi)"/>
+    <path d="M26 30 L21 24 M41 30 L36 24 M41 14 L36 8" fill="none" stroke="var(--line-c)" stroke-width="1.1" opacity="0.55"/>
+  </symbol>
+
+  <symbol id="m5" viewBox="0 0 64 64">
+    <use href="#field-quiet"/>
+    <rect x="27.25" y="15.25" width="12.5" height="13.5" rx="1" fill="none" stroke="var(--line-c)" stroke-width="2.5"/>
+  </symbol>
+
+  <symbol id="m6" viewBox="0 0 64 64">
+    <use href="#field-quiet"/>
+    <rect x="26" y="14" width="15" height="16" rx="1.5" fill="var(--hi)"/>
+    <path d="M33.5 30 V57 H55" fill="none" stroke="var(--line-c)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="58.5" cy="57" r="3" fill="none" stroke="var(--line-c)" stroke-width="2"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+
+  <!-- ── Hero ─────────────────────────────────────────────────────────── -->
+  <header class="hero">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">Identity direction <span class="on">01</span> · Anodized · 26 Aug 2026</p>
+        <h1>Portrayal is<br>the piece you can<br><span class="swap">point at</span>.</h1>
+        <p class="lede">
+          A visual identity for a neutral substrate: accurate, addressable drawings of
+          real hardware, and whatever anyone builds on top of them.
+        </p>
+        <dl class="hero-meta">
+          <div><dt>Accent</dt><dd>Anodized brass, matte</dd></div>
+          <div><dt>Ground</dt><dd>Cool near-black</dd></div>
+          <div><dt>Type</dt><dd>Archivo · Plex Sans · Plex Mono</dd></div>
+          <div><dt>Domains</dt><dd>portrayal.io · portrayal.dev</dd></div>
+        </dl>
+      </div>
+      <div class="hero-mark">
+        <svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Lead candidate mark: a field of elements with one singled out in brass, inside a selection ring">
+          <use href="#m1"/>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Brief ────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">The brief</p>
+      <h2>Brand a primitive, not a product.</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Portrayal compiles YAML device manifests into flat SVG in real millimetres,
+        where every port, PSU, fan, LED, bay and region carries a stable id and a
+        <span class="mono">data-path</span>. What that enables is deliberately open —
+        documentation, monitoring overlays, DCIM integration where clicking a port
+        follows its connection, rack layouts, install guides. The core is
+        domain-neutral; networking is profile #1.
+      </p>
+      <p>
+        So the identity is closer to a font foundry or a rendering library than to a
+        SaaS app. <strong>The mark must not depict a use case, and it must not depict a
+        specific piece of gear.</strong> An abstract field of elements with one singled
+        out stays true whether those elements are ports, bays, slots or cells — and
+        whether profile #2 is networking hardware or something nobody has modelled yet.
+      </p>
+      <p>
+        Two constraints come straight out of the working demo, and they shape
+        everything below. <strong>The chrome can never compete with the canvas:</strong>
+        the device drawing is the content, rendered in real greys and metals, and status
+        colour has to be the loudest thing on screen. And
+        <strong>the marking swatches are reserved:</strong> magenta, green, yellow, cyan
+        and orange belong to the user's annotations. A brand colour drawn from that set
+        would read as a mark somebody made.
+      </p>
+      <p class="quiet">
+        Anodized brass answers both. It sits nowhere near the marking palette, it never
+        needs to appear on the canvas, and it is warm against a cool ground — a pairing
+        that reads as panel hardware without a single port being drawn, in a category
+        where nearly everything is blue, purple or teal.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Marks ────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Six candidates</p>
+      <h2>One field. Six ways to single something out.</h2>
+      <p class="lede">
+        Every candidate shares the same field — four quiet elements and one tall one,
+        irregular on purpose so it reads as a device rather than a grid. What changes is
+        the act. Each card shows the mark at 16px and 24px, then knocked back to a single
+        colour, because those are the sizes and conditions it actually has to survive.
+      </p>
+    </div>
+
+    <div class="marks">
+
+      <article class="mark-card">
+        <div class="mark-stage"><svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Select mark"><use href="#m1"/></svg></div>
+        <div class="mark-body">
+          <h3><span class="num">01</span>Select</h3>
+          <p>One element lit, wrapped in a selection ring. The most literal reading of
+             "this one, out of all of them" — and the closest to what a user does in the
+             explorer. Holds together at every size because the ring does the work when
+             the fill gets too small to see.</p>
+        </div>
+        <div class="mark-tests">
+          <svg class="m-color test-16" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg>
+          <svg class="m-color test-24" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg>
+          <svg class="m-mono test-mono" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg>
+          <span class="label">16 · 24 · mono</span>
+        </div>
+      </article>
+
+      <article class="mark-card">
+        <div class="mark-stage"><svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Marquee mark"><use href="#m2"/></svg></div>
+        <div class="mark-body">
+          <h3><span class="num">02</span>Marquee</h3>
+          <p>Four corner ticks around an element that is otherwise identical to its
+             neighbours. Says <em>addressable</em> rather than <em>active</em> — nothing
+             is lit, something is merely reachable. Quieter and more tool-like; the ticks
+             thin out badly below 20px.</p>
+        </div>
+        <div class="mark-tests">
+          <svg class="m-color test-16" viewBox="0 0 64 64" aria-hidden="true"><use href="#m2"/></svg>
+          <svg class="m-color test-24" viewBox="0 0 64 64" aria-hidden="true"><use href="#m2"/></svg>
+          <svg class="m-mono test-mono" viewBox="0 0 64 64" aria-hidden="true"><use href="#m2"/></svg>
+          <span class="label">16 · 24 · mono</span>
+        </div>
+      </article>
+
+      <article class="mark-card">
+        <div class="mark-stage"><svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Callout mark"><use href="#m3"/></svg></div>
+        <div class="mark-body">
+          <h3><span class="num">03</span>Callout</h3>
+          <p>A leader line off the lit element to a label that isn't there yet. The most
+             expressive of the six and the one that scales into a whole system — the
+             leader can grow into real callouts across the site. Also the most fragile:
+             a 2px diagonal is the first thing to vanish at favicon size.</p>
+        </div>
+        <div class="mark-tests">
+          <svg class="m-color test-16" viewBox="0 0 64 64" aria-hidden="true"><use href="#m3"/></svg>
+          <svg class="m-color test-24" viewBox="0 0 64 64" aria-hidden="true"><use href="#m3"/></svg>
+          <svg class="m-mono test-mono" viewBox="0 0 64 64" aria-hidden="true"><use href="#m3"/></svg>
+          <span class="label">16 · 24 · mono</span>
+        </div>
+      </article>
+
+      <article class="mark-card">
+        <div class="mark-stage"><svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Lift mark"><use href="#m4"/></svg></div>
+        <div class="mark-body">
+          <h3><span class="num">04</span>Lift</h3>
+          <p>The element pulled out of the plane, leaving its recess behind. Nods at
+             the 3D work and at modularity — a thing that seats into a bay and can come
+             back out. Reads well large; at 16px the recess and the lifted copy start to
+             merge into one blur.</p>
+        </div>
+        <div class="mark-tests">
+          <svg class="m-color test-16" viewBox="0 0 64 64" aria-hidden="true"><use href="#m4"/></svg>
+          <svg class="m-color test-24" viewBox="0 0 64 64" aria-hidden="true"><use href="#m4"/></svg>
+          <svg class="m-mono test-mono" viewBox="0 0 64 64" aria-hidden="true"><use href="#m4"/></svg>
+          <span class="label">16 · 24 · mono</span>
+        </div>
+      </article>
+
+      <article class="mark-card">
+        <div class="mark-stage"><svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Aperture mark"><use href="#m5"/></svg></div>
+        <div class="mark-body">
+          <h3><span class="num">05</span>Aperture</h3>
+          <p>Inversion: the singled-out element is the one that isn't filled. A hole in
+             the field where everything else is solid. The strongest small-size performer
+             here — a knockout survives anything — but it says <em>empty bay</em> as
+             readily as <em>selected</em>, which is a real ambiguity in this domain.</p>
+        </div>
+        <div class="mark-tests">
+          <svg class="m-color test-16" viewBox="0 0 64 64" aria-hidden="true"><use href="#m5"/></svg>
+          <svg class="m-color test-24" viewBox="0 0 64 64" aria-hidden="true"><use href="#m5"/></svg>
+          <svg class="m-mono test-mono" viewBox="0 0 64 64" aria-hidden="true"><use href="#m5"/></svg>
+          <span class="label">16 · 24 · mono</span>
+        </div>
+      </article>
+
+      <article class="mark-card">
+        <div class="mark-stage"><svg class="m-color" viewBox="0 0 64 64" role="img" aria-label="Trace mark"><use href="#m6"/></svg></div>
+        <div class="mark-body">
+          <h3><span class="num">06</span>Trace</h3>
+          <p>The lit element with a path leaving it — click a port, follow the
+             connection. The only candidate that points outward, at integration rather
+             than inspection. Risks reading as a network-diagram logo, which is the one
+             neighbourhood this project should avoid.</p>
+        </div>
+        <div class="mark-tests">
+          <svg class="m-color test-16" viewBox="0 0 64 64" aria-hidden="true"><use href="#m6"/></svg>
+          <svg class="m-color test-24" viewBox="0 0 64 64" aria-hidden="true"><use href="#m6"/></svg>
+          <svg class="m-mono test-mono" viewBox="0 0 64 64" aria-hidden="true"><use href="#m6"/></svg>
+          <span class="label">16 · 24 · mono</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── Palette ──────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Palette</p>
+      <h2>One warm accent, on a ground borrowed from the app.</h2>
+      <p class="lede">
+        The greys are the demo's own, tightened and given a slight cool bias so the brass
+        has something to be warm against. Brass appears in the mark, the site, and the
+        chrome — never on the canvas.
+      </p>
+    </div>
+
+    <div class="ramp">
+      <div class="ramp-group">
+        <h3>Anodized</h3>
+        <div class="chip"><span class="sw" style="background:#E3BC84"></span><span class="meta"><span class="name">Brass light</span><span class="hex">#E3BC84 · dark-mode hover, hairlines</span></span></div>
+        <div class="chip"><span class="sw" style="background:#C79350"></span><span class="meta"><span class="name">Brass</span><span class="hex">#C79350 · the accent, dark ground</span></span></div>
+        <div class="chip"><span class="sw" style="background:#8E6729"></span><span class="meta"><span class="name">Brass deep</span><span class="hex">#8E6729 · the accent, light ground</span></span></div>
+        <div class="chip"><span class="sw" style="background:#8A6432"></span><span class="meta"><span class="name">Bronze</span><span class="hex">#8A6432 · borders, dimmed states</span></span></div>
+      </div>
+
+      <div class="ramp-group">
+        <h3>Ground</h3>
+        <div class="chip"><span class="sw" style="background:#0A0C0E"></span><span class="meta"><span class="name">Void</span><span class="hex">#0A0C0E · recesses, empty bays</span></span></div>
+        <div class="chip"><span class="sw" style="background:#0E1013"></span><span class="meta"><span class="name">Ground</span><span class="hex">#0E1013 · page, canvas</span></span></div>
+        <div class="chip"><span class="sw" style="background:#16181B"></span><span class="meta"><span class="name">Surface</span><span class="hex">#16181B · chrome, cards</span></span></div>
+        <div class="chip"><span class="sw" style="background:#2C3137"></span><span class="meta"><span class="name">Line</span><span class="hex">#2C3137 · hairlines, dividers</span></span></div>
+      </div>
+
+      <div class="ramp-group">
+        <h3>Ink</h3>
+        <div class="chip"><span class="sw" style="background:#E4E7EA"></span><span class="meta"><span class="name">Ink</span><span class="hex">#E4E7EA · body, headings</span></span></div>
+        <div class="chip"><span class="sw" style="background:#9AA1A8"></span><span class="meta"><span class="name">Ink muted</span><span class="hex">#9AA1A8 · secondary copy</span></span></div>
+        <div class="chip"><span class="sw" style="background:#6B727A"></span><span class="meta"><span class="name">Ink faint</span><span class="hex">#6B727A · labels, captions</span></span></div>
+        <div class="chip"><span class="sw" style="background:#EDEFF2"></span><span class="meta"><span class="name">Paper</span><span class="hex">#EDEFF2 · light-mode ground</span></span></div>
+      </div>
+    </div>
+
+    <div class="prose" style="margin-top:2.5rem">
+      <p class="eyebrow">Reserved — the user's marking colours</p>
+      <p class="quiet" style="margin-top:0.5rem">
+        These already mean something in the explorer. Nothing in the brand may use them.
+      </p>
+      <div class="reserved">
+        <span class="r" style="background:#EC1E9C"></span>
+        <span class="r" style="background:#3FCC3F"></span>
+        <span class="r" style="background:#F2CC22"></span>
+        <span class="r" style="background:#2CC5E0"></span>
+        <span class="r" style="background:#F07028"></span>
+        <span class="r" style="background:#FFFFFF"></span>
+        <span class="r" style="background:#F566B5"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Type ─────────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Typography</p>
+      <h2>A sturdy grotesque, an engineering sans, and a silkscreen voice.</h2>
+      <p class="lede">
+        Three faces, three jobs, no overlap. Deliberately not the defaults — Archivo
+        has the squared-off density of panel lettering, and Plex carries an engineering
+        pedigree that Inter does not.
+      </p>
+    </div>
+
+    <div class="specimens">
+      <div class="spec">
+        <div class="role">
+          <span class="n">Display</span>
+          <span class="d">Archivo 700/800. Headlines and the wordmark. Tight tracking, never below 1.4rem.</span>
+        </div>
+        <div class="spec-a">Every physical thing, individually addressable</div>
+      </div>
+
+      <div class="spec">
+        <div class="role">
+          <span class="n">Body</span>
+          <span class="d">IBM Plex Sans 400/500. Running copy and docs, set near 65 characters.</span>
+        </div>
+        <div class="spec-b">
+          A device is a YAML manifest that places reusable component contracts. The
+          compiler resolves it into one flat SVG in real millimetres, where every element
+          carries a stable DOM id and a data-path.
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="role">
+          <span class="n">Utility</span>
+          <span class="d">IBM Plex Mono 500. Ids, paths, provenance, callout labels, eyebrows. Uppercase gets 0.14em.</span>
+        </div>
+        <div class="spec-c">
+          port-14/led-link&nbsp;&nbsp;<span class="k">state</span>=up&nbsp;&nbsp;<span class="k">provenance</span>=measured&nbsp;&nbsp;<span class="k">maturity</span>=verified<br>
+          <span style="letter-spacing:0.14em">FRONT · REAR · TOP · INTERIOR · LID-OPEN</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="wordmarks">
+      <div class="wm">
+        <div class="wm-lock">
+          <svg class="m-color" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg>
+          <span class="wm-a">portrayal</span>
+        </div>
+        <span class="note">A · lowercase lockup</span>
+      </div>
+      <div class="wm">
+        <div class="wm-lock">
+          <svg class="m-color" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg>
+          <span class="wm-b">Portrayal</span>
+        </div>
+        <span class="note">B · silkscreen lockup</span>
+      </div>
+      <div class="wm">
+        <div class="wm-lock">
+          <span class="wm-c">portrayal<span class="dot">.dev</span></span>
+        </div>
+        <span class="note">C · domain lockup, mark omitted</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Applications ─────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">In place</p>
+      <h2>Where it actually has to hold up.</h2>
+    </div>
+
+    <div class="apps">
+
+      <div class="app">
+        <div class="app-stage">
+          <div class="tabbar">
+            <span class="tab on"><svg class="m-color" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg><span class="t">Portrayal</span></span>
+            <span class="tab"><svg viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3" fill="var(--line)"/></svg><span class="t">NetBox</span></span>
+            <span class="tab"><svg viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="8" fill="var(--line)"/></svg><span class="t">Grafana</span></span>
+          </div>
+          <div class="tabstrip-floor"></div>
+        </div>
+        <p class="cap">The favicon test — a plugin list or a browser strip, next to neighbours that are not being polite.</p>
+      </div>
+
+      <div class="app">
+        <div class="app-stage">
+          <div class="chrome">
+            <div class="chrome-nav">
+              <span class="chrome-brand">
+                <svg class="m-color" viewBox="0 0 64 64" aria-hidden="true"><use href="#m1"/></svg>
+                <span class="t">portrayal</span>
+              </span>
+              <span class="chrome-tabs">
+                <span class="on">Explorer</span><span>Annotate</span><span>Components</span><span>Exporter</span>
+              </span>
+              <span class="chrome-swatches">
+                <i style="background:#EC1E9C"></i><i style="background:#3FCC3F"></i><i style="background:#F2CC22"></i><i style="background:#2CC5E0"></i><i style="background:#F07028"></i>
+              </span>
+            </div>
+            <div class="chrome-body">
+              <svg viewBox="0 0 600 84" width="100%" aria-label="Abstract 1U faceplate with one cage selected">
+                <rect x="0.5" y="0.5" width="599" height="83" rx="2" fill="var(--surface)" stroke="var(--line)"/>
+                <rect x="10" y="10" width="26" height="64" rx="2" fill="var(--surface-2)"/>
+                <rect x="556" y="10" width="34" height="64" rx="2" fill="var(--surface-2)"/>
+                <g fill="var(--void)">
+                  <rect x="52"  y="16" width="28" height="22" rx="1.5"/><rect x="52"  y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="86"  y="16" width="28" height="22" rx="1.5"/><rect x="86"  y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="120" y="16" width="28" height="22" rx="1.5"/><rect x="120" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="154" y="16" width="28" height="22" rx="1.5"/><rect x="154" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="196" y="16" width="28" height="22" rx="1.5"/><rect x="196" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="230" y="16" width="28" height="22" rx="1.5"/><rect x="230" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="264" y="16" width="28" height="22" rx="1.5"/><rect x="264" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="298" y="16" width="28" height="22" rx="1.5"/><rect x="298" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="340" y="16" width="28" height="22" rx="1.5"/><rect x="340" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="374" y="16" width="28" height="22" rx="1.5"/><rect x="374" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="408" y="16" width="28" height="22" rx="1.5"/><rect x="408" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="442" y="16" width="28" height="22" rx="1.5"/><rect x="442" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="484" y="16" width="28" height="22" rx="1.5"/><rect x="484" y="46" width="28" height="22" rx="1.5"/>
+                  <rect x="518" y="16" width="28" height="22" rx="1.5"/><rect x="518" y="46" width="28" height="22" rx="1.5"/>
+                </g>
+                <rect x="296" y="14" width="32" height="26" rx="2" fill="none" stroke="var(--brass)" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <p class="cap">App chrome. Brass marks the active tab and the current selection; the reserved swatches sit two inches away and never collide with it.</p>
+      </div>
+
+      <div class="app">
+        <div class="callout-stage">
+          <svg viewBox="0 0 620 190" aria-label="Faceplate detail with a technical callout">
+            <g fill="none" stroke="var(--line)" stroke-width="1">
+              <path d="M40 150 H580"/>
+            </g>
+            <g fill="var(--surface-2)" stroke="var(--line)" stroke-width="1">
+              <rect x="40" y="90" width="540" height="60" rx="2"/>
+            </g>
+            <g fill="var(--void)">
+              <rect x="60"  y="100" width="34" height="18" rx="1.5"/><rect x="60"  y="122" width="34" height="18" rx="1.5"/>
+              <rect x="100" y="100" width="34" height="18" rx="1.5"/><rect x="100" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="140" y="100" width="34" height="18" rx="1.5"/><rect x="140" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="180" y="100" width="34" height="18" rx="1.5"/><rect x="180" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="220" y="100" width="34" height="18" rx="1.5"/><rect x="220" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="260" y="100" width="34" height="18" rx="1.5"/><rect x="260" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="300" y="100" width="34" height="18" rx="1.5"/><rect x="300" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="340" y="100" width="34" height="18" rx="1.5"/><rect x="340" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="380" y="100" width="34" height="18" rx="1.5"/><rect x="380" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="420" y="100" width="34" height="18" rx="1.5"/><rect x="420" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="460" y="100" width="34" height="18" rx="1.5"/><rect x="460" y="122" width="34" height="18" rx="1.5"/>
+              <rect x="500" y="100" width="34" height="18" rx="1.5"/><rect x="500" y="122" width="34" height="18" rx="1.5"/>
+            </g>
+            <rect x="298" y="98" width="38" height="22" rx="2" fill="none" stroke="var(--brass)" stroke-width="2"/>
+            <path d="M336 100 L392 52 H520" fill="none" stroke="var(--brass)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="336" cy="100" r="2.75" fill="var(--brass)"/>
+            <text x="392" y="44" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="500" fill="var(--ink)">port-14 — qsfp28-cage</text>
+            <text x="392" y="68" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink-faint)">provenance: measured · maturity: verified</text>
+            <text x="40" y="172" font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1.4" fill="var(--ink-faint)">FRONT · 440.0 mm</text>
+          </svg>
+        </div>
+        <p class="cap">The callout grammar. Brass leader, mono label, the drawing untouched underneath — this is what the docs and the site are made of.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Decisions ────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Still open</p>
+      <h2>What I'd want decided before any of this gets drawn properly.</h2>
+    </div>
+    <div class="decisions">
+      <div class="dec">
+        <h3>Which mark</h3>
+        <p>My call is <strong>01 Select</strong> for the primary, with <strong>05 Aperture</strong>
+           held in reserve as the favicon-and-monochrome variant if 01 proves too soft at 16px
+           in real use.</p>
+      </div>
+      <div class="dec">
+        <h3>How irregular the field</h3>
+        <p>The current field is mildly irregular. It could go further — a real silhouette
+           taken from one of the modelled devices — at the cost of the neutrality the
+           project depends on.</p>
+      </div>
+      <div class="dec">
+        <h3>Light mode for the site</h3>
+        <p>The app is dark and always will be. The site could be light and lean on the
+           drawing-sheet look, at the cost of every screenshot punching a hole in the page.</p>
+      </div>
+      <div class="dec">
+        <h3>.io or .dev as canonical</h3>
+        <p>One is the project, one redirects. <span class="mono">.dev</span> reads as the
+           developer substrate this is; <span class="mono">.io</span> reads as a product.
+           The wordmark lockup differs depending which one leads.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Portrayal · identity direction 01 · Anodized</span>
+    <span>Exploration only — nothing here is committed to the repo.</span>
+  </footer>
+
+</div>

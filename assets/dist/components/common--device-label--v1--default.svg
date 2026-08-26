@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="80.0mm" height="40.0mm" viewBox="0 0 80.0 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="device-label" data-path="device-label" data-class="sticker" data-ref="common/device-label@1:1.1.0" transform="translate(0,0)">
+    <title>device-label</title>
+    <rect id="device-label--recess" x="0" y="0" width="80" height="40" rx="19" fill="#e3e6e9" stroke="#c9cdd1" stroke-width="0.5" />
+    <rect id="device-label--label" x="3" y="3" width="74" height="34" rx="16" fill="#f7f8f9" stroke="#d5d9dc" stroke-width="0.4" data-path="device-label/label" data-class="sticker" />
+    <g id="device-label--label-lines" fill="#d5d9dc">
+      <rect x="11" y="8" width="20" height="3.2" rx="1" />
+      <rect x="11" y="14" width="26" height="2" rx="1" />
+      <rect x="11" y="18" width="23" height="2" rx="1" />
+      <rect x="11" y="22" width="26" height="2" rx="1" />
+      <rect x="11" y="27" width="18" height="4" rx="1" />
+      <rect x="44" y="9" width="24" height="4.5" rx="1" />
+      <rect x="44" y="16" width="24" height="4.5" rx="1" />
+      <rect x="44" y="23" width="24" height="4.5" rx="1" />
+      <rect x="44" y="30" width="16" height="3" rx="1" />
+    </g>
+  </g>
+</svg>

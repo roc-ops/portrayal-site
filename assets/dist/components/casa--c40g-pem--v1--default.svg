@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="158.0mm" height="68.5mm" viewBox="0 0 158.0 68.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="c40g-pem" data-path="c40g-pem" data-class="power" data-ref="casa/c40g-pem@1:1.3.0" data-body-depth="200.0" data-wall="#4a4f55" data-current-per-feed="20 A nominal" data-input-voltage="-40.5 to -60 VDC (-48 VDC nominal)" data-model="C40G PEM" data-role="dc-power-entry" transform="translate(0,0)">
+    <title>c40g-pem</title>
+    <rect id="c40g-pem--plate" x="0" y="0" width="158" height="68.5" fill="#9b9da0" stroke="#6d6f71" stroke-width="0.3" />
+    <g transform="scale(1,0.971631)">
+      <g id="c40g-pem--terminal-cover" data-z-out="1.5">
+        <rect x="6.0" y="4.0" width="60.0" height="16.0" rx="1.2" fill="#8a8d90" stroke="#5f6469" stroke-width="0.5" />
+        <circle cx="16.0" cy="12.0" r="1.8" fill="#6d7379" stroke="#4a4f55" stroke-width="0.3" />
+        <circle id="c40g-pem--cover-screw" cx="36.0" cy="7.5" r="2.2" fill="#6d7379" stroke="#4a4f55" stroke-width="0.3" data-z-cyl="1.6" data-z-lift="1.5" />
+        <circle cx="56.0" cy="12.0" r="1.8" fill="#6d7379" stroke="#4a4f55" stroke-width="0.3" />
+      </g>
+      <g id="c40g-pem--terminals-neg">
+        <rect x="6.0" y="26.0" width="60.0" height="16.0" fill="none" stroke="#e8e9ea" stroke-width="0.7" />
+        <rect x="11.0" y="33.2" width="6.0" height="1.6" fill="#231f20" />
+        <rect x="55.0" y="33.2" width="6.0" height="1.6" fill="#231f20" />
+        <circle id="c40g-pem--nut-neg-l" cx="27.0" cy="34.0" r="3.6" fill="#8a8d90" stroke="#4a4f55" stroke-width="0.5" data-z-cyl="2.2" />
+        <circle id="c40g-pem--nut-neg-r" cx="45.0" cy="34.0" r="3.6" fill="#8a8d90" stroke="#4a4f55" stroke-width="0.5" data-z-cyl="2.2" />
+      </g>
+      <g id="c40g-pem--terminals-pos">
+        <rect x="6.0" y="46.0" width="60.0" height="16.0" fill="none" stroke="#e8e9ea" stroke-width="0.7" />
+        <path d="M 11 54 h 6 M 14 51 v 6" stroke="#231f20" stroke-width="1.4" />
+        <path d="M 55 54 h 6 M 58 51 v 6" stroke="#231f20" stroke-width="1.4" />
+        <circle id="c40g-pem--nut-pos-l" cx="27.0" cy="54.0" r="3.6" fill="#8a8d90" stroke="#4a4f55" stroke-width="0.5" data-z-cyl="2.2" />
+        <circle id="c40g-pem--nut-pos-r" cx="45.0" cy="54.0" r="3.6" fill="#8a8d90" stroke="#4a4f55" stroke-width="0.5" data-z-cyl="2.2" />
+      </g>
+      <rect id="c40g-pem--lever-a" x="70.0" y="35.0" width="16.0" height="3.6" rx="1.8" fill="#c9cbcd" stroke="#8a8d90" stroke-width="0.3" data-z-out="4.2" />
+      <rect id="c40g-pem--lever-b" x="70.0" y="45.0" width="16.0" height="3.6" rx="1.8" fill="#c9cbcd" stroke="#8a8d90" stroke-width="0.3" data-z-out="4.2" />
+      <g id="c40g-pem--warning" data-z-out="0.2">
+        <rect x="90.0" y="44.0" width="62.0" height="15.0" fill="#f7d117" stroke="#b99c10" stroke-width="0.3" />
+        <path d="M 97 47.5 L 102 56 L 92 56 Z" fill="none" stroke="#231f20" stroke-width="0.7" />
+        <rect x="105.0" y="47.5" width="42.0" height="2.0" fill="#231f20" />
+        <rect x="105.0" y="51.5" width="44.0" height="1.4" fill="#4a4f55" />
+        <rect x="105.0" y="54.5" width="38.0" height="1.4" fill="#4a4f55" />
+      </g>
+    </g>
+  </g>
+</svg>

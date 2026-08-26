@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="42.67mm" height="403.1mm" viewBox="0 0 42.67 403.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a9k-4hg-flex-se@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-4hg-flex-se@'] .state-amber-blinking { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-4hg-flex-se@'] .state-amber-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/a9k-4hg-flex-se@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/a9k-4hg-flex-se@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="a9k-4hg-flex-se" data-path="a9k-4hg-flex-se" data-class="line-card" data-ref="cisco/a9k-4hg-flex-se@1:1.0.0" data-body-depth="609.6" data-wall="#4a4f55" data-chassis="ASR 9922, ASR 9912, ASR 9910, ASR 9906, ASR 9904, ASR 9010 and ASR 9006" data-eol="none-announced" data-generation="5th" data-model="A9K-4HG-FLEX-SE" data-operating-temp="5 to 40 C" data-qsfp28="4" data-role="line-card" data-sfp-plus="24" data-sfp28="16" data-throughput="400 Gbps" data-weight-kg="8.5" transform="translate(0,0)">
+    <title>a9k-4hg-flex-se</title>
+    <rect id="a9k-4hg-flex-se--plate" x="0.0" y="19.131" width="43.468" height="365.479" rx="0.81" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <circle id="a9k-4hg-flex-se--pivot-top" cx="21.489" cy="22.625" r="3.056" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" />
+    <g id="a9k-4hg-flex-se--silkscreen">
+      <rect x="0.626" y="27.719" width="42.217" height="4.075" fill="#ffef5c" />
+      <text x="21.73" y="30.9" font-family="sans-serif" font-size="3.32" font-weight="bold" text-anchor="middle" fill="#231f20">A9K-4HG-FLEX-SE</text>
+      <rect x="25.941" y="20.384" width="13.346" height="6.245" fill="#ffef5c" />
+      <text x="32.61" y="23.13" font-family="sans-serif" font-size="2.22" font-weight="bold" text-anchor="middle" fill="#231f20">CLASS 1</text>
+      <text x="32.61" y="25.75" font-family="sans-serif" font-size="2.22" font-weight="bold" text-anchor="middle" fill="#231f20">LASER</text>
+      <text x="25.77" y="380.86" font-family="sans-serif" font-size="2.04" fill="#231f20">STATUS</text>
+      <text x="38.51" y="36.96" transform="rotate(90 38.51 36.96)" font-family="sans-serif" font-size="2.83" fill="#231f20">10</text>
+      <text x="38.51" y="51.0" transform="rotate(90 38.51 51.0)" font-family="sans-serif" font-size="2.83" fill="#231f20">11</text>
+      <text x="38.51" y="65.05" transform="rotate(90 38.51 65.05)" font-family="sans-serif" font-size="2.83" fill="#231f20">12</text>
+      <text x="38.51" y="79.1" transform="rotate(90 38.51 79.1)" font-family="sans-serif" font-size="2.83" fill="#231f20">13</text>
+      <text x="38.51" y="93.15" transform="rotate(90 38.51 93.15)" font-family="sans-serif" font-size="2.83" fill="#231f20">14</text>
+      <text x="38.51" y="107.19" transform="rotate(90 38.51 107.19)" font-family="sans-serif" font-size="2.83" fill="#231f20">15</text>
+      <text x="5.48" y="37.76" transform="rotate(90 5.48 37.76)" font-family="sans-serif" font-size="2.83" fill="#231f20">0</text>
+      <text x="5.48" y="51.81" transform="rotate(90 5.48 51.81)" font-family="sans-serif" font-size="2.83" fill="#231f20">1</text>
+      <text x="5.48" y="65.86" transform="rotate(90 5.48 65.86)" font-family="sans-serif" font-size="2.83" fill="#231f20">2</text>
+      <text x="5.48" y="79.9" transform="rotate(90 5.48 79.9)" font-family="sans-serif" font-size="2.83" fill="#231f20">3</text>
+      <text x="5.48" y="93.95" transform="rotate(90 5.48 93.95)" font-family="sans-serif" font-size="2.83" fill="#231f20">4</text>
+      <text x="5.48" y="108.0" transform="rotate(90 5.48 108.0)" font-family="sans-serif" font-size="2.83" fill="#231f20">5</text>
+      <text x="38.51" y="126.37" transform="rotate(90 38.51 126.37)" font-family="sans-serif" font-size="2.83" fill="#231f20">16</text>
+      <text x="38.51" y="139.27" transform="rotate(90 38.51 139.27)" font-family="sans-serif" font-size="2.83" fill="#231f20">17</text>
+      <text x="38.51" y="154.9" transform="rotate(90 38.51 154.9)" font-family="sans-serif" font-size="2.83" fill="#231f20">18</text>
+      <text x="38.51" y="168.51" transform="rotate(90 38.51 168.51)" font-family="sans-serif" font-size="2.83" fill="#231f20">19</text>
+      <text x="5.48" y="127.17" transform="rotate(90 5.48 127.17)" font-family="sans-serif" font-size="2.83" fill="#231f20">6</text>
+      <text x="5.48" y="141.22" transform="rotate(90 5.48 141.22)" font-family="sans-serif" font-size="2.83" fill="#231f20">7</text>
+      <text x="5.48" y="155.27" transform="rotate(90 5.48 155.27)" font-family="sans-serif" font-size="2.83" fill="#231f20">8</text>
+      <text x="5.48" y="169.31" transform="rotate(90 5.48 169.31)" font-family="sans-serif" font-size="2.83" fill="#231f20">9</text>
+      <text x="4.23" y="181.49" transform="rotate(90 4.23 181.49)" font-family="sans-serif" font-size="2.83" fill="#231f20">40</text>
+      <text x="4.23" y="197.32" transform="rotate(90 4.23 197.32)" font-family="sans-serif" font-size="2.83" fill="#231f20">41</text>
+      <text x="38.51" y="209.97" transform="rotate(90 38.51 209.97)" font-family="sans-serif" font-size="2.83" fill="#231f20">30</text>
+      <text x="38.51" y="224.01" transform="rotate(90 38.51 224.01)" font-family="sans-serif" font-size="2.83" fill="#231f20">31</text>
+      <text x="38.51" y="238.06" transform="rotate(90 38.51 238.06)" font-family="sans-serif" font-size="2.83" fill="#231f20">32</text>
+      <text x="38.51" y="252.11" transform="rotate(90 38.51 252.11)" font-family="sans-serif" font-size="2.83" fill="#231f20">33</text>
+      <text x="38.51" y="266.15" transform="rotate(90 38.51 266.15)" font-family="sans-serif" font-size="2.83" fill="#231f20">34</text>
+      <text x="38.51" y="280.2" transform="rotate(90 38.51 280.2)" font-family="sans-serif" font-size="2.83" fill="#231f20">35</text>
+      <text x="5.48" y="209.97" transform="rotate(90 5.48 209.97)" font-family="sans-serif" font-size="2.83" fill="#231f20">20</text>
+      <text x="5.48" y="224.01" transform="rotate(90 5.48 224.01)" font-family="sans-serif" font-size="2.83" fill="#231f20">21</text>
+      <text x="5.48" y="238.06" transform="rotate(90 5.48 238.06)" font-family="sans-serif" font-size="2.83" fill="#231f20">22</text>
+      <text x="5.48" y="252.11" transform="rotate(90 5.48 252.11)" font-family="sans-serif" font-size="2.83" fill="#231f20">23</text>
+      <text x="5.48" y="266.38" transform="rotate(90 5.48 266.38)" font-family="sans-serif" font-size="2.83" fill="#231f20">24</text>
+      <text x="5.48" y="280.5" transform="rotate(90 5.48 280.5)" font-family="sans-serif" font-size="2.83" fill="#231f20">25</text>
+      <text x="38.51" y="299.38" transform="rotate(90 38.51 299.38)" font-family="sans-serif" font-size="2.83" fill="#231f20">36</text>
+      <text x="38.51" y="312.27" transform="rotate(90 38.51 312.27)" font-family="sans-serif" font-size="2.83" fill="#231f20">37</text>
+      <text x="38.51" y="327.91" transform="rotate(90 38.51 327.91)" font-family="sans-serif" font-size="2.83" fill="#231f20">38</text>
+      <text x="38.51" y="341.52" transform="rotate(90 38.51 341.52)" font-family="sans-serif" font-size="2.83" fill="#231f20">39</text>
+      <text x="5.48" y="299.38" transform="rotate(90 5.48 299.38)" font-family="sans-serif" font-size="2.83" fill="#231f20">26</text>
+      <text x="5.48" y="313.42" transform="rotate(90 5.48 313.42)" font-family="sans-serif" font-size="2.83" fill="#231f20">27</text>
+      <text x="5.48" y="327.47" transform="rotate(90 5.48 327.47)" font-family="sans-serif" font-size="2.83" fill="#231f20">28</text>
+      <text x="5.48" y="341.52" transform="rotate(90 5.48 341.52)" font-family="sans-serif" font-size="2.83" fill="#231f20">29</text>
+      <text x="4.23" y="354.5" transform="rotate(90 4.23 354.5)" font-family="sans-serif" font-size="2.83" fill="#231f20">42</text>
+      <text x="4.23" y="370.33" transform="rotate(90 4.23 370.33)" font-family="sans-serif" font-size="2.83" fill="#231f20">43</text>
+    </g>
+    <g id="a9k-4hg-flex-se--p0" data-path="a9k-4hg-flex-se/p0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,32.91) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p0</title>
+      <rect id="a9k-4hg-flex-se--p0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p0/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p1" data-path="a9k-4hg-flex-se/p1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,47.11) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p1</title>
+      <rect id="a9k-4hg-flex-se--p1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p1/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p2" data-path="a9k-4hg-flex-se/p2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,61.32) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p2</title>
+      <rect id="a9k-4hg-flex-se--p2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p2/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p3" data-path="a9k-4hg-flex-se/p3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,75.52) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p3</title>
+      <rect id="a9k-4hg-flex-se--p3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p3/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p4" data-path="a9k-4hg-flex-se/p4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,89.72) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p4</title>
+      <rect id="a9k-4hg-flex-se--p4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p4/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p5" data-path="a9k-4hg-flex-se/p5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,103.94) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p5</title>
+      <rect id="a9k-4hg-flex-se--p5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p5/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p6" data-path="a9k-4hg-flex-se/p6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,122.35) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p6</title>
+      <rect id="a9k-4hg-flex-se--p6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p6/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p7" data-path="a9k-4hg-flex-se/p7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,136.39) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p7</title>
+      <rect id="a9k-4hg-flex-se--p7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p7/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p8" data-path="a9k-4hg-flex-se/p8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,150.43) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p8</title>
+      <rect id="a9k-4hg-flex-se--p8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p8/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p9" data-path="a9k-4hg-flex-se/p9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,164.48) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p9</title>
+      <rect id="a9k-4hg-flex-se--p9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p9/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p10" data-path="a9k-4hg-flex-se/p10" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,32.91) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p10</title>
+      <rect id="a9k-4hg-flex-se--p10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p10/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p10--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p11" data-path="a9k-4hg-flex-se/p11" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,47.11) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p11</title>
+      <rect id="a9k-4hg-flex-se--p11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p11/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p11--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p12" data-path="a9k-4hg-flex-se/p12" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,61.32) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p12</title>
+      <rect id="a9k-4hg-flex-se--p12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p12/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p12--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p13" data-path="a9k-4hg-flex-se/p13" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,75.52) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p13</title>
+      <rect id="a9k-4hg-flex-se--p13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p13/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p13--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p14" data-path="a9k-4hg-flex-se/p14" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,89.72) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p14</title>
+      <rect id="a9k-4hg-flex-se--p14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p14/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p14--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p15" data-path="a9k-4hg-flex-se/p15" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,103.94) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p15</title>
+      <rect id="a9k-4hg-flex-se--p15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p15/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p15--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p16" data-path="a9k-4hg-flex-se/p16" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,122.35) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p16</title>
+      <rect id="a9k-4hg-flex-se--p16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p16/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p16--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p17" data-path="a9k-4hg-flex-se/p17" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,136.39) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p17</title>
+      <rect id="a9k-4hg-flex-se--p17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p17/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p17--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p18" data-path="a9k-4hg-flex-se/p18" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,150.43) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p18</title>
+      <rect id="a9k-4hg-flex-se--p18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p18/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p18--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p19" data-path="a9k-4hg-flex-se/p19" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,164.48) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p19</title>
+      <rect id="a9k-4hg-flex-se--p19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p19/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p19--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p20" data-path="a9k-4hg-flex-se/p20" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,205.92) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p20</title>
+      <rect id="a9k-4hg-flex-se--p20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p20/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p20--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p21" data-path="a9k-4hg-flex-se/p21" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,220.12) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p21</title>
+      <rect id="a9k-4hg-flex-se--p21--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p21/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p21--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p21--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p21--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p22" data-path="a9k-4hg-flex-se/p22" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,234.32) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p22</title>
+      <rect id="a9k-4hg-flex-se--p22--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p22/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p22--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p22--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p22--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p23" data-path="a9k-4hg-flex-se/p23" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,248.54) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p23</title>
+      <rect id="a9k-4hg-flex-se--p23--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p23/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p23--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p23--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p23--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p24" data-path="a9k-4hg-flex-se/p24" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,262.74) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p24</title>
+      <rect id="a9k-4hg-flex-se--p24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p24/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p24--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p25" data-path="a9k-4hg-flex-se/p25" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.88,276.95) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p25</title>
+      <rect id="a9k-4hg-flex-se--p25--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p25/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p25--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p25--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p25--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p26" data-path="a9k-4hg-flex-se/p26" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,295.35) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p26</title>
+      <rect id="a9k-4hg-flex-se--p26--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p26/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p26--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p26--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p26--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p27" data-path="a9k-4hg-flex-se/p27" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,309.39) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p27</title>
+      <rect id="a9k-4hg-flex-se--p27--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p27/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p27--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p27--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p27--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p28" data-path="a9k-4hg-flex-se/p28" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,323.44) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p28</title>
+      <rect id="a9k-4hg-flex-se--p28--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p28/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p28--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p28--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p28--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p29" data-path="a9k-4hg-flex-se/p29" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.19,337.48) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p29</title>
+      <rect id="a9k-4hg-flex-se--p29--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p29/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p29--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p29--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p29--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p30" data-path="a9k-4hg-flex-se/p30" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,205.92) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p30</title>
+      <rect id="a9k-4hg-flex-se--p30--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p30/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p30--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p30--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p30--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p31" data-path="a9k-4hg-flex-se/p31" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,220.12) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p31</title>
+      <rect id="a9k-4hg-flex-se--p31--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p31/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p31--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p31--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p31--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p32" data-path="a9k-4hg-flex-se/p32" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,234.32) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p32</title>
+      <rect id="a9k-4hg-flex-se--p32--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p32/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p32--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p32--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p32--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p33" data-path="a9k-4hg-flex-se/p33" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,248.54) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p33</title>
+      <rect id="a9k-4hg-flex-se--p33--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p33/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p33--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p33--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p33--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p34" data-path="a9k-4hg-flex-se/p34" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,262.74) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p34</title>
+      <rect id="a9k-4hg-flex-se--p34--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p34/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p34--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p34--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p34--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p35" data-path="a9k-4hg-flex-se/p35" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.73,276.95) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p35</title>
+      <rect id="a9k-4hg-flex-se--p35--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p35/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p35--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p35--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p35--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p36" data-path="a9k-4hg-flex-se/p36" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,295.35) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p36</title>
+      <rect id="a9k-4hg-flex-se--p36--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p36/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p36--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p36--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p36--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p37" data-path="a9k-4hg-flex-se/p37" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,309.39) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p37</title>
+      <rect id="a9k-4hg-flex-se--p37--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p37/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p37--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p37--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p37--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p38" data-path="a9k-4hg-flex-se/p38" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,323.44) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p38</title>
+      <rect id="a9k-4hg-flex-se--p38--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p38/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p38--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p38--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p38--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p39" data-path="a9k-4hg-flex-se/p39" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(23.43,337.48) rotate(90 7.125 5.2)">
+      <title>a9k-4hg-flex-se--p39</title>
+      <rect id="a9k-4hg-flex-se--p39--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a9k-4hg-flex-se/p39/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p39--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a9k-4hg-flex-se--p39--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p39--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p40" data-path="a9k-4hg-flex-se/p40" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(22.01,185.75) rotate(90 9.25 4.79)">
+      <title>a9k-4hg-flex-se--p40</title>
+      <rect id="a9k-4hg-flex-se--p40--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-4hg-flex-se/p40/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p40--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-4hg-flex-se--p40--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p40--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p41" data-path="a9k-4hg-flex-se/p41" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(4.84,185.75) rotate(90 9.25 4.79)">
+      <title>a9k-4hg-flex-se--p41</title>
+      <rect id="a9k-4hg-flex-se--p41--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-4hg-flex-se/p41/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p41--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-4hg-flex-se--p41--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p41--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p42" data-path="a9k-4hg-flex-se/p42" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(22.01,358.77) rotate(90 9.25 4.79)">
+      <title>a9k-4hg-flex-se--p42</title>
+      <rect id="a9k-4hg-flex-se--p42--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-4hg-flex-se/p42/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p42--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-4hg-flex-se--p42--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p42--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="a9k-4hg-flex-se--p43" data-path="a9k-4hg-flex-se/p43" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(4.84,358.77) rotate(90 9.25 4.79)">
+      <title>a9k-4hg-flex-se--p43</title>
+      <rect id="a9k-4hg-flex-se--p43--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="a9k-4hg-flex-se/p43/opening" data-class="cutout" />
+      <rect id="a9k-4hg-flex-se--p43--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="a9k-4hg-flex-se--p43--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a9k-4hg-flex-se--p43--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <rect id="a9k-4hg-flex-se--ejector-top" x="4.671" y="0.0" width="13.346" height="21.872" rx="1.22" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a9k-4hg-flex-se--ejector-bot" x="4.671" y="380.699" width="13.346" height="22.401" rx="1.22" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a9k-4hg-flex-se--lever-top" x="1.324" y="5.297" width="3.545" height="72.562" rx="1.77" fill="#4a4f55" data-z-out="4.2" />
+    <rect id="a9k-4hg-flex-se--lever-bot" x="1.324" y="324.915" width="3.545" height="72.562" rx="1.77" fill="#4a4f55" data-z-out="4.2" />
+    <g id="a9k-4hg-flex-se--screw-top" data-z-cyl="1.6">
+      <circle cx="25.576" cy="8.16" r="3.301" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="25.576" cy="8.16" r="1.49" fill="#6d7379" />
+      <path d="M 23.2 8.16 H 27.95 M 25.576 5.78 V 10.54" stroke="#3a4046" stroke-width="0.36" fill="none" />
+    </g>
+    <g id="a9k-4hg-flex-se--screw-bot" data-z-cyl="1.6">
+      <circle cx="25.576" cy="394.635" r="3.301" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="25.576" cy="394.635" r="1.49" fill="#6d7379" />
+      <path d="M 23.2 394.635 H 27.95 M 25.576 392.26 V 397.01" stroke="#3a4046" stroke-width="0.36" fill="none" />
+    </g>
+    <rect id="a9k-4hg-flex-se--asset-label" x="5.005" y="376.685" width="23.366" height="8.965" rx="0.51" fill="#2e7489" data-z-out="0.2" />
+    <circle id="a9k-4hg-flex-se--status" cx="21.489" cy="379.945" r="1.89" fill="#39b54a" stroke="#9aa0a6" stroke-width="0.25" data-path="a9k-4hg-flex-se/status" data-class="led" data-states="green amber amber-blinking red off" data-description="the single tristate card Status LED (Ethernet Line Card Installation Guide, Table 32)." data-z-dome="0.3" />
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.47mm" height="345.5mm" viewBox="0 0 30.47 345.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="blank-faceplate" data-path="blank-faceplate" data-class="blank" data-ref="casa/blank-faceplate@1:1.5.0" data-body-depth="20.0" data-wall="#4a4f55" data-model="Blank Face Plate" data-role="airflow-blank" transform="translate(0,0)">
+    <title>blank-faceplate</title>
+    <rect id="blank-faceplate--plate" x="0" y="0" width="30.47" height="345.5" fill="#9b9da0" stroke="#6d6f71" stroke-width="0.25" />
+    <g id="blank-faceplate--screw-t" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="15.235" cy="6.00" r="2.4" fill="#8d949c" stroke="#5f6469" stroke-width="0.3" />
+      <circle cx="15.235" cy="6.00" r="1.5" fill="#6d7379" />
+      <path d="M 14.045 4.80 L 16.425 7.20 M 14.045 7.20 L 16.425 4.80" stroke="#3a4046" stroke-width="0.45" fill="none" />
+    </g>
+    <g id="blank-faceplate--screw-b" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="15.235" cy="339.50" r="2.4" fill="#8d949c" stroke="#5f6469" stroke-width="0.3" />
+      <circle cx="15.235" cy="339.50" r="1.5" fill="#6d7379" />
+      <path d="M 14.045 338.30 L 16.425 340.70 M 14.045 340.70 L 16.425 338.30" stroke="#3a4046" stroke-width="0.45" fill="none" />
+    </g>
+  </g>
+</svg>

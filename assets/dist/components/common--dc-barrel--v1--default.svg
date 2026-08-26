@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="12.0mm" height="13.0mm" viewBox="0 0 12.0 13.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dc-barrel" data-path="dc-barrel" data-class="inlet" data-ref="common/dc-barrel@1:1.0.0" data-input="dc" transform="translate(0,0)">
+    <title>dc-barrel</title>
+    <rect id="dc-barrel--body" x="0" y="0" width="12" height="13" rx="0.8" fill="#c9cdd1" />
+    <rect id="dc-barrel--inlet" x="1.5" y="2" width="9" height="9" rx="1" fill="#17191c" stroke="#5c6167" stroke-width="0.3" data-path="dc-barrel/inlet" data-class="inlet" />
+    <circle id="dc-barrel--inlet-bore" cx="6" cy="6.5" r="3.1" fill="#000000" />
+    <circle id="dc-barrel--inlet-pin" cx="6" cy="6.5" r="0.9" fill="#8a9099" />
+  </g>
+</svg>

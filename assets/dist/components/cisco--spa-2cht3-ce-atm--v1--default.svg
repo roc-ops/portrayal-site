@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="17.29mm" height="167.87mm" viewBox="0 0 17.29 167.87">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/spa-2cht3-ce-atm@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/spa-2cht3-ce-atm@'] .state-green { --led-color: #39b54a; }</style>
+  <g id="spa-2cht3-ce-atm" data-path="spa-2cht3-ce-atm" data-class="line-card" data-ref="cisco/spa-2cht3-ce-atm@1:1.0.0" data-wall="#4a4f55" data-eol="none-announced" data-form-factor="single-width, single-height (one SIP-700 subslot)" data-media="75-ohm coaxial DIN 1.0/2.3, T3 44.736 Mbps or E3 34.368 Mbps" data-min-hardware-revision="1.0" data-min-ios-xr="4.3.0" data-model="SPA-2CHT3-CE-ATM" data-ports="2" data-role="shared-port-adapter" transform="translate(0,0)">
+    <title>spa-2cht3-ce-atm</title>
+    <rect id="spa-2cht3-ce-atm--plate" x="0" y="0" width="17.29" height="167.87" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <g id="spa-2cht3-ce-atm--p0-tx">
+      <circle cx="8.64" cy="15.43" r="2.3" fill="#b8bdc2" stroke="#7d848c" stroke-width="0.25" />
+      <circle cx="8.64" cy="15.43" r="0.9" fill="#3f4448" />
+    </g>
+    <g id="spa-2cht3-ce-atm--p0-rx">
+      <circle cx="8.64" cy="27.92" r="2.3" fill="#b8bdc2" stroke="#7d848c" stroke-width="0.25" />
+      <circle cx="8.64" cy="27.92" r="0.9" fill="#3f4448" />
+    </g>
+    <g id="spa-2cht3-ce-atm--p1-tx">
+      <circle cx="8.64" cy="49.59" r="2.3" fill="#b8bdc2" stroke="#7d848c" stroke-width="0.25" />
+      <circle cx="8.64" cy="49.59" r="0.9" fill="#3f4448" />
+    </g>
+    <g id="spa-2cht3-ce-atm--p1-rx">
+      <circle cx="8.64" cy="61.34" r="2.3" fill="#b8bdc2" stroke="#7d848c" stroke-width="0.25" />
+      <circle cx="8.64" cy="61.34" r="0.9" fill="#3f4448" />
+    </g>
+    <rect id="spa-2cht3-ce-atm--led-ca-p0" x="0.63" y="37.87" width="2.2" height="1.4" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="spa-2cht3-ce-atm/led-ca-p0" data-class="led" data-states="green amber off" data-description="the port's C/A (Carrier/Alarm) lamp. Table 37 of the Cisco ASR 9000 Series SIP and SPA Hardware Installation Guide: off - port is not enabled by software; green on - port is enabled by software; amber on - port is enabled by software and there is at least one alarm. NOTE the green row is the short form in this part's table - it does not mention a valid signal." data-z-dome="0.3" />
+    <rect id="spa-2cht3-ce-atm--led-al-p0" x="4.43" y="37.87" width="2.2" height="1.4" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="spa-2cht3-ce-atm/led-al-p0" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Loopback) lamp. Table 37 of the Cisco ASR 9000 Series SIP and SPA Hardware Installation Guide: off - port is not enabled by software; green on - port is enabled by software, loopback is off; amber on - port is enabled by software, loopback is on." data-z-dome="0.3" />
+    <rect id="spa-2cht3-ce-atm--led-ca-p1" x="0.63" y="71.66" width="2.2" height="1.4" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="spa-2cht3-ce-atm/led-ca-p1" data-class="led" data-states="green amber off" data-description="the port's C/A (Carrier/Alarm) lamp. Table 37 of the Cisco ASR 9000 Series SIP and SPA Hardware Installation Guide: off - port is not enabled by software; green on - port is enabled by software; amber on - port is enabled by software and there is at least one alarm. NOTE the green row is the short form in this part's table - it does not mention a valid signal." data-z-dome="0.3" />
+    <rect id="spa-2cht3-ce-atm--led-al-p1" x="4.43" y="71.66" width="2.2" height="1.4" rx="0.3" fill="#8d949c" stroke="#5f6469" stroke-width="0.15" data-path="spa-2cht3-ce-atm/led-al-p1" data-class="led" data-states="green amber off" data-description="the port's A/L (Active/Loopback) lamp. Table 37 of the Cisco ASR 9000 Series SIP and SPA Hardware Installation Guide: off - port is not enabled by software; green on - port is enabled by software, loopback is off; amber on - port is enabled by software, loopback is on." data-z-dome="0.3" />
+    <circle id="spa-2cht3-ce-atm--status" cx="8.64" cy="165.3" r="1.1" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="spa-2cht3-ce-atm/status" data-class="led" data-states="green amber off" data-description="the SPA's STATUS lamp, the one lamp every SPA in this guide carries. Table 37 of the Cisco ASR 9000 Series SIP and SPA Hardware Installation Guide: off - SPA power is off; green on - SPA is ready and operational; amber on - SPA power is on and good, and the SPA is being configured." data-z-dome="0.3" />
+    <g>
+      <circle cx="8.645" cy="3.4" r="2.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="8.645" cy="3.4" r="1.0" fill="#6d7379" />
+    </g>
+    <g>
+      <circle cx="8.645" cy="164.47" r="2.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="8.645" cy="164.47" r="1.0" fill="#6d7379" />
+    </g>
+    <g id="spa-2cht3-ce-atm--silkscreen">
+      <text x="11.84" y="15.43" transform="rotate(90 11.84 15.43)" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#231f20">TX</text>
+      <text x="11.84" y="27.92" transform="rotate(90 11.84 27.92)" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#231f20">RX</text>
+      <text x="5.04" y="21.31" transform="rotate(90 5.04 21.31)" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#231f20">0</text>
+      <text x="11.84" y="49.59" transform="rotate(90 11.84 49.59)" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#231f20">TX</text>
+      <text x="11.84" y="61.34" transform="rotate(90 11.84 61.34)" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#231f20">RX</text>
+      <text x="5.04" y="49.59" transform="rotate(90 5.04 49.59)" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#231f20">1</text>
+      <text x="4.13" y="38.57" transform="rotate(90 4.13 38.57)" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#231f20">C/A</text>
+      <text x="7.93" y="38.57" transform="rotate(90 7.93 38.57)" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#231f20">A/L</text>
+      <text x="5.83" y="72.36" transform="rotate(90 5.83 72.36)" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#231f20">C/A</text>
+      <text x="9.63" y="72.36" transform="rotate(90 9.63 72.36)" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#231f20">A/L</text>
+      <text x="11.04" y="165.3" transform="rotate(90 11.04 165.3)" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#231f20">STATUS</text>
+      <text x="14.16" y="139.01" transform="rotate(90 14.16 139.01)" font-family="sans-serif" font-size="1.7" font-weight="bold" fill="#231f20">SPA-2CHT3-CE-ATM</text>
+    </g>
+  </g>
+</svg>

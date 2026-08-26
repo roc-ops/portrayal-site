@@ -1,0 +1,92 @@
+/* Portrayal — identity tokens
+ * Direction 01, "Anodized". See DIRECTION.md.
+ *
+ * Dark-first by intent: the product is a dark canvas and the identity lives
+ * next to it. :root carries the dark set; light is the swap.
+ *
+ * Three theme states are handled, not two. An explicit user choice stamps
+ * data-theme on the root element; the default "system" setting stamps nothing,
+ * and only prefers-color-scheme separates light from dark there.
+ */
+
+:root {
+  /* Anodized — the accent. Never appears on the device canvas. */
+  --pt-brass-light: #E3BC84;
+  --pt-brass:       #C79350;
+  --pt-brass-deep:  #8E6729;
+  --pt-bronze:      #8A6432;
+  --pt-brass-wash:  rgba(199, 147, 80, 0.13);
+
+  /* Ground — cool near-blacks, biased slightly blue so the brass reads warm. */
+  --pt-void:      #0A0C0E;   /* recesses, empty bays, port apertures */
+  --pt-ground:    #0E1013;   /* page and canvas background */
+  --pt-surface:   #16181B;   /* chrome, cards, panels */
+  --pt-surface-2: #1C1F23;   /* raised or inset panels */
+  --pt-line:      #2C3137;   /* hairlines and dividers */
+  --pt-line-soft: #21252A;   /* the quieter divider */
+
+  /* Ink */
+  --pt-ink:       #E4E7EA;
+  --pt-ink-muted: #9AA1A8;
+  --pt-ink-faint: #6B727A;
+
+  /* Type */
+  --pt-font-display: Archivo, ui-sans-serif, system-ui, sans-serif;
+  --pt-font-body:    "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --pt-font-mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Radius: small. This is panel hardware, not a consumer app. */
+  --pt-radius:    3px;
+  --pt-radius-sm: 2px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --pt-brass-light: #B4873D;
+    --pt-brass:       #8E6729;   /* the accent needs to darken on paper */
+    --pt-brass-deep:  #6E4E1C;
+    --pt-bronze:      #C3A87D;
+    --pt-brass-wash:  rgba(142, 103, 41, 0.10);
+
+    --pt-void:      #DDE1E6;
+    --pt-ground:    #EDEFF2;
+    --pt-surface:   #FFFFFF;
+    --pt-surface-2: #F4F6F8;
+    --pt-line:      #D2D8DE;
+    --pt-line-soft: #E4E8ED;
+
+    --pt-ink:       #13171B;
+    --pt-ink-muted: #565E67;
+    --pt-ink-faint: #838B94;
+  }
+}
+
+:root[data-theme="light"] {
+  --pt-brass-light: #B4873D;
+  --pt-brass:       #8E6729;
+  --pt-brass-deep:  #6E4E1C;
+  --pt-bronze:      #C3A87D;
+  --pt-brass-wash:  rgba(142, 103, 41, 0.10);
+
+  --pt-void:      #DDE1E6;
+  --pt-ground:    #EDEFF2;
+  --pt-surface:   #FFFFFF;
+  --pt-surface-2: #F4F6F8;
+  --pt-line:      #D2D8DE;
+  --pt-line-soft: #E4E8ED;
+
+  --pt-ink:       #13171B;
+  --pt-ink-muted: #565E67;
+  --pt-ink-faint: #838B94;
+}
+
+/* ── Reserved ─────────────────────────────────────────────────────────────
+ * These belong to the user's annotations in the explorer. Nothing in the
+ * brand may use them, and nothing in the brand may sit close enough to one
+ * to be mistaken for a mark somebody made.
+ *
+ *   #EC1E9C  #3FCC3F  #F2CC22  #2CC5E0  #F07028  #FFFFFF  #F566B5
+ *
+ * Listed here so the collision is visible to anyone picking a colour, not
+ * for use. Do not reference these variables from brand surfaces.
+ */

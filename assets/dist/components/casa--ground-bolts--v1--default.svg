@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="27.6mm" height="11.3mm" viewBox="0 0 27.6 11.3">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ground-bolts" data-path="ground-bolts" data-class="mechanical" data-ref="casa/ground-bolts@1:1.3.0" data-wall="#4a4f55" data-model="Grounding Studs" transform="translate(0,0)">
+    <title>ground-bolts</title>
+    <g id="ground-bolts--stud-1">
+      <polygon id="ground-bolts--washer-1" points="6.15,0.25 7.16,1.88 8.85,0.97 8.91,2.89 10.83,2.95 9.92,4.64 11.55,5.65 9.92,6.66 10.83,8.35 8.91,8.41 8.85,10.33 7.16,9.42 6.15,11.05 5.14,9.42 3.45,10.33 3.39,8.41 1.47,8.35 2.38,6.66 0.75,5.65 2.38,4.64 1.47,2.95 3.39,2.89 3.45,0.97 5.14,1.88" fill="#ffffff" stroke="#231f20" stroke-width="0.3" data-z-cyl="0.7" />
+      <polygon id="ground-bolts--nut-1" points="10.05,5.65 8.10,9.03 4.20,9.03 2.25,5.65 4.20,2.27 8.10,2.27" fill="#ffffff" stroke="#231f20" stroke-width="0.45" data-z-cyl="2.2" data-z-lift="0.7" />
+      <circle id="ground-bolts--stud-top-1" cx="6.15" cy="5.65" r="1.55" fill="#c9cbcd" stroke="#231f20" stroke-width="0.3" data-z-cyl="3.5" data-z-thread="1.0" />
+    </g>
+    <g id="ground-bolts--stud-2">
+      <polygon id="ground-bolts--washer-2" points="21.45,0.25 22.46,1.88 24.15,0.97 24.21,2.89 26.13,2.95 25.22,4.64 26.85,5.65 25.22,6.66 26.13,8.35 24.21,8.41 24.15,10.33 22.46,9.42 21.45,11.05 20.44,9.42 18.75,10.33 18.69,8.41 16.77,8.35 17.68,6.66 16.05,5.65 17.68,4.64 16.77,2.95 18.69,2.89 18.75,0.97 20.44,1.88" fill="#ffffff" stroke="#231f20" stroke-width="0.3" data-z-cyl="0.7" />
+      <polygon id="ground-bolts--nut-2" points="25.35,5.65 23.40,9.03 19.50,9.03 17.55,5.65 19.50,2.27 23.40,2.27" fill="#ffffff" stroke="#231f20" stroke-width="0.45" data-z-cyl="2.2" data-z-lift="0.7" />
+      <circle id="ground-bolts--stud-top-2" cx="21.45" cy="5.65" r="1.55" fill="#c9cbcd" stroke="#231f20" stroke-width="0.3" data-z-cyl="3.5" data-z-thread="1.0" />
+    </g>
+  </g>
+</svg>

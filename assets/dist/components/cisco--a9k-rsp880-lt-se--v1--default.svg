@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="46.0mm" height="428.5mm" viewBox="0 0 46.0 428.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a9k-rsp880-lt-se@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-rsp880-lt-se@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/a9k-rsp880-lt-se@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="a9k-rsp880-lt-se" data-path="a9k-rsp880-lt-se" data-class="supervisor" data-ref="cisco/a9k-rsp880-lt-se@1:1.0.0" data-body-depth="628.9" data-wall="#4a4f55" data-alarm="DB9, three dry-contact outputs" data-console="EIA/TIA-232 RJ-45" data-eol="none-announced" data-mgmt="2 x 10/100/1000 RJ-45" data-model="A9K-RSP880-LT-SE" data-power-draw-max-w="315" data-role="route-switch-processor" data-timing="2 x SYNC (BITS/J.211/DTI) RJ-45, IEEE 1588 RJ-45, 2 x inter-chassis sync RJ-45, 10 MHz and 1 PPS SMB" data-usb="1 x USB 2.0 type A" data-weight-kg="8.07" transform="translate(0,0)">
+    <title>a9k-rsp880-lt-se</title>
+    <rect id="a9k-rsp880-lt-se--plate" x="0" y="20.54" width="46.0" height="388.28" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <rect id="a9k-rsp880-lt-se--usb-bezel" x="7.53" y="231.09" width="21.19" height="10.4" rx="0.6" fill="#8db1e2" />
+    <g id="a9k-rsp880-lt-se--alarm-out" data-path="a9k-rsp880-lt-se/alarm-out" data-class="cutout">
+      <path d="M 22.75 194.06 L 22.75 229.71 L 10.89 226.15 L 10.89 197.62 Z" fill="#2b2f33" stroke="#9aa0a6" stroke-width="0.4" />
+      <circle cx="14.8" cy="200.48" r="0.7" fill="#8d949c" />
+      <circle cx="14.8" cy="206.18" r="0.7" fill="#8d949c" />
+      <circle cx="14.8" cy="211.88" r="0.7" fill="#8d949c" />
+      <circle cx="14.8" cy="217.59" r="0.7" fill="#8d949c" />
+      <circle cx="14.8" cy="223.29" r="0.7" fill="#8d949c" />
+      <circle cx="18.84" cy="203.33" r="0.7" fill="#8d949c" />
+      <circle cx="18.84" cy="209.03" r="0.7" fill="#8d949c" />
+      <circle cx="18.84" cy="214.74" r="0.7" fill="#8d949c" />
+      <circle cx="18.84" cy="220.44" r="0.7" fill="#8d949c" />
+    </g>
+    <rect id="a9k-rsp880-lt-se--led-matrix" x="15.96" y="376.86" width="19.43" height="8.23" rx="0.4" fill="#6f757b" stroke="#4a4f55" stroke-width="0.3" data-path="a9k-rsp880-lt-se/led-matrix" data-class="display" data-description="the four-character 5x7 LED dot-matrix display. The Overview and Reference Guide devotes two sections to what it shows - 'LED Matrix Boot Stage and Runtime Display' and 'LED Matrix CAN Bus Controller Error Display' - which is a message vocabulary rather than a lamp state list, so it is modelled as a display and not as an indicator with states." />
+    <g id="a9k-rsp880-lt-se--silkscreen">
+      <rect x="30.8" y="70.2" width="7.24" height="13.01" fill="#ffef5c" />
+      <text x="36.01" y="70.98" transform="rotate(90 36.01 70.98)" font-family="sans-serif" font-size="2.1" font-weight="bold" fill="#231f20">CLASS 1</text>
+      <text x="32.83" y="70.98" transform="rotate(90 32.83 70.98)" font-family="sans-serif" font-size="2.1" font-weight="bold" fill="#231f20">LASER</text>
+      <rect x="8.02" y="385.96" width="33.04" height="4.33" fill="#ffef5c" />
+      <text x="24.54" y="389.34" font-family="sans-serif" font-size="3.2" font-weight="bold" text-anchor="middle" fill="#231f20">A9K-RSP880-LT-SE</text>
+      <text x="23.06" y="45.97" transform="rotate(90 23.06 45.97)" font-family="sans-serif" font-size="2.6" fill="#231f20">SYNC 0</text>
+      <text x="23.06" y="65.45" transform="rotate(90 23.06 65.45)" font-family="sans-serif" font-size="2.6" fill="#231f20">SYNC 1</text>
+      <text x="23.06" y="127.4" transform="rotate(90 23.06 127.4)" font-family="sans-serif" font-size="2.6" fill="#231f20">IEEE 1588</text>
+      <text x="38.92" y="150.84" transform="rotate(90 38.92 150.84)" font-family="sans-serif" font-size="2.6" fill="#231f20">ICS0</text>
+      <text x="23.06" y="150.84" transform="rotate(90 23.06 150.84)" font-family="sans-serif" font-size="2.6" fill="#231f20">ICS1/TOD</text>
+      <text x="40.24" y="244.96" transform="rotate(90 40.24 244.96)" font-family="sans-serif" font-size="2.6" fill="#231f20">MGT LAN 0</text>
+      <text x="23.06" y="244.96" transform="rotate(90 23.06 244.96)" font-family="sans-serif" font-size="2.6" fill="#231f20">MGT LAN 1</text>
+      <text x="23.06" y="265.76" transform="rotate(90 23.06 265.76)" font-family="sans-serif" font-size="2.6" fill="#231f20">CMP</text>
+      <text x="23.06" y="286.91" transform="rotate(90 23.06 286.91)" font-family="sans-serif" font-size="2.6" fill="#231f20">CONSOLE</text>
+      <text x="23.06" y="307.71" transform="rotate(90 23.06 307.71)" font-family="sans-serif" font-size="2.6" fill="#231f20">AUX</text>
+      <text x="19.22" y="171.35" transform="rotate(90 19.22 171.35)" font-family="sans-serif" font-size="2.6" fill="#231f20">10MHz</text>
+      <text x="19.22" y="181.68" transform="rotate(90 19.22 181.68)" font-family="sans-serif" font-size="2.6" fill="#231f20">1PPS</text>
+      <text x="27.82" y="197.31" transform="rotate(90 27.82 197.31)" font-family="sans-serif" font-size="2.6" fill="#231f20">ALARM OUT</text>
+      <text x="26.24" y="351.82" transform="rotate(90 26.24 351.82)" font-family="sans-serif" font-size="1.65" fill="#231f20">SSD</text>
+      <text x="26.24" y="360.25" transform="rotate(90 26.24 360.25)" font-family="sans-serif" font-size="1.65" fill="#231f20">FC FAULT</text>
+      <text x="26.24" y="368.67" transform="rotate(90 26.24 368.67)" font-family="sans-serif" font-size="1.65" fill="#231f20">GPS</text>
+      <text x="21.38" y="351.82" transform="rotate(90 21.38 351.82)" font-family="sans-serif" font-size="1.65" fill="#231f20">CRIT</text>
+      <text x="21.38" y="360.25" transform="rotate(90 21.38 360.25)" font-family="sans-serif" font-size="1.65" fill="#231f20">MAJ</text>
+      <text x="21.38" y="368.67" transform="rotate(90 21.38 368.67)" font-family="sans-serif" font-size="1.65" fill="#231f20">MIN</text>
+      <text x="16.08" y="351.82" transform="rotate(90 16.08 351.82)" font-family="sans-serif" font-size="1.65" fill="#231f20">FAIL</text>
+      <text x="16.08" y="360.25" transform="rotate(90 16.08 360.25)" font-family="sans-serif" font-size="1.65" fill="#231f20">ACO</text>
+      <text x="16.08" y="368.67" transform="rotate(90 16.08 368.67)" font-family="sans-serif" font-size="1.65" fill="#231f20">SYNC</text>
+      <text x="34.75" y="303.1" transform="rotate(90 34.75 303.1)" font-family="sans-serif" font-size="2.2" fill="#231f20">S/N</text>
+      <text x="33.31" y="334.29" transform="rotate(90 33.31 334.29)" font-family="sans-serif" font-size="2.2" fill="#231f20">CLEI</text>
+      <text x="4.63" y="243.54" transform="rotate(90 4.63 243.54)" font-family="sans-serif" font-size="2.2" fill="#231f20">LINK</text>
+      <text x="4.63" y="253.72" transform="rotate(90 4.63 253.72)" font-family="sans-serif" font-size="2.2" fill="#231f20">ACTIVITY</text>
+      <text x="15.69" y="330.17" transform="rotate(90 15.69 330.17)" font-family="sans-serif" font-size="2.0" fill="#231f20">ACO</text>
+      <text x="15.69" y="340.58" transform="rotate(90 15.69 340.58)" font-family="sans-serif" font-size="2.0" fill="#231f20">LAMP TEST</text>
+    </g>
+    <g id="a9k-rsp880-lt-se--sync-0" data-path="a9k-rsp880-lt-se/sync-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,47.4) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--sync-0</title>
+      <rect id="a9k-rsp880-lt-se--sync-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/sync-0/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--sync-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--sync-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--sync-1" data-path="a9k-rsp880-lt-se/sync-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,66.89) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--sync-1</title>
+      <rect id="a9k-rsp880-lt-se--sync-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/sync-1/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--sync-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--sync-1--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--ieee-1588" data-path="a9k-rsp880-lt-se/ieee-1588" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,128.84) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--ieee-1588</title>
+      <rect id="a9k-rsp880-lt-se--ieee-1588--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/ieee-1588/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--ieee-1588--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--ieee-1588--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--ics-0" data-path="a9k-rsp880-lt-se/ics-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(24.83,152.27) rotate(270 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--ics-0</title>
+      <rect id="a9k-rsp880-lt-se--ics-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/ics-0/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--ics-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--ics-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--ics-1-tod" data-path="a9k-rsp880-lt-se/ics-1-tod" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,152.27) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--ics-1-tod</title>
+      <rect id="a9k-rsp880-lt-se--ics-1-tod--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/ics-1-tod/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--ics-1-tod--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--ics-1-tod--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--mgt-lan-0" data-path="a9k-rsp880-lt-se/mgt-lan-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(26.15,246.4) rotate(270 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--mgt-lan-0</title>
+      <rect id="a9k-rsp880-lt-se--mgt-lan-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/mgt-lan-0/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--mgt-lan-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--mgt-lan-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--mgt-lan-1" data-path="a9k-rsp880-lt-se/mgt-lan-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,246.4) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--mgt-lan-1</title>
+      <rect id="a9k-rsp880-lt-se--mgt-lan-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/mgt-lan-1/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--mgt-lan-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--mgt-lan-1--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--cmp" data-path="a9k-rsp880-lt-se/cmp" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,267.2) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--cmp</title>
+      <rect id="a9k-rsp880-lt-se--cmp--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/cmp/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--cmp--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--cmp--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--console" data-path="a9k-rsp880-lt-se/console" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,288.35) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--console</title>
+      <rect id="a9k-rsp880-lt-se--console--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/console/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--console--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--console--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--aux" data-path="a9k-rsp880-lt-se/aux" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(8.97,309.15) rotate(90 6.35 5.5)">
+      <title>a9k-rsp880-lt-se--aux</title>
+      <rect id="a9k-rsp880-lt-se--aux--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="a9k-rsp880-lt-se/aux/opening" data-class="cutout" />
+      <path id="a9k-rsp880-lt-se--aux--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="a9k-rsp880-lt-se--aux--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--gps-10mhz" data-path="a9k-rsp880-lt-se/gps-10mhz" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(11.0,173.75)">
+      <title>a9k-rsp880-lt-se--gps-10mhz</title>
+      <circle id="a9k-rsp880-lt-se--gps-10mhz--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="a9k-rsp880-lt-se/gps-10mhz/opening" data-class="cutout" />
+      <g id="a9k-rsp880-lt-se--gps-10mhz--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--gps-1pps" data-path="a9k-rsp880-lt-se/gps-1pps" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(11.0,184.09)">
+      <title>a9k-rsp880-lt-se--gps-1pps</title>
+      <circle id="a9k-rsp880-lt-se--gps-1pps--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="a9k-rsp880-lt-se/gps-1pps/opening" data-class="cutout" />
+      <g id="a9k-rsp880-lt-se--gps-1pps--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+    </g>
+    <g id="a9k-rsp880-lt-se--usb" data-path="a9k-rsp880-lt-se/usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(12.13,234.04) rotate(90 6.0 2.25)">
+      <title>a9k-rsp880-lt-se--usb</title>
+      <rect id="a9k-rsp880-lt-se--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="a9k-rsp880-lt-se/usb/opening" data-class="cutout" />
+      <rect id="a9k-rsp880-lt-se--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+    </g>
+    <rect id="a9k-rsp880-lt-se--ejector-top" x="19.43" y="2.15" width="15.01" height="24.13" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a9k-rsp880-lt-se--ejector-bot" x="19.43" y="401.88" width="15.01" height="24.14" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a9k-rsp880-lt-se--lever-top" x="1.76" y="5.63" width="3.75" height="77.13" rx="1.88" fill="#4a4f55" data-z-out="4.2" />
+    <rect id="a9k-rsp880-lt-se--lever-bot" x="1.76" y="355.62" width="3.75" height="66.89" rx="1.88" fill="#4a4f55" data-z-out="4.2" />
+    <g id="a9k-rsp880-lt-se--screw-top" data-z-cyl="1.6">
+      <circle cx="27.42" cy="8.68" r="3.57" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="27.42" cy="8.68" r="1.61" fill="#6d7379" />
+      <path d="M 24.85 8.68 H 29.99 M 27.42 6.11 V 11.25" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <g id="a9k-rsp880-lt-se--screw-bot" data-z-cyl="1.6">
+      <circle cx="27.42" cy="419.5" r="3.57" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="27.42" cy="419.5" r="1.61" fill="#6d7379" />
+      <path d="M 24.85 419.5 H 29.99 M 27.42 416.93 V 422.07" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <circle id="a9k-rsp880-lt-se--aco-button" cx="12.38" cy="331.15" r="1.99" fill="#e6e7e9" stroke="#231f20" stroke-width="0.45" data-path="a9k-rsp880-lt-se/aco-button" data-class="button" data-description="the Alarm Cut Off momentary push button. Pressing it after an alarm lights the ACO lamp: 'Alarm Cutoff has been enabled. The ACO push button was pressed after at least one alarm has occurred.'" data-z-cyl="1.2" />
+    <circle id="a9k-rsp880-lt-se--lamp-test" cx="12.38" cy="341.55" r="1.99" fill="#e6e7e9" stroke="#231f20" stroke-width="0.45" data-path="a9k-rsp880-lt-se/lamp-test" data-class="button" data-description="the LAMP TEST momentary push button. On the RSP5 the guide adds that these two buttons 'can be used to eject the RSP5 card', which is why they are modelled as buttons and not as decoration." data-z-cyl="1.2" />
+    <circle id="a9k-rsp880-lt-se--ssd" cx="24.09" cy="353.61" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/ssd" data-class="led" data-states="green off" data-description="Internal Solid State Hard Disk Drive (SSD). Green: SSD0 is busy/active, driven by the SSD controller. Off (default after reset): not busy/active." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--fc-fault" cx="24.09" cy="362.04" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/fc-fault" data-class="led" data-states="off on" data-description="FC FAULT, printed on the faceplate between SSD and GPS. THIS CARD'S OWN TABLE HAS NO ROW FOR IT. Table 4 of the Overview and Reference Guide - headed 'RSP, RSP-440, RSP-440 Lite, RSP-880, RSP880-LT, RSP4-S, RSP5', which is this card - describes FAIL, CRIT, MAJ, MIN, SYNC, ACO, HDD, CF, SSD, GPS and the three USB lamps, and stops. TABLE 5 DOES HAVE AN FC FAULT ROW, at amber and off with Cisco's own sentence, but Table 5 is headed 'RP and RP2/RP3' and is a different scope - the same book gives the RSP and RP families different vocabularies for SYNC in those two tables, so they cannot be treated as one. The amber is therefore NOT borrowed across and this lamp carries off/on. An earlier version of this sentence said no row existed in either table, which was simply wrong about Table 5." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--gps" cx="24.09" cy="370.46" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/gps" data-class="led" data-states="green off" data-description="GPS. Green: 'GPS interface provisioned and ports are turned on. ToD, 1 PPS, 10 Mhz are all valid.' Off (default after reset): either the interface is not provisioned or the ports are not turned on." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--crit" cx="19.22" cy="353.61" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/crit" data-class="led" data-states="red off" data-description="Critical Alarm (CRIT). Red: a critical alarm has occurred. Off (default after reset): no critical alarm has occurred." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--maj" cx="19.22" cy="362.04" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/maj" data-class="led" data-states="red off" data-description="Major Alarm (MAJ). Red: a major alarm has occurred. Off (default after reset): no major alarm has occurred." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--min" cx="19.22" cy="370.46" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/min" data-class="led" data-states="amber off" data-description="Minor Alarm (MIN). Amber: a minor alarm has occurred. Off (default after reset): no minor alarm has occurred." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--fail" cx="13.93" cy="353.61" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/fail" data-class="led" data-states="red off" data-description="Power Fail (FAIL). Red: 'Standby Power Fail LED. The LED is turned off by the CAN bus controller after it is up and running.' Off: standby power is normal." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--aco" cx="13.93" cy="362.04" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/aco" data-class="led" data-states="amber off" data-description="Alarm Cutoff (ACO). Amber: 'Alarm Cutoff has been enabled. The ACO push button was pressed after at least one alarm has occurred.' Off (default after reset): alarm cutoff is not enabled." data-z-dome="0.3" />
+    <circle id="a9k-rsp880-lt-se--sync" cx="13.93" cy="370.46" r="1.05" fill="#8d949c" stroke="#5f6469" stroke-width="0.2" data-path="a9k-rsp880-lt-se/sync" data-class="led" data-states="green amber off" data-description="Synchronization (SYNC). Green: system timing is synchronized to an external timing source. Amber: system timing is free running. Off: no system timing is configured." data-z-dome="0.3" />
+  </g>
+</svg>
