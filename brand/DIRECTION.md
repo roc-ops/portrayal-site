@@ -9,13 +9,13 @@ site and for whoever eventually restyles the demo.
 ## What is being branded
 
 Portrayal is a **neutral substrate**, not a product. It compiles YAML device
-manifests into flat SVG in real millimetres, where every port, PSU, fan, LED,
+manifests into flat SVG in real millimeters, where every port, PSU, fan, LED,
 bay and region carries a stable DOM id and a `data-path`. What gets built on
 that is deliberately open — documentation, monitoring overlays, DCIM
 integration where clicking a port follows its connection, rack layouts, install
 guides, configuration-accurate drawings populated from discovery.
 
-That plurality is the point. The identity must not pick a favourite. It is
+That plurality is the point. The identity must not pick a favorite. It is
 closer to the branding of a font foundry or a rendering library than of a SaaS
 application.
 
@@ -25,14 +25,14 @@ Two consequences, both load-bearing:
    of gear.** The core is domain-neutral; `spec/DESIGN.md` calls networking
    profile #1, not the only profile. An RJ45 or a QSFP cage in the logo would
    put profile #2 at war with the brand.
-2. **The brand colour never appears on the canvas.** The device drawing is the
-   content, rendered in real greys and metals, and status colour has to be the
+2. **The brand color never appears on the canvas.** The device drawing is the
+   content, rendered in real grays and metals, and status color has to be the
    loudest thing on screen. Brand lives in chrome, docs, site and mark.
 
-## The reserved colours
+## The reserved colors
 
 The explorer gives the user magenta, green, yellow, cyan, orange, white and
-pink as marking colours. Those are spoken for. A brand colour drawn from that
+pink as marking colors. Those are spoken for. A brand color drawn from that
 set would read as an annotation somebody made rather than as chrome. This is
 the single hardest constraint on the palette and it is why the accent is a
 warm metal — it is nowhere near any of them.
@@ -45,17 +45,17 @@ element lit and wrapped in a selection ring.
 The field is mildly irregular on purpose. A perfectly regular grid reads as an
 abstract tool; a field with structure reads as a device. It stays abstract
 enough that the elements can be ports, bays, slots, cells, or something in a
-domain nobody has modelled yet.
+domain nobody has modeled yet.
 
 The ring, not the fill, is what makes it work small. When the lit element gets
-too small to read as a distinct colour, the ring still says *this one*.
+too small to read as a distinct color, the ring still says *this one*.
 
 Files:
 
 | File | Use |
 |---|---|
-| `portrayal-mark.svg` | Primary, 64-unit grid, full colour. Anything ≥ 24px. |
-| `portrayal-mark-16.svg` | Redrawn on the 16px pixel grid — fewer, chunkier elements, every edge on a whole pixel, and a full pixel of dark ground between the ring and the lit element. Not a scaled copy: rendered at 16px the 64px mark blurs ring and fill into one brass blob. Verified by rasterising at 16 and inspecting on both grounds. |
+| `portrayal-mark.svg` | Primary, 64-unit grid, full color. Anything ≥ 24px. |
+| `portrayal-mark-16.svg` | Redrawn on the 16px pixel grid — fewer, chunkier elements, every edge on a whole pixel, and a full pixel of dark ground between the ring and the lit element. Not a scaled copy: rendered at 16px the 64px mark blurs ring and fill into one brass blob. Verified by rasterizing at 16 and inspecting on both grounds. |
 | `portrayal-mark-mono.svg` | Single ink via `currentColor`, separated by opacity. Inline use, print, stamps. |
 | `favicon.svg` | Copy of the 16px variant. |
 
@@ -78,12 +78,12 @@ Files:
   as *selected*, and in this domain that ambiguity is real.
 - **Trace** — the lit element with a path leaving it. The only candidate
   pointing outward at integration rather than inspection, but it reads as a
-  network-diagram logo, which is the one neighbourhood this project should
+  network-diagram logo, which is the one neighborhood this project should
   avoid.
 
 ## Palette
 
-Warm metal on a cool ground. The greys are the demo's own, tightened and given
+Warm metal on a cool ground. The grays are the demo's own, tightened and given
 a slight blue bias so the brass has something to be warm against. Full token
 set in `tokens.css`.
 
@@ -160,13 +160,13 @@ Related: **real faceplates in the illustration layer.** The mark stays abstract
 for neutrality, but wherever the drawing is big enough to read — hero, docs,
 social — use actual output from the library with actual callouts on it. That is
 more convincing than any stylised port silhouette, because it is the genuine
-artefact. Recognition where there is room for it; neutrality where there isn't.
+artifact. Recognition where there is room for it; neutrality where there isn't.
 
 ## Open
 
 - The 16px variant has been checked as a raster on both grounds and holds. It
   has not been checked in a real browser tab strip or plugin list, next to
-  neighbours competing for attention. If it goes soft there, switch the small
+  neighbors competing for attention. If it goes soft there, switch the small
   variant to Aperture.
 - No social card / OG image yet.
 - No wordmark as outlined paths — currently live text in Archivo.

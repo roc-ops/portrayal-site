@@ -38,7 +38,7 @@ Then click through the showcase and check it still behaves.
 ## The showcase
 
 One device — an Edgecore AS7726-32X — driven seven ways off a single compiled
-artefact:
+artifact:
 
 | Tab | What it demonstrates |
 |---|---|

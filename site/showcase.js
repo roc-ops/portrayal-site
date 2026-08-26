@@ -1,6 +1,6 @@
 // portrayal.dev — the showcase.
 //
-// One compiled artefact, seven lenses. Every tab drives the *same* inlined SVG
+// One compiled artifact, seven lenses. Every tab drives the *same* inlined SVG
 // (except 3D and Rack, which mount their own stage), because that is the claim
 // the page is making: the drawing is addressable, so you do not need a
 // different picture for a different job.
@@ -55,10 +55,10 @@ const hint = $('#showHint');
 const srcLine = $('#showSrc');
 
 let svg = null;         // the live compiled drawing
-let overlay = null;     // our own layer inside it, in millimetre space
+let overlay = null;     // our own layer inside it, in millimeter space
 let BASE_FRAME = null;
 
-// ── Loading the artefact ───────────────────────────────────────────────
+// ── Loading the artifact ───────────────────────────────────────────────
 async function loadDrawing() {
   const url = src();
   const text = await fetch(url, {cache: 'no-store'}).then(r => {
@@ -69,7 +69,7 @@ async function loadDrawing() {
   svg = stage2d.querySelector('svg');
   // The file is authored at true size (438.4mm x 43.5mm). Drop the physical
   // width/height so it can be responsive, and keep the viewBox, which is what
-  // carries the millimetres.
+  // carries the millimeters.
   BASE_FRAME = svg.getAttribute('viewBox').split(/\s+/).map(Number);
   svg.removeAttribute('width');
   svg.removeAttribute('height');
@@ -82,7 +82,7 @@ async function loadDrawing() {
   loading.hidden = true;
 }
 
-// Swap the artefact under the current tab. The tab is torn down and rebuilt
+// Swap the artifact under the current tab. The tab is torn down and rebuilt
 // around the new drawing rather than patched, because its listeners are bound
 // to the old SVG element and its overlay lives inside it.
 async function setDrawing(view, config) {
@@ -125,7 +125,7 @@ const setFrame = (x, y, w, h) => { TAB_FRAME = [x, y, w, h]; pz2d ? pz2d.reset()
 const resetFrame = () => setFrame(...BASE_FRAME);
 
 // Wheel to zoom about the cursor, drag to pan, double-click to fit. Operates on
-// the viewBox rather than a transform, so millimetres stay millimetres and
+// the viewBox rather than a transform, so millimeters stay millimeters and
 // getBBox-derived overlays keep working unchanged.
 function panZoom(node, baseFrame) {
   let view = [...baseFrame()];
@@ -176,7 +176,7 @@ function panZoom(node, baseFrame) {
 }
 const clearOverlay = () => { while (overlay.firstChild) overlay.firstChild.remove(); };
 
-// A single brass stroke disappears against the faceplate, which is dark grey
+// A single brass stroke disappears against the faceplate, which is dark gray
 // whatever the page theme is doing. Draw a dark halo underneath and the bright
 // brass on top, so the ring separates from the metal at any zoom.
 function ring(path, cls = 'pt-ring', pad = 0.9) {
@@ -353,7 +353,7 @@ const inspect = (() => {
         readout,
         el('p', {class: 'panel-title', text: 'view'}), viewRow,
         el('p', {class: 'panel-title', text: 'configuration'}), cfgRow,
-        el('p', {class: 'panel-lead', html: 'A configuration populates the bays. Swapping AC for DC swaps the <em>modules</em> — the drawing is recompiled per configuration, not recoloured.'}),
+        el('p', {class: 'panel-lead', html: 'A configuration populates the bays. Swapping AC for DC swaps the <em>modules</em> — the drawing is recompiled per configuration, not recolored.'}),
       );
       show(null);
       setExports([{label: 'SVG', title: 'Download this view as SVG',
@@ -425,7 +425,7 @@ const callouts = (() => {
 
     // Three passes. Forward: sit each block under its own anchor, pushed right
     // only as far as the previous block requires. Backward: pull anything that
-    // overhangs the right edge back in, carrying its neighbours with it.
+    // overhangs the right edge back in, carrying its neighbors with it.
     // Forward again: nothing may end up left of the frame.
     //
     // Shifting the whole row by the right-hand overflow - the obvious fix - is
@@ -539,7 +539,7 @@ const state = (() => {
       setState('sfp-leds/lamp-2', 'link-1g');
       return 'Four speeds at once — ' +
         BANDS.map(b => `${b.from}-${b.to} at ${b.label}`).join(', ') +
-        '. The colours are the vendor\'s own convention, carried in the compiled stylesheet, not chosen here.';
+        '. The colors are the vendor\'s own convention, carried in the compiled stylesheet, not chosen here.';
     },
     fault() {
       clearStates(); clearOverlay();
@@ -712,7 +712,7 @@ const three = (() => {
     const {THREE, scene, camera} = v.three;
     const c = v.info.chassis || {};
 
-    // The box comes from the chassis dimensions the manifest declares, centred
+    // The box comes from the chassis dimensions the manifest declares, centered
     // on the origin - which is the convention the chassis mesh itself uses
     // (its bounds are exactly ±w/2, ±h/2, ±d/2).
     //
@@ -737,7 +737,7 @@ const three = (() => {
     }
 
     const size = box.getSize(new THREE.Vector3());
-    const centre = box.getCenter(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
     const mm = n => `${(+n).toFixed(1)} mm`;
     const {min, max} = box;
     const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -763,7 +763,7 @@ const three = (() => {
       svg.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
       while (svg.firstChild) svg.firstChild.remove();
 
-      const cen = project(centre, r.width, r.height);
+      const cen = project(center, r.width, r.height);
       const OFF = 42, ARROW = 7;
 
       if (finite(cen)) for (const e of EDGES) {
@@ -815,7 +815,7 @@ const three = (() => {
   }
 
   return {
-    hint: 'Drag to orbit, wheel to zoom, hover to identify. The dimensions are projected from the model\'s own bounding box and labelled from the millimetres the manifest declares.',
+    hint: 'Drag to orbit, wheel to zoom, hover to identify. The dimensions are projected from the model\'s own bounding box and labeled from the millimeters the manifest declares.',
     async enter() {
       const mine = epoch;
       stage2d.hidden = true; stage3d.hidden = false;
