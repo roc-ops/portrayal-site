@@ -1,0 +1,24 @@
+diff --git a/build.sh b/build.sh
+index 7c8efd1..78558a8 100755
+--- a/build.sh
++++ b/build.sh
+@@ -15,11 +15,14 @@ python3 spec/tools/portrayal/devices_index.py    --library library --out "$OUT"
+ python3 spec/tools/portrayal/components_index.py --library library --out "$OUT"
+ python3 spec/tools/portrayal/labs_index.py       --library library --out "$OUT"
+ python3 spec/tools/portrayal/gaps_index.py       --library library --out "$OUT"
+-# DCIM exports: Portrayal is the source of truth, a DCIM is one consumer
++# DCIM exports: Portrayal is the source of truth, a DCIM is one consumer.
++# One device type per SKU, for NetBox and Nautobot alike, with elevation images
++# rendered from the compiled faces. Errors are NOT swallowed: the old loop hid
++# every failure behind `2>/dev/null || true`, which is how a device silently
++# stopped exporting.
++rm -rf library/exports
+ for d in library/devices/*/*/device.yaml; do
+-  for nos in arcos sonic; do
+-    python3 spec/tools/portrayal/nautobot_export.py "$d" --nos "$nos" \
+-      --out library/exports/nautobot 2>/dev/null || true
+-  done
++  python3 spec/tools/portrayal/dcim_export.py "$d" \
++    --out library/exports --nos arcos --nos sonic --dist "$OUT" >/dev/null
+ done
+ echo "built $(ls "$OUT" | wc -l | tr -d ' ') files -> $OUT"
