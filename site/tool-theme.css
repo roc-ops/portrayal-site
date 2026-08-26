@@ -13,8 +13,11 @@
  * through variables - so for the shell this file is nothing but a mapping, and
  * no selector of theirs is re-specified here.
  *
- * devsel.js is NOT, and is covered separately below. That half of the issue is
- * still open.
+ * devsel.js answers to variables too, and shell.js declares its set as well, so
+ * the picker themes inside a shell and falls back to its own defaults when a
+ * page uses createDevicePicker without one - which the DCIM export viewer does.
+ * Both halves of roc-ops/ndv#19 are in, and this file re-specifies no selector
+ * of theirs at all.
  */
 
 :root:root {
@@ -35,32 +38,21 @@
   --on-ink:        var(--pt-brass);
   --stage:         var(--pt-ground);
   --kid-line:      var(--pt-line-soft);
+
+  /* devsel.js's set, which shell.js declares too so the picker themes inside a
+     shell and falls back to its own defaults standalone. --field is a step
+     deeper than --control upstream (#1c1f23 against #23272c) - a picker field
+     against a header control - so the relationship is kept rather than
+     flattening both onto one surface. */
+  --field:              var(--pt-surface);
+  --field-line:         var(--pt-line);
+  --hint:               var(--pt-ink-faint);
+  --control-hover-line: var(--pt-brass-dim);
   /* --sel-ink is deliberately NOT mapped. It is a token now, but it paints the
      selected row's text over --hl, the highlight colour the user picks, so its
      #fff default is the right answer at any theme. Same reasoning keeps
      `#hl .sw` hard-coded in the shell. */
 }
-
-/* ── devsel.js — still the open half of roc-ops/ndv#19 ────────────────────
-   The device picker injects its own stylesheet with no tokens at all: seven
-   hard-coded colours, zero var(). It is the one control on every shell page AND
-   on pages that call createDevicePicker without a shell, which the DCIM export
-   viewer does. Overriding its background alone is not enough - its own
-   color:#d7dbdf survives and lands light-grey text on a near-white field at
-   1.28:1, which is exactly how this was found.
-
-   `body .devpick x` is (0,2,1) against its (0,2,0). Delete this block when the
-   module answers to variables. */
-body .devpick label { color: var(--pt-ink-muted); }
-body .devpick select,
-body .devpick input {
-  background: var(--pt-surface-2);
-  color: var(--pt-ink);
-  border-color: var(--pt-line);
-}
-body .devpick input::placeholder { color: var(--pt-ink-faint); }
-body .devpick input:focus { border-color: var(--pt-brass); }
-body .devpick .none { color: var(--pt-warn); }
 
 /* NOT overridden, on purpose: `#hl .sw` and `.node.sel { color:#fff }` both sit
    over --hl, the highlight color the user picks. White over an arbitrary
