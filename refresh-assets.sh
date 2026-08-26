@@ -5,8 +5,54 @@
 # the schemas are at v0 and the drawings change under us. Re-run this after a
 # ./build.sh over there, then check the showcase still behaves.
 set -e
-SRC="${1:-/Volumes/External/Network-Device-Visualization/library}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
+
+# Build against OUR CLONE, never against Portrayal's working tree.
+#
+# This is not tidiness. Their tree is a live workspace: ./build.sh over there
+# does `rm -rf library/dist` and rebuilds it, so reading it mid-build yields a
+# tree that is missing files rather than one that is merely stale. That has
+# already happened here once - a modules pass rendered 117 of 170 faceplates
+# because 53 skins did not exist for the seconds it took them to rebuild, and
+# nothing in the output said so. Worse, it is THEIR tree: a stray write from
+# here lands in someone else's uncommitted work.
+#
+# The clone is a full checkout and builds its own dist, so it needs nothing
+# from over there:
+#
+#   git clone git@github.com:roc-ops/ndv.git /Volumes/External/portrayal-upstream
+#   ./build.sh
+#
+UPSTREAM="${PORTRAYAL_UPSTREAM:-/Volumes/External/portrayal-upstream}"
+SRC="${1:-$UPSTREAM/library}"
+
+# Refuse to read Portrayal's working tree. A comment saying "use the clone" is
+# advice; this is the part that makes it true. PORTRAYAL_ALLOW_LIVE=1 is the
+# deliberate escape hatch, and it is deliberately ugly to type.
+if [ ! -d "$SRC" ]; then
+  echo "no library at $SRC" >&2
+  echo "clone it first:" >&2
+  echo "  git clone git@github.com:roc-ops/ndv.git ${UPSTREAM}" >&2
+  echo "  (cd ${UPSTREAM} && ./build.sh)" >&2
+  exit 1
+fi
+case "$(cd "$SRC" && pwd -P)" in
+  */Network-Device-Visualization/*)
+    if [ "${PORTRAYAL_ALLOW_LIVE:-}" != "1" ]; then
+      echo "refusing to build from Portrayal's working tree:" >&2
+      echo "  $(cd "$SRC" && pwd -P)" >&2
+      echo "That tree is rebuilt in place by their ./build.sh, so a read here" >&2
+      echo "can catch it half-written. Build from the clone instead:" >&2
+      echo "  (cd ${UPSTREAM} && git pull && ./build.sh) && $0" >&2
+      exit 1
+    fi
+    echo "WARNING: building from Portrayal's live working tree" >&2
+    ;;
+esac
+if [ ! -d "$SRC/dist" ]; then
+  echo "no compiled output at $SRC/dist - run ./build.sh in $UPSTREAM first" >&2
+  exit 1
+fi
 
 # The viewer modules moved out of demo2/ into their own library/viewer/ tree.
 # dist.js is new and non-optional: viewer3d.js imports it, and it is the fetch
@@ -36,6 +82,14 @@ done
 # out to that second file, and nothing here reads either field - the viewer
 # takes ns, name, major, body and skins. Vendoring it would add 1.9 MB nobody
 # fetches.
+# Cleared, not copied over. These are a SNAPSHOT of one build, and a cp into a
+# directory that was never emptied is not a snapshot - it is the union of every
+# build ever run here. A component that goes away upstream, or one left behind
+# by a build against a different checkout, stays on the site forever and nothing
+# reports it. $EXPORTS below has always been rm -rf'd; this never was.
+rm -rf "$HERE/assets/dist"
+mkdir -p "$HERE/assets/dist"
+
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
 for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json; do
@@ -62,9 +116,10 @@ done
 EXPORTS="$HERE/assets/exports"
 rm -rf "$EXPORTS"
 mkdir -p "$EXPORTS"
-# Overridable so the site can be built against a clone while a change to the
-# exporter is still in review:
-#   PORTRAYAL_TOOLS=/path/to/clone/spec/tools/portrayal ./refresh-assets.sh
+# Derived from SRC, so the exporter and the library it reads are always the same
+# checkout. When these could differ, they did: an earlier run took the exporter
+# from the clone and the drawings from the live tree, which is how the partial
+# render above got in. Override only if you mean to mix them.
 TOOLS="${PORTRAYAL_TOOLS:-$SRC/../spec/tools/portrayal}"
 INDEX="$EXPORTS/index.json"
 
