@@ -9,11 +9,29 @@ in progress there.
 
 ```
 index.html          the landing page
+explorer.html       the device explorer
+schema.html         the schema browser
 site/               page styles and the showcase
 brand/              identity direction, marks, tokens
-vendor/             viewer modules copied from the Portrayal demo
+vendor/             viewer modules — Portrayal's, vendored
 assets/dist/        compiled SVGs — a vendored snapshot, not a live link
+assets/schemas/     the three schema documents
 ```
+
+## Who owns what
+
+The line runs between the modules and the pages built on them.
+
+| | Owner |
+|---|---|
+| `vendor/*.js` — `shell.js`, `viewer3d.js`, `relief.js`, `states.js`, `swap.js`, `devsel.js`, `dist.js`, `share.js` | **Portrayal.** How you talk to a drawing. Vendored here, changed there. |
+| `explorer.html`, `index.html`, `schema.html`, `site/*` | **This repository.** What you do with it. |
+
+`shell.js` makes that line a real one rather than a convention: it is the whole
+application chrome — stage, tree, inspector, pickers, 2D/3D, selection, bay
+swapping — and its own header puts it plainly, *"a page is the shell plus its
+own panel."* The Explorer's own panel is state chips on tree rows and syncing an
+applied state into the 3D scene. That part is ours.
 
 ## Preview
 

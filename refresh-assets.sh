@@ -12,32 +12,39 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 # dist.js is new and non-optional: viewer3d.js imports it, and it is the fetch
 # memo that stopped components.json coming down three times a load.
 #
-# viewer3d.js -> share.js, relief.js, swap.js, dist.js is the whole graph this
-# site touches. shell.js, marks.js, states.js, devsel.js, gif.js and hl.js are
-# deliberately not vendored - nothing here imports them.
-for m in viewer3d.js relief.js share.js swap.js dist.js; do
+# The Explorer is the shell plus its own panel, so the shell's graph comes too:
+# shell.js -> devsel.js, swap.js, dist.js, and the Explorer itself reads
+# states.js. marks.js arrives with the Annotator; gif.js and hl.js when
+# something here imports them.
+#
+# These modules are Portrayal's to own - they are how you talk to a drawing.
+# The pages built on them are this repository's.
+for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js states.js; do
   cp "$SRC/viewer/$m" "$HERE/vendor/$m"
 done
 
-# The 3D viewer needs every view of the featured device, plus the component
-# index it resolves swapped-in modules through.
+# Every device, because the Explorer offers the whole library and a picker with
+# holes in it looks broken.
+#
+# This is a bigger snapshot than the showcase needs - but it costs the VISITOR
+# nothing: devices.json drives the picker and a device's files are fetched only
+# when someone selects it. The cost is repository and deploy size, which is the
+# argument for building assets/ on deploy rather than for shipping fewer
+# devices. See issue #6.
 #
 # components.json only, NOT components-detail.json: provenance and relief moved
-# out to that second file, and nothing in the graph above reads either field -
-# the viewer takes ns, name, major, body and skins. Vendoring it anyway would
-# add 1.9 MB nobody fetches.
-cp "$SRC"/dist/as7726-32x.* "$HERE/assets/dist/"
+# out to that second file, and nothing here reads either field - the viewer
+# takes ns, name, major, body and skins. Vendoring it would add 1.9 MB nobody
+# fetches.
+cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
+for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json; do
+  cp "$f" "$HERE/assets/dist/"
+done
 
-# Swapped-in module skins the 3D build resolves through components.json.
+# Swapped-in module skins, resolved through components.json.
 mkdir -p "$HERE/assets/dist/components"
 cp "$SRC"/dist/components/*.svg "$HERE/assets/dist/components/"
-
-# The rack elevation needs the front of every device it stacks; the 3D rack
-# needs all six faces of each, because relief is extracted per face.
-for d in asr-9001.asr-9001-s as7946-30xb.ac-psu as5912-54x.ac-f2b s9510-28dc.ac dcp-sc-28p.default; do
-  cp "$SRC"/dist/$d.*.svg "$HERE/assets/dist/"
-done
 for d in asr-9001 as7946-30xb as5912-54x s9510-28dc dcp-sc-28p; do
   cp "$SRC/dist/$d.configs.json" "$HERE/assets/dist/"
 done

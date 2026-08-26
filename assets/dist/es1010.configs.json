@@ -1,0 +1,178 @@
+{
+ "attrs": {
+  "features": {
+   "encryption": "256b MACsec",
+   "poe": "optional IEEE 802.3af/at/bt Type 4 Class 8, 90 W per port, persistent PoE",
+   "timing": "optional IEEE 1588 and SyncE"
+  },
+  "management": {
+   "mgmt-ports": "1x RJ45 console, OOB management as a combo pair (RJ45 at the mgmt stack and SFP in the top band share one interface), 2x USB 3.0 Type A"
+  },
+  "performance": {
+   "port-modes-rj45": "1000Base-T",
+   "port-modes-sfp28": "1/10/25G",
+   "switching-capacity": "148 Gbps"
+  },
+  "platform": {
+   "asic": "Broadcom TD3.X2",
+   "cpu": "Intel Denverton x86, 4C @ 2.1 GHz (8C @ 2.2 GHz option)",
+   "memory": "16 GB DDR4 (32 GB option)",
+   "storage": "64 GB M.2 SSD (up to 256 GB)"
+  },
+  "power": {
+   "psus": "2x 1600 W hot-swap AC, 0:1 / 1:1 redundancy"
+  },
+  "thermal": {
+   "fans": "2+1 fixed (not field-replaceable)"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [
+   {
+    "accepts": [
+     "celestica/psu-1600@1"
+    ],
+    "at": [
+     5,
+     1.7
+    ],
+    "default": "celestica/psu-1600@1",
+    "group": "psus",
+    "id": "psu-1",
+    "rel-pos": 1,
+    "rotate": null,
+    "size": {
+     "h": 40,
+     "w": 73.5
+    }
+   },
+   {
+    "accepts": [
+     "celestica/psu-1600@1"
+    ],
+    "at": [
+     83,
+     1.7
+    ],
+    "default": "celestica/psu-1600@1",
+    "group": "psus",
+    "id": "psu-2",
+    "rel-pos": 2,
+    "rotate": null,
+    "size": {
+     "h": 40,
+     "w": 73.5
+    }
+   }
+  ],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [
+   {
+    "level": 4,
+    "name": "addressable",
+    "needs": "`group` on 20 placements (front 10, left 4, right 4, top 1, bottom 1); `rel-pos` on 20 placements (front 10, left 4, right 4, top 1, bottom 1)"
+   }
+  ],
+  "flags": [
+   "templated"
+  ],
+  "level": 3,
+  "name": "solid",
+  "unknown": [
+   "specified"
+  ]
+ },
+ "chassis": {
+  "d": 371.6,
+  "h": 43.4,
+  "ru": 1,
+  "w": 438.2
+ },
+ "configs": [
+  {
+   "bays": {},
+   "description": "ES1010-48C, no PoE, back-to-front airflow (R4048-F91LA-A1)",
+   "name": "b2f",
+   "part-numbers": {
+    "R4048-F91LA-A1": {
+     "part": "R4048-F91LA-A1"
+    }
+   }
+  },
+  {
+   "bays": {},
+   "description": "ES1010-48C, no PoE, front-to-back airflow (R4048-F90LA-A1)",
+   "name": "f2b",
+   "part-numbers": {
+    "R4048-F90LA-A1": {
+     "part": "R4048-F90LA-A1"
+    }
+   }
+  },
+  {
+   "bays": {},
+   "description": "ES1010-48CP with PoE++, back-to-front airflow (R4048-F91L9-A1)",
+   "name": "poe-b2f",
+   "part-numbers": {
+    "R4048-F91L9-A1": {
+     "part": "R4048-F91L9-A1"
+    }
+   }
+  },
+  {
+   "bays": {},
+   "description": "ES1010-48CP with PoE++, front-to-back airflow (R4048-F90L9-A1)",
+   "name": "poe-f2b",
+   "part-numbers": {
+    "R4048-F90L9-A1": {
+     "part": "R4048-F90L9-A1"
+    }
+   }
+  }
+ ],
+ "default": "poe-b2f",
+ "device": "es1010",
+ "gaps": [
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "`physical-context` on 2 bays (rear 2); `physical-context` on port groups rj45-1g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  }
+ ],
+ "model": "ES1010",
+ "provenance": {
+  "chassis": "datasheet (438.2 x 371.6 x 43.4 mm)",
+  "console-symbol": "photo - the IOIOI console mark is printed BELOW the console jack, near the panel lower lip and below the port-pair legend row (working/celestica/pics/chassis-front.jpeg, shot upside down). It was at baseline 35.6, inside the jack. The x is unchanged - the photograph is not orthographic enough to re-derive it",
+  "fans": "datasheet (2+1 FIXED fans - not FRUs; three grilles seen on the rear photo)",
+  "layout": "measured from a square-on product photo (working/celestica/product-front.png), calibrated on two independent references - the 438.2mm chassis body and the 482.6mm rack width - which agree to 99.6 percent. Column pitch 13.99mm, extra 8.0mm between the four blocks, first column centre 8.46mm from the faceplate edge. Supersedes the earlier oblique-photo reading (order and grouping are reliable, mm positions are NOT calibrated; column pitch 14.5mm estimated from the front photo and from fitting 24 columns plus the uplink and management clusters into 438.2mm). Needs caliper verification or a square-on photo before the geometry can be trusted.",
+  "port-apertures": "ganged block openings via std/rj45-ganged (estimated)",
+  "psu": "photo (Gospower G1482-1600WRA FRU, six faces)"
+ },
+ "views": [
+  "front",
+  "rear",
+  "left",
+  "right",
+  "top",
+  "bottom"
+ ]
+}

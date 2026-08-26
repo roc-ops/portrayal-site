@@ -1,0 +1,1047 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440mm" height="45mm" viewBox="0 0 440 45" data-device="dcp-r-34d-cs" data-view="front" data-config="default" data-channels="34">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/rj45-shielded@'] .state-activity { --led-color: #f59e0b; }
+    g[data-ref^='common/rj45-shielded@'] .state-link { --led-color: #22c55e; }
+</style>
+  <metadata>{"config":"default","device":"Smartoptics DCP-R-34D-CS","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/laser-warning@1":"1.0.0","common/lc-duplex-adapter@3":"3.0.0","common/led-dot@1":"1.1.0","common/rj45-shielded@2":"2.0.0","std/lc-bore@1":"1.0.0","std/sfp@1":"1.4.0"},"source":{"attrs":{"performance":{"channels":34}},"chassis":{"color":"#1b1e21","depth":505,"height":45,"ru":1,"width":440},"description":"34-channel colourless/directionless cross-connect ROADM line unit, 1RU. Two rows of LC duplex adapters (XC01-XC34) plus Line, 1510 OSC filter and OSC monitor, with ETH0 and RS232 management.","format":1,"groups":{"mgmt":{"index-origin":1,"mixed":"the rear management block - ETH1-4 on RJ45 to the shelf controller, ETH5 as an SFP for optical management access, and the recessed reset beside them. DCP-R User Manual 14.0 A section 2.10 lists them as one set of network management interfaces","term":"Port"},"xc":{"attrs":{"media":"fiber","role":"cross-connect"},"description":"XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port","index-origin":1,"term":"Port"}},"kind":"device","manufacturer":"Smartoptics","model":"DCP-R-34D-CS","name":"dcp-r-34d-cs","profile":"optical","provenance":{"brand-position":"measured off the stencil art - smartoptics runs 6.1 to 27.3mm from the body edge and the model name 29.9 to 49.6, both well left of the first port. Decor text anchors on its CENTRE, so these carry the mid-point of each measured span, not its left edge - anchoring the edge value ran the brand off the side of the chassis","chassis":"manual DIMENSIONS (DCP-R) - 440mm (W) x 45mm (H) x 505mm (D), 1 RU. The manual also states power and fan units are in the back panel, so this is a standalone chassis and not a plug-in unit","column-grid":"top and bottom rows agreed to within 0.15mm across all 17 columns, so a single averaged grid is used and the drawing jitter discarded","markings":"photo - IEC 60825 laser hazard triangles in the gap between the two port blocks, one above the top row and one below the bottom","port-pairing":"each LC duplex adapter carries two connection points 6.6mm apart (the Tx and Rx fibers); adapters were recovered by pairing those","port-positions":"stencil ShapeSheet connection points. Visio stores these as FRACTIONS of shape width/height, so they survive without knowing the drawing scale - resolved against the 19-inch rack width the master is drawn at, then expressed from the body edge","psu-orientation":"photo - both modules are fitted the same way round, fan inboard of the inlet, so the C14 sits at the far right on PSU-2 and inboard on PSU-1. They are not mirrored","psu-part":"label - Gospower G1251-0550WNA, P/N CRPS0550-AH, and the fan sticker reads 550W Platinum CRPS. So the module is a standard CRPS 1U part at 73.5 x 40 x 185, not the 84mm-wide estimate taken from the racked photo, and both bays sit flush to the chassis edges","rear-layout":"photo IMG_2181 of racked DCP-R units - PSU with integrated fan and C14 inlet at each end, mirrored; honeycomb vent panel across the centre; management block right of centre. Block positions are approximate to about 3mm - the photo has uncorrected perspective and partial cable occlusion, so it fixes the structure and order but not exact millimetres","rear-mgmt-block":"stencil master dcp-r-rear, which is orthographic - a 2x2 ganged RJ45 shell (ETH 2 / ETH 4 over ETH 1 / ETH 3), ESD warning, Tx and Rx LEDs, an ETH 5 SFP cage and a recessed RESET button","side-top-bottom":"IMG_2188 shows the lid, so these now carry the real finish - a light silver body with the black front panel wrapping about 12.7mm (half an inch) back along every face. Still no vents, screws or lid labels - the photo shows the finish and the panel depth but not those details, so they are left out rather than invented","silkscreen":"port grouping read from the stencil master - XC1 alone, then eight abutting pairs at 13.24mm with about 17.3mm between pairs. Label text corrected from a rack photo - the device prints XC1, not the stencil's XC01, and every port carries a small Tx/Rx box between its name and the adapter, reversed on the bottom row"},"references":[{"title":"Smartoptics DCP-R User Manual 14.0_A"},{"title":"Smartoptics DCP-R Visio stencil DCP-R_v260105.vssx (master r-34d-cs)"}],"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[440,505]},{"at":[0,492.3],"fill":"#17191c","size":[440,12.7]}]},"size":{"h":505,"w":440}},"front":{"components":{"placements":[{"at":[-14,0.75],"id":"ear-left","optional":"ears","ref":"common/rack-ear@1","skin":"left"},{"at":[440,0.75],"id":"ear-right","optional":"ears","ref":"common/rack-ear@1","skin":"right"},{"at":[9.6,10.55],"attrs":{"role":"mgmt","speed":"1000base-t"},"id":"eth0","ref":"common/rj45-shielded@2","rotate":180},{"at":[10,24.85],"attrs":{"media":"rj45-serial","role":"console"},"id":"rs232","ref":"common/rj45-shielded@2"},{"at":[33.9,21.8],"attrs":{"function":"osc-tx"},"for":"port-osc","id":"led-osc-tx","ref":"common/led-dot@1"},{"at":[39.7,21.8],"attrs":{"function":"osc-rx"},"for":"port-osc","id":"led-osc-rx","ref":"common/led-dot@1"},{"at":[53.2,35],"attrs":{"function":"power"},"for":"chassis","id":"led-power","ref":"common/led-dot@1"},{"at":[58.8,35],"attrs":{"function":"status"},"for":"chassis","id":"led-status","ref":"common/led-dot@1"},{"at":[52.7,9.6],"attrs":{"media":"fiber","role":"osc-filter"},"id":"port-1510","ref":"common/lc-duplex-adapter@3"},{"at":[104.71,11.1],"attrs":{"media":"fiber","role":"line"},"id":"port-line","ref":"common/lc-duplex-adapter@3"},{"at":[30.7,27.5],"attrs":{"media":"sfp","role":"osc"},"id":"port-osc","ref":"std/sfp@1"},{"at":[134.79,11.1],"attrs":{"channel":"1"},"group":"xc","id":"xc01","ref":"common/lc-duplex-adapter@3"},{"at":[152.81,11.1],"attrs":{"channel":"2"},"group":"xc","id":"xc02","ref":"common/lc-duplex-adapter@3"},{"at":[166.12,11.1],"attrs":{"channel":"3"},"group":"xc","id":"xc03","ref":"common/lc-duplex-adapter@3"},{"at":[183.22,11.1],"attrs":{"channel":"4"},"group":"xc","id":"xc04","ref":"common/lc-duplex-adapter@3"},{"at":[196.55,11.1],"attrs":{"channel":"5"},"group":"xc","id":"xc05","ref":"common/lc-duplex-adapter@3"},{"at":[213.91,11.1],"attrs":{"channel":"6"},"group":"xc","id":"xc06","ref":"common/lc-duplex-adapter@3"},{"at":[227.22,11.1],"attrs":{"channel":"7"},"group":"xc","id":"xc07","ref":"common/lc-duplex-adapter@3"},{"at":[244.12,11.1],"attrs":{"channel":"8"},"group":"xc","id":"xc08","ref":"common/lc-duplex-adapter@3"},{"at":[257.39,11.1],"attrs":{"channel":"9"},"group":"xc","id":"xc09","ref":"common/lc-duplex-adapter@3"},{"at":[280,11.1],"attrs":{"channel":"10"},"group":"xc","id":"xc10","ref":"common/lc-duplex-adapter@3"},{"at":[293.34,11.1],"attrs":{"channel":"11"},"group":"xc","id":"xc11","ref":"common/lc-duplex-adapter@3"},{"at":[311.21,11.1],"attrs":{"channel":"12"},"group":"xc","id":"xc12","ref":"common/lc-duplex-adapter@3"},{"at":[324.44,11.1],"attrs":{"channel":"13"},"group":"xc","id":"xc13","ref":"common/lc-duplex-adapter@3"},{"at":[341.36,11.1],"attrs":{"channel":"14"},"group":"xc","id":"xc14","ref":"common/lc-duplex-adapter@3"},{"at":[354.68,11.1],"attrs":{"channel":"15"},"group":"xc","id":"xc15","ref":"common/lc-duplex-adapter@3"},{"at":[372.05,11.1],"attrs":{"channel":"16"},"group":"xc","id":"xc16","ref":"common/lc-duplex-adapter@3"},{"at":[385.45,11.1],"attrs":{"channel":"17"},"group":"xc","id":"xc17","ref":"common/lc-duplex-adapter@3"},{"at":[134.79,22.6],"attrs":{"channel":"18"},"group":"xc","id":"xc18","ref":"common/lc-duplex-adapter@3"},{"at":[152.81,22.6],"attrs":{"channel":"19"},"group":"xc","id":"xc19","ref":"common/lc-duplex-adapter@3"},{"at":[166.12,22.6],"attrs":{"channel":"20"},"group":"xc","id":"xc20","ref":"common/lc-duplex-adapter@3"},{"at":[183.22,22.6],"attrs":{"channel":"21"},"group":"xc","id":"xc21","ref":"common/lc-duplex-adapter@3"},{"at":[196.55,22.6],"attrs":{"channel":"22"},"group":"xc","id":"xc22","ref":"common/lc-duplex-adapter@3"},{"at":[213.91,22.6],"attrs":{"channel":"23"},"group":"xc","id":"xc23","ref":"common/lc-duplex-adapter@3"},{"at":[227.22,22.6],"attrs":{"channel":"24"},"group":"xc","id":"xc24","ref":"common/lc-duplex-adapter@3"},{"at":[244.12,22.6],"attrs":{"channel":"25"},"group":"xc","id":"xc25","ref":"common/lc-duplex-adapter@3"},{"at":[257.39,22.6],"attrs":{"channel":"26"},"group":"xc","id":"xc26","ref":"common/lc-duplex-adapter@3"},{"at":[280,22.6],"attrs":{"channel":"27"},"group":"xc","id":"xc27","ref":"common/lc-duplex-adapter@3"},{"at":[293.34,22.6],"attrs":{"channel":"28"},"group":"xc","id":"xc28","ref":"common/lc-duplex-adapter@3"},{"at":[311.21,22.6],"attrs":{"channel":"29"},"group":"xc","id":"xc29","ref":"common/lc-duplex-adapter@3"},{"at":[324.44,22.6],"attrs":{"channel":"30"},"group":"xc","id":"xc30","ref":"common/lc-duplex-adapter@3"},{"at":[341.36,22.6],"attrs":{"channel":"31"},"group":"xc","id":"xc31","ref":"common/lc-duplex-adapter@3"},{"at":[354.68,22.6],"attrs":{"channel":"32"},"group":"xc","id":"xc32","ref":"common/lc-duplex-adapter@3"},{"at":[372.05,22.6],"attrs":{"channel":"33"},"group":"xc","id":"xc33","ref":"common/lc-duplex-adapter@3"},{"at":[385.45,22.6],"attrs":{"channel":"34"},"group":"xc","id":"xc34","ref":"common/lc-duplex-adapter@3"},{"at":[271.6,5.4],"id":"laser-warn-top","ref":"common/laser-warning@1"},{"at":[271.6,34.6],"id":"laser-warn-bottom","ref":"common/laser-warning@1"}]},"panel":{"decor":[{"at":[52.7,6.75],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[59.23,6.75],"fill":"#8d939a","size":[0.14,2.5]},{"at":[104.71,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[111.24,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[134.79,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[141.32,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[152.81,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[159.34,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[166.12,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[172.65,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[183.22,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[189.75,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[196.55,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[203.08,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[213.91,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[220.44,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[227.22,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[233.75,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[244.12,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[250.65,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[257.39,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[263.92,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[280,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[286.53,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[293.34,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[299.87,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[311.21,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[317.74,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[324.44,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[330.97,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[341.36,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[347.89,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[354.68,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[361.21,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[372.05,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[378.58,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[385.45,8.25],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[391.98,8.25],"fill":"#8d939a","size":[0.14,2.5]},{"at":[134.79,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[141.32,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[152.81,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[159.34,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[166.12,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[172.65,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[183.22,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[189.75,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[196.55,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[203.08,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[213.91,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[220.44,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[227.22,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[233.75,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[244.12,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[250.65,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[257.39,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[263.92,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[280,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[286.53,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[293.34,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[299.87,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[311.21,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[317.74,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[324.44,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[330.97,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[341.36,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[347.89,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[354.68,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[361.21,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[372.05,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[378.58,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[385.45,33.95],"fill":"none","rx":0.5,"size":[13.2,2.5],"stroke":"#8d939a","stroke-width":0.14},{"at":[391.98,33.95],"fill":"#8d939a","size":[0.14,2.5]},{"at":[30,9],"pattern":"vent","size":[20,10],"vent":5},{"at":[271.6,15.5],"pattern":"vent","size":[5.4,14],"vent":3},{"at":[424,13],"pattern":"vent","size":[7,19],"vent":5}]},"silkscreen":[{"anchor":"middle","at":[56,8.53],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[62.6,8.53],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[108.01,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[114.61,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[138.09,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[144.69,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[156.11,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[162.71,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[169.42,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[176.02,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[186.52,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[193.12,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[199.85,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[206.45,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[217.21,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[223.81,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[230.52,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[237.12,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[247.42,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[254.02,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[260.69,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[267.29,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[283.3,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[289.9,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[296.64,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[303.24,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[314.51,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[321.11,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[327.74,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[334.34,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[344.66,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[351.26,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[357.98,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[364.58,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[375.35,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[381.95,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[388.75,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[395.35,10.03],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[138.09,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[144.69,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[156.11,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[162.71,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[169.42,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[176.02,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[186.52,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[193.12,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[199.85,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[206.45,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[217.21,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[223.81,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[230.52,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[237.12,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[247.42,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[254.02,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[260.69,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[267.29,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[283.3,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[289.9,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[296.64,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[303.24,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[314.51,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[321.11,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[327.74,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[334.34,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[344.66,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[351.26,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[357.98,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[364.58,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[375.35,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[381.95,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"anchor":"middle","at":[388.75,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Rx"},{"anchor":"middle","at":[395.35,35.73],"fill":"#c9cdd1","font-size":1.5,"text":"Tx"},{"at":[16.7,6.4],"fill":"#e8ecef","font-size":3.4,"text":"smartoptics"},{"at":[39.8,6.2],"fill":"#e8ecef","font-size":3.0,"text":"DCP-R-34D-CS"},{"anchor":"middle","at":[6.2,16.8],"fill":"#c9cdd1","font-size":2.2,"rotate":-90,"text":"ETH0"},{"anchor":"middle","at":[6.2,31.1],"fill":"#c9cdd1","font-size":2.2,"rotate":-90,"text":"RS232"},{"at":[30.6,23.6],"fill":"#c9cdd1","font-size":2.0,"text":"Tx"},{"at":[42.6,23.6],"fill":"#c9cdd1","font-size":2.0,"text":"Rx"},{"anchor":"middle","at":[54.2,34.2],"fill":"#c9cdd1","font-size":2.0,"text":"Power"},{"anchor":"middle","at":[59.8,34.2],"fill":"#c9cdd1","font-size":2.0,"text":"Status"},{"at":[59.3,5.85],"font-size":1.5,"for":"port-1510","text":"1510"},{"at":[111.31,7.35],"font-size":1.5,"for":"port-line","text":"Line"},{"at":[37.95,40.4],"font-size":1.4,"for":"port-osc","text":"OSC"},{"at":[141.39,7.35],"font-size":1.5,"for":"xc01","text":"XC1"},{"at":[159.41,7.35],"font-size":1.5,"for":"xc02","text":"XC2"},{"at":[172.72,7.35],"font-size":1.5,"for":"xc03","text":"XC3"},{"at":[189.82,7.35],"font-size":1.5,"for":"xc04","text":"XC4"},{"at":[203.15,7.35],"font-size":1.5,"for":"xc05","text":"XC5"},{"at":[220.51,7.35],"font-size":1.5,"for":"xc06","text":"XC6"},{"at":[233.82,7.35],"font-size":1.5,"for":"xc07","text":"XC7"},{"at":[250.72,7.35],"font-size":1.5,"for":"xc08","text":"XC8"},{"at":[263.99,7.35],"font-size":1.5,"for":"xc09","text":"XC9"},{"at":[286.6,7.35],"font-size":1.5,"for":"xc10","text":"XC10"},{"at":[299.94,7.35],"font-size":1.5,"for":"xc11","text":"XC11"},{"at":[317.81,7.35],"font-size":1.5,"for":"xc12","text":"XC12"},{"at":[331.04,7.35],"font-size":1.5,"for":"xc13","text":"XC13"},{"at":[347.96,7.35],"font-size":1.5,"for":"xc14","text":"XC14"},{"at":[361.28,7.35],"font-size":1.5,"for":"xc15","text":"XC15"},{"at":[378.65,7.35],"font-size":1.5,"for":"xc16","text":"XC16"},{"at":[392.05,7.35],"font-size":1.5,"for":"xc17","text":"XC17"},{"at":[141.39,38.35],"font-size":1.5,"for":"xc18","text":"XC18"},{"at":[159.41,38.35],"font-size":1.5,"for":"xc19","text":"XC19"},{"at":[172.72,38.35],"font-size":1.5,"for":"xc20","text":"XC20"},{"at":[189.82,38.35],"font-size":1.5,"for":"xc21","text":"XC21"},{"at":[203.15,38.35],"font-size":1.5,"for":"xc22","text":"XC22"},{"at":[220.51,38.35],"font-size":1.5,"for":"xc23","text":"XC23"},{"at":[233.82,38.35],"font-size":1.5,"for":"xc24","text":"XC24"},{"at":[250.72,38.35],"font-size":1.5,"for":"xc25","text":"XC25"},{"at":[263.99,38.35],"font-size":1.5,"for":"xc26","text":"XC26"},{"at":[286.6,38.35],"font-size":1.5,"for":"xc27","text":"XC27"},{"at":[299.94,38.35],"font-size":1.5,"for":"xc28","text":"XC28"},{"at":[317.81,38.35],"font-size":1.5,"for":"xc29","text":"XC29"},{"at":[331.04,38.35],"font-size":1.5,"for":"xc30","text":"XC30"},{"at":[347.96,38.35],"font-size":1.5,"for":"xc31","text":"XC31"},{"at":[361.28,38.35],"font-size":1.5,"for":"xc32","text":"XC32"},{"at":[378.65,38.35],"font-size":1.5,"for":"xc33","text":"XC33"},{"at":[392.05,38.35],"font-size":1.5,"for":"xc34","text":"XC34"}],"size":{"h":45,"w":440}},"left":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[505,45]},{"at":[492.3,0],"fill":"#17191c","size":[12.7,45]}]},"size":{"h":45,"w":505}},"rear":{"components":{"placements":[{"at":[-14,0.75],"id":"ear-left-r","optional":"ears","ref":"common/rack-ear@1","skin":"left"},{"at":[440,0.75],"id":"ear-right-r","optional":"ears","ref":"common/rack-ear@1","skin":"right"},{"at":[0,2.5],"attrs":{"slot":"1"},"id":"psu-1","ref":"common/psu-550w@2"},{"at":[366.5,2.5],"attrs":{"slot":"2"},"id":"psu-2","ref":"common/psu-550w@2"},{"at":[276,8.5],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth2","ref":"common/rj45-hd@1"},{"at":[291,8.5],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth4","ref":"common/rj45-hd@1"},{"at":[276,22],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth1","ref":"common/rj45-hd@1"},{"at":[291,22],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth3","ref":"common/rj45-hd@1"},{"at":[320,14],"attrs":{"function":"tx"},"for":"eth5","id":"led-eth5-tx","ref":"common/led-dot@1"},{"at":[332,14],"attrs":{"function":"rx"},"for":"eth5","id":"led-eth5-rx","ref":"common/led-dot@1"},{"at":[318.75,22],"attrs":{"media":"sfp","role":"mgmt","speed":"100m-1g"},"group":"mgmt","id":"eth5","ref":"std/sfp@1"},{"at":[345,26],"for":"chassis","group":"mgmt","id":"reset","ref":"common/reset-button@1"}]},"panel":{"decor":[{"at":[78,5],"pattern":"vent","size":[180,35],"vent":9}]},"silkscreen":[{"anchor":"end","at":[316.5,16],"fill":"#c9cdd1","font-size":1.8,"text":"Tx"},{"at":[336.5,16],"fill":"#c9cdd1","font-size":1.8,"text":"Rx"},{"at":[283,7.1],"font-size":1.8,"for":"eth2","text":"ETH 2"},{"at":[298,7.1],"font-size":1.8,"for":"eth4","text":"ETH 4"},{"at":[283,35.9],"font-size":1.8,"for":"eth1","text":"ETH 1"},{"at":[298,35.9],"font-size":1.8,"for":"eth3","text":"ETH 3"},{"at":[326.75,35.9],"font-size":1.8,"for":"eth5","text":"ETH 5"},{"at":[347,34.4],"font-size":1.5,"for":"reset","text":"RESET"}],"size":{"h":45,"w":440}},"right":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[505,45]},{"at":[0,0],"fill":"#17191c","size":[12.7,45]}]},"size":{"h":45,"w":505}},"top":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[440,505]},{"at":[0,492.3],"fill":"#17191c","size":[440,12.7]}]},"size":{"h":505,"w":440}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DCP-R-34D-CS" x="0" y="0" width="440" height="45" rx="1.2" fill="#1b1e21" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <rect x="52.7" y="6.75" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="59.23" y="6.75" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="104.71" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="111.24" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="134.79" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="141.32" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="152.81" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="159.34" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="166.12" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="172.65" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="183.22" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="189.75" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="196.55" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="203.08" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="213.91" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="220.44" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="227.22" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="233.75" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="244.12" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="250.65" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="257.39" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="263.92" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="280" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="286.53" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="293.34" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="299.87" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="311.21" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="317.74" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="324.44" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="330.97" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="341.36" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="347.89" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="354.68" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="361.21" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="372.05" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="378.58" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="385.45" y="8.25" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="391.98" y="8.25" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="134.79" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="141.32" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="152.81" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="159.34" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="166.12" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="172.65" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="183.22" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="189.75" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="196.55" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="203.08" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="213.91" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="220.44" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="227.22" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="233.75" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="244.12" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="250.65" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="257.39" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="263.92" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="280" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="286.53" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="293.34" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="299.87" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="311.21" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="317.74" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="324.44" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="330.97" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="341.36" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="347.89" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="354.68" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="361.21" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="372.05" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="378.58" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="385.45" y="33.95" width="13.2" height="2.5" rx="0.5" fill="none" stroke="#8d939a" stroke-width="0.14" />
+  <rect x="391.98" y="33.95" width="0.14" height="2.5" rx="0.6" fill="#8d939a" />
+  <rect x="30" y="9" width="20" height="10" rx="0.6" fill="url(#portrayal-vent)" data-vent="5" />
+  <rect x="271.6" y="15.5" width="5.4" height="14" rx="0.6" fill="url(#portrayal-vent)" data-vent="3" />
+  <rect x="424" y="13" width="7" height="19" rx="0.6" fill="url(#portrayal-vent)" data-vent="5" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="56" y="8.53" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="62.6" y="8.53" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="108.01" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="114.61" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="138.09" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="144.69" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="156.11" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="162.71" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="169.42" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="176.02" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="186.52" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="193.12" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="199.85" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="206.45" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="217.21" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="223.81" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="230.52" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="237.12" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="247.42" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="254.02" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="260.69" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="267.29" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="283.3" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="289.9" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="296.64" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="303.24" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="314.51" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="321.11" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="327.74" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="334.34" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="344.66" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="351.26" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="357.98" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="364.58" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="375.35" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="381.95" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="388.75" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="395.35" y="10.03" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="138.09" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="144.69" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="156.11" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="162.71" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="169.42" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="176.02" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="186.52" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="193.12" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="199.85" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="206.45" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="217.21" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="223.81" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="230.52" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="237.12" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="247.42" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="254.02" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="260.69" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="267.29" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="283.3" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="289.9" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="296.64" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="303.24" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="314.51" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="321.11" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="327.74" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="334.34" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="344.66" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="351.26" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="357.98" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="364.58" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="375.35" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="381.95" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="388.75" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="395.35" y="35.73" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="16.7" y="6.4" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#e8ecef">smartoptics</text>
+    <text x="39.8" y="6.2" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#e8ecef">DCP-R-34D-CS</text>
+    <text x="6.2" y="16.8" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9cdd1" transform="rotate(-90 6.2 16.8)">ETH0</text>
+    <text x="6.2" y="31.1" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9cdd1" transform="rotate(-90 6.2 31.1)">RS232</text>
+    <text x="30.6" y="23.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c9cdd1">Tx</text>
+    <text x="42.6" y="23.6" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c9cdd1">Rx</text>
+    <text x="54.2" y="34.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c9cdd1">Power</text>
+    <text x="59.8" y="34.2" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#c9cdd1">Status</text>
+    <text x="59.3" y="5.85" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="port-1510">1510</text>
+    <text x="111.31" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="port-line">Line</text>
+    <text x="37.95" y="40.4" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#c7ccd1" data-for="port-osc">OSC</text>
+    <text x="141.39" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc01">XC1</text>
+    <text x="159.41" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc02">XC2</text>
+    <text x="172.72" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc03">XC3</text>
+    <text x="189.82" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc04">XC4</text>
+    <text x="203.15" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc05">XC5</text>
+    <text x="220.51" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc06">XC6</text>
+    <text x="233.82" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc07">XC7</text>
+    <text x="250.72" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc08">XC8</text>
+    <text x="263.99" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc09">XC9</text>
+    <text x="286.6" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc10">XC10</text>
+    <text x="299.94" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc11">XC11</text>
+    <text x="317.81" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc12">XC12</text>
+    <text x="331.04" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc13">XC13</text>
+    <text x="347.96" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc14">XC14</text>
+    <text x="361.28" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc15">XC15</text>
+    <text x="378.65" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc16">XC16</text>
+    <text x="392.05" y="7.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc17">XC17</text>
+    <text x="141.39" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc18">XC18</text>
+    <text x="159.41" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc19">XC19</text>
+    <text x="172.72" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc20">XC20</text>
+    <text x="189.82" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc21">XC21</text>
+    <text x="203.15" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc22">XC22</text>
+    <text x="220.51" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc23">XC23</text>
+    <text x="233.82" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc24">XC24</text>
+    <text x="250.72" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc25">XC25</text>
+    <text x="263.99" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc26">XC26</text>
+    <text x="286.6" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc27">XC27</text>
+    <text x="299.94" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc28">XC28</text>
+    <text x="317.81" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc29">XC29</text>
+    <text x="331.04" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc30">XC30</text>
+    <text x="347.96" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc31">XC31</text>
+    <text x="361.28" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc32">XC32</text>
+    <text x="378.65" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc33">XC33</text>
+    <text x="392.05" y="38.35" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#c7ccd1" data-for="xc34">XC34</text>
+  </g>
+  <g id="eth0" data-path="eth0" data-class="port" data-ref="common/rj45-shielded@2:2.0.0" data-depth="12.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-role="mgmt" data-speed="1000base-t" transform="translate(9.6,10.55) rotate(180 7.9 6.25)">
+    <title>eth0</title>
+    <rect id="eth0--body" x="0" y="0" width="15.8" height="12.5" rx="0.4" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.3" />
+    <rect id="eth0--jack" x="0.6" y="1.0" width="14.6" height="10.5" rx="0.4" fill="#17191c" data-path="eth0/jack" data-class="cutout" />
+    <path id="eth0--cavity" d="M 1.955 1.525 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="eth0--pins" fill="#a8873c">
+      <rect x="4.034" y="2.175" width="0.62" height="2.3" />
+      <rect x="5.050" y="2.175" width="0.62" height="2.3" />
+      <rect x="6.066" y="2.175" width="0.62" height="2.3" />
+      <rect x="7.082" y="2.175" width="0.62" height="2.3" />
+      <rect x="8.098" y="2.175" width="0.62" height="2.3" />
+      <rect x="9.114" y="2.175" width="0.62" height="2.3" />
+      <rect x="10.130" y="2.175" width="0.62" height="2.3" />
+      <rect x="11.146" y="2.175" width="0.62" height="2.3" />
+    </g>
+    <rect id="eth0--led-a" x="1.5" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="eth0/led-a" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+    <rect id="eth0--led-b" x="11.7" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="eth0/led-b" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+  </g>
+  <g id="rs232" data-path="rs232" data-class="port" data-ref="common/rj45-shielded@2:2.0.0" data-depth="12.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45-serial" data-role="console" transform="translate(10,24.85)">
+    <title>rs232</title>
+    <rect id="rs232--body" x="0" y="0" width="15.8" height="12.5" rx="0.4" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.3" />
+    <rect id="rs232--jack" x="0.6" y="1.0" width="14.6" height="10.5" rx="0.4" fill="#17191c" data-path="rs232/jack" data-class="cutout" />
+    <path id="rs232--cavity" d="M 1.955 1.525 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="rs232--pins" fill="#a8873c">
+      <rect x="4.034" y="2.175" width="0.62" height="2.3" />
+      <rect x="5.050" y="2.175" width="0.62" height="2.3" />
+      <rect x="6.066" y="2.175" width="0.62" height="2.3" />
+      <rect x="7.082" y="2.175" width="0.62" height="2.3" />
+      <rect x="8.098" y="2.175" width="0.62" height="2.3" />
+      <rect x="9.114" y="2.175" width="0.62" height="2.3" />
+      <rect x="10.130" y="2.175" width="0.62" height="2.3" />
+      <rect x="11.146" y="2.175" width="0.62" height="2.3" />
+    </g>
+    <rect id="rs232--led-a" x="1.5" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="rs232/led-a" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+    <rect id="rs232--led-b" x="11.7" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="rs232/led-b" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+  </g>
+  <g id="led-osc-tx" data-path="led-osc-tx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="osc-tx" transform="translate(33.9,21.8)" data-for="port-osc">
+    <title>led-osc-tx</title>
+    <circle id="led-osc-tx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-osc-tx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-osc-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-osc-rx" data-path="led-osc-rx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="osc-rx" transform="translate(39.7,21.8)" data-for="port-osc">
+    <title>led-osc-rx</title>
+    <circle id="led-osc-rx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-osc-rx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-osc-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-power" data-path="led-power" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="power" transform="translate(53.2,35)" data-for="chassis">
+    <title>led-power</title>
+    <circle id="led-power--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-power--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-power/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-status" data-path="led-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(58.8,35)" data-for="chassis">
+    <title>led-status</title>
+    <circle id="led-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-1510" data-path="port-1510" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-connector="lc-duplex" data-media="fiber" data-role="osc-filter" transform="translate(52.7,9.6)">
+    <title>port-1510</title>
+    <rect id="port-1510--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="port-1510--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="port-1510--tx" data-path="port-1510/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>port-1510--tx</title>
+      <rect id="port-1510--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="port-1510/tx/bore" data-class="cutout" />
+      <circle id="port-1510--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="port-1510--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="port-1510--rx" data-path="port-1510/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>port-1510--rx</title>
+      <rect id="port-1510--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="port-1510/rx/bore" data-class="cutout" />
+      <circle id="port-1510--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="port-1510--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="port-1510--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="port-1510--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="port-1510/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="port-1510--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="port-1510/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="port-line" data-path="port-line" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-connector="lc-duplex" data-media="fiber" data-role="line" transform="translate(104.71,11.1)">
+    <title>port-line</title>
+    <rect id="port-line--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="port-line--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="port-line--tx" data-path="port-line/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>port-line--tx</title>
+      <rect id="port-line--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="port-line/tx/bore" data-class="cutout" />
+      <circle id="port-line--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="port-line--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="port-line--rx" data-path="port-line/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>port-line--rx</title>
+      <rect id="port-line--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="port-line/rx/bore" data-class="cutout" />
+      <circle id="port-line--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="port-line--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="port-line--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="port-line--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="port-line/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="port-line--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="port-line/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="port-osc" data-path="port-osc" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-role="osc" transform="translate(30.7,27.5)">
+    <title>port-osc</title>
+    <rect id="port-osc--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="port-osc/opening" data-class="cutout" />
+    <rect id="port-osc--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="port-osc--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-osc--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="port-osc--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+  </g>
+  <g id="xc01" data-path="xc01" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="1" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(134.79,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc01</title>
+    <rect id="xc01--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc01--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc01--tx" data-path="xc01/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc01--tx</title>
+      <rect id="xc01--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc01/tx/bore" data-class="cutout" />
+      <circle id="xc01--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc01--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc01--rx" data-path="xc01/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc01--rx</title>
+      <rect id="xc01--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc01/rx/bore" data-class="cutout" />
+      <circle id="xc01--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc01--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc01--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc01--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc01/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc01--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc01/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc02" data-path="xc02" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="2" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(152.81,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc02</title>
+    <rect id="xc02--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc02--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc02--tx" data-path="xc02/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc02--tx</title>
+      <rect id="xc02--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc02/tx/bore" data-class="cutout" />
+      <circle id="xc02--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc02--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc02--rx" data-path="xc02/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc02--rx</title>
+      <rect id="xc02--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc02/rx/bore" data-class="cutout" />
+      <circle id="xc02--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc02--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc02--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc02--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc02/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc02--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc02/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc03" data-path="xc03" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="3" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(166.12,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc03</title>
+    <rect id="xc03--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc03--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc03--tx" data-path="xc03/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc03--tx</title>
+      <rect id="xc03--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc03/tx/bore" data-class="cutout" />
+      <circle id="xc03--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc03--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc03--rx" data-path="xc03/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc03--rx</title>
+      <rect id="xc03--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc03/rx/bore" data-class="cutout" />
+      <circle id="xc03--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc03--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc03--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc03--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc03/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc03--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc03/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc04" data-path="xc04" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="4" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(183.22,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc04</title>
+    <rect id="xc04--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc04--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc04--tx" data-path="xc04/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc04--tx</title>
+      <rect id="xc04--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc04/tx/bore" data-class="cutout" />
+      <circle id="xc04--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc04--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc04--rx" data-path="xc04/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc04--rx</title>
+      <rect id="xc04--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc04/rx/bore" data-class="cutout" />
+      <circle id="xc04--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc04--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc04--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc04--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc04/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc04--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc04/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc05" data-path="xc05" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="5" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(196.55,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc05</title>
+    <rect id="xc05--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc05--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc05--tx" data-path="xc05/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc05--tx</title>
+      <rect id="xc05--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc05/tx/bore" data-class="cutout" />
+      <circle id="xc05--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc05--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc05--rx" data-path="xc05/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc05--rx</title>
+      <rect id="xc05--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc05/rx/bore" data-class="cutout" />
+      <circle id="xc05--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc05--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc05--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc05--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc05/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc05--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc05/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc06" data-path="xc06" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="6" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(213.91,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc06</title>
+    <rect id="xc06--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc06--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc06--tx" data-path="xc06/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc06--tx</title>
+      <rect id="xc06--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc06/tx/bore" data-class="cutout" />
+      <circle id="xc06--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc06--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc06--rx" data-path="xc06/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc06--rx</title>
+      <rect id="xc06--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc06/rx/bore" data-class="cutout" />
+      <circle id="xc06--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc06--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc06--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc06--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc06/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc06--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc06/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc07" data-path="xc07" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="7" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(227.22,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc07</title>
+    <rect id="xc07--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc07--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc07--tx" data-path="xc07/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc07--tx</title>
+      <rect id="xc07--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc07/tx/bore" data-class="cutout" />
+      <circle id="xc07--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc07--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc07--rx" data-path="xc07/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc07--rx</title>
+      <rect id="xc07--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc07/rx/bore" data-class="cutout" />
+      <circle id="xc07--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc07--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc07--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc07--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc07/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc07--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc07/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc08" data-path="xc08" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="8" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(244.12,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc08</title>
+    <rect id="xc08--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc08--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc08--tx" data-path="xc08/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc08--tx</title>
+      <rect id="xc08--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc08/tx/bore" data-class="cutout" />
+      <circle id="xc08--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc08--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc08--rx" data-path="xc08/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc08--rx</title>
+      <rect id="xc08--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc08/rx/bore" data-class="cutout" />
+      <circle id="xc08--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc08--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc08--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc08--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc08/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc08--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc08/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc09" data-path="xc09" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="9" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(257.39,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc09</title>
+    <rect id="xc09--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc09--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc09--tx" data-path="xc09/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc09--tx</title>
+      <rect id="xc09--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc09/tx/bore" data-class="cutout" />
+      <circle id="xc09--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc09--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc09--rx" data-path="xc09/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc09--rx</title>
+      <rect id="xc09--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc09/rx/bore" data-class="cutout" />
+      <circle id="xc09--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc09--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc09--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc09--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc09/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc09--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc09/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc10" data-path="xc10" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="10" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(280,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc10</title>
+    <rect id="xc10--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc10--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc10--tx" data-path="xc10/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc10--tx</title>
+      <rect id="xc10--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc10/tx/bore" data-class="cutout" />
+      <circle id="xc10--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc10--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc10--rx" data-path="xc10/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc10--rx</title>
+      <rect id="xc10--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc10/rx/bore" data-class="cutout" />
+      <circle id="xc10--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc10--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc10--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc10--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc10/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc10--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc10/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc11" data-path="xc11" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="11" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(293.34,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc11</title>
+    <rect id="xc11--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc11--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc11--tx" data-path="xc11/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc11--tx</title>
+      <rect id="xc11--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc11/tx/bore" data-class="cutout" />
+      <circle id="xc11--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc11--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc11--rx" data-path="xc11/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc11--rx</title>
+      <rect id="xc11--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc11/rx/bore" data-class="cutout" />
+      <circle id="xc11--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc11--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc11--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc11--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc11/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc11--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc11/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc12" data-path="xc12" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="12" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(311.21,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc12</title>
+    <rect id="xc12--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc12--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc12--tx" data-path="xc12/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc12--tx</title>
+      <rect id="xc12--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc12/tx/bore" data-class="cutout" />
+      <circle id="xc12--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc12--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc12--rx" data-path="xc12/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc12--rx</title>
+      <rect id="xc12--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc12/rx/bore" data-class="cutout" />
+      <circle id="xc12--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc12--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc12--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc12--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc12/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc12--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc12/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc13" data-path="xc13" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="13" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(324.44,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc13</title>
+    <rect id="xc13--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc13--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc13--tx" data-path="xc13/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc13--tx</title>
+      <rect id="xc13--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc13/tx/bore" data-class="cutout" />
+      <circle id="xc13--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc13--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc13--rx" data-path="xc13/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc13--rx</title>
+      <rect id="xc13--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc13/rx/bore" data-class="cutout" />
+      <circle id="xc13--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc13--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc13--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc13--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc13/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc13--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc13/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc14" data-path="xc14" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="14" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(341.36,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc14</title>
+    <rect id="xc14--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc14--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc14--tx" data-path="xc14/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc14--tx</title>
+      <rect id="xc14--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc14/tx/bore" data-class="cutout" />
+      <circle id="xc14--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc14--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc14--rx" data-path="xc14/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc14--rx</title>
+      <rect id="xc14--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc14/rx/bore" data-class="cutout" />
+      <circle id="xc14--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc14--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc14--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc14--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc14/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc14--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc14/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc15" data-path="xc15" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="15" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(354.68,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc15</title>
+    <rect id="xc15--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc15--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc15--tx" data-path="xc15/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc15--tx</title>
+      <rect id="xc15--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc15/tx/bore" data-class="cutout" />
+      <circle id="xc15--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc15--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc15--rx" data-path="xc15/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc15--rx</title>
+      <rect id="xc15--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc15/rx/bore" data-class="cutout" />
+      <circle id="xc15--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc15--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc15--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc15--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc15/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc15--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc15/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc16" data-path="xc16" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="16" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(372.05,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc16</title>
+    <rect id="xc16--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc16--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc16--tx" data-path="xc16/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc16--tx</title>
+      <rect id="xc16--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc16/tx/bore" data-class="cutout" />
+      <circle id="xc16--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc16--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc16--rx" data-path="xc16/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc16--rx</title>
+      <rect id="xc16--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc16/rx/bore" data-class="cutout" />
+      <circle id="xc16--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc16--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc16--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc16--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc16/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc16--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc16/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc17" data-path="xc17" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="17" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(385.45,11.1)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc17</title>
+    <rect id="xc17--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc17--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc17--tx" data-path="xc17/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc17--tx</title>
+      <rect id="xc17--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc17/tx/bore" data-class="cutout" />
+      <circle id="xc17--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc17--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc17--rx" data-path="xc17/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc17--rx</title>
+      <rect id="xc17--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc17/rx/bore" data-class="cutout" />
+      <circle id="xc17--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc17--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc17--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc17--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc17/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc17--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc17/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc18" data-path="xc18" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="18" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(134.79,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc18</title>
+    <rect id="xc18--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc18--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc18--tx" data-path="xc18/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc18--tx</title>
+      <rect id="xc18--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc18/tx/bore" data-class="cutout" />
+      <circle id="xc18--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc18--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc18--rx" data-path="xc18/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc18--rx</title>
+      <rect id="xc18--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc18/rx/bore" data-class="cutout" />
+      <circle id="xc18--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc18--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc18--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc18--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc18/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc18--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc18/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc19" data-path="xc19" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="19" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(152.81,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc19</title>
+    <rect id="xc19--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc19--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc19--tx" data-path="xc19/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc19--tx</title>
+      <rect id="xc19--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc19/tx/bore" data-class="cutout" />
+      <circle id="xc19--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc19--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc19--rx" data-path="xc19/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc19--rx</title>
+      <rect id="xc19--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc19/rx/bore" data-class="cutout" />
+      <circle id="xc19--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc19--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc19--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc19--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc19/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc19--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc19/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc20" data-path="xc20" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="20" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(166.12,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc20</title>
+    <rect id="xc20--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc20--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc20--tx" data-path="xc20/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc20--tx</title>
+      <rect id="xc20--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc20/tx/bore" data-class="cutout" />
+      <circle id="xc20--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc20--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc20--rx" data-path="xc20/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc20--rx</title>
+      <rect id="xc20--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc20/rx/bore" data-class="cutout" />
+      <circle id="xc20--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc20--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc20--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc20--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc20/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc20--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc20/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc21" data-path="xc21" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="21" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(183.22,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc21</title>
+    <rect id="xc21--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc21--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc21--tx" data-path="xc21/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc21--tx</title>
+      <rect id="xc21--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc21/tx/bore" data-class="cutout" />
+      <circle id="xc21--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc21--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc21--rx" data-path="xc21/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc21--rx</title>
+      <rect id="xc21--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc21/rx/bore" data-class="cutout" />
+      <circle id="xc21--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc21--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc21--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc21--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc21/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc21--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc21/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc22" data-path="xc22" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="22" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(196.55,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc22</title>
+    <rect id="xc22--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc22--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc22--tx" data-path="xc22/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc22--tx</title>
+      <rect id="xc22--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc22/tx/bore" data-class="cutout" />
+      <circle id="xc22--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc22--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc22--rx" data-path="xc22/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc22--rx</title>
+      <rect id="xc22--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc22/rx/bore" data-class="cutout" />
+      <circle id="xc22--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc22--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc22--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc22--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc22/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc22--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc22/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc23" data-path="xc23" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="23" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(213.91,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc23</title>
+    <rect id="xc23--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc23--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc23--tx" data-path="xc23/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc23--tx</title>
+      <rect id="xc23--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc23/tx/bore" data-class="cutout" />
+      <circle id="xc23--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc23--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc23--rx" data-path="xc23/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc23--rx</title>
+      <rect id="xc23--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc23/rx/bore" data-class="cutout" />
+      <circle id="xc23--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc23--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc23--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc23--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc23/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc23--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc23/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc24" data-path="xc24" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="24" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(227.22,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc24</title>
+    <rect id="xc24--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc24--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc24--tx" data-path="xc24/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc24--tx</title>
+      <rect id="xc24--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc24/tx/bore" data-class="cutout" />
+      <circle id="xc24--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc24--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc24--rx" data-path="xc24/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc24--rx</title>
+      <rect id="xc24--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc24/rx/bore" data-class="cutout" />
+      <circle id="xc24--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc24--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc24--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc24--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc24/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc24--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc24/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc25" data-path="xc25" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="25" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(244.12,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc25</title>
+    <rect id="xc25--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc25--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc25--tx" data-path="xc25/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc25--tx</title>
+      <rect id="xc25--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc25/tx/bore" data-class="cutout" />
+      <circle id="xc25--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc25--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc25--rx" data-path="xc25/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc25--rx</title>
+      <rect id="xc25--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc25/rx/bore" data-class="cutout" />
+      <circle id="xc25--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc25--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc25--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc25--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc25/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc25--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc25/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc26" data-path="xc26" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="26" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(257.39,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc26</title>
+    <rect id="xc26--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc26--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc26--tx" data-path="xc26/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc26--tx</title>
+      <rect id="xc26--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc26/tx/bore" data-class="cutout" />
+      <circle id="xc26--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc26--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc26--rx" data-path="xc26/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc26--rx</title>
+      <rect id="xc26--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc26/rx/bore" data-class="cutout" />
+      <circle id="xc26--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc26--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc26--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc26--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc26/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc26--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc26/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc27" data-path="xc27" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="27" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(280,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc27</title>
+    <rect id="xc27--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc27--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc27--tx" data-path="xc27/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc27--tx</title>
+      <rect id="xc27--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc27/tx/bore" data-class="cutout" />
+      <circle id="xc27--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc27--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc27--rx" data-path="xc27/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc27--rx</title>
+      <rect id="xc27--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc27/rx/bore" data-class="cutout" />
+      <circle id="xc27--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc27--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc27--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc27--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc27/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc27--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc27/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc28" data-path="xc28" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="28" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(293.34,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc28</title>
+    <rect id="xc28--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc28--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc28--tx" data-path="xc28/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc28--tx</title>
+      <rect id="xc28--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc28/tx/bore" data-class="cutout" />
+      <circle id="xc28--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc28--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc28--rx" data-path="xc28/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc28--rx</title>
+      <rect id="xc28--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc28/rx/bore" data-class="cutout" />
+      <circle id="xc28--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc28--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc28--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc28--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc28/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc28--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc28/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc29" data-path="xc29" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="29" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(311.21,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc29</title>
+    <rect id="xc29--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc29--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc29--tx" data-path="xc29/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc29--tx</title>
+      <rect id="xc29--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc29/tx/bore" data-class="cutout" />
+      <circle id="xc29--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc29--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc29--rx" data-path="xc29/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc29--rx</title>
+      <rect id="xc29--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc29/rx/bore" data-class="cutout" />
+      <circle id="xc29--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc29--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc29--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc29--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc29/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc29--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc29/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc30" data-path="xc30" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="30" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(324.44,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc30</title>
+    <rect id="xc30--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc30--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc30--tx" data-path="xc30/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc30--tx</title>
+      <rect id="xc30--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc30/tx/bore" data-class="cutout" />
+      <circle id="xc30--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc30--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc30--rx" data-path="xc30/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc30--rx</title>
+      <rect id="xc30--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc30/rx/bore" data-class="cutout" />
+      <circle id="xc30--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc30--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc30--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc30--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc30/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc30--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc30/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc31" data-path="xc31" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="31" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(341.36,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc31</title>
+    <rect id="xc31--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc31--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc31--tx" data-path="xc31/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc31--tx</title>
+      <rect id="xc31--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc31/tx/bore" data-class="cutout" />
+      <circle id="xc31--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc31--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc31--rx" data-path="xc31/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc31--rx</title>
+      <rect id="xc31--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc31/rx/bore" data-class="cutout" />
+      <circle id="xc31--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc31--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc31--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc31--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc31/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc31--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc31/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc32" data-path="xc32" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="32" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(354.68,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc32</title>
+    <rect id="xc32--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc32--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc32--tx" data-path="xc32/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc32--tx</title>
+      <rect id="xc32--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc32/tx/bore" data-class="cutout" />
+      <circle id="xc32--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc32--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc32--rx" data-path="xc32/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc32--rx</title>
+      <rect id="xc32--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc32/rx/bore" data-class="cutout" />
+      <circle id="xc32--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc32--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc32--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc32--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc32/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc32--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc32/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc33" data-path="xc33" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="33" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(372.05,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc33</title>
+    <rect id="xc33--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc33--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc33--tx" data-path="xc33/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc33--tx</title>
+      <rect id="xc33--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc33/tx/bore" data-class="cutout" />
+      <circle id="xc33--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc33--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc33--rx" data-path="xc33/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc33--rx</title>
+      <rect id="xc33--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc33/rx/bore" data-class="cutout" />
+      <circle id="xc33--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc33--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc33--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc33--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc33/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc33--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc33/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="xc34" data-path="xc34" data-class="port" data-ref="common/lc-duplex-adapter@3:3.0.0" data-channel="34" data-connector="lc-duplex" data-media="fiber" data-role="cross-connect" data-group="xc" transform="translate(385.45,22.6)" data-description="XC01-XC34, the cross-connect ports. One block of 34 laid out seventeen over seventeen - the two rows are how they fit on a 1U faceplate, not two kinds of port">
+    <title>xc34</title>
+    <rect id="xc34--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <rect id="xc34--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+    <g id="xc34--tx" data-path="xc34/tx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.0,3.3)" data-z-lift="3.175">
+      <title>xc34--tx</title>
+      <rect id="xc34--tx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc34/tx/bore" data-class="cutout" />
+      <circle id="xc34--tx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc34--tx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="xc34--rx" data-path="xc34/rx" data-class="port" data-ref="std/lc-bore@1:1.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.6,3.3)" data-z-lift="3.175">
+      <title>xc34--rx</title>
+      <rect id="xc34--rx--bore" x="0" y="0" width="4.6" height="4.4" rx="0.35" fill="#15181b" data-path="xc34/rx/bore" data-class="cutout" />
+      <circle id="xc34--rx--sleeve" cx="2.3" cy="2.2" r="1.15" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="xc34--rx--ferrule" cx="2.3" cy="2.2" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <path id="xc34--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.0 3.3 h 4.6 v 4.4 h -4.6 z            M 7.6 3.3 h 4.6 v 4.4 h -4.6 z" data-z-out="3.175" />
+    <rect id="xc34--cap-tx" x="1.0" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc34/cap-tx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+    <rect id="xc34--cap-rx" x="7.6" y="3.3" width="4.6" height="4.4" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="xc34/cap-rx" data-class="cap" data-z-out="6.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+  </g>
+  <g id="laser-warn-top" data-path="laser-warn-top" data-class="marking" data-ref="common/laser-warning@1:1.0.0" transform="translate(271.6,5.4)">
+    <title>laser-warn-top</title>
+    <path id="laser-warn-top--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+    <g id="laser-warn-top--burst" fill="#1a1a1a">
+      <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+      <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+      <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+      <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+    </g>
+  </g>
+  <g id="laser-warn-bottom" data-path="laser-warn-bottom" data-class="marking" data-ref="common/laser-warning@1:1.0.0" transform="translate(271.6,34.6)">
+    <title>laser-warn-bottom</title>
+    <path id="laser-warn-bottom--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+    <g id="laser-warn-bottom--burst" fill="#1a1a1a">
+      <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+      <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+      <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+      <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+    </g>
+  </g>
+</svg>
