@@ -41,6 +41,31 @@ const el = (tag, attrs = {}, kids = []) => {
   return n;
 };
 
+
+// Descriptions are prose written for people, and these ones use backticks for
+// code spans - `data-<key>`, `power-max-w`. Rendering them as flat text left the
+// backticks on screen. Built as DOM nodes rather than parsed as HTML, so the
+// angle brackets inside those spans are safe by construction rather than by
+// escaping.
+//
+// Paired backticks only. An unpaired one stays literal, because swallowing the
+// rest of a sentence is worse than showing one stray character.
+function richText(text) {
+  const frag = document.createDocumentFragment();
+  String(text).split(/`([^`]+)`/g).forEach((part, i) => {
+    if (!part) return;
+    frag.append(i % 2 ? el('code', {class: 'sc-code', text: part})
+                      : document.createTextNode(part));
+  });
+  return frag;
+}
+
+const descP = text => {
+  const p = el('p', {class: 'sc-desc'});
+  p.append(richText(text));
+  return p;
+};
+
 const refName = ref => String(ref).split('/').pop();
 const defId = name => `def-${name}`;
 
@@ -133,7 +158,7 @@ function renderNode(node, depth) {
     node.oneOf.forEach((branch, i) => {
       const b = el('div', {class: 'sc-branch'});
       b.append(el('p', {class: 'sc-branch-head', text: `option ${i + 1} — ${typeLabel(branch) || 'object'}`}));
-      if (branch.description) b.append(el('p', {class: 'sc-desc', text: branch.description}));
+      if (branch.description) b.append(descP(branch.description));
       b.append(renderNode(branch, depth + 1));
       wrap.append(b);
     });
@@ -161,7 +186,7 @@ function propertyList(schema, depth) {
       required ? el('span', {class: 'sc-req', text: 'required'}) : null,
     ]);
     row.append(head);
-    if (prop.description) row.append(el('p', {class: 'sc-desc', text: prop.description}));
+    if (prop.description) row.append(descP(prop.description));
     const cons = constraints(prop);
     if (cons.length) row.append(el('div', {class: 'sc-meta'}, cons));
 
@@ -220,7 +245,7 @@ function renderSchema(doc, key) {
         el('code', {text: name}),
         typeLabel(def) ? el('span', {class: 'sc-type', text: typeLabel(def)}) : null,
       ]));
-      if (def.description) block.append(el('p', {class: 'sc-desc', text: def.description}));
+      if (def.description) block.append(descP(def.description));
       const cons = constraints(def);
       if (cons.length) block.append(el('div', {class: 'sc-meta'}, cons));
       block.append(renderNode(def, 0));
