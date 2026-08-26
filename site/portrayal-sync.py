@@ -51,7 +51,8 @@ class Run:
 
     def __init__(self, commit):
         self.commit = commit
-        self.n = {"created": 0, "existing": 0, "enriched": 0, "failed": 0}
+        self.n = {"created": 0, "existing": 0, "images": 0,
+                  "enriched": 0, "failed": 0}
 
     def do(self, what, fn):
         if not self.commit:
@@ -88,6 +89,74 @@ def load_types(root, kind):
         yield f, yaml.safe_load(f.read_text())
 
 
+# Which kinds of type can hold a rendered face, per product.
+#
+# Both products give a DEVICE type front_image/rear_image. Only Nautobot gives a
+# MODULE type the same two fields; NetBox's ModuleType carries
+# ImageAttachmentsMixin instead, so a picture of a card attaches as a generic
+# image attachment against the object rather than living on it, and there is no
+# field here to PATCH. The bundle ships module-images/ for both targets either
+# way - the files are also what a pull request to the shared devicetype library
+# needs, and neither library's YAML schema has a field for them.
+IMAGE_FIELD = {
+    ("netbox", "device-types"): True,
+    ("netbox", "module-types"): False,
+    ("nautobot", "device-types"): True,
+    ("nautobot", "module-types"): True,
+}
+IMAGE_DIR = {"device-types": "elevation-images", "module-types": "module-images"}
+
+
+def image_for(root, kind, doc, face):
+    """The rendered face for one type, or None if it was not rendered.
+
+    Device types are keyed by slug, the name the elevation tree already uses.
+    Module types have no slug in either schema, so both libraries key their
+    module-images tree by MODEL - sanitised the way the YAML filename is,
+    because a Cisco part number can contain a slash.
+    """
+    stem = doc.get("slug") if kind == "device-types" else doc["model"].replace("/", "-")
+    if not stem:
+        return None
+    p = root / IMAGE_DIR[kind] / doc["manufacturer"] / f"{stem}.{face}.png"
+    return p if p.is_file() else None
+
+
+def upload_images(root, kind, doc, obj, target, url, token, run):
+    """PATCH the rendered faces onto a type that was just created.
+
+    An image field is a file upload, not JSON, so this goes over requests
+    directly rather than through the client - both clients depend on requests,
+    so nothing new is being asked for. Only newly created types get a picture:
+    an existing one is left alone, which is the same rule the rest of the script
+    follows.
+    """
+    if not IMAGE_FIELD.get((target, kind)):
+        return
+    for face in ("front", "rear"):
+        path = image_for(root, kind, doc, face)
+        if not path:
+            continue
+        what = f"upload {face} image for {doc['model']} ({path.stat().st_size // 1024} KB)"
+        if not run.commit:
+            print(f"  would {what}")
+            continue
+        if obj is None:
+            continue
+        import requests
+        def send(p=path, f=face, o=obj):
+            with p.open("rb") as fh:
+                r = requests.patch(
+                    f"{url.rstrip('/')}/api/dcim/{kind}/{o.id}/",
+                    headers={"Authorization": f"Token {token}"},
+                    files={f"{f}_image": (p.name, fh, "image/png")},
+                    timeout=60)
+            r.raise_for_status()
+            return r
+        if run.do(what, send):
+            run.n["images"] += 1
+
+
 def sync(root, target, url, token, run, images=True):
     dcim = client(target, url, token)
     cache = {}
@@ -110,14 +179,16 @@ def sync(root, target, url, token, run, images=True):
                 run.n["existing"] += 1
                 continue
             payload = dict(doc, manufacturer={"name": man})
-            # front_image/rear_image are booleans here and file uploads in the
-            # API; the files go up separately below.
+            # front_image/rear_image are booleans in the YAML and file uploads
+            # in the API. Drop them from the JSON and send the files after.
             payload.pop("front_image", None)
             payload.pop("rear_image", None)
             made = run.do(f"create {kind[:-1]} {man} / {doc['model']}",
                           lambda p=payload: api.create(p))
             if made:
                 run.n["created"] += 1
+            if images:
+                upload_images(root, kind, doc, made, target, url, token, run)
 
     enrich = root / "enrichment.json"
     if enrich.is_file():
@@ -180,6 +251,8 @@ def main():
     ap.add_argument("--token", default=os.environ.get("DCIM_TOKEN"))
     ap.add_argument("--commit", action="store_true",
                     help="actually write; without it nothing is changed")
+    ap.add_argument("--no-images", action="store_true",
+                    help="create the types without uploading rendered faces")
     args = ap.parse_args()
 
     target = args.target
@@ -197,7 +270,7 @@ def main():
     if not args.commit:
         print("DRY RUN - nothing will be written. Add --commit when the plan "
               "below is what you want.\n")
-    sync(root, target, args.url, args.token, run)
+    sync(root, target, args.url, args.token, run, images=not args.no_images)
 
     print("\n" + ", ".join(f"{v} {k}" for k, v in run.n.items() if v))
     if not args.commit:

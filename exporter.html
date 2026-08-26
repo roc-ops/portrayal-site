@@ -224,7 +224,8 @@ Interface names: ${nos ? nos : 'none - NOS-neutral device types only'}.
 
     device-types/      one per SKU, not per device
     module-types/      line cards, supervisors, power supplies, fans
-    elevation-images/  rendered from the compiled faces
+    elevation-images/  chassis faces, rendered from the compiled drawings
+    module-images/     card faceplates, the same way
     enrichment.json    the facts the YAML schema has no field for
     portrayal-sync.py  loads all of the above
 
@@ -244,6 +245,24 @@ strictly valid and still contributable.
 
 That file is a measure of the gap. As the libraries gain these fields it gets
 smaller, and when it is empty the script is optional.
+
+## About the images
+
+Neither library's YAML schema has a field for a module image, yet both repos
+carry a module-images/ tree - so these are named the way those trees are, by
+model rather than by slug, and drop straight onto a clone for a pull request.
+
+Through the API the two products differ. Both give a DEVICE type front_image
+and rear_image. Only Nautobot gives a MODULE type the same fields; NetBox's
+module type takes pictures as generic image attachments instead, so
+\`portrayal-sync.py\` uploads module faceplates to Nautobot and skips them on
+NetBox. The files ship for both targets regardless, because the other use for
+them - contributing upstream - does not care which product you run.
+
+Each card is drawn in its own orientation rather than rotated to a convention.
+Which way up a card sits is a property of the chassis holding it - an A9K line
+card is horizontal in a 9010 and vertical in a 9910 - so there is no rotation
+that is true of the part by itself.
 
 ## Interface names are OS-dependent
 

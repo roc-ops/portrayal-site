@@ -75,7 +75,11 @@ if [ -f "$TOOLS/dcim_export.py" ]; then
     python3 "$TOOLS/dcim_export.py" "$d" --out "$EXPORTS"       --nos arcos --nos sonic --dist "$SRC/dist"       | sed "s|^|$name\t|" >> "$EXPORTS/.paths"
   done
   # Module types are per component, not per device: one pass over the library.
-  python3 "$TOOLS/dcim_export.py" --modules "$SRC" --out "$EXPORTS" >/dev/null 2>&1 || \
+  # --dist earns its place here too: with it the pass also rasterises each
+  # card's faceplate into module-images/, which is the half of a module type a
+  # person actually recognises in a rack. Without it the YAML still writes.
+  python3 "$TOOLS/dcim_export.py" --modules "$SRC" --out "$EXPORTS" \
+    --dist "$SRC/dist" >/dev/null 2>&1 || \
     echo "  note: this exporter has no --modules pass" >&2
 
   python3 - "$EXPORTS" "$SRC" <<'PYEOF'
