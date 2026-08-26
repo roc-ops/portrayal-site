@@ -162,6 +162,32 @@ social — use actual output from the library with actual callouts on it. That i
 more convincing than any stylised port silhouette, because it is the genuine
 artifact. Recognition where there is room for it; neutrality where there isn't.
 
+## The dark stage, and why the drawing has low contrast on it
+
+Settled 26 Aug 2026, with numbers, so it does not get reopened by eye.
+
+The compiled chassis fill is `#3a3f45` — mid-dark metal, and not ours to
+change. Measured against the stage it sits on:
+
+| Stage | Contrast |
+|---|---|
+| Light `#EDEFF2` | 9.22:1 |
+| Dark `#0E1013` (shipping) | 1.79:1 |
+| Pure black, the best case by darkening | 1.98:1 |
+
+The chassis sits in a dead zone: **you cannot darken your way to contrast.** To
+clear the 3:1 minimum for meaningful graphics the surround has to be *lighter*
+than about `#888888` — a light drafting table, not a dark stage.
+
+**Decision: keep the stage dark.** The drawing's own internal contrast carries
+legibility — black port apertures, lit LEDs, silkscreen — which is how the
+project's own explorer has always worked. A light stage would also fight the 3D
+canvas, which is a rendered scene and stays dark, so tabs would flip between a
+bright slab and a dark one.
+
+Revisit by making the 2D stage a light drafting table in both themes if the
+drawing ever proves hard to read in practice. That is a one-token change.
+
 ## Open
 
 - The 16px variant has been checked as a raster on both grounds and holds. It
