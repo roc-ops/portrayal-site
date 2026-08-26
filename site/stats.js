@@ -6,7 +6,7 @@
 // nobody has to remember to come back and edit a paragraph.
 const FALLBACK_HIDE = 'the figures beside it';
 
-fetch('assets/dist/stats.json', {cache: 'no-store'})
+fetch('assets/dist/stats.json')
   .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
   .then(s => {
     const lineCards = (s.byClass || []).find(([cls]) => cls === 'line-card');

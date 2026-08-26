@@ -8,12 +8,24 @@ set -e
 SRC="${1:-/Volumes/External/Network-Device-Visualization/library}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
-for m in viewer3d.js relief.js share.js swap.js; do
-  cp "$SRC/demo2/$m" "$HERE/vendor/$m"
+# The viewer modules moved out of demo2/ into their own library/viewer/ tree.
+# dist.js is new and non-optional: viewer3d.js imports it, and it is the fetch
+# memo that stopped components.json coming down three times a load.
+#
+# viewer3d.js -> share.js, relief.js, swap.js, dist.js is the whole graph this
+# site touches. shell.js, marks.js, states.js, devsel.js, gif.js and hl.js are
+# deliberately not vendored - nothing here imports them.
+for m in viewer3d.js relief.js share.js swap.js dist.js; do
+  cp "$SRC/viewer/$m" "$HERE/vendor/$m"
 done
 
 # The 3D viewer needs every view of the featured device, plus the component
 # index it resolves swapped-in modules through.
+#
+# components.json only, NOT components-detail.json: provenance and relief moved
+# out to that second file, and nothing in the graph above reads either field -
+# the viewer takes ns, name, major, body and skins. Vendoring it anyway would
+# add 1.9 MB nobody fetches.
 cp "$SRC"/dist/as7726-32x.* "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
 

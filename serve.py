@@ -33,8 +33,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                       '.json': 'application/json', '.css': 'text/css'}
 
     def end_headers(self):
-        # The drawings are a vendored snapshot and get re-copied often.
-        self.send_header('Cache-Control', 'no-store')
+        # Revalidate, do not refuse to cache. A blanket no-store meant the
+        # browser re-downloaded every drawing each time something asked for it -
+        # the AS7726 front view came down six times in one session, 457 KB of
+        # the same 76 KB file. must-revalidate still catches a refreshed
+        # snapshot, because SimpleHTTPRequestHandler answers a conditional
+        # request with 304 when the mtime has not moved.
+        self.send_header('Cache-Control', 'no-cache, must-revalidate')
         super().end_headers()
 
     def log_message(self, fmt, *args):

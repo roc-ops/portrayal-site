@@ -266,7 +266,7 @@ async function show(key) {
   const body = document.getElementById('schema-body');
   body.replaceChildren(el('p', {class: 'sc-loading', text: 'Reading the schema…'}));
   try {
-    const res = await fetch(url, {cache: 'no-store'});
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`${res.status}`);
     renderSchema(await res.json(), key);
     if (location.hash) document.querySelector(location.hash)?.scrollIntoView();

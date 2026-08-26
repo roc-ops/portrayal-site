@@ -61,7 +61,7 @@ let BASE_FRAME = null;
 // ── Loading the artifact ───────────────────────────────────────────────
 async function loadDrawing() {
   const url = src();
-  const text = await fetch(url, {cache: 'no-store'}).then(r => {
+  const text = await fetch(url).then(r => {
     if (!r.ok) throw new Error(`${url} — ${r.status}`);
     return r.text();
   });
@@ -911,15 +911,23 @@ const rack = (() => {
   let scene3d = null;
   let readout, controlsRow;
 
+  // Through jdist, not fetch: the 3D viewer asks for these same two indexes, and
+  // its memo is what stopped components.json coming down repeatedly. A bare
+  // fetch here would sit outside that memo and put the duplicate straight back.
+  //
+  // jdist throws where the old code inspected r.ok, so the tolerance is explicit
+  // now: a device whose configs.json is missing drops out of the rack rather
+  // than taking the tab down with it.
   async function loadMeta() {
     if (meta) return;
     meta = {};
+    const {jdist} = await import('../vendor/dist.js');
     for (const e of STACK) {
-      const r = await fetch(`${DIST}${e.ref}.configs.json`, {cache: 'no-store'});
-      if (r.ok) meta[e.ref] = await r.json();
+      try { meta[e.ref] = await jdist(`${DIST}${e.ref}.configs.json`); }
+      catch (err) { console.warn('[portrayal] no config index for', e.ref, err); }
     }
-    const ci = await fetch(`${DIST}components.json`, {cache: 'no-store'});
-    components = ci.ok ? (await ci.json()).components : [];
+    try { components = (await jdist(`${DIST}components.json`)).components; }
+    catch (err) { console.warn('[portrayal] no component index', err); components = []; }
   }
 
   const entryOf = ref => STACK.find(e => e.ref === ref);
@@ -934,7 +942,7 @@ const rack = (() => {
     if (!c) return null;
     const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
     const url = `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`;
-    const r = await fetch(url, {cache: 'no-store'});
+    const r = await fetch(url);
     if (!r.ok) return null;
     return {comp: c, text: await r.text()};
   }
@@ -971,7 +979,7 @@ const rack = (() => {
     let styled = false;
     for (const e of STACK) {
       const url = `${DIST}${e.ref}.${e.cfg}.front.svg`;
-      const text = await fetch(url, {cache: 'no-store'}).then(r => r.ok ? r.text() : null);
+      const text = await fetch(url).then(r => r.ok ? r.text() : null);
       if (!text) continue;
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       const root = doc.documentElement;

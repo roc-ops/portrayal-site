@@ -25,8 +25,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toGLB, toUSDZ } from './share.js';
 import { configureRelief, svgCanvas, canvasTex, rasterize, svgSource, setSvgOverride, clearSvgOverrides,
+         setNodeStates, nodeStates, restyleText,
          buildFaceRelief, squareFaceplate } from './relief.js';
 import { applyOverrides } from './swap.js';
+import { jdist } from './dist.js';
 
 const CLS_LABEL = {fan: 'Fan module', psu: 'Power supply', tab: 'Info tab'};
 // box-face shading, in +x -x +y -y +z -z order: sides darker, lid lifted,
@@ -81,6 +83,16 @@ export function createViewer(container, opts = {}) {
   // configuration says, so without these a swap made in the 2D inspector is
   // invisible here - on every device, in both directions.
   let OVERRIDES = {}, COMP_INDEX = null;
+  // Runtime lamp/element states, data-path -> the state classes the page has on
+  // that element. Same story as the swaps above and for the same reason: the
+  // scene is rasterised from the compiled files, which carry the RULES for every
+  // state a part declares and have never carried one APPLIED. Held here so a
+  // rebuild - a config change, a swap - repaints the states that were set rather
+  // than quietly reverting the device to all-dark.
+  let STATES = {};
+  // How to redraw each texture that came from a node's own art, collected during
+  // the build. Emptied on every rebuild: the materials it points at are disposed.
+  let RESTYLE = [];
   let COMP = null, COMP_ENTRY = null;     // lone-component mode, as ?component= gave
   let W = 438.4, H = 43.5, D = 515;
   // animated FRUs: paths discovered per build, groups tweened along their face normal
@@ -380,6 +392,11 @@ export function createViewer(container, opts = {}) {
     // the shared relief pipeline is global state; claim it for this build
     configureRelief({THREE, renderer, PXMM, FRU_PATHS});
     await applyBayOverrides(cfg);
+    // the states go in BEFORE anything is extracted, so the faces and the relief
+    // are cut from a document that already carries them; a rebuild that dropped
+    // them would put out every lamp the user had lit
+    setNodeStates(STATES);
+    RESTYLE = [];
     gen++;
     const f = v => `${DIST}${DEV}.${cfg}.${v}.svg`;
     const meshes = [];
@@ -420,7 +437,8 @@ export function createViewer(container, opts = {}) {
     for (const F of FACES) {
       const before = meshes.length;
       await buildFaceRelief(F, {src: F.url || f(F.view), faceCv, faceSvg, facePunch,
-                                meshes, FRU_GROUPS, FRU_META, BODY_META, D, bodyBoxMesh});
+                                meshes, FRU_GROUPS, FRU_META, BODY_META, D, bodyBoxMesh,
+                                restyle: RESTYLE});
       // a face with no drawing falls back to flat colour and contributes no group
       if (meshes.length > before) built[F.view] = meshes[meshes.length - 1];
     }
@@ -680,16 +698,27 @@ export function createViewer(container, opts = {}) {
   }
 
   // --- loading ----------------------------------------------------------------
+
+  // The component index does NOT depend on the device, so loading it does not
+  // belong behind either mode's "did the subject change" guard - that is what
+  // made every device switch pull 2 MB of device-independent data down again.
+  // Both modes need COMP_INDEX and both need BODY_META with it; jdist means the
+  // bytes arrive once per page even with the shell asking for them too.
+  async function ensureComponents() {
+    if (COMP_INDEX) return;
+    const cidx = await jdist(`${DIST}components.json`);
+    COMP_INDEX = cidx.components;
+    BODY_META = Object.fromEntries(cidx.components.filter(c => c.body)
+      .map(c => [`${c.ns}/${c.name}@${c.major.slice(1)}`, c.body]));
+  }
+
   async function loadDevice(device, config) {
     const first = device !== DEV;
     DEV = device;
     COMP = COMP_ENTRY = null;
+    await ensureComponents();
     if (first || !devIndex) {
-      devIndex = await (await fetch(`${DIST}${DEV}.configs.json`, {cache: 'no-store'})).json();
-      const cidx = await (await fetch(`${DIST}components.json`, {cache: 'no-store'})).json();
-      COMP_INDEX = cidx.components;
-      BODY_META = Object.fromEntries(cidx.components.filter(c => c.body)
-        .map(c => [`${c.ns}/${c.name}@${c.major.slice(1)}`, c.body]));
+      devIndex = await jdist(`${DIST}${DEV}.configs.json`);
       if (devIndex.chassis && devIndex.chassis.w) {
         W = devIndex.chassis.w; H = devIndex.chassis.h; D = devIndex.chassis.d;
       }
@@ -706,9 +735,8 @@ export function createViewer(container, opts = {}) {
     COMP = component;
     DEV = null;
     if (first || !COMP_ENTRY) {
-      const idx = await (await fetch(`${DIST}components.json`, {cache: 'no-store'})).json();
-      COMP_INDEX = idx.components;
-      COMP_ENTRY = idx.components.find(e => `${e.ns}/${e.name}@${e.major.slice(1)}` === COMP);
+      await ensureComponents();
+      COMP_ENTRY = COMP_INDEX.find(e => `${e.ns}/${e.name}@${e.major.slice(1)}` === COMP);
       if (!COMP_ENTRY) throw new Error(`unknown component ${COMP}`);
       W = COMP_ENTRY.size.w; H = COMP_ENTRY.size.h;
       D = COMP_ENTRY.body ? COMP_ENTRY.body.depth : Math.max(COMP_ENTRY.size.d || 2, 2);
@@ -784,8 +812,52 @@ export function createViewer(container, opts = {}) {
     for (const k of Object.keys(listeners)) listeners[k].length = 0;
   }
 
+  // A STATE CHANGE REPAINTS AND NEVER RE-SHAPES, which is the whole reason this
+  // is not a rebuild. Re-running the build to light one lamp measured 1.0-1.4 s
+  // on the AGR420 - a second and a half of black screen for a click, on a control
+  // a user works through a row of ports one at a time. Redrawing only the
+  // textures the change actually reaches is ~1.6 ms per node plus one face.
+  //
+  // WHICH textures is asked of the node's own svg text, not of a lookup: a state
+  // class can land on the element being drawn, on an ancestor whose id scopes the
+  // rule, or on a descendant with art of its own, and a substring test over the
+  // text that carries all three cannot miss the case a table would.
+  //
+  // The face texture goes through the LOD path rather than a second raster of its
+  // own. It already knows how to re-rasterise a face at the current density and
+  // re-punch its apertures, and a face repainted by hand here would silently lose
+  // its cavities the moment the camera moved.
+  async function setStates(map) {
+    const next = {};
+    for (const [k, v] of map instanceof Map ? map : Object.entries(map || {}))
+      if (v) next[k] = String(v);
+    const changed = new Set();
+    for (const k of new Set([...Object.keys(STATES), ...Object.keys(next)]))
+      if (STATES[k] !== next[k]) changed.add(k);
+    STATES = next;
+    if (!changed.size || !box) return 0;
+    setNodeStates(STATES);
+    const touches = text => [...changed].some(p => text.includes(`data-path="${p}"`));
+    let n = 0;
+    for (const e of RESTYLE) {
+      if (!touches(e.svgText)) continue;
+      try { await e.run(restyleText(e.svgText)); n++; }
+      catch (err) { console.warn('[portrayal] restyle failed', err); }
+    }
+    for (const rec of LOD) {
+      if (!touches(rec.svgText)) continue;
+      rec.svgText = restyleText(rec.svgText);
+      const at = rec.level;
+      rec.level = 0;                    // refineFace no-ops at the level it holds
+      await refineFace(rec, at);
+      n++;
+    }
+    return n;
+  }
+
   return {
-    load, select, on, resize, dispose,
+    load, select, on, resize, dispose, setStates,
+    states: () => ({...STATES}),
     // what a host needs to rebuild the chrome this module gave up
     frus, toggleFru, download, exportData, exportName,
     // every path select() can find, for a host without its own tree
