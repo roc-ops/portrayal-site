@@ -62,6 +62,27 @@ callouts, the swapped modules. The 2D tabs export SVG that keeps every `id` and
 hole spacing, U scale, L-bracket ears and recessed mounting come from there. Its
 cabling and topology work is deliberately left out.
 
+## Derived vs authored
+
+Most of what the showcase displays is read off the compiled drawing. A few
+things are written by hand, and the difference matters when reading the code:
+
+| | |
+|---|---|
+| **Derived** | every coordinate, callout anchor and leader route; sub-labels (`qsfp28 · 100g · 4 lanes`, `7 members`); which states an element will accept; what each bay accepts; chassis dimensions |
+| **Authored** | which elements the callouts point at and which side they leave from; the example MOP prose; the live-state speed bands |
+
+A state the model does not declare is refused rather than faked — try a PSU
+fault on the front view and nothing happens, because the front PSU lamps declare
+only `off` and `on`.
+
+## Known gaps
+
+Tracked as issues on this repo. The big one is
+[#1, seating transceivers in the optical cages](https://github.com/roc-ops/portrayal-site/issues/1)
+— blocked on artwork, and the thing that most gives away that these are drawings
+rather than photographs.
+
 ## Identity
 
 Direction 01, "Anodized". See `brand/DIRECTION.md`.
