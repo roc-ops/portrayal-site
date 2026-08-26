@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&display=swap">
 <link rel="stylesheet" href="brand/tokens.css">
 <link rel="stylesheet" href="site/toolbar.css">
+<link rel="stylesheet" href="site/tool-theme.css">
 <style>
 
 
@@ -21,26 +22,28 @@
   #mode button:first-child { border-radius:6px 0 0 6px; }
   #mode button:last-child { border-radius:0 6px 6px 0; margin-left:-1px; }
   #mode button:disabled { opacity:0.45; cursor:not-allowed; }
-  #mode button:disabled:hover { background:#23272c; }
-  #stage-3d { background:#16181b; }
+  #mode button:disabled:hover { background:var(--pt-surface-2); }
+  #stage-3d { background:var(--pt-surface); }
   #stage-3d canvas { display:block; }
   #frus { display:flex; gap:0.2rem; flex-wrap:wrap; }
   #frus[hidden] { display:none; }        /* display:flex outranks the hidden attribute */
   #frus button { font-family:ui-monospace, monospace; font-size:0.72rem; padding:0.26rem 0.42rem; }
   #gfx { position:absolute; bottom:0.6rem; right:0.7rem; z-index:5; pointer-events:none;
-         background:#0c0e10cc; border:1px solid #33373c; border-radius:4px;
-         padding:0.25rem 0.45rem; font:11px ui-monospace, monospace; color:#8d939a; }
-  #gfx.warn { color:#f59e0b; border-color:#7a5a12; }
+         background:color-mix(in srgb, var(--pt-ground) 80%, transparent); border:1px solid var(--pt-line); border-radius:4px;
+         padding:0.25rem 0.45rem; font:11px ui-monospace, monospace; color:var(--pt-ink-muted); }
+  #gfx.warn { color:var(--pt-warn); border-color:var(--pt-warn); }
   #glx { position:absolute; bottom:0.6rem; left:0.7rem; z-index:5; display:flex;
          gap:0.3rem; align-items:center; font-size:0.72rem; }
   #glx button:disabled { opacity:0.55; cursor:progress; }
   #glx .msg { color:var(--dim); }
   #glx .msg.bad { color:var(--warn); }
-  .chip { display:inline-block; margin-left:0.3rem; padding:0 0.4rem; border:1px solid #4a4f55;
-          border-radius:9px; font-size:0.64rem; color:#c7ccd1; cursor:pointer; user-select:none;
+  .chip { display:inline-block; margin-left:0.3rem; padding:0 0.4rem; border:1px solid var(--pt-line);
+          border-radius:9px; font-size:0.64rem; color:var(--pt-ink); cursor:pointer; user-select:none;
           line-height:1.35; }
   .chip:hover { border-color:var(--warn); }
-  .chip.on { background:var(--warn); color:#16181b; border-color:var(--warn); }
+  .chip.on { background:var(--warn); color:var(--pt-on-warn); border-color:var(--warn); }
+  /* Over --hl, the highlight color the user picks, so it stays fixed for the
+     same reason shell.js keeps `#hl .sw` fixed. */
   .node.sel .chip { border-color:#ffffff66; }
   #inspect .prov { color:var(--dim); font-size:0.68rem; line-height:1.45; margin:-0.15rem 0 0.5rem 5.4rem;
                    border-left:2px solid var(--line); padding-left:0.45rem; }
@@ -55,11 +58,11 @@
                   margin-bottom:0.45rem; }
   #inspect .lvl b { font-size:0.95rem; color:var(--ink); }
   #inspect .lvl .nm { color:var(--ink); }
-  #inspect .flag { border:1px solid #3f6a4a; background:#1b2a20; color:#8fd3a4;
+  #inspect .flag { border:1px solid var(--pt-good-line); background:var(--pt-good-wash); color:var(--pt-good);
                    border-radius:9px; padding:0 0.42rem; font-size:0.64rem; }
   /* a flag nothing could test is not a flag that failed, and it must not be
      able to be mistaken for one at a glance - dashed, dim, and question-marked */
-  #inspect .flag.unk { border-style:dashed; border-color:#4a4f55; background:none;
+  #inspect .flag.unk { border-style:dashed; border-color:var(--pt-line); background:none;
                        color:var(--dim); }
   #inspect .legend { color:var(--dim); font-size:0.66rem; margin:-0.2rem 0 0.5rem;
                      line-height:1.45; }
@@ -71,7 +74,7 @@
   #inspect .gap .hd { display:flex; gap:0.35rem; align-items:baseline; flex-wrap:wrap;
                       margin-bottom:0.2rem; }
   #inspect .gap .what { color:var(--ink); font-weight:600; }
-  #inspect .gap .why { border:1px solid #6b4d15; color:var(--warn); border-radius:9px;
+  #inspect .gap .why { border:1px solid var(--pt-warn); color:var(--warn); border-radius:9px;
                        padding:0 0.4rem; font-size:0.64rem; }
   #inspect .gap .sc { color:var(--dim); font-size:0.68rem; }
   #inspect .gap .note { color:var(--dim); font-size:0.7rem; }

@@ -6,17 +6,22 @@
  * those elements. So this file is the whole of what the site imposes on a tool:
  * one bar, written against the tool's own dark palette rather than ours.
  *
- * Every page using it is pinned to data-theme="dark" for the same reason. A
- * light masthead over a dark tool is the one combination that cannot work.
+ * The pages used to be pinned to data-theme="dark", because a light masthead
+ * over a dark tool is the one combination that cannot work. They are not any
+ * more: site/tool-theme.css maps the shell's own tokens onto ours, so the tool
+ * follows the site's theme and the bar can follow it too.
  */
 .site-bar {
   display: flex; align-items: center; gap: 1rem;
   padding: 0 0.9rem; height: 42px; flex: none;
-  background: #101214; border-bottom: 1px solid #2b3035;
+  /* --pt-surface, not --pt-ground: the shell's own header uses --panel, and the
+     bar sits directly above it. Matching the ground instead made the two read
+     as one undifferentiated slab. */
+  background: var(--pt-surface); border-bottom: 1px solid var(--pt-line);
   font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
 }
 .site-bar a { text-decoration: none; }
-.site-bar .brand { display: flex; align-items: center; gap: 0.45rem; color: #d7dbdf; }
+.site-bar .brand { display: flex; align-items: center; gap: 0.45rem; color: var(--pt-ink); }
 .site-bar .brand img { display: block; }
 .site-bar .brand span {
   font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
@@ -24,8 +29,8 @@
 }
 .site-bar .tld { color: var(--pt-brass); }
 .site-bar nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap; }
-.site-bar nav a { color: #8d939a; font-size: 0.82rem; }
-.site-bar nav a:hover { color: #d7dbdf; }
+.site-bar nav a { color: var(--pt-ink-muted); font-size: 0.82rem; }
+.site-bar nav a:hover { color: var(--pt-ink); }
 .site-bar nav a[aria-current="page"] { color: var(--pt-brass); }
 
 /* Pages that hand the rest of the viewport to a tool. shell.js sizes itself
@@ -38,5 +43,9 @@ body.tool > .fill { flex: 1; min-height: 0; display: flex; flex-direction: colum
 /* The ported pages carry their own `body { ... }` rule with margins in it, and
    it loads after this file. Reset the margin on the class instead of fighting
    over the element, and let the wrapper do the padding. */
-body.doc { margin: 0 !important; }
+body.doc {
+  margin: 0 !important;
+  background: var(--pt-ground);
+  color: var(--pt-ink);
+}
 body.doc .wrap-tool { padding: 0.9rem 1.2rem 2rem; }

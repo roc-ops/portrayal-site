@@ -1,0 +1,71 @@
+/* Making the shell follow the site's theme.
+ *
+ * shell.js is ~70% themeable already: it declares --bg, --panel, --line, --ink,
+ * --dim, --accent and --warn on :root and uses them 25 times. Mapping those
+ * seven onto our tokens does most of the work in one step.
+ *
+ * TWO THINGS MAKE THIS FIDDLIER THAN IT LOOKS.
+ *
+ * Order. SHELL_CSS is injected into <head> when createShell() runs, which is
+ * after every <link> in the document, so a plain `:root { }` here would lose
+ * the tie on document order. `:root:root` is specificity (0,2,0) against their
+ * (0,1,0) and wins regardless of when either arrives - no JS, no injection
+ * timing to get wrong.
+ *
+ * The stragglers. Nine values in six rules are hard-coded rather than tokenised,
+ * so a host that themes the variables still gets those. They are overridden
+ * below with a `body.tool` prefix, again to beat the tie on specificity rather
+ * than order. This is the part that will drift if the shell is restyled, and it
+ * is exactly what roc-ops/ndv#19 asks them to tokenise. When that lands, delete
+ * everything under "STRAGGLERS" and keep the mapping.
+ */
+
+:root:root {
+  --bg:     var(--pt-ground);
+  --panel:  var(--pt-surface);
+  --line:   var(--pt-line);
+  --ink:    var(--pt-ink);
+  --dim:    var(--pt-ink-muted);
+  --accent: var(--pt-brass);
+  --warn:   var(--pt-warn);
+}
+
+/* ── STRAGGLERS — delete when roc-ops/ndv#19 lands ────────────────────────── */
+
+body.tool select,
+body.tool button,
+body.tool input {
+  background: var(--pt-surface-2);
+  border-color: var(--pt-line);
+}
+body.tool button:hover { background: var(--pt-line-soft); }
+body.tool button.on {
+  background: var(--pt-brass-wash);
+  border-color: var(--pt-brass);
+  color: var(--pt-brass);
+}
+body.tool #stage { background: var(--pt-ground); }
+body.tool .node:hover { background: var(--pt-surface-2); }
+body.tool .kids { border-left-color: var(--pt-line-soft); }
+
+/* devsel.js injects its own stylesheet and has NO tokens at all - seven
+   hard-coded colors, zero var() uses. It is the one control that appears on
+   every shell page and on pages that call createDevicePicker directly, so it
+   needs covering separately. `body .devpick x` is (0,2,1) against its (0,2,0).
+   Its `color` is what produced the only contrast failure our audit caught:
+   overriding the background alone left #d7dbdf on a near-white field at
+   1.28:1. */
+body .devpick label { color: var(--pt-ink-muted); }
+body .devpick select,
+body .devpick input {
+  background: var(--pt-surface-2);
+  color: var(--pt-ink);
+  border-color: var(--pt-line);
+}
+body .devpick input::placeholder { color: var(--pt-ink-faint); }
+body .devpick input:focus { border-color: var(--pt-brass); }
+body .devpick .none { color: var(--pt-warn); }
+
+/* NOT overridden, on purpose: `#hl .sw` and `.node.sel { color:#fff }` both sit
+   over --hl, the highlight color the user picks. White over an arbitrary
+   background is doing a real job there; a themed value would be worse. */
