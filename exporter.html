@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — DCIM export</title>
+<meta name="description" content="The Nautobot and NetBox device type a modeled device produces, per network operating system.">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/toolbar.css">
+<style>
+
+  body { font-family: system-ui, sans-serif; background: #16181b; color: #d7dbdf; margin: 0.8rem 1.2rem; }
+  .hdr { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.7rem; }
+  h1 { font-size: 1rem; margin: 0; }
+  label { font-size: 0.8rem; color: #9aa1a8; display: flex; gap: 0.4rem; align-items: center; }
+  select, button { background: #2b2f33; color: #d7dbdf; border: 1px solid #4a4f55; border-radius: 6px;
+                   padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+  button { cursor: pointer; }
+  button:hover { background: #3a3f45; }
+  .note { font-size: 0.74rem; color: #7d848b; max-width: 60rem; line-height: 1.5; }
+  .note code { color: #9aa1a8; }
+  pre { background: #121417; border: 1px solid #33373c; border-radius: 8px; padding: 0.7rem 0.9rem;
+        font: 0.76rem/1.5 ui-monospace, monospace; overflow: auto; max-height: 74vh; white-space: pre; }
+  .bad { color: #f59e0b; }
+</style>
+</head>
+<body class="doc">
+
+<div class="site-bar">
+  <a class="brand" href="index.html">
+    <img src="brand/portrayal-mark.svg" alt="" width="20" height="20">
+    <span>portrayal<span class="tld">.dev</span></span>
+  </a>
+  <nav>
+    <a href="index.html#showcase">Showcase</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="components.html">Components</a>
+    <a href="exporter.html" aria-current="page">DCIM export</a>
+    <a href="schema.html">Schema</a>
+    <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
+  </nav>
+</div>
+
+<div class="wrap-tool">
+<div class="hdr">
+  <h1>DCIM export</h1>
+  <span id="pick"></span>
+  <label>NOS <select id="nos"><option value="arcos">arcos</option><option value="sonic">sonic</option></select></label>
+  <button id="dl">Download YAML</button>
+  <span id="src" class="note"></span>
+</div>
+<p class="note">
+  Portrayal is the source of truth for the physical facts; a DCIM is one consumer of them.
+  This is the file <code>spec/tools/portrayal/nautobot_export.py</code> writes at build time, in the
+  schema used by <code>nautobot/devicetype-library</code>, so a device modelled here loads into
+  Nautobot without anyone re-typing port counts by hand. Interface names come from the NOS
+  profile, because they are a property of the network OS rather than of the hardware.
+</p>
+<pre id="out">loading…</pre>
+</div>
+
+<script type="module">
+import { createDevicePicker } from './vendor/devsel.js';
+import { jdist } from './vendor/dist.js';
+
+const $ = id => document.getElementById(id);
+let DEVICES = [], text = '', file = '', DEV = '';
+
+// The build writes exports/nautobot/<manufacturer>/<model>-<nos>.yaml. The
+// marketing series used to be crammed into `model:` - "AS5912-54X (AGR100)" -
+// and had to be stripped back out here; it now lives in `portfolio.series`, so
+// the model is the model. Rebuild the name rather than adding an index nobody
+// else needs.
+const pathFor = (d, nos) =>
+  `assets/exports/nautobot/${encodeURIComponent(d.manufacturer)}/` +
+  `${encodeURIComponent(d.model)}-${nos}.yaml`;
+
+async function show() {
+  const d = DEVICES.find(x => x.name === DEV);
+  const nos = $('nos').value;
+  file = pathFor(d, nos);
+  $('src').textContent = '';
+  const res = await fetch(file);
+  if (!res.ok) {
+    text = '';
+    // nautobot_export.py writes nothing when it cannot resolve an interface for
+    // the profile - a CCAP chassis has no swp ports - and that is a fact about
+    // the device, not a broken build. Say which.
+    $('out').innerHTML = `<span class="bad">No ${nos} export for ${d.model}.</span>\n\n` +
+      `The exporter emits a file only once it can resolve interfaces for the NOS profile;\n` +
+      `a device whose ports are all line-card bays (a CCAP chassis, an optical shelf)\n` +
+      `produces none. Expected at ${file}`;
+    return;
+  }
+  text = await res.text();
+  $('out').textContent = text;
+  $('src').textContent = file.replace('assets/', 'library/');
+}
+
+$('dl').onclick = () => {
+  if (!text) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type: 'text/yaml'}));
+  a.download = file.split('/').pop();
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+(async () => {
+  DEVICES = (await jdist('assets/dist/devices.json')).devices;
+  const want = new URLSearchParams(location.search).get('device');
+  DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
+  // The original guarded this with `parent === window` because demo2 embedded
+  // it in a tab shell and two menus for one fact is what its deleted postMessage
+  // sync was papering over. Here it is a page of the site, never embedded, so
+  // the picker is unconditional.
+  createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
+                      onchange: name => { DEV = name; show(); }});
+  $('nos').onchange = show;
+  await show();
+})();
+</script>
+</body>
+</html>

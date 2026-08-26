@@ -1,0 +1,42 @@
+/* The strip above a tool page.
+ *
+ * The tool pages - Explorer, Components, DCIM export - do NOT load site.css.
+ * shell.js and these pages style body, header and main directly, and loading
+ * the site stylesheet as well would mean two of them fighting over each of
+ * those elements. So this file is the whole of what the site imposes on a tool:
+ * one bar, written against the tool's own dark palette rather than ours.
+ *
+ * Every page using it is pinned to data-theme="dark" for the same reason. A
+ * light masthead over a dark tool is the one combination that cannot work.
+ */
+.site-bar {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0 0.9rem; height: 42px; flex: none;
+  background: #101214; border-bottom: 1px solid #2b3035;
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+}
+.site-bar a { text-decoration: none; }
+.site-bar .brand { display: flex; align-items: center; gap: 0.45rem; color: #d7dbdf; }
+.site-bar .brand img { display: block; }
+.site-bar .brand span {
+  font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700; font-size: 0.92rem; letter-spacing: -0.03em;
+}
+.site-bar .tld { color: var(--pt-brass); }
+.site-bar nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap; }
+.site-bar nav a { color: #8d939a; font-size: 0.82rem; }
+.site-bar nav a:hover { color: #d7dbdf; }
+.site-bar nav a[aria-current="page"] { color: var(--pt-brass); }
+
+/* Pages that hand the rest of the viewport to a tool. shell.js sizes itself
+   from `main { flex: 1 }` inside its mount, so the mount has to be a flex
+   column that fills what the bar leaves. */
+body.tool { margin: 0; height: 100vh; display: flex; flex-direction: column; }
+body.tool > .fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* Pages that just scroll - the component browser, the export viewer. */
+/* The ported pages carry their own `body { ... }` rule with margins in it, and
+   it loads after this file. Reset the margin on the class instead of fighting
+   over the element, and let the wrapper do the padding. */
+body.doc { margin: 0 !important; }
+body.doc .wrap-tool { padding: 0.9rem 1.2rem 2rem; }

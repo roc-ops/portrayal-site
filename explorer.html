@@ -10,35 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&display=swap">
 <link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/toolbar.css">
 <style>
-  /* This page deliberately does NOT load site.css.
-     shell.js injects its own stylesheet when createShell runs, and it styles
-     body, header, main and aside directly - the two would fight over every one
-     of those. The shell owns the tool; this file owns only the strip above it,
-     and that strip is written to sit on the shell's palette rather than ours.
-     The page is pinned to data-theme="dark" for the same reason: a light
-     masthead over a dark tool is the one combination that cannot work. */
-  .site-bar {
-    display: flex; align-items: center; gap: 1rem;
-    padding: 0 0.9rem; height: 42px; flex: none;
-    background: #101214; border-bottom: 1px solid #2b3035;
-    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  }
-  .site-bar a { text-decoration: none; }
-  .site-bar .brand { display: flex; align-items: center; gap: 0.45rem; color: #d7dbdf; }
-  .site-bar .brand img { display: block; }
-  .site-bar .brand span {
-    font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
-    font-weight: 700; font-size: 0.92rem; letter-spacing: -0.03em;
-  }
-  .site-bar .tld { color: var(--pt-brass); }
-  .site-bar nav { margin-left: auto; display: flex; gap: 1.1rem; }
-  .site-bar nav a { color: #8d939a; font-size: 0.82rem; }
-  .site-bar nav a:hover { color: #d7dbdf; }
-  .site-bar nav a[aria-current="page"] { color: var(--pt-brass); }
-  /* The shell sizes itself from `main { flex: 1 }` inside whatever it is
-     mounted in, so the mount has to be a flex column that fills what is left. */
-  #shell { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 
   /* The shell brings its own stylesheet. Everything here is the Explorer's own:
@@ -115,7 +88,7 @@
 } }
 </script>
 </head>
-<body>
+<body class="tool">
 
 <div class="site-bar">
   <a class="brand" href="index.html">
@@ -125,12 +98,14 @@
   <nav>
     <a href="index.html#showcase">Showcase</a>
     <a href="explorer.html" aria-current="page">Explorer</a>
+    <a href="components.html">Components</a>
+    <a href="exporter.html">DCIM export</a>
     <a href="schema.html">Schema</a>
     <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
   </nav>
 </div>
 
-<div id="shell"></div>
+<div id="shell" class="fill"></div>
 
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';

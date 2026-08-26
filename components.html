@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — component browser</title>
+<meta name="description" content="Every component contract in the library, drawn at true scale on a millimeter grid.">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/toolbar.css">
+<style>
+
+  body { font-family: system-ui, sans-serif; background: #16181b; color: #d7dbdf; margin: 0.8rem 1.2rem; }
+  .hdr { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.8rem; }
+  h1 { font-size: 1rem; margin: 0; }
+  input, select { background: #2b2f33; color: #d7dbdf; border: 1px solid #4a4f55; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+  .hdr label { font-size: 0.8rem; color: #9aa1a8; display: flex; gap: 0.4rem; align-items: center; }
+  #grid { display: flex; flex-wrap: wrap; gap: 0.9rem; }
+  .card { border: 1px solid #33373c; border-radius: 10px; padding: 0.7rem 0.8rem; background: #1a1d20; max-width: 340px; }
+  .card h3 { margin: 0 0 0.1rem; font-size: 0.88rem; font-family: ui-monospace, monospace; }
+  .meta { font-size: 0.72rem; color: #9aa1a8; margin-bottom: 0.45rem; }
+  .meta .std { color: #f5c542; }
+  .stage { background-color: #dfe3e6;
+           background-image: linear-gradient(#c9cdd1 1px, transparent 1px), linear-gradient(90deg, #c9cdd1 1px, transparent 1px);
+           border-radius: 6px; padding: 6px; display: inline-block; }
+  .stage img { display: block; }
+  .skinrow { margin-top: 0.4rem; font-size: 0.72rem; display: flex; gap: 0.5rem; align-items: center; color: #9aa1a8; }
+  .desc { font-size: 0.72rem; color: #7d848b; margin-top: 0.4rem; max-width: 320px; }
+  /* Ours: the card action, and the 3D overlay the v1 link became. */
+  .v3d { font-size: 0.72rem; color: #f5c542; background: none; border: none; padding: 0;
+         margin-top: 0.3rem; cursor: pointer; font-family: inherit; display: inline-block; }
+  .v3d:hover { text-decoration: underline; }
+  #ov { position: fixed; inset: 0; z-index: 20; background: #0a0c0ecc;
+        display: grid; place-items: center; padding: 2rem; }
+  #ov[hidden] { display: none; }
+  #ov .panel { background: #16181b; border: 1px solid #33373c; border-radius: 10px;
+               width: min(900px, 100%); height: min(70vh, 640px); display: flex; flex-direction: column; }
+  #ov .bar { display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem 0.8rem;
+             border-bottom: 1px solid #33373c; }
+  #ov .bar h2 { margin: 0; font: 600 0.82rem/1 ui-monospace, monospace; color: #d7dbdf; }
+  #ov .bar .note { font-size: 0.72rem; color: #8d939a; }
+  #ov .bar button { margin-left: auto; }
+  #ov-stage { flex: 1; min-height: 0; }
+</style>
+<!-- viewer3d.js pulls three from here. An import map is a property of the
+     document, so it lives in the page even though nothing here imports three. -->
+<script type="importmap">
+{ "imports": {
+    "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+} }
+</script>
+</head>
+<body class="doc">
+
+<div class="site-bar">
+  <a class="brand" href="index.html">
+    <img src="brand/portrayal-mark.svg" alt="" width="20" height="20">
+    <span>portrayal<span class="tld">.dev</span></span>
+  </a>
+  <nav>
+    <a href="index.html#showcase">Showcase</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="components.html" aria-current="page">Components</a>
+    <a href="exporter.html">DCIM export</a>
+    <a href="schema.html">Schema</a>
+    <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
+  </nav>
+</div>
+
+<div class="wrap-tool">
+<div class="hdr">
+  <h1>Component browser</h1>
+  <label>Search <input id="q" placeholder="rj45, port, sff…" size="16"></label>
+  <label>Namespace <select id="ns"><option value="">all</option></select></label>
+  <label>Zoom <input id="zoom" type="range" min="2" max="14" value="6"> <span id="zl">6 px/mm</span></label>
+  <span style="font-size:0.72rem;color:#565d64">grid = 1 mm · gold = standards-registry conformant</span>
+</div>
+<div id="grid"></div>
+</div>
+
+<div id="ov" hidden>
+  <div class="panel">
+    <div class="bar">
+      <h2 id="ov-title"></h2>
+      <span class="note" id="ov-note"></span>
+      <button type="button" id="ov-close">close</button>
+    </div>
+    <div id="ov-stage"></div>
+  </div>
+</div>
+
+<script type="module">
+import { jdist } from './vendor/dist.js';
+let DATA = [];
+const $ = id => document.getElementById(id);
+function render() {
+  const q = $('q').value.toLowerCase();
+  const ns = $('ns').value;
+  const z = +$('zoom').value;
+  $('zl').textContent = `${z} px/mm`;
+  const grid = $('grid');
+  grid.innerHTML = '';
+  DATA.filter(c => (!ns || c.ns === ns) &&
+      (!q || `${c.ns}/${c.name} ${c.class} ${c.conforms || ''} ${c.description}`.toLowerCase().includes(q)))
+    .forEach(c => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const std = c.conforms ? ` <span class="std">⛭ ${c.conforms}</span>` : '';
+      card.innerHTML = `<h3>${c.ns}/${c.name}@${c.major.slice(1)} <span style="color:#565d64">${c.version}</span></h3>
+        <div class="meta">${c.kind} · ${c.class} · ${c.size.w}×${c.size.h} mm${std}</div>`;
+      const stage = document.createElement('div');
+      stage.className = 'stage';
+      stage.style.backgroundSize = `${z}px ${z}px`;
+      const img = document.createElement('img');
+      img.width = c.size.w * z; img.height = c.size.h * z;
+      const skins = Object.keys(c.files);
+      img.src = 'assets/dist/' + c.files[skins[0]];
+      stage.appendChild(img);
+      card.appendChild(stage);
+      if (skins.length > 1) {
+        const row = document.createElement('div');
+        row.className = 'skinrow';
+        row.textContent = 'skin: ';
+        const sel = document.createElement('select');
+        skins.forEach(sk => { const o = document.createElement('option'); o.value = sk; o.textContent = sk; sel.appendChild(o); });
+        sel.onchange = () => { img.src = 'assets/dist/' + c.files[sel.value]; };
+        row.appendChild(sel);
+        card.appendChild(row);
+      }
+      const d = document.createElement('div');
+      d.className = 'desc';
+      d.textContent = c.description;
+      card.appendChild(d);
+      // The original opened the frozen v1 page, because "v2's 3D is a stage
+      // inside the Explorer and is device-scoped". viewer3d.js has had
+      // load({component, skin}) since then, so the lone component opens here.
+      const l3d = document.createElement('button');
+      l3d.type = 'button';
+      l3d.className = 'v3d';
+      l3d.textContent = 'view in 3D →';
+      l3d.onclick = () => open3d(`${c.ns}/${c.name}@${c.major.slice(1)}`,
+                                 skins.length > 1 ? card.querySelector('select')?.value : skins[0]);
+      card.appendChild(l3d);
+      grid.appendChild(card);
+    });
+}
+(async () => {
+  const idx = await jdist('assets/dist/components.json');
+  DATA = idx.components.sort((a, b) => (a.ns + a.name).localeCompare(b.ns + b.name));
+  [...new Set(DATA.map(c => c.ns))].forEach(ns => {
+    const o = document.createElement('option'); o.value = ns; o.textContent = ns; $('ns').appendChild(o);
+  });
+  ['q', 'ns', 'zoom'].forEach(id => $(id).addEventListener('input', render));
+  render();
+})();
+
+// ---------------------------------------------------------------- 3D overlay
+// One viewer, disposed on close. Browsers keep about sixteen WebGL contexts
+// alive and drop the oldest without warning, so a browser page that opens a
+// component per click must not stack them up.
+let viewer = null;
+const ov = document.getElementById('ov');
+const ovTitle = document.getElementById('ov-title');
+const ovStage = document.getElementById('ov-stage');
+const ovNote = document.getElementById('ov-note');
+
+async function open3d(ref, skin) {
+  ov.hidden = false;
+  ovTitle.textContent = ref;
+  ovNote.textContent = 'building…';
+  try {
+    if (!viewer) {
+      const {createViewer} = await import('./vendor/viewer3d.js');
+      viewer = createViewer(ovStage, {dist: 'assets/dist/', background: 0x101214});
+    }
+    await viewer.load({component: ref, skin});
+    ovNote.textContent = skin ? `skin: ${skin}` : '';
+  } catch (err) {
+    ovNote.textContent = `could not build: ${err.message}`;
+  }
+}
+
+function close3d() {
+  ov.hidden = true;
+  viewer?.dispose();
+  viewer = null;
+  ovStage.replaceChildren();
+}
+document.getElementById('ov-close').onclick = close3d;
+ov.addEventListener('click', ev => { if (ev.target === ov) close3d(); });
+addEventListener('keydown', ev => { if (ev.key === 'Escape' && !ov.hidden) close3d(); });
+</script>
+</body>
+</html>

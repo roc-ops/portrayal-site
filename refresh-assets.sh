@@ -49,6 +49,13 @@ for d in asr-9001 as7946-30xb as5912-54x s9510-28dc dcp-sc-28p; do
   cp "$SRC/dist/$d.configs.json" "$HERE/assets/dist/"
 done
 
+# What nautobot_export.py writes at build time, served by the DCIM export page.
+# 64 KB across 16 files - one per device per NOS profile, and a device whose
+# ports are all line-card bays produces none.
+mkdir -p "$HERE/assets/exports"
+rm -rf "$HERE/assets/exports/nautobot"
+cp -R "$SRC/exports/nautobot" "$HERE/assets/exports/nautobot"
+
 # The schemas, rendered by the schema browser rather than linked as raw JSON.
 mkdir -p "$HERE/assets/schemas"
 cp "$SRC"/../spec/schemas/*.json "$HERE/assets/schemas/"
@@ -100,6 +107,28 @@ print(f"stats: {stats['devices']} devices, {stats['vendors']} vendors, "
       f"{stats['components']} components, {stats['configurations']} configurations, "
       f"schema {stats['schema']}")
 PYEOF
+
+# Readiness, checked by asking for the modules themselves.
+#
+# Portrayal's own advice, and it applies here: a directory answers 200 whether
+# or not the library shipped. A copy that half-failed leaves the tree looking
+# right and every tool page blank, so assert on the files - and on the export
+# each page actually imports, because an empty file is also a file.
+missing=0
+for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js states.js; do
+  f="$HERE/vendor/$m"
+  if [ ! -s "$f" ] || ! grep -q '^export' "$f"; then
+    echo "  MISSING or empty: vendor/$m" >&2
+    missing=1
+  fi
+done
+# relief.js, share.js and swap.js are imported by other MODULES rather than by
+# any page, so nothing in this repository names them and a missing one surfaces
+# only as a broken tool at runtime. They are on the list above for that reason.
+if [ "$missing" != "0" ]; then
+  echo "vendoring incomplete - check $SRC/viewer" >&2
+  exit 1
+fi
 
 echo "vendored from $SRC"
 du -sh "$HERE/assets/dist" "$HERE/vendor"
