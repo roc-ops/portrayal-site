@@ -50,16 +50,20 @@
 <div class="hdr">
   <h1>DCIM export</h1>
   <span id="pick"></span>
-  <label>NOS <select id="nos"><option value="arcos">arcos</option><option value="sonic">sonic</option></select></label>
+  <label>Library <select id="target"><option value="netbox">NetBox</option><option value="nautobot">Nautobot</option></select></label>
+  <label>Type <select id="variant"></select></label>
   <button id="dl">Download YAML</button>
   <span id="src" class="note"></span>
 </div>
 <p class="note">
   Portrayal is the source of truth for the physical facts; a DCIM is one consumer of them.
-  This is the file <code>spec/tools/portrayal/nautobot_export.py</code> writes at build time, in the
-  schema used by <code>nautobot/devicetype-library</code>, so a device modelled here loads into
-  Nautobot without anyone re-typing port counts by hand. Interface names come from the NOS
-  profile, because they are a property of the network OS rather than of the hardware.
+  This is what <code>spec/tools/portrayal/dcim_export.py</code> writes at build time, in the
+  schema shared by <code>netbox-community/devicetype-library</code> and
+  <code>nautobot/devicetype-library</code>. One device type per SKU, so an AC front-to-back
+  and a DC back-to-front are separate entries with their own part numbers and images.
+  Interface names come from a NOS profile where one applies &mdash; they are a property of the
+  network OS rather than the hardware &mdash; and a device that runs no NOS still gets a device
+  type.
 </p>
 <pre id="out">loading…</pre>
 </div>
@@ -69,37 +73,53 @@ import { createDevicePicker } from './vendor/devsel.js';
 import { jdist } from './vendor/dist.js';
 
 const $ = id => document.getElementById(id);
-let DEVICES = [], text = '', file = '', DEV = '';
+let DEVICES = [], INDEX = {}, text = '', file = '', DEV = '';
 
-// The build writes exports/nautobot/<manufacturer>/<model>-<nos>.yaml. The
-// marketing series used to be crammed into `model:` - "AS5912-54X (AGR100)" -
-// and had to be stripped back out here; it now lives in `portfolio.series`, so
-// the model is the model. Rebuild the name rather than adding an index nobody
-// else needs.
-const pathFor = (d, nos) =>
-  `assets/exports/nautobot/${encodeURIComponent(d.manufacturer)}/` +
-  `${encodeURIComponent(d.model)}-${nos}.yaml`;
+// The old page built a path from a naming convention - manufacturer, model,
+// NOS - and a device that produced no file was indistinguishable from a device
+// whose name it had guessed wrong. The export now writes an index of what it
+// actually produced, so this reads that instead of predicting it.
+const filesFor = () => (INDEX[DEV] || {})[$('target').value] || [];
+
+// device-types/Edgecore/7726-32X-O-AC-F-arcos.yaml -> 7726-32X-O-AC-F · arcos
+function label(rel) {
+  const base = rel.split('/').pop().replace(/\.yaml$/, '');
+  const m = base.match(/^(.*)-(arcos|sonic)$/);
+  return m ? `${m[1]} · ${m[2]}` : `${base} · no NOS`;
+}
+
+function paintVariants() {
+  const sel = $('variant');
+  const files = filesFor();
+  sel.textContent = '';
+  for (const f of files) sel.appendChild(new Option(label(f), f));
+  sel.disabled = !files.length;
+}
 
 async function show() {
+  paintVariants();
+  const files = filesFor();
   const d = DEVICES.find(x => x.name === DEV);
-  const nos = $('nos').value;
-  file = pathFor(d, nos);
-  $('src').textContent = '';
-  const res = await fetch(file);
-  if (!res.ok) {
+  if (!files.length) {
     text = '';
-    // nautobot_export.py writes nothing when it cannot resolve an interface for
-    // the profile - a CCAP chassis has no swp ports - and that is a fact about
-    // the device, not a broken build. Say which.
-    $('out').innerHTML = `<span class="bad">No ${nos} export for ${d.model}.</span>\n\n` +
-      `The exporter emits a file only once it can resolve interfaces for the NOS profile;\n` +
-      `a device whose ports are all line-card bays (a CCAP chassis, an optical shelf)\n` +
-      `produces none. Expected at ${file}`;
+    $('src').textContent = '';
+    // A device with nothing to export is now a much smaller set than it was:
+    // it used to include every chassis that runs no NOS.
+    $('out').innerHTML = `<span class="bad">No device type for ${d ? d.model : DEV}.</span>\n\n` +
+      `The exporter writes a device type for anything with console ports,\n` +
+      `interfaces or module bays - a NOS is optional. A device with none of\n` +
+      `those has nothing a DCIM would hold.`;
+    return;
+  }
+  file = $('variant').value || files[0];
+  const res = await fetch('assets/exports/' + file);
+  if (!res.ok) {
+    $('out').innerHTML = `<span class="bad">Missing: ${file}</span>`;
     return;
   }
   text = await res.text();
   $('out').textContent = text;
-  $('src').textContent = file.replace('assets/', 'library/');
+  $('src').textContent = 'library/exports/' + file;
 }
 
 $('dl').onclick = () => {
@@ -112,16 +132,16 @@ $('dl').onclick = () => {
 };
 
 (async () => {
-  DEVICES = (await jdist('assets/dist/devices.json')).devices;
+  [DEVICES, INDEX] = await Promise.all([
+    jdist('assets/dist/devices.json').then(d => d.devices),
+    jdist('assets/exports/index.json'),
+  ]);
   const want = new URLSearchParams(location.search).get('device');
   DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
-  // The original guarded this with `parent === window` because demo2 embedded
-  // it in a tab shell and two menus for one fact is what its deleted postMessage
-  // sync was papering over. Here it is a page of the site, never embedded, so
-  // the picker is unconditional.
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; show(); }});
-  $('nos').onchange = show;
+  $('target').onchange = show;
+  $('variant').onchange = show;
   await show();
 })();
 </script>

@@ -49,12 +49,57 @@ for d in asr-9001 as7946-30xb as5912-54x s9510-28dc dcp-sc-28p; do
   cp "$SRC/dist/$d.configs.json" "$HERE/assets/dist/"
 done
 
-# What nautobot_export.py writes at build time, served by the DCIM export page.
-# 64 KB across 16 files - one per device per NOS profile, and a device whose
-# ports are all line-card bays produces none.
-mkdir -p "$HERE/assets/exports"
-rm -rf "$HERE/assets/exports/nautobot"
-cp -R "$SRC/exports/nautobot" "$HERE/assets/exports/nautobot"
+# The DCIM exports, GENERATED rather than copied.
+#
+# The old step copied $SRC/exports/nautobot, a build artifact whose shape is
+# whatever the last ./build.sh over there produced. Running the exporter here
+# instead means this page shows the current behaviour of the current exporter,
+# which is the whole point of having the page - it is where the "a CCAP chassis
+# exports nothing" defect was noticed.
+#
+# Prefers dcim_export.py; falls back to the older nautobot_export.py so the site
+# still builds against a checkout that predates roc-ops/ndv#21.
+EXPORTS="$HERE/assets/exports"
+rm -rf "$EXPORTS"
+mkdir -p "$EXPORTS"
+# Overridable so the site can be built against a clone while a change to the
+# exporter is still in review:
+#   PORTRAYAL_TOOLS=/path/to/clone/spec/tools/portrayal ./refresh-assets.sh
+TOOLS="${PORTRAYAL_TOOLS:-$SRC/../spec/tools/portrayal}"
+INDEX="$EXPORTS/index.json"
+
+if [ -f "$TOOLS/dcim_export.py" ]; then
+  : > "$EXPORTS/.paths"
+  for d in "$SRC"/devices/*/*/device.yaml; do
+    name=$(basename "$(dirname "$d")")
+    python3 "$TOOLS/dcim_export.py" "$d" --out "$EXPORTS"       --nos arcos --nos sonic --dist "$SRC/dist"       | sed "s|^|$name\t|" >> "$EXPORTS/.paths"
+  done
+  python3 - "$EXPORTS" <<'PYEOF'
+import json, os, re, sys
+root = sys.argv[1]
+index = {}
+for line in open(os.path.join(root, '.paths')):
+    dev, _, rest = line.partition('	')
+    # NOT \S+ : "Casa Systems" and "Check Point" have spaces in them, so a
+    # non-whitespace run stops at the manufacturer and never reaches .yaml.
+    m = re.match(r'(.+\.yaml)', rest.strip())
+    if not m:
+        continue
+    rel = os.path.relpath(m.group(1), root)
+    target = rel.split(os.sep)[0]
+    index.setdefault(dev, {}).setdefault(target, []).append(rel)
+for dev in index:
+    for t in index[dev]:
+        index[dev][t].sort()
+json.dump(index, open(os.path.join(root, 'index.json'), 'w'), indent=1, sort_keys=True)
+print(f"exports: {sum(len(v) for d in index.values() for v in d.values())} files "
+      f"across {len(index)} devices")
+PYEOF
+  rm -f "$EXPORTS/.paths"
+else
+  echo "  note: dcim_export.py not found, copying the legacy nautobot tree" >&2
+  cp -R "$SRC/exports/nautobot" "$EXPORTS/nautobot"
+fi
 
 # The schemas, rendered by the schema browser rather than linked as raw JSON.
 mkdir -p "$HERE/assets/schemas"
