@@ -74,26 +74,72 @@ if [ -f "$TOOLS/dcim_export.py" ]; then
     name=$(basename "$(dirname "$d")")
     python3 "$TOOLS/dcim_export.py" "$d" --out "$EXPORTS"       --nos arcos --nos sonic --dist "$SRC/dist"       | sed "s|^|$name\t|" >> "$EXPORTS/.paths"
   done
-  python3 - "$EXPORTS" <<'PYEOF'
-import json, os, re, sys
-root = sys.argv[1]
+  # Module types are per component, not per device: one pass over the library.
+  python3 "$TOOLS/dcim_export.py" --modules "$SRC" --out "$EXPORTS" >/dev/null 2>&1 || \
+    echo "  note: this exporter has no --modules pass" >&2
+
+  python3 - "$EXPORTS" "$SRC" <<'PYEOF'
+import json, os, re, sys, glob
+import yaml
+root, lib = sys.argv[1], sys.argv[2]
+
+# What the export produced, keyed by device, so the page offers what exists
+# rather than predicting filenames.
 index = {}
 for line in open(os.path.join(root, '.paths')):
-    dev, _, rest = line.partition('	')
-    # NOT \S+ : "Casa Systems" and "Check Point" have spaces in them, so a
-    # non-whitespace run stops at the manufacturer and never reaches .yaml.
+    dev, _, rest = line.partition('\t')
+    # NOT \S+ : "Casa Systems" has a space in it, so a non-whitespace run stops
+    # at the manufacturer and never reaches .yaml.
     m = re.match(r'(.+\.yaml)', rest.strip())
     if not m:
         continue
     rel = os.path.relpath(m.group(1), root)
-    target = rel.split(os.sep)[0]
-    index.setdefault(dev, {}).setdefault(target, []).append(rel)
+    index.setdefault(dev, {}).setdefault(rel.split(os.sep)[0], []).append(rel)
 for dev in index:
     for t in index[dev]:
         index[dev][t].sort()
+
+# Everything in the tree, so a bundle can be assembled without guessing.
+files = {}
+for target in ('netbox', 'nautobot'):
+    base = os.path.join(root, target)
+    if not os.path.isdir(base):
+        continue
+    files[target] = sorted(os.path.relpath(p, root)
+                           for p in glob.glob(os.path.join(base, '**', '*'), recursive=True)
+                           if os.path.isfile(p))
+
+# The facts the YAML schemas cannot carry. Everything here is something the
+# PRODUCTS support and the LIBRARIES cannot import, so this file is a measure of
+# that gap and shrinks as they catch up.
+enrichment = {'device-types': {}, 'module-bays': {}}
+for f in sorted(glob.glob(os.path.join(lib, 'devices', '*', '*', 'device.yaml'))):
+    dev = yaml.safe_load(open(f))
+    man = dev.get('manufacturer')
+    for view in (dev.get('views') or {}).values():
+        for b in ((view.get('components') or {}).get('bays') or []):
+            if not b.get('accepts'):
+                continue
+            key = man + '/' + dev['model'].split(' (')[0]
+            name = (b['id'].replace('psu-', 'PSU ').replace('fan-', 'Fan ')
+                    .replace('front-', 'Front ').replace('rear-', 'Rear '))
+            enrichment['module-bays'].setdefault(key, {})[name] = {
+                'accepts': [a.split('/')[-1].split('@')[0] for a in b['accepts']]}
+
+# default_platform: a NOS-suffixed device type is named for that NOS, and
+# platform is the field both products use to say so.
+for dev, targets in index.items():
+    for rel in targets.get('netbox', []):
+        m = re.search(r'-(arcos|sonic)\.yaml$', rel)
+        if m:
+            enrichment['device-types'][rel[:-5]] = {'default_platform': m.group(1)}
+
 json.dump(index, open(os.path.join(root, 'index.json'), 'w'), indent=1, sort_keys=True)
-print(f"exports: {sum(len(v) for d in index.values() for v in d.values())} files "
-      f"across {len(index)} devices")
+json.dump(files, open(os.path.join(root, 'files.json'), 'w'), indent=1)
+json.dump(enrichment, open(os.path.join(root, 'enrichment.json'), 'w'), indent=1, sort_keys=True)
+n = sum(len(v) for v in files.values())
+print("exports: %d files, %d devices, %d bay constraints, %d platform hints"
+      % (n, len(index), len(enrichment['module-bays']), len(enrichment['device-types'])))
 PYEOF
   rm -f "$EXPORTS/.paths"
 else

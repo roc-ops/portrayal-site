@@ -53,6 +53,19 @@
   <label>Library <select id="target"><option value="netbox">NetBox</option><option value="nautobot">Nautobot</option></select></label>
   <label>Type <select id="variant"></select></label>
   <button id="dl">Download YAML</button>
+  <span class="sep"></span>
+  <label>Bundle <select id="scope">
+    <option value="vendor">this vendor</option>
+    <option value="all">everything</option>
+  </select></label>
+  <label>NOS <select id="bnos">
+    <option value="">no NOS variants</option>
+    <option value="arcos">arcos</option>
+    <option value="sonic">sonic</option>
+  </select></label>
+  <label><input type="checkbox" id="bimg" checked> images</label>
+  <button id="bdl">Download bundle</button>
+  <span id="bnote" class="note"></span>
   <span id="src" class="note"></span>
 </div>
 <p class="note">
@@ -71,6 +84,7 @@
 <script type="module">
 import { createDevicePicker } from './vendor/devsel.js';
 import { jdist } from './vendor/dist.js';
+import { makeZip } from './site/bundle.js';
 
 const $ = id => document.getElementById(id);
 let DEVICES = [], INDEX = {}, text = '', file = '', DEV = '';
@@ -131,6 +145,119 @@ $('dl').onclick = () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 
+// ------------------------------------------------------------------ bundle
+// One zip per library, assembled from what the export actually produced. The
+// tree inside mirrors the target library, so the same download can be fed to
+// this script, to the community importer, or onto a clone of devicetype-library
+// for a PR upstream.
+let FILES = {}, ENRICH = null;
+
+async function buildBundle(btn) {
+  const target = $('target').value;
+  const scope = $('scope').value;
+  const nos = $('bnos').value;
+  const withImages = $('bimg').checked;
+  const man = (DEVICES.find(d => d.name === DEV) || {}).manufacturer;
+
+  const keep = rel => {
+    const parts = rel.split('/');
+    const kind = parts[1];
+    if (!withImages && kind.endsWith('-images')) return false;
+    if (scope === 'vendor' && man && parts[2] !== man) return false;
+    if (kind === 'device-types') {
+      const m = parts.at(-1).match(/-(arcos|sonic)\.yaml$/);
+      // A NOS variant is one device type per SKU per OS. Taking both would put
+      // two entries in the DCIM for one physical switch.
+      if (m) return m[1] === nos;
+      return true;                       // NOS-neutral types always travel
+    }
+    return true;
+  };
+
+  const wanted = (FILES[target] || []).filter(keep);
+  if (!wanted.length) { $('bnote').textContent = 'nothing matches that selection'; return; }
+
+  btn.disabled = true;
+  $('bnote').textContent = `fetching ${wanted.length} files…`;
+  const enc = new TextEncoder();
+  const entries = [];
+  for (const rel of wanted) {
+    const res = await fetch('assets/exports/' + rel);
+    if (!res.ok) continue;
+    entries.push({name: rel.split('/').slice(1).join('/'),
+                  bytes: new Uint8Array(await res.arrayBuffer())});
+  }
+
+  const script = await (await fetch('site/portrayal-sync.py')).text();
+  entries.push({name: 'portrayal-sync.py', bytes: enc.encode(script)});
+  entries.push({name: 'enrichment.json',
+                bytes: enc.encode(JSON.stringify(ENRICH, null, 1))});
+
+  const stamp = new Date();
+  const day = stamp.toISOString().slice(0, 10);
+  const counts = {};
+  for (const e of entries) counts[e.name.split('/')[0]] = (counts[e.name.split('/')[0]] || 0) + 1;
+  entries.push({name: 'MANIFEST.json', bytes: enc.encode(JSON.stringify({
+    target, scope, nos: nos || null, images: withImages,
+    snapshot: day, vendor: scope === 'vendor' ? man : null,
+    contents: counts, files: entries.length,
+  }, null, 1))});
+  entries.push({name: 'README.md', bytes: enc.encode(readme(target, nos, man, scope, day))});
+
+  $('bnote').textContent = 'compressing…';
+  const blob = await makeZip(entries, stamp);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `portrayal-${target}-${day}.zip`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  $('bnote').textContent = `${entries.length} files, ${(blob.size / 1048576).toFixed(1)} MB`;
+  btn.disabled = false;
+}
+
+const readme = (target, nos, man, scope, day) => `# Portrayal DCIM bundle
+
+Snapshot ${day}. Target: ${target}. Scope: ${scope === 'vendor' ? man : 'all vendors'}.
+Interface names: ${nos ? nos : 'none - NOS-neutral device types only'}.
+
+## What is here
+
+    device-types/      one per SKU, not per device
+    module-types/      line cards, supervisors, power supplies, fans
+    elevation-images/  rendered from the compiled faces
+    enrichment.json    the facts the YAML schema has no field for
+    portrayal-sync.py  loads all of the above
+
+The YAML validates against ${target}'s devicetype-library schema, so you have
+three ways to use this and only one of them needs the script:
+
+1. \`python3 portrayal-sync.py --target ${target}\` - dry run; add --commit to write
+2. Point the community importer at this directory
+3. Copy it over a clone of devicetype-library and open a pull request
+
+## Why enrichment.json exists
+
+Both DCIM products support facts the YAML import format cannot carry - a device
+type's default platform, which module family a bay accepts. Those live in
+enrichment.json and are applied through the API afterwards, which keeps the YAML
+strictly valid and still contributable.
+
+That file is a measure of the gap. As the libraries gain these fields it gets
+smaller, and when it is empty the script is optional.
+
+## Interface names are OS-dependent
+
+There is no single source of truth for an interface name: it depends on what is
+installed. A NOS-neutral device type carries the physical facts - console ports,
+module bays, power, images - and no switch interface names, because a bare
+switch has none until an OS is on it.
+
+## Nothing is written without --commit
+
+The script defaults to a dry run. It writes to a source of truth, and a tool
+that does that by default is one that will eventually do it by accident.
+`;
+
 (async () => {
   [DEVICES, INDEX] = await Promise.all([
     jdist('assets/dist/devices.json').then(d => d.devices),
@@ -142,6 +269,11 @@ $('dl').onclick = () => {
                       onchange: name => { DEV = name; show(); }});
   $('target').onchange = show;
   $('variant').onchange = show;
+  $('bdl').onclick = ev => buildBundle(ev.target);
+  [FILES, ENRICH] = await Promise.all([
+    jdist('assets/exports/files.json'),
+    jdist('assets/exports/enrichment.json'),
+  ]);
   await show();
 })();
 </script>
