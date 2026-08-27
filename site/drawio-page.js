@@ -80,7 +80,13 @@ function scopesFor(dev) {
     out.push({key: 'g:ungrouped', label: 'ungrouped', n: loose.length,
               pred: d => set.has(d.name)});
   }
+  // Shown as "selected device (AS7726-32X)" rather than just the model. The
+  // bare name reads as a fixed entry for that one box; naming the ROLE says it
+  // follows the device menu above, and the model in brackets says which one it
+  // is following right now. `label` stays the model, because that is what the
+  // filename wants.
   out.push({key: 'device', label: dev.model || dev.name, n: 1,
+            display: `selected device (${dev.model || dev.name})`,
             pred: d => d.name === dev.name});
   out.push({key: 'vendor', label: `all of ${dev.manufacturer}`, n: mine.length,
             pred: d => d.manufacturer === dev.manufacturer});
@@ -100,7 +106,8 @@ function fillScopes() {
     if (!sel) continue;
     const was = sel.value;
     sel.innerHTML = SCOPES
-      .map(s => `<option value="${s.key}">${s.label} (${s.n})</option>`).join('');
+      .map(s => `<option value="${s.key}">${s.display || `${s.label} (${s.n})`}</option>`)
+      .join('');
     sel.value = SCOPES.some(s => s.key === was) ? was
               : (SCOPES.some(s => s.key === home) ? home : SCOPES[0]?.key);
   }
