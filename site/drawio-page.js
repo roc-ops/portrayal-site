@@ -101,7 +101,10 @@ function fillScopes() {
   // Open on the group the selected device belongs to - the one the picker had
   // it filed under - rather than on whatever sorts first.
   const home = dev ? `g:${groupLabel(dev)}` : null;
-  for (const id of ['scope', 'rscope']) {
+  // Three menus, one per card: the two libraries and the rack diagram each
+  // choose their own scope. Sharing one meant asking for a rack picture of the
+  // thing you were looking at also changed what a library download contained.
+  for (const id of ['scope', 'rscope', 'dscope']) {
     const sel = $(id);
     if (!sel) continue;
     const was = sel.value;
@@ -230,7 +233,7 @@ async function buildRackDiagram() {
   const faces = both ? ['front', 'rear'] : [$('rfaces').value];
   btn.disabled = true;
   try {
-    const scope = $('scope').value;
+    const scope = $('dscope').value;
     // Both sides of every device, so one mounting serves both cabinets and a
     // device sits at the same U in each.
     const {loaded, missing} = await gather(scope, stat, {faces: ['front', 'rear']});
@@ -301,7 +304,8 @@ async function buildRackDiagram() {
     const rears = mounted.filter(m => m.faces.rear).length;
     const sizes = [...new Set(racksAll.map(r => r.units))].sort((a, b) => a - b);
     stat.textContent =
-      `${mounted.length} devices, ${racksAll.length} rack${racksAll.length === 1 ? '' : 's'} ` +
+      `${mounted.length} device${mounted.length === 1 ? '' : 's'}, ` +
+      `${racksAll.length} rack${racksAll.length === 1 ? '' : 's'} ` +
       `across ${pages.length} page${pages.length === 1 ? '' : 's'}` +
       `, ${sizes.length === 1 ? `${sizes[0]}U` : `${sizes[0]}–${sizes[sizes.length - 1]}U`}` +
       (both ? `, ${rears} with a rear face` : '') +
@@ -329,7 +333,7 @@ function describe() {
   const all = $('allven');
   if (all) {
     $('allven-count').textContent = ` (${DEVICES.length})`;
-    for (const id of ['scope', 'rscope']) if ($(id)) $(id).disabled = all.checked;
+    for (const id of ['scope', 'rscope', 'dscope']) if ($(id)) $(id).disabled = all.checked;
   }
   const mods = modulesFor($('scope')?.value);
   const lbl = $('mods-count');
@@ -370,7 +374,7 @@ function describe() {
   DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
-  $('scope').addEventListener('change', describe);
+  for (const id of ['scope', 'rscope', 'dscope']) $(id).addEventListener('change', describe);
   $('allven').addEventListener('change', describe);
   fillScopes();
   describe();
