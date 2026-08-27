@@ -233,10 +233,20 @@ const slug = s => String(s).replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-|-$/g, 
  * the JSON - reporting a JSON error about its own error page, which is a
  * memorably unhelpful way to find out.
  */
-export function library(entries) {
+export function library(entries, provenance = null) {
   const payload = JSON.stringify(entries)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<mxlibrary>${payload}</mxlibrary>`;
+  // WHAT THIS IS A LIBRARY OF, as an XML comment. draw.io ignores it, the file
+  // keeps it, and a person who opens the .xml can see which drawings their
+  // shapes came from. A device's version moves when its drawing does, and a
+  // major bump means a slot moved or an id was renamed - so a shape placed from
+  // an old library can disagree with the current drawing about where a port is.
+  // The comment is the only place to say so: an mxlibrary has no metadata slot,
+  // and putting it in a shape's title would put it in the shape picker.
+  // roc-ops/portrayal-site#14.
+  const head = provenance ? `<!--\n${String(provenance)
+    .replace(/--+/g, '-')}\n-->\n` : '';
+  return `${head}<mxlibrary>${payload}</mxlibrary>`;
 }
 
 /**

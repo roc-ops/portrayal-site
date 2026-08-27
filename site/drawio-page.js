@@ -153,7 +153,8 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false} = {}
       try {
         const f = await loadFace(faceUrl(d, face));
         out.push({label: faces.length > 1 ? `${d.model || d.name} (${face})` : (d.model || d.name),
-                  ru, face, kind: 'device', ...f,
+                  ru, face, kind: 'device', device: d.name,
+                  model: d.model || d.name, version: d.version ?? null, ...f,
                   ports: portsOf(f.zones, {bays: $('bays')?.checked})});
       } catch {
         // A device with no rear face is not an error - a shelf may only have
@@ -206,7 +207,25 @@ async function buildLibrary({rack}) {
       // A card is not rack-mountable on its own, so it keeps its drawn size
       // even in the rack library; only chassis get a unit height.
       rack && f.kind === 'device' ? {ru: f.ru} : {visible: $('tint').checked}));
-    const xml = library(entries);
+    // Stamp the library with what it was drawn from. #14: a device's version
+    // moves when its drawing does, and a shape placed from a stale library can
+    // disagree with the current drawing about where a port is.
+    const seen = new Map();
+    for (const f of loaded) {
+      if (f.kind === 'device' && !seen.has(f.device)) {
+        seen.set(f.device, `  ${(f.model || f.device).padEnd(22)} ${f.version || '?'}`);
+      }
+    }
+    const xml = library(entries, [
+      `Portrayal shape library - ${allVendors() ? 'all vendors' : (scopeOf(scope)?.label || 'portrayal')}`,
+      `generated ${new Date().toISOString().slice(0, 10)} from portrayal.dev`,
+      '',
+      'Drawn from these device versions. A major bump means a slot moved or an',
+      'id was renamed, so shapes placed from this file may disagree with the',
+      'current drawing about where a port is.',
+      '',
+      ...seen.values(),
+    ].join('\n'));
     save(xml, `portrayal-${vendorTag(scope)}${rack ? '-rack' : ''}.xml`, 'application/xml');
     report(stat, loaded, missing, `, ${(xml.length / 1048576).toFixed(1)} MB`);
   } catch (err) {

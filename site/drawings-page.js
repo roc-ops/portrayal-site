@@ -43,19 +43,32 @@ async function filesFor(dev, faces, everyConfig) {
   for (const face of faces) {
     out.push({path: `devices/${dev.name}/${dev.name}.${face}.svg`,
               url: `${DIST}${dev.name}.${face}.svg`,
-              device: dev.name, config: cfg?.default ?? null, face});
+              device: dev.name, version: dev.version ?? null,
+              config: cfg?.default ?? null, face});
     for (const c of configs) {
       out.push({path: `devices/${dev.name}/${dev.name}.${c}.${face}.svg`,
                 url: `${DIST}${dev.name}.${c}.${face}.svg`,
-                device: dev.name, config: c, face});
+                device: dev.name, version: dev.version ?? null, config: c, face});
     }
   }
   return {files: out, cfg};
 }
 
-const README = (label, n, faces) => `# Portrayal drawings
+const README = (label, n, faces, devs = []) => `# Portrayal drawings
 
 ${label} — ${n} file${n === 1 ? '' : 's'}, ${faces.join(' and ')}.
+Generated ${new Date().toISOString().slice(0, 10)}.
+
+## What this is a drawing OF
+
+Each device carries a version that moves when its drawing does. A major bump
+means a slot moved or an id was renamed - the two changes that invalidate a
+coordinate or a reference taken from these files. Check these against the
+library before trusting anything you cached from an older copy.
+
+${devs.map(d => `    ${(d.model || d.name).padEnd(22)} ${d.version || '?'}`).join('\n')}
+
+\`index.json\` carries the same list, and a version on every file entry.
 
 Flat SVG in real millimetres. Every port, PSU, fan, LED, bay and region carries
 a stable DOM id and a \`data-path\`, so you can find a named thing in the file
@@ -133,6 +146,14 @@ async function build(btn) {
         scope: SCOPE.labelFor(key),
         generated: new Date().toISOString().slice(0, 10),
         faces, everyConfig,
+        // WHICH DRAWING THIS IS, not just which device. A device carries a
+        // semantic version that moves when the drawing does, and a major bump
+        // means a slot moved or an id was renamed - the two changes that
+        // invalidate a coordinate or a reference somebody cached from this zip.
+        // Without it a holder cannot tell a stale bundle from a current one.
+        // roc-ops/portrayal-site#14.
+        devices: devs.map(d => ({name: d.name, model: d.model,
+                                 version: d.version ?? null})),
         files: wanted.filter(w => have.has(w.path)),
       }, null, 1))});
       for (const [name, cfg] of Object.entries(configIndexes)) {
@@ -141,7 +162,8 @@ async function build(btn) {
       }
     }
     entries.push({name: 'README.md',
-                  bytes: enc.encode(README(SCOPE.labelFor(key), entries.length, faces))});
+                  bytes: enc.encode(README(SCOPE.labelFor(key), entries.length,
+                                           faces, devs))});
 
     stat.textContent = 'compressing…';
     const blob = await makeZip(entries, new Date());
