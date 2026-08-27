@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="55.0mm" height="405.0mm" viewBox="0 0 55.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="mx2000-cb-re-1800-v" data-path="mx2000-cb-re-1800-v" data-class="supervisor" data-behaviour="fills" data-ref="juniper/mx2000-cb-re-1800-v@1:1.0.0" data-model="RE-MX2000-1800X4" data-power-draw-max-w="250" data-power-draw-typical-w="150" data-states="ok fail absent" transform="translate(0,0)">
+    <title>mx2000-cb-re-1800-v</title>
+    <rect id="mx2000-cb-re-1800-v--face" x="0" y="0" width="55.0" height="405.0" rx="0.6" fill="#565b61" stroke="#44484d" stroke-width="0.4" />
+    <g id="mx2000-cb-re-1800-v--ejector-top">
+      <rect x="21.0" y="2.5" width="13.0" height="14.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="mx2000-cb-re-1800-v--ejector-bottom">
+      <rect x="21.0" y="388.5" width="13.0" height="14.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="mx2000-cb-re-1800-v--lamps">
+      <circle id="mx2000-cb-re-1800-v--led-master" cx="12.0" cy="24.0" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+      <circle id="mx2000-cb-re-1800-v--led-online" cx="20.0" cy="24.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      <circle id="mx2000-cb-re-1800-v--led-offline" cx="28.0" cy="24.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="mx2000-cb-re-1800-v--silkscreen">
+      <g id="mx2000-cb-re-1800-v--t11-silkscreen">
+        <text x="27.5" y="20.0" font-family="Arial" font-size="1.5" fill="#e8eaec" text-anchor="middle">CB-RE</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t12-silkscreen">
+        <text x="12.0" y="29.0" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">MST</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t13-silkscreen">
+        <text x="20.0" y="29.0" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">ON</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t14-silkscreen">
+        <text x="28.0" y="29.0" font-family="Arial" font-size="0.9" fill="#e8eaec" text-anchor="middle">OFF</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t15-silkscreen">
+        <text x="38.5" y="63.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle" transform="rotate(-90 38.5 63.0)">CONSOLE</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t16-silkscreen">
+        <text x="38.5" y="86.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle" transform="rotate(-90 38.5 86.0)">AUX</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t17-silkscreen">
+        <text x="38.5" y="126.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle" transform="rotate(-90 38.5 126.0)">MGMT</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t18-silkscreen">
+        <text x="38.5" y="149.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle" transform="rotate(-90 38.5 149.0)">BITS</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t19-silkscreen">
+        <text x="31.5" y="240.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle" transform="rotate(-90 31.5 240.0)">USB</text>
+      </g>
+      <g id="mx2000-cb-re-1800-v--t20-silkscreen">
+        <text x="38.5" y="270.0" font-family="Arial" font-size="1.1" fill="#e8eaec" text-anchor="middle" transform="rotate(-90 38.5 270.0)">SFP</text>
+      </g>
+    </g>
+    <g id="mx2000-cb-re-1800-v--console" data-path="mx2000-cb-re-1800-v/console" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(15.0,55.0) rotate(90 8.0 7.0)">
+      <title>mx2000-cb-re-1800-v--console</title>
+      <rect id="mx2000-cb-re-1800-v--console--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="mx2000-cb-re-1800-v/console/opening" data-class="cutout" />
+      <path id="mx2000-cb-re-1800-v--console--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="mx2000-cb-re-1800-v--console--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+    <g id="mx2000-cb-re-1800-v--aux" data-path="mx2000-cb-re-1800-v/aux" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="auxiliary console" data-media="rj45" transform="translate(15.0,78.0) rotate(90 8.0 7.0)">
+      <title>mx2000-cb-re-1800-v--aux</title>
+      <rect id="mx2000-cb-re-1800-v--aux--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="mx2000-cb-re-1800-v/aux/opening" data-class="cutout" />
+      <path id="mx2000-cb-re-1800-v--aux--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="mx2000-cb-re-1800-v--aux--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+    <g id="mx2000-cb-re-1800-v--mgmt" data-path="mx2000-cb-re-1800-v/mgmt" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="out-of-band management" data-media="rj45" transform="translate(15.0,118.0) rotate(90 8.0 7.0)">
+      <title>mx2000-cb-re-1800-v--mgmt</title>
+      <rect id="mx2000-cb-re-1800-v--mgmt--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="mx2000-cb-re-1800-v/mgmt/opening" data-class="cutout" />
+      <path id="mx2000-cb-re-1800-v--mgmt--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="mx2000-cb-re-1800-v--mgmt--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+    <g id="mx2000-cb-re-1800-v--bits" data-path="mx2000-cb-re-1800-v/bits" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="BITS timing" data-media="rj45" transform="translate(15.0,141.0) rotate(90 8.0 7.0)">
+      <title>mx2000-cb-re-1800-v--bits</title>
+      <rect id="mx2000-cb-re-1800-v--bits--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="mx2000-cb-re-1800-v/bits/opening" data-class="cutout" />
+      <path id="mx2000-cb-re-1800-v--bits--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="mx2000-cb-re-1800-v--bits--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+    <g id="mx2000-cb-re-1800-v--usb" data-path="mx2000-cb-re-1800-v/usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(20.75,230.0)">
+      <title>mx2000-cb-re-1800-v--usb</title>
+      <rect id="mx2000-cb-re-1800-v--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="mx2000-cb-re-1800-v/usb/opening" data-class="cutout" />
+      <rect id="mx2000-cb-re-1800-v--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+    </g>
+    <g id="mx2000-cb-re-1800-v--sfp-mgmt" data-path="mx2000-cb-re-1800-v/sfp-mgmt" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="management SFP" data-media="sfp" transform="translate(15.0,262.0) rotate(90 7.25 5.0)">
+      <title>mx2000-cb-re-1800-v--sfp-mgmt</title>
+      <rect id="mx2000-cb-re-1800-v--sfp-mgmt--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="mx2000-cb-re-1800-v/sfp-mgmt/opening" data-class="cutout" />
+      <rect id="mx2000-cb-re-1800-v--sfp-mgmt--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="mx2000-cb-re-1800-v--sfp-mgmt--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mx2000-cb-re-1800-v--sfp-mgmt--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="mx2000-cb-re-1800-v--sfp-mgmt--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    </g>
+  </g>
+</svg>

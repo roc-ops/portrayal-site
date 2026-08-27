@@ -26,7 +26,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { toGLB, toUSDZ } from './share.js';
 import { configureRelief, createReliefScope, svgCanvas, canvasTex, rasterize, svgSource, setSvgOverride, clearSvgOverrides,
          setNodeStates, nodeStates, restyleText,
-         buildFaceRelief, squareFaceplate } from './relief.js';
+         setPulled as setReliefPulled, pulledPaths,
+         buildFaceRelief } from './relief.js';
 import { applyOverrides } from './swap.js';
 import { jdist } from './dist.js';
 
@@ -90,6 +91,12 @@ export function createViewer(container, opts = {}) {
   // rebuild - a config change, a swap - repaints the states that were set rather
   // than quietly reverting the device to all-dark.
   let STATES = {};
+  // WHAT THE HOST HAS TAKEN OFF, by data-path. Same story as STATES above and for
+  // the same reason: the scene is rasterised from the compiled faces, which know
+  // what the device HAS and have never known what a viewer has removed from it.
+  // Held here so a rebuild - a config change, a swap, turning the chassis around -
+  // does not quietly bolt every cover back on.
+  let PULLED = new Set();
   // How to redraw each texture that came from a node's own art, collected during
   // the build. Emptied on every rebuild: the materials it points at are disposed.
   let RESTYLE = [];
@@ -400,13 +407,18 @@ export function createViewer(container, opts = {}) {
 
   async function build(cfg) {
     // THREE and the renderer are genuinely shared; the per-document state is not,
-    // and rides on SCOPE rather than being claimed from under the other viewer
-    configureRelief({THREE, renderer, PXMM, FRU_PATHS});
+    // and rides on SCOPE rather than being claimed from under the other viewer.
+    // That now includes the raster density and the FRU path set - until it did,
+    // two viewers at different pxmm could rasterise each other's side faces.
+    configureRelief({THREE, renderer, PXMM, FRU_PATHS}, SCOPE);
     await applyBayOverrides(cfg);
     // the states go in BEFORE anything is extracted, so the faces and the relief
     // are cut from a document that already carries them; a rebuild that dropped
     // them would put out every lamp the user had lit
     setNodeStates(STATES, SCOPE);
+    // and what is off stays off, for the same reason and at the same moment: the
+    // faces and the relief are both cut from a document that already knows
+    setReliefPulled(PULLED, SCOPE);
     RESTYLE = [];
     gen++;
     const f = v => `${DIST}${DEV}.${cfg}.${v}.svg`;
@@ -434,21 +446,30 @@ export function createViewer(container, opts = {}) {
     // Relief is built in LOCAL face coordinates (x right, y up, z out of the face,
     // face plane at z=0) and oriented by a per-face group transform. flipLY handles
     // views whose y axis runs opposite to the face's local up (top view).
+    // `deep` is how far INTO the box this face looks, and it is a different number
+    // per face - the depth on front and rear, the width on the sides, the height on
+    // the top and the bottom. It used to be the depth everywhere.
     const FACES = COMP ? [
       {view: 'comp', url: DIST + COMP_ENTRY.files[cfg],
-       fw: () => W, fh: () => H, pos: () => [0, 0, D / 2], rot: [0, 0, 0]},
+       fw: () => W, fh: () => H, deep: () => D, pos: () => [0, 0, D / 2], rot: [0, 0, 0]},
     ] : [
-      {view: 'front', fw: () => W, fh: () => H, pos: () => [0, 0, D / 2], rot: [0, 0, 0]},
-      {view: 'rear',  fw: () => W, fh: () => H, pos: () => [0, 0, -D / 2], rot: [0, Math.PI, 0]},
-      {view: 'right', fw: () => D, fh: () => H, pos: () => [W / 2, 0, 0], rot: [0, Math.PI / 2, 0]},
-      {view: 'left',  fw: () => D, fh: () => H, pos: () => [-W / 2, 0, 0], rot: [0, -Math.PI / 2, 0]},
-      {view: 'top',   fw: () => W, fh: () => D, pos: () => [0, H / 2, 0], rot: [-Math.PI / 2, 0, 0]},
+      {view: 'front', fw: () => W, fh: () => H, deep: () => D, pos: () => [0, 0, D / 2], rot: [0, 0, 0]},
+      {view: 'rear',  fw: () => W, fh: () => H, deep: () => D, pos: () => [0, 0, -D / 2], rot: [0, Math.PI, 0]},
+      {view: 'right', fw: () => D, fh: () => H, deep: () => W, pos: () => [W / 2, 0, 0], rot: [0, Math.PI / 2, 0]},
+      {view: 'left',  fw: () => D, fh: () => H, deep: () => W, pos: () => [-W / 2, 0, 0], rot: [0, -Math.PI / 2, 0]},
+      {view: 'top',   fw: () => W, fh: () => D, deep: () => H, pos: () => [0, H / 2, 0], rot: [-Math.PI / 2, 0, 0]},
+      // THE UNDERSIDE GETS A RELIEF PASS TOO NOW. It was the one face left flat, and
+      // 70 components are placed on it - more than on the top. Its art is authored
+      // mirrored in both axes, which is what flipLX/flipLY carry through.
+      {view: 'bottom', fw: () => W, fh: () => D, deep: () => H, pos: () => [0, -H / 2, 0],
+       rot: [Math.PI / 2, 0, 0], flipLX: true, flipLY: true},
     ];
     const built = {};
     for (const F of FACES) {
       const before = meshes.length;
       await buildFaceRelief(F, {src: F.url || f(F.view), faceCv, faceSvg, facePunch,
-                                meshes, FRU_GROUPS, FRU_META, BODY_META, D, bodyBoxMesh,
+                                meshes, FRU_GROUPS, FRU_META, BODY_META, D, deep: F.deep(),
+                                bodyBoxMesh,
                                 restyle: RESTYLE, scope: SCOPE});
       // a face with no drawing falls back to flat colour and contributes no group
       if (meshes.length > before) built[F.view] = meshes[meshes.length - 1];
@@ -471,16 +492,16 @@ export function createViewer(container, opts = {}) {
         await sideMat('rear', W, H),                // -z: as seen from behind
       ];
     } else {
-      // the underside gets no relief pass, so square its faceplate here too
-      const bottomTxt = squareFaceplate(await svgSource(f('bottom'), SCOPE));
-      const bottomCv = await rasterize(bottomTxt, W, D, PXMM, true, true);
-      faceSvg.bottom = bottomTxt;
-      mats = [faceCv.right, faceCv.left, faceCv.top, bottomCv, faceCv.front, faceCv.rear]
+      // The underside used to be rasterised here because it got no relief pass. It
+      // gets one now, so it comes from faceCv like every other face - and if its
+      // drawing is missing, buildFaceRelief falls back to flat colour the same way
+      // the others do rather than this branch having its own answer.
+      mats = [faceCv.right, faceCv.left, faceCv.top, faceCv.bottom, faceCv.front, faceCv.rear]
         .map((c, i) => {
           const m = new THREE.MeshBasicMaterial(
             // alphaTest: punched pixels must not write depth, or they occlude interiors
-            {map: canvasTex(c), transparent: i !== 3, alphaTest: i !== 3 ? 0.1 : 0,
-             alphaToCoverage: i !== 3});
+            {map: canvasTex(c), transparent: true, alphaTest: 0.1,
+             alphaToCoverage: true});
           // The faces are unlit, so with the faceplate outline gone nothing marks a
           // corner: front and side are the same flat grey and the box loses its
           // form. Tint each face instead - the lid catches light, the sides fall
@@ -868,6 +889,51 @@ export function createViewer(container, opts = {}) {
   // own. It already knows how to re-rasterise a face at the current density and
   // re-punch its apertures, and a face repainted by hand here would silently lose
   // its cavities the moment the camera moved.
+  // TAKE PARTS OFF, AND PUT THEM BACK. `paths` is the whole set that should be
+  // off, not a delta, so a host can hand over its own state and a reset is
+  // setPulled([]) rather than a walk over every control.
+  //
+  // It repaints rather than rebuilding, which is the same bargain a lamp state
+  // strikes: a face is a texture drawn from a fragment of SVG, and hiding an
+  // element in that fragment and redrawing costs one raster instead of a
+  // 1.0-1.4 s rebuild. What it cannot do is un-extrude relief that was already
+  // built, so anything with a body gets hidden in the scene as well - and on the
+  // NEXT rebuild it is dropped at extraction and the geometry never exists.
+  async function setPulled(paths) {
+    const next = new Set();
+    for (const p of paths || []) if (p) next.add(String(p));
+    const changed = new Set();
+    for (const p of new Set([...PULLED, ...next]))
+      if (PULLED.has(p) !== next.has(p)) changed.add(p);
+    PULLED = next;
+    if (!changed.size || !box) return 0;
+    setReliefPulled(PULLED, SCOPE);
+    const isOff = path => {
+      for (const p of PULLED) if (path === p || path.startsWith(p + "/")) return true;
+      return false;
+    };
+    // geometry first: a body that was extruded before the part came off is still
+    // in the scene, and no amount of repainting a texture removes it
+    for (const [path, g] of Object.entries(FRU_GROUPS)) g.visible = !isOff(path);
+    // a texture is only touched if the change is actually in it
+    const touches = text => [...changed].some(p => text.includes(`data-path="${p}"`));
+    let n = 0;
+    for (const e of RESTYLE) {
+      if (!touches(e.svgText)) continue;
+      try { await e.run(restyleText(e.svgText, SCOPE)); n++; }
+      catch (err) { console.warn('[portrayal] pull repaint failed', err); }
+    }
+    for (const rec of LOD) {
+      if (!touches(rec.svgText)) continue;
+      rec.svgText = restyleText(rec.svgText, SCOPE);
+      const at = rec.level;
+      rec.level = 0;                    // refineFace no-ops at the level it holds
+      await refineFace(rec, at);
+      n++;
+    }
+    return n;
+  }
+
   async function setStates(map) {
     const next = {};
     for (const [k, v] of map instanceof Map ? map : Object.entries(map || {}))
@@ -899,6 +965,8 @@ export function createViewer(container, opts = {}) {
   return {
     load, select, on, resize, dispose, setStates,
     states: () => ({...STATES}),
+    setPulled,
+    pulled: () => new Set(PULLED),
     // what a host needs to rebuild the chrome this module gave up
     frus, toggleFru, download, exportData, exportName,
     // every path select() can find, for a host without its own tree

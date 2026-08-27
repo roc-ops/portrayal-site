@@ -118,9 +118,6 @@ export function createRackScene(container, opts = {}) {
   fill.position.set(-0.8, 0.3, -0.6);
   scene.add(fill);
 
-  const PXMM = opts.pxmm || PXMM_RELIEF;
-  configureRelief({THREE, renderer, PXMM, FRU_PATHS: new Set()});
-
   // This scene's own override map. relief.js used to keep ONE, module-wide, so
   // two scenes in a page showing the same device with different occupants fought
   // over it - and clearSvgOverrides() emptied everything, meaning one scene
@@ -128,6 +125,15 @@ export function createRackScene(container, opts = {}) {
   // by making a scope a thing you can hold; holding one is what makes a
   // side-by-side rack possible in a single document instead of two iframes.
   const relief = createReliefScope();
+
+  // The scope is passed, not left to the module-level fallback. THREE and the
+  // renderer really are per-page, but the raster density and the FRU path set
+  // are per-scene, and relief.js used to keep those module-level too - so a
+  // second scene calling configureRelief reclaimed them from under the first.
+  // A rack asking for 5 px/mm beside a viewer asking for 4 is the same class of
+  // collision the override map had, and passing `relief` is what settles it.
+  const PXMM = opts.pxmm || PXMM_RELIEF;
+  configureRelief({THREE, renderer, PXMM, FRU_PATHS: new Set()}, relief);
 
   // Framed up front, before a single device exists. Framing at the END of a
   // build meant the whole rack assembled itself somewhere above the default
