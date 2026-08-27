@@ -301,3 +301,11 @@ fi
 
 echo "vendored from $SRC"
 du -sh "$HERE/assets/dist" "$HERE/vendor"
+
+# What we just vendored, checked against what the pages actually read.
+#
+# The schemas are v0 and the drawings are rebuilt over there constantly; when
+# something this site depends on goes away the failure is SILENT - a tab renders
+# slightly wrong, or a download comes out empty. This is the only thing that
+# turns that into a noise. Non-zero exit fails the refresh.
+python3 "$HERE/check-contract.py"
