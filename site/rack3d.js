@@ -17,6 +17,7 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { applyOverrides } from '../vendor/swap.js';
+import { jdist } from '../vendor/dist.js';
 
 export const RU = 44.45;            // EIA-310 rack unit
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
@@ -50,7 +51,13 @@ const PXMM_RELIEF = 8;
 export function createRackScene(container, opts = {}) {
   const DIST = opts.dist || 'assets/dist/';
   const STACK = opts.stack || [];
-  const UNITS = opts.heightRU || 12;
+  // `heightRU: 'fit'` sizes the rack to what is actually in it, which cannot be
+  // known until the configs are loaded - so UNITS is settled in build(), not
+  // here, and the rails are built from it there too. A number still means a
+  // number, and stays fixed.
+  const FIT = opts.heightRU === 'fit';
+  const MIN_RU = opts.minHeightRU ?? 12;
+  let UNITS = FIT ? MIN_RU : (opts.heightRU || 12);
 
   // Label colours, alongside `background`. The dark stage gives three different
   // tones - device tags, plain RU numbers, and the every-fifth emphasis - so
@@ -188,7 +195,9 @@ export function createRackScene(container, opts = {}) {
   const screwMat = new THREE.MeshLambertMaterial({color: 0x8d949c});
 
   const rack = new THREE.Group();
-  {
+  function buildRack() {
+    disposeTree(rack);                       // dispose BEFORE detaching, or
+    for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
     const H = UNITS * RU;
     for (const side of [-1, 1]) {
       const x = side * (RACK_W / 2 - 8);
@@ -211,6 +220,7 @@ export function createRackScene(container, opts = {}) {
       rack.add(s);
     }
   }
+  buildRack();
   scene.add(rack);
 
   // An L bracket per side: a flange flat on the rack face taking two screws, and
@@ -338,6 +348,50 @@ export function createRackScene(container, opts = {}) {
     });
   }
 
+  // The stack a caller writes is {ref, cfg, ru, label, overrides} - the five keys
+  // a network model knows natively. `chassis`, `bays` and `componentIndex` are
+  // shapes out of Portrayal's compiled dist, and requiring them made Portrayal's
+  // index layout part of THIS module's contract: roc-ops/portrayal-site#10
+  // reports a consumer shipping a bug from guessing componentIndex was the raw
+  // components.json rather than its `.components`. The scene is handed `dist`
+  // already, so it reads them itself.
+  //
+  // Resolved into a parallel array rather than written back onto the caller's
+  // objects. An entry that already carries them keeps them, so the callers that
+  // pass the full shape today are untouched.
+  let RESOLVED = [], COMPONENTS = null;
+  async function hydrate() {
+    const configs = new Map();
+    for (const e of STACK) {
+      if ((e.chassis && e.bays) || configs.has(e.ref)) continue;
+      configs.set(e.ref, jdist(`${DIST}${e.ref}.configs.json`).catch(() => null));
+    }
+    if (STACK.some(e => !e.componentIndex) && !COMPONENTS) {
+      COMPONENTS = await jdist(`${DIST}components.json`)
+        .then(d => d.components).catch(() => []);
+    }
+    RESOLVED = [];
+    for (const e of STACK) {
+      const cfg = configs.has(e.ref) ? await configs.get(e.ref) : null;
+      RESOLVED.push({...e,
+        chassis: e.chassis || cfg?.chassis || {},
+        bays: e.bays || cfg?.bays || {},
+        componentIndex: e.componentIndex || COMPONENTS || []});
+    }
+  }
+
+  // How tall the rack has to be to hold what is in it. A device occupies its own
+  // height from where it is mounted, so the top of the stack is the highest
+  // (ru + height - 1), not the highest ru.
+  function fitUnits() {
+    let top = 0;
+    for (const e of RESOLVED) {
+      const h = e.chassis?.ru || Math.max(1, Math.round((e.chassis?.h || RU) / RU));
+      top = Math.max(top, (e.ru || 1) + h - 1);
+    }
+    return Math.max(MIN_RU, top);
+  }
+
   async function buildAll() {
     for (const m of mounted) {
       scene.remove(m.group); scene.remove(m.tag); scene.remove(m.ears);
@@ -345,7 +399,16 @@ export function createRackScene(container, opts = {}) {
     }
     mounted.length = 0;
     clearSvgOverrides();
-    for (const entry of STACK) {
+    await hydrate();
+    if (FIT) {
+      const want = fitUnits();
+      if (want !== UNITS) {
+        UNITS = want;
+        buildRack();
+        frameCamera();     // the framing is a function of height; it just moved
+      }
+    }
+    for (const entry of RESOLVED) {
       await overrideFaces(entry);
       await buildDevice(entry);
     }
@@ -380,6 +443,11 @@ export function createRackScene(container, opts = {}) {
     },
     resize,
     reframe: frameCamera,
+    // What the scene resolved: the stack with chassis, bays and the component
+    // index filled in, and the height it settled on. Asked for in
+    // roc-ops/portrayal-site#10 - a consumer that used to compute heightRU from
+    // chassis.ru should not have to re-fetch what this just read.
+    resolved: () => ({heightRU: UNITS, stack: RESOLVED.map(e => ({...e}))}),
     // Export what is on screen, including whatever is currently seated in a bay.
     toGLB: () => toGLB(scene),
     toUSDZ: () => toUSDZ(scene),
