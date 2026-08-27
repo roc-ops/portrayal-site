@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="441.0mm" height="43.7mm" viewBox="0 0 441.0 43.7" data-device="mx150" data-view="front" data-config="default" data-weight="4.3 kg (Table 1)" data-power-max-w="140" data-power-envelope="unstated" data-psu-ac-input="100-240 VAC, 50-60 Hz, 3 A max (rear legend), built-in" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/eol/product/m_series/">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-alm.state-alarm, #led-alm .state-alarm { --led-color: #ef4444; }
+    #led-sys.state-booting, #led-sys .state-booting { --led-color: #22c55e; }
+    #led-sys.state-booting [data-class='led'], #led-sys .state-booting { animation: portrayal-blink 1s linear infinite; }
+    #led-sys.state-junos, #led-sys .state-junos { --led-color: #22c55e; }
+    #led-mst.state-ok, #led-mst .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"config":"default","device":"Juniper MX150","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","std/micro-usb@1":"1.0.0","std/rj45-ganged@1":"1.3.0","std/rj45@1":"1.3.0","std/sfp-ganged@1":"1.1.0","std/usb-a@1":"1.2.0"},"source":{"attrs":{"lifecycle":{"eol":"announced","eol-announcement":"https://support.juniper.net/support/eol/product/m_series/"},"physical":{"weight":"4.3 kg (Table 1)"},"power":{"power-envelope":"unstated","power-max-w":140,"psu-ac-input":"100-240 VAC, 50-60 Hz, 3 A max (rear legend), built-in"}},"chassis":{"color":"#6d7175","depth":305.0,"height":43.7,"ru":1,"width":441.0},"description":"Juniper MX150 - a compact fixed-configuration 1RU edge router (EOL). Twelve 1GbE access ports (eight RJ45 0-7 in a 2x4 block, RJ45 ports 8 and 9, SFP ports 10 and 11) and two 10GbE SFP+ uplinks silkscreened 0 and 1, with a mini-USB console, USB service port, MGMT RJ45 and the chassis status lamp matrix at the right. Built-in AC supply and two fixed fans on the rear.","format":1,"gaps":[{"reason":"needs-drawing","scope":["rear"],"wanted":"proper MX150 fixed-fan and rocker components - the rear reuses common/fan-module (a generic square FRU face) behind circular grille cutouts and common/power-button for the rocker; both are stand-ins sized to the photo.","what":"fan-and-switch-representation"},{"reason":"vendor-silent","scope":["status-leds"],"wanted":"the SPD/DX/EN selector lamp semantics tied to the mode button - the guide's port-parameter table is transcribed only as legends here.","what":"port-parameter-leds"},{"reason":"vendor-silent","scope":["ge","xe"],"wanted":"transceiver list (external compatibility tool).","what":"supported-optics"}],"groups":{"fans":{"index-origin":0,"role":"service","term":"Fan"},"ge":{"index-origin":0,"mixed":"the twelve 1GbE access ports - eight RJ45 in the 2x4 block, RJ45 8/9, and SFP 10/11. One numbering space, two media","role":"traffic","term":"Port"},"grounding":{"description":"the protective-earthing stud pair under the rear earth symbol","index-origin":0,"role":"furniture","term":"Point"},"mgmt":{"index-origin":0,"mixed":"mini-USB console, USB service port and the MGMT RJ45","role":"management","term":"Port"},"port-leds":{"description":"LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here","index-origin":0,"role":"indicator","term":"LED"},"status-leds":{"description":"SYS / ALM / MST / PH chassis lamps and the SPD/DX/EN port parameter selectors at the right end, per the guide tables","index-origin":0,"role":"indicator","term":"LED"},"xe":{"attrs":{"media":"sfp-plus","speed":"10g"},"description":"The two SFP+ uplinks, silkscreened 0 and 1","index-origin":0,"role":"traffic","term":"Port"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX150","name":"mx150","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"provenance":{"chassis":"datasheet-table - guide Table 1: 1.72 x 17.36 x 12 in (43.7 x 441 x 305 mm), 4.3 kg. Ears NOT MODELLED by convention","color":"photo - medium grey face (#6d7175), aluminium rear","front":"photo - recessed JUNIPER/junos panel to x 45.2, hex vent fields above the ports, the 2x4 RJ45 block at column centres 167.7-214.8 (15.7 mm measured pitch, upper jacks rotate 180 to keep both release tabs reachable), RJ45 8/9 at 232.6/250.3, SFP 10/11 at 280.3/294.5, SFP+ uplinks 0/1 at 323.3/337.5, mini-USB CON at 352.8, vertical USB at 365.0, MGMT at 381.4, and the SYS/ALM/MST/PH + SPD/DX/EN lamp matrix with the white beacon at the right end. LINK/ST lamp pairs sit above each SFP port; ports 8/9 carry their lamps inside the jack","leds":"guide chassis-status table: SYS green steady = Junos loaded, blinking = booting; MST green steady = functioning; ALM red/amber = alarm (unlit = none); PH unused (off). Port and MGMT lamp tables exist in the guide; the per-port LINK/ST pairs are drawn with generic states","lifecycle":"announced - the MX150 is EOL (image-library page redirects to the EOL notice; the intake's datasheet hunt recorded no standalone sheet). Per-SKU dates on the Juniper milestones page","other-faces":"near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as on the siblings","port-numbering":"photo - access ports print 0-11 (column pairs 01/23/45/67 under the RJ block, then 8, 9, 10, 11); the two SFP+ uplinks print 0 and 1 - a second numbering space (xe-0/1/x in the CLI), carried as printed","power":"guide specifications: maximum power consumption 140 W. The vendor does not qualify an ambient - filed as max, and that reading is recorded here","rear":"photo - earthing plate with two studs at the left (21.0/34.0, y 6.5, approximate), ESD socket below, two fixed fan rotors at x 65/122 (r ~17), the AC INPUT 100-240V 50-60Hz 3A MAX legend, power rocker at 390 and C14 inlet at 408. The supply is BUILT IN - no PSU bay exists on this platform","scale":"photo - both photographs are straight-on but carry extra shadow/bezel rows, so x is anchored to the 441 mm width (front 3.245 px/mm, rear 3.184) and y positions are per-face fractions anchored to the 43.7 mm height - approximate to about a millimetre","sources":"MX150 Hardware Guide (extracted into working/images/mx150/), the MX-family datasheet (no standalone MX150 datasheet exists - recorded in the intake), and the image-library photographs mx150-front-high and mx150-rear-high. No mechanical drawing was available"},"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#5f6367","size":[5.0,305.0],"source":"side edge; estimated"},{"at":[436.0,0.0],"confidence":"estimated","fill":"#5f6367","size":[5.0,305.0],"source":"side edge; estimated"}]},"size":{"h":305.0,"w":441.0}},"front":{"components":{"placements":[{"at":[161.35,9.0],"group":"ge","id":"port-0","ref":"std/rj45-ganged@1","rel-pos":0,"rotate":180},{"at":[177.05,9.0],"group":"ge","id":"port-2","ref":"std/rj45-ganged@1","rel-pos":2,"rotate":180},{"at":[192.75,9.0],"group":"ge","id":"port-4","ref":"std/rj45-ganged@1","rel-pos":4,"rotate":180},{"at":[208.45,9.0],"group":"ge","id":"port-6","ref":"std/rj45-ganged@1","rel-pos":6,"rotate":180},{"at":[161.35,22.5],"group":"ge","id":"port-1","ref":"std/rj45-ganged@1","rel-pos":1},{"at":[177.05,22.5],"group":"ge","id":"port-3","ref":"std/rj45-ganged@1","rel-pos":3},{"at":[192.75,22.5],"group":"ge","id":"port-5","ref":"std/rj45-ganged@1","rel-pos":5},{"at":[208.45,22.5],"group":"ge","id":"port-7","ref":"std/rj45-ganged@1","rel-pos":7},{"at":[224.6,21.5],"group":"ge","id":"port-8","ref":"std/rj45@1","rel-pos":8},{"at":[242.3,21.5],"group":"ge","id":"port-9","ref":"std/rj45@1","rel-pos":9},{"at":[273.05,23.3],"attrs":{"media":"sfp","speed":"1g"},"group":"ge","id":"port-10","ref":"std/sfp-ganged@1","rel-pos":10},{"at":[287.3,23.3],"attrs":{"media":"sfp","speed":"1g"},"group":"ge","id":"port-11","ref":"std/sfp-ganged@1","rel-pos":11},{"at":[316.05,23.3],"group":"xe","id":"xe-0","ref":"std/sfp-ganged@1","rel-pos":0},{"at":[330.3,23.3],"group":"xe","id":"xe-1","ref":"std/sfp-ganged@1","rel-pos":1},{"at":[349.05,26.6],"attrs":{"function":"console"},"group":"mgmt","id":"con","ref":"std/micro-usb@1","rel-pos":0},{"at":[359.0,25.25],"attrs":{"function":"USB service port"},"group":"mgmt","id":"usb","ref":"std/usb-a@1","rel-pos":1,"rotate":90},{"at":[373.4,21.5],"attrs":{"function":"out-of-band management"},"group":"mgmt","id":"mgmt","ref":"std/rj45@1","rel-pos":2},{"at":[277.3,17.6],"for":"port-10","group":"port-leds","id":"led-link-10","ref":"common/led-dot@1","rel-pos":4},{"at":[281.9,17.6],"for":"port-10","group":"port-leds","id":"led-st-10","ref":"common/led-dot@1","rel-pos":5},{"at":[291.6,17.6],"for":"port-11","group":"port-leds","id":"led-link-11","ref":"common/led-dot@1","rel-pos":6},{"at":[296.2,17.6],"for":"port-11","group":"port-leds","id":"led-st-11","ref":"common/led-dot@1","rel-pos":7},{"at":[320.3,17.6],"for":"xe-0","group":"port-leds","id":"led-link-x0","ref":"common/led-dot@1","rel-pos":8},{"at":[324.9,17.6],"for":"xe-0","group":"port-leds","id":"led-st-x0","ref":"common/led-dot@1","rel-pos":9},{"at":[334.6,17.6],"for":"xe-1","group":"port-leds","id":"led-link-x1","ref":"common/led-dot@1","rel-pos":10},{"at":[339.2,17.6],"for":"xe-1","group":"port-leds","id":"led-st-x1","ref":"common/led-dot@1","rel-pos":11},{"at":[418.5,7.1],"description":"guide - green steady: Junos loaded; blinking: booting; off: powered off or halted","for":"chassis","group":"status-leds","id":"led-sys","ref":"common/led-dot@1","rel-pos":0,"states":["off",{"color":"#22c55e","name":"junos"},{"behavior":"blinking","color":"#22c55e","name":"booting"}]},{"at":[418.5,12.1],"description":"guide - lit on alarm; unlit: no alarm or device halted","for":"chassis","group":"status-leds","id":"led-alm","ref":"common/led-dot@1","rel-pos":1,"states":["off",{"color":"#ef4444","name":"alarm"}]},{"at":[418.5,17.1],"description":"guide - green steady: functioning normally","for":"chassis","group":"status-leds","id":"led-mst","ref":"common/led-dot@1","rel-pos":2,"states":["off",{"color":"#22c55e","name":"ok"}]},{"at":[418.5,22.1],"description":"guide - not used; always off","for":"chassis","group":"status-leds","id":"led-ph","ref":"common/led-dot@1","rel-pos":3,"states":["off"]}]},"panel":{"cutouts":[{"at":[161.35,9.0],"id":"port-0","size":[12.7,11.0]},{"at":[177.05,9.0],"id":"port-2","size":[12.7,11.0]},{"at":[192.75,9.0],"id":"port-4","size":[12.7,11.0]},{"at":[208.45,9.0],"id":"port-6","size":[12.7,11.0]},{"at":[161.35,22.5],"id":"port-1","size":[12.7,11.0]},{"at":[177.05,22.5],"id":"port-3","size":[12.7,11.0]},{"at":[192.75,22.5],"id":"port-5","size":[12.7,11.0]},{"at":[208.45,22.5],"id":"port-7","size":[12.7,11.0]},{"at":[224.6,21.5],"id":"port-8","size":[16.0,14.0]},{"at":[242.3,21.5],"id":"port-9","size":[16.0,14.0]},{"at":[273.05,23.1],"id":"port-10","size":[14.25,10.4]},{"at":[287.3,23.1],"id":"port-11","size":[14.25,10.4]},{"at":[316.05,23.1],"id":"xe-0","size":[14.25,10.4]},{"at":[330.3,23.1],"id":"xe-1","size":[14.25,10.4]},{"at":[349.05,26.6],"id":"con","size":[7.5,2.75]},{"at":[362.75,21.5],"id":"usb","size":[4.5,12.0]},{"at":[373.4,21.5],"id":"mgmt","size":[16.0,14.0]},{"at":[434.0,26.8],"id":"led-beacon","shape":"circle","size":[3.2,3.2]}],"decor":[{"at":[0.0,0.0],"fill":"#5f6367","rx":0.8,"size":[45.2,43.7]},{"at":[48.0,2.5],"pattern":"vent","size":[107.0,12.0],"vent":40},{"at":[223.0,2.5],"pattern":"vent","size":[80.0,12.0],"vent":40},{"at":[308.0,2.5],"pattern":"vent","size":[100.0,10.0],"vent":40}]},"silkscreen":[{"anchor":"start","at":[6.0,8.0],"fill":"#f0f1f2","font-size":4.2,"for":"chassis","text":"JUNIPER"},{"anchor":"middle","at":[22.5,11.0],"fill":"#d7dadd","font-size":1.4,"for":"chassis","text":"NETWORKS"},{"anchor":"start","at":[6.0,17.0],"fill":"#f0f1f2","font-size":3.2,"for":"chassis","text":"MX150"},{"anchor":"middle","at":[16.0,36.0],"fill":"#f0f1f2","font-size":3.0,"for":"chassis","text":"junos"},{"anchor":"middle","at":[171.5,39.6],"font-size":1.8,"for":["port-0","port-1"],"text":"0 1"},{"anchor":"middle","at":[187.2,39.6],"font-size":1.8,"for":["port-2","port-3"],"text":"2 3"},{"anchor":"middle","at":[202.9,39.6],"font-size":1.8,"for":["port-4","port-5"],"text":"4 5"},{"anchor":"middle","at":[218.6,39.6],"font-size":1.8,"for":["port-6","port-7"],"text":"6 7"},{"anchor":"middle","at":[232.6,39.6],"font-size":1.8,"for":"port-8","text":"8"},{"anchor":"middle","at":[250.3,39.6],"font-size":1.8,"for":"port-9","text":"9"},{"anchor":"middle","at":[280.3,39.6],"font-size":1.8,"for":"port-10","text":"10"},{"anchor":"middle","at":[294.5,39.6],"font-size":1.8,"for":"port-11","text":"11"},{"anchor":"middle","at":[323.3,39.6],"font-size":1.8,"for":"xe-0","text":"0"},{"anchor":"middle","at":[337.5,39.6],"font-size":1.8,"for":"xe-1","text":"1"},{"anchor":"middle","at":[352.8,37.6],"font-size":1.6,"for":"con","text":"CON"},{"at":[365.0,38.6],"for":"usb","path":"M -2.2 0 H 2.2 M -0.9 -1.2 L 0.4 -1.2 L 1.2 -0.3 M -0.9 1.2 L 0.4 1.2 L 1.2 0.3"},{"anchor":"middle","at":[381.4,37.6],"font-size":1.6,"for":"mgmt","text":"MGMT"},{"anchor":"middle","at":[280.6,18.6],"font-size":1.1,"for":"port-10","text":"LINK ST"},{"anchor":"middle","at":[294.9,18.6],"font-size":1.1,"for":"port-11","text":"LINK ST"},{"anchor":"middle","at":[323.6,18.6],"font-size":1.1,"for":"xe-0","text":"LINK ST"},{"anchor":"middle","at":[337.9,18.6],"font-size":1.1,"for":"xe-1","text":"LINK ST"},{"anchor":"end","at":[416.5,8.6],"font-size":1.5,"for":"led-sys","text":"SYS"},{"anchor":"end","at":[416.5,13.6],"font-size":1.5,"for":"led-alm","text":"ALM"},{"anchor":"end","at":[416.5,18.6],"font-size":1.5,"for":"led-mst","text":"MST"},{"anchor":"end","at":[416.5,23.6],"font-size":1.5,"for":"led-ph","text":"PH"},{"anchor":"end","at":[436.5,8.6],"font-size":1.5,"for":"chassis","text":"SPD"},{"anchor":"end","at":[436.5,13.6],"font-size":1.5,"for":"chassis","text":"DX"},{"anchor":"end","at":[436.5,18.6],"font-size":1.5,"for":"chassis","text":"EN"}],"size":{"h":43.7,"w":441.0}},"left":{"panel":{"decor":[{"at":[0.0,17.0],"confidence":"estimated","fill":"#5f6367","size":[305.0,9.0],"source":"mounting-bracket screw band along the side; estimated"}]},"size":{"h":43.7,"w":305.0}},"rear":{"components":{"placements":[{"at":[17.5,3.0],"for":"chassis","group":"grounding","id":"ground-stud-0","ref":"juniper/mx-ground-stud@1","rel-pos":0},{"at":[30.5,3.0],"for":"chassis","group":"grounding","id":"ground-stud-1","ref":"juniper/mx-ground-stud@1","rel-pos":1},{"at":[48.0,2.0],"attrs":{"function":"fixed chassis fan"},"group":"fans","id":"fan-0","ref":"common/fan-module@1","rel-pos":0,"skin":"default"},{"at":[105.0,2.0],"attrs":{"function":"fixed chassis fan"},"group":"fans","id":"fan-1","ref":"common/fan-module@1","rel-pos":1,"skin":"default"},{"at":[390.0,10.0],"attrs":{"function":"AC power rocker"},"for":"chassis","group":"mgmt","id":"power-switch","ref":"common/power-button@1","rel-pos":3},{"at":[407.5,11.0],"attrs":{"function":"AC inlet"},"group":"mgmt","id":"inlet","ref":"std/c14-inlet@1","rel-pos":4}]},"panel":{"cutouts":[{"at":[18.0,3.5],"id":"ground-stud-0","shape":"circle","size":[6.0,6.0]},{"at":[31.0,3.5],"id":"ground-stud-1","shape":"circle","size":[6.0,6.0]},{"at":[34.4,11.6],"id":"esd-rear","shape":"circle","size":[3.6,3.6]},{"at":[48.0,2.0],"id":"fan-0","shape":"circle","size":[34.0,34.0]},{"at":[105.0,2.0],"id":"fan-1","shape":"circle","size":[34.0,34.0]}],"decor":[{"at":[13.0,2.5],"fill":"#c9ccd0","rx":1.0,"size":[28.0,9.0]}]},"silkscreen":[{"at":[36.2,20.6],"fill":"#e8eaec","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"},{"anchor":"middle","at":[383.7,5.0],"fill":"#e8eaec","font-size":1.5,"for":"chassis","text":"AC INPUT: 100-240V, 50-60Hz, 3A Max"}],"size":{"h":43.7,"w":441.0}},"right":{"panel":{"decor":[{"at":[0.0,17.0],"confidence":"estimated","fill":"#5f6367","size":[305.0,9.0],"source":"mirror of the left band, same estimate"}]},"size":{"h":43.7,"w":305.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#5f6367","size":[5.0,305.0],"source":"side edge; estimated"},{"at":[436.0,0.0],"confidence":"estimated","fill":"#5f6367","size":[5.0,305.0],"source":"side edge; estimated"}]},"size":{"h":305.0,"w":441.0}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX150" x="0" y="0" width="441" height="43.7" rx="1.2" fill="#6d7175" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <rect x="0" y="0" width="45.2" height="43.7" rx="0.8" fill="#5f6367" />
+  <rect x="48" y="2.5" width="107" height="12" rx="0.6" fill="url(#portrayal-vent)" data-vent="40" />
+  <rect x="223" y="2.5" width="80" height="12" rx="0.6" fill="url(#portrayal-vent)" data-vent="40" />
+  <rect x="308" y="2.5" width="100" height="10" rx="0.6" fill="url(#portrayal-vent)" data-vent="40" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="161.35" y="9" width="12.7" height="11" id="cutout--port-0" data-path="cutout:port-0" data-class="cutout" fill="#101214" />
+    <rect x="177.05" y="9" width="12.7" height="11" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" fill="#101214" />
+    <rect x="192.75" y="9" width="12.7" height="11" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" fill="#101214" />
+    <rect x="208.45" y="9" width="12.7" height="11" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" fill="#101214" />
+    <rect x="161.35" y="22.5" width="12.7" height="11" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" fill="#101214" />
+    <rect x="177.05" y="22.5" width="12.7" height="11" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" fill="#101214" />
+    <rect x="192.75" y="22.5" width="12.7" height="11" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" fill="#101214" />
+    <rect x="208.45" y="22.5" width="12.7" height="11" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" fill="#101214" />
+    <rect x="224.6" y="21.5" width="16" height="14" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" fill="#101214" />
+    <rect x="242.3" y="21.5" width="16" height="14" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" fill="#101214" />
+    <rect x="273.05" y="23.1" width="14.25" height="10.4" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" fill="#101214" />
+    <rect x="287.3" y="23.1" width="14.25" height="10.4" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" fill="#101214" />
+    <rect x="316.05" y="23.1" width="14.25" height="10.4" id="cutout--xe-0" data-path="cutout:xe-0" data-class="cutout" fill="#101214" />
+    <rect x="330.3" y="23.1" width="14.25" height="10.4" id="cutout--xe-1" data-path="cutout:xe-1" data-class="cutout" fill="#101214" />
+    <rect x="349.05" y="26.6" width="7.5" height="2.75" id="cutout--con" data-path="cutout:con" data-class="cutout" fill="#101214" />
+    <rect x="362.75" y="21.5" width="4.5" height="12" id="cutout--usb" data-path="cutout:usb" data-class="cutout" fill="#101214" />
+    <rect x="373.4" y="21.5" width="16" height="14" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" fill="#101214" />
+    <ellipse cx="435.6" cy="28.4" rx="1.6" ry="1.6" id="cutout--led-beacon" data-path="cutout:led-beacon" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="6" y="8" font-family="sans-serif" font-size="4.2" text-anchor="start" fill="#f0f1f2" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">JUNIPER</text>
+    <text x="22.5" y="11" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#d7dadd" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">NETWORKS</text>
+    <text x="6" y="17" font-family="sans-serif" font-size="3.2" text-anchor="start" fill="#f0f1f2" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">MX150</text>
+    <text x="16" y="36" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f0f1f2" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">junos</text>
+    <text x="171.5" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-0 port-1">0 1</text>
+    <text x="187.2" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2 port-3">2 3</text>
+    <text x="202.9" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4 port-5">4 5</text>
+    <text x="218.6" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6 port-7">6 7</text>
+    <text x="232.6" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="250.3" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="280.3" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="294.5" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="323.3" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-0">0</text>
+    <text x="337.5" y="39.6" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#c7ccd1" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-1">1</text>
+    <text x="352.8" y="37.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#c7ccd1" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="con">CON</text>
+    <path d="M -2.2 0 H 2.2 M -0.9 -1.2 L 0.4 -1.2 L 1.2 -0.3 M -0.9 1.2 L 0.4 1.2 L 1.2 0.3" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(365 38.6)" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb" />
+    <text x="381.4" y="37.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#c7ccd1" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <text x="280.6" y="18.6" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#c7ccd1" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">LINK ST</text>
+    <text x="294.9" y="18.6" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#c7ccd1" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">LINK ST</text>
+    <text x="323.6" y="18.6" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#c7ccd1" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-0">LINK ST</text>
+    <text x="337.9" y="18.6" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#c7ccd1" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-1">LINK ST</text>
+    <text x="416.5" y="8.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <text x="416.5" y="13.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="416.5" y="18.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-mst">MST</text>
+    <text x="416.5" y="23.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-ph">PH</text>
+    <text x="436.5" y="8.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">SPD</text>
+    <text x="436.5" y="13.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">DX</text>
+    <text x="436.5" y="18.6" font-family="sans-serif" font-size="1.5" text-anchor="end" fill="#c7ccd1" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">EN</text>
+  </g>
+  <g id="port-0" data-path="port-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="0" transform="translate(161.35,9.0) rotate(180 6.35 5.5)" data-group-role="traffic">
+    <title>port-0</title>
+    <rect id="port-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-0/opening" data-class="cutout" />
+    <path id="port-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-0--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="2" transform="translate(177.05,9.0) rotate(180 6.35 5.5)" data-group-role="traffic">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <path id="port-2--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-2--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="4" transform="translate(192.75,9.0) rotate(180 6.35 5.5)" data-group-role="traffic">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <path id="port-4--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-4--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="6" transform="translate(208.45,9.0) rotate(180 6.35 5.5)" data-group-role="traffic">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <path id="port-6--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-6--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="1" transform="translate(161.35,22.5)" data-group-role="traffic">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <path id="port-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-1--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="3" transform="translate(177.05,22.5)" data-group-role="traffic">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <path id="port-3--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-3--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="5" transform="translate(192.75,22.5)" data-group-role="traffic">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <path id="port-5--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-5--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="7" transform="translate(208.45,22.5)" data-group-role="traffic">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <path id="port-7--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-7--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="8" transform="translate(224.6,21.5)" data-group-role="traffic">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <path id="port-8--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-8--pins" fill="#a8873c">
+      <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+      <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+      <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+      <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+      <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+      <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+      <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+      <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+    </g>
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-group="ge" data-rel-pos="9" transform="translate(242.3,21.5)" data-group-role="traffic">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <path id="port-9--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="port-9--pins" fill="#a8873c">
+      <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+      <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+      <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+      <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+      <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+      <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+      <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+      <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+    </g>
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-group="ge" data-rel-pos="10" transform="translate(273.05,23.3)" data-group-role="traffic">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-10--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-group="ge" data-rel-pos="11" transform="translate(287.3,23.3)" data-group-role="traffic">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-11--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="xe-0" data-path="xe-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-group="xe" data-rel-pos="0" transform="translate(316.05,23.3)" data-group-role="traffic" data-description="The two SFP+ uplinks, silkscreened 0 and 1">
+    <title>xe-0</title>
+    <rect id="xe-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="xe-0/opening" data-class="cutout" />
+    <rect id="xe-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="xe-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="xe-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="xe-1" data-path="xe-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-group="xe" data-rel-pos="1" transform="translate(330.3,23.3)" data-group-role="traffic" data-description="The two SFP+ uplinks, silkscreened 0 and 1">
+    <title>xe-1</title>
+    <rect id="xe-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="xe-1/opening" data-class="cutout" />
+    <rect id="xe-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="xe-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="xe-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="con" data-path="con" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-function="console" data-media="micro-usb-b" data-group="mgmt" data-rel-pos="0" transform="translate(349.05,26.6)" data-group-role="management">
+    <title>con</title>
+    <rect id="con--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+    <path id="con--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="con/opening" data-class="cutout" />
+    <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" data-group="mgmt" data-rel-pos="1" transform="translate(359.0,25.25) rotate(90 6.0 2.25)" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="out-of-band management" data-media="rj45" data-group="mgmt" data-rel-pos="2" transform="translate(373.4,21.5)" data-group-role="management">
+    <title>mgmt</title>
+    <rect id="mgmt--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="mgmt/opening" data-class="cutout" />
+    <path id="mgmt--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="mgmt--pins" fill="#a8873c">
+      <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+      <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+      <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+      <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+      <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+      <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+      <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+      <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+    </g>
+  </g>
+  <g id="led-link-10" data-path="led-link-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="4" transform="translate(277.3,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="port-10">
+    <title>led-link-10</title>
+    <circle id="led-link-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-link-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-link-10/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-st-10" data-path="led-st-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="5" transform="translate(281.9,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="port-10">
+    <title>led-st-10</title>
+    <circle id="led-st-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-st-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-st-10/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-link-11" data-path="led-link-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="6" transform="translate(291.6,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="port-11">
+    <title>led-link-11</title>
+    <circle id="led-link-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-link-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-link-11/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-st-11" data-path="led-st-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="7" transform="translate(296.2,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="port-11">
+    <title>led-st-11</title>
+    <circle id="led-st-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-st-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-st-11/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-link-x0" data-path="led-link-x0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="8" transform="translate(320.3,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="xe-0">
+    <title>led-link-x0</title>
+    <circle id="led-link-x0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-link-x0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-link-x0/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-st-x0" data-path="led-st-x0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="9" transform="translate(324.9,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="xe-0">
+    <title>led-st-x0</title>
+    <circle id="led-st-x0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-st-x0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-st-x0/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-link-x1" data-path="led-link-x1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="10" transform="translate(334.6,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="xe-1">
+    <title>led-link-x1</title>
+    <circle id="led-link-x1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-link-x1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-link-x1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-st-x1" data-path="led-st-x1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="11" transform="translate(339.2,17.6)" data-group-role="indicator" data-description="LINK/ST pairs above each SFP port; the RJ45 ports (block and 8/9) carry their lamps inside the jacks. States per the guide's port LED tables, drawn generic here" data-for="xe-1">
+    <title>led-st-x1</title>
+    <circle id="led-st-x1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-st-x1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-st-x1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="0" transform="translate(418.5,7.1)" data-group-role="indicator" data-states="off junos booting" data-description="guide - green steady: Junos loaded; blinking: booting; off: powered off or halted" data-for="chassis">
+    <title>led-sys</title>
+    <circle id="led-sys--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys/lamp" data-class="led" data-states="off junos booting" data-z-dome="0.3" />
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="1" transform="translate(418.5,12.1)" data-group-role="indicator" data-states="off alarm" data-description="guide - lit on alarm; unlit: no alarm or device halted" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.3" />
+  </g>
+  <g id="led-mst" data-path="led-mst" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="2" transform="translate(418.5,17.1)" data-group-role="indicator" data-states="off ok" data-description="guide - green steady: functioning normally" data-for="chassis">
+    <title>led-mst</title>
+    <circle id="led-mst--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-mst--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-mst/lamp" data-class="led" data-states="off ok" data-z-dome="0.3" />
+  </g>
+  <g id="led-ph" data-path="led-ph" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="3" transform="translate(418.5,22.1)" data-group-role="indicator" data-states="off" data-description="guide - not used; always off" data-for="chassis">
+    <title>led-ph</title>
+    <circle id="led-ph--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-ph--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-ph/lamp" data-class="led" data-states="off" data-z-dome="0.3" />
+  </g>
+</svg>

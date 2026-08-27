@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420.9mm" height="29.5mm" viewBox="0 0 420.9 29.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ms-dpc" data-path="ms-dpc" data-class="line-card" data-behaviour="fills" data-ref="juniper/ms-dpc@1:1.0.0" data-model="MS-DPC" data-power-draw-max-w="265" data-states="ok fail absent" transform="translate(0,0)">
+    <title>ms-dpc</title>
+    <rect id="ms-dpc--face" x="0" y="0" width="420.9" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="ms-dpc--lever-left">
+      <rect x="1.2" y="2.2" width="16.0" height="9.0" rx="3.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="ms-dpc--lever-right">
+      <rect x="403.7" y="2.2" width="16.0" height="9.0" rx="3.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="ms-dpc--lamps">
+      <circle id="ms-dpc--led-ok-fail" cx="31.0" cy="8.2" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="ms-dpc--vents">
+      <rect x="44" y="3" width="356" height="23" rx="0.8" fill="#b7bbbf" />
+    </g>
+    <g id="ms-dpc--silkscreen">
+      <g id="ms-dpc--t616-silkscreen">
+        <text x="31.00" y="17.00" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle" transform="rotate(-90 31.00 17.00)">OK/FAIL</text>
+      </g>
+      <g id="ms-dpc--t617-silkscreen">
+        <text x="12.00" y="27.90" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="start">MS-DPC</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,637 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="437.0mm" height="43.7mm" viewBox="0 0 437.0 43.7" data-device="mx204" data-view="rear" data-config="dc" data-weight="10.3 kg fully loaded, AC-powered chassis (Table 19)" data-depth-with-handles="518.9 mm over fan and power-supply handles (Table 19; drawing g009881 reads 518.4)" data-throughput="400 Gbps (datasheet)" data-power-efficiency="0.9 W/Gb (datasheet)" data-power-typical-w="240" data-power-max-w="280" data-power-envelope="fully-configured" data-psu-ac-input="dedicated feed per inlet; breaker min 20 A at 110 VAC or 16 A at 220 VAC" data-psu-dc-input="PS0 from feed A, PS1 from feed B (A/B redundancy)" data-max-thermal-output="1705 BTU/hour (500 W) (Table 20; provisioning ceiling, not reconciled with the 280 W maximum draw)" data-operating-temp="0 C to 40 C normal; -5 C to 55 C short-term (NEBS GR-63-CORE Issue 4 short-term, up to 96 h, max 15 days/year)" data-storage-temp="-40 C to 70 C in shipping container" data-humidity="5-90 percent noncondensing" data-altitude="no performance degradation to 3048 m" data-cpu="1.6-GHz Intel 8-core x86" data-memory="32-GB DDR4" data-storage="100-GB SATA SSD (Routing Engine description; the faceplate carries SSD0 and SSD1 activity LEDs, and no sentence in the guide states the drive count)" data-routing-engine="built-in on the baseboard, not replaceable" data-rate-selectability="each QSFP port runs 100GbE, 40GbE, or 4x10GbE via breakout; QSA adapter (MAM1Q00A-QSA) converts a port to single 10GbE or 1GbE from Junos 18.3R1" data-timing="BITS and ToD RJ45 ports, 1PPS and 10 MHz SMB input and output, PTP grandmaster clock SFP port (GM/PTP)" data-oob="MGMT RJ-45, autosensing 10/100/1000 with link and activity LEDs" data-console="CON RJ-45 serial" data-usb="single USB port (guide names no revision)" data-seismic="Designed to meet Telcordia Technologies Zone 4 earthquake requirements (Table 20 wording, transcribed)" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/eol/product/m_series/" data-end-of-sale="2027-06-15" data-end-of-support="2032-06-30">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-fan-0.state-fault, #led-fan-0 .state-fault, #led-fan-1.state-fault, #led-fan-1 .state-fault, #led-fan-2.state-fault, #led-fan-2 .state-fault { --led-color: #ef4444; }
+    #led-fan-0.state-init, #led-fan-0 .state-init, #led-fan-1.state-init, #led-fan-1 .state-init, #led-fan-2.state-init, #led-fan-2 .state-init { --led-color: #22c55e; }
+    #led-fan-0.state-init [data-class='led'], #led-fan-0 .state-init, #led-fan-1.state-init [data-class='led'], #led-fan-1 .state-init, #led-fan-2.state-init [data-class='led'], #led-fan-2 .state-init { animation: portrayal-blink 1s linear infinite; }
+    #led-fan-0.state-ok, #led-fan-0 .state-ok, #led-fan-1.state-ok, #led-fan-1 .state-ok, #led-fan-2.state-ok, #led-fan-2 .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"config":"dc","device":"Juniper MX204","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","juniper/mx204-fan@1":"1.0.0","juniper/mx204-ground-plate@1":"1.0.0","juniper/mx204-psu-dc@1":"1.1.0"},"source":{"attrs":{"compliance":{"seismic":"Designed to meet Telcordia Technologies Zone 4 earthquake requirements (Table 20 wording, transcribed)"},"environmental":{"altitude":"no performance degradation to 3048 m","humidity":"5-90 percent noncondensing","operating-temp":"0 C to 40 C normal; -5 C to 55 C short-term (NEBS GR-63-CORE Issue 4 short-term, up to 96 h, max 15 days/year)","storage-temp":"-40 C to 70 C in shipping container"},"features":{"rate-selectability":"each QSFP port runs 100GbE, 40GbE, or 4x10GbE via breakout; QSA adapter (MAM1Q00A-QSA) converts a port to single 10GbE or 1GbE from Junos 18.3R1","timing":"BITS and ToD RJ45 ports, 1PPS and 10 MHz SMB input and output, PTP grandmaster clock SFP port (GM/PTP)"},"lifecycle":{"end-of-sale":"2027-06-15","end-of-support":"2032-06-30","eol":"announced","eol-announcement":"https://support.juniper.net/support/eol/product/m_series/"},"management":{"console":"CON RJ-45 serial","oob":"MGMT RJ-45, autosensing 10/100/1000 with link and activity LEDs","usb":"single USB port (guide names no revision)"},"performance":{"power-efficiency":"0.9 W/Gb (datasheet)","throughput":"400 Gbps (datasheet)"},"physical":{"depth-with-handles":"518.9 mm over fan and power-supply handles (Table 19; drawing g009881 reads 518.4)","weight":"10.3 kg fully loaded, AC-powered chassis (Table 19)"},"platform":{"cpu":"1.6-GHz Intel 8-core x86","memory":"32-GB DDR4","routing-engine":"built-in on the baseboard, not replaceable","storage":"100-GB SATA SSD (Routing Engine description; the faceplate carries SSD0 and SSD1 activity LEDs, and no sentence in the guide states the drive count)"},"power":{"power-envelope":"fully-configured","power-max-w":280,"power-typical-w":240,"psu-ac-input":"dedicated feed per inlet; breaker min 20 A at 110 VAC or 16 A at 220 VAC","psu-dc-input":"PS0 from feed A, PS1 from feed B (A/B redundancy)"},"thermal":{"max-thermal-output":"1705 BTU/hour (500 W) (Table 20; provisioning ceiling, not reconciled with the 280 W maximum draw)"}},"chassis":{"color":"#9a9ea3","depth":470.0,"height":43.7,"ru":1,"width":437.0},"configurations":{"ac":{"default":true,"description":"AC-powered chassis - two 650 W AC PSUs with C14 inlets. SKUs per the datasheet bundle table - MX204-HW-BASE (base HW + standard Junos, perpetual; 3 fan trays, 2 PSUs) and MX204-HWBASE-AC-FS (fixed AC system, R mode, feature rights separate). Spares - JNP204-CHAS chassis, JPSU-650W-AC-AO PSU.","part-numbers":{"MX204-HW-BASE":{},"MX204-HWBASE-AC-FS":{}}},"dc":{"bays":{"psu-0":"juniper/mx204-psu-dc@1","psu-1":"juniper/mx204-psu-dc@1"},"description":"DC-powered chassis - two 650 W DC PSUs with terminal blocks; PS0 on feed A, PS1 on feed B. SKU MX204-HWBASE-DC-FS (fixed DC system, IR mode, feature rights separate).","part-numbers":{"MX204-HWBASE-DC-FS":{}}}},"description":"Juniper MX204 Universal Routing Platform - a fixed-configuration 1RU, 400 Gbps Trio-based edge router. Four rate-selectable ports (100GbE QSFP28, 40GbE QSFP+, or 4x10GbE breakout) and eight 10GbE SFP+ ports, a built-in Routing Engine, a PTP grandmaster SFP port and a full timing block (BITS, ToD, 1PPS and 10 MHz in/out). Two 650 W PSUs (AC or DC, 1+1) and three fan modules at the rear.","format":1,"gaps":[{"note":"The photographed faceplate prints PPS under the left SMB column and 100MHz under the right; the guide art prints 10MHz left and 1PPS right, and the guide text calls the ports 10-MHz throughout (pinouts, clocking topics). The silkscreen follows the photograph; the cutout ids follow the guide's functional naming (smb-10mhz-* left, smb-1pps-* right), which therefore disagrees with the printed legend under them.","reason":"sources-disagree","scope":["timing"],"wanted":"a photograph of a second production unit's SMB legend","what":"smb-column-legend"},{"note":"Table 19 states the fan module 1.89 in (48.0 mm) wide; the rear drawing's bay apertures measure ~42 mm on a 49.1 mm pitch and the photograph shows the orange face filling the aperture. Modelled at 42.0 (drawing aperture); the 48.0 envelope presumably includes body rails behind the panel.","reason":"sources-disagree","scope":["fans"],"wanted":"a mechanical drawing or a caliper on the hardware","what":"fan-module-width"},{"reason":"vendor-silent","scope":["rear"],"wanted":"identification of the small hole at x 250.0, y 28.9 right of fan bay 2 (drawing shows it with no icon or number; not modelled)","what":"rear-extra-hole"},{"reason":"vendor-silent","scope":["qsfp28","sfp-plus","timing"],"wanted":"the MX204 transceiver list - the guide points at the external Hardware Compatibility Tool (\"MX204 Transceivers\") and no document in the intake carries the table, so the port groups declare no interface","what":"supported-optics"},{"reason":"vendor-silent","wanted":"the face and position of the chassis serial-number label - guide Figure 60 shows the label but names no face and carries no locating dimension","what":"serial-label-location"}],"groups":{"bits-leds":{"description":"Table 17 - BITS jack lamps; Activity (left) green steady when locked, off on loss; Link (right) amber steady on loss of signal or line, off when locked","index-origin":0,"role":"indicator","states":["off",{"color":"#22c55e","name":"locked"},{"color":"#f59e0b","name":"loss"}],"term":"LED"},"fan-leds":{"description":"Table 9 - bicolor fan status LED on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, red steady = faulty","index-origin":0,"role":"indicator","states":["off",{"behavior":"blinking","color":"#22c55e","name":"init"},{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}],"term":"LED"},"fans":{"index-origin":0,"role":"service","term":"Fan"},"gm-ptp-leds":{"description":"Two stacked lamps right of the GM/PTP cage; undocumented in the guide (same searches as the port lamps)","index-origin":0,"role":"indicator","term":"LED"},"grounding":{"index-origin":0,"role":"furniture","term":"Point"},"mgmt":{"index-origin":0,"mixed":"the management corner - out-of-band RJ45, RJ45 serial console, the USB service port, and the recessed OFFLINE and RESET buttons","role":"management","term":"Port"},"mgmt-leds":{"description":"Routing Engine interface text - link LED amber steady at 1000 Mbps, green steady at 100 Mbps, off at 10 Mbps; activity LED green, blinking with traffic","index-origin":0,"role":"indicator","states":["off",{"color":"#f59e0b","name":"1000m"},{"color":"#22c55e","name":"100m"},{"behavior":"blinking","name":"activity"}],"term":"LED"},"psus":{"index-origin":0,"role":"service","term":"PSU"},"qsfp28":{"attrs":{"media":"qsfp28","speed":"100g"},"description":"Rate-selectable ports 0-3 - 100GbE QSFP28, 40GbE QSFP+, or 4x10GbE via breakout. No per-port faceplate LEDs (photo-confirmed)","index-origin":0,"role":"traffic","term":"Port"},"sfp-plus":{"attrs":{"media":"sfp-plus","speed":"10g"},"description":"Fixed 10GbE ports numbered 4-11 on the faceplate silkscreen (rel-pos carries the printed number; the origin token cannot express a block that starts at 4). Upper number = upper port of each column","index-origin":0,"role":"traffic","term":"Port"},"sfp-plus-leds":{"description":"One lamp per SFP+ port in the strip between the rows; the silkscreened triangles tie the left lens (up arrow) to the upper port and the right lens (down arrow) to the lower. No document in the intake describes their states - searched \"port LED\", \"link and activity\", \"triangle\" across the guide","index-origin":0,"role":"indicator","term":"LED"},"status-leds":{"description":"The five system lamps; each declares its own states from Table 17 because no two share a vocabulary","index-origin":0,"role":"indicator","term":"LED"},"timing":{"index-origin":0,"mixed":"the timing block - BITS and ToD RJ45s, the 1PPS/10 MHz SMB in/out quad, and the GM/PTP grandmaster SFP port. One job (clock), four media","role":"management","term":"Port"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX204","name":"mx204","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"provenance":{"chassis":"datasheet-table - Table 19: chassis 1.72 x 19 x 18.50 in (43.7 x 482.3 x 470 mm), 1RU; the dimension drawing g009881 (top view) reads the width as 18.99 in (48.23 cm) and the depth over fan and power handles as 20.41 in (51.84 cm) against Table 19's 20.43. The rack-requirements table says the MOUNTING BRACKETS \"extend the width to 19 in\", yet drawing and table agree the body itself is ~482.3 including the integral ear flanges - this chassis is genuinely full-rack-width, with the front face spanning ear to ear. The modelled width is the 437.0 mm BODY between the ear-flange fold lines (ears are not modelled here - see ears)","color":"photo - light Juniper grey, sampled from mx204-front-high.jpg (#9a9ea3); module faces near-black charcoal, fan furniture orange","drawing-vs-photo":"sources-disagree, and the REAL DEVICE (Juniper studio photographs) wins for everything printed: the guide art labels the QSFP ports 0/0-0/3 and the SFP+ ports 1/0-1/7 (CLI interface names), prints 10MHz / 1PPS on the SMB columns, orders the LED row ...SSD1 SSD0, puts MX204 beside the Juniper logo and a junos badge at the right. The photographed faceplate prints plain 0-3 and 4/5-10/11 port numbers, PPS and 100MHz under the SMB columns, orders the row SSD0 SSD1, prints MX204 at the RIGHT end and carries no junos badge. The silkscreen below follows the photograph; note the guide TEXT unambiguously calls the clock ports 10-MHz (pinout table, clocking topic), so the printed 100MHz legend is carried as artwork while the function stays 10 MHz - see gaps","ears":"NOT MODELLED, by project convention - devices in this library are drawn without rack ears. The MX204's guide art draws integral ear flanges at both ends of both faces (fold lines at x 22.65 and 459.65 on the 482.3 mm rack face, each flange carrying two rounded slots and, on the front, a central 8.2 mm hole), and Table 19's 19 in width is measured over them. The modelled body is the 437.0 mm between the fold lines; all front and rear coordinates were measured on the 482.3 mm drawing and shifted by -22.65. The removable outboard brackets in the photographs are likewise not modelled","esd-front":"drawing + photo - a recessed socket at 31.1, 28.9 with the ESD symbol below; the guide's \"ESD Points\" figure (g009865, Figure 5) marks this same location. The guide art draws it as a hex-nut stud; the photograph shows a plain recessed socket - photo carried","lifecycle":"announced - Juniper lists MX204-HW-BASE end-of-sale 2027-06-15 and end-of-support 2032-06-30 (support.juniper.net M/MX hardware milestones, mirrored by Park Place and router-switch EOL trackers, searched 2026-08-26)","mgmt-block":"drawing - MGMT and BITS RJ45s centred at 267.6/289.7 (y 27.25), CON and ToD at 312.8/336.8 (y 27.4); vertical USB-A at 352.5, 27.8; SMB quad at 366.7/376.5 x 23.8/31.4 (IN row above OUT row); five status lamps at y 34.2, x 387.6 (OK/FAIL), 399.1 (ONLINE), 409.4 (ALM), 417.5, 425.7; recessed OFFLINE button at 435.5 and RESET pinhole at 447.0 (RESET x read off the photograph between OFFLINE and the ear; not resolvable on the drawing - estimated). The drawing draws OFFLINE ~3 mm above the lamp row (31.3 against 34.2); both buttons are MODELLED ON the lamp centreline for visual consistency, a deliberate deviation recorded here","other-faces":"near-blank by evidence - no photograph or drawing of the top, bottom or side faces exists in the intake beyond the g009881 top-view outline, which shows a plain slab with the mounting rails pre-attached along the sides. Each face carries only its rail band(s), estimated and marked so, which is also what lets the capability chain count the face as drawn. Faces are sized from Table 19. Every face carries only symmetric content as far as the sources show, so the axis conventions have been checked but nothing asymmetric pins them. Axis conventions, checked against viewer3d.js: LEFT view x = 0 is the REAR, RIGHT view x = 0 is the FRONT, top and bottom have y = 0 at the FRONT with left/right mirrored between them","port-leds":"photo + drawing - each SFP+ column carries a lamp strip between the rows: triangle-up, two lenses, triangle-down (drawing shows the four marks at y 22.1 with lenses at column-centre +/-1.8). The up triangle ties the left lens to the upper port and the down triangle the right lens to the lower port. NO DOCUMENT DESCRIBES THESE LAMPS: searched the guide doc.md for \"port LED\", \"link and activity\", \"rate-selectable\" near LED, and \"triangle\"; the front-panel LED table (Table 17) covers only system LEDs. States left as the component default, description records the silence. The QSFP ports carry NO per-port faceplate LEDs - confirmed against the photograph, not just the text (the only marks above the cages are vent holes). The GM/PTP port has two stacked lamps at x 63.6 (y 26.6/32.1), also undocumented","port-numbering":"photo - QSFP ports are silkscreened 0-3; SFP+ columns are silkscreened 4/5, 6/7, 8/9, 10/11 with the UPPER number on the upper port (the guide art writes 1/0 over 1/1 the same way up). CLI names (et-0/0/x, xe-0/1/x) are not printed on the metal","ports":"drawing + registry - four QSFP cages centred at x 76.7/95.7/114.7/ 133.7 (measured pitch 18.93, registry qsfp-ganged pitch 19.0), aperture centre y 27.5; eight SFP+ in a 2x4 belly-to-belly block, column centres 158.1/172.3/186.6/200.8 (pitch 14.25 per registry, measured 14.3), row centres y 14.25 and 30.15; GM/PTP SFP centred at 53.15, 29.65 (aperture interior read off the labelled drawing). Counts confirmed by the photograph and the guide text (4 + 8 + 1)","power":"guide power planning - 240 W typical at 25 C and 280 W maximum at 55 C for a fully loaded router (Tables 28 and 31, AC and DC alike; the vendor qualifies both by ambient, not by measure). Table 32 adds the DC INPUT figure at 90% efficiency: 266 W at 25 C; Table 33's 55 C input value fell outside the text layer of this extraction and is not carried. Table 20 separately states maximum thermal output 1705 BTU/hour (500 W) - a different scope (provisioning ceiling) that is transcribed under thermal and deliberately NOT reconciled with the 280 W draw","rear":"drawing (g009862 at the same per-axis scales) + photo - recessed left panel 24-97.7 across the full height carrying the grounding plate (lug circles at 38.6 and 54.6, y 17.2), the earth symbol at 46.6, 31.6 and the ESD socket at 81.4, 17.2 with its symbol above at 81.1, 6.7. Three fan bays with apertures ~42 mm on a 49.1 mm pitch at x 107.8/156.9/206.0, each preceded by a chassis strip printed with a fan icon (y 17.1), the bay number (y 21.6) and the fan status lamp (y 28.9) at x 103.2/152.4/201.2. A blank recessed plate spans 256-327.3. Two PSU bays at 334.9 and 396.3 (apertures measure 57.0, module width 56.6 per Table 19; the bay is sized 42.4 tall for the DC module, the taller of the two occupants per Table 19, so the 40.1 AC face sits in it with clearance), silkscreened 0 and 1 on the chassis left of each bay. A fourth small hole appears at 250.0, 28.9 on the drawing right of fan 2 with no icon or number above it; left unmodelled and recorded here","rear-axis":"the rear view is its own face with x = 0 at ITS left edge (the chassis RIGHT side seen from the front); the fan and PSU modules are horizontal, so nothing mirrors. Positions are direct measurements of the rear drawing, not derived from front coordinates","rj45-orientation":"drawing + photo - CON and ToD are drawn and photographed contacts-UP (keyway down, std/rj45 default); MGMT and BITS are drawn contacts-DOWN with two integrated LED windows at the top corners, so they carry rotate 180 and a lamp pair placed over the top corners. The MGMT lamps are the guide's own \"activity LED and link LED\"; BITS lamp roles (Activity left, Link right) are Table 17's","scale":"drawing - the guide front view (g009860) rendered at 600 dpi measures 2895 x 275 px, aspect 10.53 against the true 482.3/43.7 = 11.04, so the figure is stretched ~4.6% vertically and is SCHEMATIC. All positions below are fractions off it anchored per axis: x at 6.003 px/mm to the 482.3 mm width, y at 6.293 px/mm to the 43.7 mm height. Feature sizes come from the standards registry, never from this drawing. The rear (g009862) is the same art family and was measured the same way","serial-label":"guide Figure 60 shows the chassis serial-number label; its figure crops without a locating dimension and the topic does not name a face. Not modelled; recorded so the next reader knows it was looked for","sources":"MX204 Universal Routing Platform Hardware Guide (published 2025-11-12, figures g009860/g009862/g009881/g009897/g100549 among others, extracted with captions into working/images/mx204/), HPE datasheet a00150825enw (MX 204/240/480/960), Juniper image-library studio photographs mx204-front-high and mx204-rear-high (straight-on), and the NetBox devicetype-library MX204 elevations. No mechanical drawing was available","ssd-labels":"photo - the photographed faceplate labels the 4th and 5th lamps SSD0 then SSD1 left to right; the guide art swaps them. Photo carried","vents":"drawing - the hex vent fields are drawn as three simplified decor rects using the shared vent pattern; the real punching follows irregular staggered outlines around every feature (including sparse transition runs between the port groups) that are not reproduced hole-for-hole. The small 3-hole columns between the RJ45 jacks are likewise simplified away"},"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#84888c","size":[6.0,470.0],"source":"lower edge of the side mounting rail - no bottom source exists; mirrored from the top view estimate"},{"at":[431.0,0.0],"confidence":"estimated","fill":"#84888c","size":[6.0,470.0],"source":"lower edge of the side mounting rail; same estimate"}]},"size":{"h":470.0,"w":437.0}},"front":{"components":{"placements":[{"at":[23.25,24.65],"attrs":{"function":"PTP grandmaster clock port","media":"sfp"},"group":"timing","id":"gm-ptp","ref":"std/sfp@1","rel-pos":4},{"at":[39.95,25.6],"for":"gm-ptp","group":"gm-ptp-leds","id":"led-gm-ptp-0","ref":"common/led-dot@1","rel-pos":0},{"at":[39.95,31.1],"for":"gm-ptp","group":"gm-ptp-leds","id":"led-gm-ptp-1","ref":"common/led-dot@1","rel-pos":1},{"at":[44.8,22.71],"group":"qsfp28","id":"port-0","ref":"std/qsfp-ganged@1","rel-pos":0},{"at":[63.8,22.71],"group":"qsfp28","id":"port-1","ref":"std/qsfp-ganged@1","rel-pos":1},{"at":[82.8,22.71],"group":"qsfp28","id":"port-2","ref":"std/qsfp-ganged@1","rel-pos":2},{"at":[101.8,22.71],"group":"qsfp28","id":"port-3","ref":"std/qsfp-ganged@1","rel-pos":3},{"at":[121.15,25.6],"group":"grounding","id":"laser-warning","ref":"common/laser-warning@1","rel-pos":4},{"at":[128.33,9.05],"group":"sfp-plus","id":"port-4","ref":"std/sfp-ganged@1","rel-pos":4,"rotate":180},{"at":[142.58,9.05],"group":"sfp-plus","id":"port-6","ref":"std/sfp-ganged@1","rel-pos":6,"rotate":180},{"at":[156.83,9.05],"group":"sfp-plus","id":"port-8","ref":"std/sfp-ganged@1","rel-pos":8,"rotate":180},{"at":[171.08,9.05],"group":"sfp-plus","id":"port-10","ref":"std/sfp-ganged@1","rel-pos":10,"rotate":180},{"at":[128.33,24.95],"group":"sfp-plus","id":"port-5","ref":"std/sfp-ganged@1","rel-pos":5},{"at":[142.58,24.95],"group":"sfp-plus","id":"port-7","ref":"std/sfp-ganged@1","rel-pos":7},{"at":[156.83,24.95],"group":"sfp-plus","id":"port-9","ref":"std/sfp-ganged@1","rel-pos":9},{"at":[171.08,24.95],"group":"sfp-plus","id":"port-11","ref":"std/sfp-ganged@1","rel-pos":11},{"at":[132.65,21.1],"for":"port-4","group":"sfp-plus-leds","id":"led-port-4","ref":"common/led-dot@1","rel-pos":4},{"at":[136.25,21.1],"for":"port-5","group":"sfp-plus-leds","id":"led-port-5","ref":"common/led-dot@1","rel-pos":5},{"at":[146.85,21.1],"for":"port-6","group":"sfp-plus-leds","id":"led-port-6","ref":"common/led-dot@1","rel-pos":6},{"at":[150.45,21.1],"for":"port-7","group":"sfp-plus-leds","id":"led-port-7","ref":"common/led-dot@1","rel-pos":7},{"at":[161.15,21.1],"for":"port-8","group":"sfp-plus-leds","id":"led-port-8","ref":"common/led-dot@1","rel-pos":8},{"at":[164.75,21.1],"for":"port-9","group":"sfp-plus-leds","id":"led-port-9","ref":"common/led-dot@1","rel-pos":9},{"at":[175.35,21.1],"for":"port-10","group":"sfp-plus-leds","id":"led-port-10","ref":"common/led-dot@1","rel-pos":10},{"at":[178.95,21.1],"for":"port-11","group":"sfp-plus-leds","id":"led-port-11","ref":"common/led-dot@1","rel-pos":11},{"at":[236.95,20.25],"group":"mgmt","id":"mgmt","ref":"std/rj45@1","rel-pos":0,"rotate":180},{"at":[239.85,20.7],"attrs":{"function":"activity"},"for":"mgmt","group":"mgmt-leds","id":"led-mgmt-act","ref":"common/led-dot@1","rel-pos":0},{"at":[248.05,20.7],"attrs":{"function":"link"},"for":"mgmt","group":"mgmt-leds","id":"led-mgmt-link","ref":"common/led-dot@1","rel-pos":1},{"at":[259.05,20.25],"group":"timing","id":"bits","ref":"std/rj45@1","rel-pos":0,"rotate":180},{"at":[261.95,20.7],"attrs":{"function":"activity"},"for":"bits","group":"bits-leds","id":"led-bits-act","ref":"common/led-dot@1","rel-pos":0},{"at":[270.15,20.7],"attrs":{"function":"link"},"for":"bits","group":"bits-leds","id":"led-bits-link","ref":"common/led-dot@1","rel-pos":1},{"at":[282.15,20.4],"group":"mgmt","id":"con","ref":"std/rj45@1","rel-pos":1},{"at":[306.15,20.4],"group":"timing","id":"tod","ref":"std/rj45@1","rel-pos":1},{"at":[323.85,25.55],"group":"mgmt","id":"usb","ref":"std/usb-a@1","rel-pos":2,"rotate":90},{"at":[341.64,21.39],"attrs":{"function":"10 MHz clock input"},"group":"timing","id":"smb-10mhz-in","ref":"std/smb@1","rel-pos":2},{"at":[341.64,28.99],"attrs":{"function":"10 MHz clock output"},"group":"timing","id":"smb-10mhz-out","ref":"std/smb@1","rel-pos":3},{"at":[351.44,21.39],"attrs":{"function":"1PPS input"},"group":"timing","id":"smb-1pps-in","ref":"std/smb@1","rel-pos":5},{"at":[351.44,28.99],"attrs":{"function":"1PPS output"},"group":"timing","id":"smb-1pps-out","ref":"std/smb@1","rel-pos":6},{"at":[363.95,33.2],"description":"Table 17 - green steady: functioning normally; red blinking: failed; off: not powered","for":"chassis","group":"status-leds","id":"led-ok-fail","ref":"common/led-dot@1","rel-pos":0,"states":["off",{"color":"#22c55e","name":"ok"},{"behavior":"blinking","color":"#ef4444","name":"failed"}]},{"at":[375.45,33.2],"description":"Table 17 - green steady: Junos and Linux loaded; green blinking: starting Junos; red steady: Linux loaded; red blinking: starting Linux; off: offline","for":"chassis","group":"status-leds","id":"led-online","ref":"common/led-dot@1","rel-pos":1,"states":["off",{"color":"#22c55e","name":"junos"},{"behavior":"blinking","color":"#22c55e","name":"junos-boot"},{"color":"#ef4444","name":"linux"},{"behavior":"blinking","color":"#ef4444","name":"linux-boot"}]},{"at":[385.75,33.2],"description":"Table 8/17 - red steady: major alarm; yellow steady: minor alarm; red blinking: both present; off: no alarms","for":"chassis","group":"status-leds","id":"led-alm","ref":"common/led-dot@1","rel-pos":2,"states":["off",{"color":"#ef4444","name":"major"},{"color":"#f59e0b","name":"minor"},{"behavior":"blinking","color":"#ef4444","name":"major-and-minor"}]},{"at":[393.85,33.2],"description":"Table 17 - green blinking: SSD0 being accessed; off: not active","for":"chassis","group":"status-leds","id":"led-ssd0","ref":"common/led-dot@1","rel-pos":3,"states":["off",{"behavior":"blinking","color":"#22c55e","name":"active"}]},{"at":[402.05,33.2],"description":"Table 17 - green blinking: SSD1 being accessed; off: not active","for":"chassis","group":"status-leds","id":"led-ssd1","ref":"common/led-dot@1","rel-pos":4,"states":["off",{"behavior":"blinking","color":"#22c55e","name":"active"}]},{"at":[410.85,32.2],"attrs":{"function":"take the router offline"},"for":"chassis","group":"mgmt","id":"offline-btn","ref":"common/reset-button@1","rel-pos":3},{"at":[422.35,32.2],"attrs":{"function":"reset"},"for":"chassis","group":"mgmt","id":"reset-btn","ref":"common/reset-button@1","rel-pos":4}]},"panel":{"cutouts":[{"at":[6.3,26.75],"id":"esd-front","shape":"circle","size":[4.3,4.3]},{"at":[23.25,24.65],"id":"gm-ptp","size":[14.5,10.0]},{"at":[39.95,25.6],"id":"led-gm-ptp-0","shape":"circle","size":[2.0,2.0]},{"at":[39.95,31.1],"id":"led-gm-ptp-1","shape":"circle","size":[2.0,2.0]},{"at":[44.8,22.71],"id":"port-0","size":[18.5,9.58]},{"at":[63.8,22.71],"id":"port-1","size":[18.5,9.58]},{"at":[82.8,22.71],"id":"port-2","size":[18.5,9.58]},{"at":[101.8,22.71],"id":"port-3","size":[18.5,9.58]},{"at":[128.33,9.05],"id":"port-4","size":[14.25,10.4]},{"at":[142.58,9.05],"id":"port-6","size":[14.25,10.4]},{"at":[156.83,9.05],"id":"port-8","size":[14.25,10.4]},{"at":[171.08,9.05],"id":"port-10","size":[14.25,10.4]},{"at":[128.33,24.95],"id":"port-5","size":[14.25,10.4]},{"at":[142.58,24.95],"id":"port-7","size":[14.25,10.4]},{"at":[156.83,24.95],"id":"port-9","size":[14.25,10.4]},{"at":[171.08,24.95],"id":"port-11","size":[14.25,10.4]},{"at":[132.65,21.1],"id":"led-port-4","shape":"circle","size":[2.0,2.0]},{"at":[136.25,21.1],"id":"led-port-5","shape":"circle","size":[2.0,2.0]},{"at":[146.85,21.1],"id":"led-port-6","shape":"circle","size":[2.0,2.0]},{"at":[150.45,21.1],"id":"led-port-7","shape":"circle","size":[2.0,2.0]},{"at":[161.15,21.1],"id":"led-port-8","shape":"circle","size":[2.0,2.0]},{"at":[164.75,21.1],"id":"led-port-9","shape":"circle","size":[2.0,2.0]},{"at":[175.35,21.1],"id":"led-port-10","shape":"circle","size":[2.0,2.0]},{"at":[178.95,21.1],"id":"led-port-11","shape":"circle","size":[2.0,2.0]},{"at":[236.95,20.25],"id":"mgmt","size":[16.0,14.0]},{"at":[259.05,20.25],"id":"bits","size":[16.0,14.0]},{"at":[282.15,20.4],"id":"con","size":[16.0,14.0]},{"at":[306.15,20.4],"id":"tod","size":[16.0,14.0]},{"at":[327.6,21.8],"id":"usb","size":[4.5,12.0]},{"at":[341.64,21.39],"id":"smb-10mhz-in","shape":"circle","size":[4.83,4.83]},{"at":[341.64,28.99],"id":"smb-10mhz-out","shape":"circle","size":[4.83,4.83]},{"at":[351.44,21.39],"id":"smb-1pps-in","shape":"circle","size":[4.83,4.83]},{"at":[351.44,28.99],"id":"smb-1pps-out","shape":"circle","size":[4.83,4.83]},{"at":[363.75,33.0],"id":"led-ok-fail","shape":"circle","size":[2.4,2.4]},{"at":[375.25,33.0],"id":"led-online","shape":"circle","size":[2.4,2.4]},{"at":[385.55,33.0],"id":"led-alm","shape":"circle","size":[2.4,2.4]},{"at":[393.65,33.0],"id":"led-ssd0","shape":"circle","size":[2.4,2.4]},{"at":[401.85,33.0],"id":"led-ssd1","shape":"circle","size":[2.4,2.4]},{"at":[410.85,32.2],"id":"offline-btn","shape":"circle","size":[4.0,4.0]},{"at":[422.35,32.2],"id":"reset-btn","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[-0.15,0.0],"fill":"#9a9ea3","rx":0.0,"size":[437.3,43.7]},{"at":[-22.65,0.0],"fill":"#94989d","rx":0.8,"size":[22.5,43.7]},{"at":[437.15,0.0],"fill":"#94989d","rx":0.8,"size":[22.5,43.7]},{"at":[54.0,3.2],"pattern":"vent","size":[72.2,10.5],"vent":40},{"at":[192.35,3.2],"pattern":"vent","size":[231.0,16.0],"vent":40},{"at":[3.35,14.0],"pattern":"vent","size":[30.0,10.0],"vent":40}]},"silkscreen":[{"anchor":"start","at":[11.35,9.4],"font-size":4.0,"for":"chassis","text":"JUNIPER"},{"anchor":"end","at":[28.75,11.6],"font-size":1.5,"for":"chassis","text":"NETWORKS"},{"anchor":"end","at":[434.5,8.8],"font-size":3.2,"for":"chassis","text":"MX204"},{"at":[8.45,37.6],"for":"chassis","path":"M -1.6 0 L 0 -2.8 L 1.6 0 Z M -2.6 1.6 L -1.2 1.6 M 1.2 1.6 L 2.6 1.6"},{"anchor":"middle","at":[30.5,38.8],"font-size":2.2,"for":"gm-ptp","text":"GM/PTP"},{"anchor":"middle","at":[54.05,38.8],"font-size":2.4,"for":"port-0","text":"0"},{"anchor":"middle","at":[73.05,38.8],"font-size":2.4,"for":"port-1","text":"1"},{"anchor":"middle","at":[92.05,38.8],"font-size":2.4,"for":"port-2","text":"2"},{"anchor":"middle","at":[111.05,38.8],"font-size":2.4,"for":"port-3","text":"3"},{"at":[123.85,31.0],"font-size":0.1,"for":"laser-warning","text":""},{"at":[130.55,22.85],"for":["led-port-4","port-4"],"path":"M -0.8 0.7 L 0 -0.7 L 0.8 0.7 Z"},{"at":[140.35,22.85],"for":["led-port-5","port-5"],"path":"M -0.8 -0.7 L 0 0.7 L 0.8 -0.7 Z"},{"at":[144.75,22.85],"for":["led-port-6","port-6"],"path":"M -0.8 0.7 L 0 -0.7 L 0.8 0.7 Z"},{"at":[154.55,22.85],"for":["led-port-7","port-7"],"path":"M -0.8 -0.7 L 0 0.7 L 0.8 -0.7 Z"},{"at":[159.05,22.85],"for":["led-port-8","port-8"],"path":"M -0.8 0.7 L 0 -0.7 L 0.8 0.7 Z"},{"at":[168.85,22.85],"for":["led-port-9","port-9"],"path":"M -0.8 -0.7 L 0 0.7 L 0.8 -0.7 Z"},{"at":[173.25,22.85],"for":["led-port-10","port-10"],"path":"M -0.8 0.7 L 0 -0.7 L 0.8 0.7 Z"},{"at":[183.05,22.85],"for":["led-port-11","port-11"],"path":"M -0.8 -0.7 L 0 0.7 L 0.8 -0.7 Z"},{"anchor":"middle","at":[135.45,37.2],"font-size":2.2,"for":"port-4","text":"4"},{"anchor":"middle","at":[135.45,40.4],"font-size":2.2,"for":"port-5","text":"5"},{"anchor":"middle","at":[149.65,37.2],"font-size":2.2,"for":"port-6","text":"6"},{"anchor":"middle","at":[149.65,40.4],"font-size":2.2,"for":"port-7","text":"7"},{"anchor":"middle","at":[163.95,37.2],"font-size":2.2,"for":"port-8","text":"8"},{"anchor":"middle","at":[163.95,40.4],"font-size":2.2,"for":"port-9","text":"9"},{"anchor":"middle","at":[178.15,37.2],"font-size":2.2,"for":"port-10","text":"10"},{"anchor":"middle","at":[178.15,40.4],"font-size":2.2,"for":"port-11","text":"11"},{"anchor":"middle","at":[244.95,38.8],"font-size":2.2,"for":"mgmt","text":"MGMT"},{"anchor":"middle","at":[267.05,38.8],"font-size":2.2,"for":"bits","text":"BITS"},{"anchor":"middle","at":[290.15,38.8],"font-size":2.2,"for":"con","text":"CON"},{"anchor":"middle","at":[314.15,38.8],"font-size":2.2,"for":"tod","text":"ToD"},{"at":[329.85,38.2],"for":"usb","path":"M -2.2 0 H 2.2 M 0.8 0 L 2.2 0 M -0.9 -1.2 L 0.4 -1.2 L 1.2 -0.3 M -0.9 1.2 L 0.4 1.2 L 1.2 0.3 M -2.2 0 L -3.0 0"},{"anchor":"middle","at":[348.95,27.3],"font-size":2.0,"for":["smb-10mhz-in","smb-1pps-in"],"text":"IN"},{"anchor":"middle","at":[348.95,37.6],"font-size":2.0,"for":["smb-10mhz-out","smb-1pps-out"],"text":"OUT"},{"anchor":"middle","at":[344.05,40.6],"font-size":1.9,"for":["smb-10mhz-in","smb-10mhz-out"],"text":"PPS"},{"anchor":"middle","at":[353.85,40.6],"font-size":1.9,"for":["smb-1pps-in","smb-1pps-out"],"text":"100MHz"},{"anchor":"middle","at":[364.95,38.8],"font-size":1.9,"for":"led-ok-fail","text":"OK/FAIL"},{"anchor":"middle","at":[376.45,38.8],"font-size":1.9,"for":"led-online","text":"ONLINE"},{"anchor":"middle","at":[386.75,38.8],"font-size":1.9,"for":"led-alm","text":"ALM"},{"anchor":"middle","at":[394.85,38.8],"font-size":1.9,"for":"led-ssd0","text":"SSD0"},{"anchor":"middle","at":[403.05,38.8],"font-size":1.9,"for":"led-ssd1","text":"SSD1"},{"anchor":"middle","at":[412.85,38.8],"font-size":1.9,"for":"offline-btn","text":"OFFLINE"},{"anchor":"middle","at":[424.35,38.8],"font-size":1.9,"for":"reset-btn","text":"RESET"}],"size":{"h":43.7,"w":437.0}},"left":{"panel":{"decor":[{"at":[0.0,17.4],"confidence":"estimated","fill":"#84888c","size":[470.0,8.9],"source":"pre-attached mounting rail along the side (guide Figures 20/27 show the rails; the DAM photos show their front ends). Full-length band; height and vertical position estimated - no side drawing exists"}]},"size":{"h":43.7,"w":470.0}},"rear":{"components":{"bays":[{"accepts":["juniper/mx204-fan@1"],"at":[85.15,2.6],"default":"juniper/mx204-fan@1","group":"fans","id":"fan-0","rel-pos":0,"size":{"h":38.5,"w":42.0}},{"accepts":["juniper/mx204-fan@1"],"at":[134.25,2.6],"default":"juniper/mx204-fan@1","group":"fans","id":"fan-1","rel-pos":1,"size":{"h":38.5,"w":42.0}},{"accepts":["juniper/mx204-fan@1"],"at":[183.35,2.6],"default":"juniper/mx204-fan@1","group":"fans","id":"fan-2","rel-pos":2,"size":{"h":38.5,"w":42.0}},{"accepts":["juniper/mx204-psu-ac@1","juniper/mx204-psu-dc@1"],"at":[312.25,0.8],"default":"juniper/mx204-psu-ac@1","group":"psus","id":"psu-0","rel-pos":0,"size":{"h":42.4,"w":56.6}},{"accepts":["juniper/mx204-psu-ac@1","juniper/mx204-psu-dc@1"],"at":[373.65,0.8],"default":"juniper/mx204-psu-ac@1","group":"psus","id":"psu-1","rel-pos":1,"size":{"h":42.4,"w":56.6}}],"placements":[{"at":[5.95,10.0],"group":"grounding","id":"ground-plate","ref":"juniper/mx204-ground-plate@1","rel-pos":0},{"at":[79.55,27.9],"for":"fan-0","group":"fan-leds","id":"led-fan-0","ref":"common/led-dot@1","rel-pos":0},{"at":[128.75,27.9],"for":"fan-1","group":"fan-leds","id":"led-fan-1","ref":"common/led-dot@1","rel-pos":1},{"at":[177.55,27.9],"for":"fan-2","group":"fan-leds","id":"led-fan-2","ref":"common/led-dot@1","rel-pos":2}]},"panel":{"cutouts":[{"at":[56.6,15.05],"id":"esd-rear","shape":"circle","size":[4.3,4.3]},{"at":[79.55,27.9],"id":"led-fan-0","shape":"circle","size":[2.0,2.0]},{"at":[128.75,27.9],"id":"led-fan-1","shape":"circle","size":[2.0,2.0]},{"at":[177.55,27.9],"id":"led-fan-2","shape":"circle","size":[2.0,2.0]}],"decor":[{"at":[-22.65,0.0],"fill":"#94989d","rx":0.8,"size":[22.5,43.7]},{"at":[437.15,0.0],"fill":"#94989d","rx":0.8,"size":[22.5,43.7]},{"at":[1.35,3.0],"fill":"#8e9296","rx":0.8,"size":[73.7,37.2]},{"at":[233.35,3.8],"fill":"#8e9296","rx":0.8,"size":[71.3,36.7]}]},"silkscreen":[{"at":[23.95,31.6],"for":"ground-plate","path":"M 0 -4.6 A 4.6 4.6 0 1 0 0.01 -4.6 Z M -2.6 -1.2 H 2.6 M -1.7 0.6 H 1.7 M -0.8 2.4 H 0.8"},{"at":[58.45,8.4],"for":"chassis","path":"M -1.6 1.4 L 0 -1.4 L 1.6 1.4 Z M -2.4 2.6 L -1.0 2.6 M 1.0 2.6 L 2.4 2.6"},{"at":[80.65,18.2],"for":"fan-0","path":"M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z"},{"anchor":"middle","at":[80.55,23.4],"font-size":2.4,"for":"fan-0","text":"0"},{"at":[129.85,18.2],"for":"fan-1","path":"M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z"},{"anchor":"middle","at":[129.75,23.4],"font-size":2.4,"for":"fan-1","text":"1"},{"at":[178.65,18.2],"for":"fan-2","path":"M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z"},{"anchor":"middle","at":[178.55,23.4],"font-size":2.4,"for":"fan-2","text":"2"},{"anchor":"middle","at":[309.45,26.8],"font-size":2.4,"for":"psu-0","text":"0"},{"anchor":"middle","at":[371.25,26.8],"font-size":2.4,"for":"psu-1","text":"1"}],"size":{"h":43.7,"w":437.0}},"right":{"panel":{"decor":[{"at":[0.0,17.4],"confidence":"estimated","fill":"#84888c","size":[470.0,8.9],"source":"pre-attached mounting rail along the side (guide Figures 20/27); mirror of the left face band, same estimate"}]},"size":{"h":43.7,"w":470.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#84888c","size":[6.0,470.0],"source":"side mounting-rail edge seen from above - the g009881 top view draws the slab with rail lines along both sides; width estimated"},{"at":[431.0,0.0],"confidence":"estimated","fill":"#84888c","size":[6.0,470.0],"source":"side mounting-rail edge seen from above (g009881); width estimated"}]},"size":{"h":470.0,"w":437.0}}}},"view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX204" data-sku="MX204-HWBASE-DC-FS" data-part-number="" x="0" y="0" width="437" height="43.7" rx="1.2" fill="#9a9ea3" stroke="#22262a" stroke-width="0.5" />
+  <rect x="-22.65" y="0" width="22.5" height="43.7" rx="0.8" fill="#94989d" />
+  <rect x="437.15" y="0" width="22.5" height="43.7" rx="0.8" fill="#94989d" />
+  <rect x="1.35" y="3" width="73.7" height="37.2" rx="0.8" fill="#8e9296" />
+  <rect x="233.35" y="3.8" width="71.3" height="36.7" rx="0.8" fill="#8e9296" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="58.75" cy="17.2" rx="2.15" ry="2.15" id="cutout--esd-rear" data-path="cutout:esd-rear" data-class="cutout" fill="#101214" />
+    <ellipse cx="80.55" cy="28.9" rx="1" ry="1" id="cutout--led-fan-0" data-path="cutout:led-fan-0" data-class="cutout" fill="#101214" />
+    <ellipse cx="129.75" cy="28.9" rx="1" ry="1" id="cutout--led-fan-1" data-path="cutout:led-fan-1" data-class="cutout" fill="#101214" />
+    <ellipse cx="178.55" cy="28.9" rx="1" ry="1" id="cutout--led-fan-2" data-path="cutout:led-fan-2" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0 -4.6 A 4.6 4.6 0 1 0 0.01 -4.6 Z M -2.6 -1.2 H 2.6 M -1.7 0.6 H 1.7 M -0.8 2.4 H 0.8" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(23.95 31.6)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-plate" />
+    <path d="M -1.6 1.4 L 0 -1.4 L 1.6 1.4 Z M -2.4 2.6 L -1.0 2.6 M 1.0 2.6 L 2.4 2.6" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(58.45 8.4)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(80.65 18.2)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0" />
+    <text x="80.55" y="23.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-0">0</text>
+    <path d="M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(129.85 18.2)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1" />
+    <text x="129.75" y="23.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">1</text>
+    <path d="M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(178.65 18.2)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2" />
+    <text x="178.55" y="23.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">2</text>
+    <text x="309.45" y="26.8" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">0</text>
+    <text x="371.25" y="26.8" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+  </g>
+  <g id="led-fan-0" data-path="led-fan-0" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="fan-leds" data-rel-pos="0" transform="translate(79.55,27.9)" data-group-role="indicator" data-states="off init ok fault" data-description="Table 9 - bicolor fan status LED on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, red steady = faulty" data-for="fan-0">
+    <title>led-fan-0</title>
+    <circle id="led-fan-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-0/lamp" data-class="led" data-states="off init ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-1" data-path="led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="fan-leds" data-rel-pos="1" transform="translate(128.75,27.9)" data-group-role="indicator" data-states="off init ok fault" data-description="Table 9 - bicolor fan status LED on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, red steady = faulty" data-for="fan-1">
+    <title>led-fan-1</title>
+    <circle id="led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-1/lamp" data-class="led" data-states="off init ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan-2" data-path="led-fan-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="fan-leds" data-rel-pos="2" transform="translate(177.55,27.9)" data-group-role="indicator" data-states="off init ok fault" data-description="Table 9 - bicolor fan status LED on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, red steady = faulty" data-for="fan-2">
+    <title>led-fan-2</title>
+    <circle id="led-fan-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan-2/lamp" data-class="led" data-states="off init ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="fan-0" data-path="fan-0" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="0">
+    <title>fan-0</title>
+    <rect id="fan-0--opening" x="85.15" y="2.6" width="42" height="38.5" fill="#101214" />
+    <g id="fan-0--module" data-path="fan-0/module" data-class="fan" data-behaviour="fills" data-ref="juniper/mx204-fan@1:1.0.0" data-body-depth="146.8" data-airflow="front-to-back" data-model="MX204 Fan Module" data-states="ok fail absent" transform="translate(106.15,21.85) translate(-21,-19.25)">
+      <title>fan-0--module</title>
+      <rect id="fan-0--module--face" x="0" y="0" width="42.0" height="38.5" rx="1.0" fill="#26292d" stroke="#181b1f" stroke-width="0.4" />
+      <g id="fan-0--module--grille-top">
+        <rect x="7.4" y="0.8" width="25.4" height="11.0" rx="0.8" fill="#1c1f22" />
+        <polygon points="9.67,2.52 8.85,3.00 8.03,2.53 8.03,1.58 8.85,1.10 9.67,1.58" fill="#0e1012" />
+        <polygon points="11.97,2.52 11.15,3.00 10.33,2.53 10.33,1.58 11.15,1.10 11.97,1.58" fill="#0e1012" />
+        <polygon points="14.27,2.52 13.45,3.00 12.63,2.53 12.63,1.58 13.45,1.10 14.27,1.58" fill="#0e1012" />
+        <polygon points="16.57,2.52 15.75,3.00 14.93,2.53 14.93,1.58 15.75,1.10 16.57,1.58" fill="#0e1012" />
+        <polygon points="18.87,2.52 18.05,3.00 17.23,2.53 17.23,1.58 18.05,1.10 18.87,1.58" fill="#0e1012" />
+        <polygon points="21.17,2.52 20.35,3.00 19.53,2.53 19.53,1.58 20.35,1.10 21.17,1.58" fill="#0e1012" />
+        <polygon points="23.47,2.52 22.65,3.00 21.83,2.53 21.83,1.58 22.65,1.10 23.47,1.58" fill="#0e1012" />
+        <polygon points="25.77,2.52 24.95,3.00 24.13,2.53 24.13,1.58 24.95,1.10 25.77,1.58" fill="#0e1012" />
+        <polygon points="28.07,2.52 27.25,3.00 26.43,2.53 26.43,1.58 27.25,1.10 28.07,1.58" fill="#0e1012" />
+        <polygon points="30.37,2.52 29.55,3.00 28.73,2.53 28.73,1.58 29.55,1.10 30.37,1.58" fill="#0e1012" />
+        <polygon points="10.82,4.52 10.00,5.00 9.18,4.53 9.18,3.58 10.00,3.10 10.82,3.58" fill="#0e1012" />
+        <polygon points="13.12,4.52 12.30,5.00 11.48,4.53 11.48,3.58 12.30,3.10 13.12,3.58" fill="#0e1012" />
+        <polygon points="15.42,4.52 14.60,5.00 13.78,4.53 13.78,3.58 14.60,3.10 15.42,3.58" fill="#0e1012" />
+        <polygon points="17.72,4.52 16.90,5.00 16.08,4.53 16.08,3.58 16.90,3.10 17.72,3.58" fill="#0e1012" />
+        <polygon points="20.02,4.52 19.20,5.00 18.38,4.53 18.38,3.58 19.20,3.10 20.02,3.58" fill="#0e1012" />
+        <polygon points="22.32,4.52 21.50,5.00 20.68,4.53 20.68,3.58 21.50,3.10 22.32,3.58" fill="#0e1012" />
+        <polygon points="24.62,4.52 23.80,5.00 22.98,4.53 22.98,3.58 23.80,3.10 24.62,3.58" fill="#0e1012" />
+        <polygon points="26.92,4.52 26.10,5.00 25.28,4.53 25.28,3.58 26.10,3.10 26.92,3.58" fill="#0e1012" />
+        <polygon points="29.22,4.52 28.40,5.00 27.58,4.53 27.58,3.58 28.40,3.10 29.22,3.58" fill="#0e1012" />
+        <polygon points="31.52,4.52 30.70,5.00 29.88,4.53 29.88,3.58 30.70,3.10 31.52,3.58" fill="#0e1012" />
+        <polygon points="9.67,6.52 8.85,7.00 8.03,6.53 8.03,5.58 8.85,5.10 9.67,5.58" fill="#0e1012" />
+        <polygon points="11.97,6.52 11.15,7.00 10.33,6.53 10.33,5.58 11.15,5.10 11.97,5.58" fill="#0e1012" />
+        <polygon points="14.27,6.52 13.45,7.00 12.63,6.53 12.63,5.58 13.45,5.10 14.27,5.58" fill="#0e1012" />
+        <polygon points="16.57,6.52 15.75,7.00 14.93,6.53 14.93,5.58 15.75,5.10 16.57,5.58" fill="#0e1012" />
+        <polygon points="18.87,6.52 18.05,7.00 17.23,6.53 17.23,5.58 18.05,5.10 18.87,5.58" fill="#0e1012" />
+        <polygon points="21.17,6.52 20.35,7.00 19.53,6.53 19.53,5.58 20.35,5.10 21.17,5.58" fill="#0e1012" />
+        <polygon points="23.47,6.52 22.65,7.00 21.83,6.53 21.83,5.58 22.65,5.10 23.47,5.58" fill="#0e1012" />
+        <polygon points="25.77,6.52 24.95,7.00 24.13,6.53 24.13,5.58 24.95,5.10 25.77,5.58" fill="#0e1012" />
+        <polygon points="28.07,6.52 27.25,7.00 26.43,6.53 26.43,5.58 27.25,5.10 28.07,5.58" fill="#0e1012" />
+        <polygon points="30.37,6.52 29.55,7.00 28.73,6.53 28.73,5.58 29.55,5.10 30.37,5.58" fill="#0e1012" />
+        <polygon points="10.82,8.53 10.00,9.00 9.18,8.53 9.18,7.58 10.00,7.10 10.82,7.58" fill="#0e1012" />
+        <polygon points="13.12,8.53 12.30,9.00 11.48,8.53 11.48,7.58 12.30,7.10 13.12,7.58" fill="#0e1012" />
+        <polygon points="15.42,8.53 14.60,9.00 13.78,8.53 13.78,7.58 14.60,7.10 15.42,7.58" fill="#0e1012" />
+        <polygon points="17.72,8.53 16.90,9.00 16.08,8.53 16.08,7.58 16.90,7.10 17.72,7.58" fill="#0e1012" />
+        <polygon points="20.02,8.53 19.20,9.00 18.38,8.53 18.38,7.58 19.20,7.10 20.02,7.58" fill="#0e1012" />
+        <polygon points="22.32,8.53 21.50,9.00 20.68,8.53 20.68,7.58 21.50,7.10 22.32,7.58" fill="#0e1012" />
+        <polygon points="24.62,8.53 23.80,9.00 22.98,8.53 22.98,7.58 23.80,7.10 24.62,7.58" fill="#0e1012" />
+        <polygon points="26.92,8.53 26.10,9.00 25.28,8.53 25.28,7.58 26.10,7.10 26.92,7.58" fill="#0e1012" />
+        <polygon points="29.22,8.53 28.40,9.00 27.58,8.53 27.58,7.58 28.40,7.10 29.22,7.58" fill="#0e1012" />
+        <polygon points="31.52,8.53 30.70,9.00 29.88,8.53 29.88,7.58 30.70,7.10 31.52,7.58" fill="#0e1012" />
+        <polygon points="9.67,10.53 8.85,11.00 8.03,10.53 8.03,9.58 8.85,9.10 9.67,9.58" fill="#0e1012" />
+        <polygon points="11.97,10.53 11.15,11.00 10.33,10.53 10.33,9.58 11.15,9.10 11.97,9.58" fill="#0e1012" />
+        <polygon points="14.27,10.53 13.45,11.00 12.63,10.53 12.63,9.58 13.45,9.10 14.27,9.58" fill="#0e1012" />
+        <polygon points="16.57,10.53 15.75,11.00 14.93,10.53 14.93,9.58 15.75,9.10 16.57,9.58" fill="#0e1012" />
+        <polygon points="18.87,10.53 18.05,11.00 17.23,10.53 17.23,9.58 18.05,9.10 18.87,9.58" fill="#0e1012" />
+        <polygon points="21.17,10.53 20.35,11.00 19.53,10.53 19.53,9.58 20.35,9.10 21.17,9.58" fill="#0e1012" />
+        <polygon points="23.47,10.53 22.65,11.00 21.83,10.53 21.83,9.58 22.65,9.10 23.47,9.58" fill="#0e1012" />
+        <polygon points="25.77,10.53 24.95,11.00 24.13,10.53 24.13,9.58 24.95,9.10 25.77,9.58" fill="#0e1012" />
+        <polygon points="28.07,10.53 27.25,11.00 26.43,10.53 26.43,9.58 27.25,9.10 28.07,9.58" fill="#0e1012" />
+        <polygon points="30.37,10.53 29.55,11.00 28.73,10.53 28.73,9.58 29.55,9.10 30.37,9.58" fill="#0e1012" />
+      </g>
+      <g id="fan-0--module--grille-bottom">
+        <rect x="5.6" y="21.7" width="28.6" height="11.4" rx="0.8" fill="#1c1f22" />
+        <polygon points="7.87,23.43 7.05,23.90 6.23,23.43 6.23,22.47 7.05,22.00 7.87,22.48" fill="#0e1012" />
+        <polygon points="10.17,23.43 9.35,23.90 8.53,23.43 8.53,22.47 9.35,22.00 10.17,22.48" fill="#0e1012" />
+        <polygon points="12.47,23.43 11.65,23.90 10.83,23.43 10.83,22.47 11.65,22.00 12.47,22.48" fill="#0e1012" />
+        <polygon points="14.77,23.43 13.95,23.90 13.13,23.43 13.13,22.47 13.95,22.00 14.77,22.48" fill="#0e1012" />
+        <polygon points="17.07,23.43 16.25,23.90 15.43,23.43 15.43,22.47 16.25,22.00 17.07,22.48" fill="#0e1012" />
+        <polygon points="19.37,23.43 18.55,23.90 17.73,23.43 17.73,22.47 18.55,22.00 19.37,22.48" fill="#0e1012" />
+        <polygon points="21.67,23.43 20.85,23.90 20.03,23.43 20.03,22.47 20.85,22.00 21.67,22.48" fill="#0e1012" />
+        <polygon points="23.97,23.43 23.15,23.90 22.33,23.43 22.33,22.47 23.15,22.00 23.97,22.48" fill="#0e1012" />
+        <polygon points="26.27,23.43 25.45,23.90 24.63,23.43 24.63,22.47 25.45,22.00 26.27,22.48" fill="#0e1012" />
+        <polygon points="28.57,23.43 27.75,23.90 26.93,23.43 26.93,22.47 27.75,22.00 28.57,22.48" fill="#0e1012" />
+        <polygon points="30.87,23.43 30.05,23.90 29.23,23.43 29.23,22.47 30.05,22.00 30.87,22.48" fill="#0e1012" />
+        <polygon points="33.17,23.43 32.35,23.90 31.53,23.43 31.53,22.47 32.35,22.00 33.17,22.48" fill="#0e1012" />
+        <polygon points="9.02,25.43 8.20,25.90 7.38,25.43 7.38,24.47 8.20,24.00 9.02,24.48" fill="#0e1012" />
+        <polygon points="11.32,25.43 10.50,25.90 9.68,25.43 9.68,24.47 10.50,24.00 11.32,24.48" fill="#0e1012" />
+        <polygon points="13.62,25.43 12.80,25.90 11.98,25.43 11.98,24.47 12.80,24.00 13.62,24.48" fill="#0e1012" />
+        <polygon points="15.92,25.43 15.10,25.90 14.28,25.43 14.28,24.47 15.10,24.00 15.92,24.48" fill="#0e1012" />
+        <polygon points="18.22,25.43 17.40,25.90 16.58,25.43 16.58,24.47 17.40,24.00 18.22,24.48" fill="#0e1012" />
+        <polygon points="20.52,25.43 19.70,25.90 18.88,25.43 18.88,24.47 19.70,24.00 20.52,24.48" fill="#0e1012" />
+        <polygon points="22.82,25.43 22.00,25.90 21.18,25.43 21.18,24.47 22.00,24.00 22.82,24.48" fill="#0e1012" />
+        <polygon points="25.12,25.43 24.30,25.90 23.48,25.43 23.48,24.47 24.30,24.00 25.12,24.48" fill="#0e1012" />
+        <polygon points="27.42,25.43 26.60,25.90 25.78,25.43 25.78,24.47 26.60,24.00 27.42,24.48" fill="#0e1012" />
+        <polygon points="29.72,25.43 28.90,25.90 28.08,25.43 28.08,24.47 28.90,24.00 29.72,24.48" fill="#0e1012" />
+        <polygon points="32.02,25.43 31.20,25.90 30.38,25.43 30.38,24.47 31.20,24.00 32.02,24.48" fill="#0e1012" />
+        <polygon points="7.87,27.43 7.05,27.90 6.23,27.43 6.23,26.47 7.05,26.00 7.87,26.48" fill="#0e1012" />
+        <polygon points="10.17,27.43 9.35,27.90 8.53,27.43 8.53,26.47 9.35,26.00 10.17,26.48" fill="#0e1012" />
+        <polygon points="12.47,27.43 11.65,27.90 10.83,27.43 10.83,26.47 11.65,26.00 12.47,26.48" fill="#0e1012" />
+        <polygon points="14.77,27.43 13.95,27.90 13.13,27.43 13.13,26.47 13.95,26.00 14.77,26.48" fill="#0e1012" />
+        <polygon points="17.07,27.43 16.25,27.90 15.43,27.43 15.43,26.47 16.25,26.00 17.07,26.48" fill="#0e1012" />
+        <polygon points="19.37,27.43 18.55,27.90 17.73,27.43 17.73,26.47 18.55,26.00 19.37,26.48" fill="#0e1012" />
+        <polygon points="21.67,27.43 20.85,27.90 20.03,27.43 20.03,26.47 20.85,26.00 21.67,26.48" fill="#0e1012" />
+        <polygon points="23.97,27.43 23.15,27.90 22.33,27.43 22.33,26.47 23.15,26.00 23.97,26.48" fill="#0e1012" />
+        <polygon points="26.27,27.43 25.45,27.90 24.63,27.43 24.63,26.47 25.45,26.00 26.27,26.48" fill="#0e1012" />
+        <polygon points="28.57,27.43 27.75,27.90 26.93,27.43 26.93,26.47 27.75,26.00 28.57,26.48" fill="#0e1012" />
+        <polygon points="30.87,27.43 30.05,27.90 29.23,27.43 29.23,26.47 30.05,26.00 30.87,26.48" fill="#0e1012" />
+        <polygon points="33.17,27.43 32.35,27.90 31.53,27.43 31.53,26.47 32.35,26.00 33.17,26.48" fill="#0e1012" />
+        <polygon points="9.02,29.43 8.20,29.90 7.38,29.43 7.38,28.47 8.20,28.00 9.02,28.48" fill="#0e1012" />
+        <polygon points="11.32,29.43 10.50,29.90 9.68,29.43 9.68,28.47 10.50,28.00 11.32,28.48" fill="#0e1012" />
+        <polygon points="13.62,29.43 12.80,29.90 11.98,29.43 11.98,28.47 12.80,28.00 13.62,28.48" fill="#0e1012" />
+        <polygon points="15.92,29.43 15.10,29.90 14.28,29.43 14.28,28.47 15.10,28.00 15.92,28.48" fill="#0e1012" />
+        <polygon points="18.22,29.43 17.40,29.90 16.58,29.43 16.58,28.47 17.40,28.00 18.22,28.48" fill="#0e1012" />
+        <polygon points="20.52,29.43 19.70,29.90 18.88,29.43 18.88,28.47 19.70,28.00 20.52,28.48" fill="#0e1012" />
+        <polygon points="22.82,29.43 22.00,29.90 21.18,29.43 21.18,28.47 22.00,28.00 22.82,28.48" fill="#0e1012" />
+        <polygon points="25.12,29.43 24.30,29.90 23.48,29.43 23.48,28.47 24.30,28.00 25.12,28.48" fill="#0e1012" />
+        <polygon points="27.42,29.43 26.60,29.90 25.78,29.43 25.78,28.47 26.60,28.00 27.42,28.48" fill="#0e1012" />
+        <polygon points="29.72,29.43 28.90,29.90 28.08,29.43 28.08,28.47 28.90,28.00 29.72,28.48" fill="#0e1012" />
+        <polygon points="32.02,29.43 31.20,29.90 30.38,29.43 30.38,28.47 31.20,28.00 32.02,28.48" fill="#0e1012" />
+        <polygon points="7.87,31.43 7.05,31.90 6.23,31.43 6.23,30.47 7.05,30.00 7.87,30.48" fill="#0e1012" />
+        <polygon points="10.17,31.43 9.35,31.90 8.53,31.43 8.53,30.47 9.35,30.00 10.17,30.48" fill="#0e1012" />
+        <polygon points="12.47,31.43 11.65,31.90 10.83,31.43 10.83,30.47 11.65,30.00 12.47,30.48" fill="#0e1012" />
+        <polygon points="14.77,31.43 13.95,31.90 13.13,31.43 13.13,30.47 13.95,30.00 14.77,30.48" fill="#0e1012" />
+        <polygon points="17.07,31.43 16.25,31.90 15.43,31.43 15.43,30.47 16.25,30.00 17.07,30.48" fill="#0e1012" />
+        <polygon points="19.37,31.43 18.55,31.90 17.73,31.43 17.73,30.47 18.55,30.00 19.37,30.48" fill="#0e1012" />
+        <polygon points="21.67,31.43 20.85,31.90 20.03,31.43 20.03,30.47 20.85,30.00 21.67,30.48" fill="#0e1012" />
+        <polygon points="23.97,31.43 23.15,31.90 22.33,31.43 22.33,30.47 23.15,30.00 23.97,30.48" fill="#0e1012" />
+        <polygon points="26.27,31.43 25.45,31.90 24.63,31.43 24.63,30.47 25.45,30.00 26.27,30.48" fill="#0e1012" />
+        <polygon points="28.57,31.43 27.75,31.90 26.93,31.43 26.93,30.47 27.75,30.00 28.57,30.48" fill="#0e1012" />
+        <polygon points="30.87,31.43 30.05,31.90 29.23,31.43 29.23,30.47 30.05,30.00 30.87,30.48" fill="#0e1012" />
+        <polygon points="33.17,31.43 32.35,31.90 31.53,31.43 31.53,30.47 32.35,30.00 33.17,30.48" fill="#0e1012" />
+      </g>
+      <g id="fan-0--module--handle" data-path="fan-0/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="1.2" y="12.4" width="39.6" height="8.6" rx="2.6" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="3.4" y="14.3" width="35.2" height="4.8" rx="2.0" fill="#d3661a" />
+        <rect id="fan-0--module--airout-chip" x="14.6" y="13.9" width="13.0" height="5.6" rx="0.7" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="17.2" cy="16.7" r="0.7" />
+          <circle cx="16.3" cy="15.9" r="0.65" />
+          <circle cx="18.1" cy="15.9" r="0.65" />
+          <circle cx="16.3" cy="17.5" r="0.65" />
+          <circle cx="18.1" cy="17.5" r="0.65" />
+        </g>
+        <g id="fan-0--module--silkscreen">
+          <text x="24.2" y="16.2" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="24.2" y="18.4" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-0--module--frame-sides" fill="#e8731f">
+        <rect x="0.4" y="10.6" width="2.2" height="12.2" rx="1.0" />
+        <rect x="39.4" y="10.6" width="2.2" height="12.2" rx="1.0" />
+      </g>
+      <g id="fan-0--module--screw" data-path="fan-0/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="4.6" cy="4.6" r="2.3" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="4.6" cy="4.6" r="1.0" fill="#26292d" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="134.25" y="2.6" width="42" height="38.5" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="juniper/mx204-fan@1:1.0.0" data-body-depth="146.8" data-airflow="front-to-back" data-model="MX204 Fan Module" data-states="ok fail absent" transform="translate(155.25,21.85) translate(-21,-19.25)">
+      <title>fan-1--module</title>
+      <rect id="fan-1--module--face" x="0" y="0" width="42.0" height="38.5" rx="1.0" fill="#26292d" stroke="#181b1f" stroke-width="0.4" />
+      <g id="fan-1--module--grille-top">
+        <rect x="7.4" y="0.8" width="25.4" height="11.0" rx="0.8" fill="#1c1f22" />
+        <polygon points="9.67,2.52 8.85,3.00 8.03,2.53 8.03,1.58 8.85,1.10 9.67,1.58" fill="#0e1012" />
+        <polygon points="11.97,2.52 11.15,3.00 10.33,2.53 10.33,1.58 11.15,1.10 11.97,1.58" fill="#0e1012" />
+        <polygon points="14.27,2.52 13.45,3.00 12.63,2.53 12.63,1.58 13.45,1.10 14.27,1.58" fill="#0e1012" />
+        <polygon points="16.57,2.52 15.75,3.00 14.93,2.53 14.93,1.58 15.75,1.10 16.57,1.58" fill="#0e1012" />
+        <polygon points="18.87,2.52 18.05,3.00 17.23,2.53 17.23,1.58 18.05,1.10 18.87,1.58" fill="#0e1012" />
+        <polygon points="21.17,2.52 20.35,3.00 19.53,2.53 19.53,1.58 20.35,1.10 21.17,1.58" fill="#0e1012" />
+        <polygon points="23.47,2.52 22.65,3.00 21.83,2.53 21.83,1.58 22.65,1.10 23.47,1.58" fill="#0e1012" />
+        <polygon points="25.77,2.52 24.95,3.00 24.13,2.53 24.13,1.58 24.95,1.10 25.77,1.58" fill="#0e1012" />
+        <polygon points="28.07,2.52 27.25,3.00 26.43,2.53 26.43,1.58 27.25,1.10 28.07,1.58" fill="#0e1012" />
+        <polygon points="30.37,2.52 29.55,3.00 28.73,2.53 28.73,1.58 29.55,1.10 30.37,1.58" fill="#0e1012" />
+        <polygon points="10.82,4.52 10.00,5.00 9.18,4.53 9.18,3.58 10.00,3.10 10.82,3.58" fill="#0e1012" />
+        <polygon points="13.12,4.52 12.30,5.00 11.48,4.53 11.48,3.58 12.30,3.10 13.12,3.58" fill="#0e1012" />
+        <polygon points="15.42,4.52 14.60,5.00 13.78,4.53 13.78,3.58 14.60,3.10 15.42,3.58" fill="#0e1012" />
+        <polygon points="17.72,4.52 16.90,5.00 16.08,4.53 16.08,3.58 16.90,3.10 17.72,3.58" fill="#0e1012" />
+        <polygon points="20.02,4.52 19.20,5.00 18.38,4.53 18.38,3.58 19.20,3.10 20.02,3.58" fill="#0e1012" />
+        <polygon points="22.32,4.52 21.50,5.00 20.68,4.53 20.68,3.58 21.50,3.10 22.32,3.58" fill="#0e1012" />
+        <polygon points="24.62,4.52 23.80,5.00 22.98,4.53 22.98,3.58 23.80,3.10 24.62,3.58" fill="#0e1012" />
+        <polygon points="26.92,4.52 26.10,5.00 25.28,4.53 25.28,3.58 26.10,3.10 26.92,3.58" fill="#0e1012" />
+        <polygon points="29.22,4.52 28.40,5.00 27.58,4.53 27.58,3.58 28.40,3.10 29.22,3.58" fill="#0e1012" />
+        <polygon points="31.52,4.52 30.70,5.00 29.88,4.53 29.88,3.58 30.70,3.10 31.52,3.58" fill="#0e1012" />
+        <polygon points="9.67,6.52 8.85,7.00 8.03,6.53 8.03,5.58 8.85,5.10 9.67,5.58" fill="#0e1012" />
+        <polygon points="11.97,6.52 11.15,7.00 10.33,6.53 10.33,5.58 11.15,5.10 11.97,5.58" fill="#0e1012" />
+        <polygon points="14.27,6.52 13.45,7.00 12.63,6.53 12.63,5.58 13.45,5.10 14.27,5.58" fill="#0e1012" />
+        <polygon points="16.57,6.52 15.75,7.00 14.93,6.53 14.93,5.58 15.75,5.10 16.57,5.58" fill="#0e1012" />
+        <polygon points="18.87,6.52 18.05,7.00 17.23,6.53 17.23,5.58 18.05,5.10 18.87,5.58" fill="#0e1012" />
+        <polygon points="21.17,6.52 20.35,7.00 19.53,6.53 19.53,5.58 20.35,5.10 21.17,5.58" fill="#0e1012" />
+        <polygon points="23.47,6.52 22.65,7.00 21.83,6.53 21.83,5.58 22.65,5.10 23.47,5.58" fill="#0e1012" />
+        <polygon points="25.77,6.52 24.95,7.00 24.13,6.53 24.13,5.58 24.95,5.10 25.77,5.58" fill="#0e1012" />
+        <polygon points="28.07,6.52 27.25,7.00 26.43,6.53 26.43,5.58 27.25,5.10 28.07,5.58" fill="#0e1012" />
+        <polygon points="30.37,6.52 29.55,7.00 28.73,6.53 28.73,5.58 29.55,5.10 30.37,5.58" fill="#0e1012" />
+        <polygon points="10.82,8.53 10.00,9.00 9.18,8.53 9.18,7.58 10.00,7.10 10.82,7.58" fill="#0e1012" />
+        <polygon points="13.12,8.53 12.30,9.00 11.48,8.53 11.48,7.58 12.30,7.10 13.12,7.58" fill="#0e1012" />
+        <polygon points="15.42,8.53 14.60,9.00 13.78,8.53 13.78,7.58 14.60,7.10 15.42,7.58" fill="#0e1012" />
+        <polygon points="17.72,8.53 16.90,9.00 16.08,8.53 16.08,7.58 16.90,7.10 17.72,7.58" fill="#0e1012" />
+        <polygon points="20.02,8.53 19.20,9.00 18.38,8.53 18.38,7.58 19.20,7.10 20.02,7.58" fill="#0e1012" />
+        <polygon points="22.32,8.53 21.50,9.00 20.68,8.53 20.68,7.58 21.50,7.10 22.32,7.58" fill="#0e1012" />
+        <polygon points="24.62,8.53 23.80,9.00 22.98,8.53 22.98,7.58 23.80,7.10 24.62,7.58" fill="#0e1012" />
+        <polygon points="26.92,8.53 26.10,9.00 25.28,8.53 25.28,7.58 26.10,7.10 26.92,7.58" fill="#0e1012" />
+        <polygon points="29.22,8.53 28.40,9.00 27.58,8.53 27.58,7.58 28.40,7.10 29.22,7.58" fill="#0e1012" />
+        <polygon points="31.52,8.53 30.70,9.00 29.88,8.53 29.88,7.58 30.70,7.10 31.52,7.58" fill="#0e1012" />
+        <polygon points="9.67,10.53 8.85,11.00 8.03,10.53 8.03,9.58 8.85,9.10 9.67,9.58" fill="#0e1012" />
+        <polygon points="11.97,10.53 11.15,11.00 10.33,10.53 10.33,9.58 11.15,9.10 11.97,9.58" fill="#0e1012" />
+        <polygon points="14.27,10.53 13.45,11.00 12.63,10.53 12.63,9.58 13.45,9.10 14.27,9.58" fill="#0e1012" />
+        <polygon points="16.57,10.53 15.75,11.00 14.93,10.53 14.93,9.58 15.75,9.10 16.57,9.58" fill="#0e1012" />
+        <polygon points="18.87,10.53 18.05,11.00 17.23,10.53 17.23,9.58 18.05,9.10 18.87,9.58" fill="#0e1012" />
+        <polygon points="21.17,10.53 20.35,11.00 19.53,10.53 19.53,9.58 20.35,9.10 21.17,9.58" fill="#0e1012" />
+        <polygon points="23.47,10.53 22.65,11.00 21.83,10.53 21.83,9.58 22.65,9.10 23.47,9.58" fill="#0e1012" />
+        <polygon points="25.77,10.53 24.95,11.00 24.13,10.53 24.13,9.58 24.95,9.10 25.77,9.58" fill="#0e1012" />
+        <polygon points="28.07,10.53 27.25,11.00 26.43,10.53 26.43,9.58 27.25,9.10 28.07,9.58" fill="#0e1012" />
+        <polygon points="30.37,10.53 29.55,11.00 28.73,10.53 28.73,9.58 29.55,9.10 30.37,9.58" fill="#0e1012" />
+      </g>
+      <g id="fan-1--module--grille-bottom">
+        <rect x="5.6" y="21.7" width="28.6" height="11.4" rx="0.8" fill="#1c1f22" />
+        <polygon points="7.87,23.43 7.05,23.90 6.23,23.43 6.23,22.47 7.05,22.00 7.87,22.48" fill="#0e1012" />
+        <polygon points="10.17,23.43 9.35,23.90 8.53,23.43 8.53,22.47 9.35,22.00 10.17,22.48" fill="#0e1012" />
+        <polygon points="12.47,23.43 11.65,23.90 10.83,23.43 10.83,22.47 11.65,22.00 12.47,22.48" fill="#0e1012" />
+        <polygon points="14.77,23.43 13.95,23.90 13.13,23.43 13.13,22.47 13.95,22.00 14.77,22.48" fill="#0e1012" />
+        <polygon points="17.07,23.43 16.25,23.90 15.43,23.43 15.43,22.47 16.25,22.00 17.07,22.48" fill="#0e1012" />
+        <polygon points="19.37,23.43 18.55,23.90 17.73,23.43 17.73,22.47 18.55,22.00 19.37,22.48" fill="#0e1012" />
+        <polygon points="21.67,23.43 20.85,23.90 20.03,23.43 20.03,22.47 20.85,22.00 21.67,22.48" fill="#0e1012" />
+        <polygon points="23.97,23.43 23.15,23.90 22.33,23.43 22.33,22.47 23.15,22.00 23.97,22.48" fill="#0e1012" />
+        <polygon points="26.27,23.43 25.45,23.90 24.63,23.43 24.63,22.47 25.45,22.00 26.27,22.48" fill="#0e1012" />
+        <polygon points="28.57,23.43 27.75,23.90 26.93,23.43 26.93,22.47 27.75,22.00 28.57,22.48" fill="#0e1012" />
+        <polygon points="30.87,23.43 30.05,23.90 29.23,23.43 29.23,22.47 30.05,22.00 30.87,22.48" fill="#0e1012" />
+        <polygon points="33.17,23.43 32.35,23.90 31.53,23.43 31.53,22.47 32.35,22.00 33.17,22.48" fill="#0e1012" />
+        <polygon points="9.02,25.43 8.20,25.90 7.38,25.43 7.38,24.47 8.20,24.00 9.02,24.48" fill="#0e1012" />
+        <polygon points="11.32,25.43 10.50,25.90 9.68,25.43 9.68,24.47 10.50,24.00 11.32,24.48" fill="#0e1012" />
+        <polygon points="13.62,25.43 12.80,25.90 11.98,25.43 11.98,24.47 12.80,24.00 13.62,24.48" fill="#0e1012" />
+        <polygon points="15.92,25.43 15.10,25.90 14.28,25.43 14.28,24.47 15.10,24.00 15.92,24.48" fill="#0e1012" />
+        <polygon points="18.22,25.43 17.40,25.90 16.58,25.43 16.58,24.47 17.40,24.00 18.22,24.48" fill="#0e1012" />
+        <polygon points="20.52,25.43 19.70,25.90 18.88,25.43 18.88,24.47 19.70,24.00 20.52,24.48" fill="#0e1012" />
+        <polygon points="22.82,25.43 22.00,25.90 21.18,25.43 21.18,24.47 22.00,24.00 22.82,24.48" fill="#0e1012" />
+        <polygon points="25.12,25.43 24.30,25.90 23.48,25.43 23.48,24.47 24.30,24.00 25.12,24.48" fill="#0e1012" />
+        <polygon points="27.42,25.43 26.60,25.90 25.78,25.43 25.78,24.47 26.60,24.00 27.42,24.48" fill="#0e1012" />
+        <polygon points="29.72,25.43 28.90,25.90 28.08,25.43 28.08,24.47 28.90,24.00 29.72,24.48" fill="#0e1012" />
+        <polygon points="32.02,25.43 31.20,25.90 30.38,25.43 30.38,24.47 31.20,24.00 32.02,24.48" fill="#0e1012" />
+        <polygon points="7.87,27.43 7.05,27.90 6.23,27.43 6.23,26.47 7.05,26.00 7.87,26.48" fill="#0e1012" />
+        <polygon points="10.17,27.43 9.35,27.90 8.53,27.43 8.53,26.47 9.35,26.00 10.17,26.48" fill="#0e1012" />
+        <polygon points="12.47,27.43 11.65,27.90 10.83,27.43 10.83,26.47 11.65,26.00 12.47,26.48" fill="#0e1012" />
+        <polygon points="14.77,27.43 13.95,27.90 13.13,27.43 13.13,26.47 13.95,26.00 14.77,26.48" fill="#0e1012" />
+        <polygon points="17.07,27.43 16.25,27.90 15.43,27.43 15.43,26.47 16.25,26.00 17.07,26.48" fill="#0e1012" />
+        <polygon points="19.37,27.43 18.55,27.90 17.73,27.43 17.73,26.47 18.55,26.00 19.37,26.48" fill="#0e1012" />
+        <polygon points="21.67,27.43 20.85,27.90 20.03,27.43 20.03,26.47 20.85,26.00 21.67,26.48" fill="#0e1012" />
+        <polygon points="23.97,27.43 23.15,27.90 22.33,27.43 22.33,26.47 23.15,26.00 23.97,26.48" fill="#0e1012" />
+        <polygon points="26.27,27.43 25.45,27.90 24.63,27.43 24.63,26.47 25.45,26.00 26.27,26.48" fill="#0e1012" />
+        <polygon points="28.57,27.43 27.75,27.90 26.93,27.43 26.93,26.47 27.75,26.00 28.57,26.48" fill="#0e1012" />
+        <polygon points="30.87,27.43 30.05,27.90 29.23,27.43 29.23,26.47 30.05,26.00 30.87,26.48" fill="#0e1012" />
+        <polygon points="33.17,27.43 32.35,27.90 31.53,27.43 31.53,26.47 32.35,26.00 33.17,26.48" fill="#0e1012" />
+        <polygon points="9.02,29.43 8.20,29.90 7.38,29.43 7.38,28.47 8.20,28.00 9.02,28.48" fill="#0e1012" />
+        <polygon points="11.32,29.43 10.50,29.90 9.68,29.43 9.68,28.47 10.50,28.00 11.32,28.48" fill="#0e1012" />
+        <polygon points="13.62,29.43 12.80,29.90 11.98,29.43 11.98,28.47 12.80,28.00 13.62,28.48" fill="#0e1012" />
+        <polygon points="15.92,29.43 15.10,29.90 14.28,29.43 14.28,28.47 15.10,28.00 15.92,28.48" fill="#0e1012" />
+        <polygon points="18.22,29.43 17.40,29.90 16.58,29.43 16.58,28.47 17.40,28.00 18.22,28.48" fill="#0e1012" />
+        <polygon points="20.52,29.43 19.70,29.90 18.88,29.43 18.88,28.47 19.70,28.00 20.52,28.48" fill="#0e1012" />
+        <polygon points="22.82,29.43 22.00,29.90 21.18,29.43 21.18,28.47 22.00,28.00 22.82,28.48" fill="#0e1012" />
+        <polygon points="25.12,29.43 24.30,29.90 23.48,29.43 23.48,28.47 24.30,28.00 25.12,28.48" fill="#0e1012" />
+        <polygon points="27.42,29.43 26.60,29.90 25.78,29.43 25.78,28.47 26.60,28.00 27.42,28.48" fill="#0e1012" />
+        <polygon points="29.72,29.43 28.90,29.90 28.08,29.43 28.08,28.47 28.90,28.00 29.72,28.48" fill="#0e1012" />
+        <polygon points="32.02,29.43 31.20,29.90 30.38,29.43 30.38,28.47 31.20,28.00 32.02,28.48" fill="#0e1012" />
+        <polygon points="7.87,31.43 7.05,31.90 6.23,31.43 6.23,30.47 7.05,30.00 7.87,30.48" fill="#0e1012" />
+        <polygon points="10.17,31.43 9.35,31.90 8.53,31.43 8.53,30.47 9.35,30.00 10.17,30.48" fill="#0e1012" />
+        <polygon points="12.47,31.43 11.65,31.90 10.83,31.43 10.83,30.47 11.65,30.00 12.47,30.48" fill="#0e1012" />
+        <polygon points="14.77,31.43 13.95,31.90 13.13,31.43 13.13,30.47 13.95,30.00 14.77,30.48" fill="#0e1012" />
+        <polygon points="17.07,31.43 16.25,31.90 15.43,31.43 15.43,30.47 16.25,30.00 17.07,30.48" fill="#0e1012" />
+        <polygon points="19.37,31.43 18.55,31.90 17.73,31.43 17.73,30.47 18.55,30.00 19.37,30.48" fill="#0e1012" />
+        <polygon points="21.67,31.43 20.85,31.90 20.03,31.43 20.03,30.47 20.85,30.00 21.67,30.48" fill="#0e1012" />
+        <polygon points="23.97,31.43 23.15,31.90 22.33,31.43 22.33,30.47 23.15,30.00 23.97,30.48" fill="#0e1012" />
+        <polygon points="26.27,31.43 25.45,31.90 24.63,31.43 24.63,30.47 25.45,30.00 26.27,30.48" fill="#0e1012" />
+        <polygon points="28.57,31.43 27.75,31.90 26.93,31.43 26.93,30.47 27.75,30.00 28.57,30.48" fill="#0e1012" />
+        <polygon points="30.87,31.43 30.05,31.90 29.23,31.43 29.23,30.47 30.05,30.00 30.87,30.48" fill="#0e1012" />
+        <polygon points="33.17,31.43 32.35,31.90 31.53,31.43 31.53,30.47 32.35,30.00 33.17,30.48" fill="#0e1012" />
+      </g>
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="1.2" y="12.4" width="39.6" height="8.6" rx="2.6" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="3.4" y="14.3" width="35.2" height="4.8" rx="2.0" fill="#d3661a" />
+        <rect id="fan-1--module--airout-chip" x="14.6" y="13.9" width="13.0" height="5.6" rx="0.7" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="17.2" cy="16.7" r="0.7" />
+          <circle cx="16.3" cy="15.9" r="0.65" />
+          <circle cx="18.1" cy="15.9" r="0.65" />
+          <circle cx="16.3" cy="17.5" r="0.65" />
+          <circle cx="18.1" cy="17.5" r="0.65" />
+        </g>
+        <g id="fan-1--module--silkscreen">
+          <text x="24.2" y="16.2" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="24.2" y="18.4" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-1--module--frame-sides" fill="#e8731f">
+        <rect x="0.4" y="10.6" width="2.2" height="12.2" rx="1.0" />
+        <rect x="39.4" y="10.6" width="2.2" height="12.2" rx="1.0" />
+      </g>
+      <g id="fan-1--module--screw" data-path="fan-1/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="4.6" cy="4.6" r="2.3" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="4.6" cy="4.6" r="1.0" fill="#26292d" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="183.35" y="2.6" width="42" height="38.5" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="juniper/mx204-fan@1:1.0.0" data-body-depth="146.8" data-airflow="front-to-back" data-model="MX204 Fan Module" data-states="ok fail absent" transform="translate(204.35,21.85) translate(-21,-19.25)">
+      <title>fan-2--module</title>
+      <rect id="fan-2--module--face" x="0" y="0" width="42.0" height="38.5" rx="1.0" fill="#26292d" stroke="#181b1f" stroke-width="0.4" />
+      <g id="fan-2--module--grille-top">
+        <rect x="7.4" y="0.8" width="25.4" height="11.0" rx="0.8" fill="#1c1f22" />
+        <polygon points="9.67,2.52 8.85,3.00 8.03,2.53 8.03,1.58 8.85,1.10 9.67,1.58" fill="#0e1012" />
+        <polygon points="11.97,2.52 11.15,3.00 10.33,2.53 10.33,1.58 11.15,1.10 11.97,1.58" fill="#0e1012" />
+        <polygon points="14.27,2.52 13.45,3.00 12.63,2.53 12.63,1.58 13.45,1.10 14.27,1.58" fill="#0e1012" />
+        <polygon points="16.57,2.52 15.75,3.00 14.93,2.53 14.93,1.58 15.75,1.10 16.57,1.58" fill="#0e1012" />
+        <polygon points="18.87,2.52 18.05,3.00 17.23,2.53 17.23,1.58 18.05,1.10 18.87,1.58" fill="#0e1012" />
+        <polygon points="21.17,2.52 20.35,3.00 19.53,2.53 19.53,1.58 20.35,1.10 21.17,1.58" fill="#0e1012" />
+        <polygon points="23.47,2.52 22.65,3.00 21.83,2.53 21.83,1.58 22.65,1.10 23.47,1.58" fill="#0e1012" />
+        <polygon points="25.77,2.52 24.95,3.00 24.13,2.53 24.13,1.58 24.95,1.10 25.77,1.58" fill="#0e1012" />
+        <polygon points="28.07,2.52 27.25,3.00 26.43,2.53 26.43,1.58 27.25,1.10 28.07,1.58" fill="#0e1012" />
+        <polygon points="30.37,2.52 29.55,3.00 28.73,2.53 28.73,1.58 29.55,1.10 30.37,1.58" fill="#0e1012" />
+        <polygon points="10.82,4.52 10.00,5.00 9.18,4.53 9.18,3.58 10.00,3.10 10.82,3.58" fill="#0e1012" />
+        <polygon points="13.12,4.52 12.30,5.00 11.48,4.53 11.48,3.58 12.30,3.10 13.12,3.58" fill="#0e1012" />
+        <polygon points="15.42,4.52 14.60,5.00 13.78,4.53 13.78,3.58 14.60,3.10 15.42,3.58" fill="#0e1012" />
+        <polygon points="17.72,4.52 16.90,5.00 16.08,4.53 16.08,3.58 16.90,3.10 17.72,3.58" fill="#0e1012" />
+        <polygon points="20.02,4.52 19.20,5.00 18.38,4.53 18.38,3.58 19.20,3.10 20.02,3.58" fill="#0e1012" />
+        <polygon points="22.32,4.52 21.50,5.00 20.68,4.53 20.68,3.58 21.50,3.10 22.32,3.58" fill="#0e1012" />
+        <polygon points="24.62,4.52 23.80,5.00 22.98,4.53 22.98,3.58 23.80,3.10 24.62,3.58" fill="#0e1012" />
+        <polygon points="26.92,4.52 26.10,5.00 25.28,4.53 25.28,3.58 26.10,3.10 26.92,3.58" fill="#0e1012" />
+        <polygon points="29.22,4.52 28.40,5.00 27.58,4.53 27.58,3.58 28.40,3.10 29.22,3.58" fill="#0e1012" />
+        <polygon points="31.52,4.52 30.70,5.00 29.88,4.53 29.88,3.58 30.70,3.10 31.52,3.58" fill="#0e1012" />
+        <polygon points="9.67,6.52 8.85,7.00 8.03,6.53 8.03,5.58 8.85,5.10 9.67,5.58" fill="#0e1012" />
+        <polygon points="11.97,6.52 11.15,7.00 10.33,6.53 10.33,5.58 11.15,5.10 11.97,5.58" fill="#0e1012" />
+        <polygon points="14.27,6.52 13.45,7.00 12.63,6.53 12.63,5.58 13.45,5.10 14.27,5.58" fill="#0e1012" />
+        <polygon points="16.57,6.52 15.75,7.00 14.93,6.53 14.93,5.58 15.75,5.10 16.57,5.58" fill="#0e1012" />
+        <polygon points="18.87,6.52 18.05,7.00 17.23,6.53 17.23,5.58 18.05,5.10 18.87,5.58" fill="#0e1012" />
+        <polygon points="21.17,6.52 20.35,7.00 19.53,6.53 19.53,5.58 20.35,5.10 21.17,5.58" fill="#0e1012" />
+        <polygon points="23.47,6.52 22.65,7.00 21.83,6.53 21.83,5.58 22.65,5.10 23.47,5.58" fill="#0e1012" />
+        <polygon points="25.77,6.52 24.95,7.00 24.13,6.53 24.13,5.58 24.95,5.10 25.77,5.58" fill="#0e1012" />
+        <polygon points="28.07,6.52 27.25,7.00 26.43,6.53 26.43,5.58 27.25,5.10 28.07,5.58" fill="#0e1012" />
+        <polygon points="30.37,6.52 29.55,7.00 28.73,6.53 28.73,5.58 29.55,5.10 30.37,5.58" fill="#0e1012" />
+        <polygon points="10.82,8.53 10.00,9.00 9.18,8.53 9.18,7.58 10.00,7.10 10.82,7.58" fill="#0e1012" />
+        <polygon points="13.12,8.53 12.30,9.00 11.48,8.53 11.48,7.58 12.30,7.10 13.12,7.58" fill="#0e1012" />
+        <polygon points="15.42,8.53 14.60,9.00 13.78,8.53 13.78,7.58 14.60,7.10 15.42,7.58" fill="#0e1012" />
+        <polygon points="17.72,8.53 16.90,9.00 16.08,8.53 16.08,7.58 16.90,7.10 17.72,7.58" fill="#0e1012" />
+        <polygon points="20.02,8.53 19.20,9.00 18.38,8.53 18.38,7.58 19.20,7.10 20.02,7.58" fill="#0e1012" />
+        <polygon points="22.32,8.53 21.50,9.00 20.68,8.53 20.68,7.58 21.50,7.10 22.32,7.58" fill="#0e1012" />
+        <polygon points="24.62,8.53 23.80,9.00 22.98,8.53 22.98,7.58 23.80,7.10 24.62,7.58" fill="#0e1012" />
+        <polygon points="26.92,8.53 26.10,9.00 25.28,8.53 25.28,7.58 26.10,7.10 26.92,7.58" fill="#0e1012" />
+        <polygon points="29.22,8.53 28.40,9.00 27.58,8.53 27.58,7.58 28.40,7.10 29.22,7.58" fill="#0e1012" />
+        <polygon points="31.52,8.53 30.70,9.00 29.88,8.53 29.88,7.58 30.70,7.10 31.52,7.58" fill="#0e1012" />
+        <polygon points="9.67,10.53 8.85,11.00 8.03,10.53 8.03,9.58 8.85,9.10 9.67,9.58" fill="#0e1012" />
+        <polygon points="11.97,10.53 11.15,11.00 10.33,10.53 10.33,9.58 11.15,9.10 11.97,9.58" fill="#0e1012" />
+        <polygon points="14.27,10.53 13.45,11.00 12.63,10.53 12.63,9.58 13.45,9.10 14.27,9.58" fill="#0e1012" />
+        <polygon points="16.57,10.53 15.75,11.00 14.93,10.53 14.93,9.58 15.75,9.10 16.57,9.58" fill="#0e1012" />
+        <polygon points="18.87,10.53 18.05,11.00 17.23,10.53 17.23,9.58 18.05,9.10 18.87,9.58" fill="#0e1012" />
+        <polygon points="21.17,10.53 20.35,11.00 19.53,10.53 19.53,9.58 20.35,9.10 21.17,9.58" fill="#0e1012" />
+        <polygon points="23.47,10.53 22.65,11.00 21.83,10.53 21.83,9.58 22.65,9.10 23.47,9.58" fill="#0e1012" />
+        <polygon points="25.77,10.53 24.95,11.00 24.13,10.53 24.13,9.58 24.95,9.10 25.77,9.58" fill="#0e1012" />
+        <polygon points="28.07,10.53 27.25,11.00 26.43,10.53 26.43,9.58 27.25,9.10 28.07,9.58" fill="#0e1012" />
+        <polygon points="30.37,10.53 29.55,11.00 28.73,10.53 28.73,9.58 29.55,9.10 30.37,9.58" fill="#0e1012" />
+      </g>
+      <g id="fan-2--module--grille-bottom">
+        <rect x="5.6" y="21.7" width="28.6" height="11.4" rx="0.8" fill="#1c1f22" />
+        <polygon points="7.87,23.43 7.05,23.90 6.23,23.43 6.23,22.47 7.05,22.00 7.87,22.48" fill="#0e1012" />
+        <polygon points="10.17,23.43 9.35,23.90 8.53,23.43 8.53,22.47 9.35,22.00 10.17,22.48" fill="#0e1012" />
+        <polygon points="12.47,23.43 11.65,23.90 10.83,23.43 10.83,22.47 11.65,22.00 12.47,22.48" fill="#0e1012" />
+        <polygon points="14.77,23.43 13.95,23.90 13.13,23.43 13.13,22.47 13.95,22.00 14.77,22.48" fill="#0e1012" />
+        <polygon points="17.07,23.43 16.25,23.90 15.43,23.43 15.43,22.47 16.25,22.00 17.07,22.48" fill="#0e1012" />
+        <polygon points="19.37,23.43 18.55,23.90 17.73,23.43 17.73,22.47 18.55,22.00 19.37,22.48" fill="#0e1012" />
+        <polygon points="21.67,23.43 20.85,23.90 20.03,23.43 20.03,22.47 20.85,22.00 21.67,22.48" fill="#0e1012" />
+        <polygon points="23.97,23.43 23.15,23.90 22.33,23.43 22.33,22.47 23.15,22.00 23.97,22.48" fill="#0e1012" />
+        <polygon points="26.27,23.43 25.45,23.90 24.63,23.43 24.63,22.47 25.45,22.00 26.27,22.48" fill="#0e1012" />
+        <polygon points="28.57,23.43 27.75,23.90 26.93,23.43 26.93,22.47 27.75,22.00 28.57,22.48" fill="#0e1012" />
+        <polygon points="30.87,23.43 30.05,23.90 29.23,23.43 29.23,22.47 30.05,22.00 30.87,22.48" fill="#0e1012" />
+        <polygon points="33.17,23.43 32.35,23.90 31.53,23.43 31.53,22.47 32.35,22.00 33.17,22.48" fill="#0e1012" />
+        <polygon points="9.02,25.43 8.20,25.90 7.38,25.43 7.38,24.47 8.20,24.00 9.02,24.48" fill="#0e1012" />
+        <polygon points="11.32,25.43 10.50,25.90 9.68,25.43 9.68,24.47 10.50,24.00 11.32,24.48" fill="#0e1012" />
+        <polygon points="13.62,25.43 12.80,25.90 11.98,25.43 11.98,24.47 12.80,24.00 13.62,24.48" fill="#0e1012" />
+        <polygon points="15.92,25.43 15.10,25.90 14.28,25.43 14.28,24.47 15.10,24.00 15.92,24.48" fill="#0e1012" />
+        <polygon points="18.22,25.43 17.40,25.90 16.58,25.43 16.58,24.47 17.40,24.00 18.22,24.48" fill="#0e1012" />
+        <polygon points="20.52,25.43 19.70,25.90 18.88,25.43 18.88,24.47 19.70,24.00 20.52,24.48" fill="#0e1012" />
+        <polygon points="22.82,25.43 22.00,25.90 21.18,25.43 21.18,24.47 22.00,24.00 22.82,24.48" fill="#0e1012" />
+        <polygon points="25.12,25.43 24.30,25.90 23.48,25.43 23.48,24.47 24.30,24.00 25.12,24.48" fill="#0e1012" />
+        <polygon points="27.42,25.43 26.60,25.90 25.78,25.43 25.78,24.47 26.60,24.00 27.42,24.48" fill="#0e1012" />
+        <polygon points="29.72,25.43 28.90,25.90 28.08,25.43 28.08,24.47 28.90,24.00 29.72,24.48" fill="#0e1012" />
+        <polygon points="32.02,25.43 31.20,25.90 30.38,25.43 30.38,24.47 31.20,24.00 32.02,24.48" fill="#0e1012" />
+        <polygon points="7.87,27.43 7.05,27.90 6.23,27.43 6.23,26.47 7.05,26.00 7.87,26.48" fill="#0e1012" />
+        <polygon points="10.17,27.43 9.35,27.90 8.53,27.43 8.53,26.47 9.35,26.00 10.17,26.48" fill="#0e1012" />
+        <polygon points="12.47,27.43 11.65,27.90 10.83,27.43 10.83,26.47 11.65,26.00 12.47,26.48" fill="#0e1012" />
+        <polygon points="14.77,27.43 13.95,27.90 13.13,27.43 13.13,26.47 13.95,26.00 14.77,26.48" fill="#0e1012" />
+        <polygon points="17.07,27.43 16.25,27.90 15.43,27.43 15.43,26.47 16.25,26.00 17.07,26.48" fill="#0e1012" />
+        <polygon points="19.37,27.43 18.55,27.90 17.73,27.43 17.73,26.47 18.55,26.00 19.37,26.48" fill="#0e1012" />
+        <polygon points="21.67,27.43 20.85,27.90 20.03,27.43 20.03,26.47 20.85,26.00 21.67,26.48" fill="#0e1012" />
+        <polygon points="23.97,27.43 23.15,27.90 22.33,27.43 22.33,26.47 23.15,26.00 23.97,26.48" fill="#0e1012" />
+        <polygon points="26.27,27.43 25.45,27.90 24.63,27.43 24.63,26.47 25.45,26.00 26.27,26.48" fill="#0e1012" />
+        <polygon points="28.57,27.43 27.75,27.90 26.93,27.43 26.93,26.47 27.75,26.00 28.57,26.48" fill="#0e1012" />
+        <polygon points="30.87,27.43 30.05,27.90 29.23,27.43 29.23,26.47 30.05,26.00 30.87,26.48" fill="#0e1012" />
+        <polygon points="33.17,27.43 32.35,27.90 31.53,27.43 31.53,26.47 32.35,26.00 33.17,26.48" fill="#0e1012" />
+        <polygon points="9.02,29.43 8.20,29.90 7.38,29.43 7.38,28.47 8.20,28.00 9.02,28.48" fill="#0e1012" />
+        <polygon points="11.32,29.43 10.50,29.90 9.68,29.43 9.68,28.47 10.50,28.00 11.32,28.48" fill="#0e1012" />
+        <polygon points="13.62,29.43 12.80,29.90 11.98,29.43 11.98,28.47 12.80,28.00 13.62,28.48" fill="#0e1012" />
+        <polygon points="15.92,29.43 15.10,29.90 14.28,29.43 14.28,28.47 15.10,28.00 15.92,28.48" fill="#0e1012" />
+        <polygon points="18.22,29.43 17.40,29.90 16.58,29.43 16.58,28.47 17.40,28.00 18.22,28.48" fill="#0e1012" />
+        <polygon points="20.52,29.43 19.70,29.90 18.88,29.43 18.88,28.47 19.70,28.00 20.52,28.48" fill="#0e1012" />
+        <polygon points="22.82,29.43 22.00,29.90 21.18,29.43 21.18,28.47 22.00,28.00 22.82,28.48" fill="#0e1012" />
+        <polygon points="25.12,29.43 24.30,29.90 23.48,29.43 23.48,28.47 24.30,28.00 25.12,28.48" fill="#0e1012" />
+        <polygon points="27.42,29.43 26.60,29.90 25.78,29.43 25.78,28.47 26.60,28.00 27.42,28.48" fill="#0e1012" />
+        <polygon points="29.72,29.43 28.90,29.90 28.08,29.43 28.08,28.47 28.90,28.00 29.72,28.48" fill="#0e1012" />
+        <polygon points="32.02,29.43 31.20,29.90 30.38,29.43 30.38,28.47 31.20,28.00 32.02,28.48" fill="#0e1012" />
+        <polygon points="7.87,31.43 7.05,31.90 6.23,31.43 6.23,30.47 7.05,30.00 7.87,30.48" fill="#0e1012" />
+        <polygon points="10.17,31.43 9.35,31.90 8.53,31.43 8.53,30.47 9.35,30.00 10.17,30.48" fill="#0e1012" />
+        <polygon points="12.47,31.43 11.65,31.90 10.83,31.43 10.83,30.47 11.65,30.00 12.47,30.48" fill="#0e1012" />
+        <polygon points="14.77,31.43 13.95,31.90 13.13,31.43 13.13,30.47 13.95,30.00 14.77,30.48" fill="#0e1012" />
+        <polygon points="17.07,31.43 16.25,31.90 15.43,31.43 15.43,30.47 16.25,30.00 17.07,30.48" fill="#0e1012" />
+        <polygon points="19.37,31.43 18.55,31.90 17.73,31.43 17.73,30.47 18.55,30.00 19.37,30.48" fill="#0e1012" />
+        <polygon points="21.67,31.43 20.85,31.90 20.03,31.43 20.03,30.47 20.85,30.00 21.67,30.48" fill="#0e1012" />
+        <polygon points="23.97,31.43 23.15,31.90 22.33,31.43 22.33,30.47 23.15,30.00 23.97,30.48" fill="#0e1012" />
+        <polygon points="26.27,31.43 25.45,31.90 24.63,31.43 24.63,30.47 25.45,30.00 26.27,30.48" fill="#0e1012" />
+        <polygon points="28.57,31.43 27.75,31.90 26.93,31.43 26.93,30.47 27.75,30.00 28.57,30.48" fill="#0e1012" />
+        <polygon points="30.87,31.43 30.05,31.90 29.23,31.43 29.23,30.47 30.05,30.00 30.87,30.48" fill="#0e1012" />
+        <polygon points="33.17,31.43 32.35,31.90 31.53,31.43 31.53,30.47 32.35,30.00 33.17,30.48" fill="#0e1012" />
+      </g>
+      <g id="fan-2--module--handle" data-path="fan-2/module/handle" data-class="latch" data-z-out="2.0" data-z-color="#e8731f">
+        <rect x="1.2" y="12.4" width="39.6" height="8.6" rx="2.6" fill="#e8731f" stroke="#b95812" stroke-width="0.4" />
+        <rect x="3.4" y="14.3" width="35.2" height="4.8" rx="2.0" fill="#d3661a" />
+        <rect id="fan-2--module--airout-chip" x="14.6" y="13.9" width="13.0" height="5.6" rx="0.7" fill="#5b6066" />
+        <g fill="#e8731f">
+          <circle cx="17.2" cy="16.7" r="0.7" />
+          <circle cx="16.3" cy="15.9" r="0.65" />
+          <circle cx="18.1" cy="15.9" r="0.65" />
+          <circle cx="16.3" cy="17.5" r="0.65" />
+          <circle cx="18.1" cy="17.5" r="0.65" />
+        </g>
+        <g id="fan-2--module--silkscreen">
+          <text x="24.2" y="16.2" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">AIR</text>
+          <text x="24.2" y="18.4" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">OUT</text>
+        </g>
+      </g>
+      <g id="fan-2--module--frame-sides" fill="#e8731f">
+        <rect x="0.4" y="10.6" width="2.2" height="12.2" rx="1.0" />
+        <rect x="39.4" y="10.6" width="2.2" height="12.2" rx="1.0" />
+      </g>
+      <g id="fan-2--module--screw" data-path="fan-2/module/screw" data-class="screw" data-z-cyl="2.5" data-z-knurl="1">
+        <circle cx="4.6" cy="4.6" r="2.3" fill="#111214" stroke="#3a3e43" stroke-width="0.35" />
+        <circle cx="4.6" cy="4.6" r="1.0" fill="#26292d" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="312.25" y="0.8" width="56.6" height="42.4" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx204-psu-dc@1:1.1.0" data-body-depth="369.1" data-input="dedicated -48 VDC feeds; PS0 from feed A, PS1 from feed B" data-model="MX204 DC PSU" data-power-output-w="650" data-redundancy="1+1; one PSU carries a fully configured router" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(340.55,22) translate(-28.3,-21.2)">
+      <title>psu-0--module</title>
+      <rect id="psu-0--module--face" x="0" y="0" width="56.6" height="42.4" rx="0.8" fill="#1c1e21" stroke="#181b1f" stroke-width="0.4" />
+      <g id="psu-0--module--terminals" data-path="psu-0/module/terminals" data-class="terminal" data-z-out="2.2" data-z-color="#111316">
+        <rect id="psu-0--module--terminal-plate" x="1.8" y="5.6" width="45.4" height="12.0" rx="1.0" fill="#111316" stroke="#3a3e43" stroke-width="0.4" />
+        <g id="psu-0--module--studs">
+          <g id="psu-0--module--stud-0" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="11.40,11.60 9.70,14.54 6.30,14.54 4.60,11.60 6.30,8.66 9.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="8.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+          <g id="psu-0--module--stud-1" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="22.40,11.60 20.70,14.54 17.30,14.54 15.60,11.60 17.30,8.66 20.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="19.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+          <g id="psu-0--module--stud-2" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="33.40,11.60 31.70,14.54 28.30,14.54 26.60,11.60 28.30,8.66 31.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="30.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+          <g id="psu-0--module--stud-3" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="44.40,11.60 42.70,14.54 39.30,14.54 37.60,11.60 39.30,8.66 42.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="41.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+        </g>
+      </g>
+      <g id="psu-0--module--silkscreen" font-family="Arial" font-size="1.9" fill="#c7ccd1" text-anchor="middle">
+        <text x="8.0" y="4.4">V-</text>
+        <text x="19.0" y="4.4">V-</text>
+        <text x="30.0" y="4.4">V+</text>
+        <text x="41.0" y="4.4">V+</text>
+        <text x="36.6" y="26.4" text-anchor="start">IN</text>
+        <text x="36.6" y="32.2" text-anchor="start">OUT</text>
+        <text x="36.6" y="38.0" text-anchor="start">!</text>
+      </g>
+      <g id="psu-0--module--vents">
+        <rect x="4.0" y="24.0" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="11.6" y="24.0" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="19.2" y="24.0" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="4.0" y="31.6" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="11.6" y="31.6" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="19.2" y="31.6" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+      </g>
+      <g id="psu-0--module--lamps">
+        <circle id="psu-0--module--led-in" cx="33.6" cy="25.7" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="psu-0--module--led-out" cx="33.6" cy="31.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="psu-0--module--led-fault" cx="33.6" cy="37.3" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="psu-0--module--latch" data-path="psu-0/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#e8731f">
+        <rect x="49.4" y="3.4" width="4.6" height="35.6" rx="1.4" fill="#e8731f" stroke="#b95812" stroke-width="0.35" />
+        <rect x="50.6" y="6.2" width="2.2" height="30.0" rx="1.0" fill="#d3661a" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="373.65" y="0.8" width="56.6" height="42.4" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx204-psu-dc@1:1.1.0" data-body-depth="369.1" data-input="dedicated -48 VDC feeds; PS0 from feed A, PS1 from feed B" data-model="MX204 DC PSU" data-power-output-w="650" data-redundancy="1+1; one PSU carries a fully configured router" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(401.95,22) translate(-28.3,-21.2)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--face" x="0" y="0" width="56.6" height="42.4" rx="0.8" fill="#1c1e21" stroke="#181b1f" stroke-width="0.4" />
+      <g id="psu-1--module--terminals" data-path="psu-1/module/terminals" data-class="terminal" data-z-out="2.2" data-z-color="#111316">
+        <rect id="psu-1--module--terminal-plate" x="1.8" y="5.6" width="45.4" height="12.0" rx="1.0" fill="#111316" stroke="#3a3e43" stroke-width="0.4" />
+        <g id="psu-1--module--studs">
+          <g id="psu-1--module--stud-0" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="11.40,11.60 9.70,14.54 6.30,14.54 4.60,11.60 6.30,8.66 9.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="8.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+          <g id="psu-1--module--stud-1" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="22.40,11.60 20.70,14.54 17.30,14.54 15.60,11.60 17.30,8.66 20.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="19.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+          <g id="psu-1--module--stud-2" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="33.40,11.60 31.70,14.54 28.30,14.54 26.60,11.60 28.30,8.66 31.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="30.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+          <g id="psu-1--module--stud-3" data-z-cyl="5.5" data-z-lift="2.2" data-z-thread="1.0">
+            <polygon points="44.40,11.60 42.70,14.54 39.30,14.54 37.60,11.60 39.30,8.66 42.70,8.66" fill="#4a4f55" stroke="#6d7379" stroke-width="0.35" />
+            <circle cx="41.0" cy="11.6" r="2.1" fill="#33373c" stroke="#565b60" stroke-width="0.3" />
+          </g>
+        </g>
+      </g>
+      <g id="psu-1--module--silkscreen" font-family="Arial" font-size="1.9" fill="#c7ccd1" text-anchor="middle">
+        <text x="8.0" y="4.4">V-</text>
+        <text x="19.0" y="4.4">V-</text>
+        <text x="30.0" y="4.4">V+</text>
+        <text x="41.0" y="4.4">V+</text>
+        <text x="36.6" y="26.4" text-anchor="start">IN</text>
+        <text x="36.6" y="32.2" text-anchor="start">OUT</text>
+        <text x="36.6" y="38.0" text-anchor="start">!</text>
+      </g>
+      <g id="psu-1--module--vents">
+        <rect x="4.0" y="24.0" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="11.6" y="24.0" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="19.2" y="24.0" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="4.0" y="31.6" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="11.6" y="31.6" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+        <rect x="19.2" y="31.6" width="6.2" height="6.2" rx="0.6" fill="#101214" />
+      </g>
+      <g id="psu-1--module--lamps">
+        <circle id="psu-1--module--led-in" cx="33.6" cy="25.7" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="psu-1--module--led-out" cx="33.6" cy="31.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="psu-1--module--led-fault" cx="33.6" cy="37.3" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="psu-1--module--latch" data-path="psu-1/module/latch" data-class="latch" data-z-out="1.6" data-z-color="#e8731f">
+        <rect x="49.4" y="3.4" width="4.6" height="35.6" rx="1.4" fill="#e8731f" stroke="#b95812" stroke-width="0.35" />
+        <rect x="50.6" y="6.2" width="2.2" height="30.0" rx="1.0" fill="#d3661a" />
+      </g>
+    </g>
+  </g>
+  <g id="ground-plate" data-path="ground-plate" data-class="ground" data-behaviour="mounts" data-ref="juniper/mx204-ground-plate@1:1.0.0" data-model="MX204 grounding terminal" data-group="grounding" data-rel-pos="0" transform="translate(5.95,10.0)" data-group-role="furniture">
+    <title>ground-plate</title>
+    <rect id="ground-plate--plate" x="0" y="0" width="36.0" height="15.0" rx="1.2" fill="#b8bcc0" stroke="#888d92" stroke-width="0.4" />
+    <g id="ground-plate--lug-holes">
+      <circle cx="10.0" cy="7.5" r="4.0" fill="#6d7278" stroke="#565b60" stroke-width="0.4" />
+      <circle cx="10.0" cy="7.5" r="2.4" fill="#26292d" />
+      <circle cx="26.0" cy="7.5" r="4.0" fill="#6d7278" stroke="#565b60" stroke-width="0.4" />
+      <circle cx="26.0" cy="7.5" r="2.4" fill="#26292d" />
+    </g>
+  </g>
+</svg>

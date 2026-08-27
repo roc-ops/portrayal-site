@@ -1,0 +1,1179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.8mm" height="88.9mm" viewBox="0 0 440.8 88.9" data-device="mx304" data-view="front" data-config="one-re-3lmic-ac" data-weight="32 kg fully loaded (two REs, two LMICs); 16 kg without FRUs (Table 22)" data-depth-with-brackets="782 mm over cable-management brackets, air filter and handles (Table 22)" data-throughput="4.8 Tbps system capacity; up to 12x400 Gbps or 48x100 Gbps ports (three LMICs)" data-asic="Juniper Trio 6 (one YT ASIC per LMIC)" data-power-typical-w="1033" data-power-max-w="1436" data-power-envelope="fully-configured" data-operating-temp="0 C to 40 C" data-storage-temp="-40 C to 70 C in shipping container" data-humidity="5-90 percent noncondensing" data-altitude="no performance degradation to 1800 m" data-macsec="inline MACsec on all ports at all speeds" data-timing="1PPS and 10 MHz SMB input and output, ToD and BITS RJ45, GM/PTP SFP (1-GbE/10-GbE); BITS and GM/PTP currently reserved for future use per the guide" data-redundancy="full hardware redundancy - Routing Engines, power supplies and fans" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"one-re-3lmic-ac","device":"Juniper MX304","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"juniper/jnp304-re@1":"1.0.0","juniper/mx304-lmic16@1":"1.0.0","std/qsfp-dd@1":"1.3.0","std/rj45@1":"1.3.0","std/usb-a@1":"1.2.0"},"source":{"attrs":{"environmental":{"altitude":"no performance degradation to 1800 m","humidity":"5-90 percent noncondensing","operating-temp":"0 C to 40 C","storage-temp":"-40 C to 70 C in shipping container"},"features":{"macsec":"inline MACsec on all ports at all speeds","redundancy":"full hardware redundancy - Routing Engines, power supplies and fans","timing":"1PPS and 10 MHz SMB input and output, ToD and BITS RJ45, GM/PTP SFP (1-GbE/10-GbE); BITS and GM/PTP currently reserved for future use per the guide"},"lifecycle":{"eol":"none-announced"},"performance":{"asic":"Juniper Trio 6 (one YT ASIC per LMIC)","throughput":"4.8 Tbps system capacity; up to 12x400 Gbps or 48x100 Gbps ports (three LMICs)"},"physical":{"depth-with-brackets":"782 mm over cable-management brackets, air filter and handles (Table 22)","weight":"32 kg fully loaded (two REs, two LMICs); 16 kg without FRUs (Table 22)"},"power":{"power-envelope":"fully-configured","power-max-w":1436,"power-typical-w":1033}},"chassis":{"color":"#8b8f94","depth":610.0,"height":88.9,"ru":2,"width":440.8},"configurations":{"dc":{"bays":{"psu-0":"juniper/mx304-psu-dc@1","psu-1":"juniper/mx304-psu-dc@1"},"description":"DC-powered chassis - two 2200 W DC PSUs, dual Routing Engines."},"dual-re-ac":{"default":true,"description":"Two Routing Engines, two LMIC16s, AC power - the fully redundant configuration the guide photographs. 3.2 Tbps of installed capacity."},"hvac-dc":{"bays":{"psu-0":"juniper/mx304-psu-hvacdc@1","psu-1":"juniper/mx304-psu-hvacdc@1"},"description":"High-voltage AC/DC universal power - two 2200 W HVAC/DC PSUs, dual Routing Engines."},"one-re-3lmic-ac":{"bays":{"re1-lmic2":"juniper/mx304-lmic16@1"},"description":"One Routing Engine and three LMIC16s (the third in the RE 1/LMIC2 slot) - the maximum-capacity 4.8 Tbps configuration of guide Figure 3."}},"description":"Juniper MX304 Universal Routing Platform - a modular 2RU, 4.8 Tbps Trio 6-based edge router. Four half-width front slots take one or two hot-swappable Routing Engines (slot RE 0, and slot RE 1/LMIC2 which also accepts a third line card) and two or three LMIC16 multi-rate line cards (16x100GbE or 4x400GbE each). The rear carries two stacked 2200 W PSUs (AC, DC, or HVAC/DC), a fixed timing strip (1PPS and 10 MHz SMB in/out, ToD, BITS, and a GM/PTP SFP), three fan modules and the earthing terminal.","format":1,"gaps":[{"reason":"needs-drawing","scope":["res","lmics","psus"],"wanted":"a mechanical drawing resolving the module envelopes against the drawn apertures - Table 22 states 203.5 mm module and 73.5 mm PSU envelopes while the photographed apertures measure 197.6 and 66.0; the bays and module faces are both drawn at the aperture and the envelopes live in each contract's attrs. That reconciliation is a judgement (rails hidden behind the panel), not a measurement, and this gap is its record.","what":"module-envelope-vs-aperture"},{"reason":"needs-photo","scope":["front"],"wanted":"geometry for the optional JNP-FLTRDR-2RU cover and JNP-AIRFLTR-2RU filter that bolt over the front face (Table 22 gives envelopes; no straight-on image exists in the intake). Not modelled; the bare front is the photographed configuration.","what":"front-cover-and-air-filter"},{"reason":"sources-disagree","scope":["fans"],"wanted":"a corrected vendor dimension for the fan module - Table 22's row reads 0.31 x 5.62 x 0.31 in, dimensionally impossible for a module holding two 80 mm fans; the model carries the photographed 82.0 x 85.5 aperture and the table's 143 mm depth.","what":"fan-module-table-error"},{"reason":"vendor-silent","wanted":"the 400GbE-configuration chassis power totals (guide Table 26) - the rows fell outside the docling text layer; only the 100GbE Table 25 totals are carried.","what":"table-26-totals"},{"reason":"vendor-silent","scope":["lmics","timing"],"wanted":"the MX304 transceiver list - the guide points at the external Hardware Compatibility Tool and no document in the intake carries the table.","what":"supported-optics"},{"reason":"needs-drawing","scope":["res","lmics"],"wanted":"the removable front brackets carrying the RE 0 / LMIC0 / RE1/LMIC2 / LMIC1 slot legends, should ears-and-brackets modelling ever be wanted; with ears unmodelled the chassis prints no slot names.","what":"slot-label-brackets"}],"groups":{"fan-leds":{"description":"Table 12 - bicolour fan lamp on the chassis strip beside each bay; green blinking = hardware init complete, green steady = ok, yellow steady = faulty","index-origin":0,"role":"indicator","states":["off",{"behavior":"blinking","color":"#22c55e","name":"init"},{"color":"#22c55e","name":"ok"},{"color":"#f59e0b","name":"fault"}],"term":"LED"},"fans":{"index-origin":0,"role":"service","term":"Fan"},"gm-ptp-leds":{"description":"Table 9 - GM port link lamp; off = no transceiver, green steady = link up, blinking = beacon enabled","index-origin":0,"role":"indicator","states":["off",{"color":"#22c55e","name":"link"},{"behavior":"blinking","color":"#22c55e","name":"beacon"}],"term":"LED"},"grounding":{"index-origin":0,"role":"furniture","term":"Point"},"lmics":{"description":"LMIC slots 0 and 1; a third LMIC seats in the RE 1/LMIC2 slot (see res)","index-origin":0,"role":"traffic","term":"Slot"},"psus":{"index-origin":0,"role":"service","term":"PSU"},"res":{"description":"Routing Engine slots - RE 0, and RE 1/LMIC2 which accepts a Routing Engine or a third LMIC. One RE minimum; slot 0 is primary by default","index-origin":0,"role":"management","term":"Slot"},"timing":{"index-origin":0,"mixed":"the rear timing strip - 1PPS/10 MHz SMB in-out quad, ToD and BITS RJ45s, and the vertical GM/PTP SFP. One job (clock), three media","role":"management","term":"Port"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX304","name":"mx304","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"provenance":{"badge-strip":"photo - the dark strip right of the module columns (402.9-440.8) carries two columns of three square vent apertures, the JUNIPER / MX 304 badge mid-height, and the front ESD socket at its top with the symbol beside it. Positions are photo-fractions, approximate","chassis":"datasheet-table - Table 22: chassis 3.5 x 17.36 x 24.01 in (88.9 x 440.8 x 610 mm), 2RU; 78.2 cm deep over cable-management brackets and handles. The chassis-description prose says 17.63 in (44.8 cm) wide - a 0.7 cm disagreement with Table 22; the table is carried and the prose recorded here. Fully loaded 32 kg, bare 16 kg. Ears are NOT MODELLED by project convention; the modelled body is the 440.8 mm between the flange folds, and the slot labels (RE 0, LMIC0, RE1/LMIC2, LMIC1) are printed on the REMOVABLE BRACKETS the photographs show, so they appear nowhere on this body - recorded so their absence is not read as an omission","color":"photo - medium grey chassis (#8b8f94), bright aluminium module plates, pale blue ejector levers, Juniper orange fan furniture","esd":"guide Figure 11 (ESD Points) - one point on the front badge strip top, one on the rear right above the earthing plate. Both are plain sockets in the photographs","fan-strips":"photo - each fan bay's chassis strip to its right prints the fan icon, the bay number and the bicolour status lamp (Table 12: green blinking = hardware init complete, green steady = ok, yellow steady = faulty). The fourth strip position at the far right shares the ground zone","front-cover":"not modelled - the optional front cover with air filter (JNP-FLTRDR-2RU + JNP-AIRFLTR-2RU, Table 22) bolts over the entire front face; the guide documents replacement procedures for both. Modelled configuration is the bare front as photographed; see gaps","grounding":"guide grounding specifications + photo - two threaded holes for M6 pan-head screws on 16 mm centres at the rear right, under the earth symbol; the protective earthing terminal bracket attaches here. Modelled as juniper/mx304-ground-plate","lifecycle":"none-announced - searched \"Juniper MX304 end of life end of sale\" 2026-08-26; the third-party EOL trackers list no dates and the 2022 NANOG thread names the MX304 as the successor replacing the MX204 and MX10003. Absence of the announcement is the finding","other-faces":"near-blank by evidence - no source shows the top, bottom or side faces; each carries only an estimated mounting-rail band so the capability chain counts it as drawn, sized from Table 22. Axis conventions per viewer3d.js: LEFT view x = 0 is the REAR, RIGHT view x = 0 is the FRONT, top and bottom y = 0 at the FRONT","power":"guide Table 25, the vendor's own per-module table at two ambients for the 3.2 Tbps two-RE + two-LMIC 100GbE configuration: REs 49/59 W each, SFB+CB+PMB 155/228 (chassis internals, not a FRU here), LMICs 318/410 each with transceivers, fans 48/90 each; total chassis power 1033 W at 25 C and 1436 W at 46 C. Those totals are carried as the device figures with that scope in power-envelope; Table 26 gives the 400GbE configuration and its totals fell outside this extraction's text layer - not carried rather than guessed","rear":"photo (mx304-rear-ac-high) - stacked PSU bays at x 10.9 (PSU 0 above PSU 1, labels printed vertically on the chassis strip right of them), the fixed timing strip at 84-116, three 82.0 mm fan bays EVENLY spaced at x 116.4, 225.4 and 334.5 (26.9 mm label strips between and after, each printing the bay's number, lamp and fan icon), and the earthing plate and rear ESD socket at the right end. A FIRST READING PUT FAN 1 AT 213.4 AND CALLED THE SPACING ASYMMETRIC - it had mis-assigned fan 1's edges to its grille internals; the DC rear photograph (independent shot, same chassis) and a zoom on the strip between fans 1 and 2 both give the even layout, and the reviewer's instinct that routers do not stagger their fans was what triggered the re-measure. The rear drawing (g101368 family) was measured too but its verticals mix module internals at this threshold and were not used for positions","scale":"photo + drawing, cross-anchored per axis - the guide front drawing (g101366) measures aspect 5.58 against the rack face's 5.43 and is internally inconsistent in x by ~1.5%, and the front photograph is ~16% COMPRESSED in y (near-axis studio shot) while consistent in x. So: front x positions come from the photograph at 4.058 px/mm anchored to the 440.8 body, front y positions from the drawing anchored to the 88.9 height. The rear photograph is near-isotropic (3%) and rear positions come from it at 4.236 px/mm (x) / 4.106 (y). Feature sizes come from the registry and Table 22 throughout","slots":"drawing + photo - four half-width apertures in two columns of two: RE 0 above LMIC 0 on the left, RE 1/LMIC2 above LMIC 1 on the right (guide Figure 2 callouts name all four). Rows y 4.1-43.8 and 44.6-84.3 off the drawing; columns x 1.2-198.8 and 205.3-402.9 off the photograph, separated by the centre rail. A one-RE system may seat a THIRD LMIC in the RE 1/LMIC2 slot (guide Figure 3 shows it; hardware overview text: \"You can also add a third LMIC into one of the Routing Engine slots\"). The 197.6 mm apertures take 203.5 mm module envelopes - the modules carry insert: for the difference","sources":"MX304 Universal Routing Platform Hardware Guide (figures g101366/ g101368/g101334/g101624 among others, extracted with captions into working/images/mx304/), MX304 datasheet (mx304-datasheet.pdf), Juniper image-library studio photographs mx304-front-high, mx304-rear-ac-high and mx304-rear-dc-high, and the NetBox devicetype-library MX304 elevations. No mechanical drawing was available","timing":"photo + guide timing topic - SMB quad at x 98.6/107.1, y 11.6/22.2 (rows 10 MHz above 1PPS, columns OUT left / IN right per the rotated legends), BITS RJ45 centred at 101.9, 35.6, ToD at 101.3, 55.4, and the GM/PTP SFP cage VERTICAL at 100.1, 74.9 with its link lamp to the left. The guide NOTE says BITS and GM/PTP are currently unsupported and reserved for future use - carried in attrs. GM/PTP supports 1-GbE and 10-GbE optics per the same topic"},"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#7d8185","size":[6.0,610.0],"source":"lower edge of the side rail; mirrored from the top estimate"},{"at":[434.8,0.0],"confidence":"estimated","fill":"#7d8185","size":[6.0,610.0],"source":"lower edge of the side rail; same estimate"}]},"size":{"h":610.0,"w":440.8}},"front":{"components":{"bays":[{"accepts":["juniper/jnp304-re@1","juniper/jnp304-blnk@1"],"at":[1.2,4.1],"default":"juniper/jnp304-re@1","group":"res","id":"re0","rel-pos":0,"size":{"h":39.7,"w":197.6}},{"accepts":["juniper/jnp304-re@1","juniper/mx304-lmic16@1","juniper/jnp304-blnk@1"],"at":[205.3,4.1],"default":"juniper/jnp304-re@1","group":"res","id":"re1-lmic2","rel-pos":1,"size":{"h":39.7,"w":197.6}},{"accepts":["juniper/mx304-lmic16@1","juniper/jnp304-blnk@1"],"at":[1.2,44.6],"default":"juniper/mx304-lmic16@1","group":"lmics","id":"lmic0","rel-pos":0,"size":{"h":39.7,"w":197.6}},{"accepts":["juniper/mx304-lmic16@1","juniper/jnp304-blnk@1"],"at":[205.3,44.6],"default":"juniper/mx304-lmic16@1","group":"lmics","id":"lmic1","rel-pos":1,"size":{"h":39.7,"w":197.6}}]},"panel":{"cutouts":[{"at":[406.5,5.0],"id":"strip-vent-0","rx":1.0,"size":[8.0,8.0]},{"at":[416.5,5.0],"id":"strip-vent-1","rx":1.0,"size":[8.0,8.0]},{"at":[406.5,15.5],"id":"strip-vent-2","rx":1.0,"size":[8.0,8.0]},{"at":[416.5,15.5],"id":"strip-vent-3","rx":1.0,"size":[8.0,8.0]},{"at":[406.5,26.0],"id":"strip-vent-4","rx":1.0,"size":[8.0,8.0]},{"at":[416.5,26.0],"id":"strip-vent-5","rx":1.0,"size":[8.0,8.0]},{"at":[431.8,3.2],"id":"esd-front","shape":"circle","size":[4.2,4.2]}],"decor":[{"at":[198.8,0.0],"fill":"#82868b","rx":0.0,"size":[6.5,88.9]},{"at":[402.9,0.0],"fill":"#3a3d42","rx":0.0,"size":[37.9,88.9]}]},"silkscreen":[{"at":[427.5,8.2],"fill":"#c7ccd1","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"},{"anchor":"middle","at":[421.8,39.5],"fill":"#e8eaec","font-size":3.4,"for":"chassis","text":"JUNIPER"},{"anchor":"middle","at":[421.8,41.9],"fill":"#b9bdc2","font-size":1.3,"for":"chassis","text":"NETWORKS"},{"anchor":"middle","at":[421.8,46.7],"fill":"#e8eaec","font-size":3.2,"for":"chassis","text":"MX 304"}],"size":{"h":88.9,"w":440.8}},"left":{"panel":{"decor":[{"at":[0.0,39.0],"confidence":"estimated","fill":"#7d8185","size":[610.0,11.0],"source":"mounting-rail band along the side (the guide's rack topics show pre-installed brackets); full-length band, height and position estimated - no side drawing exists"}]},"size":{"h":88.9,"w":610.0}},"rear":{"components":{"bays":[{"accepts":["juniper/mx304-psu-ac@1","juniper/mx304-psu-dc@1","juniper/mx304-psu-hvacdc@1"],"at":[10.9,2.4],"default":"juniper/mx304-psu-ac@1","group":"psus","id":"psu-0","rel-pos":0,"size":{"h":40.1,"w":66.0}},{"accepts":["juniper/mx304-psu-ac@1","juniper/mx304-psu-dc@1","juniper/mx304-psu-hvacdc@1"],"at":[10.9,44.4],"default":"juniper/mx304-psu-ac@1","group":"psus","id":"psu-1","rel-pos":1,"size":{"h":40.1,"w":66.0}},{"accepts":["juniper/mx304-fan@1"],"at":[116.4,1.5],"default":"juniper/mx304-fan@1","group":"fans","id":"fan-0","rel-pos":0,"size":{"h":85.5,"w":82.0}},{"accepts":["juniper/mx304-fan@1"],"at":[225.4,1.5],"default":"juniper/mx304-fan@1","group":"fans","id":"fan-1","rel-pos":1,"size":{"h":85.5,"w":82.0}},{"accepts":["juniper/mx304-fan@1"],"at":[334.2,1.5],"default":"juniper/mx304-fan@1","group":"fans","id":"fan-2","rel-pos":2,"size":{"h":85.5,"w":82.0}}],"placements":[{"at":[96.19,9.19],"attrs":{"function":"10 MHz clock output"},"group":"timing","id":"smb-10mhz-out","ref":"std/smb@1","rel-pos":0},{"at":[104.69,9.19],"attrs":{"function":"10 MHz clock input"},"group":"timing","id":"smb-10mhz-in","ref":"std/smb@1","rel-pos":1},{"at":[96.19,19.79],"attrs":{"function":"1PPS output"},"group":"timing","id":"smb-1pps-out","ref":"std/smb@1","rel-pos":2},{"at":[104.69,19.79],"attrs":{"function":"1PPS input"},"group":"timing","id":"smb-1pps-in","ref":"std/smb@1","rel-pos":3},{"at":[93.9,28.6],"attrs":{"function":"BITS (reserved for future use per the guide)"},"group":"timing","id":"bits","ref":"std/rj45@1","rel-pos":4},{"at":[93.3,48.4],"attrs":{"function":"Time of day"},"group":"timing","id":"tod","ref":"std/rj45@1","rel-pos":5},{"at":[92.85,69.9],"attrs":{"function":"PTP grandmaster clock port","media":"sfp","speed":"1g/10g (reserved for future use per the guide)"},"group":"timing","id":"gm-ptp","ref":"std/sfp@1","rel-pos":6,"rotate":90},{"at":[92.6,71.8],"for":"gm-ptp","group":"gm-ptp-leds","id":"led-gm-ptp","ref":"common/led-dot@1","rel-pos":0},{"at":[201.6,77.6],"for":"fan-0","group":"fan-leds","id":"led-fan-0","ref":"common/led-dot@1","rel-pos":0},{"at":[310.7,77.6],"for":"fan-1","group":"fan-leds","id":"led-fan-1","ref":"common/led-dot@1","rel-pos":1},{"at":[419.3,77.6],"for":"fan-2","group":"fan-leds","id":"led-fan-2","ref":"common/led-dot@1","rel-pos":2},{"at":[422.4,24.5],"group":"grounding","id":"ground-plate","ref":"juniper/mx304-ground-plate@1","rel-pos":0}]},"panel":{"cutouts":[{"at":[96.19,9.19],"id":"smb-10mhz-out","shape":"circle","size":[4.83,4.83]},{"at":[104.69,9.19],"id":"smb-10mhz-in","shape":"circle","size":[4.83,4.83]},{"at":[96.19,19.79],"id":"smb-1pps-out","shape":"circle","size":[4.83,4.83]},{"at":[104.69,19.79],"id":"smb-1pps-in","shape":"circle","size":[4.83,4.83]},{"at":[93.9,28.6],"id":"bits","size":[16.0,14.0]},{"at":[93.3,48.4],"id":"tod","size":[16.0,14.0]},{"at":[95.1,67.65],"id":"gm-ptp","size":[10.0,14.5]},{"at":[92.6,71.8],"id":"led-gm-ptp","shape":"circle","size":[2.0,2.0]},{"at":[201.6,77.6],"id":"led-fan-0","shape":"circle","size":[2.0,2.0]},{"at":[310.7,77.6],"id":"led-fan-1","shape":"circle","size":[2.0,2.0]},{"at":[419.3,77.6],"id":"led-fan-2","shape":"circle","size":[2.0,2.0]},{"at":[430.0,8.6],"id":"esd-rear","shape":"circle","size":[4.2,4.2]}],"decor":[{"at":[77.4,0.0],"fill":"#82868b","rx":0.0,"size":[6.8,88.9]}]},"silkscreen":[{"anchor":"middle","at":[80.9,21.5],"font-size":2.0,"for":"psu-0","rotate":270,"text":"PSU 0"},{"anchor":"middle","at":[80.9,63.0],"font-size":2.0,"for":"psu-1","rotate":270,"text":"PSU 1"},{"anchor":"middle","at":[93.4,11.6],"font-size":1.7,"for":["smb-10mhz-out","smb-10mhz-in"],"rotate":270,"text":"10Mhz"},{"anchor":"middle","at":[93.4,22.2],"font-size":1.7,"for":["smb-1pps-out","smb-1pps-in"],"rotate":270,"text":"1PPS"},{"anchor":"middle","at":[101.6,16.9],"font-size":1.5,"for":["smb-10mhz-out","smb-1pps-out"],"rotate":270,"text":"OUT"},{"anchor":"middle","at":[110.6,16.9],"font-size":1.5,"for":["smb-10mhz-in","smb-1pps-in"],"rotate":270,"text":"IN"},{"anchor":"middle","at":[91.4,35.6],"font-size":1.7,"for":"bits","rotate":270,"text":"BITS"},{"anchor":"middle","at":[91.4,55.4],"font-size":1.7,"for":"tod","rotate":270,"text":"ToD"},{"anchor":"middle","at":[111.8,74.9],"font-size":1.7,"for":"gm-ptp","rotate":270,"text":"GM/PTP"},{"anchor":"middle","at":[208.3,76.6],"font-size":2.4,"for":"fan-0","text":"0"},{"at":[211.8,82.2],"for":"fan-0","path":"M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z"},{"anchor":"middle","at":[317.4,76.6],"font-size":2.4,"for":"fan-1","text":"1"},{"at":[320.9,82.2],"for":"fan-1","path":"M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z"},{"anchor":"middle","at":[426.0,76.6],"font-size":2.4,"for":"fan-2","text":"2"},{"at":[429.5,82.2],"for":"fan-2","path":"M 0 -1.1 A 1.1 1.1 0 1 0 0.01 -1.1 Z M -1.9 -1.1 A 1.1 1.1 0 1 0 -1.89 -1.1 Z M 1.9 -1.1 A 1.1 1.1 0 1 0 1.91 -1.1 Z M -0.95 0.8 A 1.1 1.1 0 1 0 -0.94 0.8 Z M 0.95 0.8 A 1.1 1.1 0 1 0 0.96 0.8 Z"},{"at":[427.3,66.5],"fill":"#c7ccd1","for":"ground-plate","path":"M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7"},{"at":[423.3,11.2],"fill":"#c7ccd1","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"}],"size":{"h":88.9,"w":440.8}},"right":{"panel":{"decor":[{"at":[0.0,39.0],"confidence":"estimated","fill":"#7d8185","size":[610.0,11.0],"source":"mounting-rail band along the side; mirror of the left face band, same estimate"}]},"size":{"h":88.9,"w":610.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#7d8185","size":[6.0,610.0],"source":"side rail edge seen from above; width estimated"},{"at":[434.8,0.0],"confidence":"estimated","fill":"#7d8185","size":[6.0,610.0],"source":"side rail edge seen from above; width estimated"}]},"size":{"h":610.0,"w":440.8}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX304" x="0" y="0" width="440.8" height="88.9" rx="1.2" fill="#8b8f94" stroke="#22262a" stroke-width="0.5" />
+  <rect x="198.8" y="0" width="6.5" height="88.9" rx="0" fill="#82868b" />
+  <rect x="402.9" y="0" width="37.9" height="88.9" rx="0" fill="#3a3d42" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="406.5" y="5" width="8" height="8" rx="1" id="cutout--strip-vent-0" data-path="cutout:strip-vent-0" data-class="cutout" fill="#101214" />
+    <rect x="416.5" y="5" width="8" height="8" rx="1" id="cutout--strip-vent-1" data-path="cutout:strip-vent-1" data-class="cutout" fill="#101214" />
+    <rect x="406.5" y="15.5" width="8" height="8" rx="1" id="cutout--strip-vent-2" data-path="cutout:strip-vent-2" data-class="cutout" fill="#101214" />
+    <rect x="416.5" y="15.5" width="8" height="8" rx="1" id="cutout--strip-vent-3" data-path="cutout:strip-vent-3" data-class="cutout" fill="#101214" />
+    <rect x="406.5" y="26" width="8" height="8" rx="1" id="cutout--strip-vent-4" data-path="cutout:strip-vent-4" data-class="cutout" fill="#101214" />
+    <rect x="416.5" y="26" width="8" height="8" rx="1" id="cutout--strip-vent-5" data-path="cutout:strip-vent-5" data-class="cutout" fill="#101214" />
+    <ellipse cx="433.9" cy="5.3" rx="2.1" ry="2.1" id="cutout--esd-front" data-path="cutout:esd-front" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2" fill="none" stroke="#c7ccd1" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(427.5 8.2)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="421.8" y="39.5" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#e8eaec" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">JUNIPER</text>
+    <text x="421.8" y="41.9" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#b9bdc2" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">NETWORKS</text>
+    <text x="421.8" y="46.7" font-family="sans-serif" font-size="3.2" text-anchor="middle" fill="#e8eaec" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">MX 304</text>
+  </g>
+  <g id="re0" data-path="re0" data-class="bay" data-group="res" data-group-role="management" data-rel-pos="0">
+    <title>re0</title>
+    <rect id="re0--opening" x="1.2" y="4.1" width="197.6" height="39.7" fill="#101214" />
+    <g id="re0--module" data-path="re0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp304-re@1:1.0.0" data-body-depth="203.2" data-cpu="Intel Icelake based multicore processor" data-envelope="203.5 x 40.1 x 203.2 mm (Table 22)" data-memory="4x32-GB DDR4 default, 128 GB maximum, ECC" data-model="JNP304-RE" data-platform-security="TPM 2.0, secure boot" data-power-draw-max-w="59" data-power-draw-typical-w="49" data-storage="2x200-GB M.2 SATA SSD" data-states="ok fail absent" transform="translate(100,23.95) translate(-98.8,-19.85)">
+      <title>re0--module</title>
+      <rect id="re0--module--face" x="0" y="0" width="197.6" height="39.7" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="re0--module--vents">
+        <rect x="24.0" y="5.8" width="39.0" height="20.0" rx="1.2" fill="#b9bdc2" />
+        <polygon points="25.99,7.37 25.25,7.80 24.51,7.38 24.51,6.52 25.25,6.10 25.99,6.52" fill="#101214" />
+        <polygon points="28.09,7.37 27.35,7.80 26.61,7.38 26.61,6.52 27.35,6.10 28.09,6.52" fill="#101214" />
+        <polygon points="30.19,7.37 29.45,7.80 28.71,7.38 28.71,6.52 29.45,6.10 30.19,6.52" fill="#101214" />
+        <polygon points="32.29,7.37 31.55,7.80 30.81,7.38 30.81,6.52 31.55,6.10 32.29,6.52" fill="#101214" />
+        <polygon points="34.39,7.37 33.65,7.80 32.91,7.38 32.91,6.52 33.65,6.10 34.39,6.52" fill="#101214" />
+        <polygon points="36.49,7.37 35.75,7.80 35.01,7.38 35.01,6.52 35.75,6.10 36.49,6.52" fill="#101214" />
+        <polygon points="38.59,7.37 37.85,7.80 37.11,7.38 37.11,6.52 37.85,6.10 38.59,6.52" fill="#101214" />
+        <polygon points="40.69,7.37 39.95,7.80 39.21,7.38 39.21,6.52 39.95,6.10 40.69,6.52" fill="#101214" />
+        <polygon points="42.79,7.37 42.05,7.80 41.31,7.38 41.31,6.52 42.05,6.10 42.79,6.52" fill="#101214" />
+        <polygon points="44.89,7.37 44.15,7.80 43.41,7.38 43.41,6.52 44.15,6.10 44.89,6.52" fill="#101214" />
+        <polygon points="46.99,7.37 46.25,7.80 45.51,7.38 45.51,6.52 46.25,6.10 46.99,6.52" fill="#101214" />
+        <polygon points="49.09,7.37 48.35,7.80 47.61,7.38 47.61,6.52 48.35,6.10 49.09,6.52" fill="#101214" />
+        <polygon points="51.19,7.37 50.45,7.80 49.71,7.38 49.71,6.52 50.45,6.10 51.19,6.52" fill="#101214" />
+        <polygon points="53.29,7.37 52.55,7.80 51.81,7.38 51.81,6.52 52.55,6.10 53.29,6.52" fill="#101214" />
+        <polygon points="55.39,7.37 54.65,7.80 53.91,7.38 53.91,6.52 54.65,6.10 55.39,6.52" fill="#101214" />
+        <polygon points="57.49,7.37 56.75,7.80 56.01,7.38 56.01,6.52 56.75,6.10 57.49,6.52" fill="#101214" />
+        <polygon points="59.59,7.37 58.85,7.80 58.11,7.38 58.11,6.52 58.85,6.10 59.59,6.52" fill="#101214" />
+        <polygon points="61.69,7.37 60.95,7.80 60.21,7.38 60.21,6.52 60.95,6.10 61.69,6.52" fill="#101214" />
+        <polygon points="27.04,9.22 26.30,9.65 25.56,9.22 25.56,8.38 26.30,7.95 27.04,8.38" fill="#101214" />
+        <polygon points="29.14,9.22 28.40,9.65 27.66,9.22 27.66,8.38 28.40,7.95 29.14,8.38" fill="#101214" />
+        <polygon points="31.24,9.22 30.50,9.65 29.76,9.22 29.76,8.38 30.50,7.95 31.24,8.38" fill="#101214" />
+        <polygon points="33.34,9.22 32.60,9.65 31.86,9.22 31.86,8.38 32.60,7.95 33.34,8.38" fill="#101214" />
+        <polygon points="35.44,9.22 34.70,9.65 33.96,9.22 33.96,8.38 34.70,7.95 35.44,8.38" fill="#101214" />
+        <polygon points="37.54,9.22 36.80,9.65 36.06,9.22 36.06,8.38 36.80,7.95 37.54,8.38" fill="#101214" />
+        <polygon points="39.64,9.22 38.90,9.65 38.16,9.22 38.16,8.38 38.90,7.95 39.64,8.38" fill="#101214" />
+        <polygon points="41.74,9.22 41.00,9.65 40.26,9.22 40.26,8.38 41.00,7.95 41.74,8.38" fill="#101214" />
+        <polygon points="43.84,9.22 43.10,9.65 42.36,9.22 42.36,8.38 43.10,7.95 43.84,8.38" fill="#101214" />
+        <polygon points="45.94,9.22 45.20,9.65 44.46,9.22 44.46,8.38 45.20,7.95 45.94,8.38" fill="#101214" />
+        <polygon points="48.04,9.22 47.30,9.65 46.56,9.22 46.56,8.38 47.30,7.95 48.04,8.38" fill="#101214" />
+        <polygon points="50.14,9.22 49.40,9.65 48.66,9.22 48.66,8.38 49.40,7.95 50.14,8.38" fill="#101214" />
+        <polygon points="52.24,9.22 51.50,9.65 50.76,9.22 50.76,8.38 51.50,7.95 52.24,8.38" fill="#101214" />
+        <polygon points="54.34,9.22 53.60,9.65 52.86,9.22 52.86,8.38 53.60,7.95 54.34,8.38" fill="#101214" />
+        <polygon points="56.44,9.22 55.70,9.65 54.96,9.22 54.96,8.38 55.70,7.95 56.44,8.38" fill="#101214" />
+        <polygon points="58.54,9.22 57.80,9.65 57.06,9.22 57.06,8.38 57.80,7.95 58.54,8.38" fill="#101214" />
+        <polygon points="60.64,9.22 59.90,9.65 59.16,9.22 59.16,8.38 59.90,7.95 60.64,8.38" fill="#101214" />
+        <polygon points="25.99,11.07 25.25,11.50 24.51,11.07 24.51,10.22 25.25,9.80 25.99,10.22" fill="#101214" />
+        <polygon points="28.09,11.07 27.35,11.50 26.61,11.07 26.61,10.22 27.35,9.80 28.09,10.22" fill="#101214" />
+        <polygon points="30.19,11.07 29.45,11.50 28.71,11.07 28.71,10.22 29.45,9.80 30.19,10.22" fill="#101214" />
+        <polygon points="32.29,11.07 31.55,11.50 30.81,11.07 30.81,10.22 31.55,9.80 32.29,10.22" fill="#101214" />
+        <polygon points="34.39,11.07 33.65,11.50 32.91,11.07 32.91,10.22 33.65,9.80 34.39,10.22" fill="#101214" />
+        <polygon points="36.49,11.07 35.75,11.50 35.01,11.07 35.01,10.22 35.75,9.80 36.49,10.22" fill="#101214" />
+        <polygon points="38.59,11.07 37.85,11.50 37.11,11.07 37.11,10.22 37.85,9.80 38.59,10.22" fill="#101214" />
+        <polygon points="40.69,11.07 39.95,11.50 39.21,11.07 39.21,10.22 39.95,9.80 40.69,10.22" fill="#101214" />
+        <polygon points="42.79,11.07 42.05,11.50 41.31,11.07 41.31,10.22 42.05,9.80 42.79,10.22" fill="#101214" />
+        <polygon points="44.89,11.07 44.15,11.50 43.41,11.07 43.41,10.22 44.15,9.80 44.89,10.22" fill="#101214" />
+        <polygon points="46.99,11.07 46.25,11.50 45.51,11.07 45.51,10.22 46.25,9.80 46.99,10.22" fill="#101214" />
+        <polygon points="49.09,11.07 48.35,11.50 47.61,11.07 47.61,10.22 48.35,9.80 49.09,10.22" fill="#101214" />
+        <polygon points="51.19,11.07 50.45,11.50 49.71,11.07 49.71,10.22 50.45,9.80 51.19,10.22" fill="#101214" />
+        <polygon points="53.29,11.07 52.55,11.50 51.81,11.07 51.81,10.22 52.55,9.80 53.29,10.22" fill="#101214" />
+        <polygon points="55.39,11.07 54.65,11.50 53.91,11.07 53.91,10.22 54.65,9.80 55.39,10.22" fill="#101214" />
+        <polygon points="57.49,11.07 56.75,11.50 56.01,11.07 56.01,10.22 56.75,9.80 57.49,10.22" fill="#101214" />
+        <polygon points="59.59,11.07 58.85,11.50 58.11,11.07 58.11,10.22 58.85,9.80 59.59,10.22" fill="#101214" />
+        <polygon points="61.69,11.07 60.95,11.50 60.21,11.07 60.21,10.22 60.95,9.80 61.69,10.22" fill="#101214" />
+        <polygon points="27.04,12.92 26.30,13.35 25.56,12.92 25.56,12.07 26.30,11.65 27.04,12.07" fill="#101214" />
+        <polygon points="29.14,12.92 28.40,13.35 27.66,12.92 27.66,12.07 28.40,11.65 29.14,12.07" fill="#101214" />
+        <polygon points="31.24,12.92 30.50,13.35 29.76,12.92 29.76,12.07 30.50,11.65 31.24,12.07" fill="#101214" />
+        <polygon points="33.34,12.92 32.60,13.35 31.86,12.92 31.86,12.07 32.60,11.65 33.34,12.07" fill="#101214" />
+        <polygon points="35.44,12.92 34.70,13.35 33.96,12.92 33.96,12.07 34.70,11.65 35.44,12.07" fill="#101214" />
+        <polygon points="37.54,12.92 36.80,13.35 36.06,12.92 36.06,12.07 36.80,11.65 37.54,12.07" fill="#101214" />
+        <polygon points="39.64,12.92 38.90,13.35 38.16,12.92 38.16,12.07 38.90,11.65 39.64,12.07" fill="#101214" />
+        <polygon points="41.74,12.92 41.00,13.35 40.26,12.92 40.26,12.07 41.00,11.65 41.74,12.07" fill="#101214" />
+        <polygon points="43.84,12.92 43.10,13.35 42.36,12.92 42.36,12.07 43.10,11.65 43.84,12.07" fill="#101214" />
+        <polygon points="45.94,12.92 45.20,13.35 44.46,12.92 44.46,12.07 45.20,11.65 45.94,12.07" fill="#101214" />
+        <polygon points="48.04,12.92 47.30,13.35 46.56,12.92 46.56,12.07 47.30,11.65 48.04,12.07" fill="#101214" />
+        <polygon points="50.14,12.92 49.40,13.35 48.66,12.92 48.66,12.07 49.40,11.65 50.14,12.07" fill="#101214" />
+        <polygon points="52.24,12.92 51.50,13.35 50.76,12.92 50.76,12.07 51.50,11.65 52.24,12.07" fill="#101214" />
+        <polygon points="54.34,12.92 53.60,13.35 52.86,12.92 52.86,12.07 53.60,11.65 54.34,12.07" fill="#101214" />
+        <polygon points="56.44,12.92 55.70,13.35 54.96,12.92 54.96,12.07 55.70,11.65 56.44,12.07" fill="#101214" />
+        <polygon points="58.54,12.92 57.80,13.35 57.06,12.92 57.06,12.07 57.80,11.65 58.54,12.07" fill="#101214" />
+        <polygon points="60.64,12.92 59.90,13.35 59.16,12.92 59.16,12.07 59.90,11.65 60.64,12.07" fill="#101214" />
+        <polygon points="25.99,14.77 25.25,15.20 24.51,14.77 24.51,13.92 25.25,13.50 25.99,13.92" fill="#101214" />
+        <polygon points="28.09,14.77 27.35,15.20 26.61,14.77 26.61,13.92 27.35,13.50 28.09,13.92" fill="#101214" />
+        <polygon points="30.19,14.77 29.45,15.20 28.71,14.77 28.71,13.92 29.45,13.50 30.19,13.92" fill="#101214" />
+        <polygon points="32.29,14.77 31.55,15.20 30.81,14.77 30.81,13.92 31.55,13.50 32.29,13.92" fill="#101214" />
+        <polygon points="34.39,14.77 33.65,15.20 32.91,14.77 32.91,13.92 33.65,13.50 34.39,13.92" fill="#101214" />
+        <polygon points="36.49,14.77 35.75,15.20 35.01,14.77 35.01,13.92 35.75,13.50 36.49,13.92" fill="#101214" />
+        <polygon points="38.59,14.77 37.85,15.20 37.11,14.77 37.11,13.92 37.85,13.50 38.59,13.92" fill="#101214" />
+        <polygon points="40.69,14.77 39.95,15.20 39.21,14.77 39.21,13.92 39.95,13.50 40.69,13.92" fill="#101214" />
+        <polygon points="42.79,14.77 42.05,15.20 41.31,14.77 41.31,13.92 42.05,13.50 42.79,13.92" fill="#101214" />
+        <polygon points="44.89,14.77 44.15,15.20 43.41,14.77 43.41,13.92 44.15,13.50 44.89,13.92" fill="#101214" />
+        <polygon points="46.99,14.77 46.25,15.20 45.51,14.77 45.51,13.92 46.25,13.50 46.99,13.92" fill="#101214" />
+        <polygon points="49.09,14.77 48.35,15.20 47.61,14.77 47.61,13.92 48.35,13.50 49.09,13.92" fill="#101214" />
+        <polygon points="51.19,14.77 50.45,15.20 49.71,14.77 49.71,13.92 50.45,13.50 51.19,13.92" fill="#101214" />
+        <polygon points="53.29,14.77 52.55,15.20 51.81,14.77 51.81,13.92 52.55,13.50 53.29,13.92" fill="#101214" />
+        <polygon points="55.39,14.77 54.65,15.20 53.91,14.77 53.91,13.92 54.65,13.50 55.39,13.92" fill="#101214" />
+        <polygon points="57.49,14.77 56.75,15.20 56.01,14.77 56.01,13.92 56.75,13.50 57.49,13.92" fill="#101214" />
+        <polygon points="59.59,14.77 58.85,15.20 58.11,14.77 58.11,13.92 58.85,13.50 59.59,13.92" fill="#101214" />
+        <polygon points="61.69,14.77 60.95,15.20 60.21,14.77 60.21,13.92 60.95,13.50 61.69,13.92" fill="#101214" />
+        <polygon points="27.04,16.62 26.30,17.05 25.56,16.62 25.56,15.77 26.30,15.35 27.04,15.78" fill="#101214" />
+        <polygon points="29.14,16.62 28.40,17.05 27.66,16.62 27.66,15.77 28.40,15.35 29.14,15.78" fill="#101214" />
+        <polygon points="31.24,16.62 30.50,17.05 29.76,16.62 29.76,15.77 30.50,15.35 31.24,15.78" fill="#101214" />
+        <polygon points="33.34,16.62 32.60,17.05 31.86,16.62 31.86,15.77 32.60,15.35 33.34,15.78" fill="#101214" />
+        <polygon points="35.44,16.62 34.70,17.05 33.96,16.62 33.96,15.77 34.70,15.35 35.44,15.78" fill="#101214" />
+        <polygon points="37.54,16.62 36.80,17.05 36.06,16.62 36.06,15.77 36.80,15.35 37.54,15.78" fill="#101214" />
+        <polygon points="39.64,16.62 38.90,17.05 38.16,16.62 38.16,15.77 38.90,15.35 39.64,15.78" fill="#101214" />
+        <polygon points="41.74,16.62 41.00,17.05 40.26,16.62 40.26,15.77 41.00,15.35 41.74,15.78" fill="#101214" />
+        <polygon points="43.84,16.62 43.10,17.05 42.36,16.62 42.36,15.77 43.10,15.35 43.84,15.78" fill="#101214" />
+        <polygon points="45.94,16.62 45.20,17.05 44.46,16.62 44.46,15.77 45.20,15.35 45.94,15.78" fill="#101214" />
+        <polygon points="48.04,16.62 47.30,17.05 46.56,16.62 46.56,15.77 47.30,15.35 48.04,15.78" fill="#101214" />
+        <polygon points="50.14,16.62 49.40,17.05 48.66,16.62 48.66,15.77 49.40,15.35 50.14,15.78" fill="#101214" />
+        <polygon points="52.24,16.62 51.50,17.05 50.76,16.62 50.76,15.77 51.50,15.35 52.24,15.78" fill="#101214" />
+        <polygon points="54.34,16.62 53.60,17.05 52.86,16.62 52.86,15.77 53.60,15.35 54.34,15.78" fill="#101214" />
+        <polygon points="56.44,16.62 55.70,17.05 54.96,16.62 54.96,15.77 55.70,15.35 56.44,15.78" fill="#101214" />
+        <polygon points="58.54,16.62 57.80,17.05 57.06,16.62 57.06,15.77 57.80,15.35 58.54,15.78" fill="#101214" />
+        <polygon points="60.64,16.62 59.90,17.05 59.16,16.62 59.16,15.77 59.90,15.35 60.64,15.78" fill="#101214" />
+        <polygon points="25.99,18.48 25.25,18.90 24.51,18.48 24.51,17.62 25.25,17.20 25.99,17.62" fill="#101214" />
+        <polygon points="28.09,18.48 27.35,18.90 26.61,18.48 26.61,17.62 27.35,17.20 28.09,17.62" fill="#101214" />
+        <polygon points="30.19,18.48 29.45,18.90 28.71,18.48 28.71,17.62 29.45,17.20 30.19,17.62" fill="#101214" />
+        <polygon points="32.29,18.48 31.55,18.90 30.81,18.48 30.81,17.62 31.55,17.20 32.29,17.62" fill="#101214" />
+        <polygon points="34.39,18.48 33.65,18.90 32.91,18.48 32.91,17.62 33.65,17.20 34.39,17.62" fill="#101214" />
+        <polygon points="36.49,18.48 35.75,18.90 35.01,18.48 35.01,17.62 35.75,17.20 36.49,17.62" fill="#101214" />
+        <polygon points="38.59,18.48 37.85,18.90 37.11,18.48 37.11,17.62 37.85,17.20 38.59,17.62" fill="#101214" />
+        <polygon points="40.69,18.48 39.95,18.90 39.21,18.48 39.21,17.62 39.95,17.20 40.69,17.62" fill="#101214" />
+        <polygon points="42.79,18.48 42.05,18.90 41.31,18.48 41.31,17.62 42.05,17.20 42.79,17.62" fill="#101214" />
+        <polygon points="44.89,18.48 44.15,18.90 43.41,18.48 43.41,17.62 44.15,17.20 44.89,17.62" fill="#101214" />
+        <polygon points="46.99,18.48 46.25,18.90 45.51,18.48 45.51,17.62 46.25,17.20 46.99,17.62" fill="#101214" />
+        <polygon points="49.09,18.48 48.35,18.90 47.61,18.48 47.61,17.62 48.35,17.20 49.09,17.62" fill="#101214" />
+        <polygon points="51.19,18.48 50.45,18.90 49.71,18.48 49.71,17.62 50.45,17.20 51.19,17.62" fill="#101214" />
+        <polygon points="53.29,18.48 52.55,18.90 51.81,18.48 51.81,17.62 52.55,17.20 53.29,17.62" fill="#101214" />
+        <polygon points="55.39,18.48 54.65,18.90 53.91,18.48 53.91,17.62 54.65,17.20 55.39,17.62" fill="#101214" />
+        <polygon points="57.49,18.48 56.75,18.90 56.01,18.48 56.01,17.62 56.75,17.20 57.49,17.62" fill="#101214" />
+        <polygon points="59.59,18.48 58.85,18.90 58.11,18.48 58.11,17.62 58.85,17.20 59.59,17.62" fill="#101214" />
+        <polygon points="61.69,18.48 60.95,18.90 60.21,18.48 60.21,17.62 60.95,17.20 61.69,17.62" fill="#101214" />
+        <polygon points="27.04,20.33 26.30,20.75 25.56,20.33 25.56,19.48 26.30,19.05 27.04,19.48" fill="#101214" />
+        <polygon points="29.14,20.33 28.40,20.75 27.66,20.33 27.66,19.48 28.40,19.05 29.14,19.48" fill="#101214" />
+        <polygon points="31.24,20.33 30.50,20.75 29.76,20.33 29.76,19.48 30.50,19.05 31.24,19.48" fill="#101214" />
+        <polygon points="33.34,20.33 32.60,20.75 31.86,20.33 31.86,19.48 32.60,19.05 33.34,19.48" fill="#101214" />
+        <polygon points="35.44,20.33 34.70,20.75 33.96,20.33 33.96,19.48 34.70,19.05 35.44,19.48" fill="#101214" />
+        <polygon points="37.54,20.33 36.80,20.75 36.06,20.33 36.06,19.48 36.80,19.05 37.54,19.48" fill="#101214" />
+        <polygon points="39.64,20.33 38.90,20.75 38.16,20.33 38.16,19.48 38.90,19.05 39.64,19.48" fill="#101214" />
+        <polygon points="41.74,20.33 41.00,20.75 40.26,20.33 40.26,19.48 41.00,19.05 41.74,19.48" fill="#101214" />
+        <polygon points="43.84,20.33 43.10,20.75 42.36,20.33 42.36,19.48 43.10,19.05 43.84,19.48" fill="#101214" />
+        <polygon points="45.94,20.33 45.20,20.75 44.46,20.33 44.46,19.48 45.20,19.05 45.94,19.48" fill="#101214" />
+        <polygon points="48.04,20.33 47.30,20.75 46.56,20.33 46.56,19.48 47.30,19.05 48.04,19.48" fill="#101214" />
+        <polygon points="50.14,20.33 49.40,20.75 48.66,20.33 48.66,19.48 49.40,19.05 50.14,19.48" fill="#101214" />
+        <polygon points="52.24,20.33 51.50,20.75 50.76,20.33 50.76,19.48 51.50,19.05 52.24,19.48" fill="#101214" />
+        <polygon points="54.34,20.33 53.60,20.75 52.86,20.33 52.86,19.48 53.60,19.05 54.34,19.48" fill="#101214" />
+        <polygon points="56.44,20.33 55.70,20.75 54.96,20.33 54.96,19.48 55.70,19.05 56.44,19.48" fill="#101214" />
+        <polygon points="58.54,20.33 57.80,20.75 57.06,20.33 57.06,19.48 57.80,19.05 58.54,19.48" fill="#101214" />
+        <polygon points="60.64,20.33 59.90,20.75 59.16,20.33 59.16,19.48 59.90,19.05 60.64,19.48" fill="#101214" />
+        <polygon points="25.99,22.18 25.25,22.60 24.51,22.18 24.51,21.33 25.25,20.90 25.99,21.33" fill="#101214" />
+        <polygon points="28.09,22.18 27.35,22.60 26.61,22.18 26.61,21.33 27.35,20.90 28.09,21.33" fill="#101214" />
+        <polygon points="30.19,22.18 29.45,22.60 28.71,22.18 28.71,21.33 29.45,20.90 30.19,21.33" fill="#101214" />
+        <polygon points="32.29,22.18 31.55,22.60 30.81,22.18 30.81,21.33 31.55,20.90 32.29,21.33" fill="#101214" />
+        <polygon points="34.39,22.18 33.65,22.60 32.91,22.18 32.91,21.33 33.65,20.90 34.39,21.33" fill="#101214" />
+        <polygon points="36.49,22.18 35.75,22.60 35.01,22.18 35.01,21.33 35.75,20.90 36.49,21.33" fill="#101214" />
+        <polygon points="38.59,22.18 37.85,22.60 37.11,22.18 37.11,21.33 37.85,20.90 38.59,21.33" fill="#101214" />
+        <polygon points="40.69,22.18 39.95,22.60 39.21,22.18 39.21,21.33 39.95,20.90 40.69,21.33" fill="#101214" />
+        <polygon points="42.79,22.18 42.05,22.60 41.31,22.18 41.31,21.33 42.05,20.90 42.79,21.33" fill="#101214" />
+        <polygon points="44.89,22.18 44.15,22.60 43.41,22.18 43.41,21.33 44.15,20.90 44.89,21.33" fill="#101214" />
+        <polygon points="46.99,22.18 46.25,22.60 45.51,22.18 45.51,21.33 46.25,20.90 46.99,21.33" fill="#101214" />
+        <polygon points="49.09,22.18 48.35,22.60 47.61,22.18 47.61,21.33 48.35,20.90 49.09,21.33" fill="#101214" />
+        <polygon points="51.19,22.18 50.45,22.60 49.71,22.18 49.71,21.33 50.45,20.90 51.19,21.33" fill="#101214" />
+        <polygon points="53.29,22.18 52.55,22.60 51.81,22.18 51.81,21.33 52.55,20.90 53.29,21.33" fill="#101214" />
+        <polygon points="55.39,22.18 54.65,22.60 53.91,22.18 53.91,21.33 54.65,20.90 55.39,21.33" fill="#101214" />
+        <polygon points="57.49,22.18 56.75,22.60 56.01,22.18 56.01,21.33 56.75,20.90 57.49,21.33" fill="#101214" />
+        <polygon points="59.59,22.18 58.85,22.60 58.11,22.18 58.11,21.33 58.85,20.90 59.59,21.33" fill="#101214" />
+        <polygon points="61.69,22.18 60.95,22.60 60.21,22.18 60.21,21.33 60.95,20.90 61.69,21.33" fill="#101214" />
+        <polygon points="27.04,24.03 26.30,24.45 25.56,24.03 25.56,23.18 26.30,22.75 27.04,23.18" fill="#101214" />
+        <polygon points="29.14,24.03 28.40,24.45 27.66,24.03 27.66,23.18 28.40,22.75 29.14,23.18" fill="#101214" />
+        <polygon points="31.24,24.03 30.50,24.45 29.76,24.03 29.76,23.18 30.50,22.75 31.24,23.18" fill="#101214" />
+        <polygon points="33.34,24.03 32.60,24.45 31.86,24.03 31.86,23.18 32.60,22.75 33.34,23.18" fill="#101214" />
+        <polygon points="35.44,24.03 34.70,24.45 33.96,24.03 33.96,23.18 34.70,22.75 35.44,23.18" fill="#101214" />
+        <polygon points="37.54,24.03 36.80,24.45 36.06,24.03 36.06,23.18 36.80,22.75 37.54,23.18" fill="#101214" />
+        <polygon points="39.64,24.03 38.90,24.45 38.16,24.03 38.16,23.18 38.90,22.75 39.64,23.18" fill="#101214" />
+        <polygon points="41.74,24.03 41.00,24.45 40.26,24.03 40.26,23.18 41.00,22.75 41.74,23.18" fill="#101214" />
+        <polygon points="43.84,24.03 43.10,24.45 42.36,24.03 42.36,23.18 43.10,22.75 43.84,23.18" fill="#101214" />
+        <polygon points="45.94,24.03 45.20,24.45 44.46,24.03 44.46,23.18 45.20,22.75 45.94,23.18" fill="#101214" />
+        <polygon points="48.04,24.03 47.30,24.45 46.56,24.03 46.56,23.18 47.30,22.75 48.04,23.18" fill="#101214" />
+        <polygon points="50.14,24.03 49.40,24.45 48.66,24.03 48.66,23.18 49.40,22.75 50.14,23.18" fill="#101214" />
+        <polygon points="52.24,24.03 51.50,24.45 50.76,24.03 50.76,23.18 51.50,22.75 52.24,23.18" fill="#101214" />
+        <polygon points="54.34,24.03 53.60,24.45 52.86,24.03 52.86,23.18 53.60,22.75 54.34,23.18" fill="#101214" />
+        <polygon points="56.44,24.03 55.70,24.45 54.96,24.03 54.96,23.18 55.70,22.75 56.44,23.18" fill="#101214" />
+        <polygon points="58.54,24.03 57.80,24.45 57.06,24.03 57.06,23.18 57.80,22.75 58.54,23.18" fill="#101214" />
+        <polygon points="60.64,24.03 59.90,24.45 59.16,24.03 59.16,23.18 59.90,22.75 60.64,23.18" fill="#101214" />
+        <rect x="63.0" y="5.8" width="122.5" height="7.4" rx="1.2" fill="#b9bdc2" />
+        <polygon points="64.99,7.37 64.25,7.80 63.51,7.38 63.51,6.52 64.25,6.10 64.99,6.52" fill="#101214" />
+        <polygon points="67.09,7.37 66.35,7.80 65.61,7.38 65.61,6.52 66.35,6.10 67.09,6.52" fill="#101214" />
+        <polygon points="69.19,7.37 68.45,7.80 67.71,7.38 67.71,6.52 68.45,6.10 69.19,6.52" fill="#101214" />
+        <polygon points="71.29,7.37 70.55,7.80 69.81,7.38 69.81,6.52 70.55,6.10 71.29,6.52" fill="#101214" />
+        <polygon points="73.39,7.37 72.65,7.80 71.91,7.38 71.91,6.52 72.65,6.10 73.39,6.52" fill="#101214" />
+        <polygon points="75.49,7.37 74.75,7.80 74.01,7.38 74.01,6.52 74.75,6.10 75.49,6.52" fill="#101214" />
+        <polygon points="77.59,7.37 76.85,7.80 76.11,7.38 76.11,6.52 76.85,6.10 77.59,6.52" fill="#101214" />
+        <polygon points="79.69,7.37 78.95,7.80 78.21,7.38 78.21,6.52 78.95,6.10 79.69,6.52" fill="#101214" />
+        <polygon points="81.79,7.37 81.05,7.80 80.31,7.38 80.31,6.52 81.05,6.10 81.79,6.52" fill="#101214" />
+        <polygon points="83.89,7.37 83.15,7.80 82.41,7.38 82.41,6.52 83.15,6.10 83.89,6.52" fill="#101214" />
+        <polygon points="85.99,7.37 85.25,7.80 84.51,7.38 84.51,6.52 85.25,6.10 85.99,6.52" fill="#101214" />
+        <polygon points="88.09,7.37 87.35,7.80 86.61,7.38 86.61,6.52 87.35,6.10 88.09,6.52" fill="#101214" />
+        <polygon points="90.19,7.37 89.45,7.80 88.71,7.38 88.71,6.52 89.45,6.10 90.19,6.52" fill="#101214" />
+        <polygon points="92.29,7.37 91.55,7.80 90.81,7.38 90.81,6.52 91.55,6.10 92.29,6.52" fill="#101214" />
+        <polygon points="94.39,7.37 93.65,7.80 92.91,7.38 92.91,6.52 93.65,6.10 94.39,6.52" fill="#101214" />
+        <polygon points="96.49,7.37 95.75,7.80 95.01,7.38 95.01,6.52 95.75,6.10 96.49,6.52" fill="#101214" />
+        <polygon points="98.59,7.37 97.85,7.80 97.11,7.38 97.11,6.52 97.85,6.10 98.59,6.52" fill="#101214" />
+        <polygon points="100.69,7.37 99.95,7.80 99.21,7.38 99.21,6.52 99.95,6.10 100.69,6.52" fill="#101214" />
+        <polygon points="102.79,7.37 102.05,7.80 101.31,7.38 101.31,6.52 102.05,6.10 102.79,6.52" fill="#101214" />
+        <polygon points="104.89,7.37 104.15,7.80 103.41,7.38 103.41,6.52 104.15,6.10 104.89,6.52" fill="#101214" />
+        <polygon points="106.99,7.37 106.25,7.80 105.51,7.38 105.51,6.52 106.25,6.10 106.99,6.52" fill="#101214" />
+        <polygon points="109.09,7.37 108.35,7.80 107.61,7.38 107.61,6.52 108.35,6.10 109.09,6.52" fill="#101214" />
+        <polygon points="111.19,7.37 110.45,7.80 109.71,7.38 109.71,6.52 110.45,6.10 111.19,6.52" fill="#101214" />
+        <polygon points="113.29,7.37 112.55,7.80 111.81,7.38 111.81,6.52 112.55,6.10 113.29,6.52" fill="#101214" />
+        <polygon points="115.39,7.37 114.65,7.80 113.91,7.38 113.91,6.52 114.65,6.10 115.39,6.52" fill="#101214" />
+        <polygon points="117.49,7.37 116.75,7.80 116.01,7.38 116.01,6.52 116.75,6.10 117.49,6.52" fill="#101214" />
+        <polygon points="119.59,7.37 118.85,7.80 118.11,7.38 118.11,6.52 118.85,6.10 119.59,6.52" fill="#101214" />
+        <polygon points="121.69,7.37 120.95,7.80 120.21,7.38 120.21,6.52 120.95,6.10 121.69,6.52" fill="#101214" />
+        <polygon points="123.79,7.37 123.05,7.80 122.31,7.38 122.31,6.52 123.05,6.10 123.79,6.52" fill="#101214" />
+        <polygon points="125.89,7.37 125.15,7.80 124.41,7.38 124.41,6.52 125.15,6.10 125.89,6.52" fill="#101214" />
+        <polygon points="127.99,7.37 127.25,7.80 126.51,7.38 126.51,6.52 127.25,6.10 127.99,6.52" fill="#101214" />
+        <polygon points="130.09,7.37 129.35,7.80 128.61,7.38 128.61,6.52 129.35,6.10 130.09,6.52" fill="#101214" />
+        <polygon points="132.19,7.37 131.45,7.80 130.71,7.38 130.71,6.52 131.45,6.10 132.19,6.52" fill="#101214" />
+        <polygon points="134.29,7.37 133.55,7.80 132.81,7.38 132.81,6.52 133.55,6.10 134.29,6.52" fill="#101214" />
+        <polygon points="136.39,7.37 135.65,7.80 134.91,7.38 134.91,6.52 135.65,6.10 136.39,6.52" fill="#101214" />
+        <polygon points="138.49,7.37 137.75,7.80 137.01,7.38 137.01,6.52 137.75,6.10 138.49,6.52" fill="#101214" />
+        <polygon points="140.59,7.37 139.85,7.80 139.11,7.38 139.11,6.52 139.85,6.10 140.59,6.52" fill="#101214" />
+        <polygon points="142.69,7.37 141.95,7.80 141.21,7.38 141.21,6.52 141.95,6.10 142.69,6.52" fill="#101214" />
+        <polygon points="144.79,7.37 144.05,7.80 143.31,7.38 143.31,6.52 144.05,6.10 144.79,6.52" fill="#101214" />
+        <polygon points="146.89,7.37 146.15,7.80 145.41,7.38 145.41,6.52 146.15,6.10 146.89,6.52" fill="#101214" />
+        <polygon points="148.99,7.37 148.25,7.80 147.51,7.38 147.51,6.52 148.25,6.10 148.99,6.52" fill="#101214" />
+        <polygon points="151.09,7.37 150.35,7.80 149.61,7.38 149.61,6.52 150.35,6.10 151.09,6.52" fill="#101214" />
+        <polygon points="153.19,7.37 152.45,7.80 151.71,7.38 151.71,6.52 152.45,6.10 153.19,6.52" fill="#101214" />
+        <polygon points="155.29,7.37 154.55,7.80 153.81,7.38 153.81,6.52 154.55,6.10 155.29,6.52" fill="#101214" />
+        <polygon points="157.39,7.37 156.65,7.80 155.91,7.38 155.91,6.52 156.65,6.10 157.39,6.52" fill="#101214" />
+        <polygon points="159.49,7.37 158.75,7.80 158.01,7.38 158.01,6.52 158.75,6.10 159.49,6.52" fill="#101214" />
+        <polygon points="161.59,7.37 160.85,7.80 160.11,7.38 160.11,6.52 160.85,6.10 161.59,6.52" fill="#101214" />
+        <polygon points="163.69,7.37 162.95,7.80 162.21,7.38 162.21,6.52 162.95,6.10 163.69,6.52" fill="#101214" />
+        <polygon points="165.79,7.37 165.05,7.80 164.31,7.38 164.31,6.52 165.05,6.10 165.79,6.52" fill="#101214" />
+        <polygon points="167.89,7.37 167.15,7.80 166.41,7.38 166.41,6.52 167.15,6.10 167.89,6.52" fill="#101214" />
+        <polygon points="169.99,7.37 169.25,7.80 168.51,7.38 168.51,6.52 169.25,6.10 169.99,6.52" fill="#101214" />
+        <polygon points="172.09,7.37 171.35,7.80 170.61,7.38 170.61,6.52 171.35,6.10 172.09,6.52" fill="#101214" />
+        <polygon points="174.19,7.37 173.45,7.80 172.71,7.38 172.71,6.52 173.45,6.10 174.19,6.52" fill="#101214" />
+        <polygon points="176.29,7.37 175.55,7.80 174.81,7.38 174.81,6.52 175.55,6.10 176.29,6.52" fill="#101214" />
+        <polygon points="178.39,7.37 177.65,7.80 176.91,7.38 176.91,6.52 177.65,6.10 178.39,6.52" fill="#101214" />
+        <polygon points="180.49,7.37 179.75,7.80 179.01,7.38 179.01,6.52 179.75,6.10 180.49,6.52" fill="#101214" />
+        <polygon points="182.59,7.37 181.85,7.80 181.11,7.38 181.11,6.52 181.85,6.10 182.59,6.52" fill="#101214" />
+        <polygon points="184.69,7.37 183.95,7.80 183.21,7.38 183.21,6.52 183.95,6.10 184.69,6.52" fill="#101214" />
+        <polygon points="66.04,9.22 65.30,9.65 64.56,9.22 64.56,8.38 65.30,7.95 66.04,8.38" fill="#101214" />
+        <polygon points="68.14,9.22 67.40,9.65 66.66,9.22 66.66,8.38 67.40,7.95 68.14,8.38" fill="#101214" />
+        <polygon points="70.24,9.22 69.50,9.65 68.76,9.22 68.76,8.38 69.50,7.95 70.24,8.38" fill="#101214" />
+        <polygon points="72.34,9.22 71.60,9.65 70.86,9.22 70.86,8.38 71.60,7.95 72.34,8.38" fill="#101214" />
+        <polygon points="74.44,9.22 73.70,9.65 72.96,9.22 72.96,8.38 73.70,7.95 74.44,8.38" fill="#101214" />
+        <polygon points="76.54,9.22 75.80,9.65 75.06,9.22 75.06,8.38 75.80,7.95 76.54,8.38" fill="#101214" />
+        <polygon points="78.64,9.22 77.90,9.65 77.16,9.22 77.16,8.38 77.90,7.95 78.64,8.38" fill="#101214" />
+        <polygon points="80.74,9.22 80.00,9.65 79.26,9.22 79.26,8.38 80.00,7.95 80.74,8.38" fill="#101214" />
+        <polygon points="82.84,9.22 82.10,9.65 81.36,9.22 81.36,8.38 82.10,7.95 82.84,8.38" fill="#101214" />
+        <polygon points="84.94,9.22 84.20,9.65 83.46,9.22 83.46,8.38 84.20,7.95 84.94,8.38" fill="#101214" />
+        <polygon points="87.04,9.22 86.30,9.65 85.56,9.22 85.56,8.38 86.30,7.95 87.04,8.38" fill="#101214" />
+        <polygon points="89.14,9.22 88.40,9.65 87.66,9.22 87.66,8.38 88.40,7.95 89.14,8.38" fill="#101214" />
+        <polygon points="91.24,9.22 90.50,9.65 89.76,9.22 89.76,8.38 90.50,7.95 91.24,8.38" fill="#101214" />
+        <polygon points="93.34,9.22 92.60,9.65 91.86,9.22 91.86,8.38 92.60,7.95 93.34,8.38" fill="#101214" />
+        <polygon points="95.44,9.22 94.70,9.65 93.96,9.22 93.96,8.38 94.70,7.95 95.44,8.38" fill="#101214" />
+        <polygon points="97.54,9.22 96.80,9.65 96.06,9.22 96.06,8.38 96.80,7.95 97.54,8.38" fill="#101214" />
+        <polygon points="99.64,9.22 98.90,9.65 98.16,9.22 98.16,8.38 98.90,7.95 99.64,8.38" fill="#101214" />
+        <polygon points="101.74,9.22 101.00,9.65 100.26,9.22 100.26,8.38 101.00,7.95 101.74,8.38" fill="#101214" />
+        <polygon points="103.84,9.22 103.10,9.65 102.36,9.22 102.36,8.38 103.10,7.95 103.84,8.38" fill="#101214" />
+        <polygon points="105.94,9.22 105.20,9.65 104.46,9.22 104.46,8.38 105.20,7.95 105.94,8.38" fill="#101214" />
+        <polygon points="108.04,9.22 107.30,9.65 106.56,9.22 106.56,8.38 107.30,7.95 108.04,8.38" fill="#101214" />
+        <polygon points="110.14,9.22 109.40,9.65 108.66,9.22 108.66,8.38 109.40,7.95 110.14,8.38" fill="#101214" />
+        <polygon points="112.24,9.22 111.50,9.65 110.76,9.22 110.76,8.38 111.50,7.95 112.24,8.38" fill="#101214" />
+        <polygon points="114.34,9.22 113.60,9.65 112.86,9.22 112.86,8.38 113.60,7.95 114.34,8.38" fill="#101214" />
+        <polygon points="116.44,9.22 115.70,9.65 114.96,9.22 114.96,8.38 115.70,7.95 116.44,8.38" fill="#101214" />
+        <polygon points="118.54,9.22 117.80,9.65 117.06,9.22 117.06,8.38 117.80,7.95 118.54,8.38" fill="#101214" />
+        <polygon points="120.64,9.22 119.90,9.65 119.16,9.22 119.16,8.38 119.90,7.95 120.64,8.38" fill="#101214" />
+        <polygon points="122.74,9.22 122.00,9.65 121.26,9.22 121.26,8.38 122.00,7.95 122.74,8.38" fill="#101214" />
+        <polygon points="124.84,9.22 124.10,9.65 123.36,9.22 123.36,8.38 124.10,7.95 124.84,8.38" fill="#101214" />
+        <polygon points="126.94,9.22 126.20,9.65 125.46,9.22 125.46,8.38 126.20,7.95 126.94,8.38" fill="#101214" />
+        <polygon points="129.04,9.22 128.30,9.65 127.56,9.22 127.56,8.38 128.30,7.95 129.04,8.38" fill="#101214" />
+        <polygon points="131.14,9.22 130.40,9.65 129.66,9.22 129.66,8.38 130.40,7.95 131.14,8.38" fill="#101214" />
+        <polygon points="133.24,9.22 132.50,9.65 131.76,9.22 131.76,8.38 132.50,7.95 133.24,8.38" fill="#101214" />
+        <polygon points="135.34,9.22 134.60,9.65 133.86,9.22 133.86,8.38 134.60,7.95 135.34,8.38" fill="#101214" />
+        <polygon points="137.44,9.22 136.70,9.65 135.96,9.22 135.96,8.38 136.70,7.95 137.44,8.38" fill="#101214" />
+        <polygon points="139.54,9.22 138.80,9.65 138.06,9.22 138.06,8.38 138.80,7.95 139.54,8.38" fill="#101214" />
+        <polygon points="141.64,9.22 140.90,9.65 140.16,9.22 140.16,8.38 140.90,7.95 141.64,8.38" fill="#101214" />
+        <polygon points="143.74,9.22 143.00,9.65 142.26,9.22 142.26,8.38 143.00,7.95 143.74,8.38" fill="#101214" />
+        <polygon points="145.84,9.22 145.10,9.65 144.36,9.22 144.36,8.38 145.10,7.95 145.84,8.38" fill="#101214" />
+        <polygon points="147.94,9.22 147.20,9.65 146.46,9.22 146.46,8.38 147.20,7.95 147.94,8.38" fill="#101214" />
+        <polygon points="150.04,9.22 149.30,9.65 148.56,9.22 148.56,8.38 149.30,7.95 150.04,8.38" fill="#101214" />
+        <polygon points="152.14,9.22 151.40,9.65 150.66,9.22 150.66,8.38 151.40,7.95 152.14,8.38" fill="#101214" />
+        <polygon points="154.24,9.22 153.50,9.65 152.76,9.22 152.76,8.38 153.50,7.95 154.24,8.38" fill="#101214" />
+        <polygon points="156.34,9.22 155.60,9.65 154.86,9.22 154.86,8.38 155.60,7.95 156.34,8.38" fill="#101214" />
+        <polygon points="158.44,9.22 157.70,9.65 156.96,9.22 156.96,8.38 157.70,7.95 158.44,8.38" fill="#101214" />
+        <polygon points="160.54,9.22 159.80,9.65 159.06,9.22 159.06,8.38 159.80,7.95 160.54,8.38" fill="#101214" />
+        <polygon points="162.64,9.22 161.90,9.65 161.16,9.22 161.16,8.38 161.90,7.95 162.64,8.38" fill="#101214" />
+        <polygon points="164.74,9.22 164.00,9.65 163.26,9.22 163.26,8.38 164.00,7.95 164.74,8.38" fill="#101214" />
+        <polygon points="166.84,9.22 166.10,9.65 165.36,9.22 165.36,8.38 166.10,7.95 166.84,8.38" fill="#101214" />
+        <polygon points="168.94,9.22 168.20,9.65 167.46,9.22 167.46,8.38 168.20,7.95 168.94,8.38" fill="#101214" />
+        <polygon points="171.04,9.22 170.30,9.65 169.56,9.22 169.56,8.38 170.30,7.95 171.04,8.38" fill="#101214" />
+        <polygon points="173.14,9.22 172.40,9.65 171.66,9.22 171.66,8.38 172.40,7.95 173.14,8.38" fill="#101214" />
+        <polygon points="175.24,9.22 174.50,9.65 173.76,9.22 173.76,8.38 174.50,7.95 175.24,8.38" fill="#101214" />
+        <polygon points="177.34,9.22 176.60,9.65 175.86,9.22 175.86,8.38 176.60,7.95 177.34,8.38" fill="#101214" />
+        <polygon points="179.44,9.22 178.70,9.65 177.96,9.22 177.96,8.38 178.70,7.95 179.44,8.38" fill="#101214" />
+        <polygon points="181.54,9.22 180.80,9.65 180.06,9.22 180.06,8.38 180.80,7.95 181.54,8.38" fill="#101214" />
+        <polygon points="183.64,9.22 182.90,9.65 182.16,9.22 182.16,8.38 182.90,7.95 183.64,8.38" fill="#101214" />
+        <polygon points="64.99,11.07 64.25,11.50 63.51,11.07 63.51,10.22 64.25,9.80 64.99,10.22" fill="#101214" />
+        <polygon points="67.09,11.07 66.35,11.50 65.61,11.07 65.61,10.22 66.35,9.80 67.09,10.22" fill="#101214" />
+        <polygon points="69.19,11.07 68.45,11.50 67.71,11.07 67.71,10.22 68.45,9.80 69.19,10.22" fill="#101214" />
+        <polygon points="71.29,11.07 70.55,11.50 69.81,11.07 69.81,10.22 70.55,9.80 71.29,10.22" fill="#101214" />
+        <polygon points="73.39,11.07 72.65,11.50 71.91,11.07 71.91,10.22 72.65,9.80 73.39,10.22" fill="#101214" />
+        <polygon points="75.49,11.07 74.75,11.50 74.01,11.07 74.01,10.22 74.75,9.80 75.49,10.22" fill="#101214" />
+        <polygon points="77.59,11.07 76.85,11.50 76.11,11.07 76.11,10.22 76.85,9.80 77.59,10.22" fill="#101214" />
+        <polygon points="79.69,11.07 78.95,11.50 78.21,11.07 78.21,10.22 78.95,9.80 79.69,10.22" fill="#101214" />
+        <polygon points="81.79,11.07 81.05,11.50 80.31,11.07 80.31,10.22 81.05,9.80 81.79,10.22" fill="#101214" />
+        <polygon points="83.89,11.07 83.15,11.50 82.41,11.07 82.41,10.22 83.15,9.80 83.89,10.22" fill="#101214" />
+        <polygon points="85.99,11.07 85.25,11.50 84.51,11.07 84.51,10.22 85.25,9.80 85.99,10.22" fill="#101214" />
+        <polygon points="88.09,11.07 87.35,11.50 86.61,11.07 86.61,10.22 87.35,9.80 88.09,10.22" fill="#101214" />
+        <polygon points="90.19,11.07 89.45,11.50 88.71,11.07 88.71,10.22 89.45,9.80 90.19,10.22" fill="#101214" />
+        <polygon points="92.29,11.07 91.55,11.50 90.81,11.07 90.81,10.22 91.55,9.80 92.29,10.22" fill="#101214" />
+        <polygon points="94.39,11.07 93.65,11.50 92.91,11.07 92.91,10.22 93.65,9.80 94.39,10.22" fill="#101214" />
+        <polygon points="96.49,11.07 95.75,11.50 95.01,11.07 95.01,10.22 95.75,9.80 96.49,10.22" fill="#101214" />
+        <polygon points="98.59,11.07 97.85,11.50 97.11,11.07 97.11,10.22 97.85,9.80 98.59,10.22" fill="#101214" />
+        <polygon points="100.69,11.07 99.95,11.50 99.21,11.07 99.21,10.22 99.95,9.80 100.69,10.22" fill="#101214" />
+        <polygon points="102.79,11.07 102.05,11.50 101.31,11.07 101.31,10.22 102.05,9.80 102.79,10.22" fill="#101214" />
+        <polygon points="104.89,11.07 104.15,11.50 103.41,11.07 103.41,10.22 104.15,9.80 104.89,10.22" fill="#101214" />
+        <polygon points="106.99,11.07 106.25,11.50 105.51,11.07 105.51,10.22 106.25,9.80 106.99,10.22" fill="#101214" />
+        <polygon points="109.09,11.07 108.35,11.50 107.61,11.07 107.61,10.22 108.35,9.80 109.09,10.22" fill="#101214" />
+        <polygon points="111.19,11.07 110.45,11.50 109.71,11.07 109.71,10.22 110.45,9.80 111.19,10.22" fill="#101214" />
+        <polygon points="113.29,11.07 112.55,11.50 111.81,11.07 111.81,10.22 112.55,9.80 113.29,10.22" fill="#101214" />
+        <polygon points="115.39,11.07 114.65,11.50 113.91,11.07 113.91,10.22 114.65,9.80 115.39,10.22" fill="#101214" />
+        <polygon points="117.49,11.07 116.75,11.50 116.01,11.07 116.01,10.22 116.75,9.80 117.49,10.22" fill="#101214" />
+        <polygon points="119.59,11.07 118.85,11.50 118.11,11.07 118.11,10.22 118.85,9.80 119.59,10.22" fill="#101214" />
+        <polygon points="121.69,11.07 120.95,11.50 120.21,11.07 120.21,10.22 120.95,9.80 121.69,10.22" fill="#101214" />
+        <polygon points="123.79,11.07 123.05,11.50 122.31,11.07 122.31,10.22 123.05,9.80 123.79,10.22" fill="#101214" />
+        <polygon points="125.89,11.07 125.15,11.50 124.41,11.07 124.41,10.22 125.15,9.80 125.89,10.22" fill="#101214" />
+        <polygon points="127.99,11.07 127.25,11.50 126.51,11.07 126.51,10.22 127.25,9.80 127.99,10.22" fill="#101214" />
+        <polygon points="130.09,11.07 129.35,11.50 128.61,11.07 128.61,10.22 129.35,9.80 130.09,10.22" fill="#101214" />
+        <polygon points="132.19,11.07 131.45,11.50 130.71,11.07 130.71,10.22 131.45,9.80 132.19,10.22" fill="#101214" />
+        <polygon points="134.29,11.07 133.55,11.50 132.81,11.07 132.81,10.22 133.55,9.80 134.29,10.22" fill="#101214" />
+        <polygon points="136.39,11.07 135.65,11.50 134.91,11.07 134.91,10.22 135.65,9.80 136.39,10.22" fill="#101214" />
+        <polygon points="138.49,11.07 137.75,11.50 137.01,11.07 137.01,10.22 137.75,9.80 138.49,10.22" fill="#101214" />
+        <polygon points="140.59,11.07 139.85,11.50 139.11,11.07 139.11,10.22 139.85,9.80 140.59,10.22" fill="#101214" />
+        <polygon points="142.69,11.07 141.95,11.50 141.21,11.07 141.21,10.22 141.95,9.80 142.69,10.22" fill="#101214" />
+        <polygon points="144.79,11.07 144.05,11.50 143.31,11.07 143.31,10.22 144.05,9.80 144.79,10.22" fill="#101214" />
+        <polygon points="146.89,11.07 146.15,11.50 145.41,11.07 145.41,10.22 146.15,9.80 146.89,10.22" fill="#101214" />
+        <polygon points="148.99,11.07 148.25,11.50 147.51,11.07 147.51,10.22 148.25,9.80 148.99,10.22" fill="#101214" />
+        <polygon points="151.09,11.07 150.35,11.50 149.61,11.07 149.61,10.22 150.35,9.80 151.09,10.22" fill="#101214" />
+        <polygon points="153.19,11.07 152.45,11.50 151.71,11.07 151.71,10.22 152.45,9.80 153.19,10.22" fill="#101214" />
+        <polygon points="155.29,11.07 154.55,11.50 153.81,11.07 153.81,10.22 154.55,9.80 155.29,10.22" fill="#101214" />
+        <polygon points="157.39,11.07 156.65,11.50 155.91,11.07 155.91,10.22 156.65,9.80 157.39,10.22" fill="#101214" />
+        <polygon points="159.49,11.07 158.75,11.50 158.01,11.07 158.01,10.22 158.75,9.80 159.49,10.22" fill="#101214" />
+        <polygon points="161.59,11.07 160.85,11.50 160.11,11.07 160.11,10.22 160.85,9.80 161.59,10.22" fill="#101214" />
+        <polygon points="163.69,11.07 162.95,11.50 162.21,11.07 162.21,10.22 162.95,9.80 163.69,10.22" fill="#101214" />
+        <polygon points="165.79,11.07 165.05,11.50 164.31,11.07 164.31,10.22 165.05,9.80 165.79,10.22" fill="#101214" />
+        <polygon points="167.89,11.07 167.15,11.50 166.41,11.07 166.41,10.22 167.15,9.80 167.89,10.22" fill="#101214" />
+        <polygon points="169.99,11.07 169.25,11.50 168.51,11.07 168.51,10.22 169.25,9.80 169.99,10.22" fill="#101214" />
+        <polygon points="172.09,11.07 171.35,11.50 170.61,11.07 170.61,10.22 171.35,9.80 172.09,10.22" fill="#101214" />
+        <polygon points="174.19,11.07 173.45,11.50 172.71,11.07 172.71,10.22 173.45,9.80 174.19,10.22" fill="#101214" />
+        <polygon points="176.29,11.07 175.55,11.50 174.81,11.07 174.81,10.22 175.55,9.80 176.29,10.22" fill="#101214" />
+        <polygon points="178.39,11.07 177.65,11.50 176.91,11.07 176.91,10.22 177.65,9.80 178.39,10.22" fill="#101214" />
+        <polygon points="180.49,11.07 179.75,11.50 179.01,11.07 179.01,10.22 179.75,9.80 180.49,10.22" fill="#101214" />
+        <polygon points="182.59,11.07 181.85,11.50 181.11,11.07 181.11,10.22 181.85,9.80 182.59,10.22" fill="#101214" />
+        <polygon points="184.69,11.07 183.95,11.50 183.21,11.07 183.21,10.22 183.95,9.80 184.69,10.22" fill="#101214" />
+      </g>
+      <g id="re0--module--lamps">
+        <circle id="re0--module--led-ok-fail" cx="44.0" cy="29.5" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-major" cx="54.5" cy="29.5" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-minor" cx="60.5" cy="29.5" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--btn-offline" cx="70.5" cy="29.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="70.5" cy="29.3" r="0.8" fill="#17191c" />
+        <circle id="re0--module--btn-reset" cx="108.9" cy="27.5" r="1.1" fill="#17191c" />
+        <circle id="re0--module--led-mgmt-act" cx="121.5" cy="16.2" r="0.8" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-mgmt-status" cx="131.1" cy="16.2" r="0.8" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-online" cx="152.8" cy="25.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-disk0" cx="167.0" cy="25.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-master" cx="152.8" cy="30.7" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re0--module--led-disk1" cx="167.0" cy="30.7" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="re0--module--model-chip">
+        <rect x="2.6" y="33.2" width="22.0" height="4.6" rx="0.8" fill="#3a3e43" />
+        <g id="re0--module--chip-silkscreen">
+          <text x="13.6" y="36.6" font-family="Arial" font-size="2.2" fill="#e8eaec" text-anchor="middle">JNP304-RE</text>
+        </g>
+      </g>
+      <g id="re0--module--silkscreen" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">
+        <text x="44.0" y="35.2">OK/FAIL</text>
+        <text x="57.5" y="33.0" font-size="1.5">MAJOR MINOR</text>
+        <text x="57.5" y="35.4">ALARM</text>
+        <text x="70.5" y="35.2">OFFLINE</text>
+        <text x="90.8" y="35.6">CONSOLE</text>
+        <text x="108.9" y="35.6">RESET</text>
+        <text x="126.3" y="35.6">MGMT</text>
+        <text x="143.4" y="35.6" font-size="1.6">3.0</text>
+        <text x="155.0" y="24.7" font-size="1.5" text-anchor="start">ONLINE/</text>
+        <text x="155.0" y="26.8" font-size="1.5" text-anchor="start">OFFLINE</text>
+        <text x="169.2" y="26.3" font-size="1.5" text-anchor="start">DISK 0</text>
+        <text x="155.0" y="31.4" font-size="1.5" text-anchor="start">MASTER</text>
+        <text x="169.2" y="31.4" font-size="1.5" text-anchor="start">DISK 1</text>
+      </g>
+      <g id="re0--module--panel-screws">
+        <circle cx="8.6" cy="30.6" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="189.2" cy="30.6" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+      <g id="re0--module--console" data-path="re0/module/console" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(82.8,17.3)">
+        <title>re0--module--console</title>
+        <rect id="re0--module--console--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re0/module/console/opening" data-class="cutout" />
+        <path id="re0--module--console--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re0--module--console--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <g id="re0--module--mgmt" data-path="re0/module/mgmt" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="out-of-band management" data-media="rj45" data-speed="10/100/1000" transform="translate(118.3,17.3)">
+        <title>re0--module--mgmt</title>
+        <rect id="re0--module--mgmt--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re0/module/mgmt/opening" data-class="cutout" />
+        <path id="re0--module--mgmt--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re0--module--mgmt--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <g id="re0--module--usb" data-path="re0/module/usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 3.0 service port" data-media="usb-a" transform="translate(137.4,21.75) rotate(90 6.0 2.25)">
+        <title>re0--module--usb</title>
+        <rect id="re0--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="re0/module/usb/opening" data-class="cutout" />
+        <rect id="re0--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+      </g>
+      <g id="re0--module--lever-left" data-path="re0/module/lever-left" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="1.6" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+      <g id="re0--module--lever-right" data-path="re0/module/lever-right" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="188.4" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+    </g>
+  </g>
+  <g id="re1-lmic2" data-path="re1-lmic2" data-class="bay" data-group="res" data-group-role="management" data-rel-pos="1">
+    <title>re1-lmic2</title>
+    <rect id="re1-lmic2--opening" x="205.3" y="4.1" width="197.6" height="39.7" fill="#101214" />
+    <g id="re1-lmic2--module" data-path="re1-lmic2/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/mx304-lmic16@1:1.0.0" data-body-depth="332.0" data-cli-naming="Junos 24.4R1+: MIC 0/PIC 0 and MIC 1/PIC 1 (MRATE LC-MIC 16x100G/4x400G); earlier: PIC 0/PIC 1" data-envelope="203.5 x 40.1 x 332 mm (Table 22)" data-forwarding-capacity="1.6 Tbps (single YT ASIC, 2x800 Gbps PFEs)" data-model="MX304-LMIC16-BASE" data-power-draw-max-w="410" data-power-draw-typical-w="386" data-states="ok fail absent" transform="translate(304.1,23.95) translate(-98.8,-19.85)">
+      <title>re1-lmic2--module</title>
+      <rect id="re1-lmic2--module--face" x="0" y="0" width="197.6" height="39.7" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="re1-lmic2--module--vents">
+        <rect x="99.4" y="4.0" width="8.0" height="18.5" rx="1.0" fill="#b9bdc2" />
+        <polygon points="101.39,5.57 100.65,6.00 99.91,5.57 99.91,4.72 100.65,4.30 101.39,4.72" fill="#101214" />
+        <polygon points="103.49,5.57 102.75,6.00 102.01,5.57 102.01,4.72 102.75,4.30 103.49,4.72" fill="#101214" />
+        <polygon points="105.59,5.57 104.85,6.00 104.11,5.57 104.11,4.72 104.85,4.30 105.59,4.72" fill="#101214" />
+        <polygon points="102.44,7.42 101.70,7.85 100.96,7.43 100.96,6.58 101.70,6.15 102.44,6.58" fill="#101214" />
+        <polygon points="104.54,7.42 103.80,7.85 103.06,7.43 103.06,6.58 103.80,6.15 104.54,6.58" fill="#101214" />
+        <polygon points="106.64,7.42 105.90,7.85 105.16,7.43 105.16,6.58 105.90,6.15 106.64,6.58" fill="#101214" />
+        <polygon points="101.39,9.28 100.65,9.70 99.91,9.28 99.91,8.43 100.65,8.00 101.39,8.43" fill="#101214" />
+        <polygon points="103.49,9.28 102.75,9.70 102.01,9.28 102.01,8.43 102.75,8.00 103.49,8.43" fill="#101214" />
+        <polygon points="105.59,9.28 104.85,9.70 104.11,9.28 104.11,8.43 104.85,8.00 105.59,8.43" fill="#101214" />
+        <polygon points="102.44,11.12 101.70,11.55 100.96,11.12 100.96,10.27 101.70,9.85 102.44,10.28" fill="#101214" />
+        <polygon points="104.54,11.12 103.80,11.55 103.06,11.12 103.06,10.27 103.80,9.85 104.54,10.28" fill="#101214" />
+        <polygon points="106.64,11.12 105.90,11.55 105.16,11.12 105.16,10.27 105.90,9.85 106.64,10.28" fill="#101214" />
+        <polygon points="101.39,12.97 100.65,13.40 99.91,12.97 99.91,12.12 100.65,11.70 101.39,12.12" fill="#101214" />
+        <polygon points="103.49,12.97 102.75,13.40 102.01,12.97 102.01,12.12 102.75,11.70 103.49,12.12" fill="#101214" />
+        <polygon points="105.59,12.97 104.85,13.40 104.11,12.97 104.11,12.12 104.85,11.70 105.59,12.12" fill="#101214" />
+        <polygon points="102.44,14.82 101.70,15.25 100.96,14.82 100.96,13.97 101.70,13.55 102.44,13.97" fill="#101214" />
+        <polygon points="104.54,14.82 103.80,15.25 103.06,14.82 103.06,13.97 103.80,13.55 104.54,13.97" fill="#101214" />
+        <polygon points="106.64,14.82 105.90,15.25 105.16,14.82 105.16,13.97 105.90,13.55 106.64,13.97" fill="#101214" />
+        <polygon points="101.39,16.68 100.65,17.10 99.91,16.68 99.91,15.82 100.65,15.40 101.39,15.83" fill="#101214" />
+        <polygon points="103.49,16.68 102.75,17.10 102.01,16.68 102.01,15.82 102.75,15.40 103.49,15.83" fill="#101214" />
+        <polygon points="105.59,16.68 104.85,17.10 104.11,16.68 104.11,15.82 104.85,15.40 105.59,15.83" fill="#101214" />
+        <polygon points="102.44,18.53 101.70,18.95 100.96,18.53 100.96,17.68 101.70,17.25 102.44,17.68" fill="#101214" />
+        <polygon points="104.54,18.53 103.80,18.95 103.06,18.53 103.06,17.68 103.80,17.25 104.54,17.68" fill="#101214" />
+        <polygon points="106.64,18.53 105.90,18.95 105.16,18.53 105.16,17.68 105.90,17.25 106.64,17.68" fill="#101214" />
+        <polygon points="101.39,20.38 100.65,20.80 99.91,20.38 99.91,19.53 100.65,19.10 101.39,19.53" fill="#101214" />
+        <polygon points="103.49,20.38 102.75,20.80 102.01,20.38 102.01,19.53 102.75,19.10 103.49,19.53" fill="#101214" />
+        <polygon points="105.59,20.38 104.85,20.80 104.11,20.38 104.11,19.53 104.85,19.10 105.59,19.53" fill="#101214" />
+      </g>
+      <g id="re1-lmic2--module--lamps">
+        <circle id="re1-lmic2--module--led-ok-fail" cx="103.5" cy="25.3" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="re1-lmic2--module--led-offline" cx="103.5" cy="33.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="re1-lmic2--module--model-chip">
+        <rect x="1.6" y="34.2" width="21.4" height="4.4" rx="0.8" fill="#3a3e43" />
+        <g id="re1-lmic2--module--chip-silkscreen">
+          <text x="12.3" y="37.4" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">MX304-LMIC16</text>
+        </g>
+      </g>
+      <g id="re1-lmic2--module--silkscreen">
+        <text x="29.45" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="90.30" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="117.15" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="178.30" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="103.5" y="28.6" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">OK/</text>
+        <text x="103.5" y="30.6" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">FAIL</text>
+        <text x="103.5" y="37.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
+        <path d="M 23.55 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-0" cx="26.05" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="28.55" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">0</text>
+        <circle id="re1-lmic2--module--led-port-1" cx="31.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="33.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">1</text>
+        <path d="M 35.85 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 42.30 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-2" cx="44.80" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="47.30" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">2</text>
+        <circle id="re1-lmic2--module--led-port-3" cx="49.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="52.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">3</text>
+        <path d="M 54.60 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 65.65 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-4" cx="68.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="70.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">4</text>
+        <circle id="re1-lmic2--module--led-port-5" cx="73.25" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="75.75" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">5</text>
+        <path d="M 77.95 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 84.40 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-6" cx="86.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="89.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">6</text>
+        <circle id="re1-lmic2--module--led-port-7" cx="92.00" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="94.50" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">7</text>
+        <path d="M 96.70 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 111.25 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-8" cx="113.75" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="116.25" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">8</text>
+        <circle id="re1-lmic2--module--led-port-9" cx="118.85" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="121.35" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">9</text>
+        <path d="M 123.55 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 130.00 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-10" cx="132.50" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="135.00" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">10</text>
+        <circle id="re1-lmic2--module--led-port-11" cx="137.60" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="140.10" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">11</text>
+        <path d="M 142.30 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 153.65 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-12" cx="156.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="158.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">12</text>
+        <circle id="re1-lmic2--module--led-port-13" cx="161.25" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="163.75" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">13</text>
+        <path d="M 165.95 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 172.40 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="re1-lmic2--module--led-port-14" cx="174.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="177.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">14</text>
+        <circle id="re1-lmic2--module--led-port-15" cx="180.00" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="182.50" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">15</text>
+        <path d="M 184.70 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+      </g>
+      <g id="re1-lmic2--module--port-0" data-path="re1-lmic2/module/port-0" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(20.0,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-0</title>
+        <rect id="re1-lmic2--module--port-0--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-0/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-0--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-0--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-1" data-path="re1-lmic2/module/port-1" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.0,22.5)">
+        <title>re1-lmic2--module--port-1</title>
+        <rect id="re1-lmic2--module--port-1--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-1/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-1--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-1--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-2" data-path="re1-lmic2/module/port-2" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(38.7,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-2</title>
+        <rect id="re1-lmic2--module--port-2--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-2/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-2--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-2--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-3" data-path="re1-lmic2/module/port-3" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(38.7,22.5)">
+        <title>re1-lmic2--module--port-3</title>
+        <rect id="re1-lmic2--module--port-3--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-3/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-3--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-3--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-4" data-path="re1-lmic2/module/port-4" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(62.1,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-4</title>
+        <rect id="re1-lmic2--module--port-4--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-4/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-4--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-4--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-5" data-path="re1-lmic2/module/port-5" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(62.1,22.5)">
+        <title>re1-lmic2--module--port-5</title>
+        <rect id="re1-lmic2--module--port-5--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-5/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-5--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-5--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-6" data-path="re1-lmic2/module/port-6" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(80.8,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-6</title>
+        <rect id="re1-lmic2--module--port-6--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-6/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-6--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-6--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-7" data-path="re1-lmic2/module/port-7" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(80.8,22.5)">
+        <title>re1-lmic2--module--port-7</title>
+        <rect id="re1-lmic2--module--port-7--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-7/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-7--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-7--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-8" data-path="re1-lmic2/module/port-8" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(107.7,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-8</title>
+        <rect id="re1-lmic2--module--port-8--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-8/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-8--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-8--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-9" data-path="re1-lmic2/module/port-9" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(107.7,22.5)">
+        <title>re1-lmic2--module--port-9</title>
+        <rect id="re1-lmic2--module--port-9--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-9/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-9--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-9--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-10" data-path="re1-lmic2/module/port-10" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(126.4,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-10</title>
+        <rect id="re1-lmic2--module--port-10--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-10/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-10--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-10--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-11" data-path="re1-lmic2/module/port-11" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(126.4,22.5)">
+        <title>re1-lmic2--module--port-11</title>
+        <rect id="re1-lmic2--module--port-11--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-11/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-11--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-11--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-12" data-path="re1-lmic2/module/port-12" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(150.1,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-12</title>
+        <rect id="re1-lmic2--module--port-12--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-12/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-12--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-12--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-13" data-path="re1-lmic2/module/port-13" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(150.1,22.5)">
+        <title>re1-lmic2--module--port-13</title>
+        <rect id="re1-lmic2--module--port-13--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-13/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-13--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-13--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-14" data-path="re1-lmic2/module/port-14" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(168.8,3.7) rotate(180 9.5 5.0)">
+        <title>re1-lmic2--module--port-14</title>
+        <rect id="re1-lmic2--module--port-14--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-14/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-14--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-14--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--port-15" data-path="re1-lmic2/module/port-15" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(168.8,22.5)">
+        <title>re1-lmic2--module--port-15</title>
+        <rect id="re1-lmic2--module--port-15--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="re1-lmic2/module/port-15/opening" data-class="cutout" />
+        <rect id="re1-lmic2--module--port-15--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="re1-lmic2--module--port-15--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="re1-lmic2--module--port-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="re1-lmic2--module--lever-left" data-path="re1-lmic2/module/lever-left" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="1.6" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+      <g id="re1-lmic2--module--lever-right" data-path="re1-lmic2/module/lever-right" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="188.4" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+    </g>
+  </g>
+  <g id="lmic0" data-path="lmic0" data-class="bay" data-group="lmics" data-group-role="traffic" data-rel-pos="0">
+    <title>lmic0</title>
+    <rect id="lmic0--opening" x="1.2" y="44.6" width="197.6" height="39.7" fill="#101214" />
+    <g id="lmic0--module" data-path="lmic0/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/mx304-lmic16@1:1.0.0" data-body-depth="332.0" data-cli-naming="Junos 24.4R1+: MIC 0/PIC 0 and MIC 1/PIC 1 (MRATE LC-MIC 16x100G/4x400G); earlier: PIC 0/PIC 1" data-envelope="203.5 x 40.1 x 332 mm (Table 22)" data-forwarding-capacity="1.6 Tbps (single YT ASIC, 2x800 Gbps PFEs)" data-model="MX304-LMIC16-BASE" data-power-draw-max-w="410" data-power-draw-typical-w="386" data-states="ok fail absent" transform="translate(100,64.45) translate(-98.8,-19.85)">
+      <title>lmic0--module</title>
+      <rect id="lmic0--module--face" x="0" y="0" width="197.6" height="39.7" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lmic0--module--vents">
+        <rect x="99.4" y="4.0" width="8.0" height="18.5" rx="1.0" fill="#b9bdc2" />
+        <polygon points="101.39,5.57 100.65,6.00 99.91,5.57 99.91,4.72 100.65,4.30 101.39,4.72" fill="#101214" />
+        <polygon points="103.49,5.57 102.75,6.00 102.01,5.57 102.01,4.72 102.75,4.30 103.49,4.72" fill="#101214" />
+        <polygon points="105.59,5.57 104.85,6.00 104.11,5.57 104.11,4.72 104.85,4.30 105.59,4.72" fill="#101214" />
+        <polygon points="102.44,7.42 101.70,7.85 100.96,7.43 100.96,6.58 101.70,6.15 102.44,6.58" fill="#101214" />
+        <polygon points="104.54,7.42 103.80,7.85 103.06,7.43 103.06,6.58 103.80,6.15 104.54,6.58" fill="#101214" />
+        <polygon points="106.64,7.42 105.90,7.85 105.16,7.43 105.16,6.58 105.90,6.15 106.64,6.58" fill="#101214" />
+        <polygon points="101.39,9.28 100.65,9.70 99.91,9.28 99.91,8.43 100.65,8.00 101.39,8.43" fill="#101214" />
+        <polygon points="103.49,9.28 102.75,9.70 102.01,9.28 102.01,8.43 102.75,8.00 103.49,8.43" fill="#101214" />
+        <polygon points="105.59,9.28 104.85,9.70 104.11,9.28 104.11,8.43 104.85,8.00 105.59,8.43" fill="#101214" />
+        <polygon points="102.44,11.12 101.70,11.55 100.96,11.12 100.96,10.27 101.70,9.85 102.44,10.28" fill="#101214" />
+        <polygon points="104.54,11.12 103.80,11.55 103.06,11.12 103.06,10.27 103.80,9.85 104.54,10.28" fill="#101214" />
+        <polygon points="106.64,11.12 105.90,11.55 105.16,11.12 105.16,10.27 105.90,9.85 106.64,10.28" fill="#101214" />
+        <polygon points="101.39,12.97 100.65,13.40 99.91,12.97 99.91,12.12 100.65,11.70 101.39,12.12" fill="#101214" />
+        <polygon points="103.49,12.97 102.75,13.40 102.01,12.97 102.01,12.12 102.75,11.70 103.49,12.12" fill="#101214" />
+        <polygon points="105.59,12.97 104.85,13.40 104.11,12.97 104.11,12.12 104.85,11.70 105.59,12.12" fill="#101214" />
+        <polygon points="102.44,14.82 101.70,15.25 100.96,14.82 100.96,13.97 101.70,13.55 102.44,13.97" fill="#101214" />
+        <polygon points="104.54,14.82 103.80,15.25 103.06,14.82 103.06,13.97 103.80,13.55 104.54,13.97" fill="#101214" />
+        <polygon points="106.64,14.82 105.90,15.25 105.16,14.82 105.16,13.97 105.90,13.55 106.64,13.97" fill="#101214" />
+        <polygon points="101.39,16.68 100.65,17.10 99.91,16.68 99.91,15.82 100.65,15.40 101.39,15.83" fill="#101214" />
+        <polygon points="103.49,16.68 102.75,17.10 102.01,16.68 102.01,15.82 102.75,15.40 103.49,15.83" fill="#101214" />
+        <polygon points="105.59,16.68 104.85,17.10 104.11,16.68 104.11,15.82 104.85,15.40 105.59,15.83" fill="#101214" />
+        <polygon points="102.44,18.53 101.70,18.95 100.96,18.53 100.96,17.68 101.70,17.25 102.44,17.68" fill="#101214" />
+        <polygon points="104.54,18.53 103.80,18.95 103.06,18.53 103.06,17.68 103.80,17.25 104.54,17.68" fill="#101214" />
+        <polygon points="106.64,18.53 105.90,18.95 105.16,18.53 105.16,17.68 105.90,17.25 106.64,17.68" fill="#101214" />
+        <polygon points="101.39,20.38 100.65,20.80 99.91,20.38 99.91,19.53 100.65,19.10 101.39,19.53" fill="#101214" />
+        <polygon points="103.49,20.38 102.75,20.80 102.01,20.38 102.01,19.53 102.75,19.10 103.49,19.53" fill="#101214" />
+        <polygon points="105.59,20.38 104.85,20.80 104.11,20.38 104.11,19.53 104.85,19.10 105.59,19.53" fill="#101214" />
+      </g>
+      <g id="lmic0--module--lamps">
+        <circle id="lmic0--module--led-ok-fail" cx="103.5" cy="25.3" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="lmic0--module--led-offline" cx="103.5" cy="33.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="lmic0--module--model-chip">
+        <rect x="1.6" y="34.2" width="21.4" height="4.4" rx="0.8" fill="#3a3e43" />
+        <g id="lmic0--module--chip-silkscreen">
+          <text x="12.3" y="37.4" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">MX304-LMIC16</text>
+        </g>
+      </g>
+      <g id="lmic0--module--silkscreen">
+        <text x="29.45" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="90.30" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="117.15" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="178.30" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="103.5" y="28.6" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">OK/</text>
+        <text x="103.5" y="30.6" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">FAIL</text>
+        <text x="103.5" y="37.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
+        <path d="M 23.55 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-0" cx="26.05" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="28.55" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">0</text>
+        <circle id="lmic0--module--led-port-1" cx="31.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="33.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">1</text>
+        <path d="M 35.85 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 42.30 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-2" cx="44.80" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="47.30" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">2</text>
+        <circle id="lmic0--module--led-port-3" cx="49.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="52.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">3</text>
+        <path d="M 54.60 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 65.65 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-4" cx="68.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="70.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">4</text>
+        <circle id="lmic0--module--led-port-5" cx="73.25" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="75.75" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">5</text>
+        <path d="M 77.95 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 84.40 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-6" cx="86.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="89.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">6</text>
+        <circle id="lmic0--module--led-port-7" cx="92.00" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="94.50" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">7</text>
+        <path d="M 96.70 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 111.25 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-8" cx="113.75" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="116.25" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">8</text>
+        <circle id="lmic0--module--led-port-9" cx="118.85" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="121.35" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">9</text>
+        <path d="M 123.55 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 130.00 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-10" cx="132.50" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="135.00" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">10</text>
+        <circle id="lmic0--module--led-port-11" cx="137.60" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="140.10" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">11</text>
+        <path d="M 142.30 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 153.65 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-12" cx="156.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="158.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">12</text>
+        <circle id="lmic0--module--led-port-13" cx="161.25" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="163.75" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">13</text>
+        <path d="M 165.95 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 172.40 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic0--module--led-port-14" cx="174.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="177.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">14</text>
+        <circle id="lmic0--module--led-port-15" cx="180.00" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="182.50" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">15</text>
+        <path d="M 184.70 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+      </g>
+      <g id="lmic0--module--port-0" data-path="lmic0/module/port-0" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(20.0,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-0</title>
+        <rect id="lmic0--module--port-0--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-0/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-0--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-0--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-1" data-path="lmic0/module/port-1" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.0,22.5)">
+        <title>lmic0--module--port-1</title>
+        <rect id="lmic0--module--port-1--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-1/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-1--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-1--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-2" data-path="lmic0/module/port-2" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(38.7,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-2</title>
+        <rect id="lmic0--module--port-2--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-2/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-2--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-2--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-3" data-path="lmic0/module/port-3" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(38.7,22.5)">
+        <title>lmic0--module--port-3</title>
+        <rect id="lmic0--module--port-3--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-3/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-3--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-3--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-4" data-path="lmic0/module/port-4" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(62.1,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-4</title>
+        <rect id="lmic0--module--port-4--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-4/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-4--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-4--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-5" data-path="lmic0/module/port-5" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(62.1,22.5)">
+        <title>lmic0--module--port-5</title>
+        <rect id="lmic0--module--port-5--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-5/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-5--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-5--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-6" data-path="lmic0/module/port-6" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(80.8,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-6</title>
+        <rect id="lmic0--module--port-6--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-6/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-6--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-6--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-7" data-path="lmic0/module/port-7" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(80.8,22.5)">
+        <title>lmic0--module--port-7</title>
+        <rect id="lmic0--module--port-7--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-7/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-7--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-7--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-8" data-path="lmic0/module/port-8" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(107.7,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-8</title>
+        <rect id="lmic0--module--port-8--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-8/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-8--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-8--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-9" data-path="lmic0/module/port-9" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(107.7,22.5)">
+        <title>lmic0--module--port-9</title>
+        <rect id="lmic0--module--port-9--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-9/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-9--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-9--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-10" data-path="lmic0/module/port-10" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(126.4,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-10</title>
+        <rect id="lmic0--module--port-10--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-10/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-10--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-10--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-11" data-path="lmic0/module/port-11" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(126.4,22.5)">
+        <title>lmic0--module--port-11</title>
+        <rect id="lmic0--module--port-11--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-11/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-11--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-11--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-12" data-path="lmic0/module/port-12" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(150.1,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-12</title>
+        <rect id="lmic0--module--port-12--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-12/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-12--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-12--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-13" data-path="lmic0/module/port-13" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(150.1,22.5)">
+        <title>lmic0--module--port-13</title>
+        <rect id="lmic0--module--port-13--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-13/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-13--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-13--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-14" data-path="lmic0/module/port-14" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(168.8,3.7) rotate(180 9.5 5.0)">
+        <title>lmic0--module--port-14</title>
+        <rect id="lmic0--module--port-14--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-14/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-14--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-14--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--port-15" data-path="lmic0/module/port-15" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(168.8,22.5)">
+        <title>lmic0--module--port-15</title>
+        <rect id="lmic0--module--port-15--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic0/module/port-15/opening" data-class="cutout" />
+        <rect id="lmic0--module--port-15--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic0--module--port-15--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic0--module--port-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic0--module--lever-left" data-path="lmic0/module/lever-left" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="1.6" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+      <g id="lmic0--module--lever-right" data-path="lmic0/module/lever-right" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="188.4" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+    </g>
+  </g>
+  <g id="lmic1" data-path="lmic1" data-class="bay" data-group="lmics" data-group-role="traffic" data-rel-pos="1">
+    <title>lmic1</title>
+    <rect id="lmic1--opening" x="205.3" y="44.6" width="197.6" height="39.7" fill="#101214" />
+    <g id="lmic1--module" data-path="lmic1/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/mx304-lmic16@1:1.0.0" data-body-depth="332.0" data-cli-naming="Junos 24.4R1+: MIC 0/PIC 0 and MIC 1/PIC 1 (MRATE LC-MIC 16x100G/4x400G); earlier: PIC 0/PIC 1" data-envelope="203.5 x 40.1 x 332 mm (Table 22)" data-forwarding-capacity="1.6 Tbps (single YT ASIC, 2x800 Gbps PFEs)" data-model="MX304-LMIC16-BASE" data-power-draw-max-w="410" data-power-draw-typical-w="386" data-states="ok fail absent" transform="translate(304.1,64.45) translate(-98.8,-19.85)">
+      <title>lmic1--module</title>
+      <rect id="lmic1--module--face" x="0" y="0" width="197.6" height="39.7" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="lmic1--module--vents">
+        <rect x="99.4" y="4.0" width="8.0" height="18.5" rx="1.0" fill="#b9bdc2" />
+        <polygon points="101.39,5.57 100.65,6.00 99.91,5.57 99.91,4.72 100.65,4.30 101.39,4.72" fill="#101214" />
+        <polygon points="103.49,5.57 102.75,6.00 102.01,5.57 102.01,4.72 102.75,4.30 103.49,4.72" fill="#101214" />
+        <polygon points="105.59,5.57 104.85,6.00 104.11,5.57 104.11,4.72 104.85,4.30 105.59,4.72" fill="#101214" />
+        <polygon points="102.44,7.42 101.70,7.85 100.96,7.43 100.96,6.58 101.70,6.15 102.44,6.58" fill="#101214" />
+        <polygon points="104.54,7.42 103.80,7.85 103.06,7.43 103.06,6.58 103.80,6.15 104.54,6.58" fill="#101214" />
+        <polygon points="106.64,7.42 105.90,7.85 105.16,7.43 105.16,6.58 105.90,6.15 106.64,6.58" fill="#101214" />
+        <polygon points="101.39,9.28 100.65,9.70 99.91,9.28 99.91,8.43 100.65,8.00 101.39,8.43" fill="#101214" />
+        <polygon points="103.49,9.28 102.75,9.70 102.01,9.28 102.01,8.43 102.75,8.00 103.49,8.43" fill="#101214" />
+        <polygon points="105.59,9.28 104.85,9.70 104.11,9.28 104.11,8.43 104.85,8.00 105.59,8.43" fill="#101214" />
+        <polygon points="102.44,11.12 101.70,11.55 100.96,11.12 100.96,10.27 101.70,9.85 102.44,10.28" fill="#101214" />
+        <polygon points="104.54,11.12 103.80,11.55 103.06,11.12 103.06,10.27 103.80,9.85 104.54,10.28" fill="#101214" />
+        <polygon points="106.64,11.12 105.90,11.55 105.16,11.12 105.16,10.27 105.90,9.85 106.64,10.28" fill="#101214" />
+        <polygon points="101.39,12.97 100.65,13.40 99.91,12.97 99.91,12.12 100.65,11.70 101.39,12.12" fill="#101214" />
+        <polygon points="103.49,12.97 102.75,13.40 102.01,12.97 102.01,12.12 102.75,11.70 103.49,12.12" fill="#101214" />
+        <polygon points="105.59,12.97 104.85,13.40 104.11,12.97 104.11,12.12 104.85,11.70 105.59,12.12" fill="#101214" />
+        <polygon points="102.44,14.82 101.70,15.25 100.96,14.82 100.96,13.97 101.70,13.55 102.44,13.97" fill="#101214" />
+        <polygon points="104.54,14.82 103.80,15.25 103.06,14.82 103.06,13.97 103.80,13.55 104.54,13.97" fill="#101214" />
+        <polygon points="106.64,14.82 105.90,15.25 105.16,14.82 105.16,13.97 105.90,13.55 106.64,13.97" fill="#101214" />
+        <polygon points="101.39,16.68 100.65,17.10 99.91,16.68 99.91,15.82 100.65,15.40 101.39,15.83" fill="#101214" />
+        <polygon points="103.49,16.68 102.75,17.10 102.01,16.68 102.01,15.82 102.75,15.40 103.49,15.83" fill="#101214" />
+        <polygon points="105.59,16.68 104.85,17.10 104.11,16.68 104.11,15.82 104.85,15.40 105.59,15.83" fill="#101214" />
+        <polygon points="102.44,18.53 101.70,18.95 100.96,18.53 100.96,17.68 101.70,17.25 102.44,17.68" fill="#101214" />
+        <polygon points="104.54,18.53 103.80,18.95 103.06,18.53 103.06,17.68 103.80,17.25 104.54,17.68" fill="#101214" />
+        <polygon points="106.64,18.53 105.90,18.95 105.16,18.53 105.16,17.68 105.90,17.25 106.64,17.68" fill="#101214" />
+        <polygon points="101.39,20.38 100.65,20.80 99.91,20.38 99.91,19.53 100.65,19.10 101.39,19.53" fill="#101214" />
+        <polygon points="103.49,20.38 102.75,20.80 102.01,20.38 102.01,19.53 102.75,19.10 103.49,19.53" fill="#101214" />
+        <polygon points="105.59,20.38 104.85,20.80 104.11,20.38 104.11,19.53 104.85,19.10 105.59,19.53" fill="#101214" />
+      </g>
+      <g id="lmic1--module--lamps">
+        <circle id="lmic1--module--led-ok-fail" cx="103.5" cy="25.3" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.3" />
+        <circle id="lmic1--module--led-offline" cx="103.5" cy="33.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
+      </g>
+      <g id="lmic1--module--model-chip">
+        <rect x="1.6" y="34.2" width="21.4" height="4.4" rx="0.8" fill="#3a3e43" />
+        <g id="lmic1--module--chip-silkscreen">
+          <text x="12.3" y="37.4" font-family="Arial" font-size="1.7" fill="#e8eaec" text-anchor="middle">MX304-LMIC16</text>
+        </g>
+      </g>
+      <g id="lmic1--module--silkscreen">
+        <text x="29.45" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="90.30" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="117.15" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="178.30" y="3.2" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="middle">400G</text>
+        <text x="103.5" y="28.6" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">OK/</text>
+        <text x="103.5" y="30.6" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">FAIL</text>
+        <text x="103.5" y="37.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
+        <path d="M 23.55 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-0" cx="26.05" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="28.55" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">0</text>
+        <circle id="lmic1--module--led-port-1" cx="31.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="33.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">1</text>
+        <path d="M 35.85 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 42.30 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-2" cx="44.80" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="47.30" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">2</text>
+        <circle id="lmic1--module--led-port-3" cx="49.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="52.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">3</text>
+        <path d="M 54.60 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 65.65 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-4" cx="68.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="70.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">4</text>
+        <circle id="lmic1--module--led-port-5" cx="73.25" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="75.75" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">5</text>
+        <path d="M 77.95 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 84.40 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-6" cx="86.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="89.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">6</text>
+        <circle id="lmic1--module--led-port-7" cx="92.00" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="94.50" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">7</text>
+        <path d="M 96.70 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 111.25 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-8" cx="113.75" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="116.25" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">8</text>
+        <circle id="lmic1--module--led-port-9" cx="118.85" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="121.35" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">9</text>
+        <path d="M 123.55 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 130.00 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-10" cx="132.50" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="135.00" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">10</text>
+        <circle id="lmic1--module--led-port-11" cx="137.60" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="140.10" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">11</text>
+        <path d="M 142.30 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 153.65 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-12" cx="156.15" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="158.65" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">12</text>
+        <circle id="lmic1--module--led-port-13" cx="161.25" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="163.75" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">13</text>
+        <path d="M 165.95 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+        <path d="M 172.40 37.0 l 0.8 0 l -0.8 -1.9 l -0.8 1.9 Z" fill="#3a3e43" />
+        <circle id="lmic1--module--led-port-14" cx="174.90" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="177.40" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">14</text>
+        <circle id="lmic1--module--led-port-15" cx="180.00" cy="36.3" r="0.85" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <text x="182.50" y="37.2" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="middle">15</text>
+        <path d="M 184.70 35.1 l 0.8 0 l -0.8 1.9 l -0.8 -1.9 Z" fill="#3a3e43" />
+      </g>
+      <g id="lmic1--module--port-0" data-path="lmic1/module/port-0" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(20.0,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-0</title>
+        <rect id="lmic1--module--port-0--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-0/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-0--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-0--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-1" data-path="lmic1/module/port-1" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.0,22.5)">
+        <title>lmic1--module--port-1</title>
+        <rect id="lmic1--module--port-1--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-1/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-1--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-1--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-2" data-path="lmic1/module/port-2" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(38.7,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-2</title>
+        <rect id="lmic1--module--port-2--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-2/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-2--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-2--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-3" data-path="lmic1/module/port-3" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(38.7,22.5)">
+        <title>lmic1--module--port-3</title>
+        <rect id="lmic1--module--port-3--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-3/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-3--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-3--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-4" data-path="lmic1/module/port-4" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(62.1,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-4</title>
+        <rect id="lmic1--module--port-4--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-4/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-4--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-4--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-5" data-path="lmic1/module/port-5" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(62.1,22.5)">
+        <title>lmic1--module--port-5</title>
+        <rect id="lmic1--module--port-5--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-5/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-5--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-5--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-6" data-path="lmic1/module/port-6" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(80.8,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-6</title>
+        <rect id="lmic1--module--port-6--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-6/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-6--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-6--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-7" data-path="lmic1/module/port-7" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(80.8,22.5)">
+        <title>lmic1--module--port-7</title>
+        <rect id="lmic1--module--port-7--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-7/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-7--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-7--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-8" data-path="lmic1/module/port-8" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(107.7,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-8</title>
+        <rect id="lmic1--module--port-8--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-8/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-8--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-8--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-9" data-path="lmic1/module/port-9" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(107.7,22.5)">
+        <title>lmic1--module--port-9</title>
+        <rect id="lmic1--module--port-9--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-9/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-9--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-9--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-10" data-path="lmic1/module/port-10" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(126.4,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-10</title>
+        <rect id="lmic1--module--port-10--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-10/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-10--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-10--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-11" data-path="lmic1/module/port-11" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(126.4,22.5)">
+        <title>lmic1--module--port-11</title>
+        <rect id="lmic1--module--port-11--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-11/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-11--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-11--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-12" data-path="lmic1/module/port-12" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(150.1,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-12</title>
+        <rect id="lmic1--module--port-12--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-12/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-12--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-12--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-13" data-path="lmic1/module/port-13" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(150.1,22.5)">
+        <title>lmic1--module--port-13</title>
+        <rect id="lmic1--module--port-13--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-13/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-13--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-13--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-14" data-path="lmic1/module/port-14" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="400g-capable" transform="translate(168.8,3.7) rotate(180 9.5 5.0)">
+        <title>lmic1--module--port-14</title>
+        <rect id="lmic1--module--port-14--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-14/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-14--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-14--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--port-15" data-path="lmic1/module/port-15" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(168.8,22.5)">
+        <title>lmic1--module--port-15</title>
+        <rect id="lmic1--module--port-15--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="lmic1/module/port-15/opening" data-class="cutout" />
+        <rect id="lmic1--module--port-15--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="lmic1--module--port-15--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+        <path id="lmic1--module--port-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      </g>
+      <g id="lmic1--module--lever-left" data-path="lmic1/module/lever-left" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="1.6" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="6.1" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+      <g id="lmic1--module--lever-right" data-path="lmic1/module/lever-right" data-class="latch" data-z-out="2.2" data-z-color="#7fb8e4">
+        <rect x="188.4" y="3.3" width="9.0" height="28.2" rx="3.2" fill="#7fb8e4" stroke="#4a86b8" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
+        <circle cx="192.9" cy="14.3" r="1.1" fill="#8a8f95" />
+      </g>
+    </g>
+  </g>
+</svg>

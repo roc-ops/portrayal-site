@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="261.8mm" height="27.5mm" viewBox="0 0 261.8 27.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="re-s-1300" data-path="re-s-1300" data-class="supervisor" data-behaviour="fills" data-ref="juniper/re-s-1300@1:1.0.0" data-cpu="1.3 GHz" data-lifecycle-note="EOL per TSB16556; modelled because it is the RE the reference photograph carries" data-memory="2 GB" data-model="RE-S-1300-2048" data-states="ok fail absent" transform="translate(0,0)">
+    <title>re-s-1300</title>
+    <rect id="re-s-1300--face" x="0" y="0" width="261.8" height="27.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="re-s-1300--latch" data-path="re-s-1300/latch" data-class="latch">
+      <rect x="1.0" y="6.0" width="5.0" height="16.0" rx="1.6" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
+    </g>
+    <g id="re-s-1300--lamps">
+      <circle id="re-s-1300--led-hdd" cx="42.7" cy="11.6" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="re-s-1300--led-master" cx="47.6" cy="11.6" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="re-s-1300--led-ok-fail" cx="42.7" cy="16.4" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="re-s-1300--led-online" cx="47.6" cy="16.4" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="re-s-1300--btn-online" cx="87.4" cy="14.6" r="1.9" fill="#26292d" stroke="#565b60" stroke-width="0.35" />
+      <circle id="re-s-1300--btn-reset" cx="97.0" cy="16.2" r="1.1" fill="#17191c" />
+    </g>
+    <g id="re-s-1300--silkscreen">
+      <g id="re-s-1300--t41-silkscreen">
+        <text x="12.0" y="8.6" font-family="Arial" font-size="2.0" fill="#3a3e43" text-anchor="start">RE-S-1300</text>
+      </g>
+      <g id="re-s-1300--t42-silkscreen">
+        <text x="40.7" y="12.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">HDD</text>
+      </g>
+      <g id="re-s-1300--t43-silkscreen">
+        <text x="49.6" y="12.2" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start">MASTER</text>
+      </g>
+      <g id="re-s-1300--t44-silkscreen">
+        <text x="40.7" y="17.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">OK/FAIL</text>
+      </g>
+      <g id="re-s-1300--t45-silkscreen">
+        <text x="49.6" y="17.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="start">ONLINE</text>
+      </g>
+      <g id="re-s-1300--t46-silkscreen">
+        <text x="87.4" y="9.6" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">ONLINE/</text>
+      </g>
+      <g id="re-s-1300--t47-silkscreen">
+        <text x="87.4" y="11.3" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
+      </g>
+      <g id="re-s-1300--t48-silkscreen">
+        <text x="100.5" y="16.8" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="start">RESET</text>
+      </g>
+      <g id="re-s-1300--t49-silkscreen">
+        <text x="170.0" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">USB</text>
+      </g>
+      <g id="re-s-1300--t50-silkscreen">
+        <text x="187.9" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">AUX</text>
+      </g>
+      <g id="re-s-1300--t51-silkscreen">
+        <text x="205.3" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
+      </g>
+      <g id="re-s-1300--t52-silkscreen">
+        <text x="222.8" y="5.4" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">ETHERNET</text>
+      </g>
+    </g>
+    <g id="re-s-1300--usb" data-path="re-s-1300/usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(164.0,11.5) rotate(90 6.0 2.25)">
+      <title>re-s-1300--usb</title>
+      <rect id="re-s-1300--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="re-s-1300/usb/opening" data-class="cutout" />
+      <rect id="re-s-1300--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+    </g>
+    <g id="re-s-1300--aux" data-path="re-s-1300/aux" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="auxiliary console" data-media="rj45" transform="translate(179.9,6.75)">
+      <title>re-s-1300--aux</title>
+      <rect id="re-s-1300--aux--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re-s-1300/aux/opening" data-class="cutout" />
+      <path id="re-s-1300--aux--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="re-s-1300--aux--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+    <g id="re-s-1300--console" data-path="re-s-1300/console" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(197.3,6.75)">
+      <title>re-s-1300--console</title>
+      <rect id="re-s-1300--console--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re-s-1300/console/opening" data-class="cutout" />
+      <path id="re-s-1300--console--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="re-s-1300--console--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+    <g id="re-s-1300--ethernet" data-path="re-s-1300/ethernet" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="fxp0 out-of-band management" data-media="rj45" transform="translate(214.8,6.75)">
+      <title>re-s-1300--ethernet</title>
+      <rect id="re-s-1300--ethernet--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re-s-1300/ethernet/opening" data-class="cutout" />
+      <path id="re-s-1300--ethernet--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="re-s-1300--ethernet--pins" fill="#a8873c">
+        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      </g>
+    </g>
+  </g>
+</svg>

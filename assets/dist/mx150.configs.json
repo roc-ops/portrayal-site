@@ -1,0 +1,147 @@
+{
+ "attrs": {
+  "lifecycle": {
+   "eol": "announced",
+   "eol-announcement": "https://support.juniper.net/support/eol/product/m_series/"
+  },
+  "physical": {
+   "weight": "4.3 kg (Table 1)"
+  },
+  "power": {
+   "power-envelope": "unstated",
+   "power-max-w": 140,
+   "psu-ac-input": "100-240 VAC, 50-60 Hz, 3 A max (rear legend), built-in"
+  }
+ },
+ "bays": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": [
+   "specified"
+  ]
+ },
+ "chassis": {
+  "d": 305.0,
+  "h": 43.7,
+  "ru": 1,
+  "w": 441.0
+ },
+ "configs": [
+  {
+   "bays": {},
+   "description": "",
+   "name": "default",
+   "part-numbers": {}
+  }
+ ],
+ "default": "default",
+ "device": "mx150",
+ "gaps": [
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "proper MX150 fixed-fan and rocker components - the rear reuses common/fan-module (a generic square FRU face) behind circular grille cutouts and common/power-button for the rocker; both are stand-ins sized to the photo.",
+   "what": "fan-and-switch-representation"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "scope": [
+    "status-leds"
+   ],
+   "wanted": "the SPD/DX/EN selector lamp semantics tied to the mode button - the guide's port-parameter table is transcribed only as legends here.",
+   "what": "port-parameter-leds"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "scope": [
+    "ge",
+    "xe"
+   ],
+   "wanted": "transceiver list (external compatibility tool).",
+   "what": "supported-optics"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 4,
+   "kind": "derived",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 1,
+   "kind": "derived",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "`physical-context` on port group ge - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  }
+ ],
+ "model": "MX150",
+ "provenance": {
+  "chassis": "datasheet-table - guide Table 1: 1.72 x 17.36 x 12 in (43.7 x 441 x 305 mm), 4.3 kg. Ears NOT MODELLED by convention",
+  "color": "photo - medium grey face (#6d7175), aluminium rear",
+  "front": "photo - recessed JUNIPER/junos panel to x 45.2, hex vent fields above the ports, the 2x4 RJ45 block at column centres 167.7-214.8 (15.7 mm measured pitch, upper jacks rotate 180 to keep both release tabs reachable), RJ45 8/9 at 232.6/250.3, SFP 10/11 at 280.3/294.5, SFP+ uplinks 0/1 at 323.3/337.5, mini-USB CON at 352.8, vertical USB at 365.0, MGMT at 381.4, and the SYS/ALM/MST/PH + SPD/DX/EN lamp matrix with the white beacon at the right end. LINK/ST lamp pairs sit above each SFP port; ports 8/9 carry their lamps inside the jack",
+  "leds": "guide chassis-status table: SYS green steady = Junos loaded, blinking = booting; MST green steady = functioning; ALM red/amber = alarm (unlit = none); PH unused (off). Port and MGMT lamp tables exist in the guide; the per-port LINK/ST pairs are drawn with generic states",
+  "lifecycle": "announced - the MX150 is EOL (image-library page redirects to the EOL notice; the intake's datasheet hunt recorded no standalone sheet). Per-SKU dates on the Juniper milestones page",
+  "other-faces": "near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as on the siblings",
+  "port-numbering": "photo - access ports print 0-11 (column pairs 01/23/45/67 under the RJ block, then 8, 9, 10, 11); the two SFP+ uplinks print 0 and 1 - a second numbering space (xe-0/1/x in the CLI), carried as printed",
+  "power": "guide specifications: maximum power consumption 140 W. The vendor does not qualify an ambient - filed as max, and that reading is recorded here",
+  "rear": "photo - earthing plate with two studs at the left (21.0/34.0, y 6.5, approximate), ESD socket below, two fixed fan rotors at x 65/122 (r ~17), the AC INPUT 100-240V 50-60Hz 3A MAX legend, power rocker at 390 and C14 inlet at 408. The supply is BUILT IN - no PSU bay exists on this platform",
+  "scale": "photo - both photographs are straight-on but carry extra shadow/bezel rows, so x is anchored to the 441 mm width (front 3.245 px/mm, rear 3.184) and y positions are per-face fractions anchored to the 43.7 mm height - approximate to about a millimetre",
+  "sources": "MX150 Hardware Guide (extracted into working/images/mx150/), the MX-family datasheet (no standalone MX150 datasheet exists - recorded in the intake), and the image-library photographs mx150-front-high and mx150-rear-high. No mechanical drawing was available"
+ },
+ "views": [
+  "front",
+  "rear",
+  "left",
+  "right",
+  "top",
+  "bottom"
+ ]
+}

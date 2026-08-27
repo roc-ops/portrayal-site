@@ -5,7 +5,7 @@ import { entry, library, rackDiagram, loadFace, portsOf, RACK, SCALE } from './d
 
 const $ = id => document.getElementById(id);
 const DIST = 'assets/dist/';
-let DEVICES = [], DEV = null, COMPONENTS = [];
+let DEVICES = [], DEV = null, COMPONENTS = [], SIZES = {};
 
 // A component's namespace is its vendor's first word, lowercased - casa for
 // Casa Systems, ufispace for UfiSpace. Checked against every namespace in the
@@ -327,6 +327,41 @@ const CLASS_WORD = {
 };
 const plural = (w, n) => n === 1 ? w : (w.endsWith('h') ? `${w}es` : `${w}s`);
 
+/**
+ * Roughly how big a library will be, before it is built.
+ *
+ * A face goes in as base64, which is 4/3 of the bytes, and the entries are JSON
+ * inside XML on top of that. It is an estimate and says so - but the difference
+ * between "2 MB" and "70 MB" is the one worth knowing in advance, and an
+ * MX10016 front alone is 9.5 MB of SVG. Before Juniper the whole library was
+ * 5 MB and nobody needed telling.
+ */
+function estimate(key, {faces, modules}) {
+  let bytes = 0;
+  for (const d of inScope(key)) {
+    for (const f of faces) bytes += SIZES[`${d.name}.${f}.svg`] || 0;
+  }
+  if (modules) {
+    for (const c of modulesFor(key)) bytes += SIZES[c.files.default.replace(/^.*?dist\//, '')]
+      || SIZES[c.files.default] || 0;
+  }
+  return bytes * 4 / 3;
+}
+
+const human = b => b >= 1048576 ? `${(b / 1048576).toFixed(b > 10485760 ? 0 : 1)} MB`
+                                : `${Math.max(1, Math.round(b / 1024))} KB`;
+
+function showEstimate() {
+  const el = $('estimate');
+  if (!el || !Object.keys(SIZES).length) return;
+  const faces = $('faces').value === 'both' ? ['front', 'rear'] : [$('faces').value];
+  const b = estimate($('scope').value, {faces, modules: $('mods').checked});
+  el.textContent = b ? `about ${human(b)}` : '';
+  // Past roughly 20 MB draw.io starts to labour on import, and the browser has
+  // to hold the whole thing in memory to build it.
+  el.className = 'stat' + (b > 20 * 1048576 ? ' warn' : '');
+}
+
 function describe() {
   const d = DEVICES.find(x => x.name === DEV);
   if (!d) return;
@@ -356,6 +391,7 @@ function describe() {
   const ml = $('mods-label');
   if (ml) ml.title = breakdown ? `The things that go in the chassis: ${breakdown}.`
                                : 'This vendor has no modelled modules.';
+  showEstimate();
   $('detail').innerHTML =
     `<strong>${d.model || d.name}</strong> — ${d.manufacturer}. Standalone entries are ${Math.round(SCALE * 25.4)}px per inch ` +
     `(${SCALE}px/mm); rack entries are ${RACK.width}×${RACK.unit} per RU, which is ` +
@@ -366,6 +402,7 @@ function describe() {
   try {
     DEVICES = (await jdist(`${DIST}devices.json`)).devices;
     COMPONENTS = (await jdist(`${DIST}components.json`).catch(() => ({}))).components || [];
+    SIZES = await jdist(`${DIST}sizes.json`).catch(() => ({}));
   } catch (err) {
     $('note').textContent = `could not load the device index: ${err.message}`;
     return;
@@ -375,6 +412,7 @@ function describe() {
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
   for (const id of ['scope', 'rscope', 'dscope']) $(id).addEventListener('change', describe);
+  for (const id of ['faces', 'mods']) $(id).addEventListener('change', showEstimate);
   $('allven').addEventListener('change', describe);
   fillScopes();
   describe();

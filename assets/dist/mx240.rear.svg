@@ -1,0 +1,1119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="443.0mm" height="221.2mm" viewBox="0 0 443.0 221.2" data-device="mx240" data-view="rear" data-config="dc" data-weight="23.6 kg chassis with midplane, fan tray and air filter; 58.1 kg maximum configuration (Table 88)" data-depth-total="705 mm including cable management (Table 88)" data-throughput="3 Tbps-class (datasheet family table)" data-base-system-w="40" data-cooling-system-w="85 W high-capacity (70 W normal); dedicated PSU tap, excluded from the output-power budget per the guide note" data-psu-system-output="AC normal-capacity 2054 W low-line / 1590 W high-line; DC normal-capacity 1600 W (Table 95, SYSTEM output for the required PSU set - no per-module nameplate is published)" data-max-thermal-output="AC 7161 BTU/h (2100 W); DC 5074 BTU/h (1488 W) (environmental table; provisioning ceiling)" data-operating-temp="0 C to 40 C" data-storage-temp="-40 C to 70 C in shipping container" data-humidity="5-90 percent noncondensing" data-altitude="no performance degradation to 3048 m" data-seismic="Designed to meet Telcordia Technologies Zone 4 earthquake requirements (environmental table wording, transcribed)" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/eol/product/m_series/">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"dc","device":"Juniper MX240","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"juniper/mx-ground-stud@1":"1.0.0","juniper/mx240-air-filter@1":"1.0.0","juniper/mx240-fan-tray@1":"1.0.0","juniper/mx240-psu-dc@1":"1.0.0"},"source":{"attrs":{"compliance":{"seismic":"Designed to meet Telcordia Technologies Zone 4 earthquake requirements (environmental table wording, transcribed)"},"environmental":{"altitude":"no performance degradation to 3048 m","humidity":"5-90 percent noncondensing","operating-temp":"0 C to 40 C","storage-temp":"-40 C to 70 C in shipping container"},"lifecycle":{"eol":"announced","eol-announcement":"https://support.juniper.net/support/eol/product/m_series/"},"performance":{"throughput":"3 Tbps-class (datasheet family table)"},"physical":{"depth-total":"705 mm including cable management (Table 88)","weight":"23.6 kg chassis with midplane, fan tray and air filter; 58.1 kg maximum configuration (Table 88)"},"power":{"base-system-w":40,"cooling-system-w":"85 W high-capacity (70 W normal); dedicated PSU tap, excluded from the output-power budget per the guide note","psu-system-output":"AC normal-capacity 2054 W low-line / 1590 W high-line; DC normal-capacity 1600 W (Table 95, SYSTEM output for the required PSU set - no per-module nameplate is published)"},"thermal":{"max-thermal-output":"AC 7161 BTU/h (2100 W); DC 5074 BTU/h (1488 W) (environmental table; provisioning ceiling)"}},"chassis":{"color":"#43474c","depth":622.0,"height":221.2,"ru":5,"width":443.0},"configurations":{"ac":{"bays":{"pem0":"juniper/mx240-psu-ac@1","pem1":"juniper/mx240-psu-ac@1","pem2":"juniper/mx240-psu-ac@1","pem3":"juniper/mx240-psu-ac@1"},"description":"AC-powered chassis - normal-capacity AC supplies (high-line uses PEM0/PEM2; the four-bay low-line form is drawn)."},"dc":{"default":true,"description":"DC-powered chassis as photographed - four normal-capacity DC PEMs, two SCB-MX with RE-S-1300, DPC 40xGE in slot 2 and DPC-R-4XGE in slot 1."}},"description":"Juniper MX240 Universal Routing Platform - a 5RU, 3 Tbps-class modular edge router with horizontal cards. Four slots under the craft interface: DPC/MPC slots 2 and 1, the shared SCB1/DPC0 slot, and SCB0; the Routing Engines seat inside the SCBs. Up to four power supplies (AC or DC) across the rear top, with the fan tray and air filter installing vertically at the rear sides.","format":1,"gaps":[{"reason":"needs-photo","scope":["slots"],"wanted":"orthographic imagery for the current MPC/SCBE2-SCBE3/RE-S-X6 generation - the intake holds their figures and power tables but no straight-on photography, so the EOL FRUs the reference photograph carries are what is modelled. The power tables for the newer FRUs are already transcribed in the guide extraction for when they are built.","what":"current-generation-frus"},{"reason":"needs-photo","scope":["psus"],"wanted":"faces for the high-capacity AC/DC supplies (figures 15/17 are isometric line art only).","what":"high-capacity-psus"},{"reason":"vendor-silent","scope":["craft","slots"],"wanted":"vendor dimensions for the craft panel and cards - no physical dimension for either exists in the intake, so faces are sized to the photographed apertures.","what":"craft-and-card-dimensions"},{"reason":"vendor-silent","scope":["slots"],"wanted":"transceiver lists per DPC/MPC (external compatibility tool).","what":"supported-optics"}],"groups":{"cooling":{"index-origin":0,"role":"service","term":"Tray"},"craft":{"index-origin":0,"role":"management","term":"Panel"},"grounding":{"description":"the protective-earthing stud pair under the rear earth symbol","index-origin":0,"role":"furniture","term":"Point"},"psus":{"index-origin":0,"role":"service","term":"PEM"},"slots":{"description":"The card cage - DPC/MPC slots 2 and 1, the shared SCB1/DPC0 slot, and SCB0, numbered on the craft tabs and left flange. SCBs carry the Routing Engines in their own bays","index-origin":0,"role":"traffic","term":"Slot"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX240","name":"mx240","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"provenance":{"chassis":"datasheet-table - guide chassis description and Table 88: 8.71 x 17.45 x 24.5 in (221.2 x 443 x 622 mm) to the chassis rear (703 total with cable management), 23.6 kg bare / 58.1 kg maximum. Ears are NOT MODELLED by project convention","color":"photo - dark charcoal chassis bands, grey craft panel with the light-blue accent strip, silver card faces (the 40xGE DPC is charcoal), bright aluminium rear","esd-front":"guide Figure 1 callout - ESD point at the front top-left; placed at 8.0, 17.0 off the photograph, approximate (the socket is small and dark against the dark band)","front-rows":"photo - top vent band 0-32.8, craft interface 32.8-75.3, card cage 84.6-206.4 as four 30.45 mm slots (top to bottom: DPC2, DPC1, SCB1/DPC0, SCB0 - the craft tabs and left-flange legends number them 2, 1, 1/0, 0), bottom band to 221.2. Card apertures span x 11.5-432.4 between the flanges","lifecycle":"announced - the third-party EOL trackers (IT-Planet, Park Place) list MX240 EOL 2020-06-30 / EOS 2026-06-30 for the older base bundles while later revisions continued shipping; Juniper's per-SKU M/MX milestones page is authoritative and the milestones are per-SKU, searched 2026-08-27","other-faces":"near-blank by evidence - the guide side art (Figure 1) shows the right side's round-hole exhaust field; sides carry an estimated vent-field band (right) and rail band (left), top and bottom rail edges only. Axis conventions per viewer3d.js: LEFT view x = 0 is the REAR, RIGHT view x = 0 is the FRONT, top/bottom y = 0 at the FRONT","populated-with":"photo - the reference unit carries DPC 40xGE (DPCE-R-40GE- SFP) in slot 2, DPC-R-4XGE in slot 1, and SCB-MX with RE-S-1300 in both SCB slots; those exact FRUs are modelled and seated as the defaults, EOL though they are, because they are what the only orthographic photograph shows. Current-generation cards (MPCs, SCBE2/3, RE-S-X6) are in the intake's figures and power tables but have no orthographic imagery - see gaps","power":"guide power tables - base system 40 W, cooling 70/85 W (normal/high capacity, from a dedicated PSU tap excluded from the output budget), SCB-MX 185 W at 55 C, DPCE-R-40GE-SFP 335 W, DPC-R-4XGE-XFP 310 W (Table 93; ambient unqualified for DPC rows). No chassis-level draw is published - the vendor instructs computing a budget per configuration (Table 94 worked example), so no power-typical/max is carried on the device and the module figures are what sums","rear":"photo - four PEM bays across the top (x 11.0 on a 101.9 mm pitch, rows 8.9-88.6), PEM 0-3 legends on the plate below each bay, the protective-earthing studs at the top right (two, vertically at 426.7, y 22.2/35.4 - pitch read off the photo, approximate), the rear ESD socket at 356.4, 173.6, and the vertical air-filter (left) and fan-tray (right) door strips with their two-line legends on the plate. The large caution-text plate between them is not transcribed","scale":"photo - BOTH DAM photographs pass the orthographic gate (front 0.1%, rear 0.7%) and are cropped exactly to the 443 x 221.2 body, so every position is a direct measurement at 3.386 px/mm. This is the first device in the set whose photos carry geometry on both axes; the guide figures were used for identification and vocabularies only","sources":"MX240 Universal Routing Platform Hardware Guide (163 captioned figures extracted into working/images/mx240/), HPE datasheet a00150825enw, and the Juniper image-library photographs mx240-front-high and mx240-rear-high. No mechanical drawing was available"},"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"lower edge of the side rail; mirrored from the top estimate"},{"at":[437.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"lower edge of the side rail; same estimate"}]},"size":{"h":622.0,"w":443.0}},"front":{"components":{"bays":[{"accepts":["juniper/mx240-craft@1"],"at":[11.5,32.8],"default":"juniper/mx240-craft@1","group":"craft","id":"craft","rel-pos":0,"size":{"h":42.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,84.6],"default":"juniper/dpce-r-40ge-sfp@1","group":"slots","id":"dpc2","rel-pos":3,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,115.05],"default":"juniper/dpc-r-4xge-xfp@1","group":"slots","id":"dpc1","rel-pos":2,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,145.5],"default":"juniper/scb-mx@1","group":"slots","id":"scb1-dpc0","rel-pos":1,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1"],"at":[11.5,175.95],"default":"juniper/scb-mx@1","group":"slots","id":"scb0","rel-pos":0,"size":{"h":29.5,"w":420.9}}]},"panel":{"cutouts":[{"at":[6.0,15.0],"id":"esd-front","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[25.1,3.0],"pattern":"vent","size":[231.8,23.6],"vent":40}]},"silkscreen":[{"at":[8.0,24.4],"fill":"#c7ccd1","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"},{"anchor":"middle","at":[5.6,99.4],"fill":"#e8eaec","font-size":2.6,"for":"dpc2","text":"2"},{"anchor":"middle","at":[5.6,129.9],"fill":"#e8eaec","font-size":2.6,"for":"dpc1","text":"1"},{"anchor":"middle","at":[5.6,160.3],"fill":"#e8eaec","font-size":2.2,"for":"scb1-dpc0","text":"1/0"},{"anchor":"middle","at":[5.6,190.8],"fill":"#e8eaec","font-size":2.6,"for":"scb0","text":"0"}],"size":{"h":221.2,"w":443.0}},"left":{"panel":{"decor":[{"at":[0.0,100.0],"confidence":"estimated","fill":"#3a3d42","size":[622.0,20.0],"source":"mounting-rail band along the side; no side drawing exists, estimated"}]},"size":{"h":221.2,"w":622.0}},"rear":{"components":{"bays":[{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[11.0,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem0","rel-pos":0,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[112.9,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem1","rel-pos":1,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[214.8,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem2","rel-pos":2,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[316.7,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem3","rel-pos":3,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-air-filter@1"],"at":[25.1,100.0],"default":"juniper/mx240-air-filter@1","group":"cooling","id":"air-filter","rel-pos":0,"size":{"h":110.0,"w":12.0}},{"accepts":["juniper/mx240-fan-tray@1"],"at":[398.7,100.0],"default":"juniper/mx240-fan-tray@1","group":"cooling","id":"fan-tray","rel-pos":1,"size":{"h":110.0,"w":12.0}}],"placements":[{"at":[423.2,18.7],"for":"chassis","group":"grounding","id":"ground-stud-0","ref":"juniper/mx-ground-stud@1","rel-pos":0},{"at":[423.2,31.9],"for":"chassis","group":"grounding","id":"ground-stud-1","ref":"juniper/mx-ground-stud@1","rel-pos":1}]},"panel":{"cutouts":[{"at":[423.2,18.7],"id":"ground-stud-0","shape":"circle","size":[7.0,7.0]},{"at":[423.2,31.9],"id":"ground-stud-1","shape":"circle","size":[7.0,7.0]},{"at":[354.4,171.6],"id":"esd-rear","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[7.0,95.0],"fill":"#b3b7bb","rx":1.2,"size":[429.0,120.0]}]},"silkscreen":[{"anchor":"middle","at":[60.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem0","text":"PEM 0"},{"anchor":"middle","at":[163.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem1","text":"PEM 1"},{"anchor":"middle","at":[266.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem2","text":"PEM 2"},{"anchor":"middle","at":[369.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem3","text":"PEM 3"},{"anchor":"middle","at":[54.6,140.0],"fill":"#3a3e43","font-size":3.0,"for":"air-filter","text":"AIR"},{"anchor":"middle","at":[54.6,145.0],"fill":"#3a3e43","font-size":3.0,"for":"air-filter","text":"FILTER"},{"anchor":"middle","at":[373.5,140.0],"fill":"#3a3e43","font-size":3.0,"for":"fan-tray","text":"FAN"},{"anchor":"middle","at":[373.5,145.0],"fill":"#3a3e43","font-size":3.0,"for":"fan-tray","text":"TRAY"},{"at":[431.7,47.2],"fill":"#43474c","for":"chassis","path":"M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7"},{"at":[349.0,178.6],"fill":"#43474c","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"}],"size":{"h":221.2,"w":443.0}},"right":{"panel":{"decor":[{"at":[180.0,30.0],"confidence":"estimated","pattern":"holes","size":[400.0,160.0],"source":"guide Figure 1 draws the right side as a round-hole air-exhaust field over most of the panel; extent estimated off that isometric art"}]},"size":{"h":221.2,"w":622.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"side rail edge seen from above; width estimated"},{"at":[437.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"side rail edge seen from above; width estimated"}]},"size":{"h":622.0,"w":443.0}}}},"view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX240" x="0" y="0" width="443" height="221.2" rx="1.2" fill="#43474c" stroke="#22262a" stroke-width="0.5" />
+  <rect x="7" y="95" width="429" height="120" rx="1.2" fill="#b3b7bb" />
+  <g id="--cutouts" data-class="cutouts">
+    <ellipse cx="426.7" cy="22.2" rx="3.5" ry="3.5" id="cutout--ground-stud-0" data-path="cutout:ground-stud-0" data-class="cutout" fill="#101214" />
+    <ellipse cx="426.7" cy="35.4" rx="3.5" ry="3.5" id="cutout--ground-stud-1" data-path="cutout:ground-stud-1" data-class="cutout" fill="#101214" />
+    <ellipse cx="356.4" cy="173.6" rx="2" ry="2" id="cutout--esd-rear" data-path="cutout:esd-rear" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="60" y="119" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem0">PEM 0</text>
+    <text x="163" y="119" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem1">PEM 1</text>
+    <text x="266" y="119" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem2">PEM 2</text>
+    <text x="369" y="119" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="pem3">PEM 3</text>
+    <text x="54.6" y="140" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="air-filter">AIR</text>
+    <text x="54.6" y="145" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="air-filter">FILTER</text>
+    <text x="373.5" y="140" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-tray">FAN</text>
+    <text x="373.5" y="145" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#3a3e43" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-tray">TRAY</text>
+    <path d="M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7" fill="none" stroke="#43474c" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(431.7 47.2)" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2" fill="none" stroke="#43474c" stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(349 178.6)" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+  </g>
+  <g id="pem0" data-path="pem0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>pem0</title>
+    <rect id="pem0--opening" x="11" y="8.9" width="101.5" height="79.7" fill="#101214" />
+    <g id="pem0--module" data-path="pem0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx240-psu-dc@1:1.0.0" data-input="-48 VDC and return; dedicated 40 A customer breaker per PEM" data-model="MX240 DC PSU (normal capacity)" data-redundancy="2 required, 4 for redundancy" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(61.75,48.75) translate(-50.75,-39.85)">
+      <title>pem0--module</title>
+      <rect id="pem0--module--face" x="0" y="0" width="101.5" height="79.7" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem0--module--vents">
+        <rect x="4.0" y="4.0" width="26.0" height="30.0" rx="0.8" fill="#a3a7ab" />
+        <polygon points="5.99,5.60 5.30,6.00 4.61,5.60 4.61,4.80 5.30,4.40 5.99,4.80" fill="#4a4f55" />
+        <polygon points="7.99,5.60 7.30,6.00 6.61,5.60 6.61,4.80 7.30,4.40 7.99,4.80" fill="#4a4f55" />
+        <polygon points="9.99,5.60 9.30,6.00 8.61,5.60 8.61,4.80 9.30,4.40 9.99,4.80" fill="#4a4f55" />
+        <polygon points="11.99,5.60 11.30,6.00 10.61,5.60 10.61,4.80 11.30,4.40 11.99,4.80" fill="#4a4f55" />
+        <polygon points="13.99,5.60 13.30,6.00 12.61,5.60 12.61,4.80 13.30,4.40 13.99,4.80" fill="#4a4f55" />
+        <polygon points="15.99,5.60 15.30,6.00 14.61,5.60 14.61,4.80 15.30,4.40 15.99,4.80" fill="#4a4f55" />
+        <polygon points="17.99,5.60 17.30,6.00 16.61,5.60 16.61,4.80 17.30,4.40 17.99,4.80" fill="#4a4f55" />
+        <polygon points="19.99,5.60 19.30,6.00 18.61,5.60 18.61,4.80 19.30,4.40 19.99,4.80" fill="#4a4f55" />
+        <polygon points="21.99,5.60 21.30,6.00 20.61,5.60 20.61,4.80 21.30,4.40 21.99,4.80" fill="#4a4f55" />
+        <polygon points="23.99,5.60 23.30,6.00 22.61,5.60 22.61,4.80 23.30,4.40 23.99,4.80" fill="#4a4f55" />
+        <polygon points="25.99,5.60 25.30,6.00 24.61,5.60 24.61,4.80 25.30,4.40 25.99,4.80" fill="#4a4f55" />
+        <polygon points="27.99,5.60 27.30,6.00 26.61,5.60 26.61,4.80 27.30,4.40 27.99,4.80" fill="#4a4f55" />
+        <polygon points="6.99,7.35 6.30,7.75 5.61,7.35 5.61,6.55 6.30,6.15 6.99,6.55" fill="#4a4f55" />
+        <polygon points="8.99,7.35 8.30,7.75 7.61,7.35 7.61,6.55 8.30,6.15 8.99,6.55" fill="#4a4f55" />
+        <polygon points="10.99,7.35 10.30,7.75 9.61,7.35 9.61,6.55 10.30,6.15 10.99,6.55" fill="#4a4f55" />
+        <polygon points="12.99,7.35 12.30,7.75 11.61,7.35 11.61,6.55 12.30,6.15 12.99,6.55" fill="#4a4f55" />
+        <polygon points="14.99,7.35 14.30,7.75 13.61,7.35 13.61,6.55 14.30,6.15 14.99,6.55" fill="#4a4f55" />
+        <polygon points="16.99,7.35 16.30,7.75 15.61,7.35 15.61,6.55 16.30,6.15 16.99,6.55" fill="#4a4f55" />
+        <polygon points="18.99,7.35 18.30,7.75 17.61,7.35 17.61,6.55 18.30,6.15 18.99,6.55" fill="#4a4f55" />
+        <polygon points="20.99,7.35 20.30,7.75 19.61,7.35 19.61,6.55 20.30,6.15 20.99,6.55" fill="#4a4f55" />
+        <polygon points="22.99,7.35 22.30,7.75 21.61,7.35 21.61,6.55 22.30,6.15 22.99,6.55" fill="#4a4f55" />
+        <polygon points="24.99,7.35 24.30,7.75 23.61,7.35 23.61,6.55 24.30,6.15 24.99,6.55" fill="#4a4f55" />
+        <polygon points="26.99,7.35 26.30,7.75 25.61,7.35 25.61,6.55 26.30,6.15 26.99,6.55" fill="#4a4f55" />
+        <polygon points="28.99,7.35 28.30,7.75 27.61,7.35 27.61,6.55 28.30,6.15 28.99,6.55" fill="#4a4f55" />
+        <polygon points="5.99,9.10 5.30,9.50 4.61,9.10 4.61,8.30 5.30,7.90 5.99,8.30" fill="#4a4f55" />
+        <polygon points="7.99,9.10 7.30,9.50 6.61,9.10 6.61,8.30 7.30,7.90 7.99,8.30" fill="#4a4f55" />
+        <polygon points="9.99,9.10 9.30,9.50 8.61,9.10 8.61,8.30 9.30,7.90 9.99,8.30" fill="#4a4f55" />
+        <polygon points="11.99,9.10 11.30,9.50 10.61,9.10 10.61,8.30 11.30,7.90 11.99,8.30" fill="#4a4f55" />
+        <polygon points="13.99,9.10 13.30,9.50 12.61,9.10 12.61,8.30 13.30,7.90 13.99,8.30" fill="#4a4f55" />
+        <polygon points="15.99,9.10 15.30,9.50 14.61,9.10 14.61,8.30 15.30,7.90 15.99,8.30" fill="#4a4f55" />
+        <polygon points="17.99,9.10 17.30,9.50 16.61,9.10 16.61,8.30 17.30,7.90 17.99,8.30" fill="#4a4f55" />
+        <polygon points="19.99,9.10 19.30,9.50 18.61,9.10 18.61,8.30 19.30,7.90 19.99,8.30" fill="#4a4f55" />
+        <polygon points="21.99,9.10 21.30,9.50 20.61,9.10 20.61,8.30 21.30,7.90 21.99,8.30" fill="#4a4f55" />
+        <polygon points="23.99,9.10 23.30,9.50 22.61,9.10 22.61,8.30 23.30,7.90 23.99,8.30" fill="#4a4f55" />
+        <polygon points="25.99,9.10 25.30,9.50 24.61,9.10 24.61,8.30 25.30,7.90 25.99,8.30" fill="#4a4f55" />
+        <polygon points="27.99,9.10 27.30,9.50 26.61,9.10 26.61,8.30 27.30,7.90 27.99,8.30" fill="#4a4f55" />
+        <polygon points="6.99,10.85 6.30,11.25 5.61,10.85 5.61,10.05 6.30,9.65 6.99,10.05" fill="#4a4f55" />
+        <polygon points="8.99,10.85 8.30,11.25 7.61,10.85 7.61,10.05 8.30,9.65 8.99,10.05" fill="#4a4f55" />
+        <polygon points="10.99,10.85 10.30,11.25 9.61,10.85 9.61,10.05 10.30,9.65 10.99,10.05" fill="#4a4f55" />
+        <polygon points="12.99,10.85 12.30,11.25 11.61,10.85 11.61,10.05 12.30,9.65 12.99,10.05" fill="#4a4f55" />
+        <polygon points="14.99,10.85 14.30,11.25 13.61,10.85 13.61,10.05 14.30,9.65 14.99,10.05" fill="#4a4f55" />
+        <polygon points="16.99,10.85 16.30,11.25 15.61,10.85 15.61,10.05 16.30,9.65 16.99,10.05" fill="#4a4f55" />
+        <polygon points="18.99,10.85 18.30,11.25 17.61,10.85 17.61,10.05 18.30,9.65 18.99,10.05" fill="#4a4f55" />
+        <polygon points="20.99,10.85 20.30,11.25 19.61,10.85 19.61,10.05 20.30,9.65 20.99,10.05" fill="#4a4f55" />
+        <polygon points="22.99,10.85 22.30,11.25 21.61,10.85 21.61,10.05 22.30,9.65 22.99,10.05" fill="#4a4f55" />
+        <polygon points="24.99,10.85 24.30,11.25 23.61,10.85 23.61,10.05 24.30,9.65 24.99,10.05" fill="#4a4f55" />
+        <polygon points="26.99,10.85 26.30,11.25 25.61,10.85 25.61,10.05 26.30,9.65 26.99,10.05" fill="#4a4f55" />
+        <polygon points="28.99,10.85 28.30,11.25 27.61,10.85 27.61,10.05 28.30,9.65 28.99,10.05" fill="#4a4f55" />
+        <polygon points="5.99,12.60 5.30,13.00 4.61,12.60 4.61,11.80 5.30,11.40 5.99,11.80" fill="#4a4f55" />
+        <polygon points="7.99,12.60 7.30,13.00 6.61,12.60 6.61,11.80 7.30,11.40 7.99,11.80" fill="#4a4f55" />
+        <polygon points="9.99,12.60 9.30,13.00 8.61,12.60 8.61,11.80 9.30,11.40 9.99,11.80" fill="#4a4f55" />
+        <polygon points="11.99,12.60 11.30,13.00 10.61,12.60 10.61,11.80 11.30,11.40 11.99,11.80" fill="#4a4f55" />
+        <polygon points="13.99,12.60 13.30,13.00 12.61,12.60 12.61,11.80 13.30,11.40 13.99,11.80" fill="#4a4f55" />
+        <polygon points="15.99,12.60 15.30,13.00 14.61,12.60 14.61,11.80 15.30,11.40 15.99,11.80" fill="#4a4f55" />
+        <polygon points="17.99,12.60 17.30,13.00 16.61,12.60 16.61,11.80 17.30,11.40 17.99,11.80" fill="#4a4f55" />
+        <polygon points="19.99,12.60 19.30,13.00 18.61,12.60 18.61,11.80 19.30,11.40 19.99,11.80" fill="#4a4f55" />
+        <polygon points="21.99,12.60 21.30,13.00 20.61,12.60 20.61,11.80 21.30,11.40 21.99,11.80" fill="#4a4f55" />
+        <polygon points="23.99,12.60 23.30,13.00 22.61,12.60 22.61,11.80 23.30,11.40 23.99,11.80" fill="#4a4f55" />
+        <polygon points="25.99,12.60 25.30,13.00 24.61,12.60 24.61,11.80 25.30,11.40 25.99,11.80" fill="#4a4f55" />
+        <polygon points="27.99,12.60 27.30,13.00 26.61,12.60 26.61,11.80 27.30,11.40 27.99,11.80" fill="#4a4f55" />
+        <polygon points="6.99,14.35 6.30,14.75 5.61,14.35 5.61,13.55 6.30,13.15 6.99,13.55" fill="#4a4f55" />
+        <polygon points="8.99,14.35 8.30,14.75 7.61,14.35 7.61,13.55 8.30,13.15 8.99,13.55" fill="#4a4f55" />
+        <polygon points="10.99,14.35 10.30,14.75 9.61,14.35 9.61,13.55 10.30,13.15 10.99,13.55" fill="#4a4f55" />
+        <polygon points="12.99,14.35 12.30,14.75 11.61,14.35 11.61,13.55 12.30,13.15 12.99,13.55" fill="#4a4f55" />
+        <polygon points="14.99,14.35 14.30,14.75 13.61,14.35 13.61,13.55 14.30,13.15 14.99,13.55" fill="#4a4f55" />
+        <polygon points="16.99,14.35 16.30,14.75 15.61,14.35 15.61,13.55 16.30,13.15 16.99,13.55" fill="#4a4f55" />
+        <polygon points="18.99,14.35 18.30,14.75 17.61,14.35 17.61,13.55 18.30,13.15 18.99,13.55" fill="#4a4f55" />
+        <polygon points="20.99,14.35 20.30,14.75 19.61,14.35 19.61,13.55 20.30,13.15 20.99,13.55" fill="#4a4f55" />
+        <polygon points="22.99,14.35 22.30,14.75 21.61,14.35 21.61,13.55 22.30,13.15 22.99,13.55" fill="#4a4f55" />
+        <polygon points="24.99,14.35 24.30,14.75 23.61,14.35 23.61,13.55 24.30,13.15 24.99,13.55" fill="#4a4f55" />
+        <polygon points="26.99,14.35 26.30,14.75 25.61,14.35 25.61,13.55 26.30,13.15 26.99,13.55" fill="#4a4f55" />
+        <polygon points="28.99,14.35 28.30,14.75 27.61,14.35 27.61,13.55 28.30,13.15 28.99,13.55" fill="#4a4f55" />
+        <polygon points="5.99,16.10 5.30,16.50 4.61,16.10 4.61,15.30 5.30,14.90 5.99,15.30" fill="#4a4f55" />
+        <polygon points="7.99,16.10 7.30,16.50 6.61,16.10 6.61,15.30 7.30,14.90 7.99,15.30" fill="#4a4f55" />
+        <polygon points="9.99,16.10 9.30,16.50 8.61,16.10 8.61,15.30 9.30,14.90 9.99,15.30" fill="#4a4f55" />
+        <polygon points="11.99,16.10 11.30,16.50 10.61,16.10 10.61,15.30 11.30,14.90 11.99,15.30" fill="#4a4f55" />
+        <polygon points="13.99,16.10 13.30,16.50 12.61,16.10 12.61,15.30 13.30,14.90 13.99,15.30" fill="#4a4f55" />
+        <polygon points="15.99,16.10 15.30,16.50 14.61,16.10 14.61,15.30 15.30,14.90 15.99,15.30" fill="#4a4f55" />
+        <polygon points="17.99,16.10 17.30,16.50 16.61,16.10 16.61,15.30 17.30,14.90 17.99,15.30" fill="#4a4f55" />
+        <polygon points="19.99,16.10 19.30,16.50 18.61,16.10 18.61,15.30 19.30,14.90 19.99,15.30" fill="#4a4f55" />
+        <polygon points="21.99,16.10 21.30,16.50 20.61,16.10 20.61,15.30 21.30,14.90 21.99,15.30" fill="#4a4f55" />
+        <polygon points="23.99,16.10 23.30,16.50 22.61,16.10 22.61,15.30 23.30,14.90 23.99,15.30" fill="#4a4f55" />
+        <polygon points="25.99,16.10 25.30,16.50 24.61,16.10 24.61,15.30 25.30,14.90 25.99,15.30" fill="#4a4f55" />
+        <polygon points="27.99,16.10 27.30,16.50 26.61,16.10 26.61,15.30 27.30,14.90 27.99,15.30" fill="#4a4f55" />
+        <polygon points="6.99,17.85 6.30,18.25 5.61,17.85 5.61,17.05 6.30,16.65 6.99,17.05" fill="#4a4f55" />
+        <polygon points="8.99,17.85 8.30,18.25 7.61,17.85 7.61,17.05 8.30,16.65 8.99,17.05" fill="#4a4f55" />
+        <polygon points="10.99,17.85 10.30,18.25 9.61,17.85 9.61,17.05 10.30,16.65 10.99,17.05" fill="#4a4f55" />
+        <polygon points="12.99,17.85 12.30,18.25 11.61,17.85 11.61,17.05 12.30,16.65 12.99,17.05" fill="#4a4f55" />
+        <polygon points="14.99,17.85 14.30,18.25 13.61,17.85 13.61,17.05 14.30,16.65 14.99,17.05" fill="#4a4f55" />
+        <polygon points="16.99,17.85 16.30,18.25 15.61,17.85 15.61,17.05 16.30,16.65 16.99,17.05" fill="#4a4f55" />
+        <polygon points="18.99,17.85 18.30,18.25 17.61,17.85 17.61,17.05 18.30,16.65 18.99,17.05" fill="#4a4f55" />
+        <polygon points="20.99,17.85 20.30,18.25 19.61,17.85 19.61,17.05 20.30,16.65 20.99,17.05" fill="#4a4f55" />
+        <polygon points="22.99,17.85 22.30,18.25 21.61,17.85 21.61,17.05 22.30,16.65 22.99,17.05" fill="#4a4f55" />
+        <polygon points="24.99,17.85 24.30,18.25 23.61,17.85 23.61,17.05 24.30,16.65 24.99,17.05" fill="#4a4f55" />
+        <polygon points="26.99,17.85 26.30,18.25 25.61,17.85 25.61,17.05 26.30,16.65 26.99,17.05" fill="#4a4f55" />
+        <polygon points="28.99,17.85 28.30,18.25 27.61,17.85 27.61,17.05 28.30,16.65 28.99,17.05" fill="#4a4f55" />
+        <polygon points="5.99,19.60 5.30,20.00 4.61,19.60 4.61,18.80 5.30,18.40 5.99,18.80" fill="#4a4f55" />
+        <polygon points="7.99,19.60 7.30,20.00 6.61,19.60 6.61,18.80 7.30,18.40 7.99,18.80" fill="#4a4f55" />
+        <polygon points="9.99,19.60 9.30,20.00 8.61,19.60 8.61,18.80 9.30,18.40 9.99,18.80" fill="#4a4f55" />
+        <polygon points="11.99,19.60 11.30,20.00 10.61,19.60 10.61,18.80 11.30,18.40 11.99,18.80" fill="#4a4f55" />
+        <polygon points="13.99,19.60 13.30,20.00 12.61,19.60 12.61,18.80 13.30,18.40 13.99,18.80" fill="#4a4f55" />
+        <polygon points="15.99,19.60 15.30,20.00 14.61,19.60 14.61,18.80 15.30,18.40 15.99,18.80" fill="#4a4f55" />
+        <polygon points="17.99,19.60 17.30,20.00 16.61,19.60 16.61,18.80 17.30,18.40 17.99,18.80" fill="#4a4f55" />
+        <polygon points="19.99,19.60 19.30,20.00 18.61,19.60 18.61,18.80 19.30,18.40 19.99,18.80" fill="#4a4f55" />
+        <polygon points="21.99,19.60 21.30,20.00 20.61,19.60 20.61,18.80 21.30,18.40 21.99,18.80" fill="#4a4f55" />
+        <polygon points="23.99,19.60 23.30,20.00 22.61,19.60 22.61,18.80 23.30,18.40 23.99,18.80" fill="#4a4f55" />
+        <polygon points="25.99,19.60 25.30,20.00 24.61,19.60 24.61,18.80 25.30,18.40 25.99,18.80" fill="#4a4f55" />
+        <polygon points="27.99,19.60 27.30,20.00 26.61,19.60 26.61,18.80 27.30,18.40 27.99,18.80" fill="#4a4f55" />
+        <polygon points="6.99,21.35 6.30,21.75 5.61,21.35 5.61,20.55 6.30,20.15 6.99,20.55" fill="#4a4f55" />
+        <polygon points="8.99,21.35 8.30,21.75 7.61,21.35 7.61,20.55 8.30,20.15 8.99,20.55" fill="#4a4f55" />
+        <polygon points="10.99,21.35 10.30,21.75 9.61,21.35 9.61,20.55 10.30,20.15 10.99,20.55" fill="#4a4f55" />
+        <polygon points="12.99,21.35 12.30,21.75 11.61,21.35 11.61,20.55 12.30,20.15 12.99,20.55" fill="#4a4f55" />
+        <polygon points="14.99,21.35 14.30,21.75 13.61,21.35 13.61,20.55 14.30,20.15 14.99,20.55" fill="#4a4f55" />
+        <polygon points="16.99,21.35 16.30,21.75 15.61,21.35 15.61,20.55 16.30,20.15 16.99,20.55" fill="#4a4f55" />
+        <polygon points="18.99,21.35 18.30,21.75 17.61,21.35 17.61,20.55 18.30,20.15 18.99,20.55" fill="#4a4f55" />
+        <polygon points="20.99,21.35 20.30,21.75 19.61,21.35 19.61,20.55 20.30,20.15 20.99,20.55" fill="#4a4f55" />
+        <polygon points="22.99,21.35 22.30,21.75 21.61,21.35 21.61,20.55 22.30,20.15 22.99,20.55" fill="#4a4f55" />
+        <polygon points="24.99,21.35 24.30,21.75 23.61,21.35 23.61,20.55 24.30,20.15 24.99,20.55" fill="#4a4f55" />
+        <polygon points="26.99,21.35 26.30,21.75 25.61,21.35 25.61,20.55 26.30,20.15 26.99,20.55" fill="#4a4f55" />
+        <polygon points="28.99,21.35 28.30,21.75 27.61,21.35 27.61,20.55 28.30,20.15 28.99,20.55" fill="#4a4f55" />
+        <polygon points="5.99,23.10 5.30,23.50 4.61,23.10 4.61,22.30 5.30,21.90 5.99,22.30" fill="#4a4f55" />
+        <polygon points="7.99,23.10 7.30,23.50 6.61,23.10 6.61,22.30 7.30,21.90 7.99,22.30" fill="#4a4f55" />
+        <polygon points="9.99,23.10 9.30,23.50 8.61,23.10 8.61,22.30 9.30,21.90 9.99,22.30" fill="#4a4f55" />
+        <polygon points="11.99,23.10 11.30,23.50 10.61,23.10 10.61,22.30 11.30,21.90 11.99,22.30" fill="#4a4f55" />
+        <polygon points="13.99,23.10 13.30,23.50 12.61,23.10 12.61,22.30 13.30,21.90 13.99,22.30" fill="#4a4f55" />
+        <polygon points="15.99,23.10 15.30,23.50 14.61,23.10 14.61,22.30 15.30,21.90 15.99,22.30" fill="#4a4f55" />
+        <polygon points="17.99,23.10 17.30,23.50 16.61,23.10 16.61,22.30 17.30,21.90 17.99,22.30" fill="#4a4f55" />
+        <polygon points="19.99,23.10 19.30,23.50 18.61,23.10 18.61,22.30 19.30,21.90 19.99,22.30" fill="#4a4f55" />
+        <polygon points="21.99,23.10 21.30,23.50 20.61,23.10 20.61,22.30 21.30,21.90 21.99,22.30" fill="#4a4f55" />
+        <polygon points="23.99,23.10 23.30,23.50 22.61,23.10 22.61,22.30 23.30,21.90 23.99,22.30" fill="#4a4f55" />
+        <polygon points="25.99,23.10 25.30,23.50 24.61,23.10 24.61,22.30 25.30,21.90 25.99,22.30" fill="#4a4f55" />
+        <polygon points="27.99,23.10 27.30,23.50 26.61,23.10 26.61,22.30 27.30,21.90 27.99,22.30" fill="#4a4f55" />
+        <polygon points="6.99,24.85 6.30,25.25 5.61,24.85 5.61,24.05 6.30,23.65 6.99,24.05" fill="#4a4f55" />
+        <polygon points="8.99,24.85 8.30,25.25 7.61,24.85 7.61,24.05 8.30,23.65 8.99,24.05" fill="#4a4f55" />
+        <polygon points="10.99,24.85 10.30,25.25 9.61,24.85 9.61,24.05 10.30,23.65 10.99,24.05" fill="#4a4f55" />
+        <polygon points="12.99,24.85 12.30,25.25 11.61,24.85 11.61,24.05 12.30,23.65 12.99,24.05" fill="#4a4f55" />
+        <polygon points="14.99,24.85 14.30,25.25 13.61,24.85 13.61,24.05 14.30,23.65 14.99,24.05" fill="#4a4f55" />
+        <polygon points="16.99,24.85 16.30,25.25 15.61,24.85 15.61,24.05 16.30,23.65 16.99,24.05" fill="#4a4f55" />
+        <polygon points="18.99,24.85 18.30,25.25 17.61,24.85 17.61,24.05 18.30,23.65 18.99,24.05" fill="#4a4f55" />
+        <polygon points="20.99,24.85 20.30,25.25 19.61,24.85 19.61,24.05 20.30,23.65 20.99,24.05" fill="#4a4f55" />
+        <polygon points="22.99,24.85 22.30,25.25 21.61,24.85 21.61,24.05 22.30,23.65 22.99,24.05" fill="#4a4f55" />
+        <polygon points="24.99,24.85 24.30,25.25 23.61,24.85 23.61,24.05 24.30,23.65 24.99,24.05" fill="#4a4f55" />
+        <polygon points="26.99,24.85 26.30,25.25 25.61,24.85 25.61,24.05 26.30,23.65 26.99,24.05" fill="#4a4f55" />
+        <polygon points="28.99,24.85 28.30,25.25 27.61,24.85 27.61,24.05 28.30,23.65 28.99,24.05" fill="#4a4f55" />
+        <polygon points="5.99,26.60 5.30,27.00 4.61,26.60 4.61,25.80 5.30,25.40 5.99,25.80" fill="#4a4f55" />
+        <polygon points="7.99,26.60 7.30,27.00 6.61,26.60 6.61,25.80 7.30,25.40 7.99,25.80" fill="#4a4f55" />
+        <polygon points="9.99,26.60 9.30,27.00 8.61,26.60 8.61,25.80 9.30,25.40 9.99,25.80" fill="#4a4f55" />
+        <polygon points="11.99,26.60 11.30,27.00 10.61,26.60 10.61,25.80 11.30,25.40 11.99,25.80" fill="#4a4f55" />
+        <polygon points="13.99,26.60 13.30,27.00 12.61,26.60 12.61,25.80 13.30,25.40 13.99,25.80" fill="#4a4f55" />
+        <polygon points="15.99,26.60 15.30,27.00 14.61,26.60 14.61,25.80 15.30,25.40 15.99,25.80" fill="#4a4f55" />
+        <polygon points="17.99,26.60 17.30,27.00 16.61,26.60 16.61,25.80 17.30,25.40 17.99,25.80" fill="#4a4f55" />
+        <polygon points="19.99,26.60 19.30,27.00 18.61,26.60 18.61,25.80 19.30,25.40 19.99,25.80" fill="#4a4f55" />
+        <polygon points="21.99,26.60 21.30,27.00 20.61,26.60 20.61,25.80 21.30,25.40 21.99,25.80" fill="#4a4f55" />
+        <polygon points="23.99,26.60 23.30,27.00 22.61,26.60 22.61,25.80 23.30,25.40 23.99,25.80" fill="#4a4f55" />
+        <polygon points="25.99,26.60 25.30,27.00 24.61,26.60 24.61,25.80 25.30,25.40 25.99,25.80" fill="#4a4f55" />
+        <polygon points="27.99,26.60 27.30,27.00 26.61,26.60 26.61,25.80 27.30,25.40 27.99,25.80" fill="#4a4f55" />
+        <polygon points="6.99,28.35 6.30,28.75 5.61,28.35 5.61,27.55 6.30,27.15 6.99,27.55" fill="#4a4f55" />
+        <polygon points="8.99,28.35 8.30,28.75 7.61,28.35 7.61,27.55 8.30,27.15 8.99,27.55" fill="#4a4f55" />
+        <polygon points="10.99,28.35 10.30,28.75 9.61,28.35 9.61,27.55 10.30,27.15 10.99,27.55" fill="#4a4f55" />
+        <polygon points="12.99,28.35 12.30,28.75 11.61,28.35 11.61,27.55 12.30,27.15 12.99,27.55" fill="#4a4f55" />
+        <polygon points="14.99,28.35 14.30,28.75 13.61,28.35 13.61,27.55 14.30,27.15 14.99,27.55" fill="#4a4f55" />
+        <polygon points="16.99,28.35 16.30,28.75 15.61,28.35 15.61,27.55 16.30,27.15 16.99,27.55" fill="#4a4f55" />
+        <polygon points="18.99,28.35 18.30,28.75 17.61,28.35 17.61,27.55 18.30,27.15 18.99,27.55" fill="#4a4f55" />
+        <polygon points="20.99,28.35 20.30,28.75 19.61,28.35 19.61,27.55 20.30,27.15 20.99,27.55" fill="#4a4f55" />
+        <polygon points="22.99,28.35 22.30,28.75 21.61,28.35 21.61,27.55 22.30,27.15 22.99,27.55" fill="#4a4f55" />
+        <polygon points="24.99,28.35 24.30,28.75 23.61,28.35 23.61,27.55 24.30,27.15 24.99,27.55" fill="#4a4f55" />
+        <polygon points="26.99,28.35 26.30,28.75 25.61,28.35 25.61,27.55 26.30,27.15 26.99,27.55" fill="#4a4f55" />
+        <polygon points="28.99,28.35 28.30,28.75 27.61,28.35 27.61,27.55 28.30,27.15 28.99,27.55" fill="#4a4f55" />
+        <polygon points="5.99,30.10 5.30,30.50 4.61,30.10 4.61,29.30 5.30,28.90 5.99,29.30" fill="#4a4f55" />
+        <polygon points="7.99,30.10 7.30,30.50 6.61,30.10 6.61,29.30 7.30,28.90 7.99,29.30" fill="#4a4f55" />
+        <polygon points="9.99,30.10 9.30,30.50 8.61,30.10 8.61,29.30 9.30,28.90 9.99,29.30" fill="#4a4f55" />
+        <polygon points="11.99,30.10 11.30,30.50 10.61,30.10 10.61,29.30 11.30,28.90 11.99,29.30" fill="#4a4f55" />
+        <polygon points="13.99,30.10 13.30,30.50 12.61,30.10 12.61,29.30 13.30,28.90 13.99,29.30" fill="#4a4f55" />
+        <polygon points="15.99,30.10 15.30,30.50 14.61,30.10 14.61,29.30 15.30,28.90 15.99,29.30" fill="#4a4f55" />
+        <polygon points="17.99,30.10 17.30,30.50 16.61,30.10 16.61,29.30 17.30,28.90 17.99,29.30" fill="#4a4f55" />
+        <polygon points="19.99,30.10 19.30,30.50 18.61,30.10 18.61,29.30 19.30,28.90 19.99,29.30" fill="#4a4f55" />
+        <polygon points="21.99,30.10 21.30,30.50 20.61,30.10 20.61,29.30 21.30,28.90 21.99,29.30" fill="#4a4f55" />
+        <polygon points="23.99,30.10 23.30,30.50 22.61,30.10 22.61,29.30 23.30,28.90 23.99,29.30" fill="#4a4f55" />
+        <polygon points="25.99,30.10 25.30,30.50 24.61,30.10 24.61,29.30 25.30,28.90 25.99,29.30" fill="#4a4f55" />
+        <polygon points="27.99,30.10 27.30,30.50 26.61,30.10 26.61,29.30 27.30,28.90 27.99,29.30" fill="#4a4f55" />
+        <polygon points="6.99,31.85 6.30,32.25 5.61,31.85 5.61,31.05 6.30,30.65 6.99,31.05" fill="#4a4f55" />
+        <polygon points="8.99,31.85 8.30,32.25 7.61,31.85 7.61,31.05 8.30,30.65 8.99,31.05" fill="#4a4f55" />
+        <polygon points="10.99,31.85 10.30,32.25 9.61,31.85 9.61,31.05 10.30,30.65 10.99,31.05" fill="#4a4f55" />
+        <polygon points="12.99,31.85 12.30,32.25 11.61,31.85 11.61,31.05 12.30,30.65 12.99,31.05" fill="#4a4f55" />
+        <polygon points="14.99,31.85 14.30,32.25 13.61,31.85 13.61,31.05 14.30,30.65 14.99,31.05" fill="#4a4f55" />
+        <polygon points="16.99,31.85 16.30,32.25 15.61,31.85 15.61,31.05 16.30,30.65 16.99,31.05" fill="#4a4f55" />
+        <polygon points="18.99,31.85 18.30,32.25 17.61,31.85 17.61,31.05 18.30,30.65 18.99,31.05" fill="#4a4f55" />
+        <polygon points="20.99,31.85 20.30,32.25 19.61,31.85 19.61,31.05 20.30,30.65 20.99,31.05" fill="#4a4f55" />
+        <polygon points="22.99,31.85 22.30,32.25 21.61,31.85 21.61,31.05 22.30,30.65 22.99,31.05" fill="#4a4f55" />
+        <polygon points="24.99,31.85 24.30,32.25 23.61,31.85 23.61,31.05 24.30,30.65 24.99,31.05" fill="#4a4f55" />
+        <polygon points="26.99,31.85 26.30,32.25 25.61,31.85 25.61,31.05 26.30,30.65 26.99,31.05" fill="#4a4f55" />
+        <polygon points="28.99,31.85 28.30,32.25 27.61,31.85 27.61,31.05 28.30,30.65 28.99,31.05" fill="#4a4f55" />
+      </g>
+      <g id="pem0--module--terminals" data-path="pem0/module/terminals" data-class="terminal" data-z-out="2.4" data-z-color="#26292d">
+        <rect id="pem0--module--terminal-plate" x="4.0" y="38.0" width="34.0" height="30.0" rx="1.2" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+        <g id="pem0--module--stud-0" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem0--module--stud-1" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem0--module--stud-2" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem0--module--stud-3" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="pem0--module--breaker" data-path="pem0/module/breaker" data-class="switch" data-z-out="3.0" data-z-color="#17191c">
+        <circle cx="60.0" cy="26.0" r="10.5" fill="#17191c" stroke="#0d0f11" stroke-width="0.5" />
+        <rect x="47.0" y="23.0" width="12.0" height="6.0" rx="1.6" fill="#e8eaec" stroke="#9ba0a6" stroke-width="0.4" />
+      </g>
+      <g id="pem0--module--lamps">
+        <circle id="pem0--module--led-pwr-ok" cx="51.0" cy="56.5" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem0--module--led-bkr-on" cx="63.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem0--module--led-input-ok" cx="77.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="pem0--module--handle" data-path="pem0/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="44.0" y="63.5" width="44.0" height="4.6" rx="2.3" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+      </g>
+      <g id="pem0--module--silkscreen">
+        <g id="pem0--module--t69-silkscreen">
+          <text x="6.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="start">RTN</text>
+        </g>
+        <g id="pem0--module--t70-silkscreen">
+          <text x="36.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="end">-48V</text>
+        </g>
+        <g id="pem0--module--t71-silkscreen">
+          <text x="51.0" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">PWR OK</text>
+        </g>
+        <g id="pem0--module--t72-silkscreen">
+          <text x="63.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">BKR ON</text>
+        </g>
+        <g id="pem0--module--t73-silkscreen">
+          <text x="77.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">INPUT OK</text>
+        </g>
+        <g id="pem0--module--t74-silkscreen">
+          <text x="80.0" y="8.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Breaker</text>
+        </g>
+        <g id="pem0--module--t75-silkscreen">
+          <text x="80.0" y="10.6" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Rating: 40A</text>
+        </g>
+        <g id="pem0--module--t76-silkscreen">
+          <text x="50.8" y="74.4" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">Use Copper Conductors</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="pem1" data-path="pem1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>pem1</title>
+    <rect id="pem1--opening" x="112.9" y="8.9" width="101.5" height="79.7" fill="#101214" />
+    <g id="pem1--module" data-path="pem1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx240-psu-dc@1:1.0.0" data-input="-48 VDC and return; dedicated 40 A customer breaker per PEM" data-model="MX240 DC PSU (normal capacity)" data-redundancy="2 required, 4 for redundancy" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(163.65,48.75) translate(-50.75,-39.85)">
+      <title>pem1--module</title>
+      <rect id="pem1--module--face" x="0" y="0" width="101.5" height="79.7" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem1--module--vents">
+        <rect x="4.0" y="4.0" width="26.0" height="30.0" rx="0.8" fill="#a3a7ab" />
+        <polygon points="5.99,5.60 5.30,6.00 4.61,5.60 4.61,4.80 5.30,4.40 5.99,4.80" fill="#4a4f55" />
+        <polygon points="7.99,5.60 7.30,6.00 6.61,5.60 6.61,4.80 7.30,4.40 7.99,4.80" fill="#4a4f55" />
+        <polygon points="9.99,5.60 9.30,6.00 8.61,5.60 8.61,4.80 9.30,4.40 9.99,4.80" fill="#4a4f55" />
+        <polygon points="11.99,5.60 11.30,6.00 10.61,5.60 10.61,4.80 11.30,4.40 11.99,4.80" fill="#4a4f55" />
+        <polygon points="13.99,5.60 13.30,6.00 12.61,5.60 12.61,4.80 13.30,4.40 13.99,4.80" fill="#4a4f55" />
+        <polygon points="15.99,5.60 15.30,6.00 14.61,5.60 14.61,4.80 15.30,4.40 15.99,4.80" fill="#4a4f55" />
+        <polygon points="17.99,5.60 17.30,6.00 16.61,5.60 16.61,4.80 17.30,4.40 17.99,4.80" fill="#4a4f55" />
+        <polygon points="19.99,5.60 19.30,6.00 18.61,5.60 18.61,4.80 19.30,4.40 19.99,4.80" fill="#4a4f55" />
+        <polygon points="21.99,5.60 21.30,6.00 20.61,5.60 20.61,4.80 21.30,4.40 21.99,4.80" fill="#4a4f55" />
+        <polygon points="23.99,5.60 23.30,6.00 22.61,5.60 22.61,4.80 23.30,4.40 23.99,4.80" fill="#4a4f55" />
+        <polygon points="25.99,5.60 25.30,6.00 24.61,5.60 24.61,4.80 25.30,4.40 25.99,4.80" fill="#4a4f55" />
+        <polygon points="27.99,5.60 27.30,6.00 26.61,5.60 26.61,4.80 27.30,4.40 27.99,4.80" fill="#4a4f55" />
+        <polygon points="6.99,7.35 6.30,7.75 5.61,7.35 5.61,6.55 6.30,6.15 6.99,6.55" fill="#4a4f55" />
+        <polygon points="8.99,7.35 8.30,7.75 7.61,7.35 7.61,6.55 8.30,6.15 8.99,6.55" fill="#4a4f55" />
+        <polygon points="10.99,7.35 10.30,7.75 9.61,7.35 9.61,6.55 10.30,6.15 10.99,6.55" fill="#4a4f55" />
+        <polygon points="12.99,7.35 12.30,7.75 11.61,7.35 11.61,6.55 12.30,6.15 12.99,6.55" fill="#4a4f55" />
+        <polygon points="14.99,7.35 14.30,7.75 13.61,7.35 13.61,6.55 14.30,6.15 14.99,6.55" fill="#4a4f55" />
+        <polygon points="16.99,7.35 16.30,7.75 15.61,7.35 15.61,6.55 16.30,6.15 16.99,6.55" fill="#4a4f55" />
+        <polygon points="18.99,7.35 18.30,7.75 17.61,7.35 17.61,6.55 18.30,6.15 18.99,6.55" fill="#4a4f55" />
+        <polygon points="20.99,7.35 20.30,7.75 19.61,7.35 19.61,6.55 20.30,6.15 20.99,6.55" fill="#4a4f55" />
+        <polygon points="22.99,7.35 22.30,7.75 21.61,7.35 21.61,6.55 22.30,6.15 22.99,6.55" fill="#4a4f55" />
+        <polygon points="24.99,7.35 24.30,7.75 23.61,7.35 23.61,6.55 24.30,6.15 24.99,6.55" fill="#4a4f55" />
+        <polygon points="26.99,7.35 26.30,7.75 25.61,7.35 25.61,6.55 26.30,6.15 26.99,6.55" fill="#4a4f55" />
+        <polygon points="28.99,7.35 28.30,7.75 27.61,7.35 27.61,6.55 28.30,6.15 28.99,6.55" fill="#4a4f55" />
+        <polygon points="5.99,9.10 5.30,9.50 4.61,9.10 4.61,8.30 5.30,7.90 5.99,8.30" fill="#4a4f55" />
+        <polygon points="7.99,9.10 7.30,9.50 6.61,9.10 6.61,8.30 7.30,7.90 7.99,8.30" fill="#4a4f55" />
+        <polygon points="9.99,9.10 9.30,9.50 8.61,9.10 8.61,8.30 9.30,7.90 9.99,8.30" fill="#4a4f55" />
+        <polygon points="11.99,9.10 11.30,9.50 10.61,9.10 10.61,8.30 11.30,7.90 11.99,8.30" fill="#4a4f55" />
+        <polygon points="13.99,9.10 13.30,9.50 12.61,9.10 12.61,8.30 13.30,7.90 13.99,8.30" fill="#4a4f55" />
+        <polygon points="15.99,9.10 15.30,9.50 14.61,9.10 14.61,8.30 15.30,7.90 15.99,8.30" fill="#4a4f55" />
+        <polygon points="17.99,9.10 17.30,9.50 16.61,9.10 16.61,8.30 17.30,7.90 17.99,8.30" fill="#4a4f55" />
+        <polygon points="19.99,9.10 19.30,9.50 18.61,9.10 18.61,8.30 19.30,7.90 19.99,8.30" fill="#4a4f55" />
+        <polygon points="21.99,9.10 21.30,9.50 20.61,9.10 20.61,8.30 21.30,7.90 21.99,8.30" fill="#4a4f55" />
+        <polygon points="23.99,9.10 23.30,9.50 22.61,9.10 22.61,8.30 23.30,7.90 23.99,8.30" fill="#4a4f55" />
+        <polygon points="25.99,9.10 25.30,9.50 24.61,9.10 24.61,8.30 25.30,7.90 25.99,8.30" fill="#4a4f55" />
+        <polygon points="27.99,9.10 27.30,9.50 26.61,9.10 26.61,8.30 27.30,7.90 27.99,8.30" fill="#4a4f55" />
+        <polygon points="6.99,10.85 6.30,11.25 5.61,10.85 5.61,10.05 6.30,9.65 6.99,10.05" fill="#4a4f55" />
+        <polygon points="8.99,10.85 8.30,11.25 7.61,10.85 7.61,10.05 8.30,9.65 8.99,10.05" fill="#4a4f55" />
+        <polygon points="10.99,10.85 10.30,11.25 9.61,10.85 9.61,10.05 10.30,9.65 10.99,10.05" fill="#4a4f55" />
+        <polygon points="12.99,10.85 12.30,11.25 11.61,10.85 11.61,10.05 12.30,9.65 12.99,10.05" fill="#4a4f55" />
+        <polygon points="14.99,10.85 14.30,11.25 13.61,10.85 13.61,10.05 14.30,9.65 14.99,10.05" fill="#4a4f55" />
+        <polygon points="16.99,10.85 16.30,11.25 15.61,10.85 15.61,10.05 16.30,9.65 16.99,10.05" fill="#4a4f55" />
+        <polygon points="18.99,10.85 18.30,11.25 17.61,10.85 17.61,10.05 18.30,9.65 18.99,10.05" fill="#4a4f55" />
+        <polygon points="20.99,10.85 20.30,11.25 19.61,10.85 19.61,10.05 20.30,9.65 20.99,10.05" fill="#4a4f55" />
+        <polygon points="22.99,10.85 22.30,11.25 21.61,10.85 21.61,10.05 22.30,9.65 22.99,10.05" fill="#4a4f55" />
+        <polygon points="24.99,10.85 24.30,11.25 23.61,10.85 23.61,10.05 24.30,9.65 24.99,10.05" fill="#4a4f55" />
+        <polygon points="26.99,10.85 26.30,11.25 25.61,10.85 25.61,10.05 26.30,9.65 26.99,10.05" fill="#4a4f55" />
+        <polygon points="28.99,10.85 28.30,11.25 27.61,10.85 27.61,10.05 28.30,9.65 28.99,10.05" fill="#4a4f55" />
+        <polygon points="5.99,12.60 5.30,13.00 4.61,12.60 4.61,11.80 5.30,11.40 5.99,11.80" fill="#4a4f55" />
+        <polygon points="7.99,12.60 7.30,13.00 6.61,12.60 6.61,11.80 7.30,11.40 7.99,11.80" fill="#4a4f55" />
+        <polygon points="9.99,12.60 9.30,13.00 8.61,12.60 8.61,11.80 9.30,11.40 9.99,11.80" fill="#4a4f55" />
+        <polygon points="11.99,12.60 11.30,13.00 10.61,12.60 10.61,11.80 11.30,11.40 11.99,11.80" fill="#4a4f55" />
+        <polygon points="13.99,12.60 13.30,13.00 12.61,12.60 12.61,11.80 13.30,11.40 13.99,11.80" fill="#4a4f55" />
+        <polygon points="15.99,12.60 15.30,13.00 14.61,12.60 14.61,11.80 15.30,11.40 15.99,11.80" fill="#4a4f55" />
+        <polygon points="17.99,12.60 17.30,13.00 16.61,12.60 16.61,11.80 17.30,11.40 17.99,11.80" fill="#4a4f55" />
+        <polygon points="19.99,12.60 19.30,13.00 18.61,12.60 18.61,11.80 19.30,11.40 19.99,11.80" fill="#4a4f55" />
+        <polygon points="21.99,12.60 21.30,13.00 20.61,12.60 20.61,11.80 21.30,11.40 21.99,11.80" fill="#4a4f55" />
+        <polygon points="23.99,12.60 23.30,13.00 22.61,12.60 22.61,11.80 23.30,11.40 23.99,11.80" fill="#4a4f55" />
+        <polygon points="25.99,12.60 25.30,13.00 24.61,12.60 24.61,11.80 25.30,11.40 25.99,11.80" fill="#4a4f55" />
+        <polygon points="27.99,12.60 27.30,13.00 26.61,12.60 26.61,11.80 27.30,11.40 27.99,11.80" fill="#4a4f55" />
+        <polygon points="6.99,14.35 6.30,14.75 5.61,14.35 5.61,13.55 6.30,13.15 6.99,13.55" fill="#4a4f55" />
+        <polygon points="8.99,14.35 8.30,14.75 7.61,14.35 7.61,13.55 8.30,13.15 8.99,13.55" fill="#4a4f55" />
+        <polygon points="10.99,14.35 10.30,14.75 9.61,14.35 9.61,13.55 10.30,13.15 10.99,13.55" fill="#4a4f55" />
+        <polygon points="12.99,14.35 12.30,14.75 11.61,14.35 11.61,13.55 12.30,13.15 12.99,13.55" fill="#4a4f55" />
+        <polygon points="14.99,14.35 14.30,14.75 13.61,14.35 13.61,13.55 14.30,13.15 14.99,13.55" fill="#4a4f55" />
+        <polygon points="16.99,14.35 16.30,14.75 15.61,14.35 15.61,13.55 16.30,13.15 16.99,13.55" fill="#4a4f55" />
+        <polygon points="18.99,14.35 18.30,14.75 17.61,14.35 17.61,13.55 18.30,13.15 18.99,13.55" fill="#4a4f55" />
+        <polygon points="20.99,14.35 20.30,14.75 19.61,14.35 19.61,13.55 20.30,13.15 20.99,13.55" fill="#4a4f55" />
+        <polygon points="22.99,14.35 22.30,14.75 21.61,14.35 21.61,13.55 22.30,13.15 22.99,13.55" fill="#4a4f55" />
+        <polygon points="24.99,14.35 24.30,14.75 23.61,14.35 23.61,13.55 24.30,13.15 24.99,13.55" fill="#4a4f55" />
+        <polygon points="26.99,14.35 26.30,14.75 25.61,14.35 25.61,13.55 26.30,13.15 26.99,13.55" fill="#4a4f55" />
+        <polygon points="28.99,14.35 28.30,14.75 27.61,14.35 27.61,13.55 28.30,13.15 28.99,13.55" fill="#4a4f55" />
+        <polygon points="5.99,16.10 5.30,16.50 4.61,16.10 4.61,15.30 5.30,14.90 5.99,15.30" fill="#4a4f55" />
+        <polygon points="7.99,16.10 7.30,16.50 6.61,16.10 6.61,15.30 7.30,14.90 7.99,15.30" fill="#4a4f55" />
+        <polygon points="9.99,16.10 9.30,16.50 8.61,16.10 8.61,15.30 9.30,14.90 9.99,15.30" fill="#4a4f55" />
+        <polygon points="11.99,16.10 11.30,16.50 10.61,16.10 10.61,15.30 11.30,14.90 11.99,15.30" fill="#4a4f55" />
+        <polygon points="13.99,16.10 13.30,16.50 12.61,16.10 12.61,15.30 13.30,14.90 13.99,15.30" fill="#4a4f55" />
+        <polygon points="15.99,16.10 15.30,16.50 14.61,16.10 14.61,15.30 15.30,14.90 15.99,15.30" fill="#4a4f55" />
+        <polygon points="17.99,16.10 17.30,16.50 16.61,16.10 16.61,15.30 17.30,14.90 17.99,15.30" fill="#4a4f55" />
+        <polygon points="19.99,16.10 19.30,16.50 18.61,16.10 18.61,15.30 19.30,14.90 19.99,15.30" fill="#4a4f55" />
+        <polygon points="21.99,16.10 21.30,16.50 20.61,16.10 20.61,15.30 21.30,14.90 21.99,15.30" fill="#4a4f55" />
+        <polygon points="23.99,16.10 23.30,16.50 22.61,16.10 22.61,15.30 23.30,14.90 23.99,15.30" fill="#4a4f55" />
+        <polygon points="25.99,16.10 25.30,16.50 24.61,16.10 24.61,15.30 25.30,14.90 25.99,15.30" fill="#4a4f55" />
+        <polygon points="27.99,16.10 27.30,16.50 26.61,16.10 26.61,15.30 27.30,14.90 27.99,15.30" fill="#4a4f55" />
+        <polygon points="6.99,17.85 6.30,18.25 5.61,17.85 5.61,17.05 6.30,16.65 6.99,17.05" fill="#4a4f55" />
+        <polygon points="8.99,17.85 8.30,18.25 7.61,17.85 7.61,17.05 8.30,16.65 8.99,17.05" fill="#4a4f55" />
+        <polygon points="10.99,17.85 10.30,18.25 9.61,17.85 9.61,17.05 10.30,16.65 10.99,17.05" fill="#4a4f55" />
+        <polygon points="12.99,17.85 12.30,18.25 11.61,17.85 11.61,17.05 12.30,16.65 12.99,17.05" fill="#4a4f55" />
+        <polygon points="14.99,17.85 14.30,18.25 13.61,17.85 13.61,17.05 14.30,16.65 14.99,17.05" fill="#4a4f55" />
+        <polygon points="16.99,17.85 16.30,18.25 15.61,17.85 15.61,17.05 16.30,16.65 16.99,17.05" fill="#4a4f55" />
+        <polygon points="18.99,17.85 18.30,18.25 17.61,17.85 17.61,17.05 18.30,16.65 18.99,17.05" fill="#4a4f55" />
+        <polygon points="20.99,17.85 20.30,18.25 19.61,17.85 19.61,17.05 20.30,16.65 20.99,17.05" fill="#4a4f55" />
+        <polygon points="22.99,17.85 22.30,18.25 21.61,17.85 21.61,17.05 22.30,16.65 22.99,17.05" fill="#4a4f55" />
+        <polygon points="24.99,17.85 24.30,18.25 23.61,17.85 23.61,17.05 24.30,16.65 24.99,17.05" fill="#4a4f55" />
+        <polygon points="26.99,17.85 26.30,18.25 25.61,17.85 25.61,17.05 26.30,16.65 26.99,17.05" fill="#4a4f55" />
+        <polygon points="28.99,17.85 28.30,18.25 27.61,17.85 27.61,17.05 28.30,16.65 28.99,17.05" fill="#4a4f55" />
+        <polygon points="5.99,19.60 5.30,20.00 4.61,19.60 4.61,18.80 5.30,18.40 5.99,18.80" fill="#4a4f55" />
+        <polygon points="7.99,19.60 7.30,20.00 6.61,19.60 6.61,18.80 7.30,18.40 7.99,18.80" fill="#4a4f55" />
+        <polygon points="9.99,19.60 9.30,20.00 8.61,19.60 8.61,18.80 9.30,18.40 9.99,18.80" fill="#4a4f55" />
+        <polygon points="11.99,19.60 11.30,20.00 10.61,19.60 10.61,18.80 11.30,18.40 11.99,18.80" fill="#4a4f55" />
+        <polygon points="13.99,19.60 13.30,20.00 12.61,19.60 12.61,18.80 13.30,18.40 13.99,18.80" fill="#4a4f55" />
+        <polygon points="15.99,19.60 15.30,20.00 14.61,19.60 14.61,18.80 15.30,18.40 15.99,18.80" fill="#4a4f55" />
+        <polygon points="17.99,19.60 17.30,20.00 16.61,19.60 16.61,18.80 17.30,18.40 17.99,18.80" fill="#4a4f55" />
+        <polygon points="19.99,19.60 19.30,20.00 18.61,19.60 18.61,18.80 19.30,18.40 19.99,18.80" fill="#4a4f55" />
+        <polygon points="21.99,19.60 21.30,20.00 20.61,19.60 20.61,18.80 21.30,18.40 21.99,18.80" fill="#4a4f55" />
+        <polygon points="23.99,19.60 23.30,20.00 22.61,19.60 22.61,18.80 23.30,18.40 23.99,18.80" fill="#4a4f55" />
+        <polygon points="25.99,19.60 25.30,20.00 24.61,19.60 24.61,18.80 25.30,18.40 25.99,18.80" fill="#4a4f55" />
+        <polygon points="27.99,19.60 27.30,20.00 26.61,19.60 26.61,18.80 27.30,18.40 27.99,18.80" fill="#4a4f55" />
+        <polygon points="6.99,21.35 6.30,21.75 5.61,21.35 5.61,20.55 6.30,20.15 6.99,20.55" fill="#4a4f55" />
+        <polygon points="8.99,21.35 8.30,21.75 7.61,21.35 7.61,20.55 8.30,20.15 8.99,20.55" fill="#4a4f55" />
+        <polygon points="10.99,21.35 10.30,21.75 9.61,21.35 9.61,20.55 10.30,20.15 10.99,20.55" fill="#4a4f55" />
+        <polygon points="12.99,21.35 12.30,21.75 11.61,21.35 11.61,20.55 12.30,20.15 12.99,20.55" fill="#4a4f55" />
+        <polygon points="14.99,21.35 14.30,21.75 13.61,21.35 13.61,20.55 14.30,20.15 14.99,20.55" fill="#4a4f55" />
+        <polygon points="16.99,21.35 16.30,21.75 15.61,21.35 15.61,20.55 16.30,20.15 16.99,20.55" fill="#4a4f55" />
+        <polygon points="18.99,21.35 18.30,21.75 17.61,21.35 17.61,20.55 18.30,20.15 18.99,20.55" fill="#4a4f55" />
+        <polygon points="20.99,21.35 20.30,21.75 19.61,21.35 19.61,20.55 20.30,20.15 20.99,20.55" fill="#4a4f55" />
+        <polygon points="22.99,21.35 22.30,21.75 21.61,21.35 21.61,20.55 22.30,20.15 22.99,20.55" fill="#4a4f55" />
+        <polygon points="24.99,21.35 24.30,21.75 23.61,21.35 23.61,20.55 24.30,20.15 24.99,20.55" fill="#4a4f55" />
+        <polygon points="26.99,21.35 26.30,21.75 25.61,21.35 25.61,20.55 26.30,20.15 26.99,20.55" fill="#4a4f55" />
+        <polygon points="28.99,21.35 28.30,21.75 27.61,21.35 27.61,20.55 28.30,20.15 28.99,20.55" fill="#4a4f55" />
+        <polygon points="5.99,23.10 5.30,23.50 4.61,23.10 4.61,22.30 5.30,21.90 5.99,22.30" fill="#4a4f55" />
+        <polygon points="7.99,23.10 7.30,23.50 6.61,23.10 6.61,22.30 7.30,21.90 7.99,22.30" fill="#4a4f55" />
+        <polygon points="9.99,23.10 9.30,23.50 8.61,23.10 8.61,22.30 9.30,21.90 9.99,22.30" fill="#4a4f55" />
+        <polygon points="11.99,23.10 11.30,23.50 10.61,23.10 10.61,22.30 11.30,21.90 11.99,22.30" fill="#4a4f55" />
+        <polygon points="13.99,23.10 13.30,23.50 12.61,23.10 12.61,22.30 13.30,21.90 13.99,22.30" fill="#4a4f55" />
+        <polygon points="15.99,23.10 15.30,23.50 14.61,23.10 14.61,22.30 15.30,21.90 15.99,22.30" fill="#4a4f55" />
+        <polygon points="17.99,23.10 17.30,23.50 16.61,23.10 16.61,22.30 17.30,21.90 17.99,22.30" fill="#4a4f55" />
+        <polygon points="19.99,23.10 19.30,23.50 18.61,23.10 18.61,22.30 19.30,21.90 19.99,22.30" fill="#4a4f55" />
+        <polygon points="21.99,23.10 21.30,23.50 20.61,23.10 20.61,22.30 21.30,21.90 21.99,22.30" fill="#4a4f55" />
+        <polygon points="23.99,23.10 23.30,23.50 22.61,23.10 22.61,22.30 23.30,21.90 23.99,22.30" fill="#4a4f55" />
+        <polygon points="25.99,23.10 25.30,23.50 24.61,23.10 24.61,22.30 25.30,21.90 25.99,22.30" fill="#4a4f55" />
+        <polygon points="27.99,23.10 27.30,23.50 26.61,23.10 26.61,22.30 27.30,21.90 27.99,22.30" fill="#4a4f55" />
+        <polygon points="6.99,24.85 6.30,25.25 5.61,24.85 5.61,24.05 6.30,23.65 6.99,24.05" fill="#4a4f55" />
+        <polygon points="8.99,24.85 8.30,25.25 7.61,24.85 7.61,24.05 8.30,23.65 8.99,24.05" fill="#4a4f55" />
+        <polygon points="10.99,24.85 10.30,25.25 9.61,24.85 9.61,24.05 10.30,23.65 10.99,24.05" fill="#4a4f55" />
+        <polygon points="12.99,24.85 12.30,25.25 11.61,24.85 11.61,24.05 12.30,23.65 12.99,24.05" fill="#4a4f55" />
+        <polygon points="14.99,24.85 14.30,25.25 13.61,24.85 13.61,24.05 14.30,23.65 14.99,24.05" fill="#4a4f55" />
+        <polygon points="16.99,24.85 16.30,25.25 15.61,24.85 15.61,24.05 16.30,23.65 16.99,24.05" fill="#4a4f55" />
+        <polygon points="18.99,24.85 18.30,25.25 17.61,24.85 17.61,24.05 18.30,23.65 18.99,24.05" fill="#4a4f55" />
+        <polygon points="20.99,24.85 20.30,25.25 19.61,24.85 19.61,24.05 20.30,23.65 20.99,24.05" fill="#4a4f55" />
+        <polygon points="22.99,24.85 22.30,25.25 21.61,24.85 21.61,24.05 22.30,23.65 22.99,24.05" fill="#4a4f55" />
+        <polygon points="24.99,24.85 24.30,25.25 23.61,24.85 23.61,24.05 24.30,23.65 24.99,24.05" fill="#4a4f55" />
+        <polygon points="26.99,24.85 26.30,25.25 25.61,24.85 25.61,24.05 26.30,23.65 26.99,24.05" fill="#4a4f55" />
+        <polygon points="28.99,24.85 28.30,25.25 27.61,24.85 27.61,24.05 28.30,23.65 28.99,24.05" fill="#4a4f55" />
+        <polygon points="5.99,26.60 5.30,27.00 4.61,26.60 4.61,25.80 5.30,25.40 5.99,25.80" fill="#4a4f55" />
+        <polygon points="7.99,26.60 7.30,27.00 6.61,26.60 6.61,25.80 7.30,25.40 7.99,25.80" fill="#4a4f55" />
+        <polygon points="9.99,26.60 9.30,27.00 8.61,26.60 8.61,25.80 9.30,25.40 9.99,25.80" fill="#4a4f55" />
+        <polygon points="11.99,26.60 11.30,27.00 10.61,26.60 10.61,25.80 11.30,25.40 11.99,25.80" fill="#4a4f55" />
+        <polygon points="13.99,26.60 13.30,27.00 12.61,26.60 12.61,25.80 13.30,25.40 13.99,25.80" fill="#4a4f55" />
+        <polygon points="15.99,26.60 15.30,27.00 14.61,26.60 14.61,25.80 15.30,25.40 15.99,25.80" fill="#4a4f55" />
+        <polygon points="17.99,26.60 17.30,27.00 16.61,26.60 16.61,25.80 17.30,25.40 17.99,25.80" fill="#4a4f55" />
+        <polygon points="19.99,26.60 19.30,27.00 18.61,26.60 18.61,25.80 19.30,25.40 19.99,25.80" fill="#4a4f55" />
+        <polygon points="21.99,26.60 21.30,27.00 20.61,26.60 20.61,25.80 21.30,25.40 21.99,25.80" fill="#4a4f55" />
+        <polygon points="23.99,26.60 23.30,27.00 22.61,26.60 22.61,25.80 23.30,25.40 23.99,25.80" fill="#4a4f55" />
+        <polygon points="25.99,26.60 25.30,27.00 24.61,26.60 24.61,25.80 25.30,25.40 25.99,25.80" fill="#4a4f55" />
+        <polygon points="27.99,26.60 27.30,27.00 26.61,26.60 26.61,25.80 27.30,25.40 27.99,25.80" fill="#4a4f55" />
+        <polygon points="6.99,28.35 6.30,28.75 5.61,28.35 5.61,27.55 6.30,27.15 6.99,27.55" fill="#4a4f55" />
+        <polygon points="8.99,28.35 8.30,28.75 7.61,28.35 7.61,27.55 8.30,27.15 8.99,27.55" fill="#4a4f55" />
+        <polygon points="10.99,28.35 10.30,28.75 9.61,28.35 9.61,27.55 10.30,27.15 10.99,27.55" fill="#4a4f55" />
+        <polygon points="12.99,28.35 12.30,28.75 11.61,28.35 11.61,27.55 12.30,27.15 12.99,27.55" fill="#4a4f55" />
+        <polygon points="14.99,28.35 14.30,28.75 13.61,28.35 13.61,27.55 14.30,27.15 14.99,27.55" fill="#4a4f55" />
+        <polygon points="16.99,28.35 16.30,28.75 15.61,28.35 15.61,27.55 16.30,27.15 16.99,27.55" fill="#4a4f55" />
+        <polygon points="18.99,28.35 18.30,28.75 17.61,28.35 17.61,27.55 18.30,27.15 18.99,27.55" fill="#4a4f55" />
+        <polygon points="20.99,28.35 20.30,28.75 19.61,28.35 19.61,27.55 20.30,27.15 20.99,27.55" fill="#4a4f55" />
+        <polygon points="22.99,28.35 22.30,28.75 21.61,28.35 21.61,27.55 22.30,27.15 22.99,27.55" fill="#4a4f55" />
+        <polygon points="24.99,28.35 24.30,28.75 23.61,28.35 23.61,27.55 24.30,27.15 24.99,27.55" fill="#4a4f55" />
+        <polygon points="26.99,28.35 26.30,28.75 25.61,28.35 25.61,27.55 26.30,27.15 26.99,27.55" fill="#4a4f55" />
+        <polygon points="28.99,28.35 28.30,28.75 27.61,28.35 27.61,27.55 28.30,27.15 28.99,27.55" fill="#4a4f55" />
+        <polygon points="5.99,30.10 5.30,30.50 4.61,30.10 4.61,29.30 5.30,28.90 5.99,29.30" fill="#4a4f55" />
+        <polygon points="7.99,30.10 7.30,30.50 6.61,30.10 6.61,29.30 7.30,28.90 7.99,29.30" fill="#4a4f55" />
+        <polygon points="9.99,30.10 9.30,30.50 8.61,30.10 8.61,29.30 9.30,28.90 9.99,29.30" fill="#4a4f55" />
+        <polygon points="11.99,30.10 11.30,30.50 10.61,30.10 10.61,29.30 11.30,28.90 11.99,29.30" fill="#4a4f55" />
+        <polygon points="13.99,30.10 13.30,30.50 12.61,30.10 12.61,29.30 13.30,28.90 13.99,29.30" fill="#4a4f55" />
+        <polygon points="15.99,30.10 15.30,30.50 14.61,30.10 14.61,29.30 15.30,28.90 15.99,29.30" fill="#4a4f55" />
+        <polygon points="17.99,30.10 17.30,30.50 16.61,30.10 16.61,29.30 17.30,28.90 17.99,29.30" fill="#4a4f55" />
+        <polygon points="19.99,30.10 19.30,30.50 18.61,30.10 18.61,29.30 19.30,28.90 19.99,29.30" fill="#4a4f55" />
+        <polygon points="21.99,30.10 21.30,30.50 20.61,30.10 20.61,29.30 21.30,28.90 21.99,29.30" fill="#4a4f55" />
+        <polygon points="23.99,30.10 23.30,30.50 22.61,30.10 22.61,29.30 23.30,28.90 23.99,29.30" fill="#4a4f55" />
+        <polygon points="25.99,30.10 25.30,30.50 24.61,30.10 24.61,29.30 25.30,28.90 25.99,29.30" fill="#4a4f55" />
+        <polygon points="27.99,30.10 27.30,30.50 26.61,30.10 26.61,29.30 27.30,28.90 27.99,29.30" fill="#4a4f55" />
+        <polygon points="6.99,31.85 6.30,32.25 5.61,31.85 5.61,31.05 6.30,30.65 6.99,31.05" fill="#4a4f55" />
+        <polygon points="8.99,31.85 8.30,32.25 7.61,31.85 7.61,31.05 8.30,30.65 8.99,31.05" fill="#4a4f55" />
+        <polygon points="10.99,31.85 10.30,32.25 9.61,31.85 9.61,31.05 10.30,30.65 10.99,31.05" fill="#4a4f55" />
+        <polygon points="12.99,31.85 12.30,32.25 11.61,31.85 11.61,31.05 12.30,30.65 12.99,31.05" fill="#4a4f55" />
+        <polygon points="14.99,31.85 14.30,32.25 13.61,31.85 13.61,31.05 14.30,30.65 14.99,31.05" fill="#4a4f55" />
+        <polygon points="16.99,31.85 16.30,32.25 15.61,31.85 15.61,31.05 16.30,30.65 16.99,31.05" fill="#4a4f55" />
+        <polygon points="18.99,31.85 18.30,32.25 17.61,31.85 17.61,31.05 18.30,30.65 18.99,31.05" fill="#4a4f55" />
+        <polygon points="20.99,31.85 20.30,32.25 19.61,31.85 19.61,31.05 20.30,30.65 20.99,31.05" fill="#4a4f55" />
+        <polygon points="22.99,31.85 22.30,32.25 21.61,31.85 21.61,31.05 22.30,30.65 22.99,31.05" fill="#4a4f55" />
+        <polygon points="24.99,31.85 24.30,32.25 23.61,31.85 23.61,31.05 24.30,30.65 24.99,31.05" fill="#4a4f55" />
+        <polygon points="26.99,31.85 26.30,32.25 25.61,31.85 25.61,31.05 26.30,30.65 26.99,31.05" fill="#4a4f55" />
+        <polygon points="28.99,31.85 28.30,32.25 27.61,31.85 27.61,31.05 28.30,30.65 28.99,31.05" fill="#4a4f55" />
+      </g>
+      <g id="pem1--module--terminals" data-path="pem1/module/terminals" data-class="terminal" data-z-out="2.4" data-z-color="#26292d">
+        <rect id="pem1--module--terminal-plate" x="4.0" y="38.0" width="34.0" height="30.0" rx="1.2" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+        <g id="pem1--module--stud-0" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem1--module--stud-1" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem1--module--stud-2" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem1--module--stud-3" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="pem1--module--breaker" data-path="pem1/module/breaker" data-class="switch" data-z-out="3.0" data-z-color="#17191c">
+        <circle cx="60.0" cy="26.0" r="10.5" fill="#17191c" stroke="#0d0f11" stroke-width="0.5" />
+        <rect x="47.0" y="23.0" width="12.0" height="6.0" rx="1.6" fill="#e8eaec" stroke="#9ba0a6" stroke-width="0.4" />
+      </g>
+      <g id="pem1--module--lamps">
+        <circle id="pem1--module--led-pwr-ok" cx="51.0" cy="56.5" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem1--module--led-bkr-on" cx="63.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem1--module--led-input-ok" cx="77.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="pem1--module--handle" data-path="pem1/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="44.0" y="63.5" width="44.0" height="4.6" rx="2.3" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+      </g>
+      <g id="pem1--module--silkscreen">
+        <g id="pem1--module--t69-silkscreen">
+          <text x="6.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="start">RTN</text>
+        </g>
+        <g id="pem1--module--t70-silkscreen">
+          <text x="36.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="end">-48V</text>
+        </g>
+        <g id="pem1--module--t71-silkscreen">
+          <text x="51.0" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">PWR OK</text>
+        </g>
+        <g id="pem1--module--t72-silkscreen">
+          <text x="63.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">BKR ON</text>
+        </g>
+        <g id="pem1--module--t73-silkscreen">
+          <text x="77.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">INPUT OK</text>
+        </g>
+        <g id="pem1--module--t74-silkscreen">
+          <text x="80.0" y="8.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Breaker</text>
+        </g>
+        <g id="pem1--module--t75-silkscreen">
+          <text x="80.0" y="10.6" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Rating: 40A</text>
+        </g>
+        <g id="pem1--module--t76-silkscreen">
+          <text x="50.8" y="74.4" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">Use Copper Conductors</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="pem2" data-path="pem2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>pem2</title>
+    <rect id="pem2--opening" x="214.8" y="8.9" width="101.5" height="79.7" fill="#101214" />
+    <g id="pem2--module" data-path="pem2/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx240-psu-dc@1:1.0.0" data-input="-48 VDC and return; dedicated 40 A customer breaker per PEM" data-model="MX240 DC PSU (normal capacity)" data-redundancy="2 required, 4 for redundancy" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(265.55,48.75) translate(-50.75,-39.85)">
+      <title>pem2--module</title>
+      <rect id="pem2--module--face" x="0" y="0" width="101.5" height="79.7" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem2--module--vents">
+        <rect x="4.0" y="4.0" width="26.0" height="30.0" rx="0.8" fill="#a3a7ab" />
+        <polygon points="5.99,5.60 5.30,6.00 4.61,5.60 4.61,4.80 5.30,4.40 5.99,4.80" fill="#4a4f55" />
+        <polygon points="7.99,5.60 7.30,6.00 6.61,5.60 6.61,4.80 7.30,4.40 7.99,4.80" fill="#4a4f55" />
+        <polygon points="9.99,5.60 9.30,6.00 8.61,5.60 8.61,4.80 9.30,4.40 9.99,4.80" fill="#4a4f55" />
+        <polygon points="11.99,5.60 11.30,6.00 10.61,5.60 10.61,4.80 11.30,4.40 11.99,4.80" fill="#4a4f55" />
+        <polygon points="13.99,5.60 13.30,6.00 12.61,5.60 12.61,4.80 13.30,4.40 13.99,4.80" fill="#4a4f55" />
+        <polygon points="15.99,5.60 15.30,6.00 14.61,5.60 14.61,4.80 15.30,4.40 15.99,4.80" fill="#4a4f55" />
+        <polygon points="17.99,5.60 17.30,6.00 16.61,5.60 16.61,4.80 17.30,4.40 17.99,4.80" fill="#4a4f55" />
+        <polygon points="19.99,5.60 19.30,6.00 18.61,5.60 18.61,4.80 19.30,4.40 19.99,4.80" fill="#4a4f55" />
+        <polygon points="21.99,5.60 21.30,6.00 20.61,5.60 20.61,4.80 21.30,4.40 21.99,4.80" fill="#4a4f55" />
+        <polygon points="23.99,5.60 23.30,6.00 22.61,5.60 22.61,4.80 23.30,4.40 23.99,4.80" fill="#4a4f55" />
+        <polygon points="25.99,5.60 25.30,6.00 24.61,5.60 24.61,4.80 25.30,4.40 25.99,4.80" fill="#4a4f55" />
+        <polygon points="27.99,5.60 27.30,6.00 26.61,5.60 26.61,4.80 27.30,4.40 27.99,4.80" fill="#4a4f55" />
+        <polygon points="6.99,7.35 6.30,7.75 5.61,7.35 5.61,6.55 6.30,6.15 6.99,6.55" fill="#4a4f55" />
+        <polygon points="8.99,7.35 8.30,7.75 7.61,7.35 7.61,6.55 8.30,6.15 8.99,6.55" fill="#4a4f55" />
+        <polygon points="10.99,7.35 10.30,7.75 9.61,7.35 9.61,6.55 10.30,6.15 10.99,6.55" fill="#4a4f55" />
+        <polygon points="12.99,7.35 12.30,7.75 11.61,7.35 11.61,6.55 12.30,6.15 12.99,6.55" fill="#4a4f55" />
+        <polygon points="14.99,7.35 14.30,7.75 13.61,7.35 13.61,6.55 14.30,6.15 14.99,6.55" fill="#4a4f55" />
+        <polygon points="16.99,7.35 16.30,7.75 15.61,7.35 15.61,6.55 16.30,6.15 16.99,6.55" fill="#4a4f55" />
+        <polygon points="18.99,7.35 18.30,7.75 17.61,7.35 17.61,6.55 18.30,6.15 18.99,6.55" fill="#4a4f55" />
+        <polygon points="20.99,7.35 20.30,7.75 19.61,7.35 19.61,6.55 20.30,6.15 20.99,6.55" fill="#4a4f55" />
+        <polygon points="22.99,7.35 22.30,7.75 21.61,7.35 21.61,6.55 22.30,6.15 22.99,6.55" fill="#4a4f55" />
+        <polygon points="24.99,7.35 24.30,7.75 23.61,7.35 23.61,6.55 24.30,6.15 24.99,6.55" fill="#4a4f55" />
+        <polygon points="26.99,7.35 26.30,7.75 25.61,7.35 25.61,6.55 26.30,6.15 26.99,6.55" fill="#4a4f55" />
+        <polygon points="28.99,7.35 28.30,7.75 27.61,7.35 27.61,6.55 28.30,6.15 28.99,6.55" fill="#4a4f55" />
+        <polygon points="5.99,9.10 5.30,9.50 4.61,9.10 4.61,8.30 5.30,7.90 5.99,8.30" fill="#4a4f55" />
+        <polygon points="7.99,9.10 7.30,9.50 6.61,9.10 6.61,8.30 7.30,7.90 7.99,8.30" fill="#4a4f55" />
+        <polygon points="9.99,9.10 9.30,9.50 8.61,9.10 8.61,8.30 9.30,7.90 9.99,8.30" fill="#4a4f55" />
+        <polygon points="11.99,9.10 11.30,9.50 10.61,9.10 10.61,8.30 11.30,7.90 11.99,8.30" fill="#4a4f55" />
+        <polygon points="13.99,9.10 13.30,9.50 12.61,9.10 12.61,8.30 13.30,7.90 13.99,8.30" fill="#4a4f55" />
+        <polygon points="15.99,9.10 15.30,9.50 14.61,9.10 14.61,8.30 15.30,7.90 15.99,8.30" fill="#4a4f55" />
+        <polygon points="17.99,9.10 17.30,9.50 16.61,9.10 16.61,8.30 17.30,7.90 17.99,8.30" fill="#4a4f55" />
+        <polygon points="19.99,9.10 19.30,9.50 18.61,9.10 18.61,8.30 19.30,7.90 19.99,8.30" fill="#4a4f55" />
+        <polygon points="21.99,9.10 21.30,9.50 20.61,9.10 20.61,8.30 21.30,7.90 21.99,8.30" fill="#4a4f55" />
+        <polygon points="23.99,9.10 23.30,9.50 22.61,9.10 22.61,8.30 23.30,7.90 23.99,8.30" fill="#4a4f55" />
+        <polygon points="25.99,9.10 25.30,9.50 24.61,9.10 24.61,8.30 25.30,7.90 25.99,8.30" fill="#4a4f55" />
+        <polygon points="27.99,9.10 27.30,9.50 26.61,9.10 26.61,8.30 27.30,7.90 27.99,8.30" fill="#4a4f55" />
+        <polygon points="6.99,10.85 6.30,11.25 5.61,10.85 5.61,10.05 6.30,9.65 6.99,10.05" fill="#4a4f55" />
+        <polygon points="8.99,10.85 8.30,11.25 7.61,10.85 7.61,10.05 8.30,9.65 8.99,10.05" fill="#4a4f55" />
+        <polygon points="10.99,10.85 10.30,11.25 9.61,10.85 9.61,10.05 10.30,9.65 10.99,10.05" fill="#4a4f55" />
+        <polygon points="12.99,10.85 12.30,11.25 11.61,10.85 11.61,10.05 12.30,9.65 12.99,10.05" fill="#4a4f55" />
+        <polygon points="14.99,10.85 14.30,11.25 13.61,10.85 13.61,10.05 14.30,9.65 14.99,10.05" fill="#4a4f55" />
+        <polygon points="16.99,10.85 16.30,11.25 15.61,10.85 15.61,10.05 16.30,9.65 16.99,10.05" fill="#4a4f55" />
+        <polygon points="18.99,10.85 18.30,11.25 17.61,10.85 17.61,10.05 18.30,9.65 18.99,10.05" fill="#4a4f55" />
+        <polygon points="20.99,10.85 20.30,11.25 19.61,10.85 19.61,10.05 20.30,9.65 20.99,10.05" fill="#4a4f55" />
+        <polygon points="22.99,10.85 22.30,11.25 21.61,10.85 21.61,10.05 22.30,9.65 22.99,10.05" fill="#4a4f55" />
+        <polygon points="24.99,10.85 24.30,11.25 23.61,10.85 23.61,10.05 24.30,9.65 24.99,10.05" fill="#4a4f55" />
+        <polygon points="26.99,10.85 26.30,11.25 25.61,10.85 25.61,10.05 26.30,9.65 26.99,10.05" fill="#4a4f55" />
+        <polygon points="28.99,10.85 28.30,11.25 27.61,10.85 27.61,10.05 28.30,9.65 28.99,10.05" fill="#4a4f55" />
+        <polygon points="5.99,12.60 5.30,13.00 4.61,12.60 4.61,11.80 5.30,11.40 5.99,11.80" fill="#4a4f55" />
+        <polygon points="7.99,12.60 7.30,13.00 6.61,12.60 6.61,11.80 7.30,11.40 7.99,11.80" fill="#4a4f55" />
+        <polygon points="9.99,12.60 9.30,13.00 8.61,12.60 8.61,11.80 9.30,11.40 9.99,11.80" fill="#4a4f55" />
+        <polygon points="11.99,12.60 11.30,13.00 10.61,12.60 10.61,11.80 11.30,11.40 11.99,11.80" fill="#4a4f55" />
+        <polygon points="13.99,12.60 13.30,13.00 12.61,12.60 12.61,11.80 13.30,11.40 13.99,11.80" fill="#4a4f55" />
+        <polygon points="15.99,12.60 15.30,13.00 14.61,12.60 14.61,11.80 15.30,11.40 15.99,11.80" fill="#4a4f55" />
+        <polygon points="17.99,12.60 17.30,13.00 16.61,12.60 16.61,11.80 17.30,11.40 17.99,11.80" fill="#4a4f55" />
+        <polygon points="19.99,12.60 19.30,13.00 18.61,12.60 18.61,11.80 19.30,11.40 19.99,11.80" fill="#4a4f55" />
+        <polygon points="21.99,12.60 21.30,13.00 20.61,12.60 20.61,11.80 21.30,11.40 21.99,11.80" fill="#4a4f55" />
+        <polygon points="23.99,12.60 23.30,13.00 22.61,12.60 22.61,11.80 23.30,11.40 23.99,11.80" fill="#4a4f55" />
+        <polygon points="25.99,12.60 25.30,13.00 24.61,12.60 24.61,11.80 25.30,11.40 25.99,11.80" fill="#4a4f55" />
+        <polygon points="27.99,12.60 27.30,13.00 26.61,12.60 26.61,11.80 27.30,11.40 27.99,11.80" fill="#4a4f55" />
+        <polygon points="6.99,14.35 6.30,14.75 5.61,14.35 5.61,13.55 6.30,13.15 6.99,13.55" fill="#4a4f55" />
+        <polygon points="8.99,14.35 8.30,14.75 7.61,14.35 7.61,13.55 8.30,13.15 8.99,13.55" fill="#4a4f55" />
+        <polygon points="10.99,14.35 10.30,14.75 9.61,14.35 9.61,13.55 10.30,13.15 10.99,13.55" fill="#4a4f55" />
+        <polygon points="12.99,14.35 12.30,14.75 11.61,14.35 11.61,13.55 12.30,13.15 12.99,13.55" fill="#4a4f55" />
+        <polygon points="14.99,14.35 14.30,14.75 13.61,14.35 13.61,13.55 14.30,13.15 14.99,13.55" fill="#4a4f55" />
+        <polygon points="16.99,14.35 16.30,14.75 15.61,14.35 15.61,13.55 16.30,13.15 16.99,13.55" fill="#4a4f55" />
+        <polygon points="18.99,14.35 18.30,14.75 17.61,14.35 17.61,13.55 18.30,13.15 18.99,13.55" fill="#4a4f55" />
+        <polygon points="20.99,14.35 20.30,14.75 19.61,14.35 19.61,13.55 20.30,13.15 20.99,13.55" fill="#4a4f55" />
+        <polygon points="22.99,14.35 22.30,14.75 21.61,14.35 21.61,13.55 22.30,13.15 22.99,13.55" fill="#4a4f55" />
+        <polygon points="24.99,14.35 24.30,14.75 23.61,14.35 23.61,13.55 24.30,13.15 24.99,13.55" fill="#4a4f55" />
+        <polygon points="26.99,14.35 26.30,14.75 25.61,14.35 25.61,13.55 26.30,13.15 26.99,13.55" fill="#4a4f55" />
+        <polygon points="28.99,14.35 28.30,14.75 27.61,14.35 27.61,13.55 28.30,13.15 28.99,13.55" fill="#4a4f55" />
+        <polygon points="5.99,16.10 5.30,16.50 4.61,16.10 4.61,15.30 5.30,14.90 5.99,15.30" fill="#4a4f55" />
+        <polygon points="7.99,16.10 7.30,16.50 6.61,16.10 6.61,15.30 7.30,14.90 7.99,15.30" fill="#4a4f55" />
+        <polygon points="9.99,16.10 9.30,16.50 8.61,16.10 8.61,15.30 9.30,14.90 9.99,15.30" fill="#4a4f55" />
+        <polygon points="11.99,16.10 11.30,16.50 10.61,16.10 10.61,15.30 11.30,14.90 11.99,15.30" fill="#4a4f55" />
+        <polygon points="13.99,16.10 13.30,16.50 12.61,16.10 12.61,15.30 13.30,14.90 13.99,15.30" fill="#4a4f55" />
+        <polygon points="15.99,16.10 15.30,16.50 14.61,16.10 14.61,15.30 15.30,14.90 15.99,15.30" fill="#4a4f55" />
+        <polygon points="17.99,16.10 17.30,16.50 16.61,16.10 16.61,15.30 17.30,14.90 17.99,15.30" fill="#4a4f55" />
+        <polygon points="19.99,16.10 19.30,16.50 18.61,16.10 18.61,15.30 19.30,14.90 19.99,15.30" fill="#4a4f55" />
+        <polygon points="21.99,16.10 21.30,16.50 20.61,16.10 20.61,15.30 21.30,14.90 21.99,15.30" fill="#4a4f55" />
+        <polygon points="23.99,16.10 23.30,16.50 22.61,16.10 22.61,15.30 23.30,14.90 23.99,15.30" fill="#4a4f55" />
+        <polygon points="25.99,16.10 25.30,16.50 24.61,16.10 24.61,15.30 25.30,14.90 25.99,15.30" fill="#4a4f55" />
+        <polygon points="27.99,16.10 27.30,16.50 26.61,16.10 26.61,15.30 27.30,14.90 27.99,15.30" fill="#4a4f55" />
+        <polygon points="6.99,17.85 6.30,18.25 5.61,17.85 5.61,17.05 6.30,16.65 6.99,17.05" fill="#4a4f55" />
+        <polygon points="8.99,17.85 8.30,18.25 7.61,17.85 7.61,17.05 8.30,16.65 8.99,17.05" fill="#4a4f55" />
+        <polygon points="10.99,17.85 10.30,18.25 9.61,17.85 9.61,17.05 10.30,16.65 10.99,17.05" fill="#4a4f55" />
+        <polygon points="12.99,17.85 12.30,18.25 11.61,17.85 11.61,17.05 12.30,16.65 12.99,17.05" fill="#4a4f55" />
+        <polygon points="14.99,17.85 14.30,18.25 13.61,17.85 13.61,17.05 14.30,16.65 14.99,17.05" fill="#4a4f55" />
+        <polygon points="16.99,17.85 16.30,18.25 15.61,17.85 15.61,17.05 16.30,16.65 16.99,17.05" fill="#4a4f55" />
+        <polygon points="18.99,17.85 18.30,18.25 17.61,17.85 17.61,17.05 18.30,16.65 18.99,17.05" fill="#4a4f55" />
+        <polygon points="20.99,17.85 20.30,18.25 19.61,17.85 19.61,17.05 20.30,16.65 20.99,17.05" fill="#4a4f55" />
+        <polygon points="22.99,17.85 22.30,18.25 21.61,17.85 21.61,17.05 22.30,16.65 22.99,17.05" fill="#4a4f55" />
+        <polygon points="24.99,17.85 24.30,18.25 23.61,17.85 23.61,17.05 24.30,16.65 24.99,17.05" fill="#4a4f55" />
+        <polygon points="26.99,17.85 26.30,18.25 25.61,17.85 25.61,17.05 26.30,16.65 26.99,17.05" fill="#4a4f55" />
+        <polygon points="28.99,17.85 28.30,18.25 27.61,17.85 27.61,17.05 28.30,16.65 28.99,17.05" fill="#4a4f55" />
+        <polygon points="5.99,19.60 5.30,20.00 4.61,19.60 4.61,18.80 5.30,18.40 5.99,18.80" fill="#4a4f55" />
+        <polygon points="7.99,19.60 7.30,20.00 6.61,19.60 6.61,18.80 7.30,18.40 7.99,18.80" fill="#4a4f55" />
+        <polygon points="9.99,19.60 9.30,20.00 8.61,19.60 8.61,18.80 9.30,18.40 9.99,18.80" fill="#4a4f55" />
+        <polygon points="11.99,19.60 11.30,20.00 10.61,19.60 10.61,18.80 11.30,18.40 11.99,18.80" fill="#4a4f55" />
+        <polygon points="13.99,19.60 13.30,20.00 12.61,19.60 12.61,18.80 13.30,18.40 13.99,18.80" fill="#4a4f55" />
+        <polygon points="15.99,19.60 15.30,20.00 14.61,19.60 14.61,18.80 15.30,18.40 15.99,18.80" fill="#4a4f55" />
+        <polygon points="17.99,19.60 17.30,20.00 16.61,19.60 16.61,18.80 17.30,18.40 17.99,18.80" fill="#4a4f55" />
+        <polygon points="19.99,19.60 19.30,20.00 18.61,19.60 18.61,18.80 19.30,18.40 19.99,18.80" fill="#4a4f55" />
+        <polygon points="21.99,19.60 21.30,20.00 20.61,19.60 20.61,18.80 21.30,18.40 21.99,18.80" fill="#4a4f55" />
+        <polygon points="23.99,19.60 23.30,20.00 22.61,19.60 22.61,18.80 23.30,18.40 23.99,18.80" fill="#4a4f55" />
+        <polygon points="25.99,19.60 25.30,20.00 24.61,19.60 24.61,18.80 25.30,18.40 25.99,18.80" fill="#4a4f55" />
+        <polygon points="27.99,19.60 27.30,20.00 26.61,19.60 26.61,18.80 27.30,18.40 27.99,18.80" fill="#4a4f55" />
+        <polygon points="6.99,21.35 6.30,21.75 5.61,21.35 5.61,20.55 6.30,20.15 6.99,20.55" fill="#4a4f55" />
+        <polygon points="8.99,21.35 8.30,21.75 7.61,21.35 7.61,20.55 8.30,20.15 8.99,20.55" fill="#4a4f55" />
+        <polygon points="10.99,21.35 10.30,21.75 9.61,21.35 9.61,20.55 10.30,20.15 10.99,20.55" fill="#4a4f55" />
+        <polygon points="12.99,21.35 12.30,21.75 11.61,21.35 11.61,20.55 12.30,20.15 12.99,20.55" fill="#4a4f55" />
+        <polygon points="14.99,21.35 14.30,21.75 13.61,21.35 13.61,20.55 14.30,20.15 14.99,20.55" fill="#4a4f55" />
+        <polygon points="16.99,21.35 16.30,21.75 15.61,21.35 15.61,20.55 16.30,20.15 16.99,20.55" fill="#4a4f55" />
+        <polygon points="18.99,21.35 18.30,21.75 17.61,21.35 17.61,20.55 18.30,20.15 18.99,20.55" fill="#4a4f55" />
+        <polygon points="20.99,21.35 20.30,21.75 19.61,21.35 19.61,20.55 20.30,20.15 20.99,20.55" fill="#4a4f55" />
+        <polygon points="22.99,21.35 22.30,21.75 21.61,21.35 21.61,20.55 22.30,20.15 22.99,20.55" fill="#4a4f55" />
+        <polygon points="24.99,21.35 24.30,21.75 23.61,21.35 23.61,20.55 24.30,20.15 24.99,20.55" fill="#4a4f55" />
+        <polygon points="26.99,21.35 26.30,21.75 25.61,21.35 25.61,20.55 26.30,20.15 26.99,20.55" fill="#4a4f55" />
+        <polygon points="28.99,21.35 28.30,21.75 27.61,21.35 27.61,20.55 28.30,20.15 28.99,20.55" fill="#4a4f55" />
+        <polygon points="5.99,23.10 5.30,23.50 4.61,23.10 4.61,22.30 5.30,21.90 5.99,22.30" fill="#4a4f55" />
+        <polygon points="7.99,23.10 7.30,23.50 6.61,23.10 6.61,22.30 7.30,21.90 7.99,22.30" fill="#4a4f55" />
+        <polygon points="9.99,23.10 9.30,23.50 8.61,23.10 8.61,22.30 9.30,21.90 9.99,22.30" fill="#4a4f55" />
+        <polygon points="11.99,23.10 11.30,23.50 10.61,23.10 10.61,22.30 11.30,21.90 11.99,22.30" fill="#4a4f55" />
+        <polygon points="13.99,23.10 13.30,23.50 12.61,23.10 12.61,22.30 13.30,21.90 13.99,22.30" fill="#4a4f55" />
+        <polygon points="15.99,23.10 15.30,23.50 14.61,23.10 14.61,22.30 15.30,21.90 15.99,22.30" fill="#4a4f55" />
+        <polygon points="17.99,23.10 17.30,23.50 16.61,23.10 16.61,22.30 17.30,21.90 17.99,22.30" fill="#4a4f55" />
+        <polygon points="19.99,23.10 19.30,23.50 18.61,23.10 18.61,22.30 19.30,21.90 19.99,22.30" fill="#4a4f55" />
+        <polygon points="21.99,23.10 21.30,23.50 20.61,23.10 20.61,22.30 21.30,21.90 21.99,22.30" fill="#4a4f55" />
+        <polygon points="23.99,23.10 23.30,23.50 22.61,23.10 22.61,22.30 23.30,21.90 23.99,22.30" fill="#4a4f55" />
+        <polygon points="25.99,23.10 25.30,23.50 24.61,23.10 24.61,22.30 25.30,21.90 25.99,22.30" fill="#4a4f55" />
+        <polygon points="27.99,23.10 27.30,23.50 26.61,23.10 26.61,22.30 27.30,21.90 27.99,22.30" fill="#4a4f55" />
+        <polygon points="6.99,24.85 6.30,25.25 5.61,24.85 5.61,24.05 6.30,23.65 6.99,24.05" fill="#4a4f55" />
+        <polygon points="8.99,24.85 8.30,25.25 7.61,24.85 7.61,24.05 8.30,23.65 8.99,24.05" fill="#4a4f55" />
+        <polygon points="10.99,24.85 10.30,25.25 9.61,24.85 9.61,24.05 10.30,23.65 10.99,24.05" fill="#4a4f55" />
+        <polygon points="12.99,24.85 12.30,25.25 11.61,24.85 11.61,24.05 12.30,23.65 12.99,24.05" fill="#4a4f55" />
+        <polygon points="14.99,24.85 14.30,25.25 13.61,24.85 13.61,24.05 14.30,23.65 14.99,24.05" fill="#4a4f55" />
+        <polygon points="16.99,24.85 16.30,25.25 15.61,24.85 15.61,24.05 16.30,23.65 16.99,24.05" fill="#4a4f55" />
+        <polygon points="18.99,24.85 18.30,25.25 17.61,24.85 17.61,24.05 18.30,23.65 18.99,24.05" fill="#4a4f55" />
+        <polygon points="20.99,24.85 20.30,25.25 19.61,24.85 19.61,24.05 20.30,23.65 20.99,24.05" fill="#4a4f55" />
+        <polygon points="22.99,24.85 22.30,25.25 21.61,24.85 21.61,24.05 22.30,23.65 22.99,24.05" fill="#4a4f55" />
+        <polygon points="24.99,24.85 24.30,25.25 23.61,24.85 23.61,24.05 24.30,23.65 24.99,24.05" fill="#4a4f55" />
+        <polygon points="26.99,24.85 26.30,25.25 25.61,24.85 25.61,24.05 26.30,23.65 26.99,24.05" fill="#4a4f55" />
+        <polygon points="28.99,24.85 28.30,25.25 27.61,24.85 27.61,24.05 28.30,23.65 28.99,24.05" fill="#4a4f55" />
+        <polygon points="5.99,26.60 5.30,27.00 4.61,26.60 4.61,25.80 5.30,25.40 5.99,25.80" fill="#4a4f55" />
+        <polygon points="7.99,26.60 7.30,27.00 6.61,26.60 6.61,25.80 7.30,25.40 7.99,25.80" fill="#4a4f55" />
+        <polygon points="9.99,26.60 9.30,27.00 8.61,26.60 8.61,25.80 9.30,25.40 9.99,25.80" fill="#4a4f55" />
+        <polygon points="11.99,26.60 11.30,27.00 10.61,26.60 10.61,25.80 11.30,25.40 11.99,25.80" fill="#4a4f55" />
+        <polygon points="13.99,26.60 13.30,27.00 12.61,26.60 12.61,25.80 13.30,25.40 13.99,25.80" fill="#4a4f55" />
+        <polygon points="15.99,26.60 15.30,27.00 14.61,26.60 14.61,25.80 15.30,25.40 15.99,25.80" fill="#4a4f55" />
+        <polygon points="17.99,26.60 17.30,27.00 16.61,26.60 16.61,25.80 17.30,25.40 17.99,25.80" fill="#4a4f55" />
+        <polygon points="19.99,26.60 19.30,27.00 18.61,26.60 18.61,25.80 19.30,25.40 19.99,25.80" fill="#4a4f55" />
+        <polygon points="21.99,26.60 21.30,27.00 20.61,26.60 20.61,25.80 21.30,25.40 21.99,25.80" fill="#4a4f55" />
+        <polygon points="23.99,26.60 23.30,27.00 22.61,26.60 22.61,25.80 23.30,25.40 23.99,25.80" fill="#4a4f55" />
+        <polygon points="25.99,26.60 25.30,27.00 24.61,26.60 24.61,25.80 25.30,25.40 25.99,25.80" fill="#4a4f55" />
+        <polygon points="27.99,26.60 27.30,27.00 26.61,26.60 26.61,25.80 27.30,25.40 27.99,25.80" fill="#4a4f55" />
+        <polygon points="6.99,28.35 6.30,28.75 5.61,28.35 5.61,27.55 6.30,27.15 6.99,27.55" fill="#4a4f55" />
+        <polygon points="8.99,28.35 8.30,28.75 7.61,28.35 7.61,27.55 8.30,27.15 8.99,27.55" fill="#4a4f55" />
+        <polygon points="10.99,28.35 10.30,28.75 9.61,28.35 9.61,27.55 10.30,27.15 10.99,27.55" fill="#4a4f55" />
+        <polygon points="12.99,28.35 12.30,28.75 11.61,28.35 11.61,27.55 12.30,27.15 12.99,27.55" fill="#4a4f55" />
+        <polygon points="14.99,28.35 14.30,28.75 13.61,28.35 13.61,27.55 14.30,27.15 14.99,27.55" fill="#4a4f55" />
+        <polygon points="16.99,28.35 16.30,28.75 15.61,28.35 15.61,27.55 16.30,27.15 16.99,27.55" fill="#4a4f55" />
+        <polygon points="18.99,28.35 18.30,28.75 17.61,28.35 17.61,27.55 18.30,27.15 18.99,27.55" fill="#4a4f55" />
+        <polygon points="20.99,28.35 20.30,28.75 19.61,28.35 19.61,27.55 20.30,27.15 20.99,27.55" fill="#4a4f55" />
+        <polygon points="22.99,28.35 22.30,28.75 21.61,28.35 21.61,27.55 22.30,27.15 22.99,27.55" fill="#4a4f55" />
+        <polygon points="24.99,28.35 24.30,28.75 23.61,28.35 23.61,27.55 24.30,27.15 24.99,27.55" fill="#4a4f55" />
+        <polygon points="26.99,28.35 26.30,28.75 25.61,28.35 25.61,27.55 26.30,27.15 26.99,27.55" fill="#4a4f55" />
+        <polygon points="28.99,28.35 28.30,28.75 27.61,28.35 27.61,27.55 28.30,27.15 28.99,27.55" fill="#4a4f55" />
+        <polygon points="5.99,30.10 5.30,30.50 4.61,30.10 4.61,29.30 5.30,28.90 5.99,29.30" fill="#4a4f55" />
+        <polygon points="7.99,30.10 7.30,30.50 6.61,30.10 6.61,29.30 7.30,28.90 7.99,29.30" fill="#4a4f55" />
+        <polygon points="9.99,30.10 9.30,30.50 8.61,30.10 8.61,29.30 9.30,28.90 9.99,29.30" fill="#4a4f55" />
+        <polygon points="11.99,30.10 11.30,30.50 10.61,30.10 10.61,29.30 11.30,28.90 11.99,29.30" fill="#4a4f55" />
+        <polygon points="13.99,30.10 13.30,30.50 12.61,30.10 12.61,29.30 13.30,28.90 13.99,29.30" fill="#4a4f55" />
+        <polygon points="15.99,30.10 15.30,30.50 14.61,30.10 14.61,29.30 15.30,28.90 15.99,29.30" fill="#4a4f55" />
+        <polygon points="17.99,30.10 17.30,30.50 16.61,30.10 16.61,29.30 17.30,28.90 17.99,29.30" fill="#4a4f55" />
+        <polygon points="19.99,30.10 19.30,30.50 18.61,30.10 18.61,29.30 19.30,28.90 19.99,29.30" fill="#4a4f55" />
+        <polygon points="21.99,30.10 21.30,30.50 20.61,30.10 20.61,29.30 21.30,28.90 21.99,29.30" fill="#4a4f55" />
+        <polygon points="23.99,30.10 23.30,30.50 22.61,30.10 22.61,29.30 23.30,28.90 23.99,29.30" fill="#4a4f55" />
+        <polygon points="25.99,30.10 25.30,30.50 24.61,30.10 24.61,29.30 25.30,28.90 25.99,29.30" fill="#4a4f55" />
+        <polygon points="27.99,30.10 27.30,30.50 26.61,30.10 26.61,29.30 27.30,28.90 27.99,29.30" fill="#4a4f55" />
+        <polygon points="6.99,31.85 6.30,32.25 5.61,31.85 5.61,31.05 6.30,30.65 6.99,31.05" fill="#4a4f55" />
+        <polygon points="8.99,31.85 8.30,32.25 7.61,31.85 7.61,31.05 8.30,30.65 8.99,31.05" fill="#4a4f55" />
+        <polygon points="10.99,31.85 10.30,32.25 9.61,31.85 9.61,31.05 10.30,30.65 10.99,31.05" fill="#4a4f55" />
+        <polygon points="12.99,31.85 12.30,32.25 11.61,31.85 11.61,31.05 12.30,30.65 12.99,31.05" fill="#4a4f55" />
+        <polygon points="14.99,31.85 14.30,32.25 13.61,31.85 13.61,31.05 14.30,30.65 14.99,31.05" fill="#4a4f55" />
+        <polygon points="16.99,31.85 16.30,32.25 15.61,31.85 15.61,31.05 16.30,30.65 16.99,31.05" fill="#4a4f55" />
+        <polygon points="18.99,31.85 18.30,32.25 17.61,31.85 17.61,31.05 18.30,30.65 18.99,31.05" fill="#4a4f55" />
+        <polygon points="20.99,31.85 20.30,32.25 19.61,31.85 19.61,31.05 20.30,30.65 20.99,31.05" fill="#4a4f55" />
+        <polygon points="22.99,31.85 22.30,32.25 21.61,31.85 21.61,31.05 22.30,30.65 22.99,31.05" fill="#4a4f55" />
+        <polygon points="24.99,31.85 24.30,32.25 23.61,31.85 23.61,31.05 24.30,30.65 24.99,31.05" fill="#4a4f55" />
+        <polygon points="26.99,31.85 26.30,32.25 25.61,31.85 25.61,31.05 26.30,30.65 26.99,31.05" fill="#4a4f55" />
+        <polygon points="28.99,31.85 28.30,32.25 27.61,31.85 27.61,31.05 28.30,30.65 28.99,31.05" fill="#4a4f55" />
+      </g>
+      <g id="pem2--module--terminals" data-path="pem2/module/terminals" data-class="terminal" data-z-out="2.4" data-z-color="#26292d">
+        <rect id="pem2--module--terminal-plate" x="4.0" y="38.0" width="34.0" height="30.0" rx="1.2" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+        <g id="pem2--module--stud-0" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem2--module--stud-1" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem2--module--stud-2" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem2--module--stud-3" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="pem2--module--breaker" data-path="pem2/module/breaker" data-class="switch" data-z-out="3.0" data-z-color="#17191c">
+        <circle cx="60.0" cy="26.0" r="10.5" fill="#17191c" stroke="#0d0f11" stroke-width="0.5" />
+        <rect x="47.0" y="23.0" width="12.0" height="6.0" rx="1.6" fill="#e8eaec" stroke="#9ba0a6" stroke-width="0.4" />
+      </g>
+      <g id="pem2--module--lamps">
+        <circle id="pem2--module--led-pwr-ok" cx="51.0" cy="56.5" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem2--module--led-bkr-on" cx="63.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem2--module--led-input-ok" cx="77.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="pem2--module--handle" data-path="pem2/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="44.0" y="63.5" width="44.0" height="4.6" rx="2.3" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+      </g>
+      <g id="pem2--module--silkscreen">
+        <g id="pem2--module--t69-silkscreen">
+          <text x="6.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="start">RTN</text>
+        </g>
+        <g id="pem2--module--t70-silkscreen">
+          <text x="36.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="end">-48V</text>
+        </g>
+        <g id="pem2--module--t71-silkscreen">
+          <text x="51.0" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">PWR OK</text>
+        </g>
+        <g id="pem2--module--t72-silkscreen">
+          <text x="63.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">BKR ON</text>
+        </g>
+        <g id="pem2--module--t73-silkscreen">
+          <text x="77.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">INPUT OK</text>
+        </g>
+        <g id="pem2--module--t74-silkscreen">
+          <text x="80.0" y="8.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Breaker</text>
+        </g>
+        <g id="pem2--module--t75-silkscreen">
+          <text x="80.0" y="10.6" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Rating: 40A</text>
+        </g>
+        <g id="pem2--module--t76-silkscreen">
+          <text x="50.8" y="74.4" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">Use Copper Conductors</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="pem3" data-path="pem3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>pem3</title>
+    <rect id="pem3--opening" x="316.7" y="8.9" width="101.5" height="79.7" fill="#101214" />
+    <g id="pem3--module" data-path="pem3/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx240-psu-dc@1:1.0.0" data-input="-48 VDC and return; dedicated 40 A customer breaker per PEM" data-model="MX240 DC PSU (normal capacity)" data-redundancy="2 required, 4 for redundancy" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(367.45,48.75) translate(-50.75,-39.85)">
+      <title>pem3--module</title>
+      <rect id="pem3--module--face" x="0" y="0" width="101.5" height="79.7" rx="0.8" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="pem3--module--vents">
+        <rect x="4.0" y="4.0" width="26.0" height="30.0" rx="0.8" fill="#a3a7ab" />
+        <polygon points="5.99,5.60 5.30,6.00 4.61,5.60 4.61,4.80 5.30,4.40 5.99,4.80" fill="#4a4f55" />
+        <polygon points="7.99,5.60 7.30,6.00 6.61,5.60 6.61,4.80 7.30,4.40 7.99,4.80" fill="#4a4f55" />
+        <polygon points="9.99,5.60 9.30,6.00 8.61,5.60 8.61,4.80 9.30,4.40 9.99,4.80" fill="#4a4f55" />
+        <polygon points="11.99,5.60 11.30,6.00 10.61,5.60 10.61,4.80 11.30,4.40 11.99,4.80" fill="#4a4f55" />
+        <polygon points="13.99,5.60 13.30,6.00 12.61,5.60 12.61,4.80 13.30,4.40 13.99,4.80" fill="#4a4f55" />
+        <polygon points="15.99,5.60 15.30,6.00 14.61,5.60 14.61,4.80 15.30,4.40 15.99,4.80" fill="#4a4f55" />
+        <polygon points="17.99,5.60 17.30,6.00 16.61,5.60 16.61,4.80 17.30,4.40 17.99,4.80" fill="#4a4f55" />
+        <polygon points="19.99,5.60 19.30,6.00 18.61,5.60 18.61,4.80 19.30,4.40 19.99,4.80" fill="#4a4f55" />
+        <polygon points="21.99,5.60 21.30,6.00 20.61,5.60 20.61,4.80 21.30,4.40 21.99,4.80" fill="#4a4f55" />
+        <polygon points="23.99,5.60 23.30,6.00 22.61,5.60 22.61,4.80 23.30,4.40 23.99,4.80" fill="#4a4f55" />
+        <polygon points="25.99,5.60 25.30,6.00 24.61,5.60 24.61,4.80 25.30,4.40 25.99,4.80" fill="#4a4f55" />
+        <polygon points="27.99,5.60 27.30,6.00 26.61,5.60 26.61,4.80 27.30,4.40 27.99,4.80" fill="#4a4f55" />
+        <polygon points="6.99,7.35 6.30,7.75 5.61,7.35 5.61,6.55 6.30,6.15 6.99,6.55" fill="#4a4f55" />
+        <polygon points="8.99,7.35 8.30,7.75 7.61,7.35 7.61,6.55 8.30,6.15 8.99,6.55" fill="#4a4f55" />
+        <polygon points="10.99,7.35 10.30,7.75 9.61,7.35 9.61,6.55 10.30,6.15 10.99,6.55" fill="#4a4f55" />
+        <polygon points="12.99,7.35 12.30,7.75 11.61,7.35 11.61,6.55 12.30,6.15 12.99,6.55" fill="#4a4f55" />
+        <polygon points="14.99,7.35 14.30,7.75 13.61,7.35 13.61,6.55 14.30,6.15 14.99,6.55" fill="#4a4f55" />
+        <polygon points="16.99,7.35 16.30,7.75 15.61,7.35 15.61,6.55 16.30,6.15 16.99,6.55" fill="#4a4f55" />
+        <polygon points="18.99,7.35 18.30,7.75 17.61,7.35 17.61,6.55 18.30,6.15 18.99,6.55" fill="#4a4f55" />
+        <polygon points="20.99,7.35 20.30,7.75 19.61,7.35 19.61,6.55 20.30,6.15 20.99,6.55" fill="#4a4f55" />
+        <polygon points="22.99,7.35 22.30,7.75 21.61,7.35 21.61,6.55 22.30,6.15 22.99,6.55" fill="#4a4f55" />
+        <polygon points="24.99,7.35 24.30,7.75 23.61,7.35 23.61,6.55 24.30,6.15 24.99,6.55" fill="#4a4f55" />
+        <polygon points="26.99,7.35 26.30,7.75 25.61,7.35 25.61,6.55 26.30,6.15 26.99,6.55" fill="#4a4f55" />
+        <polygon points="28.99,7.35 28.30,7.75 27.61,7.35 27.61,6.55 28.30,6.15 28.99,6.55" fill="#4a4f55" />
+        <polygon points="5.99,9.10 5.30,9.50 4.61,9.10 4.61,8.30 5.30,7.90 5.99,8.30" fill="#4a4f55" />
+        <polygon points="7.99,9.10 7.30,9.50 6.61,9.10 6.61,8.30 7.30,7.90 7.99,8.30" fill="#4a4f55" />
+        <polygon points="9.99,9.10 9.30,9.50 8.61,9.10 8.61,8.30 9.30,7.90 9.99,8.30" fill="#4a4f55" />
+        <polygon points="11.99,9.10 11.30,9.50 10.61,9.10 10.61,8.30 11.30,7.90 11.99,8.30" fill="#4a4f55" />
+        <polygon points="13.99,9.10 13.30,9.50 12.61,9.10 12.61,8.30 13.30,7.90 13.99,8.30" fill="#4a4f55" />
+        <polygon points="15.99,9.10 15.30,9.50 14.61,9.10 14.61,8.30 15.30,7.90 15.99,8.30" fill="#4a4f55" />
+        <polygon points="17.99,9.10 17.30,9.50 16.61,9.10 16.61,8.30 17.30,7.90 17.99,8.30" fill="#4a4f55" />
+        <polygon points="19.99,9.10 19.30,9.50 18.61,9.10 18.61,8.30 19.30,7.90 19.99,8.30" fill="#4a4f55" />
+        <polygon points="21.99,9.10 21.30,9.50 20.61,9.10 20.61,8.30 21.30,7.90 21.99,8.30" fill="#4a4f55" />
+        <polygon points="23.99,9.10 23.30,9.50 22.61,9.10 22.61,8.30 23.30,7.90 23.99,8.30" fill="#4a4f55" />
+        <polygon points="25.99,9.10 25.30,9.50 24.61,9.10 24.61,8.30 25.30,7.90 25.99,8.30" fill="#4a4f55" />
+        <polygon points="27.99,9.10 27.30,9.50 26.61,9.10 26.61,8.30 27.30,7.90 27.99,8.30" fill="#4a4f55" />
+        <polygon points="6.99,10.85 6.30,11.25 5.61,10.85 5.61,10.05 6.30,9.65 6.99,10.05" fill="#4a4f55" />
+        <polygon points="8.99,10.85 8.30,11.25 7.61,10.85 7.61,10.05 8.30,9.65 8.99,10.05" fill="#4a4f55" />
+        <polygon points="10.99,10.85 10.30,11.25 9.61,10.85 9.61,10.05 10.30,9.65 10.99,10.05" fill="#4a4f55" />
+        <polygon points="12.99,10.85 12.30,11.25 11.61,10.85 11.61,10.05 12.30,9.65 12.99,10.05" fill="#4a4f55" />
+        <polygon points="14.99,10.85 14.30,11.25 13.61,10.85 13.61,10.05 14.30,9.65 14.99,10.05" fill="#4a4f55" />
+        <polygon points="16.99,10.85 16.30,11.25 15.61,10.85 15.61,10.05 16.30,9.65 16.99,10.05" fill="#4a4f55" />
+        <polygon points="18.99,10.85 18.30,11.25 17.61,10.85 17.61,10.05 18.30,9.65 18.99,10.05" fill="#4a4f55" />
+        <polygon points="20.99,10.85 20.30,11.25 19.61,10.85 19.61,10.05 20.30,9.65 20.99,10.05" fill="#4a4f55" />
+        <polygon points="22.99,10.85 22.30,11.25 21.61,10.85 21.61,10.05 22.30,9.65 22.99,10.05" fill="#4a4f55" />
+        <polygon points="24.99,10.85 24.30,11.25 23.61,10.85 23.61,10.05 24.30,9.65 24.99,10.05" fill="#4a4f55" />
+        <polygon points="26.99,10.85 26.30,11.25 25.61,10.85 25.61,10.05 26.30,9.65 26.99,10.05" fill="#4a4f55" />
+        <polygon points="28.99,10.85 28.30,11.25 27.61,10.85 27.61,10.05 28.30,9.65 28.99,10.05" fill="#4a4f55" />
+        <polygon points="5.99,12.60 5.30,13.00 4.61,12.60 4.61,11.80 5.30,11.40 5.99,11.80" fill="#4a4f55" />
+        <polygon points="7.99,12.60 7.30,13.00 6.61,12.60 6.61,11.80 7.30,11.40 7.99,11.80" fill="#4a4f55" />
+        <polygon points="9.99,12.60 9.30,13.00 8.61,12.60 8.61,11.80 9.30,11.40 9.99,11.80" fill="#4a4f55" />
+        <polygon points="11.99,12.60 11.30,13.00 10.61,12.60 10.61,11.80 11.30,11.40 11.99,11.80" fill="#4a4f55" />
+        <polygon points="13.99,12.60 13.30,13.00 12.61,12.60 12.61,11.80 13.30,11.40 13.99,11.80" fill="#4a4f55" />
+        <polygon points="15.99,12.60 15.30,13.00 14.61,12.60 14.61,11.80 15.30,11.40 15.99,11.80" fill="#4a4f55" />
+        <polygon points="17.99,12.60 17.30,13.00 16.61,12.60 16.61,11.80 17.30,11.40 17.99,11.80" fill="#4a4f55" />
+        <polygon points="19.99,12.60 19.30,13.00 18.61,12.60 18.61,11.80 19.30,11.40 19.99,11.80" fill="#4a4f55" />
+        <polygon points="21.99,12.60 21.30,13.00 20.61,12.60 20.61,11.80 21.30,11.40 21.99,11.80" fill="#4a4f55" />
+        <polygon points="23.99,12.60 23.30,13.00 22.61,12.60 22.61,11.80 23.30,11.40 23.99,11.80" fill="#4a4f55" />
+        <polygon points="25.99,12.60 25.30,13.00 24.61,12.60 24.61,11.80 25.30,11.40 25.99,11.80" fill="#4a4f55" />
+        <polygon points="27.99,12.60 27.30,13.00 26.61,12.60 26.61,11.80 27.30,11.40 27.99,11.80" fill="#4a4f55" />
+        <polygon points="6.99,14.35 6.30,14.75 5.61,14.35 5.61,13.55 6.30,13.15 6.99,13.55" fill="#4a4f55" />
+        <polygon points="8.99,14.35 8.30,14.75 7.61,14.35 7.61,13.55 8.30,13.15 8.99,13.55" fill="#4a4f55" />
+        <polygon points="10.99,14.35 10.30,14.75 9.61,14.35 9.61,13.55 10.30,13.15 10.99,13.55" fill="#4a4f55" />
+        <polygon points="12.99,14.35 12.30,14.75 11.61,14.35 11.61,13.55 12.30,13.15 12.99,13.55" fill="#4a4f55" />
+        <polygon points="14.99,14.35 14.30,14.75 13.61,14.35 13.61,13.55 14.30,13.15 14.99,13.55" fill="#4a4f55" />
+        <polygon points="16.99,14.35 16.30,14.75 15.61,14.35 15.61,13.55 16.30,13.15 16.99,13.55" fill="#4a4f55" />
+        <polygon points="18.99,14.35 18.30,14.75 17.61,14.35 17.61,13.55 18.30,13.15 18.99,13.55" fill="#4a4f55" />
+        <polygon points="20.99,14.35 20.30,14.75 19.61,14.35 19.61,13.55 20.30,13.15 20.99,13.55" fill="#4a4f55" />
+        <polygon points="22.99,14.35 22.30,14.75 21.61,14.35 21.61,13.55 22.30,13.15 22.99,13.55" fill="#4a4f55" />
+        <polygon points="24.99,14.35 24.30,14.75 23.61,14.35 23.61,13.55 24.30,13.15 24.99,13.55" fill="#4a4f55" />
+        <polygon points="26.99,14.35 26.30,14.75 25.61,14.35 25.61,13.55 26.30,13.15 26.99,13.55" fill="#4a4f55" />
+        <polygon points="28.99,14.35 28.30,14.75 27.61,14.35 27.61,13.55 28.30,13.15 28.99,13.55" fill="#4a4f55" />
+        <polygon points="5.99,16.10 5.30,16.50 4.61,16.10 4.61,15.30 5.30,14.90 5.99,15.30" fill="#4a4f55" />
+        <polygon points="7.99,16.10 7.30,16.50 6.61,16.10 6.61,15.30 7.30,14.90 7.99,15.30" fill="#4a4f55" />
+        <polygon points="9.99,16.10 9.30,16.50 8.61,16.10 8.61,15.30 9.30,14.90 9.99,15.30" fill="#4a4f55" />
+        <polygon points="11.99,16.10 11.30,16.50 10.61,16.10 10.61,15.30 11.30,14.90 11.99,15.30" fill="#4a4f55" />
+        <polygon points="13.99,16.10 13.30,16.50 12.61,16.10 12.61,15.30 13.30,14.90 13.99,15.30" fill="#4a4f55" />
+        <polygon points="15.99,16.10 15.30,16.50 14.61,16.10 14.61,15.30 15.30,14.90 15.99,15.30" fill="#4a4f55" />
+        <polygon points="17.99,16.10 17.30,16.50 16.61,16.10 16.61,15.30 17.30,14.90 17.99,15.30" fill="#4a4f55" />
+        <polygon points="19.99,16.10 19.30,16.50 18.61,16.10 18.61,15.30 19.30,14.90 19.99,15.30" fill="#4a4f55" />
+        <polygon points="21.99,16.10 21.30,16.50 20.61,16.10 20.61,15.30 21.30,14.90 21.99,15.30" fill="#4a4f55" />
+        <polygon points="23.99,16.10 23.30,16.50 22.61,16.10 22.61,15.30 23.30,14.90 23.99,15.30" fill="#4a4f55" />
+        <polygon points="25.99,16.10 25.30,16.50 24.61,16.10 24.61,15.30 25.30,14.90 25.99,15.30" fill="#4a4f55" />
+        <polygon points="27.99,16.10 27.30,16.50 26.61,16.10 26.61,15.30 27.30,14.90 27.99,15.30" fill="#4a4f55" />
+        <polygon points="6.99,17.85 6.30,18.25 5.61,17.85 5.61,17.05 6.30,16.65 6.99,17.05" fill="#4a4f55" />
+        <polygon points="8.99,17.85 8.30,18.25 7.61,17.85 7.61,17.05 8.30,16.65 8.99,17.05" fill="#4a4f55" />
+        <polygon points="10.99,17.85 10.30,18.25 9.61,17.85 9.61,17.05 10.30,16.65 10.99,17.05" fill="#4a4f55" />
+        <polygon points="12.99,17.85 12.30,18.25 11.61,17.85 11.61,17.05 12.30,16.65 12.99,17.05" fill="#4a4f55" />
+        <polygon points="14.99,17.85 14.30,18.25 13.61,17.85 13.61,17.05 14.30,16.65 14.99,17.05" fill="#4a4f55" />
+        <polygon points="16.99,17.85 16.30,18.25 15.61,17.85 15.61,17.05 16.30,16.65 16.99,17.05" fill="#4a4f55" />
+        <polygon points="18.99,17.85 18.30,18.25 17.61,17.85 17.61,17.05 18.30,16.65 18.99,17.05" fill="#4a4f55" />
+        <polygon points="20.99,17.85 20.30,18.25 19.61,17.85 19.61,17.05 20.30,16.65 20.99,17.05" fill="#4a4f55" />
+        <polygon points="22.99,17.85 22.30,18.25 21.61,17.85 21.61,17.05 22.30,16.65 22.99,17.05" fill="#4a4f55" />
+        <polygon points="24.99,17.85 24.30,18.25 23.61,17.85 23.61,17.05 24.30,16.65 24.99,17.05" fill="#4a4f55" />
+        <polygon points="26.99,17.85 26.30,18.25 25.61,17.85 25.61,17.05 26.30,16.65 26.99,17.05" fill="#4a4f55" />
+        <polygon points="28.99,17.85 28.30,18.25 27.61,17.85 27.61,17.05 28.30,16.65 28.99,17.05" fill="#4a4f55" />
+        <polygon points="5.99,19.60 5.30,20.00 4.61,19.60 4.61,18.80 5.30,18.40 5.99,18.80" fill="#4a4f55" />
+        <polygon points="7.99,19.60 7.30,20.00 6.61,19.60 6.61,18.80 7.30,18.40 7.99,18.80" fill="#4a4f55" />
+        <polygon points="9.99,19.60 9.30,20.00 8.61,19.60 8.61,18.80 9.30,18.40 9.99,18.80" fill="#4a4f55" />
+        <polygon points="11.99,19.60 11.30,20.00 10.61,19.60 10.61,18.80 11.30,18.40 11.99,18.80" fill="#4a4f55" />
+        <polygon points="13.99,19.60 13.30,20.00 12.61,19.60 12.61,18.80 13.30,18.40 13.99,18.80" fill="#4a4f55" />
+        <polygon points="15.99,19.60 15.30,20.00 14.61,19.60 14.61,18.80 15.30,18.40 15.99,18.80" fill="#4a4f55" />
+        <polygon points="17.99,19.60 17.30,20.00 16.61,19.60 16.61,18.80 17.30,18.40 17.99,18.80" fill="#4a4f55" />
+        <polygon points="19.99,19.60 19.30,20.00 18.61,19.60 18.61,18.80 19.30,18.40 19.99,18.80" fill="#4a4f55" />
+        <polygon points="21.99,19.60 21.30,20.00 20.61,19.60 20.61,18.80 21.30,18.40 21.99,18.80" fill="#4a4f55" />
+        <polygon points="23.99,19.60 23.30,20.00 22.61,19.60 22.61,18.80 23.30,18.40 23.99,18.80" fill="#4a4f55" />
+        <polygon points="25.99,19.60 25.30,20.00 24.61,19.60 24.61,18.80 25.30,18.40 25.99,18.80" fill="#4a4f55" />
+        <polygon points="27.99,19.60 27.30,20.00 26.61,19.60 26.61,18.80 27.30,18.40 27.99,18.80" fill="#4a4f55" />
+        <polygon points="6.99,21.35 6.30,21.75 5.61,21.35 5.61,20.55 6.30,20.15 6.99,20.55" fill="#4a4f55" />
+        <polygon points="8.99,21.35 8.30,21.75 7.61,21.35 7.61,20.55 8.30,20.15 8.99,20.55" fill="#4a4f55" />
+        <polygon points="10.99,21.35 10.30,21.75 9.61,21.35 9.61,20.55 10.30,20.15 10.99,20.55" fill="#4a4f55" />
+        <polygon points="12.99,21.35 12.30,21.75 11.61,21.35 11.61,20.55 12.30,20.15 12.99,20.55" fill="#4a4f55" />
+        <polygon points="14.99,21.35 14.30,21.75 13.61,21.35 13.61,20.55 14.30,20.15 14.99,20.55" fill="#4a4f55" />
+        <polygon points="16.99,21.35 16.30,21.75 15.61,21.35 15.61,20.55 16.30,20.15 16.99,20.55" fill="#4a4f55" />
+        <polygon points="18.99,21.35 18.30,21.75 17.61,21.35 17.61,20.55 18.30,20.15 18.99,20.55" fill="#4a4f55" />
+        <polygon points="20.99,21.35 20.30,21.75 19.61,21.35 19.61,20.55 20.30,20.15 20.99,20.55" fill="#4a4f55" />
+        <polygon points="22.99,21.35 22.30,21.75 21.61,21.35 21.61,20.55 22.30,20.15 22.99,20.55" fill="#4a4f55" />
+        <polygon points="24.99,21.35 24.30,21.75 23.61,21.35 23.61,20.55 24.30,20.15 24.99,20.55" fill="#4a4f55" />
+        <polygon points="26.99,21.35 26.30,21.75 25.61,21.35 25.61,20.55 26.30,20.15 26.99,20.55" fill="#4a4f55" />
+        <polygon points="28.99,21.35 28.30,21.75 27.61,21.35 27.61,20.55 28.30,20.15 28.99,20.55" fill="#4a4f55" />
+        <polygon points="5.99,23.10 5.30,23.50 4.61,23.10 4.61,22.30 5.30,21.90 5.99,22.30" fill="#4a4f55" />
+        <polygon points="7.99,23.10 7.30,23.50 6.61,23.10 6.61,22.30 7.30,21.90 7.99,22.30" fill="#4a4f55" />
+        <polygon points="9.99,23.10 9.30,23.50 8.61,23.10 8.61,22.30 9.30,21.90 9.99,22.30" fill="#4a4f55" />
+        <polygon points="11.99,23.10 11.30,23.50 10.61,23.10 10.61,22.30 11.30,21.90 11.99,22.30" fill="#4a4f55" />
+        <polygon points="13.99,23.10 13.30,23.50 12.61,23.10 12.61,22.30 13.30,21.90 13.99,22.30" fill="#4a4f55" />
+        <polygon points="15.99,23.10 15.30,23.50 14.61,23.10 14.61,22.30 15.30,21.90 15.99,22.30" fill="#4a4f55" />
+        <polygon points="17.99,23.10 17.30,23.50 16.61,23.10 16.61,22.30 17.30,21.90 17.99,22.30" fill="#4a4f55" />
+        <polygon points="19.99,23.10 19.30,23.50 18.61,23.10 18.61,22.30 19.30,21.90 19.99,22.30" fill="#4a4f55" />
+        <polygon points="21.99,23.10 21.30,23.50 20.61,23.10 20.61,22.30 21.30,21.90 21.99,22.30" fill="#4a4f55" />
+        <polygon points="23.99,23.10 23.30,23.50 22.61,23.10 22.61,22.30 23.30,21.90 23.99,22.30" fill="#4a4f55" />
+        <polygon points="25.99,23.10 25.30,23.50 24.61,23.10 24.61,22.30 25.30,21.90 25.99,22.30" fill="#4a4f55" />
+        <polygon points="27.99,23.10 27.30,23.50 26.61,23.10 26.61,22.30 27.30,21.90 27.99,22.30" fill="#4a4f55" />
+        <polygon points="6.99,24.85 6.30,25.25 5.61,24.85 5.61,24.05 6.30,23.65 6.99,24.05" fill="#4a4f55" />
+        <polygon points="8.99,24.85 8.30,25.25 7.61,24.85 7.61,24.05 8.30,23.65 8.99,24.05" fill="#4a4f55" />
+        <polygon points="10.99,24.85 10.30,25.25 9.61,24.85 9.61,24.05 10.30,23.65 10.99,24.05" fill="#4a4f55" />
+        <polygon points="12.99,24.85 12.30,25.25 11.61,24.85 11.61,24.05 12.30,23.65 12.99,24.05" fill="#4a4f55" />
+        <polygon points="14.99,24.85 14.30,25.25 13.61,24.85 13.61,24.05 14.30,23.65 14.99,24.05" fill="#4a4f55" />
+        <polygon points="16.99,24.85 16.30,25.25 15.61,24.85 15.61,24.05 16.30,23.65 16.99,24.05" fill="#4a4f55" />
+        <polygon points="18.99,24.85 18.30,25.25 17.61,24.85 17.61,24.05 18.30,23.65 18.99,24.05" fill="#4a4f55" />
+        <polygon points="20.99,24.85 20.30,25.25 19.61,24.85 19.61,24.05 20.30,23.65 20.99,24.05" fill="#4a4f55" />
+        <polygon points="22.99,24.85 22.30,25.25 21.61,24.85 21.61,24.05 22.30,23.65 22.99,24.05" fill="#4a4f55" />
+        <polygon points="24.99,24.85 24.30,25.25 23.61,24.85 23.61,24.05 24.30,23.65 24.99,24.05" fill="#4a4f55" />
+        <polygon points="26.99,24.85 26.30,25.25 25.61,24.85 25.61,24.05 26.30,23.65 26.99,24.05" fill="#4a4f55" />
+        <polygon points="28.99,24.85 28.30,25.25 27.61,24.85 27.61,24.05 28.30,23.65 28.99,24.05" fill="#4a4f55" />
+        <polygon points="5.99,26.60 5.30,27.00 4.61,26.60 4.61,25.80 5.30,25.40 5.99,25.80" fill="#4a4f55" />
+        <polygon points="7.99,26.60 7.30,27.00 6.61,26.60 6.61,25.80 7.30,25.40 7.99,25.80" fill="#4a4f55" />
+        <polygon points="9.99,26.60 9.30,27.00 8.61,26.60 8.61,25.80 9.30,25.40 9.99,25.80" fill="#4a4f55" />
+        <polygon points="11.99,26.60 11.30,27.00 10.61,26.60 10.61,25.80 11.30,25.40 11.99,25.80" fill="#4a4f55" />
+        <polygon points="13.99,26.60 13.30,27.00 12.61,26.60 12.61,25.80 13.30,25.40 13.99,25.80" fill="#4a4f55" />
+        <polygon points="15.99,26.60 15.30,27.00 14.61,26.60 14.61,25.80 15.30,25.40 15.99,25.80" fill="#4a4f55" />
+        <polygon points="17.99,26.60 17.30,27.00 16.61,26.60 16.61,25.80 17.30,25.40 17.99,25.80" fill="#4a4f55" />
+        <polygon points="19.99,26.60 19.30,27.00 18.61,26.60 18.61,25.80 19.30,25.40 19.99,25.80" fill="#4a4f55" />
+        <polygon points="21.99,26.60 21.30,27.00 20.61,26.60 20.61,25.80 21.30,25.40 21.99,25.80" fill="#4a4f55" />
+        <polygon points="23.99,26.60 23.30,27.00 22.61,26.60 22.61,25.80 23.30,25.40 23.99,25.80" fill="#4a4f55" />
+        <polygon points="25.99,26.60 25.30,27.00 24.61,26.60 24.61,25.80 25.30,25.40 25.99,25.80" fill="#4a4f55" />
+        <polygon points="27.99,26.60 27.30,27.00 26.61,26.60 26.61,25.80 27.30,25.40 27.99,25.80" fill="#4a4f55" />
+        <polygon points="6.99,28.35 6.30,28.75 5.61,28.35 5.61,27.55 6.30,27.15 6.99,27.55" fill="#4a4f55" />
+        <polygon points="8.99,28.35 8.30,28.75 7.61,28.35 7.61,27.55 8.30,27.15 8.99,27.55" fill="#4a4f55" />
+        <polygon points="10.99,28.35 10.30,28.75 9.61,28.35 9.61,27.55 10.30,27.15 10.99,27.55" fill="#4a4f55" />
+        <polygon points="12.99,28.35 12.30,28.75 11.61,28.35 11.61,27.55 12.30,27.15 12.99,27.55" fill="#4a4f55" />
+        <polygon points="14.99,28.35 14.30,28.75 13.61,28.35 13.61,27.55 14.30,27.15 14.99,27.55" fill="#4a4f55" />
+        <polygon points="16.99,28.35 16.30,28.75 15.61,28.35 15.61,27.55 16.30,27.15 16.99,27.55" fill="#4a4f55" />
+        <polygon points="18.99,28.35 18.30,28.75 17.61,28.35 17.61,27.55 18.30,27.15 18.99,27.55" fill="#4a4f55" />
+        <polygon points="20.99,28.35 20.30,28.75 19.61,28.35 19.61,27.55 20.30,27.15 20.99,27.55" fill="#4a4f55" />
+        <polygon points="22.99,28.35 22.30,28.75 21.61,28.35 21.61,27.55 22.30,27.15 22.99,27.55" fill="#4a4f55" />
+        <polygon points="24.99,28.35 24.30,28.75 23.61,28.35 23.61,27.55 24.30,27.15 24.99,27.55" fill="#4a4f55" />
+        <polygon points="26.99,28.35 26.30,28.75 25.61,28.35 25.61,27.55 26.30,27.15 26.99,27.55" fill="#4a4f55" />
+        <polygon points="28.99,28.35 28.30,28.75 27.61,28.35 27.61,27.55 28.30,27.15 28.99,27.55" fill="#4a4f55" />
+        <polygon points="5.99,30.10 5.30,30.50 4.61,30.10 4.61,29.30 5.30,28.90 5.99,29.30" fill="#4a4f55" />
+        <polygon points="7.99,30.10 7.30,30.50 6.61,30.10 6.61,29.30 7.30,28.90 7.99,29.30" fill="#4a4f55" />
+        <polygon points="9.99,30.10 9.30,30.50 8.61,30.10 8.61,29.30 9.30,28.90 9.99,29.30" fill="#4a4f55" />
+        <polygon points="11.99,30.10 11.30,30.50 10.61,30.10 10.61,29.30 11.30,28.90 11.99,29.30" fill="#4a4f55" />
+        <polygon points="13.99,30.10 13.30,30.50 12.61,30.10 12.61,29.30 13.30,28.90 13.99,29.30" fill="#4a4f55" />
+        <polygon points="15.99,30.10 15.30,30.50 14.61,30.10 14.61,29.30 15.30,28.90 15.99,29.30" fill="#4a4f55" />
+        <polygon points="17.99,30.10 17.30,30.50 16.61,30.10 16.61,29.30 17.30,28.90 17.99,29.30" fill="#4a4f55" />
+        <polygon points="19.99,30.10 19.30,30.50 18.61,30.10 18.61,29.30 19.30,28.90 19.99,29.30" fill="#4a4f55" />
+        <polygon points="21.99,30.10 21.30,30.50 20.61,30.10 20.61,29.30 21.30,28.90 21.99,29.30" fill="#4a4f55" />
+        <polygon points="23.99,30.10 23.30,30.50 22.61,30.10 22.61,29.30 23.30,28.90 23.99,29.30" fill="#4a4f55" />
+        <polygon points="25.99,30.10 25.30,30.50 24.61,30.10 24.61,29.30 25.30,28.90 25.99,29.30" fill="#4a4f55" />
+        <polygon points="27.99,30.10 27.30,30.50 26.61,30.10 26.61,29.30 27.30,28.90 27.99,29.30" fill="#4a4f55" />
+        <polygon points="6.99,31.85 6.30,32.25 5.61,31.85 5.61,31.05 6.30,30.65 6.99,31.05" fill="#4a4f55" />
+        <polygon points="8.99,31.85 8.30,32.25 7.61,31.85 7.61,31.05 8.30,30.65 8.99,31.05" fill="#4a4f55" />
+        <polygon points="10.99,31.85 10.30,32.25 9.61,31.85 9.61,31.05 10.30,30.65 10.99,31.05" fill="#4a4f55" />
+        <polygon points="12.99,31.85 12.30,32.25 11.61,31.85 11.61,31.05 12.30,30.65 12.99,31.05" fill="#4a4f55" />
+        <polygon points="14.99,31.85 14.30,32.25 13.61,31.85 13.61,31.05 14.30,30.65 14.99,31.05" fill="#4a4f55" />
+        <polygon points="16.99,31.85 16.30,32.25 15.61,31.85 15.61,31.05 16.30,30.65 16.99,31.05" fill="#4a4f55" />
+        <polygon points="18.99,31.85 18.30,32.25 17.61,31.85 17.61,31.05 18.30,30.65 18.99,31.05" fill="#4a4f55" />
+        <polygon points="20.99,31.85 20.30,32.25 19.61,31.85 19.61,31.05 20.30,30.65 20.99,31.05" fill="#4a4f55" />
+        <polygon points="22.99,31.85 22.30,32.25 21.61,31.85 21.61,31.05 22.30,30.65 22.99,31.05" fill="#4a4f55" />
+        <polygon points="24.99,31.85 24.30,32.25 23.61,31.85 23.61,31.05 24.30,30.65 24.99,31.05" fill="#4a4f55" />
+        <polygon points="26.99,31.85 26.30,32.25 25.61,31.85 25.61,31.05 26.30,30.65 26.99,31.05" fill="#4a4f55" />
+        <polygon points="28.99,31.85 28.30,32.25 27.61,31.85 27.61,31.05 28.30,30.65 28.99,31.05" fill="#4a4f55" />
+      </g>
+      <g id="pem3--module--terminals" data-path="pem3/module/terminals" data-class="terminal" data-z-out="2.4" data-z-color="#26292d">
+        <rect id="pem3--module--terminal-plate" x="4.0" y="38.0" width="34.0" height="30.0" rx="1.2" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+        <g id="pem3--module--stud-0" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem3--module--stud-1" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="47.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem3--module--stud-2" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="13.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+        <g id="pem3--module--stud-3" data-z-cyl="7.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="28.0" cy="60.0" r="3.6" fill="#8a8f95" stroke="#565b60" stroke-width="0.4" />
+        </g>
+      </g>
+      <g id="pem3--module--breaker" data-path="pem3/module/breaker" data-class="switch" data-z-out="3.0" data-z-color="#17191c">
+        <circle cx="60.0" cy="26.0" r="10.5" fill="#17191c" stroke="#0d0f11" stroke-width="0.5" />
+        <rect x="47.0" y="23.0" width="12.0" height="6.0" rx="1.6" fill="#e8eaec" stroke="#9ba0a6" stroke-width="0.4" />
+      </g>
+      <g id="pem3--module--lamps">
+        <circle id="pem3--module--led-pwr-ok" cx="51.0" cy="56.5" r="1.1" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem3--module--led-bkr-on" cx="63.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="pem3--module--led-input-ok" cx="77.5" cy="56.5" r="1.1" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      </g>
+      <g id="pem3--module--handle" data-path="pem3/module/handle" data-class="latch" data-z-out="2.2" data-z-color="#26292d">
+        <rect x="44.0" y="63.5" width="44.0" height="4.6" rx="2.3" fill="#26292d" stroke="#17191c" stroke-width="0.4" />
+      </g>
+      <g id="pem3--module--silkscreen">
+        <g id="pem3--module--t69-silkscreen">
+          <text x="6.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="start">RTN</text>
+        </g>
+        <g id="pem3--module--t70-silkscreen">
+          <text x="36.0" y="37.0" font-family="Arial" font-size="1.7" fill="#f0f1f2" text-anchor="end">-48V</text>
+        </g>
+        <g id="pem3--module--t71-silkscreen">
+          <text x="51.0" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">PWR OK</text>
+        </g>
+        <g id="pem3--module--t72-silkscreen">
+          <text x="63.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">BKR ON</text>
+        </g>
+        <g id="pem3--module--t73-silkscreen">
+          <text x="77.5" y="53.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">INPUT OK</text>
+        </g>
+        <g id="pem3--module--t74-silkscreen">
+          <text x="80.0" y="8.4" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Breaker</text>
+        </g>
+        <g id="pem3--module--t75-silkscreen">
+          <text x="80.0" y="10.6" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">Rating: 40A</text>
+        </g>
+        <g id="pem3--module--t76-silkscreen">
+          <text x="50.8" y="74.4" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">Use Copper Conductors</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="air-filter" data-path="air-filter" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="0">
+    <title>air-filter</title>
+    <rect id="air-filter--opening" x="25.1" y="100" width="12" height="110" fill="#101214" />
+    <g id="air-filter--module" data-path="air-filter/module" data-class="filter" data-behaviour="fills" data-ref="juniper/mx240-air-filter@1:1.0.0" data-model="MX240 Air Filter" data-states="ok absent" transform="translate(31.1,155) translate(-6,-55)">
+      <title>air-filter--module</title>
+      <rect id="air-filter--module--face" x="0" y="0" width="12.0" height="110.0" rx="1.4" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="air-filter--module--screws">
+        <circle cx="6.0" cy="8.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="6.0" cy="102.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="fan-tray" data-path="fan-tray" data-class="bay" data-group="cooling" data-group-role="service" data-rel-pos="1">
+    <title>fan-tray</title>
+    <rect id="fan-tray--opening" x="398.7" y="100" width="12" height="110" fill="#101214" />
+    <g id="fan-tray--module" data-path="fan-tray/module" data-class="fan" data-behaviour="fills" data-ref="juniper/mx240-fan-tray@1:1.0.0" data-airflow="side-to-side (intake beside the filter, exhaust at the fan-tray side)" data-fans="3" data-model="FANTRAY-MX240-HC" data-power-draw-max-w="85" data-states="ok fail absent" transform="translate(404.7,155) translate(-6,-55)">
+      <title>fan-tray--module</title>
+      <rect id="fan-tray--module--face" x="0" y="0" width="12.0" height="110.0" rx="1.4" fill="#b3b7bb" stroke="#8a8f94" stroke-width="0.4" />
+      <g id="fan-tray--module--screws">
+        <circle cx="6.0" cy="8.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="6.0" cy="102.0" r="2.0" fill="#a3a7ab" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+    </g>
+  </g>
+  <g id="ground-stud-0" data-path="ground-stud-0" data-class="ground" data-behaviour="mounts" data-ref="juniper/mx-ground-stud@1:1.0.0" data-wall="#4a4f55" data-model="MX earthing stud" data-group="grounding" data-rel-pos="0" transform="translate(423.2,18.7)" data-group-role="furniture" data-description="the protective-earthing stud pair under the rear earth symbol" data-for="chassis">
+    <title>ground-stud-0</title>
+    <circle id="ground-stud-0--washer" cx="3.5" cy="3.5" r="3.4" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.3" />
+    <g id="ground-stud-0--stud" data-z-cyl="5.0" data-z-lift="3.0" data-z-thread="0.8">
+      <circle cx="3.5" cy="3.5" r="2.4" fill="#8a8f95" stroke="#565b60" stroke-width="0.3" />
+      <circle cx="3.5" cy="3.5" r="1.1" fill="#6d7278" />
+    </g>
+  </g>
+  <g id="ground-stud-1" data-path="ground-stud-1" data-class="ground" data-behaviour="mounts" data-ref="juniper/mx-ground-stud@1:1.0.0" data-wall="#4a4f55" data-model="MX earthing stud" data-group="grounding" data-rel-pos="1" transform="translate(423.2,31.9)" data-group-role="furniture" data-description="the protective-earthing stud pair under the rear earth symbol" data-for="chassis">
+    <title>ground-stud-1</title>
+    <circle id="ground-stud-1--washer" cx="3.5" cy="3.5" r="3.4" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.3" />
+    <g id="ground-stud-1--stud" data-z-cyl="5.0" data-z-lift="3.0" data-z-thread="0.8">
+      <circle cx="3.5" cy="3.5" r="2.4" fill="#8a8f95" stroke="#565b60" stroke-width="0.3" />
+      <circle cx="3.5" cy="3.5" r="1.1" fill="#6d7278" />
+    </g>
+  </g>
+</svg>

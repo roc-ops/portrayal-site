@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420.9mm" height="29.5mm" viewBox="0 0 420.9 29.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="mpc-3d-16xge-sfpp" data-path="mpc-3d-16xge-sfpp" data-class="line-card" data-behaviour="fills" data-ref="juniper/mpc-3d-16xge-sfpp@1:1.0.0" data-model="MPC-3D-16XGE-SFP" data-states="ok fail absent" transform="translate(0,0)">
+    <title>mpc-3d-16xge-sfpp</title>
+    <rect id="mpc-3d-16xge-sfpp--face" x="0" y="0" width="420.9" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="mpc-3d-16xge-sfpp--lever-left">
+      <rect x="1.2" y="2.2" width="16.0" height="9.0" rx="3.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--lever-right">
+      <rect x="403.7" y="2.2" width="16.0" height="9.0" rx="3.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--lamps">
+      <circle id="mpc-3d-16xge-sfpp--led-ok-fail" cx="31.0" cy="8.2" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--silkscreen">
+      <g id="mpc-3d-16xge-sfpp--t21-silkscreen">
+        <text x="31.00" y="17.00" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle" transform="rotate(-90 31.00 17.00)">OK/FAIL</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t22-silkscreen">
+        <text x="12.00" y="27.90" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="start">MPC-3D-16XGE-SFP</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t1-silkscreen">
+        <text x="51.12" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t2-silkscreen">
+        <text x="65.38" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">1</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t3-silkscreen">
+        <text x="79.62" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t4-silkscreen">
+        <text x="93.88" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">3</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t5-silkscreen">
+        <text x="42.80" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">0/</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t6-silkscreen">
+        <text x="115.12" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t7-silkscreen">
+        <text x="129.38" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">1</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t8-silkscreen">
+        <text x="143.62" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t9-silkscreen">
+        <text x="157.88" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">3</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t10-silkscreen">
+        <text x="106.80" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">1/</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t11-silkscreen">
+        <text x="179.12" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t12-silkscreen">
+        <text x="193.38" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">1</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t13-silkscreen">
+        <text x="207.62" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t14-silkscreen">
+        <text x="221.88" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">3</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t15-silkscreen">
+        <text x="170.80" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">2/</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t16-silkscreen">
+        <text x="243.12" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t17-silkscreen">
+        <text x="257.38" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">1</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t18-silkscreen">
+        <text x="271.62" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t19-silkscreen">
+        <text x="285.88" y="22.55" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">3</text>
+      </g>
+      <g id="mpc-3d-16xge-sfpp--t20-silkscreen">
+        <text x="234.80" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">3/</text>
+      </g>
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-0-0" data-path="mpc-3d-16xge-sfpp/port-0-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(44.0,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-0-0</title>
+      <rect id="mpc-3d-16xge-sfpp--port-0-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-0-0/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-0-1" data-path="mpc-3d-16xge-sfpp/port-0-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(58.25,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-0-1</title>
+      <rect id="mpc-3d-16xge-sfpp--port-0-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-0-1/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-0-2" data-path="mpc-3d-16xge-sfpp/port-0-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(72.5,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-0-2</title>
+      <rect id="mpc-3d-16xge-sfpp--port-0-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-0-2/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-0-3" data-path="mpc-3d-16xge-sfpp/port-0-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(86.75,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-0-3</title>
+      <rect id="mpc-3d-16xge-sfpp--port-0-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-0-3/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-0-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-1-0" data-path="mpc-3d-16xge-sfpp/port-1-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(108.0,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-1-0</title>
+      <rect id="mpc-3d-16xge-sfpp--port-1-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-1-0/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-1-1" data-path="mpc-3d-16xge-sfpp/port-1-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(122.25,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-1-1</title>
+      <rect id="mpc-3d-16xge-sfpp--port-1-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-1-1/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-1-2" data-path="mpc-3d-16xge-sfpp/port-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(136.5,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-1-2</title>
+      <rect id="mpc-3d-16xge-sfpp--port-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-1-2/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-1-3" data-path="mpc-3d-16xge-sfpp/port-1-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(150.75,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-1-3</title>
+      <rect id="mpc-3d-16xge-sfpp--port-1-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-1-3/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-1-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-2-0" data-path="mpc-3d-16xge-sfpp/port-2-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(172.0,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-2-0</title>
+      <rect id="mpc-3d-16xge-sfpp--port-2-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-2-0/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-2-1" data-path="mpc-3d-16xge-sfpp/port-2-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(186.25,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-2-1</title>
+      <rect id="mpc-3d-16xge-sfpp--port-2-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-2-1/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-2-2" data-path="mpc-3d-16xge-sfpp/port-2-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(200.5,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-2-2</title>
+      <rect id="mpc-3d-16xge-sfpp--port-2-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-2-2/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-2-3" data-path="mpc-3d-16xge-sfpp/port-2-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(214.75,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-2-3</title>
+      <rect id="mpc-3d-16xge-sfpp--port-2-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-2-3/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-2-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-3-0" data-path="mpc-3d-16xge-sfpp/port-3-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(236.0,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-3-0</title>
+      <rect id="mpc-3d-16xge-sfpp--port-3-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-3-0/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-3-1" data-path="mpc-3d-16xge-sfpp/port-3-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(250.25,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-3-1</title>
+      <rect id="mpc-3d-16xge-sfpp--port-3-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-3-1/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-3-2" data-path="mpc-3d-16xge-sfpp/port-3-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(264.5,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-3-2</title>
+      <rect id="mpc-3d-16xge-sfpp--port-3-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-3-2/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+    <g id="mpc-3d-16xge-sfpp--port-3-3" data-path="mpc-3d-16xge-sfpp/port-3-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" transform="translate(278.75,9.55)">
+      <title>mpc-3d-16xge-sfpp--port-3-3</title>
+      <rect id="mpc-3d-16xge-sfpp--port-3-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mpc-3d-16xge-sfpp/port-3-3/opening" data-class="cutout" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mpc-3d-16xge-sfpp--port-3-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+</svg>

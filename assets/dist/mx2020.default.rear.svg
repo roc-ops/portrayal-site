@@ -1,0 +1,887 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="2000.0mm" viewBox="0 0 440.0 2000.0" data-device="mx2020" data-view="rear" data-config="default">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"default","device":"Juniper MX2020","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"juniper/mx2000-psm-dc-v@1":"1.0.0"},"source":{"chassis":{"color":"#565b61","depth":919.5,"height":2000.0,"ru":45,"width":440.0},"description":"Juniper MX2020 - the 45RU, two-metre flagship of the MX2000 family: the MX2010 doubled. Craft interface and EMI cover at the top, an upper cage of ten MPC slots (LC 10-19), the fabric cage (CB-RE 0, SFB 0-7, CB-RE 1) in the middle, a lower cage of ten more (LC 0-9), and the intake grille at the base. The rear carries two nine-module PSM walls between four power distribution modules, with fan trays behind the grilles.","format":1,"gaps":[{"reason":"needs-photo","scope":["psus"],"wanted":"the printed PSM slot numbering across the two walls, and a dimensioned PSM - the bay is drawn at the family 430 mm where this photograph reads nearer 375.","what":"psm-numbering-and-bay-height"},{"reason":"needs-photo","scope":["fpcs"],"wanted":"as the MX2010 - vertical authors for the MPC range and the adapter card; the photographed MX2020 front carries blanks in every LC slot.","what":"mpc-catalogue"},{"reason":"needs-photo","wanted":"the four fan trays and four PDMs as FRU bays - drawn as the grilles and zones they sit behind.","what":"fan-trays-and-pdms"}],"groups":{"craft":{"index-origin":0,"role":"indicator","term":"Panel"},"fpcs":{"description":"MPC slots LC 0-9 (lower cage) and LC 10-19 (upper)","index-origin":0,"role":"traffic","term":"Slot"},"psus":{"description":"eighteen power supply modules in two nine-wide walls, 8+1 per wall","index-origin":0,"role":"service","term":"PSM"},"res":{"description":"CB-RE slots 0 and 1 at the ends of the fabric cage","index-origin":0,"role":"service","term":"Slot"},"sfbs":{"description":"Switch Fabric Board slots SFB 0-7","index-origin":0,"role":"service","term":"Slot"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX2020","name":"mx2020","portfolio":{"family":"MX2000 3D Universal Edge Router","line":"MX Series"},"provenance":{"chassis":"datasheet-table - 78.75 in (2000 mm) tall, 45U, same 440 mm body width and 919.5 mm depth as the MX2010. Ears NOT MODELLED by convention","color":"photo - grey chassis, dark craft band, silver-grey modules","front":"photo - the studio front photograph proportioned per-axis (~1.22 mm/px x, ~1.33 y): craft at y 12, EMI cover to 260, upper LC cage at y 300, the fabric cage at y 770, lower LC cage at y 1225, intake grille at the base; positions approximate to ~5 mm on this face. All MX2000 components are shared with the MX2010","other-faces":"near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as the siblings","power":"datasheet-table - the guide power overview: two -48 V pools as the MX2010 (8+1 per wall)","rear":"photo - fan tray 3/2 grille, PDM3 zone, the upper nine-PSM wall, the centre grille, the lower nine-PSM wall, the PDM0 / air filter panel and the bottom grille. The photographed unit is -48 V DC. The PSM bay is drawn at the family 430 mm; this photograph reads nearer 375 and the difference is recorded here rather than silently split","slot-numbering":"guide + photo - the lower cage is LC 0-9 and the upper LC 10-19 (the label strips under each cage print them); PSM numbering across the two rear walls is not legible - see gaps","sources":"MX2020 Hardware Guide (extracted into working/images/ mx2020-p0001-0300 et seq, 960 pages), the MX2000 datasheet, and the studio front and rear photographs in the image library"},"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[8.0,919.5],"source":"side edge; estimated"},{"at":[432.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[8.0,919.5],"source":"side edge; estimated"}]},"size":{"h":919.5,"w":440.0}},"front":{"components":{"bays":[{"accepts":["juniper/mx2000-craft@1"],"at":[0.0,12.0],"default":"juniper/mx2000-craft@1","group":"craft","id":"craft","rel-pos":0,"size":{"h":95.0,"w":440.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[15.0,300.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc10","rel-pos":10,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[56.0,300.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc11","rel-pos":11,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[97.0,300.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc12","rel-pos":12,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[138.0,300.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc13","rel-pos":13,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[179.0,300.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc14","rel-pos":14,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[220.0,300.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc15","rel-pos":15,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[261.0,300.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc16","rel-pos":16,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[302.0,300.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc17","rel-pos":17,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[343.0,300.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc18","rel-pos":18,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[384.0,300.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc19","rel-pos":19,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mx2000-cb-re-v@1"],"at":[5.0,770.0],"default":"juniper/mx2000-cb-re-v@1","group":"res","id":"cbre0","rel-pos":0,"size":{"h":405.0,"w":55.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[60.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb0","rel-pos":0,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[100.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb1","rel-pos":1,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[140.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb2","rel-pos":2,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[180.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb3","rel-pos":3,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[220.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb4","rel-pos":4,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[260.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb5","rel-pos":5,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[300.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb6","rel-pos":6,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-sfb-v@1"],"at":[340.0,770.0],"default":"juniper/mx2000-sfb-v@1","group":"sfbs","id":"sfb7","rel-pos":7,"size":{"h":405.0,"w":40.0}},{"accepts":["juniper/mx2000-cb-re-v@1"],"at":[380.0,770.0],"default":"juniper/mx2000-cb-re-v@1","group":"res","id":"cbre1","rel-pos":1,"size":{"h":405.0,"w":55.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[15.0,1225.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc0","rel-pos":0,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[56.0,1225.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc1","rel-pos":1,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[97.0,1225.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc2","rel-pos":2,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[138.0,1225.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc3","rel-pos":3,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[179.0,1225.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc4","rel-pos":4,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[220.0,1225.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc5","rel-pos":5,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[261.0,1225.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc6","rel-pos":6,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[302.0,1225.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc7","rel-pos":7,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[343.0,1225.0],"default":"juniper/mpc4e-3d-32xge-sfpp-v2k@1","group":"fpcs","id":"fpc8","rel-pos":8,"size":{"h":425.0,"w":41.0}},{"accepts":["juniper/mpc-3d-16xge-sfpp-v2k@1","juniper/mpc1e-3d-v2k@1","juniper/mpc2e-3d-v2k@1","juniper/mpc3e-3d-v2k@1","juniper/mpc4e-3d-2cge-8xge-v2k@1","juniper/mpc4e-3d-32xge-sfpp-v2k@1","juniper/mpc5e-100g10g-v2k@1","juniper/mpc5e-40g10g-v2k@1","juniper/mpc7e-10g-v2k@1","juniper/mpc7e-mrate-v2k@1","juniper/ms-mpc-v2k@1","juniper/mx2k-mpc11e-v2k@1","juniper/mx2k-mpc6e-v2k@1","juniper/mx2k-mpc8e-v2k@1","juniper/mx2k-mpc9e-v2k@1","juniper/mx2000-mpc-blank-v@1"],"at":[384.0,1225.0],"default":"juniper/mx2000-mpc-blank-v@1","group":"fpcs","id":"fpc9","rel-pos":9,"size":{"h":425.0,"w":41.0}}]},"panel":{"decor":[{"at":[0.0,0.0],"fill":"#4a4f55","size":[440.0,12.0]},{"at":[8.0,110.0],"fill":"#6d7278","size":[424.0,150.0]},{"at":[0.0,727.0],"fill":"#4a4f55","size":[440.0,43.0]},{"at":[0.0,1177.0],"fill":"#4a4f55","size":[440.0,48.0]},{"at":[0.0,1652.0],"fill":"#4a4f55","size":[440.0,26.0]},{"at":[0.0,1680.0],"fill":"#565b61","size":[440.0,120.0]},{"at":[14.0,1810.0],"fill":"#26292d","pattern":"holes","size":[412.0,150.0]}]},"silkscreen":[{"anchor":"middle","at":[14.0,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"chassis","text":"LC"},{"anchor":"middle","at":[35.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc0","text":"0"},{"anchor":"middle","at":[76.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc1","text":"1"},{"anchor":"middle","at":[117.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc2","text":"2"},{"anchor":"middle","at":[158.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc3","text":"3"},{"anchor":"middle","at":[199.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc4","text":"4"},{"anchor":"middle","at":[240.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc5","text":"5"},{"anchor":"middle","at":[281.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc6","text":"6"},{"anchor":"middle","at":[322.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc7","text":"7"},{"anchor":"middle","at":[363.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc8","text":"8"},{"anchor":"middle","at":[404.5,1668.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc9","text":"9"},{"anchor":"middle","at":[14.0,743.0],"fill":"#e8eaec","font-size":2.6,"for":"chassis","text":"LC"},{"anchor":"middle","at":[35.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc10","text":"10"},{"anchor":"middle","at":[76.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc11","text":"11"},{"anchor":"middle","at":[117.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc12","text":"12"},{"anchor":"middle","at":[158.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc13","text":"13"},{"anchor":"middle","at":[199.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc14","text":"14"},{"anchor":"middle","at":[240.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc15","text":"15"},{"anchor":"middle","at":[281.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc16","text":"16"},{"anchor":"middle","at":[322.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc17","text":"17"},{"anchor":"middle","at":[363.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc18","text":"18"},{"anchor":"middle","at":[404.5,743.0],"fill":"#e8eaec","font-size":2.6,"for":"fpc19","text":"19"},{"anchor":"middle","at":[32.5,766.0],"fill":"#e8eaec","font-size":2.0,"for":"cbre0","text":"CB-RE 0"},{"anchor":"middle","at":[80.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb0","text":"0"},{"anchor":"middle","at":[120.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb1","text":"1"},{"anchor":"middle","at":[160.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb2","text":"2"},{"anchor":"middle","at":[200.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb3","text":"3"},{"anchor":"middle","at":[240.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb4","text":"4"},{"anchor":"middle","at":[280.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb5","text":"5"},{"anchor":"middle","at":[320.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb6","text":"6"},{"anchor":"middle","at":[360.0,766.0],"fill":"#e8eaec","font-size":2.0,"for":"sfb7","text":"7"},{"anchor":"middle","at":[407.5,766.0],"fill":"#e8eaec","font-size":2.0,"for":"cbre1","text":"CB-RE 1"}],"size":{"h":2000.0,"w":440.0}},"left":{"panel":{"decor":[{"at":[0.0,960.0],"confidence":"estimated","fill":"#4a4f55","size":[919.5,45.0],"source":"rail band; estimated"}]},"size":{"h":2000.0,"w":919.5}},"rear":{"components":{"bays":[{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[22.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm9","rel-pos":9,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[66.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm10","rel-pos":10,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[110.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm11","rel-pos":11,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[154.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm12","rel-pos":12,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[198.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm13","rel-pos":13,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[242.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm14","rel-pos":14,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[286.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm15","rel-pos":15,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[330.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm16","rel-pos":16,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[374.0,405.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm17","rel-pos":17,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[22.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm0","rel-pos":0,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[66.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm1","rel-pos":1,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[110.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm2","rel-pos":2,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[154.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm3","rel-pos":3,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[198.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm4","rel-pos":4,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[242.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm5","rel-pos":5,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[286.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm6","rel-pos":6,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[330.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm7","rel-pos":7,"size":{"h":430.0,"w":44.0}},{"accepts":["juniper/mx2000-psm-dc-v@1"],"at":[374.0,1085.0],"default":"juniper/mx2000-psm-dc-v@1","group":"psus","id":"psm8","rel-pos":8,"size":{"h":430.0,"w":44.0}}]},"panel":{"decor":[{"at":[12.0,13.0],"fill":"#26292d","pattern":"holes","size":[416.0,240.0]},{"at":[8.0,267.0],"fill":"#6d7278","size":[424.0,133.0]},{"at":[8.0,838.0],"fill":"#6d7278","size":[424.0,65.0]},{"at":[12.0,905.0],"fill":"#26292d","pattern":"holes","size":[416.0,110.0]},{"at":[8.0,1017.0],"fill":"#6d7278","size":[424.0,65.0]},{"at":[8.0,1518.0],"fill":"#6d7278","size":[424.0,100.0]},{"at":[8.0,1640.0],"fill":"#9a9ea3","size":[424.0,170.0]},{"at":[12.0,1830.0],"fill":"#26292d","pattern":"holes","size":[416.0,160.0]}]},"silkscreen":[{"anchor":"middle","at":[300.0,160.0],"fill":"#c7ccd1","font-size":2.4,"for":"chassis","text":"Fan Tray 3"},{"anchor":"middle","at":[300.0,210.0],"fill":"#c7ccd1","font-size":2.4,"for":"chassis","text":"Fan Tray 2"},{"anchor":"middle","at":[220.0,262.0],"fill":"#e8eaec","font-size":2.6,"for":"chassis","text":"PDM3"},{"anchor":"middle","at":[220.0,1633.0],"fill":"#3a3e43","font-size":2.6,"for":"chassis","text":"PDM0"},{"anchor":"middle","at":[220.0,1680.0],"fill":"#3a3e43","font-size":2.6,"for":"chassis","text":"Air Filter"},{"anchor":"middle","at":[220.0,1725.0],"fill":"#3a3e43","font-size":2.4,"for":"chassis","text":"Fan Tray 1"},{"anchor":"middle","at":[220.0,1765.0],"fill":"#3a3e43","font-size":2.4,"for":"chassis","text":"Fan Tray 0"}],"size":{"h":2000.0,"w":440.0}},"right":{"panel":{"decor":[{"at":[0.0,960.0],"confidence":"estimated","fill":"#4a4f55","size":[919.5,45.0],"source":"rail band; estimated"}]},"size":{"h":2000.0,"w":919.5}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[8.0,919.5],"source":"side edge; estimated"},{"at":[432.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[8.0,919.5],"source":"side edge; estimated"}]},"size":{"h":919.5,"w":440.0}}}},"view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX2020" x="0" y="0" width="440" height="2000" rx="1.2" fill="#565b61" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-holes" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <rect x="12" y="13" width="416" height="240" rx="0.6" fill="url(#portrayal-holes)" />
+  <rect x="8" y="267" width="424" height="133" rx="0.6" fill="#6d7278" />
+  <rect x="8" y="838" width="424" height="65" rx="0.6" fill="#6d7278" />
+  <rect x="12" y="905" width="416" height="110" rx="0.6" fill="url(#portrayal-holes)" />
+  <rect x="8" y="1017" width="424" height="65" rx="0.6" fill="#6d7278" />
+  <rect x="8" y="1518" width="424" height="100" rx="0.6" fill="#6d7278" />
+  <rect x="8" y="1640" width="424" height="170" rx="0.6" fill="#9a9ea3" />
+  <rect x="12" y="1830" width="416" height="160" rx="0.6" fill="url(#portrayal-holes)" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="300" y="160" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Fan Tray 3</text>
+    <text x="300" y="210" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Fan Tray 2</text>
+    <text x="220" y="262" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#e8eaec" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">PDM3</text>
+    <text x="220" y="1633" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#3a3e43" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">PDM0</text>
+    <text x="220" y="1680" font-family="sans-serif" font-size="2.6" text-anchor="middle" fill="#3a3e43" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Air Filter</text>
+    <text x="220" y="1725" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#3a3e43" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Fan Tray 1</text>
+    <text x="220" y="1765" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#3a3e43" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Fan Tray 0</text>
+  </g>
+  <g id="psm9" data-path="psm9" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="9">
+    <title>psm9</title>
+    <rect id="psm9--opening" x="22" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm9--module" data-path="psm9/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(44,620) translate(-22,-215)">
+      <title>psm9--module</title>
+      <rect id="psm9--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm9--module--breaker">
+        <rect id="psm9--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm9--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm9--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm9--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm9--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm9--module--lamps">
+        <circle id="psm9--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm9--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm9--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm9--module--silkscreen">
+        <g id="psm9--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm9--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm9--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm9--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm9--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm10" data-path="psm10" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="10">
+    <title>psm10</title>
+    <rect id="psm10--opening" x="66" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm10--module" data-path="psm10/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(88,620) translate(-22,-215)">
+      <title>psm10--module</title>
+      <rect id="psm10--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm10--module--breaker">
+        <rect id="psm10--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm10--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm10--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm10--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm10--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm10--module--lamps">
+        <circle id="psm10--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm10--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm10--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm10--module--silkscreen">
+        <g id="psm10--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm10--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm10--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm10--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm10--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm11" data-path="psm11" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="11">
+    <title>psm11</title>
+    <rect id="psm11--opening" x="110" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm11--module" data-path="psm11/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(132,620) translate(-22,-215)">
+      <title>psm11--module</title>
+      <rect id="psm11--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm11--module--breaker">
+        <rect id="psm11--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm11--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm11--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm11--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm11--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm11--module--lamps">
+        <circle id="psm11--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm11--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm11--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm11--module--silkscreen">
+        <g id="psm11--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm11--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm11--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm11--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm11--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm12" data-path="psm12" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="12">
+    <title>psm12</title>
+    <rect id="psm12--opening" x="154" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm12--module" data-path="psm12/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(176,620) translate(-22,-215)">
+      <title>psm12--module</title>
+      <rect id="psm12--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm12--module--breaker">
+        <rect id="psm12--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm12--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm12--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm12--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm12--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm12--module--lamps">
+        <circle id="psm12--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm12--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm12--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm12--module--silkscreen">
+        <g id="psm12--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm12--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm12--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm12--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm12--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm13" data-path="psm13" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="13">
+    <title>psm13</title>
+    <rect id="psm13--opening" x="198" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm13--module" data-path="psm13/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(220,620) translate(-22,-215)">
+      <title>psm13--module</title>
+      <rect id="psm13--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm13--module--breaker">
+        <rect id="psm13--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm13--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm13--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm13--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm13--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm13--module--lamps">
+        <circle id="psm13--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm13--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm13--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm13--module--silkscreen">
+        <g id="psm13--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm13--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm13--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm13--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm13--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm14" data-path="psm14" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="14">
+    <title>psm14</title>
+    <rect id="psm14--opening" x="242" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm14--module" data-path="psm14/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(264,620) translate(-22,-215)">
+      <title>psm14--module</title>
+      <rect id="psm14--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm14--module--breaker">
+        <rect id="psm14--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm14--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm14--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm14--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm14--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm14--module--lamps">
+        <circle id="psm14--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm14--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm14--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm14--module--silkscreen">
+        <g id="psm14--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm14--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm14--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm14--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm14--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm15" data-path="psm15" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="15">
+    <title>psm15</title>
+    <rect id="psm15--opening" x="286" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm15--module" data-path="psm15/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(308,620) translate(-22,-215)">
+      <title>psm15--module</title>
+      <rect id="psm15--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm15--module--breaker">
+        <rect id="psm15--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm15--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm15--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm15--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm15--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm15--module--lamps">
+        <circle id="psm15--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm15--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm15--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm15--module--silkscreen">
+        <g id="psm15--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm15--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm15--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm15--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm15--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm16" data-path="psm16" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="16">
+    <title>psm16</title>
+    <rect id="psm16--opening" x="330" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm16--module" data-path="psm16/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(352,620) translate(-22,-215)">
+      <title>psm16--module</title>
+      <rect id="psm16--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm16--module--breaker">
+        <rect id="psm16--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm16--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm16--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm16--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm16--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm16--module--lamps">
+        <circle id="psm16--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm16--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm16--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm16--module--silkscreen">
+        <g id="psm16--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm16--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm16--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm16--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm16--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm17" data-path="psm17" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="17">
+    <title>psm17</title>
+    <rect id="psm17--opening" x="374" y="405" width="44" height="430" fill="#101214" />
+    <g id="psm17--module" data-path="psm17/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(396,620) translate(-22,-215)">
+      <title>psm17--module</title>
+      <rect id="psm17--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm17--module--breaker">
+        <rect id="psm17--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm17--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm17--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm17--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm17--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm17--module--lamps">
+        <circle id="psm17--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm17--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm17--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm17--module--silkscreen">
+        <g id="psm17--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm17--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm17--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm17--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm17--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm0" data-path="psm0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psm0</title>
+    <rect id="psm0--opening" x="22" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm0--module" data-path="psm0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(44,1300) translate(-22,-215)">
+      <title>psm0--module</title>
+      <rect id="psm0--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm0--module--breaker">
+        <rect id="psm0--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm0--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm0--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm0--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm0--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm0--module--lamps">
+        <circle id="psm0--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm0--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm0--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm0--module--silkscreen">
+        <g id="psm0--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm0--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm0--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm0--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm0--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm1" data-path="psm1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psm1</title>
+    <rect id="psm1--opening" x="66" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm1--module" data-path="psm1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(88,1300) translate(-22,-215)">
+      <title>psm1--module</title>
+      <rect id="psm1--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm1--module--breaker">
+        <rect id="psm1--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm1--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm1--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm1--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm1--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm1--module--lamps">
+        <circle id="psm1--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm1--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm1--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm1--module--silkscreen">
+        <g id="psm1--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm1--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm1--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm1--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm1--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm2" data-path="psm2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psm2</title>
+    <rect id="psm2--opening" x="110" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm2--module" data-path="psm2/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(132,1300) translate(-22,-215)">
+      <title>psm2--module</title>
+      <rect id="psm2--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm2--module--breaker">
+        <rect id="psm2--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm2--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm2--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm2--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm2--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm2--module--lamps">
+        <circle id="psm2--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm2--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm2--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm2--module--silkscreen">
+        <g id="psm2--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm2--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm2--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm2--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm2--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm3" data-path="psm3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psm3</title>
+    <rect id="psm3--opening" x="154" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm3--module" data-path="psm3/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(176,1300) translate(-22,-215)">
+      <title>psm3--module</title>
+      <rect id="psm3--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm3--module--breaker">
+        <rect id="psm3--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm3--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm3--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm3--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm3--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm3--module--lamps">
+        <circle id="psm3--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm3--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm3--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm3--module--silkscreen">
+        <g id="psm3--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm3--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm3--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm3--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm3--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm4" data-path="psm4" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="4">
+    <title>psm4</title>
+    <rect id="psm4--opening" x="198" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm4--module" data-path="psm4/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(220,1300) translate(-22,-215)">
+      <title>psm4--module</title>
+      <rect id="psm4--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm4--module--breaker">
+        <rect id="psm4--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm4--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm4--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm4--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm4--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm4--module--lamps">
+        <circle id="psm4--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm4--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm4--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm4--module--silkscreen">
+        <g id="psm4--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm4--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm4--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm4--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm4--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm5" data-path="psm5" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="5">
+    <title>psm5</title>
+    <rect id="psm5--opening" x="242" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm5--module" data-path="psm5/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(264,1300) translate(-22,-215)">
+      <title>psm5--module</title>
+      <rect id="psm5--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm5--module--breaker">
+        <rect id="psm5--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm5--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm5--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm5--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm5--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm5--module--lamps">
+        <circle id="psm5--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm5--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm5--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm5--module--silkscreen">
+        <g id="psm5--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm5--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm5--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm5--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm5--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm6" data-path="psm6" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="6">
+    <title>psm6</title>
+    <rect id="psm6--opening" x="286" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm6--module" data-path="psm6/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(308,1300) translate(-22,-215)">
+      <title>psm6--module</title>
+      <rect id="psm6--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm6--module--breaker">
+        <rect id="psm6--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm6--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm6--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm6--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm6--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm6--module--lamps">
+        <circle id="psm6--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm6--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm6--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm6--module--silkscreen">
+        <g id="psm6--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm6--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm6--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm6--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm6--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm7" data-path="psm7" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="7">
+    <title>psm7</title>
+    <rect id="psm7--opening" x="330" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm7--module" data-path="psm7/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(352,1300) translate(-22,-215)">
+      <title>psm7--module</title>
+      <rect id="psm7--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm7--module--breaker">
+        <rect id="psm7--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm7--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm7--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm7--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm7--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm7--module--lamps">
+        <circle id="psm7--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm7--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm7--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm7--module--silkscreen">
+        <g id="psm7--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm7--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm7--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm7--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm7--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="psm8" data-path="psm8" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="8">
+    <title>psm8</title>
+    <rect id="psm8--opening" x="374" y="1085" width="44" height="430" fill="#101214" />
+    <g id="psm8--module" data-path="psm8/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx2000-psm-dc-v@1:1.0.0" data-model="MX2000 DC PSM (-48 V)" data-redundancy="8+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(396,1300) translate(-22,-215)">
+      <title>psm8--module</title>
+      <rect id="psm8--module--face" x="0" y="0" width="44.0" height="430.0" rx="0.8" fill="#9a9ea3" stroke="#7d8288" stroke-width="0.5" />
+      <g id="psm8--module--breaker">
+        <rect id="psm8--module--switch" x="14.0" y="18.0" width="16.0" height="24.0" rx="2.0" fill="#26292d" stroke="#17191c" stroke-width="0.5" />
+        <rect x="18.5" y="24.0" width="7.0" height="12.0" rx="1.4" fill="#565b61" />
+      </g>
+      <g id="psm8--module--side-up">
+        <rect x="14.5" y="62.0" width="15.0" height="42.0" rx="1.2" fill="#f0f1f2" stroke="#c0c4c8" stroke-width="0.4" />
+        <g id="psm8--module--t60-silkscreen">
+          <text x="22.0" y="83.0" font-family="Arial" font-size="1.3" fill="#6d7278" text-anchor="middle" transform="rotate(-90 22.0 83.0)">THIS SIDE UP</text>
+        </g>
+      </g>
+      <g id="psm8--module--pull">
+        <rect x="16.0" y="150.0" width="12.0" height="130.0" rx="6.0" fill="none" stroke="#7d8288" stroke-width="2.6" />
+      </g>
+      <g id="psm8--module--label-patch">
+        <rect x="8.0" y="300.0" width="28.0" height="90.0" rx="1.6" fill="#e6e8ea" stroke="#c0c4c8" stroke-width="0.4" />
+      </g>
+      <g id="psm8--module--lamps">
+        <circle id="psm8--module--led-ps-fail" cx="12.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm8--module--led-out-ok" cx="22.0" cy="410.0" r="1.0" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+        <circle id="psm8--module--led-in-ok" cx="32.0" cy="410.0" r="1.0" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
+      </g>
+      <g id="psm8--module--silkscreen">
+        <g id="psm8--module--t61-silkscreen">
+          <text x="22.0" y="12.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">INPUT</text>
+        </g>
+        <g id="psm8--module--t62-silkscreen">
+          <text x="22.0" y="145.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="middle">DC PSM</text>
+        </g>
+        <g id="psm8--module--t63-silkscreen">
+          <text x="12.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">IN</text>
+        </g>
+        <g id="psm8--module--t64-silkscreen">
+          <text x="22.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">OUT</text>
+        </g>
+        <g id="psm8--module--t65-silkscreen">
+          <text x="32.0" y="415.5" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="middle">!</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

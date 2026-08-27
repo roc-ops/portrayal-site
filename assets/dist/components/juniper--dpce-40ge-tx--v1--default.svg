@@ -1,0 +1,728 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="420.9mm" height="29.5mm" viewBox="0 0 420.9 29.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dpce-40ge-tx" data-path="dpce-40ge-tx" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpce-40ge-tx@1:1.0.0" data-model="DPCE-R-40GE-TX" data-model-variants="DPCE-X-40GE-TX" data-power-draw-max-w="320" data-states="ok fail absent" transform="translate(0,0)">
+    <title>dpce-40ge-tx</title>
+    <rect id="dpce-40ge-tx--face" x="0" y="0" width="420.9" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="dpce-40ge-tx--lever-left">
+      <rect x="1.2" y="2.2" width="16.0" height="9.0" rx="3.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="dpce-40ge-tx--lever-right">
+      <rect x="403.7" y="2.2" width="16.0" height="9.0" rx="3.2" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="dpce-40ge-tx--lamps">
+      <circle id="dpce-40ge-tx--led-ok-fail" cx="31.0" cy="8.2" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="dpce-40ge-tx--silkscreen">
+      <g id="dpce-40ge-tx--t702-silkscreen">
+        <text x="31.00" y="17.00" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle" transform="rotate(-90 31.00 17.00)">OK/FAIL</text>
+      </g>
+      <g id="dpce-40ge-tx--t703-silkscreen">
+        <text x="12.00" y="27.90" font-family="Arial" font-size="1.8" fill="#3a3e43" text-anchor="start">DPCE-R-40GE-TX</text>
+      </g>
+      <g id="dpce-40ge-tx--t678-silkscreen">
+        <text x="50.35" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="dpce-40ge-tx--t679-silkscreen">
+        <text x="63.05" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="dpce-40ge-tx--t680-silkscreen">
+        <text x="75.75" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="dpce-40ge-tx--t681-silkscreen">
+        <text x="88.45" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="dpce-40ge-tx--t682-silkscreen">
+        <text x="101.15" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">8 9</text>
+      </g>
+      <g id="dpce-40ge-tx--t683-silkscreen">
+        <text x="42.80" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">0/</text>
+      </g>
+      <g id="dpce-40ge-tx--t684-silkscreen">
+        <text x="120.85" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="dpce-40ge-tx--t685-silkscreen">
+        <text x="133.55" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="dpce-40ge-tx--t686-silkscreen">
+        <text x="146.25" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="dpce-40ge-tx--t687-silkscreen">
+        <text x="158.95" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="dpce-40ge-tx--t688-silkscreen">
+        <text x="171.65" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">8 9</text>
+      </g>
+      <g id="dpce-40ge-tx--t689-silkscreen">
+        <text x="113.30" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">1/</text>
+      </g>
+      <g id="dpce-40ge-tx--t690-silkscreen">
+        <text x="191.35" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="dpce-40ge-tx--t691-silkscreen">
+        <text x="204.05" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="dpce-40ge-tx--t692-silkscreen">
+        <text x="216.75" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="dpce-40ge-tx--t693-silkscreen">
+        <text x="229.45" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="dpce-40ge-tx--t694-silkscreen">
+        <text x="242.15" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">8 9</text>
+      </g>
+      <g id="dpce-40ge-tx--t695-silkscreen">
+        <text x="183.80" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">2/</text>
+      </g>
+      <g id="dpce-40ge-tx--t696-silkscreen">
+        <text x="261.85" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0 1</text>
+      </g>
+      <g id="dpce-40ge-tx--t697-silkscreen">
+        <text x="274.55" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">2 3</text>
+      </g>
+      <g id="dpce-40ge-tx--t698-silkscreen">
+        <text x="287.25" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">4 5</text>
+      </g>
+      <g id="dpce-40ge-tx--t699-silkscreen">
+        <text x="299.95" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">6 7</text>
+      </g>
+      <g id="dpce-40ge-tx--t700-silkscreen">
+        <text x="312.65" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">8 9</text>
+      </g>
+      <g id="dpce-40ge-tx--t701-silkscreen">
+        <text x="254.30" y="28.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">3/</text>
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-0" data-path="dpce-40ge-tx/port-0-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(44.0,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-0-0</title>
+      <rect id="dpce-40ge-tx--port-0-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-0/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-1" data-path="dpce-40ge-tx/port-0-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(44.0,15.8)">
+      <title>dpce-40ge-tx--port-0-1</title>
+      <rect id="dpce-40ge-tx--port-0-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-1/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-1--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-2" data-path="dpce-40ge-tx/port-0-2" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(56.7,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-0-2</title>
+      <rect id="dpce-40ge-tx--port-0-2--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-2/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-2--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-2--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-3" data-path="dpce-40ge-tx/port-0-3" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(56.7,15.8)">
+      <title>dpce-40ge-tx--port-0-3</title>
+      <rect id="dpce-40ge-tx--port-0-3--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-3/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-3--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-3--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-4" data-path="dpce-40ge-tx/port-0-4" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(69.4,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-0-4</title>
+      <rect id="dpce-40ge-tx--port-0-4--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-4/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-4--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-4--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-5" data-path="dpce-40ge-tx/port-0-5" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(69.4,15.8)">
+      <title>dpce-40ge-tx--port-0-5</title>
+      <rect id="dpce-40ge-tx--port-0-5--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-5/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-5--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-5--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-6" data-path="dpce-40ge-tx/port-0-6" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(82.1,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-0-6</title>
+      <rect id="dpce-40ge-tx--port-0-6--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-6/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-6--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-6--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-7" data-path="dpce-40ge-tx/port-0-7" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(82.1,15.8)">
+      <title>dpce-40ge-tx--port-0-7</title>
+      <rect id="dpce-40ge-tx--port-0-7--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-7/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-7--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-7--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-8" data-path="dpce-40ge-tx/port-0-8" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(94.8,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-0-8</title>
+      <rect id="dpce-40ge-tx--port-0-8--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-8/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-8--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-8--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-0-9" data-path="dpce-40ge-tx/port-0-9" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(94.8,15.8)">
+      <title>dpce-40ge-tx--port-0-9</title>
+      <rect id="dpce-40ge-tx--port-0-9--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-0-9/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-0-9--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-0-9--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-0" data-path="dpce-40ge-tx/port-1-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(114.5,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-1-0</title>
+      <rect id="dpce-40ge-tx--port-1-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-0/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-1" data-path="dpce-40ge-tx/port-1-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(114.5,15.8)">
+      <title>dpce-40ge-tx--port-1-1</title>
+      <rect id="dpce-40ge-tx--port-1-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-1/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-1--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-2" data-path="dpce-40ge-tx/port-1-2" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(127.2,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-1-2</title>
+      <rect id="dpce-40ge-tx--port-1-2--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-2/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-2--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-2--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-3" data-path="dpce-40ge-tx/port-1-3" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(127.2,15.8)">
+      <title>dpce-40ge-tx--port-1-3</title>
+      <rect id="dpce-40ge-tx--port-1-3--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-3/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-3--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-3--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-4" data-path="dpce-40ge-tx/port-1-4" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(139.9,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-1-4</title>
+      <rect id="dpce-40ge-tx--port-1-4--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-4/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-4--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-4--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-5" data-path="dpce-40ge-tx/port-1-5" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(139.9,15.8)">
+      <title>dpce-40ge-tx--port-1-5</title>
+      <rect id="dpce-40ge-tx--port-1-5--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-5/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-5--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-5--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-6" data-path="dpce-40ge-tx/port-1-6" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(152.6,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-1-6</title>
+      <rect id="dpce-40ge-tx--port-1-6--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-6/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-6--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-6--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-7" data-path="dpce-40ge-tx/port-1-7" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(152.6,15.8)">
+      <title>dpce-40ge-tx--port-1-7</title>
+      <rect id="dpce-40ge-tx--port-1-7--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-7/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-7--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-7--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-8" data-path="dpce-40ge-tx/port-1-8" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(165.3,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-1-8</title>
+      <rect id="dpce-40ge-tx--port-1-8--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-8/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-8--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-8--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-1-9" data-path="dpce-40ge-tx/port-1-9" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(165.3,15.8)">
+      <title>dpce-40ge-tx--port-1-9</title>
+      <rect id="dpce-40ge-tx--port-1-9--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-1-9/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-1-9--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-1-9--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-0" data-path="dpce-40ge-tx/port-2-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(185.0,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-2-0</title>
+      <rect id="dpce-40ge-tx--port-2-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-0/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-1" data-path="dpce-40ge-tx/port-2-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(185.0,15.8)">
+      <title>dpce-40ge-tx--port-2-1</title>
+      <rect id="dpce-40ge-tx--port-2-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-1/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-1--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-2" data-path="dpce-40ge-tx/port-2-2" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(197.7,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-2-2</title>
+      <rect id="dpce-40ge-tx--port-2-2--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-2/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-2--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-2--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-3" data-path="dpce-40ge-tx/port-2-3" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(197.7,15.8)">
+      <title>dpce-40ge-tx--port-2-3</title>
+      <rect id="dpce-40ge-tx--port-2-3--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-3/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-3--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-3--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-4" data-path="dpce-40ge-tx/port-2-4" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(210.4,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-2-4</title>
+      <rect id="dpce-40ge-tx--port-2-4--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-4/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-4--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-4--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-5" data-path="dpce-40ge-tx/port-2-5" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(210.4,15.8)">
+      <title>dpce-40ge-tx--port-2-5</title>
+      <rect id="dpce-40ge-tx--port-2-5--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-5/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-5--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-5--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-6" data-path="dpce-40ge-tx/port-2-6" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(223.1,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-2-6</title>
+      <rect id="dpce-40ge-tx--port-2-6--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-6/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-6--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-6--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-7" data-path="dpce-40ge-tx/port-2-7" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(223.1,15.8)">
+      <title>dpce-40ge-tx--port-2-7</title>
+      <rect id="dpce-40ge-tx--port-2-7--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-7/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-7--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-7--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-8" data-path="dpce-40ge-tx/port-2-8" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(235.8,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-2-8</title>
+      <rect id="dpce-40ge-tx--port-2-8--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-8/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-8--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-8--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-2-9" data-path="dpce-40ge-tx/port-2-9" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(235.8,15.8)">
+      <title>dpce-40ge-tx--port-2-9</title>
+      <rect id="dpce-40ge-tx--port-2-9--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-2-9/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-2-9--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-2-9--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-0" data-path="dpce-40ge-tx/port-3-0" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(255.5,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-3-0</title>
+      <rect id="dpce-40ge-tx--port-3-0--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-0/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-0--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-0--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-1" data-path="dpce-40ge-tx/port-3-1" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(255.5,15.8)">
+      <title>dpce-40ge-tx--port-3-1</title>
+      <rect id="dpce-40ge-tx--port-3-1--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-1/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-1--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-1--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-2" data-path="dpce-40ge-tx/port-3-2" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(268.2,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-3-2</title>
+      <rect id="dpce-40ge-tx--port-3-2--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-2/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-2--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-2--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-3" data-path="dpce-40ge-tx/port-3-3" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(268.2,15.8)">
+      <title>dpce-40ge-tx--port-3-3</title>
+      <rect id="dpce-40ge-tx--port-3-3--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-3/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-3--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-3--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-4" data-path="dpce-40ge-tx/port-3-4" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(280.9,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-3-4</title>
+      <rect id="dpce-40ge-tx--port-3-4--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-4/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-4--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-4--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-5" data-path="dpce-40ge-tx/port-3-5" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(280.9,15.8)">
+      <title>dpce-40ge-tx--port-3-5</title>
+      <rect id="dpce-40ge-tx--port-3-5--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-5/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-5--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-5--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-6" data-path="dpce-40ge-tx/port-3-6" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(293.6,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-3-6</title>
+      <rect id="dpce-40ge-tx--port-3-6--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-6/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-6--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-6--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-7" data-path="dpce-40ge-tx/port-3-7" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(293.6,15.8)">
+      <title>dpce-40ge-tx--port-3-7</title>
+      <rect id="dpce-40ge-tx--port-3-7--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-7/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-7--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-7--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-8" data-path="dpce-40ge-tx/port-3-8" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(306.3,3.6) rotate(180 6.35 5.5)">
+      <title>dpce-40ge-tx--port-3-8</title>
+      <rect id="dpce-40ge-tx--port-3-8--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-8/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-8--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-8--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+    <g id="dpce-40ge-tx--port-3-9" data-path="dpce-40ge-tx/port-3-9" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(306.3,15.8)">
+      <title>dpce-40ge-tx--port-3-9</title>
+      <rect id="dpce-40ge-tx--port-3-9--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="dpce-40ge-tx/port-3-9/opening" data-class="cutout" />
+      <path id="dpce-40ge-tx--port-3-9--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <g id="dpce-40ge-tx--port-3-9--pins" fill="#a8873c">
+        <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+        <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+        <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+        <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+        <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+        <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+        <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+        <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+      </g>
+    </g>
+  </g>
+</svg>

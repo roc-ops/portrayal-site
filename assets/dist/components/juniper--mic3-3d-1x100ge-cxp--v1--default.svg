@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="168.0mm" height="27.0mm" viewBox="0 0 168.0 27.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="mic3-3d-1x100ge-cxp" data-path="mic3-3d-1x100ge-cxp" data-class="line-card" data-behaviour="fills" data-ref="juniper/mic3-3d-1x100ge-cxp@1:1.0.0" data-model="MIC3-3D-1X100GE-CXP" data-power-draw-max-w="20" data-states="ok fail absent" transform="translate(0,0)">
+    <title>mic3-3d-1x100ge-cxp</title>
+    <rect id="mic3-3d-1x100ge-cxp--face" x="0" y="0" width="168.0" height="27.0" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="mic3-3d-1x100ge-cxp--lamps">
+      <circle id="mic3-3d-1x100ge-cxp--led-ok-fail" cx="5.5" cy="4.4" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="mic3-3d-1x100ge-cxp--silkscreen">
+      <g id="mic3-3d-1x100ge-cxp--t1118-silkscreen">
+        <text x="8.00" y="5.10" font-family="Arial" font-size="0.9" fill="#3a3e43" text-anchor="start">OK</text>
+      </g>
+      <g id="mic3-3d-1x100ge-cxp--t1119-silkscreen">
+        <text x="165.00" y="25.60" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="end">MIC3-3D-1X100GE-CXP</text>
+      </g>
+      <g id="mic3-3d-1x100ge-cxp--t1116-silkscreen">
+        <text x="29.50" y="21.10" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">0</text>
+      </g>
+      <g id="mic3-3d-1x100ge-cxp--t1117-silkscreen">
+        <text x="14.80" y="25.60" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">0/</text>
+      </g>
+    </g>
+    <g id="mic3-3d-1x100ge-cxp--port-0-0" data-path="mic3-3d-1x100ge-cxp/port-0-0" data-class="port" data-ref="std/cxp@1:1.0.0" data-depth="92.0" data-wall="#aab0b7" data-media="cxp" transform="translate(16.0,8.5)">
+      <title>mic3-3d-1x100ge-cxp--port-0-0</title>
+      <rect id="mic3-3d-1x100ge-cxp--port-0-0--opening" x="0" y="0" width="27.0" height="10.0" rx="0.8" fill="#17191c" data-path="mic3-3d-1x100ge-cxp/port-0-0/opening" data-class="cutout" />
+      <rect id="mic3-3d-1x100ge-cxp--port-0-0--collar" x="0.6" y="0.6" width="25.8" height="8.8" rx="0.6" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="mic3-3d-1x100ge-cxp--port-0-0--module-slot" x="1.6" y="1.60" width="23.8" height="2.40" rx="0.4" fill="#2b2f33" />
+      <rect id="mic3-3d-1x100ge-cxp--port-0-0--latch-window" x="1.6" y="5.50" width="23.8" height="2.80" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+</svg>
