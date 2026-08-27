@@ -20,15 +20,65 @@ function save(text, name, type) {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
-const inScope = scope => {
-  if (scope === 'all') return DEVICES;
-  const man = (DEVICES.find(d => d.name === DEV) || {}).manufacturer;
-  return DEVICES.filter(d => d.manufacturer === man);
-};
+/**
+ * The scopes on offer for the selected device, narrowest first.
+ *
+ * A library per vendor stops working the moment a vendor has hundreds of
+ * devices - the ASR 9000 Series alone is the whole of Cisco here, and Juniper
+ * will be worse. The model already carries the hierarchy in `portfolio`:
+ * series inside family inside line. Series is usually what someone means by
+ * "the switches I work on".
+ *
+ * family and line are scoped WITHIN the manufacturer, because "Service
+ * Provider" is a line at both Cisco and Edgecore and a library mixing them is
+ * nobody's mental model. Everything is the one deliberately cross-vendor
+ * option. Six of the current devices carry no portfolio at all, so a scope is
+ * only offered when the selected device actually has that field.
+ */
+function scopesFor(dev) {
+  const p = dev.portfolio || {};
+  const sameMan = d => d.manufacturer === dev.manufacturer;
+  const out = [];
+  const add = (key, label, pred) => {
+    const n = DEVICES.filter(pred).length;
+    if (n) out.push({key, label, pred, n});
+  };
+  for (const [field, key] of [['series', 'series'], ['family', 'family'], ['line', 'line']]) {
+    if (p[field]) {
+      add(key, p[field], d => sameMan(d) && (d.portfolio || {})[field] === p[field]);
+    }
+  }
+  add('vendor', dev.manufacturer, sameMan);
+  add('all', 'everything', () => true);
+  // Two scopes that select the same devices are one choice wearing two hats -
+  // an ASR 9000 Series library and a Cisco library are the same eight files
+  // today, and offering both invites someone to wonder what the difference is.
+  return out.filter((s, i) => i === 0 || s.n !== out[i - 1].n);
+}
 
-const vendorTag = scope => scope === 'all'
-  ? 'all' : ((DEVICES.find(d => d.name === DEV) || {}).manufacturer || 'vendor')
-      .toLowerCase().replace(/[^a-z0-9]+/g, '-');
+let SCOPES = [];
+
+function fillScopes() {
+  const dev = DEVICES.find(d => d.name === DEV);
+  SCOPES = dev ? scopesFor(dev) : [];
+  for (const id of ['scope', 'rscope']) {
+    const sel = $(id);
+    if (!sel) continue;
+    const was = sel.value;
+    sel.innerHTML = SCOPES
+      .map(s => `<option value="${s.key}">${s.label} (${s.n})</option>`).join('');
+    if (SCOPES.some(s => s.key === was)) sel.value = was;
+  }
+}
+
+const scopeOf = key => SCOPES.find(s => s.key === key) || SCOPES[0];
+const inScope = key => DEVICES.filter((scopeOf(key) || {pred: () => true}).pred);
+
+const vendorTag = key => {
+  const s = scopeOf(key);
+  return (s ? s.label : 'portrayal').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'portrayal';
+};
 
 /** Load every device in scope, skipping any whose face is missing rather than
  *  failing the whole download - a library with a hole in it beats no library. */
@@ -57,7 +107,8 @@ async function gather(scope, statusEl) {
 
 function report(el, loaded, missing, extra = '') {
   const ports = loaded.reduce((a, f) => a + f.ports.length, 0);
-  el.textContent = `${loaded.length} devices, ${ports} connectable${extra}` +
+  const n = loaded.length;
+  el.textContent = `${n} device${n === 1 ? '' : 's'}, ${ports} connectable${extra}` +
     (missing.length ? ` — ${missing.length} skipped (no compiled front)` : '');
 }
 
@@ -87,7 +138,7 @@ async function buildRackDiagram() {
   const units = Number($('units').value);
   btn.disabled = true;
   try {
-    const {loaded, missing} = await gather('vendor', stat);
+    const {loaded, missing} = await gather($('scope').value, stat);
     if (!loaded.length) { stat.textContent = 'nothing to mount'; return; }
     // Stack from U1 up, skipping anything that will not fit in the cabinet.
     let u = 1;
@@ -99,8 +150,10 @@ async function buildRackDiagram() {
                     ports: f.ports, u, ru});
       u += ru;
     }
-    const xml = rackDiagram(mounted, {units, name: `${vendorTag('vendor')} rack`});
-    save(xml, `portrayal-rack-${units}u.drawio`, 'application/xml');
+    const label = (scopeOf($('scope').value) || {}).label || 'Portrayal';
+    const xml = rackDiagram(mounted, {units, name: `${label} rack`});
+    save(xml, `portrayal-${vendorTag($('scope').value)}-rack-${units}u.drawio`,
+         'application/xml');
     const short = loaded.length - mounted.length;
     report(stat, mounted.map(m => ({ports: m.ports})), missing,
       `, ${u - 1} of ${units}U used` + (short ? ` — ${short} did not fit` : ''));
@@ -130,7 +183,8 @@ function describe() {
   const want = new URLSearchParams(location.search).get('device');
   DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
-                      onchange: name => { DEV = name; describe(); }});
+                      onchange: name => { DEV = name; fillScopes(); describe(); }});
+  fillScopes();
   describe();
   $('dl-lib').onclick = () => buildLibrary({rack: false});
   $('dl-rack-lib').onclick = () => buildLibrary({rack: true});
