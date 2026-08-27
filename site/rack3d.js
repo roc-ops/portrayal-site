@@ -29,6 +29,19 @@ export function createRackScene(container, opts = {}) {
   const STACK = opts.stack || [];
   const UNITS = opts.heightRU || 12;
 
+  // Label colours, alongside `background`. The dark stage gives three different
+  // tones - device tags, plain RU numbers, and the every-fifth emphasis - so
+  // each keeps its own default and passing nothing leaves the dark stage exactly
+  // as it was.
+  //
+  // labelColor covers tags AND plain numbers together, which is what a light
+  // stage asked for (roc-ops/portrayal-site#9): the emphasis tone is the one
+  // that inverts, being the lightest of the three. labelUnitColor is there for
+  // pulling the numbers back off the tags when you want the two apart again.
+  const LABEL_TAG = opts.labelColor ?? '#D7DBDF';
+  const LABEL_UNIT = opts.labelUnitColor ?? opts.labelColor ?? '#6B727A';
+  const LABEL_EMPH = opts.labelEmphasisColor ?? '#E4E7EA';
+
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
   const camera = new THREE.PerspectiveCamera(42, 1, 20, 12000);
@@ -112,7 +125,7 @@ export function createRackScene(container, opts = {}) {
     }
     // U numbering up the left rail, counted from the floor as racks are
     for (let u = 1; u <= UNITS; u++) {
-      const s = labelSprite(String(u), 30, u % 5 === 0 ? '#E4E7EA' : '#6B727A');
+      const s = labelSprite(String(u), 30, u % 5 === 0 ? LABEL_EMPH : LABEL_UNIT);
       s.position.set(-(RACK_W / 2 + 34), (u - 1) * RU + RU / 2, 46);
       rack.add(s);
     }
@@ -216,7 +229,7 @@ export function createRackScene(container, opts = {}) {
     const ears = rackEars(entry.ru, ruHeight, W / 2, D);
     scene.add(ears);
 
-    const tag = labelSprite(entry.label, 30, '#D7DBDF');
+    const tag = labelSprite(entry.label, 30, LABEL_TAG);
     tag.position.set(-(RACK_W / 2 + 120) - tag.scale.x / 2, group.position.y, 46);
     scene.add(tag);
     scene.add(group);
