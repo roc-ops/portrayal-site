@@ -4,3 +4,10 @@ node_modules/
 *.log
 __pycache__/
 *.pyc
+
+# Rendered images are a build artefact of a build artefact: generated from the
+# compiled SVGs, and regenerated whole on every refresh. They were 74% of the
+# pack while being 28% of the bytes, because PNG does not delta-compress the way
+# SVG does. Portrayal gitignores *.png for the same reason. The DCIM bundle
+# renders its own in the browser, so nothing depends on these being committed.
+assets/exports/**/*.png

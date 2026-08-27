@@ -92,6 +92,7 @@
 import { createDevicePicker } from './vendor/devsel.js';
 import { jdist } from './vendor/dist.js';
 import { makeZip } from './site/bundle.js';
+import { rasterize } from './site/raster.js';
 
 const $ = id => document.getElementById(id);
 let DEVICES = [], INDEX = {}, text = '', file = '', DEV = '';
@@ -157,7 +158,7 @@ $('dl').onclick = () => {
 // tree inside mirrors the target library, so the same download can be fed to
 // this script, to the community importer, or onto a clone of devicetype-library
 // for a PR upstream.
-let FILES = {}, ENRICH = null;
+let FILES = {}, ENRICH = null, COMPONENTS = [];
 
 async function buildBundle(btn) {
   const target = $('target').value;
@@ -169,7 +170,9 @@ async function buildBundle(btn) {
   const keep = rel => {
     const parts = rel.split('/');
     const kind = parts[1];
-    if (!withImages && kind.endsWith('-images')) return false;
+    // Images are never taken from FILES - they are rendered below from the
+    // compiled drawings, so they are not carried in the repository at all.
+    if (kind.endsWith('-images')) return false;
     if (scope === 'vendor' && man && parts[2] !== man) return false;
     if (kind === 'device-types') {
       const m = parts.at(-1).match(/-(arcos|sonic)\.yaml$/);
@@ -193,6 +196,53 @@ async function buildBundle(btn) {
     if (!res.ok) continue;
     entries.push({name: rel.split('/').slice(1).join('/'),
                   bytes: new Uint8Array(await res.arrayBuffer())});
+  }
+
+  // ── images, rendered rather than fetched ──────────────────────────────
+  // The elevation is taken from the device's default compiled face. A device
+  // with more than one type - a C40G, whose AC and DC chassis differ in which
+  // bays exist - gets the same picture on both, where the exporter used each
+  // configuration's own face. The bays in the YAML still differ; only the
+  // photograph is shared, and it is the same chassis.
+  if (withImages) {
+    const byYaml = new Map();
+    for (const [dev, targets] of Object.entries(INDEX)) {
+      for (const rel of targets[target] || []) byYaml.set(rel, dev);
+    }
+    const models = new Map();          // module model -> component record
+    for (const c of (COMPONENTS || [])) {
+      const m = (c.attrs || {}).model;
+      if (m && c.files?.default) models.set(m, c);
+    }
+    let made = 0;
+    for (const rel of wanted) {
+      const parts = rel.split('/');
+      if (parts[1] === 'device-types') {
+        const dev = byYaml.get(rel);
+        if (!dev) continue;
+        const doc = entries.find(e => e.name === parts.slice(1).join('/'));
+        if (!doc) continue;
+        const yaml = new TextDecoder().decode(doc.bytes);
+        const slug = (yaml.match(/^slug:\s*(\S+)/m) || [])[1];
+        if (!slug) continue;
+        for (const face of ['front', 'rear']) {
+          if (!new RegExp(`^${face}_image:\\s*true`, 'm').test(yaml)) continue;
+          $('bnote').textContent = `rendering ${++made} images…`;
+          const png = await rasterize(`assets/dist/${dev}.${face}.svg`);
+          if (png) entries.push({name: `elevation-images/${parts[2]}/${slug}.${face}.png`,
+                                 bytes: png});
+        }
+      } else if (parts[1] === 'module-types') {
+        const model = parts.at(-1).replace(/\.yaml$/, '');
+        const c = models.get(model) || [...models.entries()]
+          .find(([k]) => k.replace(/\//g, '-') === model)?.[1];
+        if (!c) continue;
+        $('bnote').textContent = `rendering ${++made} images…`;
+        const png = await rasterize(`assets/dist/${c.files.default}`, 1);
+        if (png) entries.push({name: `module-images/${parts[2]}/${model}.front.png`,
+                               bytes: png});
+      }
+    }
   }
 
   const script = await (await fetch('site/portrayal-sync.py')).text();
@@ -289,6 +339,10 @@ that does that by default is one that will eventually do it by accident.
     jdist('assets/dist/devices.json').then(d => d.devices),
     jdist('assets/exports/index.json'),
   ]);
+  // Needed to find a module's skin when its picture is rendered rather than
+  // fetched: the module type is named for the model, the drawing for the part.
+  COMPONENTS = (await jdist('assets/dist/components.json')
+    .catch(() => ({}))).components || [];
   const want = new URLSearchParams(location.search).get('device');
   DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,

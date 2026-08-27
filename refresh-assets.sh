@@ -183,9 +183,14 @@ for target in ('netbox', 'nautobot'):
     base = os.path.join(root, target)
     if not os.path.isdir(base):
         continue
+    # PNGs are deliberately absent. They were 74% of this repository's pack -
+    # 15 MB from 319 blobs against 4.6 MB for 2043 SVGs, because PNG does not
+    # delta-compress and a refresh rewrites every one. The exporter still writes
+    # them for a local run and for portrayal-sync.py to upload; the bundle
+    # renders its own from the compiled drawings, so nothing needs to carry them.
     files[target] = sorted(os.path.relpath(p, root)
                            for p in glob.glob(os.path.join(base, '**', '*'), recursive=True)
-                           if os.path.isfile(p))
+                           if os.path.isfile(p) and not p.endswith('.png'))
 
 # The facts the YAML schemas cannot carry. Everything here is something the
 # PRODUCTS support and the LIBRARIES cannot import, so this file is a measure of
