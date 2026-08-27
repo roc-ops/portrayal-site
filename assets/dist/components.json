@@ -12,6 +12,7 @@
     "upstream": "up to 85 MHz, 1 OFDMA and 6 ATDMA channels",
     "us-ports": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa Bi-Directional Module, the original 85 MHz card. Carries no RF connectors at all; every port lands on the paired rear 6+12 I/O card. The faceplate is a blank plate with a model band, two tapering stripe groups and three status LEDs, shared with the BDM2 and BDM2m.",
@@ -89,6 +90,7 @@
     "upstream": "up to 204 MHz, 1 OFDMA and 6 ATDMA channels",
     "us-ports": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa Bi-Directional Module 2 (BDM_204MHZ), the high-split 204 MHz card. Carries no RF connectors at all; every port lands on the paired rear 6+12 IO2 card. Faceplate shared with the BDM and BDM2m.",
@@ -166,6 +168,7 @@
     "upstream": "up to 204 MHz, 1 OFDMA and 6 ATDMA channels",
     "us-ports": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa Bi-Directional Module 2m (BDM2m_204MHZ), the high-split 204 MHz card with the newer packet processor. Carries no RF connectors at all; every port lands on the paired rear 6+12 IO2 card. Faceplate shared with the BDM and BDM2.",
@@ -236,6 +239,7 @@
     "model": "Blank Face Plate",
     "role": "airflow-blank"
    },
+   "behaviour": "fills",
    "class": "blank",
    "conforms": null,
    "description": "Casa blank face plate for an unpopulated C100G or C40G card slot. A plain plate with two captive thumbscrews and nothing else. It is a functional part, not trim - it keeps the cooling airflow channelled through the chassis, and the guide is explicit that running a slot open makes components \"excessively warm or even overheat\". An empty bay in a real chassis has one of these in it.",
@@ -268,6 +272,7 @@
    "attrs": {
     "model": "Bezel Swoop"
    },
+   "behaviour": "mounts",
    "class": "marking",
    "conforms": null,
    "description": "The curved moulding on the C100G front bezel, between the casa systems mark and the model name. A closed lens-shaped outline, not a filled graphic.",
@@ -301,6 +306,7 @@
     "model": "C40G AC Input Panel",
     "role": "ac-input"
    },
+   "behaviour": "mounts",
    "class": "inlet",
    "conforms": null,
    "description": "Casa C40G AC input panel - the bolted panel across the bottom of the REAR face on an AC chassis, where a DC chassis carries its two power entry modules. One continuous panel, not four module ends: it carries a rocker ON/OFF switch and an IEC C14 inlet for each of the four front-loaded PSUs, with vent mesh above and below.",
@@ -324,7 +330,7 @@
    },
    "size": {
     "d": 20.0,
-    "h": 70.5,
+    "h": 68.5,
     "w": 349.2
    },
    "size-confidence": {},
@@ -332,7 +338,7 @@
    "skins": [
     "default"
    ],
-   "version": "1.4.0"
+   "version": "1.5.0"
   },
   {
    "attrs": {
@@ -341,6 +347,7 @@
     "power-draw-max-w": 400,
     "role": "cooling"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#9b9da0",
     "depth": 380.0,
@@ -348,7 +355,7 @@
    },
    "class": "cooling",
    "conforms": null,
-   "description": "Casa C40G system fan module. A tall side-mounted assembly of eight fan units with the air filter built into its outboard face, occupying the full height of the card band. The chassis takes two: the right-hand slot carries the system fan module and is the air INTAKE, and the left-hand slot is a secondary fan module position that is empty unless the redundancy kit is fitted.",
+   "description": "Casa C40G system fan module, RIGHT-hand position. A tall side-mounted assembly of eight fan units with the air filter built into its outboard face, occupying the full height of the card band, and the air INTAKE for the chassis. The chassis takes two and they are NOT the same part: the left-hand position takes casa/c40g-fan-left@1, mechanically identical but printing the six card-slot numbers on its faceplate. That asymmetry is visible in every photograph and is why one part cannot serve both sides.",
    "element-boxes": {},
    "elements": [],
    "files": {
@@ -376,11 +383,85 @@
   },
   {
    "attrs": {
+    "fans": "8",
+    "model": "C40G System Fan Module",
+    "power-draw-max-w": 400,
+    "role": "cooling"
+   },
+   "behaviour": "fills",
+   "body": {
+    "color": "#9b9da0",
+    "depth": 380.0,
+    "sides": {}
+   },
+   "class": "cooling",
+   "conforms": null,
+   "description": "Casa C40G LEFT fan module - the secondary position, and the one that carries the slot numbering. Mechanically the same tall side-mounted assembly as the right-hand system fan module, at the same 34.7 x 205, but its faceplate prints the six card-slot numbers 5 down to 0 with 3 and 2 in red, which the right-hand module does not.",
+   "element-boxes": {},
+   "elements": [],
+   "files": {
+    "default": "components/casa--c40g-fan-left--v1--default.svg"
+   },
+   "kind": "module",
+   "major": "v1",
+   "name": "c40g-fan-left",
+   "ns": "casa",
+   "parts": [],
+   "relief-confidence": {
+    "drawing": 1
+   },
+   "size": {
+    "d": 380.0,
+    "h": 205.0,
+    "w": 34.7
+   },
+   "size-confidence": {},
+   "size-notes": "",
+   "skins": [
+    "default"
+   ],
+   "version": "1.2.0"
+  },
+  {
+   "attrs": {
+    "model": "C40G Shelf Ground Terminal"
+   },
+   "behaviour": "mounts",
+   "class": "ground",
+   "conforms": null,
+   "description": "Casa C40G shelf ground terminal - the grounding landing in the left strip of the rear face, near the bottom. Three studs on a square grid, each a star washer under a hex nut, with the protective-earth mark printed in the fourth corner of that grid.",
+   "element-boxes": {},
+   "elements": [],
+   "files": {
+    "default": "components/casa--c40g-ground-studs--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "name": "c40g-ground-studs",
+   "ns": "casa",
+   "parts": [],
+   "relief-confidence": {
+    "estimated": 9
+   },
+   "size": {
+    "h": 27.6,
+    "w": 27.6
+   },
+   "size-confidence": {},
+   "size-notes": "",
+   "skins": [
+    "default"
+   ],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
     "current-per-feed": "20 A nominal",
     "input-voltage": "-40.5 to -60 VDC (-48 VDC nominal)",
     "model": "C40G PEM",
     "role": "dc-power-entry"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#9b9da0",
     "depth": 200.0,
@@ -422,6 +503,7 @@
     "redundancy": "up to four, concurrent; the C40G-20 needs at least two",
     "role": "ac-power-supply"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#e9eaec",
     "depth": 300.0,
@@ -461,6 +543,7 @@
     "model": "C40G PSU Cover",
     "role": "airflow-filter"
    },
+   "behaviour": "mounts",
    "class": "filter",
    "conforms": null,
    "description": "Casa C40G snap-on power supply unit cover with integrated air filter - the full-width panel across the bottom of the front face, below the card band and the brand band. It covers the four AC PSU positions and carries the filter that protects them, and it snaps on rather than sliding into an opening.",
@@ -493,6 +576,7 @@
    "attrs": {
     "model": "Cable Manager"
    },
+   "behaviour": "mounts",
    "class": "mechanical",
    "conforms": null,
    "description": "Casa C100G front cable manager. Two brackets across the bottom of the front face, left and right, that carry the coax down and away from the exhaust.",
@@ -522,6 +606,7 @@
    "attrs": {
     "model": "Chassis Label"
    },
+   "behaviour": "mounts",
    "class": "sticker",
    "conforms": null,
    "description": "Casa C100G/C40G chassis identity and compliance label, affixed to the top front of the chassis. Placeholder art - the blocks stand for the printed fields and no real model or serial is reproduced.",
@@ -556,6 +641,7 @@
     "role": "ccap-services",
     "sfp-plus": "8"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa CCAP Services Card (CSC8x10G) for the C100G/C40G CCAP chassis. Eight 10GbE SFP+ ports (XG0-XG7) in two ganged blocks of four, carrying the DOCSIS and EQAM MAC functions to Distributed Access nodes, plus a bank of eight two-lamp port rows and the STATUS, ACTIVE and ALARM cluster. Out-of-band signalling is on the separate optional CSC I/O card, not on this faceplate.",
@@ -814,6 +900,7 @@
     "rf-ports": "8",
     "role": "downstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa DS 8X192 downstream line card for the C100G/C40G CCAP chassis. DOCSIS QAM downstream module (DQM). Eight downstream QAM ports, but the RF connectors are on the paired rear RF Downstream I/O (RFD) module - this faceplate carries no connectors at all, only the STATUS, ALARM and ACTIVE lamps.",
@@ -888,6 +975,7 @@
     "rf-ports": "8",
     "role": "downstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa DS 8X8 downstream line card for the C100G/C40G CCAP chassis. DOCSIS QAM downstream module (DQM). Eight downstream QAM ports, but the RF connectors are on the paired rear RF Downstream I/O (RFD) module - this faceplate carries no connectors at all, only the STATUS, ALARM and ACTIVE lamps.",
@@ -961,6 +1049,7 @@
     "rf-ports": "8",
     "role": "downstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa DS 8X96 downstream line card for the C100G/C40G CCAP chassis. DOCSIS QAM downstream module (DQM). Eight downstream QAM ports, but the RF connectors are on the paired rear RF Downstream I/O (RFD) module - this faceplate carries no connectors at all, only the STATUS, ALARM and ACTIVE lamps.",
@@ -1031,6 +1120,7 @@
     "model": "Fan Assembly",
     "power-draw-max-w": 100
    },
+   "behaviour": "fills",
    "body": {
     "color": "#8d949c",
     "depth": 150.0,
@@ -1104,6 +1194,7 @@
    "attrs": {
     "model": "Grounding Studs"
    },
+   "behaviour": "mounts",
    "class": "mechanical",
    "conforms": null,
    "description": "Casa C100G rear grounding lug landing. Two studs on 15.3 mm centres, each with a star washer under a hex nut, for a two-hole grounding lug.",
@@ -1135,6 +1226,7 @@
    "attrs": {
     "model": "Ground Strap Point"
    },
+   "behaviour": "mounts",
    "class": "mechanical",
    "conforms": null,
    "description": "Casa C100G ground strap attachment point. A marked plate with a single bolt hole and a chassis-ground symbol. Appears on both faces, on the same physical side of the chassis - which reads as the RIGHT of the front view and the LEFT of the rear view.",
@@ -1169,6 +1261,7 @@
     "spectrum": "5-85MHz",
     "upstream": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa 6+12 I/O module - the rear half of a BDM position, carrying six downstream (D0-D5) and twelve upstream (U0-U11) MCX jacks. Pairs with a BDM in the associated front slot. The IO2 variant is the same faceplate at 5-204 MHz instead of 5-85 MHz. (v2 = composed - the eighteen MCX openings are std/mcx@1 at the sourced 4.95 x 4.50 D-hole; v1 drew them inline at an ESTIMATED 3.87 x 3.14, so an aperture here is about 28 percent wider than it was at v1. Jack AXES are unchanged.)",
@@ -1228,6 +1321,7 @@
     "spectrum": "5-204MHz",
     "upstream": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa 6+12 IO2 module - the 204 MHz-capable rear half of a BDM2 or BDM2m position, carrying six downstream (D0-D5) and twelve upstream (U0-U11) MCX jacks. Same faceplate as the plain 6+12 IO; the difference is upstream spectrum, 5-204 MHz instead of 5-85 MHz, and therefore which BDM it pairs with.",
@@ -1289,6 +1383,7 @@
     "switch": "yes",
     "upstream": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa 6+12 SW I/O - the combined switch and I/O card. Same six downstream and twelve upstream MCX jacks as the plain 6+12, but it also carries the LC switch function, so it goes in the redundancy slot that a BDM scheme frees up: C100G rear 8, C40G rear 4. Its RF port section stands proud of the faceplate. (v2 = composed - the eighteen MCX openings are std/mcx@1 at the sourced 4.95 x 4.50 D-hole; v1 drew them inline at an ESTIMATED 3.88 x 3.88, so an aperture here is about 28 percent wider in x and 16 percent in y than it was at v1. Jack AXES are unchanged.)",
@@ -1350,6 +1445,7 @@
     "switch": "yes",
     "upstream": "12"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa 6+12 SW-IO2 - the 204 MHz-capable combined switch and I/O card. Same eighteen MCX jacks and the same LC switch function as the plain 6+12 SW- IO, at 5-204 MHz, so it is what a 204 MHz BDM build puts in the redundancy slot a BDM scheme frees up: C100G rear 8, C40G rear 4.",
@@ -1404,6 +1500,7 @@
    "attrs": {
     "model": "LC-SW-BDM"
    },
+   "behaviour": "fills",
    "class": "switch",
    "conforms": null,
    "description": "Casa LC Switch BDM (LC-SW-BDM) - the line-card switch for BDM redundancy. Goes in the rear slot that PROTECTS, which under the C100G 11+1 scheme is rear 5 and under the C40G 3+1 scheme is rear 1. A blank faceplate; it switches the RF path rather than presenting ports.",
@@ -1442,6 +1539,7 @@
     "model": "PEM",
     "role": "dc-power-entry"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#8d949c",
     "depth": 250.0,
@@ -1607,6 +1705,7 @@
     "rf-ports": "8",
     "role": "downstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa RF Downstream I/O module (RFD) - the rear half of a DQM position, carrying the eight downstream F-type ports for one DS 8x8, DS 8x96 or DS 8x192 line card in the paired front slot. Silkscreened QAM IO. It carries no electronics of its own that the guide describes; it is the mechanical and electrical QAM connection to the HFC network.",
@@ -1656,6 +1755,7 @@
     "rf-ports": "16",
     "role": "upstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa RF Upstream I/O module (RFU), 16x8 variant - the rear half of a DCU position, carrying sixteen upstream F-type ports at eight channels each for a US 16x8 or US 16x4 line card in the paired front slot. Silkscreened US IO. The UPS 32x4 I/O module is the other RFU and is a different card, not a skin of this one: it swaps all sixteen F ports for thirty-two MCX.",
@@ -1713,6 +1813,7 @@
     "sfp": "8",
     "sfp-plus": "2"
    },
+   "behaviour": "fills",
    "class": "supervisor",
    "conforms": null,
    "description": "Casa standard SMM 2x10GE - the C100G/C40G Switch and Management Module in its original density. Eight GigE SFP (G0-G7) and two 10GigE SFP+ (XG2, XG1), a 10/100BASE-T management RJ45 at the top and an RS-232 console RJ45 at the bottom, plus STATUS, ACTIVE and ALARM lamps. The cage population is the inverse of the high-density SMM 8x10G, on the same eleven openings.",
@@ -1804,6 +1905,7 @@
     "switching-throughput": "300G bidirectional per module",
     "timing": "IEEE 1588v2"
    },
+   "behaviour": "fills",
    "class": "supervisor",
    "conforms": null,
    "description": "Casa/CommScope SMM300G Switch and Management Module - the 300G supervisor for the C100G and C40G CCAP chassis. Ten 10GigE SFP+ (XG0-XG9) in ganged blocks of six and four, two 100GigE QSFP28 (CG0, CG1), a 10/100BASE-T management RJ45 and an RS-232 console RJ45, plus STATUS, ACTIVE and ALARM lamps. Up to two per chassis in the dedicated active and standby slots, for 600G aggregate.",
@@ -2161,6 +2263,7 @@
     "switching-throughput": "300G bidirectional per module",
     "timing": "IEEE 1588v2"
    },
+   "behaviour": "fills",
    "class": "supervisor",
    "conforms": null,
    "description": "Casa/CommScope SMM300GM Switch and Management Module - the supervisor for the C100G and C40G CCAP chassis, and the SMM 300G fitted with a newer packet processor after the original went end-of-life. Identical metal; the model name on the silkscreen is the only visible difference. Ten 10GigE SFP+ (XG0-XG9) in ganged blocks of six and four, two 100GigE QSFP28 (CG0, CG1), a 10/100BASE-T management RJ45 and an RS-232 console RJ45, plus STATUS, ACTIVE and ALARM lamps. Up to two per chassis in the dedicated active and standby slots, for 600G aggregate.",
@@ -2515,6 +2618,7 @@
     "sfp": "2",
     "sfp-plus": "8"
    },
+   "behaviour": "fills",
    "class": "supervisor",
    "conforms": null,
    "description": "Casa high-density SMM 8x10GigE - the C100G/C40G supervisor and switch module. Eight 10GigE SFP+ (XG0-XG7), two GigE SFP (G0, G1), a 10/100BASE-T management RJ45 and an RS-232 console RJ45, plus STATUS, ACTIVE and ALARM LEDs.",
@@ -2597,6 +2701,7 @@
    "attrs": {
     "model": "SMM-SW-BDM A"
    },
+   "behaviour": "fills",
    "class": "switch",
    "conforms": null,
    "description": "Casa SMM Switch BDM A. Carries a Power Supply Monitor window and prints its own slot on the faceplate. NOT interchangeable with the B card - A is C100G rear slot 6 and C40G rear slot 2.",
@@ -2633,6 +2738,7 @@
    "attrs": {
     "model": "SMM-SW-BDM B"
    },
+   "behaviour": "fills",
    "class": "switch",
    "conforms": null,
    "description": "Casa SMM Switch BDM B. As the A card but for the other SMM position - C100G rear slot 7, C40G rear slot 3. Not interchangeable with A.",
@@ -2675,6 +2781,7 @@
     "rf-ports": "32",
     "role": "upstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa UPS 32x4 I/O module - the high-density RFU, and the only Casa rear I/O card that lands its upstream RF on MCX instead of F. Thirty-two ports at four channels each, in two staggered columns, for a US 16x8 line card in the paired front slot; it is not supported behind a US 16x4. Silkscreened UPS IO 32.",
@@ -2747,6 +2854,7 @@
     "rf-ports": "16",
     "role": "upstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa US 16X4 upstream line card for the C100G/C40G CCAP chassis. DOCSIS Control & Upstream module (DCU). Sixteen upstream burst receivers, but the RF connectors are on the paired rear RF Upstream I/O (RFU) module - this faceplate carries no connectors at all, only the STATUS, ALARM and ACTIVE lamps.",
@@ -2820,6 +2928,7 @@
     "rf-ports": "16",
     "role": "upstream"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Casa US 16X8 upstream line card for the C100G/C40G CCAP chassis. DOCSIS Control & Upstream module (DCU). Sixteen upstream burst receivers, but the RF connectors are on the paired rear RF Upstream I/O (RFU) module - this faceplate carries no connectors at all, only the STATUS, ALARM and ACTIVE lamps.",
@@ -2894,6 +3003,7 @@
     "power-output-w": 1600,
     "vendor": "Gospower"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 185,
@@ -2980,6 +3090,7 @@
     "throughput": "4 Tbps",
     "weight-kg": 12.88
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 609.6,
@@ -3158,6 +3269,7 @@
     "throughput": "4 Tbps",
     "weight-kg": 12.88
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 609.6,
@@ -3336,6 +3448,7 @@
     "throughput": "1.2 Tbps",
     "weight-kg": 11.7
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -3542,6 +3655,7 @@
     "throughput": "3.2 Tbps",
     "weight-kg": 12.43
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -3989,6 +4103,7 @@
     "throughput": "3.2 Tbps",
     "weight-kg": 12.43
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -4431,6 +4546,7 @@
     "throughput": "3.2 Tbps",
     "weight-kg": 12.84
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -4873,6 +4989,7 @@
     "throughput": "3.2 Tbps",
     "weight-kg": 12.84
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -5318,6 +5435,7 @@
     "throughput": "400 Gbps",
     "weight-kg": 8.5
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 609.6,
@@ -5423,6 +5541,7 @@
     "throughput": "400 Gbps",
     "weight-kg": 8.5
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 609.6,
@@ -5527,6 +5646,7 @@
     "timing": "2 x BITS RJ-45, ToD RJ-45, 10 MHz and 1 PPS SMB",
     "usb": "1 x USB class A"
    },
+   "behaviour": "fills",
    "class": "supervisor",
    "conforms": null,
    "description": "Cisco ASR 9900 Fixed Chassis Route Processor. The RP for the ASR 9902 and ASR 9903, two per chassis. A compact landscape module: two BITS timing ports, a time-of-day port, two management Ethernet ports, console and auxiliary serial ports, a Class A USB port, 10 MHz and 1 PPS GPS clock inputs, and nine status lamps in a hex-vented faceplate.",
@@ -5679,6 +5799,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.89
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 626.6,
@@ -5884,6 +6005,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.89
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 626.6,
@@ -6090,6 +6212,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.09
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 625.6,
@@ -6337,6 +6460,7 @@
     "model": "A99-SFC-S",
     "role": "switch-fabric"
    },
+   "behaviour": "fills",
    "class": "fabric",
    "conforms": null,
    "description": "Cisco ASR 9900 switch fabric card for the ASR 9910, the generation the A99-SFC3-S replaced. Same faceplate as its successor - the two stencil masters are the same drawing - and the Hardware Installation Guide carries a migration procedure between them.",
@@ -6386,6 +6510,7 @@
     "power-draw-max-w": 340,
     "role": "switch-fabric"
    },
+   "behaviour": "fills",
    "class": "fabric",
    "conforms": null,
    "description": "Cisco ASR 9900 Series Third Generation Switch Fabric Card. One switch fabric plane for an ASR 9912 or an ASR 9922 - the data sheet's specifications table gives the same part number for both. A plain faceplate: a hex-perforated vent field over most of its length, two ejector levers, two captive installation screws and a single tri-colour Status LED.",
@@ -6435,6 +6560,7 @@
     "power-draw-max-w": 170,
     "role": "switch-fabric"
    },
+   "behaviour": "fills",
    "class": "fabric",
    "conforms": null,
    "description": "Cisco ASR 9900 Series Third Generation Switch Fabric Card for the ASR 9910. A double-width plate - 76.2 mm against a line card's 41.4 - and longer than a line card at 492.1 mm. Two ejector levers, captive screws and a single tri-colour Status LED; no vent field.",
@@ -6484,6 +6610,7 @@
     "power-draw-max-w": 110,
     "role": "switch-fabric"
    },
+   "behaviour": "fills",
    "class": "fabric",
    "conforms": null,
    "description": "Cisco ASR 9900 Series Third Generation Switch Fabric Card for the ASR 9906. Line-card width but longer than a line card at 492.1 mm. Two ejector levers, captive screws and a single tri-colour Status LED; no vent field.",
@@ -6535,6 +6662,7 @@
     "throughput": "2 Tbps",
     "weight-kg": 6.81
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 383.28,
@@ -6624,6 +6752,7 @@
     "throughput": "800 Gbps",
     "weight-kg": 5.82
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 383.28,
@@ -6740,6 +6869,7 @@
     "sfp-plus": 16,
     "weight-kg": 8.165
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -6815,6 +6945,7 @@
     "qsfp28": 16,
     "role": "line-card"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -7070,6 +7201,7 @@
     "throughput": "1.6 Tbps",
     "weight-kg": 9.86
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -7321,6 +7453,7 @@
     "throughput": "2 Tbps",
     "weight-kg": 10.95
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -7620,6 +7753,7 @@
     "throughput": "2 Tbps",
     "weight-kg": 10.95
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -7919,6 +8053,7 @@
     "sfp-plus": 24,
     "weight-kg": 8.3
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -8000,6 +8135,7 @@
     "sfp-plus": 24,
     "weight-kg": 8.355
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -8081,6 +8217,7 @@
     "role": "line-card",
     "weight-kg": 6.35
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -8181,6 +8318,7 @@
     "sfp-plus": 36,
     "weight-kg": 8.65
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -8277,6 +8415,7 @@
     "sfp-plus": 20,
     "weight-kg": 10.4
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 569.0,
@@ -8398,6 +8537,7 @@
     "sfp": 40,
     "weight-kg": 6.124
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -8495,6 +8635,7 @@
     "sfp": 40,
     "weight-kg": 6.124
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -8592,6 +8733,7 @@
     "sfp": 40,
     "weight-kg": 6.124
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -8691,6 +8833,7 @@
     "sfp-plus": 48,
     "weight-kg": 9.1
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -8800,6 +8943,7 @@
     "throughput": "400 Gbps",
     "weight-kg": 8.5
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 609.6,
@@ -8905,6 +9049,7 @@
     "throughput": "400 Gbps",
     "weight-kg": 8.5
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 609.6,
@@ -9006,6 +9151,7 @@
     "weight-kg": 8.391,
     "xfp": 4
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -9067,6 +9213,7 @@
     "weight-kg": 8.391,
     "xfp": 4
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -9128,6 +9275,7 @@
     "weight-kg": 8.391,
     "xfp": 4
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -9191,6 +9339,7 @@
     "throughput": "400 Gbps",
     "weight-kg": 8.9
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -9297,6 +9446,7 @@
     "role": "line-card",
     "weight-kg": 12.7
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -9394,6 +9544,7 @@
     "model": "A9K-750W-AC",
     "power-output-w": 750
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "Cisco ASR 9001 and ASR 9001-S AC power entry module, 750 W. A punched vent field, a pull handle across the middle, FAIL and OK lamps, and an IEC 60320 C14 appliance inlet standing upright on the right of the face. Same shell as the DC unit with the inlet in place of the terminal block.",
@@ -9465,6 +9616,7 @@
     "model": "A9K-750W-DC",
     "power-output-w": 750
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "Cisco ASR 9001 and ASR 9001-S DC power entry module, 750 W. Same shell as the AC unit, with a two-pole -48 VDC terminal block and its '+  -' legend where the AC unit carries its appliance inlet, and the vent field moved to the right of the handle.",
@@ -9539,6 +9691,7 @@
     "throughput": "800 Gbps",
     "weight-kg": 9.84
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -9694,6 +9847,7 @@
     "throughput": "800 Gbps",
     "weight-kg": 9.84
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -9847,6 +10001,7 @@
     "weight-kg": 6.35,
     "xfp": 8
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -9912,6 +10067,7 @@
     "weight-kg": 6.35,
     "xfp": 8
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -9977,6 +10133,7 @@
     "weight-kg": 6.35,
     "xfp": 8
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -10042,6 +10199,7 @@
     "weight-kg": 8.391,
     "xfp": 8
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -10107,6 +10265,7 @@
     "weight-kg": 8.391,
     "xfp": 8
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -10172,6 +10331,7 @@
     "weight-kg": 8.391,
     "xfp": 8
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -10239,6 +10399,7 @@
     "role": "line-card",
     "weight-kg": 12.7
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -10385,6 +10546,7 @@
     "role": "line-card",
     "weight-kg": 12.7
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 559.3,
@@ -10527,6 +10689,7 @@
     "qsfp28": 8,
     "role": "line-card"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -10678,6 +10841,7 @@
     "qsfp28": 8,
     "role": "line-card"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 604.5,
@@ -10829,6 +10993,7 @@
     "module-bays": 3,
     "role": "power-tray"
    },
+   "behaviour": "fills",
    "class": "power",
    "conforms": null,
    "description": "Cisco ASR 9000 version 3 AC power entry module - a power TRAY, not a supply. Three module openings labelled M0 to M2 and an ON/STANDBY switch at the right end. It holds three 6000 W AC power modules. IOS XR inventories the tray itself: it appears in `show platform` as 0/PT0 and 0/PT1 with this part number.",
@@ -10862,6 +11027,7 @@
     "model": "Cable Manager",
     "role": "cable-management"
    },
+   "behaviour": "mounts",
    "class": "mechanical",
    "conforms": null,
    "description": "Horizontal cable management bracket for an ASR 9000 rack. A full-width plate with a chevron of angled cable channels and a mounting hole at each corner. It bolts to the rack face rather than seating in a chassis opening.",
@@ -10895,6 +11061,7 @@
     "module-bays": 4,
     "role": "power-tray"
    },
+   "behaviour": "fills",
    "class": "power",
    "conforms": null,
    "description": "Cisco ASR 9000 version 3 DC power entry module - a power TRAY, not a supply. Four module openings labelled M0 to M3, holding four 4400 W DC power modules. Like the AC tray it is the unit IOS XR inventories, as 0/PT0.",
@@ -10927,6 +11094,7 @@
     "model": "ASR 9006 fan tray door",
     "role": "access-door"
    },
+   "behaviour": "fills",
    "class": "blank",
    "conforms": null,
    "description": "Hinged fan tray door for the Cisco ASR 9006 Router. A cosmetic and EMC door across the top of the chassis front, covering both fan trays FT0 and FT1, hinged at one side and held by a single captive screw. THIS IS THE PART THAT CARRIES THE CHASSIS BRANDING: the cisco bridge, the wordmark and the \"Cisco ASR 9000 Series\" legend are printed on the door face, not on the chassis, which is why they belong here and are deliberately absent from the ASR 9006 device manifest. Open the door and the branding swings away with it.",
@@ -10970,6 +11138,41 @@
   },
   {
    "attrs": {
+    "model": "NEBS Bonding and Grounding Pad"
+   },
+   "behaviour": "mounts",
+   "class": "ground",
+   "conforms": null,
+   "description": "Cisco ASR 9000 NEBS bonding and grounding pad - the two-hole lug landing every chassis in the family cuts, with the flat lug bolted across it by two screws. One part for all eight positions across seven chassis, because the guide documents one receptacle type and varies only where it sits.",
+   "element-boxes": {},
+   "elements": [],
+   "files": {
+    "default": "components/cisco--a9k-ground-pad--v1--default.svg"
+   },
+   "kind": "component",
+   "major": "v1",
+   "name": "a9k-ground-pad",
+   "ns": "cisco",
+   "parts": [
+    "common/screw-head@1",
+    "common/screw-head@1"
+   ],
+   "relief-confidence": {
+    "estimated": 1
+   },
+   "size": {
+    "h": 20.0,
+    "w": 46.0
+   },
+   "size-confidence": {},
+   "size-notes": "",
+   "skins": [
+    "default"
+   ],
+   "version": "1.0.0"
+  },
+  {
+   "attrs": {
     "capacity": "160 Gbps",
     "eol": "none-announced",
     "model": "A9K-MOD160-SE",
@@ -10979,6 +11182,7 @@
     "variant": "service-edge",
     "weight-kg": 7.412
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 160 Gigabyte Modular Line Card, Service Edge Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays.",
@@ -11031,6 +11235,7 @@
     "variant": "packet-transport",
     "weight-kg": 7.412
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 160 Gigabyte Modular Line Card, Packet Transport Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays.",
@@ -11082,6 +11287,7 @@
     "variant": "service-edge",
     "weight-kg": 8.62
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 200 Gigabyte Modular Line Card, Service Edge Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays.",
@@ -11133,6 +11339,7 @@
     "variant": "packet-transport",
     "weight-kg": 8.62
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 200 Gigabyte Modular Line Card, Packet Transport Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays.",
@@ -11185,6 +11392,7 @@
     "variant": "service-edge",
     "weight-kg": 9.5
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 400 Gigabyte Modular Line Card, Service Edge Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays. The only carrier in the family whose supported MPA list Cisco writes out.",
@@ -11237,6 +11445,7 @@
     "variant": "packet-transport",
     "weight-kg": 9.5
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 400 Gigabyte Modular Line Card, Packet Transport Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays. The only carrier in the family whose supported MPA list Cisco writes out.",
@@ -11289,6 +11498,7 @@
     "variant": "service-edge",
     "weight-kg": 6.913
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 80 Gigabyte Modular Line Card, Service Edge Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays.",
@@ -11341,6 +11551,7 @@
     "variant": "packet-transport",
     "weight-kg": 6.913
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco ASR 9000 Series 80 Gigabyte Modular Line Card, Packet Transport Optimized. A carrier, not a port card: the faceplate is two bays for Modular Port Adapters and almost nothing else - a Status lamp, an ejector and a captive screw at each end. Every port this card presents belongs to the MPA seated in one of its bays.",
@@ -11391,6 +11602,7 @@
     "role": "modular-port-adapter",
     "weight-kg": 0.91
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -11468,6 +11680,7 @@
     "role": "modular-port-adapter",
     "weight-kg": 0.7
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -11536,6 +11749,7 @@
     "sfp-plus": 20,
     "weight-kg": 0.99
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -11832,6 +12046,7 @@
     "sfp": 20,
     "weight-kg": 0.96
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -11908,6 +12123,7 @@
     "role": "modular-port-adapter",
     "weight-kg": 1.09
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -12007,6 +12223,7 @@
     "weight-kg": 0.7,
     "xfp": 2
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -12087,6 +12304,7 @@
     "role": "modular-port-adapter",
     "weight-kg": 0.79
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -12167,6 +12385,7 @@
     "weight-kg": 0.87,
     "xfp": 4
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -12271,6 +12490,7 @@
     "sfp-plus": 8,
     "weight-kg": 0.79
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -12419,6 +12639,7 @@
     "model": "MPA blank",
     "role": "airflow-blank"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 170.18,
@@ -12460,6 +12681,7 @@
     "model": "A9K Power Module (V1)",
     "role": "power-module"
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "Cisco ASR 9000 version 1 power module for a modular-chassis power tray. Three axial fans behind finger guards across the face, an ejector door with a latch on the right, and Input, Output and Fault lamps. Three of these fill a version 1 tray.",
@@ -12530,6 +12752,7 @@
     "model": "A9K Power Module (V2)",
     "role": "power-module"
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "Cisco ASR 9000 version 2 power module for a modular-chassis power tray. Two axial fans behind finger guards, a pull handle between them, a hazard label and Input, Output and Fault lamps. Four of these fill a version 2 tray.",
@@ -12600,6 +12823,7 @@
     "role": "cover",
     "shelves": "4 (PS0-PS3)"
    },
+   "behaviour": "fills",
    "class": "blank",
    "conforms": null,
    "description": "Cover panel for an ASR 9000 power shelf. Four louvred columns of seven bands each, sixteen module positions legended PM0 to PM15 on the strips between them, and PS0 to PS3 down both edges for the four shelves. Modelled as a blank: it closes the shelf face and passes air, and carries no electrical function.",
@@ -12635,6 +12859,7 @@
     "module-bays": 4,
     "role": "power-tray"
    },
+   "behaviour": "fills",
    "class": "power",
    "conforms": null,
    "description": "Cisco ASR 9000 version 2 power tray for a modular chassis. Four module openings across the full chassis width, labelled M0 to M3, with a grip at each end. The tray is the field-replaceable unit the router inventories; the power modules seat into it.",
@@ -12679,6 +12904,7 @@
     "timing": "2 x SYNC (BITS or J.211/UTI) RJ-45",
     "weight-kg": 8.16
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 673.8,
@@ -12892,6 +13118,7 @@
     "timing": "2 x SYNC (BITS or J.211/UTI) RJ-45",
     "weight-kg": 8.16
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 673.8,
@@ -13102,6 +13329,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 9.0
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 674.0,
@@ -13276,6 +13504,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 9.0
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 674.0,
@@ -13449,6 +13678,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 9.25
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 625.3,
@@ -13654,6 +13884,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 9.25
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 625.3,
@@ -13859,6 +14090,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.07
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 628.9,
@@ -14064,6 +14296,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.07
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 628.9,
@@ -14270,6 +14503,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.07
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 628.9,
@@ -14524,6 +14758,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 8.07
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 628.9,
@@ -14777,6 +15012,7 @@
     "spa-subslots": 4,
     "weight-kg": 6.35
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -14836,6 +15072,7 @@
     "spa-subslots": 4,
     "weight-kg": 6.35
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 520.7,
@@ -14888,6 +15125,7 @@
     "part-numbers": "A9K-LC-FILR, A9K-LC-FILR-V2",
     "role": "airflow-blank"
    },
+   "behaviour": "fills",
    "class": "blank",
    "conforms": null,
    "description": "Line card and RSP/RP blank filler for a Cisco ASR 9000 modular chassis. A plain plate on the line-card envelope with a captive installation screw at each end and nothing else on it. It is a functional part, not trim: the installation guide is explicit that \"unoccupied card slots must have a blank filler card installed for electromagnetic compatibility (EMC)\", and the high-density 100GE cards additionally require the two-screen A9K-LC-FILR-V2 in the slots around them \"for optimal cooling and EMI\". An empty slot in a real chassis has one of these in it.",
@@ -14946,6 +15184,7 @@
     "model": "ASR-9001-FAN",
     "role": "fan-module"
    },
+   "behaviour": "fills",
    "class": "cooling",
    "conforms": null,
    "description": "Cisco ASR 9001 fan module. A narrow 2RU-tall module that stands on one side of the fixed-port chassis rather than lying across it - the faceplate is a slotted vent, a STATUS lamp and two captive screws.",
@@ -14994,6 +15233,7 @@
     "power-draw-max-w": 375,
     "role": "fan-tray"
    },
+   "behaviour": "fills",
    "class": "cooling",
    "conforms": null,
    "description": "Cisco ASR 9006 Router fan tray. Six axial 92 mm (3.62 in) fans behind a perforated face, secured by a single captive screw and aligned on two guide pins. The ASR 9006 carries two of these for redundancy, side by side above the card cage and BEHIND A HINGED DOOR - which is why, uniquely in this family, no drawing of this tray exists anywhere: on the chassis master you see the door, not the tray.",
@@ -15043,6 +15283,7 @@
     "role": "fan-tray",
     "weight-kg": 6.29
    },
+   "behaviour": "fills",
    "class": "cooling",
    "conforms": null,
    "description": "Cisco ASR 9010 Router fan tray. Twelve axial 120 mm (4.72 in) fans behind a full-width band, with a pull handle across the middle, a grip and a captive screw at each end, a FAN STATUS lamp and a hazard label. The ASR 9010 carries two of these for redundancy and both are required for normal operation - if both are pulled or missing the router raises a critical alarm.",
@@ -15092,6 +15333,7 @@
     "role": "fan-tray",
     "weight-kg": 12.04
    },
+   "behaviour": "fills",
    "class": "cooling",
    "conforms": null,
    "description": "Cisco ASR 9910 Router fan tray. Twelve axial 134 mm (5.27 in) fans behind a full-width plate, with a pull handle across the middle, a grip at each end, a FAN STATUS lamp at the left and two hazard labels. The ASR 9910 carries two of these for redundancy; the tray is secured by two captive screws and aligns on two guide pins, and swapping one does not interrupt service.",
@@ -15142,6 +15384,7 @@
     "power-draw-max-w": 88,
     "role": "switch-fabric"
    },
+   "behaviour": "fills",
    "class": "fabric",
    "conforms": null,
    "description": "Cisco ASR 9912 Router Switch Fabric Card, first generation. One switch fabric plane for an ASR 9912; the guide notes it is the only FC in the family with a SINGLE fabric ASIC. Physically the A99-SFC3 faceplate - hex-perforated vent field, two ejector levers, two captive screws and one tri-colour Status LED.",
@@ -15191,6 +15434,7 @@
     "role": "fan-tray",
     "weight-kg": 8.16
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 584.2,
@@ -15250,6 +15494,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 5.9
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 628.9,
@@ -15445,6 +15690,7 @@
     "usb": "1 x USB 2.0 type A",
     "weight-kg": 5.9
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 628.9,
@@ -15635,6 +15881,7 @@
     "model": "ASR-9922-SFC110",
     "role": "switch-fabric"
    },
+   "behaviour": "fills",
    "class": "fabric",
    "conforms": null,
    "description": "Cisco ASR 9922 Router Switch Fabric Card, first generation. One switch fabric plane for an ASR 9922. UNLIKE ITS 9912 NAMESAKE THIS IS A DIFFERENT DRAWING from the SFC3 family: a much denser perforation covering nearly the whole plate rather than the SFC3's hex band, long ejector levers running a seventh of the card's length, and a stiffening pad at mid-length. The two SFC110s share a naming convention and nothing else.",
@@ -15685,6 +15932,7 @@
     "power-output-w": 2100,
     "role": "power-module"
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "Cisco ASR 9000 version 2 DC power supply, 2100 W, for a version 2 power entry module (ASR9K-DC-PEM-V2). Two axial fans behind finger guards, a pull handle between them, a hazard label and Input, Output and Fault lamps. Four of these fill a version 2 tray. The AC and DC modules of this generation share one faceplate because the input lands on the tray.",
@@ -15757,6 +16005,7 @@
     "power-output-w": 3000,
     "role": "power-module"
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "Cisco ASR 9000 version 2 AC power supply, 3000 W, for a version 2 power entry module (ASR9K-AC-PEM-V2). Two axial fans behind finger guards, a pull handle between them, a hazard label and Input, Output and Fault lamps. Four of these fill a version 2 tray. The AC and DC modules of this generation share one faceplate because the input lands on the tray.",
@@ -15830,6 +16079,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port Channelized OC-3 ATM CEoP SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The single SPA port accepts an SFP module with a duplex LC-type receptacle.' Optics: SFP-OC3-MM, -SR, -IR1, -LR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -15905,6 +16155,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port Channelized OC48/STM16 DS3 SPA, a double-height shared port adapter for the ASR 9000 SIP-700. 'The 1-Port Channelized STM-16/OC-48 SPA uses a small form-factor pluggable (SFP) optical transceiver module installed in the port for SONET and SDH single- mode and multimode optical fiber connection.' Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -15980,6 +16231,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port Channelized OC-3/STM-1 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. the section's SFP list is the OC-3 set: SFP-OC3-MM, -SR, -IR1, -LR1, -LR2, with a duplex LC-type receptacle. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16055,6 +16307,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port Clear Channel OC-12 ATM SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The single SPA port accepts an SFP module with a duplex LC-type receptacle.' Optics: SFP-OC12-MM, -SR, -IR1, -LR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16130,6 +16383,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port Clear Channel OC-3 ATM SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'Each SPA port accepts an SFP module with a duplex LC-type receptacle.' Optics: SFP-OC3-MM, -SR, -IR1, -LR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16205,6 +16459,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port OC-48/STM16 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The 1-Port OC48-POS/RPR SPA has one duplex LC-type receptacle.' Optics SFP- OC48-SR, -IR1, -LR2. And the faceplate's second opening: 'The 40-pin connector on the 1-Port OC-48/STM-16 POS SPA is used for resilient packet ring (RPR) connections.' Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16335,6 +16590,7 @@
     "ports": 24,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 24-Port Channelized T1/E1/J1 CEoP SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The physical layer interface for the 24-Port Channelized T1/E1/J1 CEoP SPA is a customer-installed high-density connector. This connector has thumbscrews that should be screwed into the SPA when the cable is installed.' The cable is CABLE-24T1E1J1: 'One end of the cable has a 100-pin connector that plugs into the front of the SPA... The other end of the cable has two 50-pin Telco connectors.' So all 24 circuits leave through ONE opening, which is why this SPA has 24 lamps and one connector. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16650,6 +16906,7 @@
     "ports": 2,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 2-Port Channelized T3/E3 ATM CEoP SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The interface connectors on the 2-Port Channelized T3/E3 ATM CEoP SPA are 75-ohm coaxial DIN 1.0/2.3 types, with one connector and cable for transmit (TX) and one for receive (RX).' NOTE THE DIFFERENCE FROM ITS T3/E3 SIBLINGS: the clear-channel T3/E3 SPA and the 4-port channelized T3 have their connectors called 'Siemax', this one 'DIN 1.0/2.3'. Both are the same 75-ohm miniature coaxial family and the same cable part numbers are listed against all three, so the two names are Cisco's, not two connectors. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16745,6 +17002,7 @@
     "ports": 2,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 2-Port Channelized OC-12/DS0 SPA, a double-height shared port adapter for the ASR 9000 SIP-700. 'The 2-Port Channelized OC-12/DS0 SPA uses a small form-factor pluggable (SFP) optical transceiver module installed in each port for SONET single-mode and multimode optical fiber connection.' Qualified optics: SFP-OC12-MM, -SR, -IR1, -LR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16843,6 +17101,7 @@
     "ports": 2,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 2-Port OC-3 STM-1/OC-12 STM-4 POS SPA, a single-height shared port adapter for the ASR 9000 SIP-700. both the OC-3 and the OC-12 SFP families are qualified: SFP-OC3-* and SFP-OC12-*. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -16941,6 +17200,7 @@
     "ports": 2,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 2-Port OC-48/STM16 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'Each port on the 2-Port OC48-POS/RPR SPA has one duplex LC-type receptacle.' Qualified optics: SFP-OC48-SR, -IR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17083,6 +17343,7 @@
     "ports": 2,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 2-Port Clear Channel T3/E3 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The interface connectors on the 2-Port and 4-Port Clear Channel T3/E3 SPA are 75-ohm coaxial Siemax types, with one connector and cable for transmit (TX) and one for receive (RX).' Cables CAB-T3E3-RF-BNC-M / -F / -OPEN carry BNC on the far end. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17178,6 +17439,7 @@
     "ports": 3,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 3-Port Clear Channel OC-3 ATM SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'Each SPA port accepts an SFP module with a duplex LC-type receptacle.' Optics: SFP-OC3-MM, -SR, -IR1, -LR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17299,6 +17561,7 @@
     "ports": 4,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 4-Port Channelized T3 to DS0, a single-height shared port adapter for the ASR 9000 SIP-700. 'The interface connectors on the 4-Port Channelized T3 to DS0 are 75-ohm coaxial Siemax types, with one connector and cable for transmit (TX) and one for receive (RX).' Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17438,6 +17701,7 @@
     "ports": 4,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 4-Port OC-3 STM-1/OC-12 STM-4 POS SPA, a single-height shared port adapter for the ASR 9000 SIP-700. both the OC-3 and the OC-12 SFP families are qualified: SFP-OC3-* and SFP-OC12-*. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17582,6 +17846,7 @@
     "ports": 4,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 4-Port OC-3/STM-1 POS SPA, a single-height shared port adapter for the ASR 9000 SIP-700. SFP-OC3-MM, -SR, -IR1, -LR1, -LR2, duplex LC-type receptacle per port. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17726,6 +17991,7 @@
     "ports": 4,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 4-Port OC-48/STM-16 POS/RPR SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'Each port on the 4-Port OC-48/STM-16 POS/RPR SPA has one duplex LC-type receptacle.' Optics SFP-OC48-SR, -IR1, -LR2. The section also carries a 'Mate Interface Cables' subsection whose text is about OC-192c SPAs, not this part. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -17870,6 +18136,7 @@
     "ports": 4,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 4-Port Serial Interface SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The 4-Port Serial Interface SPA uses Smart Serial cable interfaces that support one of two serial interface ports: DTE or DCE.' Table 42 lists ten cables, CAB- SS-V35MT/FC, -232MT/FC, -449MT/FC, -X21MT/FC, -530MT and the rest. 'The 4-Port Serial Interface SPA supports six interfaces in DCE and DTE mode: V.35, EIA/TIA-232, EIA/TIA-449, EIA/TIA-530, EIA/TIA-530A, X.21.' 'Each port allows a maximum bandwidth of 8064 Kbps except for the X.21 and EIA/TIA-232 interfaces.' Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -18009,6 +18276,7 @@
     "ports": 4,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 4-Port Clear Channel T3/E3 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The interface connectors on the 2-Port and 4-Port Clear Channel T3/E3 SPA are 75-ohm coaxial Siemax types, with one connector and cable for transmit (TX) and one for receive (RX).' Cables CAB-T3E3-RF-BNC-M / -F / -OPEN carry BNC on the far end. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -18148,6 +18416,7 @@
     "ports": 8,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 8-Port Channelized T1/E1 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The E1 interface on the 8-Port Channelized T1/E1 SPA uses RJ-48c receptacles for E1 (120-Ohm) cables with RJ-45 connectors. You can use all ports simultaneously. Each E1 connection supports interfaces that meet G.703 standards.' And the guide's own note on the vocabulary: 'The terms RJ-45 and RJ-48c are sometimes used interchangeably. The RJ-48c is the jack or receptacle; the RJ-45 is the connector.' Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -18384,6 +18653,7 @@
     "ports": 8,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 8-Port Channelized T1/E1 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. as the original: 'The E1 interface on the 8-Port Channelized T1/E1 SPA uses RJ-48c receptacles for E1 (120-Ohm) cables with RJ-45 connectors.' Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -18620,6 +18890,7 @@
     "ports": 8,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 8-Port OC12/STM4 SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The 8-Port OC12/STM4 SPA uses a small form-factor pluggable (SFP) optical transceiver module installed in each port.' Qualified optics: SFP-OC12-MM, -SR, -IR1, -LR1, -LR2. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -18856,6 +19127,7 @@
     "ports": 8,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 8-Port OC-3/STM-1 POS SPA, a single-height shared port adapter for the ASR 9000 SIP-700. SFP-OC3-MM, -SR, -IR1, -LR1, -LR2, duplex LC-type receptacle per port. Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -19092,6 +19364,7 @@
     "ports": 1,
     "role": "shared-port-adapter"
    },
+   "behaviour": "fills",
    "class": "line-card",
    "conforms": null,
    "description": "Cisco 1-Port OC-192/STM-64 POS/RPR SPA, a single-height shared port adapter for the ASR 9000 SIP-700. 'The 1-Port OC-192/STM-64 POS/RPR XFP SPA uses a 10-Gbps small form-factor pluggable optical receptacle.' Qualified optics: XFP-10GLR-OC192SR, XFP-10GER-OC192IR, XFP-10GZR-OC192LR. The faceplate also carries a 40-pin RPR mate connector between two thumbscrews: 'Two 1-Port OC-192/STM-64 POS/RPR XFP SPAs are connected using a 40-pin connector copper mate cable' (CBL-RPR-OC192-L, CAB-RPR-OC192-S). Seats in a SIP-700 SPA subslot; it is a module, not a device.",
@@ -19191,6 +19464,7 @@
   },
   {
    "attrs": {},
+   "behaviour": "mounts",
    "class": "sticker",
    "conforms": null,
    "description": "Bottom-cover compliance/spec label (placeholder art until a real bottom photo is available)",
@@ -19233,6 +19507,7 @@
    "attrs": {
     "input": "dc"
    },
+   "behaviour": null,
    "class": "inlet",
    "conforms": null,
    "description": "DC barrel power inlet",
@@ -19273,6 +19548,7 @@
   },
   {
    "attrs": {},
+   "behaviour": "mounts",
    "class": "sticker",
    "conforms": null,
    "description": "Bottom identity label in oval recess (placeholder art - never reproduce serials/MACs/credentials)",
@@ -19315,6 +19591,7 @@
    "attrs": {
     "airflow": "front-to-back"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#26292d",
     "depth": 56,
@@ -19412,6 +19689,7 @@
   },
   {
    "attrs": {},
+   "behaviour": "mounts",
    "class": "ground",
    "conforms": null,
    "description": "Chassis grounding point with earth symbol above the stud",
@@ -19465,6 +19743,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "ground",
    "conforms": null,
    "description": "Grounding silkscreen symbol (earth in a circle), no hardware",
@@ -19505,6 +19784,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "mount",
    "conforms": null,
    "description": "Wall-mount keyhole slot",
@@ -19545,6 +19825,7 @@
   },
   {
    "attrs": {},
+   "behaviour": "mounts",
    "class": "marking",
    "conforms": null,
    "description": "IEC 60825 laser hazard triangle - yellow field, black border and burst symbol. Silkscreened beside optical ports rather than being a port itself.",
@@ -19575,6 +19856,7 @@
     "connector": "lc-duplex",
     "media": "fiber"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Panel-mount LC duplex adapter - a bezel carrying two LC bores side by side, as used for Tx/Rx pairs on optical line cards. The body stands proud of the faceplate; the bores recess from that raised face, not from the panel. Both bores carry a white dust cap, which is how an unused port ships and sits. Distinct from sfp-lc-duplex, which is a pluggable transceiver.",
@@ -19632,6 +19914,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "Single triangle port LED - up skin for top-row ports, down for bottom",
@@ -19676,6 +19959,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "Compact triangle port LED for tight inter-port gaps - up skin for top-row ports, down for bottom. Geometrically identical to led-arrow at 0.625 scale. led-arrow is 3.2mm tall and does not fit between belly-to-belly QSFP cages, whose aperture-to-aperture gap is about 2.4mm.",
@@ -19720,6 +20004,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "Tiny round port LED (2mm)",
@@ -19762,6 +20047,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "Single chassis status LED",
@@ -19804,6 +20090,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "Rectangular system LED (cell-site style green bar)",
@@ -19846,6 +20133,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "button",
    "conforms": null,
    "description": "Round ON/OFF push button",
@@ -19889,6 +20177,7 @@
     "input": "ac",
     "power-output-w": 550
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "550W hot-swap PSU module with an integrated axial fan and its own C14 inlet, as fitted to the Smartoptics DCP chassis. Wider than the Edgecore psu-ac-650 family because the fan and inlet share one module face.",
@@ -19938,6 +20227,7 @@
     "input": "ac",
     "power-output-w": 550
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 185.0,
@@ -20008,6 +20298,7 @@
     "input": "ac",
     "power-output-w": 650
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "650W AC PSU module (Edgecore PSU-AC-650B family) \u2014 release tab, pull handle, C14 inlet",
@@ -20073,6 +20364,7 @@
     "input": "ac",
     "power-output-w": 650
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "650W AC PSU module - red fold-out handle, release tab, C14 inlet (v2 = photo-measured 54mm)",
@@ -20140,6 +20432,7 @@
     "input": "ac",
     "power-output-w": 650
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 195,
@@ -20212,6 +20505,7 @@
     "power-output-w": 650,
     "voltage": "-48v"
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "650W -48V DC PSU module (Edgecore PSU-DC-650B family) \u2014 same footprint as the AC unit, DC terminal input",
@@ -20278,6 +20572,7 @@
     "power-output-w": 650,
     "voltage": "-48v"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 195,
@@ -20355,6 +20650,7 @@
    "attrs": {
     "role": "info-tab"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#3d8f28",
     "depth": 115,
@@ -20412,6 +20708,7 @@
     "media": "qsfp28",
     "speed": "100g"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Plain QSFP cage (no lane LEDs) - bezel around a std/qsfp-ganged aperture (v2 = the cage only - the coloured band under each aperture is PRINTED ON THE FACEPLATE, not part of the cage assembly, so it moved out to the device's panel.decor and the box no longer claims the 3mm of panel it sits on; the skin variants existed only to carry that band's colour and collapse into one)",
@@ -20456,6 +20753,7 @@
    "attrs": {
     "role": "drawing-study"
    },
+   "behaviour": null,
    "class": "reference",
    "conforms": null,
    "description": "QSFP orthographic views transcribed from a vendor mechanical drawing - top, side and bottom at true scale. A drawing study rather than a placeable part: it exists so the 2D can be checked against the dimensions before any 3D is built from it.",
@@ -20491,6 +20789,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "QSFP port lane LED strip - four triangles, one per lane (no separate link/activity LEDs on this platform)",
@@ -20568,6 +20867,7 @@
    "attrs": {
     "role": "pull-latch"
    },
+   "behaviour": null,
    "class": "latch",
    "conforms": null,
    "description": "QSFP / QSFP-DD pull tab - the flat paddle bail that wraps the module and extends forward, with an elongated opening through it for a finger. Built as a flat loop, two side rails and a front crossbar, rather than a round bail, which is what a tube primitive would give. Vendors colour-code it by reach.",
@@ -20649,6 +20949,7 @@
     "form-factor": "qsfp",
     "media": "qsfp"
    },
+   "behaviour": "occupies",
    "body": {
     "color": "#8d949c",
     "depth": 83.2,
@@ -20696,6 +20997,7 @@
     "media": "qsfp28",
     "speed": "100g"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "QSFP28 cage at the measured 19.0mm ganged pitch, four round per-lane LEDs (v3 = composed - cage bezel wraps a std/qsfp-ganged aperture core; ganged cages keep vendor pitch, the aperture is the standard part)",
@@ -20782,6 +21084,7 @@
   },
   {
    "attrs": {},
+   "behaviour": "mounts",
    "class": "ear",
    "conforms": null,
    "description": "Generic 1U rack mounting ear (decorative; place outside the chassis with optional tag 'ears'; skins left/right)",
@@ -20811,6 +21114,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "button",
    "conforms": null,
    "description": "Recessed pinhole reset button",
@@ -20856,6 +21160,7 @@
    "attrs": {
     "model": "Rivet"
    },
+   "behaviour": "mounts",
    "class": "mechanical",
    "conforms": null,
    "description": "Sheet-metal rivet head. Chassis panels are full of them and they are a real, visible feature of a rear or side face, not decoration.",
@@ -20885,6 +21190,7 @@
    "attrs": {
     "media": "rj11"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "RJ11 telephone jack (FXS)",
@@ -20927,6 +21233,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "RJ45 panel port with jack-outline bezel, no LEDs (v2 = silver plate over the cutout leaving a plug-shaped aperture, stepped keyway down; console use)",
@@ -20963,6 +21270,7 @@
     "media": "rj45",
     "speed": "1g"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "High-density ganged RJ45 port with a jack-outline bezel - silver plate over the cutout leaving the plug silhouette open (body plus stepped keyway), two link/activity LEDs in the outer corners; the mirrored bottom row is the same part rotated 180 at placement",
@@ -21020,6 +21328,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "High-density ganged RJ45 port with a jack-outline bezel and no LEDs (console/serial use on dense faceplates)",
@@ -21053,6 +21362,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Bare RJ45 jack, pins down, clip notch up (15.76mm housing; physical-unit verified)",
@@ -21097,6 +21407,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "RJ45 panel port with jack-outline bezel (v4 = silver plate over the cutout leaving a plug-shaped aperture, stepped keyway up; link/activity LEDs sit in the bezel corner tabs beside the keyway)",
@@ -21156,6 +21467,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Shielded RJ45 jack, pins up, clip notch down, no port LEDs (physical-unit verified). The 8P8C plug interface is recessed behind the jack face, so it reads as a real socket in 3D rather than painted art",
@@ -21199,6 +21511,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Shielded RJ45 jack with integrated link/activity LEDs in the shell corners (v2 = v1 plus LEDs). The 8P8C plug interface is recessed behind the jack face, so it reads as a real socket in 3D rather than painted art. Stack a belly-to-belly pair by rotating the lower one 180 at placement",
@@ -21266,6 +21579,7 @@
    "attrs": {
     "media": "sc-apc"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "SC/APC fiber adapter in a molded bay (PON WAN)",
@@ -21308,6 +21622,7 @@
   },
   {
    "attrs": {},
+   "behaviour": "mounts",
    "class": "screw",
    "conforms": null,
    "description": "Generic countersunk screw head (decorative fastener)",
@@ -21345,6 +21660,7 @@
     "reach": "30km",
     "speed": "100m"
    },
+   "behaviour": "occupies",
    "class": "transceiver",
    "conforms": null,
    "description": "SFP transceiver with an LC duplex face - two recessed bores with the fiber ferrules standing in them, and a bail latch that pivots to release",
@@ -21378,6 +21694,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "led",
    "conforms": null,
    "description": "Stacked-SFP indicator pair \u2014 left lamp = upper port, right lamp = lower port, up/down triangles between",
@@ -21434,6 +21751,7 @@
     "media": "sfp-plus",
     "speed": "10g"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "SFP+ cage (v2 = composed - bezel wraps a std/sfp cutout core)",
@@ -21465,6 +21783,7 @@
    "attrs": {
     "media": "coax-sma"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Panel-mount SMA jack with gold jam nut (bezel) around a std/sma core",
@@ -21498,6 +21817,7 @@
    "attrs": {
     "media": "coax-smb"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "Panel-mount SMB jack with gold nut (bezel) around a std/smb core",
@@ -21531,6 +21851,7 @@
    "attrs": {
     "media": "usb-a"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "USB Type-A receptacle with trident silkscreen (v2 = composed - shell bezel wraps a std/usb-a opening core)",
@@ -21586,6 +21907,7 @@
    "attrs": {
     "media": "usb-a"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "USB Type-A port in a silver panel bezel (v3 = bezel plate spans the component so it can abut neighboring port bezels; receptacle centered)",
@@ -21630,6 +21952,7 @@
   },
   {
    "attrs": {},
+   "behaviour": null,
    "class": "silkscreen",
    "conforms": null,
    "description": "USB trident silkscreen symbol, no hardware - the marking printed beside a USB receptacle",
@@ -21672,6 +21995,7 @@
    "attrs": {
     "model": "AGR Fan"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#26292d",
     "depth": 132.0,
@@ -21715,6 +22039,7 @@
    "attrs": {
     "model": "AGR Air Filter (bottom)"
    },
+   "behaviour": "fills",
    "class": "filter",
    "conforms": null,
    "description": "Removable bottom air filter for the Edgecore AGR400 (AS7946-30XB) and AGR420 (AS7946-74XKSB). A dark metal frame with open sections and reticulated foam behind them. It bolts onto the OUTSIDE of the faceplate with captive thumb screws - it does not slide into a bay - so it is placed, not seated. A plain rectangle, wider than the top filter because it also spans the SFP28 pair.",
@@ -21747,6 +22072,7 @@
    "attrs": {
     "model": "AGR Air Filter (top)"
    },
+   "behaviour": "fills",
    "class": "filter",
    "conforms": null,
    "description": "Removable top air filter for the Edgecore AGR400 (AS7946-30XB) and AGR420 (AS7946-74XKSB). A dark metal frame with open sections and reticulated foam behind them. It bolts onto the OUTSIDE of the faceplate with captive thumb screws - it does not slide into a bay - so it is placed, not seated. Its outline is not a plain rectangle - it drops deeper over each QSFP-DD block, which Jason describes as two nubs and the photographs confirm.",
@@ -21779,6 +22105,7 @@
    "attrs": {
     "model": "Grounding Plate"
    },
+   "behaviour": "mounts",
    "class": "ground",
    "conforms": null,
    "description": "Chassis grounding landing on the AGR400/AGR420 rear, between the PSU bay and the fans. An IEC 60417-5019 earth symbol above a two-hole plate for a two-hole grounding lug.",
@@ -21810,6 +22137,7 @@
    "attrs": {
     "model": "AGR caution label"
    },
+   "behaviour": "mounts",
    "class": "sticker",
    "conforms": null,
    "description": "Caution label near the rear left of the top cover on the Edgecore AGR400 / AGR420.",
@@ -21841,6 +22169,7 @@
    "attrs": {
     "model": "AGR serial label"
    },
+   "behaviour": "mounts",
    "class": "sticker",
    "conforms": null,
    "description": "Serial number, SKU and MAC label on the top cover on the Edgecore AGR400 / AGR420.",
@@ -21872,6 +22201,7 @@
    "attrs": {
     "model": "AGR spec label"
    },
+   "behaviour": "mounts",
    "class": "sticker",
    "conforms": null,
    "description": "Regulatory and specification label on the top cover on the Edgecore AGR400 / AGR420.",
@@ -21903,6 +22233,7 @@
    "attrs": {
     "model": "AGR captive panel screw"
    },
+   "behaviour": "mounts",
    "class": "fastener",
    "conforms": null,
    "description": "Captive slotted thumb screw at each corner of the Edgecore AGR400 / AGR420 front panel, holding the rack flange to the chassis. A bright plated head about 8.4 mm across with a single broad slot, standing proud of the paint. Much larger than common/screw-head, which is 3.6 mm and reads as a machine screw rather than a thumb screw at this scale.",
@@ -21936,6 +22267,7 @@
     "input": "100-120 V 12 A or 200-240 V 7.5 A, 50-60 Hz per PSU",
     "model": "AGR PSU (AC)"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 360.7,
@@ -21982,6 +22314,7 @@
     "input": "-40 to -75 VDC, 40 A max per PSU",
     "model": "AGR PSU (DC)"
    },
+   "behaviour": "fills",
    "body": {
     "color": "#b9bec4",
     "depth": 360.7,
@@ -22026,6 +22359,7 @@
    "attrs": {
     "model": "AGR420 Air Filter (bottom)"
    },
+   "behaviour": "fills",
    "class": "filter",
    "conforms": null,
    "description": "Removable BOTTOM air filter for the Edgecore AGR420 (AS7946-74XKSB) - the full-width band of it. The mirror of the top filter and shorter, stopping at panel x 412 rather than running under the management corner. The same physical filter also carries a deeper section beside the QSFP-DD column, which is agr420-filter-step.",
@@ -22058,6 +22392,7 @@
    "attrs": {
     "model": "AGR420 Air Filter (step)"
    },
+   "behaviour": "fills",
    "class": "filter",
    "conforms": null,
    "description": "The deep section of an Edgecore AGR420 air filter, beside the QSFP-DD column at the left of the front panel, where the nearest port row is 17 mm away and the frame can drop a second foam cell in. Both the top and the bottom filter carry one; it is not a separate FRU, it is the stepped end of one, split out because a placement is a bounding rectangle.",
@@ -22090,6 +22425,7 @@
    "attrs": {
     "model": "AGR420 Air Filter (top)"
    },
+   "behaviour": "fills",
    "class": "filter",
    "conforms": null,
    "description": "Removable TOP air filter for the Edgecore AGR420 (AS7946-74XKSB) - the full-width band of it. A dark metal frame with open sections and reticulated foam behind them, bolted onto the OUTSIDE of the faceplate with two captive thumb screws; it does not slide into a bay, so it is placed, not seated. The same physical filter also carries a deeper section beside the QSFP-DD column, which is agr420-filter-step.",
@@ -22123,6 +22459,7 @@
     "input": "ac",
     "media": "ac"
    },
+   "behaviour": null,
    "class": "inlet",
    "conforms": "c14-inlet",
    "description": "IEC C14 appliance inlet (mates C13 cords) - panel cutout with the keyed coupler shroud recessed behind it, earth pin up, line and neutral below",
@@ -22169,6 +22506,7 @@
     "input": "ac",
     "media": "ac"
    },
+   "behaviour": null,
    "class": "inlet",
    "conforms": "c20-inlet",
    "description": "IEC C20 appliance inlet (mates C19 cords) - panel cutout with the rounded-rectangle coupler recess behind it, earth pin up, line and neutral below",
@@ -22214,6 +22552,7 @@
    "attrs": {
     "media": "coax-f"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "f-type",
    "description": "F-type 75-ohm coaxial panel jack (3/8-32 UNEF-2A) - the CATV drop connector. The threaded neck IS the mating interface, so it stands proud of the panel with the hex nut clamped behind it; the aperture is a double-D hole.",
@@ -22259,6 +22598,7 @@
     "connector": "lc",
     "media": "fiber"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": null,
    "description": "One LC receptacle bore - a square recess with the fiber ferrule standing in it, as seen looking into an LC port",
@@ -22305,6 +22645,7 @@
     "connector": "lc",
     "media": "fiber"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "lc-duplex-receptacle",
    "description": "One LC receptacle bore - a square recess with the fiber ferrule standing in it, as seen looking into an LC port",
@@ -22350,6 +22691,7 @@
    "attrs": {
     "media": "coax-mcx"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "mcx",
    "description": "MCX coaxial panel jack (IEC 61169-36) - snap-on micro coax, the 75-ohm RF drop connector on cable headend I/O cards and the 50-ohm GNSS/timing jack elsewhere. The panel aperture is a D-hole with one anti-rotation flat.",
@@ -22394,6 +22736,7 @@
    "attrs": {
     "media": "micro-usb-b"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "micro-usb-b",
    "description": "Micro-USB Type-B receptacle, as used for a console port",
@@ -22437,6 +22780,7 @@
    "attrs": {
     "media": "qsfp-dd"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "qsfp-dd",
    "description": "QSFP-DD cage cutout (400G, backward-compatible faceplate)",
@@ -22482,6 +22826,7 @@
    "attrs": {
     "media": "qsfp"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "qsfp-ganged",
    "description": "QSFP family per-port opening inside a ganged cage block - the cage aperture, with the SFF-8661 module envelope as the recess behind it",
@@ -22525,6 +22870,7 @@
    "attrs": {
     "media": "qsfp28"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "qsfp28",
    "description": "QSFP28 cage cutout (100G, 4 lanes)",
@@ -22570,6 +22916,7 @@
    "attrs": {
     "media": "qsfp56"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "qsfp56",
    "description": "QSFP56 cage cutout (200G, shares SFF-8661 profile)",
@@ -22615,6 +22962,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "rj45",
    "description": "Standard RJ45 modular jack - IEC 60603-7 panel aperture with the invariant 8P8C cavity recessed behind it, 8 pins up, latch keyway down",
@@ -22658,6 +23006,7 @@
    "attrs": {
     "media": "rj45"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "rj45-ganged",
    "description": "RJ45 jack aperture inside a ganged multi-port block - the per-port opening where ports share walls, narrower than the IEC single-port panel cutout",
@@ -22701,6 +23050,7 @@
    "attrs": {
     "media": "sfp"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "sfp",
    "description": "SFP/SFP+/SFP28 cage cutout (1G/10G/25G)",
@@ -22746,6 +23096,7 @@
    "attrs": {
     "media": "sfp"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "sfp-ganged",
    "description": "Per-port opening inside a ganged SFP+/SFP28 block - the port's share of a continuous 1xN bezel slot, so adjacent instances abut with no gap",
@@ -22789,6 +23140,7 @@
    "attrs": {
     "media": "coax-sma"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "sma",
    "description": "SMA coaxial panel jack (1/4-36UNS-2B) - threaded barrel protrudes; GNSS/RF antenna input",
@@ -22833,6 +23185,7 @@
    "attrs": {
     "media": "coax-smb"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "smb",
    "description": "SMB coaxial panel jack (10-32UNF-2A) - snap-on timing coax (1PPS/10MHz)",
@@ -22877,6 +23230,7 @@
    "attrs": {
     "media": "usb-a"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "usb-a",
    "description": "USB Type-A receptacle opening - sharp corners",
@@ -22922,6 +23276,7 @@
    "attrs": {
     "media": "usb-c"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "usb-c",
    "description": "USB Type-C receptacle opening - fully rounded ends",
@@ -22967,6 +23322,7 @@
    "attrs": {
     "media": "xfp"
    },
+   "behaviour": null,
    "class": "port",
    "conforms": "xfp",
    "description": "XFP cage cutout (10G pluggable) - the recommended bezel opening of the XFP MSA, the aperture an XFP cage protrudes through",
@@ -23013,6 +23369,7 @@
     "airflow": "exhaust",
     "model": "FAN-402825-HD"
    },
+   "behaviour": "fills",
    "class": "fan",
    "conforms": null,
    "description": "UfiSpace FAN-402825-HD hot-swap fan module (S9510-28DC family) - red tube handle on the left, knurled captive thumbscrew on the right, status LED top-left; exhaust airflow",
@@ -23060,6 +23417,7 @@
     "model": "PSU-401-AISB",
     "power-output-w": 400
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "UfiSpace PSU-401-AISB 400W AC PSU - C14 inlet with cord strap, blue release latch, black tube handle, status LED (S9510-28DC family)",
@@ -23131,6 +23489,7 @@
     "model": "PSU-401-DISB-1",
     "power-output-w": 400
    },
+   "behaviour": "fills",
    "class": "psu",
    "conforms": null,
    "description": "UfiSpace PSU-401-DISB-1 400W DC PSU - screw-terminal block, blue release latch, black tube handle, status LED (S9510-28DC family)",
@@ -23234,8 +23593,8 @@
  "relief-confidence": {
   "borrowed": 3,
   "datasheet": 3,
-  "drawing": 10,
-  "estimated": 1555,
+  "drawing": 11,
+  "estimated": 1565,
   "measured": 6,
   "photo-measured": 15
  },

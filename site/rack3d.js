@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
-         setSvgOverride, clearSvgOverrides } from '../vendor/relief.js';
+         setSvgOverride, clearSvgOverrides, createReliefScope } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { applyOverrides } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
@@ -104,6 +104,14 @@ export function createRackScene(container, opts = {}) {
   scene.add(fill);
 
   configureRelief({THREE, renderer, PXMM: PXMM_RELIEF, FRU_PATHS: new Set()});
+
+  // This scene's own override map. relief.js used to keep ONE, module-wide, so
+  // two scenes in a page showing the same device with different occupants fought
+  // over it - and clearSvgOverrides() emptied everything, meaning one scene
+  // building or disposing silently wiped the other's. roc-ops/ndv#31 fixed that
+  // by making a scope a thing you can hold; holding one is what makes a
+  // side-by-side rack possible in a single document instead of two iframes.
+  const relief = createReliefScope();
 
   // Framed up front, before a single device exists. Framing at the END of a
   // build meant the whole rack assembled itself somewhere above the default
@@ -279,18 +287,18 @@ export function createRackScene(container, opts = {}) {
       if (!c) return null;
       const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
       return {comp: c, text: await svgSource(
-        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`)};
+        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`, relief)};
     };
     for (const [view, bays] of Object.entries(entry.bays)) {
       if (!bays.length) continue;
       if (!bays.some(b => Object.prototype.hasOwnProperty.call(ov, b.id))) continue;
       const url = `${DIST}${entry.ref}.${entry.cfg}.${view}.svg`;
       let text;
-      try { text = await svgSource(url); } catch { continue; }
+      try { text = await svgSource(url, relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
       const n = await applyOverrides(doc.documentElement, bays, ov, loadSkin);
-      if (n) setSvgOverride(url, new XMLSerializer().serializeToString(doc));
+      if (n) setSvgOverride(url, new XMLSerializer().serializeToString(doc), relief);
     }
   }
 
@@ -306,10 +314,10 @@ export function createRackScene(container, opts = {}) {
     ];
     const meshes = [], faceCv = {}, faceSvg = {}, facePunch = {};
     for (const F of FACES) {
-      await buildFaceRelief(F, {src: f(F.view), faceCv, faceSvg, facePunch, meshes,
+      await buildFaceRelief(F, {scope: relief, src: f(F.view), faceCv, faceSvg, facePunch, meshes,
         FRU_GROUPS: {}, FRU_META: {}, BODY_META: {}, D, bodyBoxMesh: null});
     }
-    const bottomCv = await svgCanvas(f('bottom'), W, D, true, true).catch(() => null);
+    const bottomCv = await svgCanvas(f('bottom'), W, D, true, true, relief).catch(() => null);
     const plain = () => new THREE.MeshLambertMaterial({color: 0x3a3f44});
     const mat = cv => cv ? new THREE.MeshLambertMaterial(
       {map: canvasTex(cv), transparent: true, alphaTest: 0.08}) : plain();
@@ -398,7 +406,7 @@ export function createRackScene(container, opts = {}) {
       disposeTree(m.group); disposeTree(m.ears);
     }
     mounted.length = 0;
-    clearSvgOverrides();
+    clearSvgOverrides(relief);
     await hydrate();
     if (FIT) {
       const want = fitUnits();
@@ -460,7 +468,7 @@ export function createRackScene(container, opts = {}) {
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;
-      clearSvgOverrides();
+      clearSvgOverrides(relief);
       renderer.dispose();
       renderer.domElement.remove();
     },

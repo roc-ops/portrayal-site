@@ -127,6 +127,29 @@
    "description": "Casa C40G CMTS/CCAP - 6RU, 6 paired front/rear slots. Takes the same line cards as the C100G but HORIZONTALLY, so the card is one model placed at rotate 90.",
    "gaps": [
     {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Casa says two things about this terminal and they do not agree. The prose in \"Connecting the chassis to ground\" says it \"provides two M6 screws to connect a double-lug ground terminal cable\". Figures 1-2 and 1-4 both DRAW three studs, in a 2x2 grid with the protective-earth mark in the fourth corner, and the two figures agree with each other. THE DRAWING IS FOLLOWED, and the model carries three. The figure is the only source that says anything about arrangement at all, so following the prose would mean inventing a layout for the two it describes; and a third stud has easy explanations - a spare, an alternate lug pitch - while a stud drawn twice that is not there has none. That is a judgement, not a reading, which is why it is filed here. THE PITCH IS NOT MEASURED FROM EITHER. It is borrowed from casa/ground-bolts@1, 15.3, off Jason`s hand-built C100G rear SVG. Figure 1-4 gives 13.2 across and 14.7 down for what must be one square grid - an 11 percent disagreement with itself, which is that figure`s anisotropy rather than a rectangular pattern.",
+     "scope": [
+      "ground-studs-rear"
+     ],
+     "wanted": "a photograph of the C40G rear lower-left corner, which would settle the count and the pitch together in one look",
+     "what": "ground-stud-count"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The card band runs 37.5 to 386.7 in a body 432.95 wide, so it sits 37.5 from the left edge and 46.25 from the right - 8.75 mm out of centre, or 4.375 on the band's own centreline. Everything inside the band agrees with everything else; the question is whether the band is really off-centre in the metal, and nothing we hold answers it. IT IS NOT COSMETIC, and the AC input panel is where it bites. Its four C14 inlets sit behind the four front power supplies. Reflect the supply centres about the PANEL and the inlets are 1.2 out; reflect them about the CHASSIS - which is what walking round a box actually does - and they are 9.95 out. The gap between those two answers IS this asymmetry, and no arrangement of the parts inside the band can close it, because the disagreement is between the band and the chassis rather than within either. THE SUPPORTING NUMBERS ARE ALSO ODD IN THE SAME DIRECTION. The two front fan strips measure 36.0 wide each - equal, as you would expect - but leave 1.5 outside them on the left and 10.25 on the right. Two equal strips with unequal surrounds is exactly the shape of a band that has been positioned from one edge. NOT RESOLVED BY GUESSING, deliberately. Re-centring the band would move the two fan strips, the card bays on both faces, the PSU row, the PSU cover and the AC panel - and it would be one estimate reconciled against another, which this device's `pem-band-top-edge` note already records going wrong twice in opposite directions.",
+     "scope": [
+      "front",
+      "rear"
+     ],
+     "wanted": "a dimensioned C40G front or rear elevation from Casa, or a tape measure across a real chassis from its left edge to the first card slot and from the last card slot to its right edge",
+     "what": "band-not-centred-in-chassis"
+    },
+    {
      "because": "needs-drawing",
      "blocks": [],
      "kind": "declared",
@@ -216,7 +239,7 @@
    "portfolio": {
     "family": "CMTS/CCAP"
    },
-   "search": "power-max-w 1800 power-envelope fully-configured front-slots slot cooling fan module power pem furniture item rear-slots bdm2 bdm2m bdm blank-faceplate c40g-fan c40g-pem c40g-psu-ac c40g-psu-cover chassis-label csc-8x10g ds-8x192 ds-8x8 ds-8x96 io-6p12-io2 io-6p12-sw-io2 io-6p12-sw io-6p12 lc-sw-bdm rfd rfu-16x8 smm-2x10g smm-300g smm-300gm smm-8x10g smm-sw-bdm-a smm-sw-bdm-b ups-32x4 us-16x4 us-16x8 screw-head",
+   "search": "power-max-w 1800 power-envelope fully-configured front-slots slot cooling fan module power pem furniture item grounding point rear-slots bdm2 bdm2m bdm blank-faceplate c40g-ac-inlet-panel c40g-fan-left c40g-fan c40g-ground-studs c40g-pem c40g-psu-ac c40g-psu-cover chassis-label csc-8x10g ds-8x192 ds-8x8 ds-8x96 io-6p12-io2 io-6p12-sw-io2 io-6p12-sw io-6p12 lc-sw-bdm rfd rfu-16x8 smm-2x10g smm-300g smm-300gm smm-8x10g smm-sw-bdm-a smm-sw-bdm-b ups-32x4 us-16x4 us-16x8 screw-head",
    "version": "0.1.0"
   },
   {
@@ -317,6 +340,14 @@
      "what": "din-1-0-2-3-connector"
     },
     {
+     "because": "L21",
+     "blocks": [],
+     "count": 5,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
+    },
+    {
      "because": "L29",
      "blocks": [],
      "count": 5,
@@ -364,12 +395,18 @@
   },
   {
    "capability": {
-    "blocked": [],
+    "blocked": [
+     {
+      "level": 4,
+      "name": "addressable",
+      "needs": "`rel-pos` on 2 placements (left 1, right 1)"
+     }
+    ],
     "flags": [
      "wired"
     ],
-    "level": 4,
-    "name": "addressable",
+    "level": 3,
+    "name": "solid",
     "unknown": [
      "specified"
     ]
@@ -508,17 +545,23 @@
     "line": "Service Provider",
     "series": "ASR 9000 Series"
    },
-   "search": "weight-configured-kg 104.33 weight-configured-scope fully configured using all card slots and six power modules power-modules-v1 version 1 system - up to three ac or dc per power-modules-v2 2 four power-modules-v3-supported false power-ac-input-per-module-v1 3400 va module power-ac-input-per-module-v2 3290 (3000 w output module) power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-input-current 15 a maximum at 200 vac; 13 220 240 vrms power-ac-service-requirement 20 north america; 16 international; united kingdom power-ac-redundancy least two required for n+1 redundancy power-dc-input-per-module-v1 1700 (1500 power-dc-input-per-module-v2 2300 (2100 power-dc-input-voltage -48 vdc in america, -60 the european community -40.5 -72 vdc, -75 5 ms) power-dc-input-current 49 nominal; 39 cooling-path side-to-top-to-rear; inlet right side of chassis, exhaust upper rear fans-per-tray 6 fans groups two, each group sharing fan controller fan-controller-redundancy 1:3 protected operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 131degf (-5 55degc) operating-temp-short-term-definition not more than 96 consecutive hours total no days year storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 95 altitude-operating 0 13,000 ft (0 4,000 m) altitude-non-operating 15,000 4,570 acoustic-noise 78 db 80.6degf (27degc) shock-operating halfsine, 21 in/sec (0.53 m/sec) shock-non-operating trapezoidal pulse, g, 52 (1.32 vibration-operating 0.35 grms from 3 500 vibration-non-operating 1.0 operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced asr-9006-ac-v2 asr 9006 chassis with pem asr-9006-dc-v2 slot power-modules doors door a9k-20hg-flex-se a9k-20hg-flex-tr a9k-8hg-flex-se a9k-8hg-flex-tr a9k-fan-tray-door a9k-power-module a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-rsp880-se a9k-rsp880-tr a9k-slot-cover",
+   "search": "weight-configured-kg 104.33 weight-configured-scope fully configured using all card slots and six power modules power-modules-v1 version 1 system - up to three ac or dc per power-modules-v2 2 four power-modules-v3-supported false power-ac-input-per-module-v1 3400 va module power-ac-input-per-module-v2 3290 (3000 w output module) power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-input-current 15 a maximum at 200 vac; 13 220 240 vrms power-ac-service-requirement 20 north america; 16 international; united kingdom power-ac-redundancy least two required for n+1 redundancy power-dc-input-per-module-v1 1700 (1500 power-dc-input-per-module-v2 2300 (2100 power-dc-input-voltage -48 vdc in america, -60 the european community -40.5 -72 vdc, -75 5 ms) power-dc-input-current 49 nominal; 39 cooling-path side-to-top-to-rear; inlet right side of chassis, exhaust upper rear fans-per-tray 6 fans groups two, each group sharing fan controller fan-controller-redundancy 1:3 protected operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 131degf (-5 55degc) operating-temp-short-term-definition not more than 96 consecutive hours total no days year storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 95 altitude-operating 0 13,000 ft (0 4,000 m) altitude-non-operating 15,000 4,570 acoustic-noise 78 db 80.6degf (27degc) shock-operating halfsine, 21 in/sec (0.53 m/sec) shock-non-operating trapezoidal pulse, g, 52 (1.32 vibration-operating 0.35 grms from 3 500 vibration-non-operating 1.0 operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced asr-9006-ac-v2 asr 9006 chassis with pem asr-9006-dc-v2 slot power-modules doors door grounding point a9k-20hg-flex-se a9k-20hg-flex-tr a9k-8hg-flex-se a9k-8hg-flex-tr a9k-fan-tray-door a9k-ground-pad a9k-power-module a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-rsp880-se a9k-rsp880-tr a9k-slot-cover",
    "version": "0.1.0"
   },
   {
    "capability": {
-    "blocked": [],
+    "blocked": [
+     {
+      "level": 4,
+      "name": "addressable",
+      "needs": "`rel-pos` on 1 placement (rear 1)"
+     }
+    ],
     "flags": [
      "wired"
     ],
-    "level": 4,
-    "name": "addressable",
+    "level": 3,
+    "name": "solid",
     "unknown": [
      "specified"
     ]
@@ -677,17 +720,23 @@
     "line": "Service Provider",
     "series": "ASR 9000 Series"
    },
-   "search": "weight-configured-kg 170.5 weight-configured-scope fully configured using all card slots and six power modules power-modules-v1 version 1 system - up to per system, three tray power-modules-v2 2 eight four power-modules-v3-ac 3 ac power-modules-v3-dc dc power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-per-module-v3 6510 (6000 power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-input-current 15 a maximum at 200 vac; 13 220 240 vrms power-ac-service-requirement 20 north america; 16 international; united kingdom power-ac-redundancy operate in n+n redundancy mode power-dc-input-per-module-v1 1700 (1500 power-dc-input-per-module-v2 2340 (2100 power-dc-input-per-module-v3 4730 (4400 power-dc-input-voltage -48 vdc america, -60 the european community -40.5 -72 vdc, -75 for 5 ms) power-dc-input-current 49 nominal; 39 cooling-path front-to-rear; inlet bottom front of chassis, exhaust upper rear air-filter-location underneath fan trays operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 95 altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced asr-9010-ac-v2 asr 9010 chassis with pem asr-9010-dc-v2 slot power-modules module fan-trays power-shelves shelf a9k-16t-8-b a9k-20hg-flex-se a9k-20hg-flex-tr a9k-24x10ge-se a9k-36x10ge-se a9k-40ge-b a9k-40ge-e a9k-40ge-l a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4t-b a9k-4t-e a9k-4t-l a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-8t-4-b a9k-8t-4-e a9k-8t-4-l a9k-8t-b a9k-8t-e a9k-8t-l a9k-mod160-se a9k-mod160-tr a9k-mod200-se a9k-mod200-tr a9k-mod400-se a9k-mod400-tr a9k-mod80-se a9k-mod80-tr a9k-power-module a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-rsp880-se a9k-rsp880-tr a9k-rsp a9k-sip-700-8g a9k-sip-700 a9k-slot-cover",
+   "search": "weight-configured-kg 170.5 weight-configured-scope fully configured using all card slots and six power modules power-modules-v1 version 1 system - up to per system, three tray power-modules-v2 2 eight four power-modules-v3-ac 3 ac power-modules-v3-dc dc power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-per-module-v3 6510 (6000 power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-input-current 15 a maximum at 200 vac; 13 220 240 vrms power-ac-service-requirement 20 north america; 16 international; united kingdom power-ac-redundancy operate in n+n redundancy mode power-dc-input-per-module-v1 1700 (1500 power-dc-input-per-module-v2 2340 (2100 power-dc-input-per-module-v3 4730 (4400 power-dc-input-voltage -48 vdc america, -60 the european community -40.5 -72 vdc, -75 for 5 ms) power-dc-input-current 49 nominal; 39 cooling-path front-to-rear; inlet bottom front of chassis, exhaust upper rear air-filter-location underneath fan trays operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 95 altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced asr-9010-ac-v2 asr 9010 chassis with pem asr-9010-dc-v2 slot power-modules module fan-trays power-shelves shelf grounding point a9k-16t-8-b a9k-20hg-flex-se a9k-20hg-flex-tr a9k-24x10ge-se a9k-36x10ge-se a9k-40ge-b a9k-40ge-e a9k-40ge-l a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4t-b a9k-4t-e a9k-4t-l a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-8t-4-b a9k-8t-4-e a9k-8t-4-l a9k-8t-b a9k-8t-e a9k-8t-l a9k-ground-pad a9k-mod160-se a9k-mod160-tr a9k-mod200-se a9k-mod200-tr a9k-mod400-se a9k-mod400-tr a9k-mod80-se a9k-mod80-tr a9k-power-module a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-rsp880-se a9k-rsp880-tr a9k-rsp a9k-sip-700-8g a9k-sip-700 a9k-slot-cover",
    "version": "0.1.0"
   },
   {
    "capability": {
-    "blocked": [],
+    "blocked": [
+     {
+      "level": 4,
+      "name": "addressable",
+      "needs": "`rel-pos` on 2 placements (rear 2)"
+     }
+    ],
     "flags": [
      "wired"
     ],
-    "level": 4,
-    "name": "addressable",
+    "level": 3,
+    "name": "solid",
     "unknown": [
      "specified"
     ]
@@ -756,7 +805,7 @@
     "line": "Service Provider",
     "series": "ASR 9000 Series"
    },
-   "search": "weight-configured-kg 55.7 weight-configured-scope fully configured using all card slots and four power modules power-modules-v2 version 2 system - up to ac or dc per power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-redundancy at least two required for n+1 redundancy a power-dc-input-per-module-v2 2300 (2100 power-dc-input-voltage -48 vdc in north america, -60 the european community -40.5 -72 vdc, -75 5 ms) cooling-path side-to-side; inlet right side of cage, exhaust left fan-trays single fan tray, fitted from rear air-filter-location filter along side, accessible operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 131degf (-5 55degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 95 altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) maximum operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slot a99-12x100ge a9k-20hg-flex-se a9k-20hg-flex-tr a9k-8hg-flex-se a9k-8hg-flex-tr a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-rsp880-se a9k-rsp880-tr a9k-slot-cover",
+   "search": "weight-configured-kg 55.7 weight-configured-scope fully configured using all card slots and four power modules power-modules-v2 version 2 system - up to ac or dc per power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-redundancy at least two required for n+1 redundancy a power-dc-input-per-module-v2 2300 (2100 power-dc-input-voltage -48 vdc in north america, -60 the european community -40.5 -72 vdc, -75 5 ms) cooling-path side-to-side; inlet right side of cage, exhaust left fan-trays single fan tray, fitted from rear air-filter-location filter along side, accessible operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 131degf (-5 55degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 95 altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) maximum operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slot grounding point a99-12x100ge a9k-20hg-flex-se a9k-20hg-flex-tr a9k-8hg-flex-se a9k-8hg-flex-tr a9k-ground-pad a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-rsp880-se a9k-rsp880-tr a9k-slot-cover",
    "version": "0.1.0"
   },
   {
@@ -887,6 +936,11 @@
       "level": 3,
       "name": "solid",
       "needs": "1 view bottom (six faces describe one box)"
+     },
+     {
+      "level": 4,
+      "name": "addressable",
+      "needs": "`rel-pos` on 1 placement (rear 1)"
      }
     ],
     "flags": [
@@ -1004,17 +1058,23 @@
     "line": "Service Provider",
     "series": "ASR 9000 Series"
    },
-   "search": "weight-configured-kg 158.575 weight-configured-scope configured with two fan trays, rsps, five fabric cards, and one pem power-modules-v3 version 3 power system - up to six ac modules per system, three tray power-ac-input-per-module-v3 6510 va (6000 w output module) power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-input-current 15 a maximum at 200 vac; 13 220 240 vrms power-ac-redundancy operate in n+n redundancy mode cooling-path front-to-rear; inlet the bottom front, exhaust upper rear fan-trays two, ft0 above ft1, on face air-filter-location underneath card cage operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 5 95 altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slots slot a99-12x100ge a99-4hg-flex-se a99-4hg-flex-tr a99-rsp-se a99-sfc-s a99-sfc3-s a9k-20hg-flex-se a9k-20hg-flex-tr a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-slot-cover asr-9910-fan",
+   "search": "weight-configured-kg 158.575 weight-configured-scope configured with two fan trays, rsps, five fabric cards, and one pem power-modules-v3 version 3 power system - up to six ac modules per system, three tray power-ac-input-per-module-v3 6510 va (6000 w output module) power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-input-frequency 50/60 hz 47 63 hz) power-ac-input-current 15 a maximum at 200 vac; 13 220 240 vrms power-ac-redundancy operate in n+n redundancy mode cooling-path front-to-rear; inlet the bottom front, exhaust upper rear fan-trays two, ft0 above ft1, on face air-filter-location underneath card cage operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing humidity-non-operating 5 95 altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slots slot grounding point a99-12x100ge a99-4hg-flex-se a99-4hg-flex-tr a99-rsp-se a99-sfc-s a99-sfc3-s a9k-20hg-flex-se a9k-20hg-flex-tr a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-ground-pad a9k-rsp880-lt-se a9k-rsp880-lt-tr a9k-slot-cover asr-9910-fan",
    "version": "0.1.0"
   },
   {
    "capability": {
-    "blocked": [],
+    "blocked": [
+     {
+      "level": 4,
+      "name": "addressable",
+      "needs": "`rel-pos` on 1 placement (rear 1)"
+     }
+    ],
     "flags": [
      "wired"
     ],
-    "level": 4,
-    "name": "addressable",
+    "level": 3,
+    "name": "solid",
     "unknown": [
      "specified"
     ]
@@ -1134,17 +1194,23 @@
     "line": "Service Provider",
     "series": "ASR 9000 Series"
    },
-   "search": "weight-configured-kg 291.66 weight-configured-scope fully configured using all card slots and three power trays depth-with-cable-management-mm 746.8 depth-with-front-doors-mm 764.5 power-modules-v2 version 2 system - up to twelve ac modules per system, four tray power-modules-v3 3 nine power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-per-module-v3 6510 (6000 power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-redundancy operate in n+n redundancy mode cooling-path front-to-rear; inlet at the bottom front, exhaust upper rear fan-trays two, ft0 over ft1, fitted from air-filter-location filters on front of rp fc cage operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) maximum operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slot fabric a99-12x100ge a99-4hg-flex-se a99-4hg-flex-tr a99-rp3-se a99-rp3-tr a99-sfc3 a9k-20hg-flex-se a9k-20hg-flex-tr a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-slot-cover asr-9912-sfc110 asr-9922-rp-se asr-9922-rp-tr",
+   "search": "weight-configured-kg 291.66 weight-configured-scope fully configured using all card slots and three power trays depth-with-cable-management-mm 746.8 depth-with-front-doors-mm 764.5 power-modules-v2 version 2 system - up to twelve ac modules per system, four tray power-modules-v3 3 nine power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-per-module-v3 6510 (6000 power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-redundancy operate in n+n redundancy mode cooling-path front-to-rear; inlet at the bottom front, exhaust upper rear fan-trays two, ft0 over ft1, fitted from air-filter-location filters on front of rp fc cage operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) maximum operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slot fabric grounding point a99-12x100ge a99-4hg-flex-se a99-4hg-flex-tr a99-rp3-se a99-rp3-tr a99-sfc3 a9k-20hg-flex-se a9k-20hg-flex-tr a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-ground-pad a9k-slot-cover asr-9912-sfc110 asr-9922-rp-se asr-9922-rp-tr",
    "version": "0.1.0"
   },
   {
    "capability": {
-    "blocked": [],
+    "blocked": [
+     {
+      "level": 4,
+      "name": "addressable",
+      "needs": "`rel-pos` on 1 placement (rear 1)"
+     }
+    ],
     "flags": [
      "wired"
     ],
-    "level": 4,
-    "name": "addressable",
+    "level": 3,
+    "name": "solid",
     "unknown": [
      "specified"
     ]
@@ -1275,7 +1341,7 @@
     "line": "Service Provider",
     "series": "ASR 9000 Series"
    },
-   "search": "weight-configured-kg 470.28 weight-configured-scope fully configured using all card slots and four power modules depth-with-cable-management-mm 762.0 depth-with-front-doors-mm 777.7 power-modules-v2 version 2 system - up to sixteen ac per system, tray power-modules-v3 3 twelve three power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-per-module-v3 6510 (6000 power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-redundancy operate in n+n redundancy mode cooling-path front-to-rear; inlet at the front of middle cage, exhaust upper lower rear fan-trays ft0 ft1 above rp/fc ft2 ft3 below it air-filter-location filters (left, center, right) on cage operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) maximum operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slot rp fabric fc power-modules module a99-12x100ge a99-4hg-flex-se a99-4hg-flex-tr a99-rp3-se a99-rp3-tr a99-sfc3 a9k-20hg-flex-se a9k-20hg-flex-tr a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-power-module-v2 a9k-slot-cover asr-9922-rp-se asr-9922-rp-tr asr-9922-sfc110",
+   "search": "weight-configured-kg 470.28 weight-configured-scope fully configured using all card slots and four power modules depth-with-cable-management-mm 762.0 depth-with-front-doors-mm 777.7 power-modules-v2 version 2 system - up to sixteen ac per system, tray power-modules-v3 3 twelve three power-ac-input-per-module-v2 3290 va (3000 w output module) power-ac-input-per-module-v3 6510 (6000 power-ac-input-voltage 200-240 vac nominal (range 180 264 vac); 220-240 (uk) power-ac-redundancy operate in n+n redundancy mode cooling-path front-to-rear; inlet at the front of middle cage, exhaust upper lower rear fan-trays ft0 ft1 above rp/fc ft2 ft3 below it air-filter-location filters (left, center, right) on cage operating-temp 41 104degf (5 40degc) operating-temp-short-term 23 122degf (-5 50degc) storage-temp -40 158degf (-40 70degc) humidity-operating 10 85 percent noncondensing altitude-operating 0 13,000 ft (0 4,000 m) acoustic-noise 78 db 80.6degf (27degc) maximum operating-system cisco ios xr interface-path-id rack/slot/module/port nebs sr-3580: criteria levels (level 3) nebs-emc-safety gr-1089-core: emc safety nebs-physical gr-63-core: physical protection eol none-announced slot rp fabric fc power-modules module grounding point a99-12x100ge a99-4hg-flex-se a99-4hg-flex-tr a99-rp3-se a99-rp3-tr a99-sfc3 a9k-20hg-flex-se a9k-20hg-flex-tr a9k-4hg-flex-se a9k-4hg-flex-tr a9k-4x100ge a9k-8hg-flex-se a9k-8hg-flex-tr a9k-ground-pad a9k-power-module-v2 a9k-slot-cover asr-9922-rp-se asr-9922-rp-tr asr-9922-sfc110",
    "version": "0.1.0"
   },
   {
@@ -1299,6 +1365,14 @@
    },
    "description": "48x SFP+ 10G + 6x QSFP28 100G 1U aggregation router, Broadcom Qumran-MX",
    "gaps": [
+    {
+     "because": "L21",
+     "blocks": [],
+     "count": 6,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
+    },
     {
      "because": "L29",
      "blocks": [],
@@ -1356,6 +1430,14 @@
    },
    "description": "48x SFP28 + 8x QSFP28 1U ToR switch, Broadcom Trident 3 (BCM56873)",
    "gaps": [
+    {
+     "because": "L21",
+     "blocks": [],
+     "count": 6,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
+    },
     {
      "because": "L29",
      "blocks": [],
@@ -1422,6 +1504,14 @@
    },
    "description": "32x QSFP28 1U spine/ToR switch, Broadcom Trident 3 (BCM56870)",
    "gaps": [
+    {
+     "because": "L21",
+     "blocks": [],
+     "count": 6,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
+    },
     {
      "because": "L29",
      "blocks": [],
@@ -1505,6 +1595,14 @@
      ],
      "wanted": "a photograph of either PSU's nameplate, which is where this figure normally lives, or an Edgecore part datasheet for the PSU and fan FRUs rather than for the chassis. The 550 W CRPS nameplate already in working/intake is the worked example of what would close it",
      "what": "fru-power-unpublished"
+    },
+    {
+     "because": "L21",
+     "blocks": [],
+     "count": 5,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
     },
     {
      "because": "L29",
@@ -1608,6 +1706,14 @@
      ],
      "wanted": "a photograph of either PSU's nameplate, which is where this figure normally lives, or an Edgecore part datasheet for the PSU and fan FRUs rather than for the chassis. The 550 W CRPS nameplate already in working/intake is the worked example of what would close it",
      "what": "fru-power-unpublished"
+    },
+    {
+     "because": "L21",
+     "blocks": [],
+     "count": 5,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
     },
     {
      "because": "L29",
@@ -1931,6 +2037,14 @@
      "what": "fru-power-unpublished"
     },
     {
+     "because": "L21",
+     "blocks": [],
+     "count": 7,
+     "kind": "derived",
+     "wanted": "the buried marks moved clear of the components that paint over them",
+     "what": "silkscreen-legibility"
+    },
+    {
      "because": "L29",
      "blocks": [],
      "count": 1,
@@ -1970,7 +2084,7 @@
    "model": "S9510-28DC",
    "name": "s9510-28dc",
    "portfolio": {},
-   "search": "switching-capacity 800 gbps packet-buffer 2 gb port-modes-qsfp-dd 100/400g, openzr+ and 400zr port-modes-qsfp28 40/100g port-modes-sfp28 1/10/25g optics-qsfp-dd 400g sr4/lr4/fr4/zr4/openzr+ optics-qsfp28 100g sr4/lr4/er4 optics-sfp28 25g sr/lr/er, 10g sfp+ sr/lr/er/zr power-typical-w 137 power-max-dc-w 306 power-max-ac-w 301.2 psus 2x 400 w 1+1 redundant, hot-swappable (intake) fans 4+1 (exhaust) operating-temp -40 to 65 c (temperature hardened) asic broadcom qumran2a bcm88483 cpu intel denverton-ns 4-core @ 1.6 ghz (premium sku 8-core 1.7 ghz) memory 8 ddr4 16 gb) storage 32 ssd 128 bmc aspeed ast2620 software onie (nos required for timing/gnss features) timing stratum 3e ocxo, synce, ieee 1588v2 (t-gm, t-bc/oc, t-tc), class c, tsn timing-interfaces gnss sma in, 10mhz smb in/out, 1pps tod rj45 bits rj48 in/out internal receiver master clock flexe oif 1.1 2.0, total bandwidth psu qsfpdd-400g port qsfp-dd qsfp28 sfp28 mgmt fan psu-401-disb-1 part fan-402825-hd psu-401-aisb gnss-in 10mhz-io 1pps-io bits-io tod-in 100m-1g usb3 rj45-serial console link activity compliance-sticker ground-lug ground-symbol led-arrow led-dot led-rect qsfp-cage qsfp-lane-leds reset-button rj45-bezel rj45-port screw-head sma-jack smb-jack usb-a sfp-ganged fan-402825 psu-401-ac psu-401-dc",
+   "search": "switching-capacity 800 gbps packet-buffer 2 gb port-modes-qsfp-dd 100/400g, openzr+ and 400zr port-modes-qsfp28 40/100g port-modes-sfp28 1/10/25g optics-qsfp-dd 400g sr4/lr4/fr4/zr4/openzr+ optics-qsfp28 100g sr4/lr4/er4 optics-sfp28 25g sr/lr/er, 10g sfp+ sr/lr/er/zr power-typical-w 137 power-max-dc-w 306 power-max-ac-w 301.2 psus 2x 400 w 1+1 redundant, hot-swappable (intake) fans 4+1 (exhaust) operating-temp -40 to 65 c (temperature hardened) asic broadcom qumran2a bcm88483 cpu intel denverton-ns 4-core @ 1.6 ghz (premium sku 8-core 1.7 ghz) memory 8 ddr4 16 gb) storage 32 ssd 128 bmc aspeed ast2620 software onie (nos required for timing/gnss features) timing stratum 3e ocxo, synce, ieee 1588v2 (t-gm, t-bc/oc, t-tc), class c, tsn timing-interfaces gnss sma in, 10mhz smb in/out, 1pps tod rj45 bits rj48 in/out internal receiver master clock flexe oif 1.1 2.0, total bandwidth psu qsfpdd-400g port qsfp-dd qsfp28 sfp28 mgmt fan s9510-28dc-bn0b part s9510-28dc-br1b gnss-in 10mhz-io 1pps-io bits-io tod-in 100m-1g usb3 rj45-serial console link activity compliance-sticker ground-lug ground-symbol led-arrow led-dot led-rect qsfp-cage qsfp-lane-leds reset-button rj45-bezel rj45-port screw-head sma-jack smb-jack usb-a sfp-ganged fan-402825 psu-401-ac psu-401-dc",
    "version": "0.9.0"
   }
  ]

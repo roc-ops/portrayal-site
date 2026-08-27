@@ -249,12 +249,18 @@
   "top": []
  },
  "capability": {
-  "blocked": [],
+  "blocked": [
+   {
+    "level": 4,
+    "name": "addressable",
+    "needs": "`rel-pos` on 2 placements (left 1, right 1)"
+   }
+  ],
   "flags": [
    "wired"
   ],
-  "level": 4,
-  "name": "addressable",
+  "level": 3,
+  "name": "solid",
   "unknown": [
    "specified"
   ]
@@ -441,7 +447,7 @@
   "stencil-is-one-generation-behind": "NOTE, and it matters - the ASR-9006-AC Front master draws THREE power modules, not four. It is the version 1 power tray, whose PID reached end of sale in 2014 (see lifecycle). So the stencil is a generation behind the guide on the power shelf while being exactly right about the outer envelope and the card cage. The four bays here follow the guide; the shelf's outer rectangle follows the stencil. Anyone re-measuring should expect that mismatch rather than treat it as an error",
   "top-bottom-orientation": "SETTLED FROM THE FIGURE, and it is a convention rather than an error. Figure 9 (ASR 9006) and Figure 10 (ASR 9904) are both laid out with \"Rear of chassis\" printed at the TOP and \"Front of chassis\" at the BOTTOM, and the top and bottom views follow that layout. SO ON A TOP OR BOTTOM VIEW, y = 0 IS THE REAR AND y = depth IS THE FRONT. The rack-mounting-surface strip is therefore measured from y = depth, and the labels' \"from the front\" is correct as written. Stated here because the arithmetic reads as a 439.9 mm error to anyone who assumes y = 0 is the front, and it was read that way once already. The bottom view keeps the same depth axis as the top rather than mirroring it: looking at a chassis from below flips LEFT and RIGHT, not front and back, so a strip that runs the full width is unaffected either way - but anything left-right asymmetric on a bottom face would need the flip and does not have it yet, because nothing left-right asymmetric is drawn there. SEPARATELY FIXED: the strip is now CENTRED on the mounting plane. It used to be placed so that on the 9006 the dimension landed on its far edge and on the 9904 on its near edge - a 3.9 mm inconsistency in which edge of a 3.9 mm strip carried the number. Centring it means neither edge is load-bearing",
   "top-face": "datasheet - Figure 9's top-down view is the only document we hold that dimensions anything on this face, and what it dimensions is the rack mounting surface at 5.73 in (14.55 cm) back from the front of the chassis. Drawn as a line across the top plate at that depth. CONVENTION, stated so it can be corrected in one line: this view is laid out as Figure 9 lays it out, front at the BOTTOM edge (y = 734.8) and rear at the top (y = 0), so the mounting surface line sits at 734.8 - 145.5 - 1.95 = 587.35, the strip being CENTRED on the plane rather than edged against it. The renderer does fix which edge is the front - see depth-axis-on-side-views, which derives it from viewer3d.js - and it agrees with Figure 9's own layout",
-  "weight": "datasheet - Table 13 gives two, and they are differently scoped: \"Chassis only - 87.5 pounds (39.69 kg)\", footnoted \"Chassis only does not include cards, power modules, fan trays, filter, or chassis accessories\", and \"Chassis: fully configured using all card slots and six power modules - 230 pounds (104.33 kg)\". chassis.weight-kg carries the bare 39.69 because that is the empty cage this manifest draws; the configured figure is in attrs beside it. Cisco's \"six power modules\" here is odd for a chassis with four bays and is transcribed as printed",
+  "weight": "datasheet - Table 13 gives two, and they are differently scoped: \"Chassis only - 87.5 pounds (39.69 kg)\", footnoted \"Chassis only does not include cards, power modules, fan trays, filter, or chassis accessories\", and \"Chassis: fully configured using all card slots and six power modules - 230 pounds (104.33 kg)\". chassis.weight-kg carries the bare 39.69 because that is the empty cage this manifest draws; the configured figure is in attrs beside it. Cisco's \"six power modules\" here is odd and is transcribed as printed rather than corrected. This chassis takes THREE on the version 1 power tray, which is what this manifest draws, or four on version 2 - never six. Either the datasheet is wrong or that row belongs to a larger chassis: the ASR 9010 has six bays and its own Table 13 row carries the identical wording. Treat 104.33 kg as a fully-configured figure of uncertain scope rather than one that can be reconciled against this chassis power system. Reported independently by the Design Studio agent reading this manifest, 2026-08-27",
   "width-disagreement": "NOTE - two figures in ONE document disagree about the body width. Table 13 says 17.50 in (44.45 cm); Figure 9 \"Cisco ASR 9006 Router Chassis Footprint Dimensions - Top Down View\" (p24) dimensions the same body at 17.38 in (44.15 cm). 3 mm apart, same measure, same part. The manifest carries Table 13's 17.50 because the skill makes the spec table authoritative for overall dimensions and because the stencil independently agrees with it. Recorded in gaps as chassis-width-sources-disagree rather than silently resolved"
  },
  "views": [
