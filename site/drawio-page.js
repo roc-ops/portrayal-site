@@ -36,51 +36,54 @@ function save(text, name, type) {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
+/** The composite the device picker groups by: `line · family`, or the series
+ *  when a device has no line or family, or nothing at all. */
+const groupLabel = d => {
+  const p = d.portfolio || {};
+  return [p.line, p.family].filter(Boolean).join(' · ') || p.series || '';
+};
+
 /**
- * The scopes on offer for the selected device, narrowest first.
+ * The scopes on offer: the selected VENDOR's groups, then this device, then all
+ * of the vendor.
  *
- * A library per vendor stops working the moment a vendor has hundreds of
- * devices - the ASR 9000 Series alone is the whole of Cisco here, and Juniper
- * will be worse. The model already carries the hierarchy in `portfolio`:
- * series inside family inside line. Series is usually what someone means by
- * "the switches I work on".
+ * These are the same headings the device picker shows above the device list -
+ * "Data Center · Ethernet Switch", "Service Provider · Aggregation Router" - so
+ * the two menus name the same things. An earlier version listed taxonomy rungs
+ * instead (series, then family, then line) which meant you could only ever
+ * export the group the selected device happened to be in, and the words did not
+ * match the menu directly above it.
  *
- * family and line are scoped WITHIN the manufacturer, because "Service
- * Provider" is a line at both Cisco and Edgecore and a library mixing them is
- * nobody's mental model. Everything is the one deliberately cross-vendor
- * option. Six of the current devices carry no portfolio at all, so a scope is
- * only offered when the selected device actually has that field.
+ * Every group the vendor has is listed, not only the current device's, because
+ * choosing "the other family" should not require selecting a device in it
+ * first.
  */
 function scopesFor(dev) {
-  const p = dev.portfolio || {};
-  const sameMan = d => d.manufacturer === dev.manufacturer;
+  const mine = DEVICES.filter(d => d.manufacturer === dev.manufacturer);
   const out = [];
-  const add = (key, label, pred) => {
-    const n = DEVICES.filter(pred).length;
-    if (n) out.push({key, label, pred, n});
-  };
-  // Each rung says WHICH rung it is, in the device picker's own words - it
-  // groups by `line · family` and labels options `series — model`, so a scope
-  // menu reading "DCS204 / Ethernet Switch / Edgecore" shared no vocabulary
-  // with the thing above it and the numbers looked arbitrary.
-  for (const field of ['series', 'family', 'line']) {
-    if (p[field]) {
-      add(field, `${field} · ${p[field]}`,
-          d => sameMan(d) && (d.portfolio || {})[field] === p[field]);
-    }
+  const seen = new Map();
+  for (const d of mine) {
+    const g = groupLabel(d);
+    if (!g) continue;
+    if (!seen.has(g)) seen.set(g, []);
+    seen.get(g).push(d.name);
   }
-  add('vendor', `vendor · ${dev.manufacturer}`, sameMan);
-  // No cross-vendor rung here. "everything" sitting at the bottom of a list of
-  // Edgecore groupings read as another Edgecore grouping; it is a decision about
-  // the VENDOR, so it lives beside the vendor menu instead.
-  //
-  // Every rung the device HAS is offered, even when two of them select the same
-  // devices. Collapsing equal counts seemed tidy and quietly deleted words
-  // people navigate by: an AS7726-32X has line "Data Center" and family
-  // "Ethernet Switch", both selecting the same two devices, so Data Center
-  // disappeared from a menu sitting directly under a picker that groups by it.
-  // A redundant choice costs a line of the dropdown; a missing one costs
-  // someone the vocabulary they came in with.
+  for (const [label, names] of [...seen.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const set = new Set(names);
+    out.push({key: `g:${label}`, label, n: names.length, pred: d => set.has(d.name)});
+  }
+  // Devices with no portfolio at all would otherwise be reachable only through
+  // the vendor, which is fine - but say so rather than leaving them invisible.
+  const loose = mine.filter(d => !groupLabel(d));
+  if (loose.length && seen.size) {
+    const set = new Set(loose.map(d => d.name));
+    out.push({key: 'g:ungrouped', label: 'ungrouped', n: loose.length,
+              pred: d => set.has(d.name)});
+  }
+  out.push({key: 'device', label: dev.model || dev.name, n: 1,
+            pred: d => d.name === dev.name});
+  out.push({key: 'vendor', label: `all of ${dev.manufacturer}`, n: mine.length,
+            pred: d => d.manufacturer === dev.manufacturer});
   return out;
 }
 
@@ -89,13 +92,17 @@ let SCOPES = [];
 function fillScopes() {
   const dev = DEVICES.find(d => d.name === DEV);
   SCOPES = dev ? scopesFor(dev) : [];
+  // Open on the group the selected device belongs to - the one the picker had
+  // it filed under - rather than on whatever sorts first.
+  const home = dev ? `g:${groupLabel(dev)}` : null;
   for (const id of ['scope', 'rscope']) {
     const sel = $(id);
     if (!sel) continue;
     const was = sel.value;
     sel.innerHTML = SCOPES
       .map(s => `<option value="${s.key}">${s.label} (${s.n})</option>`).join('');
-    if (SCOPES.some(s => s.key === was)) sel.value = was;
+    sel.value = SCOPES.some(s => s.key === was) ? was
+              : (SCOPES.some(s => s.key === home) ? home : SCOPES[0]?.key);
   }
 }
 
@@ -110,7 +117,7 @@ const vendorTag = key => {
   const s = scopeOf(key);
   // Strip the rung name off the front - a filename wants "ethernet-switch",
   // not "family-ethernet-switch".
-  const label = s ? s.label.replace(/^\w+ · /, '') : 'portrayal';
+  const label = s ? s.label.replace(/^all of /, '') : 'portrayal';
   return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
     || 'portrayal';
 };
