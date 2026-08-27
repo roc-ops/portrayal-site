@@ -49,3 +49,45 @@ body.doc {
   color: var(--pt-ink);
 }
 body.doc .wrap-tool { padding: 0.9rem 1.2rem 2rem; }
+
+/* ── Export menu ───────────────────────────────────────────────────────────
+ * One nav item instead of one per format. Two exports already crowded the bar
+ * and there are more coming - Visio, Lucidchart - so the bar cannot grow a slot
+ * each time.
+ *
+ * <details> rather than a scripted menu: it opens on click and on Enter, closes
+ * on Escape, and is reachable by keyboard and screen reader without a line of
+ * JavaScript. A <select> would have been fewer characters and the wrong element
+ * - these are destinations, not a value.
+ */
+.navmenu { position: relative; }
+.navmenu > summary {
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center;
+  gap: 0.25rem; color: var(--pt-ink-muted);
+}
+.navmenu > summary::-webkit-details-marker { display: none; }
+.navmenu > summary::after {
+  content: ''; width: 0; height: 0; margin-top: 1px;
+  border-left: 3.5px solid transparent; border-right: 3.5px solid transparent;
+  border-top: 4px solid currentColor; opacity: 0.7;
+}
+.navmenu > summary:hover { color: var(--pt-ink); }
+.navmenu[data-here] > summary { color: var(--pt-brass); }
+.navmenu[open] > summary { color: var(--pt-ink); }
+.navmenu-items {
+  position: absolute; right: 0; top: calc(100% + 0.5rem); z-index: 60;
+  min-width: 13rem; padding: 0.3rem;
+  background: var(--pt-surface); border: 1px solid var(--pt-line);
+  border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  display: flex; flex-direction: column;
+}
+.navmenu-items a {
+  display: block; padding: 0.4rem 0.55rem; border-radius: 5px;
+  color: var(--pt-ink-muted); text-decoration: none; font-size: 0.82rem;
+  white-space: nowrap;
+}
+.navmenu-items a:hover { background: var(--pt-surface-2); color: var(--pt-ink); }
+.navmenu-items a[aria-current="page"] { color: var(--pt-brass); }
+.navmenu-items .hint {
+  display: block; font-size: 0.7rem; color: var(--pt-ink-faint); margin-top: 0.05rem;
+}

@@ -32,6 +32,13 @@
       <a href="#showcase">Showcase</a>
       <a href="explorer.html">Explorer</a>
       <a href="#how">How it works</a>
+      <details class="navmenu">
+        <summary>Export</summary>
+        <div class="navmenu-items">
+          <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+          <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+        </div>
+      </details>
       <a href="schema.html">Schema</a>
       <a href="#status">Status</a>
       <a class="gh" href="https://github.com/roc-ops/Portrayal">GitHub</a>
@@ -363,8 +370,8 @@
     <p class="footer-tools">
       <a href="explorer.html">Explorer</a> ·
       <a href="components.html">Components</a> ·
-      <a href="exporter.html">DCIM export</a>
-      <a href="drawio.html">draw.io</a> ·
+      <a href="exporter.html">DCIM export</a> ·
+      <a href="drawio.html">draw.io export</a> ·
       <a href="schema.html">Schema</a>
     </p>
     <p><a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a></p>
@@ -373,5 +380,22 @@
 
 <script type="module" src="site/stats.js"></script>
 <script type="module" src="site/showcase.js"></script>
+<script>
+// Close the export menu on Escape or on a click outside it. <details> handles
+// opening, keyboard focus and the disclosure semantics on its own; these are the
+// two behaviours a nav menu needs that it does not give you.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
+</script>
 </body>
 </html>

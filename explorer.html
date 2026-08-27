@@ -102,8 +102,13 @@
     <a href="index.html#showcase">Showcase</a>
     <a href="explorer.html" aria-current="page">Explorer</a>
     <a href="components.html">Components</a>
-    <a href="exporter.html">DCIM export</a>
-    <a href="drawio.html">draw.io</a>
+    <details class="navmenu">
+      <summary>Export</summary>
+      <div class="navmenu-items">
+        <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+        <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+      </div>
+    </details>
     <a href="schema.html">Schema</a>
     <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
   </nav>
@@ -665,6 +670,23 @@ shell.on('load', () => { sync3d().catch(err => {
 addEventListener('resize', () => { if (mode === '3d' && viewer) viewer.resize(); });
 
 await shell.ready;
+</script>
+<script>
+// Close the export menu on Escape or on a click outside it. <details> handles
+// opening, keyboard focus and the disclosure semantics on its own; these are the
+// two behaviours a nav menu needs that it does not give you.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
 </script>
 </body>
 </html>
