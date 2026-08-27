@@ -51,6 +51,9 @@ const VIEWS = {
 // devices at once, so it had no business being denser than the close-up. Kept
 // as an option because a host wanting a poster-quality still can pay for it.
 const PXMM_RELIEF = 5;
+// The top and underside, which a rack almost entirely hides - see the note by
+// COARSE below.
+const PXMM_HIDDEN = 2;
 
 // BoxGeometry takes its materials as [+x, -x, +y, -y, +z, -z].
 const MAT_SLOT = {right: 0, left: 1, top: 2, bottom: 3, front: 4, rear: 5};
@@ -134,6 +137,25 @@ export function createRackScene(container, opts = {}) {
   // collision the override map had, and passing `relief` is what settles it.
   const PXMM = opts.pxmm || PXMM_RELIEF;
   configureRelief({THREE, renderer, PXMM, FRU_PATHS: new Set()}, relief);
+
+  // A SECOND SCOPE, PURELY FOR DENSITY. A face is rasterised at its own size in
+  // millimetres, so a 1RU device's top is 440 x 500 against the front's
+  // 440 x 43.5 - about eleven times the area, and there are two of them. On this
+  // stack that made the top and underside 251 MB of a 298 MB total: 84% of the
+  // texture spent on the two surfaces a rack hides. Every device but the topmost
+  // has another sitting on it, and nothing is seen from below without orbiting
+  // under the floor.
+  //
+  // They are not skipped, because there is no polar limit and somebody will
+  // orbit under there eventually; they are drawn coarse. Vents and screw heads
+  // survive 2 px/mm in a way port lettering would not.
+  //
+  // Sharing the override map rather than taking a fresh one: the only thing that
+  // should differ between these two scopes is density, and a bay swap that
+  // reaches the top view must still reach it. roc-ops/portrayal-site#13.
+  const COARSE = createReliefScope({PXMM: opts.hiddenPxmm || PXMM_HIDDEN});
+  COARSE.overrides = relief.overrides;
+  const scopeFor = view => (view === 'top' || view === 'bottom') ? COARSE : relief;
 
   // Framed up front, before a single device exists. Framing at the END of a
   // build meant the whole rack assembled itself somewhere above the default
@@ -362,9 +384,10 @@ export function createRackScene(container, opts = {}) {
     // who zooms in. Same end state, reached with nobody watching a scrim.
     const flatCv = {};
     await Promise.all([
-      ...FACES.map(F => svgCanvas(f(F.view), F.fw(), F.fh(), false, false, relief)
+      ...FACES.map(F => svgCanvas(f(F.view), F.fw(), F.fh(), false, false,
+                                  scopeFor(F.view))
         .then(cv => { flatCv[F.view] = cv; }).catch(() => {})),
-      svgCanvas(f('bottom'), W, D, true, true, relief)
+      svgCanvas(f('bottom'), W, D, true, true, COARSE)
         .then(cv => { flatCv.bottom = cv; }).catch(() => {}),
     ]);
     const mats = ['right', 'left', 'top', 'bottom', 'front', 'rear']
@@ -407,7 +430,7 @@ export function createRackScene(container, opts = {}) {
     pending.push((async () => {
       for (const F of order) {
         const per = [];
-        await buildFaceRelief(F, {scope: relief, src: f(F.view), faceCv, faceSvg,
+        await buildFaceRelief(F, {scope: scopeFor(F.view), src: f(F.view), faceCv, faceSvg,
           facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
           D, bodyBoxMesh: null});
         if (mine !== epoch) return;
