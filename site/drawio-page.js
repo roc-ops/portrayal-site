@@ -5,12 +5,28 @@ import { entry, library, rackDiagram, loadFace, portsOf, RACK, SCALE } from './d
 
 const $ = id => document.getElementById(id);
 const DIST = 'assets/dist/';
-let DEVICES = [], DEV = null;
+let DEVICES = [], DEV = null, COMPONENTS = [];
+
+// A component's namespace is its vendor's first word, lowercased - casa for
+// Casa Systems, ufispace for UfiSpace. Checked against every namespace in the
+// index; std/ and common/ are generic parts belonging to no vendor, which is
+// the same reason the DCIM exporter refuses to give them a manufacturer.
+const NORM = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+const nsOf = man => NORM(String(man).split(/\s+/)[0]);
 
 /** The default face for a device: the NOS-neutral front if there is one, else
  *  the first configuration's. The picture is the same either way; the
  *  configurations differ in what is seated, which a device type does not carry. */
-const faceUrl = d => `${DIST}${d.name}.front.svg`;
+const faceUrl = (d, face) => `${DIST}${d.name}.${face}.svg`;
+
+/** The vendor's line cards, supervisors, supplies - the things that go IN the
+ *  chassis. For a modular vendor these outnumber the chassis many times over:
+ *  eight Cisco devices against 128 Cisco components. */
+function modulesFor(key) {
+  const devs = inScope(key);
+  const wanted = new Set(devs.map(d => nsOf(d.manufacturer)));
+  return COMPONENTS.filter(c => c.kind === 'module' && wanted.has(c.ns) && c.files?.default);
+}
 
 function save(text, name, type) {
   const a = document.createElement('a');
@@ -82,24 +98,40 @@ const vendorTag = key => {
 
 /** Load every device in scope, skipping any whose face is missing rather than
  *  failing the whole download - a library with a hole in it beats no library. */
-async function gather(scope, statusEl) {
+async function gather(scope, statusEl, {faces = ['front'], modules = false} = {}) {
   const want = inScope(scope);
   const out = [], missing = [];
-  let n = 0;
+  let n = 0, total = want.length * faces.length;
   for (const d of want) {
-    statusEl.textContent = `reading ${++n}/${want.length}…`;
-    try {
-      // devices.json does not carry the chassis height - it lives in the
-      // per-device config index, which is also what the 3D rack reads. A
-      // device whose RU we cannot find is mounted as 1RU rather than dropped.
-      const [face, cfg] = await Promise.all([
-        loadFace(faceUrl(d)),
-        jdist(`${DIST}${d.name}.configs.json`).catch(() => null),
-      ]);
-      out.push({dev: d, ru: Math.max(1, Math.round(cfg?.chassis?.ru || 1)),
-                ...face, ports: portsOf(face.zones, {bays: $('bays')?.checked})});
-    } catch {
-      missing.push(d.name);
+    const cfg = await jdist(`${DIST}${d.name}.configs.json`).catch(() => null);
+    const ru = Math.max(1, Math.round(cfg?.chassis?.ru || 1));
+    for (const face of faces) {
+      statusEl.textContent = `reading ${++n}/${total}…`;
+      try {
+        const f = await loadFace(faceUrl(d, face));
+        out.push({label: faces.length > 1 ? `${d.model || d.name} (${face})` : (d.model || d.name),
+                  ru, face, kind: 'device', ...f,
+                  ports: portsOf(f.zones, {bays: $('bays')?.checked})});
+      } catch {
+        // A device with no rear face is not an error - a shelf may only have
+        // one side worth drawing. Only note it if the FRONT is missing too.
+        if (face === 'front') missing.push(d.name);
+      }
+    }
+  }
+  if (modules) {
+    const mods = modulesFor(scope);
+    let k = 0;
+    for (const c of mods) {
+      statusEl.textContent = `reading card ${++k}/${mods.length}…`;
+      try {
+        const f = await loadFace(`${DIST}${c.files.default}`);
+        out.push({label: (c.attrs || {}).model || c.name, ru: 1, face: 'front',
+                  kind: 'module', cls: c.class, ...f,
+                  ports: portsOf(f.zones, {bays: $('bays')?.checked})});
+      } catch {
+        missing.push(c.name);
+      }
     }
   }
   return {loaded: out, missing};
@@ -107,8 +139,12 @@ async function gather(scope, statusEl) {
 
 function report(el, loaded, missing, extra = '') {
   const ports = loaded.reduce((a, f) => a + f.ports.length, 0);
-  const n = loaded.length;
-  el.textContent = `${n} device${n === 1 ? '' : 's'}, ${ports} connectable${extra}` +
+  const dev = loaded.filter(f => f.kind === 'device').length;
+  const mod = loaded.length - dev;
+  const parts = [`${dev} face${dev === 1 ? '' : 's'}`];
+  if (mod) parts.push(`${mod} card${mod === 1 ? '' : 's'}`);
+  parts.push(`${ports} connectable`);
+  el.textContent = parts.join(', ') + extra +
     (missing.length ? ` — ${missing.length} skipped (no compiled front)` : '');
 }
 
@@ -118,11 +154,15 @@ async function buildLibrary({rack}) {
   const scope = (rack ? $('rscope') : $('scope')).value;
   btn.disabled = true;
   try {
-    const {loaded, missing} = await gather(scope, stat);
+    const faces = rack ? ['front'] : ($('faces').value === 'both'
+      ? ['front', 'rear'] : [$('faces').value]);
+    const {loaded, missing} = await gather(scope, stat,
+      {faces, modules: !rack && $('mods').checked});
     if (!loaded.length) { stat.textContent = 'nothing to export'; return; }
-    const entries = loaded.map(f => entry(f.dev.model || f.dev.name, f.text, f.vb, f.ports,
-      rack ? {ru: f.ru}
-           : {visible: $('tint').checked}));
+    const entries = loaded.map(f => entry(f.label, f.text, f.vb, f.ports,
+      // A card is not rack-mountable on its own, so it keeps its drawn size
+      // even in the rack library; only chassis get a unit height.
+      rack && f.kind === 'device' ? {ru: f.ru} : {visible: $('tint').checked}));
     const xml = library(entries);
     save(xml, `portrayal-${vendorTag(scope)}${rack ? '-rack' : ''}.xml`, 'application/xml');
     report(stat, loaded, missing, `, ${(xml.length / 1048576).toFixed(1)} MB`);
@@ -138,16 +178,16 @@ async function buildRackDiagram() {
   const units = Number($('units').value);
   btn.disabled = true;
   try {
-    const {loaded, missing} = await gather($('scope').value, stat);
+    const {loaded, missing} = await gather($('scope').value, stat, {faces: ['front']});
     if (!loaded.length) { stat.textContent = 'nothing to mount'; return; }
     // Stack from U1 up, skipping anything that will not fit in the cabinet.
     let u = 1;
     const mounted = [];
     for (const f of loaded) {
+      if (f.kind !== 'device') continue;
       const ru = f.ru;
       if (u + ru - 1 > units) break;
-      mounted.push({name: f.dev.model || f.dev.name, svg: f.text, vb: f.vb,
-                    ports: f.ports, u, ru});
+      mounted.push({name: f.label, svg: f.text, vb: f.vb, ports: f.ports, u, ru});
       u += ru;
     }
     const label = (scopeOf($('scope').value) || {}).label || 'Portrayal';
@@ -167,6 +207,10 @@ async function buildRackDiagram() {
 function describe() {
   const d = DEVICES.find(x => x.name === DEV);
   if (!d) return;
+  const nmods = modulesFor($('scope')?.value).length;
+  const lbl = $('mods-count');
+  if (lbl) lbl.textContent = nmods ? ` (${nmods})` : '';
+  if ($('mods')) $('mods').disabled = !nmods;
   $('detail').innerHTML =
     `<strong>${d.model || d.name}</strong> — ${d.manufacturer}. Standalone entries are ${Math.round(SCALE * 25.4)}px per inch ` +
     `(${SCALE}px/mm); rack entries are ${RACK.width}×${RACK.unit} per RU, which is ` +
@@ -176,6 +220,7 @@ function describe() {
 (async () => {
   try {
     DEVICES = (await jdist(`${DIST}devices.json`)).devices;
+    COMPONENTS = (await jdist(`${DIST}components.json`).catch(() => ({}))).components || [];
   } catch (err) {
     $('note').textContent = `could not load the device index: ${err.message}`;
     return;
@@ -184,6 +229,7 @@ function describe() {
   DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
+  $('scope').addEventListener('change', describe);
   fillScopes();
   describe();
   $('dl-lib').onclick = () => buildLibrary({rack: false});
