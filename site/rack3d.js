@@ -21,7 +21,8 @@ import { applyOverrides } from '../vendor/swap.js';
 export const RU = 44.45;            // EIA-310 rack unit
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
-const RECESS = 30;                  // how far back the faceplate sits from the rails
+const RECESS_DEFAULT = 30;          // how far back the faceplate sits from the rails
+const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a flank
 const PXMM_RELIEF = 8;
 
 export function createRackScene(container, opts = {}) {
@@ -41,6 +42,11 @@ export function createRackScene(container, opts = {}) {
   const LABEL_TAG = opts.labelColor ?? '#D7DBDF';
   const LABEL_UNIT = opts.labelUnitColor ?? opts.labelColor ?? '#6B727A';
   const LABEL_EMPH = opts.labelEmphasisColor ?? '#E4E7EA';
+
+  // How far back the faceplate sits from the mounting rails. Most gear mounts
+  // flush and wants 0; the default is the setback the showcase was drawn with,
+  // so passing nothing changes nothing.
+  const RECESS = opts.recess ?? RECESS_DEFAULT;
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
@@ -140,7 +146,16 @@ export function createRackScene(container, opts = {}) {
     const g = new THREE.Group();
     const yBase = (ru - 1) * RU;
     const h = ruHeight * RU - 4.5;
-    const legLen = RECESS + depth * 0.75;
+    // The leg spans the recess and then grips the flank. Only the GRIP is
+    // capped: the recess has to be crossed whatever the device, or the ear
+    // never reaches it.
+    //
+    // min(3in, three quarters) rather than three quarters flat. A real ear is a
+    // bracket a few inches long, not a rail the length of the box - on a 600 mm
+    // chassis the old proportion ran 450 mm back and rendered as a plate over
+    // the whole flank. Shallow gear keeps the proportion, because on a 150 mm
+    // box three inches would be most of it anyway.
+    const legLen = RECESS + Math.min(EAR_GRIP_MAX, depth * 0.75);
     for (const side of [-1, 1]) {
       const holeX = side * (RACK_W / 2 - 8);
       const earX = side * (halfW + 12);
