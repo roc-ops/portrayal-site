@@ -371,7 +371,10 @@ export function createRackScene(container, opts = {}) {
   async function hydrate() {
     const configs = new Map();
     for (const e of STACK) {
-      if ((e.chassis && e.bays) || configs.has(e.ref)) continue;
+      // The configs index is also where the name of the default configuration
+      // lives, so an entry without a cfg needs it even when the caller supplied
+      // chassis and bays.
+      if (((e.chassis && e.bays) && e.cfg) || configs.has(e.ref)) continue;
       configs.set(e.ref, jdist(`${DIST}${e.ref}.configs.json`).catch(() => null));
     }
     if (STACK.some(e => !e.componentIndex) && !COMPONENTS) {
@@ -382,6 +385,7 @@ export function createRackScene(container, opts = {}) {
     for (const e of STACK) {
       const cfg = configs.has(e.ref) ? await configs.get(e.ref) : null;
       RESOLVED.push({...e,
+        cfg: e.cfg || cfg?.default,
         chassis: e.chassis || cfg?.chassis || {},
         bays: e.bays || cfg?.bays || {},
         componentIndex: e.componentIndex || COMPONENTS || []});
@@ -425,7 +429,11 @@ export function createRackScene(container, opts = {}) {
   function resize() {
     const w = container.clientWidth, h = container.clientHeight;
     if (!w || !h) return;
-    renderer.setSize(w, h, false);
+    // Sizes the element as well as the buffer. Passing updateStyle=false here
+    // left the canvas with no CSS size, so at devicePixelRatio > 1 it laid out
+    // at buffer size - double its pane, covering whatever sat next to it.
+    // roc-ops/ndv#31.
+    renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
