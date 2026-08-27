@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — download drawings</title>
+<meta name="description" content="The compiled SVG drawings themselves, as a zip: pick a vendor, a family or one device.">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/toolbar.css">
+<link rel="stylesheet" href="site/tool-theme.css">
+<style>
+  body { font-family: system-ui, sans-serif; background: var(--pt-surface); color: var(--pt-ink); margin: 0.8rem 1.2rem; }
+  .hdr { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.7rem; }
+  h1 { font-size: 1rem; margin: 0; }
+  label { font-size: 0.8rem; color: var(--pt-ink-muted); display: flex; gap: 0.4rem; align-items: center; }
+  select, button { background: var(--pt-surface-2); color: var(--pt-ink); border: 1px solid var(--pt-line);
+                   border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { background: var(--pt-line-soft); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .note { font-size: 0.74rem; color: var(--pt-ink-faint); max-width: 62rem; line-height: 1.55; }
+  .note code { color: var(--pt-ink-muted); }
+  .card { border: 1px solid var(--pt-line); border-radius: 10px; padding: 0.9rem 1rem;
+          background: var(--pt-surface-2); max-width: 34rem; min-width: 0; margin: 1rem 0; }
+  .card h2 { font-size: 0.85rem; margin: 0 0 0.35rem; }
+  .card select { max-width: 100%; }
+  .row { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; min-width: 0; }
+  .row > label { min-width: 0; max-width: 100%; }
+  .scope-row { display: block; margin-bottom: 0.55rem; }
+  .scope-row label { display: block; }
+  .scope-row select { display: block; width: 100%; margin-top: 0.25rem; }
+  .stat { font-size: 0.72rem; color: var(--pt-ink-faint); font-family: ui-monospace, monospace;
+          margin-top: 0.6rem; min-height: 1.1em; }
+  dl.hints { margin: 0.8rem 0 0; font-size: 0.72rem; line-height: 1.5; }
+  dl.hints dt { color: var(--pt-brass); font-family: ui-monospace, monospace; margin-top: 0.4rem; }
+  dl.hints dd { margin: 0.1rem 0 0; color: var(--pt-ink-faint); }
+  pre.tree { background: var(--pt-surface); border: 1px solid var(--pt-line); border-radius: 8px;
+             padding: 0.7rem 0.9rem; font: 0.72rem/1.6 ui-monospace, monospace;
+             color: var(--pt-ink-muted); overflow-x: auto; max-width: 34rem; }
+</style>
+</head>
+<body class="doc">
+
+<div class="site-bar">
+  <a class="brand" href="index.html">
+    <img src="brand/portrayal-mark.svg" alt="" width="20" height="20">
+    <span>portrayal<span class="tld">.dev</span></span>
+  </a>
+  <nav>
+    <a href="index.html#showcase">Showcase</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="components.html">Components</a>
+    <details class="navmenu" data-here>
+      <summary>Export</summary>
+      <div class="navmenu-items">
+        <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+        <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+        <a href="drawings.html" aria-current="page">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
+      </div>
+    </details>
+    <a href="schema.html">Schema</a>
+    <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
+  </nav>
+</div>
+
+<div class="wrap-tool">
+<div class="hdr">
+  <h1>Download drawings</h1>
+  <span id="pick"></span>
+  <label title="Ignore the vendor and scope entirely and take every device in the library.">
+    <input type="checkbox" id="allven"> all vendors<span id="allven-count"></span></label>
+</div>
+
+<p class="note">
+  The drawings themselves, as they are compiled — flat SVG in real millimetres,
+  every port, PSU, fan, LED, bay and region carrying a stable id and a
+  <code>data-path</code>. No exporter in the middle: this is what the other
+  exports are made from, and what you would build your own from.
+</p>
+
+<div class="card">
+  <h2>Zip of the compiled SVGs</h2>
+  <div class="scope-row"><label>Scope <select id="scope"></select></label></div>
+  <div class="row">
+    <label title="Which sides to include. All six is four times the bytes and most people want two.">Faces
+      <select id="faces">
+        <option value="front">front</option>
+        <option value="front,rear" selected>front + rear</option>
+        <option value="all">all six sides</option>
+      </select></label>
+    <label title="Every configuration of each device, or only the default one."><input type="checkbox" id="cfgs"> every configuration</label>
+  </div>
+  <div class="row" style="margin-top:0.5rem">
+    <label title="The vendor's line cards, supervisors, supplies and fans."><input type="checkbox" id="mods" checked> modules<span id="mods-count"></span></label>
+    <label title="A JSON index naming every file, plus each device's configurations."><input type="checkbox" id="meta" checked> manifest</label>
+    <button id="dl">Download .zip</button>
+  </div>
+  <div class="stat" id="stat"></div>
+  <dl class="hints">
+    <dt>every configuration</dt><dd>a device is drawn once per configuration —
+      AC and DC, front-to-back and back-to-front. Off, you get the default one;
+      on, you get all of them, which is most of the bytes.</dd>
+    <dt>manifest</dt><dd><code>index.json</code> naming every file with its
+      device, configuration and face, so a script does not have to parse
+      filenames, plus each device's own <code>configs.json</code>.</dd>
+  </dl>
+</div>
+
+<p class="note">What comes out:</p>
+<pre class="tree" id="tree">devices/&lt;device&gt;/&lt;device&gt;.&lt;config&gt;.&lt;face&gt;.svg
+components/&lt;vendor&gt;--&lt;part&gt;--&lt;version&gt;--&lt;skin&gt;.svg
+index.json
+README.md</pre>
+
+<p class="note">
+  Apache-2.0, like the library. The drawings are Portrayal's own geometry — no
+  vendor stencil or CAD is redistributed, which is the whole reason they could
+  be drawn from measurements in the first place.
+</p>
+
+</div>
+<script type="module" src="site/drawings-page.js"></script>
+<script>
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
+</script>
+</body>
+</html>
