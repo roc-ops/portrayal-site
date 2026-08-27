@@ -110,6 +110,13 @@ function fillScopes() {
       .join('');
     sel.value = SCOPES.some(s => s.key === was) ? was
               : (SCOPES.some(s => s.key === home) ? home : SCOPES[0]?.key);
+    // A family name is longer than the card is wide, so the closed select shows
+    // it cut off. The full text on hover costs nothing and saves opening the
+    // menu to find out what is already chosen.
+    const showTitle = () => { sel.title = sel.selectedOptions[0]?.text || ''; };
+    showTitle();
+    sel.removeEventListener('change', showTitle);
+    sel.addEventListener('change', showTitle);
   }
 }
 

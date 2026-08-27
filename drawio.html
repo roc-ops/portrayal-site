@@ -27,8 +27,23 @@
   .sep { width: 1px; align-self: stretch; background: var(--pt-line); }
   .cards { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
            max-width: 62rem; margin: 1rem 0; }
+  /* A grid item defaults to min-width:auto, so it refuses to shrink below its
+     widest child - and a <select> is as wide as its longest option. "Service
+     Provider · Aggregation Services Router" then pushed the card past its
+     column and over the one beside it. */
   .card { border: 1px solid var(--pt-line); border-radius: 10px; padding: 0.9rem 1rem;
-          background: var(--pt-surface-2); }
+          background: var(--pt-surface-2); min-width: 0; }
+  .card select { max-width: 100%; }
+  .row { min-width: 0; }
+  .row > label { min-width: 0; max-width: 100%; }
+  .row > label > select { flex: 0 1 auto; min-width: 0; }
+  /* Scope gets a line to itself and the full width of the card. Its options are
+     the longest strings on the page - a family name is "Service Provider ·
+     Aggregation Services Router" - and sharing a row with anything else left it
+     truncated to the point of being unreadable. */
+  .scope-row { display: block; margin-bottom: 0.55rem; }
+  .scope-row label { display: block; }
+  .scope-row select { display: block; width: 100%; margin-top: 0.25rem; }
   .card h2 { font-size: 0.85rem; margin: 0 0 0.35rem; }
   .card p { margin: 0 0 0.7rem; font-size: 0.76rem; color: var(--pt-ink-faint); line-height: 1.55; }
   .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
@@ -84,8 +99,8 @@
        is legible on its own. Scope lists the vendor’s own groups — the same
        headings the device menu above uses — plus just this device, plus all of
        the vendor. A vendor with hundreds of devices is not one library.</p>
+    <div class="scope-row"><label>Scope <select id="scope"></select></label></div>
     <div class="row">
-      <label>Scope <select id="scope"></select></label>
       <label title="Which side of the chassis to draw. Devices with no rear face are skipped.">Faces
         <select id="faces">
           <option value="front">front</option>
@@ -120,8 +135,8 @@
     <h2>Rack-ready library</h2>
     <p>The same devices sized for draw.io’s own rack: 138&nbsp;×&nbsp;14.8 per RU.
        Drop one into a <em>rackCabinet3</em> and it snaps to a unit.</p>
+    <div class="scope-row"><label>Scope <select id="rscope"></select></label></div>
     <div class="row">
-      <label>Scope <select id="rscope"></select></label>
       <button id="dl-rack-lib">Download .xml</button>
     </div>
     <div class="stat" id="stat-rack"></div>
