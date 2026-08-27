@@ -36,6 +36,9 @@
   table.facts { border-collapse: collapse; font-size: 0.75rem; margin: 0.6rem 0 0; }
   table.facts th, table.facts td { text-align: left; padding: 0.2rem 0.9rem 0.2rem 0; color: var(--pt-ink-muted); }
   table.facts th { color: var(--pt-ink-faint); font-weight: 500; }
+  dl.hints { margin: 0.75rem 0 0; font-size: 0.72rem; line-height: 1.5; }
+  dl.hints dt { color: var(--pt-brass); font-family: ui-monospace, monospace; margin-top: 0.4rem; }
+  dl.hints dd { margin: 0.1rem 0 0; color: var(--pt-ink-faint); }
   code.k { color: var(--pt-brass); }
 </style>
 </head>
@@ -82,17 +85,32 @@
        chassis many times over.</p>
     <div class="row">
       <label>Scope <select id="scope"></select></label>
-      <label>Faces <select id="faces">
-        <option value="front">front</option>
-        <option value="rear">rear</option>
-        <option value="both">front + rear</option>
-      </select></label>
-      <label><input type="checkbox" id="mods"> line cards<span id="mods-count"></span></label>
-      <label><input type="checkbox" id="tint"> show port cells</label>
-      <label><input type="checkbox" id="bays"> include bays</label>
+      <label title="Which side of the chassis to draw. Devices with no rear face are skipped.">Faces
+        <select id="faces">
+          <option value="front">front</option>
+          <option value="rear">rear</option>
+          <option value="both" selected>front + rear</option>
+        </select></label>
+      <label title="Also include the vendor's line cards, supervisors, supplies and fans as their own shapes.">
+        <input type="checkbox" id="mods" checked> line cards<span id="mods-count"></span></label>
+      <label title="Add a connectable cell for each slot, not just each port, so a line can be drawn to the slot itself.">
+        <input type="checkbox" id="bays" checked> bays too</label>
+      <label title="Tint the port cells so you can see where they are. An inspection aid - leave it off and the faceplate looks like the real thing.">
+        <input type="checkbox" id="tint"> highlight them</label>
       <button id="dl-lib">Download .xml</button>
     </div>
     <div class="stat" id="stat-lib"></div>
+    <dl class="hints">
+      <dt>line cards</dt><dd>the modules that go <em>in</em> the chassis — for a
+        modular vendor these outnumber the chassis many times over.</dd>
+      <dt>bays too</dt><dd>every slot becomes connectable as well as every port,
+        so you can draw a line to “slot 6” rather than to a port on whatever is
+        in it. Slots sit <em>under</em> the ports, so a port still takes the
+        click.</dd>
+      <dt>highlight them</dt><dd>tints those cells blue (ports) and amber (bays)
+        so you can see them. Off by default — invisible over an exact drawing is
+        the whole point.</dd>
+    </dl>
   </div>
 
   <div class="card">

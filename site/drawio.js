@@ -145,7 +145,13 @@ export function readSvg(text) {
 export function portsOf(zones, {bays = false} = {}) {
   return zones
     .filter(z => z.cls === 'port' || (bays && z.cls === 'bay'))
-    .sort((a, b) => a.id.length - b.id.length || a.id.localeCompare(b.id));
+    // Bays FIRST, then ports. A later sibling draws on top in draw.io, and a
+    // bay is a big cell containing the ports of whatever is seated in it - so
+    // sorting the two together by id lets a slot land above its own card's
+    // ports and swallow every click meant for them.
+    .sort((a, b) =>
+      (a.cls === b.cls ? 0 : a.cls === 'bay' ? -1 : 1) ||
+      a.id.length - b.id.length || a.id.localeCompare(b.id));
 }
 
 // ── cells ────────────────────────────────────────────────────────────────
