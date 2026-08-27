@@ -73,10 +73,15 @@ function scopesFor(dev) {
   // No cross-vendor rung here. "everything" sitting at the bottom of a list of
   // Edgecore groupings read as another Edgecore grouping; it is a decision about
   // the VENDOR, so it lives beside the vendor menu instead.
-  // Two scopes that select the same devices are one choice wearing two hats -
-  // an ASR 9000 Series library and a Cisco library are the same eight files
-  // today, and offering both invites someone to wonder what the difference is.
-  return out.filter((s, i) => i === 0 || s.n !== out[i - 1].n);
+  //
+  // Every rung the device HAS is offered, even when two of them select the same
+  // devices. Collapsing equal counts seemed tidy and quietly deleted words
+  // people navigate by: an AS7726-32X has line "Data Center" and family
+  // "Ethernet Switch", both selecting the same two devices, so Data Center
+  // disappeared from a menu sitting directly under a picker that groups by it.
+  // A redundant choice costs a line of the dropdown; a missing one costs
+  // someone the vocabulary they came in with.
+  return out;
 }
 
 let SCOPES = [];
@@ -225,7 +230,9 @@ async function buildRackDiagram() {
     const groupOf = m => {
       const d = DEVICES.find(x => (x.model || x.name) === m.name) || {};
       const p = d.portfolio || {};
-      const kind = p.family || p.series || null;
+      // The same composite the device picker groups by - `line · family` - so a
+      // page tab is named the thing someone already picked the device out of.
+      const kind = [p.line, p.family].filter(Boolean).join(' · ') || p.series || null;
       return {
         key: `${d.manufacturer || '?'}|${kind || ''}`,
         label: kind ? `${d.manufacturer} — ${kind}` : (d.manufacturer || 'Devices'),
