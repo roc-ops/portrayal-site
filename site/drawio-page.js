@@ -59,13 +59,20 @@ function scopesFor(dev) {
     const n = DEVICES.filter(pred).length;
     if (n) out.push({key, label, pred, n});
   };
-  for (const [field, key] of [['series', 'series'], ['family', 'family'], ['line', 'line']]) {
+  // Each rung says WHICH rung it is, in the device picker's own words - it
+  // groups by `line · family` and labels options `series — model`, so a scope
+  // menu reading "DCS204 / Ethernet Switch / Edgecore" shared no vocabulary
+  // with the thing above it and the numbers looked arbitrary.
+  for (const field of ['series', 'family', 'line']) {
     if (p[field]) {
-      add(key, p[field], d => sameMan(d) && (d.portfolio || {})[field] === p[field]);
+      add(field, `${field} · ${p[field]}`,
+          d => sameMan(d) && (d.portfolio || {})[field] === p[field]);
     }
   }
-  add('vendor', dev.manufacturer, sameMan);
-  add('all', 'everything', () => true);
+  add('vendor', `vendor · ${dev.manufacturer}`, sameMan);
+  // No cross-vendor rung here. "everything" sitting at the bottom of a list of
+  // Edgecore groupings read as another Edgecore grouping; it is a decision about
+  // the VENDOR, so it lives beside the vendor menu instead.
   // Two scopes that select the same devices are one choice wearing two hats -
   // an ASR 9000 Series library and a Cisco library are the same eight files
   // today, and offering both invites someone to wonder what the difference is.
@@ -87,13 +94,20 @@ function fillScopes() {
   }
 }
 
+const allVendors = () => !!$('allven')?.checked;
 const scopeOf = key => SCOPES.find(s => s.key === key) || SCOPES[0];
-const inScope = key => DEVICES.filter((scopeOf(key) || {pred: () => true}).pred);
+const inScope = key => allVendors()
+  ? DEVICES
+  : DEVICES.filter((scopeOf(key) || {pred: () => true}).pred);
 
 const vendorTag = key => {
+  if (allVendors()) return 'all-vendors';
   const s = scopeOf(key);
-  return (s ? s.label : 'portrayal').toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'portrayal';
+  // Strip the rung name off the front - a filename wants "ethernet-switch",
+  // not "family-ethernet-switch".
+  const label = s ? s.label.replace(/^\w+ · /, '') : 'portrayal';
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    || 'portrayal';
 };
 
 /** Load every device in scope, skipping any whose face is missing rather than
@@ -272,13 +286,44 @@ async function buildRackDiagram() {
   }
 }
 
+// Plain words for the classes the model uses, so a count can say what it is.
+const CLASS_WORD = {
+  'line-card': 'line card', supervisor: 'supervisor', fabric: 'fabric card',
+  psu: 'PSU', power: 'power module', cooling: 'fan', fan: 'fan',
+  filter: 'air filter', blank: 'blank', mechanical: 'mechanical', inlet: 'inlet',
+  switch: 'switch card',
+};
+const plural = (w, n) => n === 1 ? w : (w.endsWith('h') ? `${w}es` : `${w}s`);
+
 function describe() {
   const d = DEVICES.find(x => x.name === DEV);
   if (!d) return;
-  const nmods = modulesFor($('scope')?.value).length;
+  const all = $('allven');
+  if (all) {
+    $('allven-count').textContent = ` (${DEVICES.length})`;
+    for (const id of ['scope', 'rscope']) if ($(id)) $(id).disabled = all.checked;
+  }
+  const mods = modulesFor($('scope')?.value);
   const lbl = $('mods-count');
-  if (lbl) lbl.textContent = nmods ? ` (${nmods})` : '';
-  if ($('mods')) $('mods').disabled = !nmods;
+  if (lbl) lbl.textContent = mods.length ? ` (${mods.length})` : '';
+  if ($('mods')) $('mods').disabled = !mods.length;
+  // Say WHAT they are. "line cards (8)" on an Edgecore switch was simply
+  // false - its eight modules are a fan, five filters and two supplies, and
+  // there is not a line card among them.
+  // Keyed by the WORD, not the class: `cooling` and `fan` are both fans, and
+  // counting them apart printed "7 fans, 2 fans" in one sentence.
+  const byClass = {};
+  for (const m of mods) {
+    const w = CLASS_WORD[m.class] || m.class || 'module';
+    byClass[w] = (byClass[w] || 0) + 1;
+  }
+  const breakdown = Object.entries(byClass)
+    .sort((a, b) => b[1] - a[1])
+    .map(([w, n]) => `${n} ${plural(w, n)}`)
+    .join(', ');
+  const ml = $('mods-label');
+  if (ml) ml.title = breakdown ? `The things that go in the chassis: ${breakdown}.`
+                               : 'This vendor has no modelled modules.';
   $('detail').innerHTML =
     `<strong>${d.model || d.name}</strong> — ${d.manufacturer}. Standalone entries are ${Math.round(SCALE * 25.4)}px per inch ` +
     `(${SCALE}px/mm); rack entries are ${RACK.width}×${RACK.unit} per RU, which is ` +
@@ -298,6 +343,7 @@ function describe() {
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
   $('scope').addEventListener('change', describe);
+  $('allven').addEventListener('change', describe);
   fillScopes();
   describe();
   $('dl-lib').onclick = () => buildLibrary({rack: false});

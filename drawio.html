@@ -64,6 +64,8 @@
 <div class="hdr">
   <h1>draw.io export</h1>
   <span id="pick"></span>
+  <label title="Ignore the vendor and scope entirely and take every device in the library.">
+    <input type="checkbox" id="allven"> all vendors<span id="allven-count"></span></label>
   <span id="note" class="note"></span>
 </div>
 
@@ -80,9 +82,7 @@
     <h2>Shape library</h2>
     <p>Devices you drag onto a blank canvas, drawn at 2&nbsp;px/mm so a faceplate
        is legible on its own. Scope narrows by series, then family, then line —
-       a vendor with hundreds of devices is not one library. <em>Line cards</em>
-       adds the vendor’s modules: for a modular chassis those outnumber the
-       chassis many times over.</p>
+       a vendor with hundreds of devices is not one library.</p>
     <div class="row">
       <label>Scope <select id="scope"></select></label>
       <label title="Which side of the chassis to draw. Devices with no rear face are skipped.">Faces
@@ -91,8 +91,8 @@
           <option value="rear">rear</option>
           <option value="both" selected>front + rear</option>
         </select></label>
-      <label title="Also include the vendor's line cards, supervisors, supplies and fans as their own shapes.">
-        <input type="checkbox" id="mods" checked> line cards<span id="mods-count"></span></label>
+      <label id="mods-label" title="The things that go in the chassis.">
+        <input type="checkbox" id="mods" checked> modules<span id="mods-count"></span></label>
       <label title="Add a connectable cell for each slot, not just each port, so a line can be drawn to the slot itself.">
         <input type="checkbox" id="bays" checked> bays too</label>
       <label title="Tint the port cells so you can see where they are. An inspection aid - leave it off and the faceplate looks like the real thing.">
@@ -101,8 +101,10 @@
     </div>
     <div class="stat" id="stat-lib"></div>
     <dl class="hints">
-      <dt>line cards</dt><dd>the modules that go <em>in</em> the chassis — for a
-        modular vendor these outnumber the chassis many times over.</dd>
+      <dt>modules</dt><dd>whatever goes <em>in</em> the chassis — line cards and
+        supervisors on a modular router, but only supplies, fans and filters on a
+        fixed switch. Hover the checkbox for the breakdown. On a modular vendor
+        these outnumber the chassis many times over.</dd>
       <dt>bays too</dt><dd>every slot becomes connectable as well as every port,
         so you can draw a line to “slot 6” rather than to a port on whatever is
         in it. Slots sit <em>under</em> the ports, so a port still takes the
