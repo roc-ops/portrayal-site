@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — draw.io export</title>
+<meta name="description" content="Modeled devices as a draw.io shape library, with every port a cell a cable can be drawn to by name.">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/toolbar.css">
+<link rel="stylesheet" href="site/tool-theme.css">
+<style>
+  body { font-family: system-ui, sans-serif; background: var(--pt-surface); color: var(--pt-ink); margin: 0.8rem 1.2rem; }
+  .hdr { display: flex; gap: 0.9rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.7rem; }
+  h1 { font-size: 1rem; margin: 0; }
+  label { font-size: 0.8rem; color: var(--pt-ink-muted); display: flex; gap: 0.4rem; align-items: center; }
+  select, button { background: var(--pt-surface-2); color: var(--pt-ink); border: 1px solid var(--pt-line);
+                   border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+  button { cursor: pointer; }
+  button:hover:not(:disabled) { background: var(--pt-line-soft); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .note { font-size: 0.74rem; color: var(--pt-ink-faint); max-width: 62rem; line-height: 1.55; }
+  .note code { color: var(--pt-ink-muted); }
+  .sep { width: 1px; align-self: stretch; background: var(--pt-line); }
+  .cards { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+           max-width: 62rem; margin: 1rem 0; }
+  .card { border: 1px solid var(--pt-line); border-radius: 10px; padding: 0.9rem 1rem;
+          background: var(--pt-surface-2); }
+  .card h2 { font-size: 0.85rem; margin: 0 0 0.35rem; }
+  .card p { margin: 0 0 0.7rem; font-size: 0.76rem; color: var(--pt-ink-faint); line-height: 1.55; }
+  .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .stat { font-size: 0.72rem; color: var(--pt-ink-faint); font-family: ui-monospace, monospace; }
+  table.facts { border-collapse: collapse; font-size: 0.75rem; margin: 0.6rem 0 0; }
+  table.facts th, table.facts td { text-align: left; padding: 0.2rem 0.9rem 0.2rem 0; color: var(--pt-ink-muted); }
+  table.facts th { color: var(--pt-ink-faint); font-weight: 500; }
+  code.k { color: var(--pt-brass); }
+</style>
+</head>
+<body class="doc">
+
+<div class="site-bar">
+  <a class="brand" href="index.html">
+    <img src="brand/portrayal-mark.svg" alt="" width="20" height="20">
+    <span>portrayal<span class="tld">.dev</span></span>
+  </a>
+  <nav>
+    <a href="index.html#showcase">Showcase</a>
+    <a href="explorer.html">Explorer</a>
+    <a href="components.html">Components</a>
+    <a href="exporter.html">DCIM export</a>
+    <a href="drawio.html" aria-current="page">draw.io</a>
+    <a href="schema.html">Schema</a>
+    <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
+  </nav>
+</div>
+
+<div class="wrap-tool">
+<div class="hdr">
+  <h1>draw.io export</h1>
+  <span id="pick"></span>
+  <span id="note" class="note"></span>
+</div>
+
+<p class="note">
+  A device becomes the compiled drawing as an image, with an invisible,
+  connectable cell over every port. You get the real faceplate <em>and</em> a
+  cable drawn to a port records <code>source="port-12"</code> rather than a
+  coordinate — so the diagram is still addressable after it leaves here.
+  Import a library with <strong>File → Open Library from → Device</strong>.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h2>Shape library</h2>
+    <p>Devices you drag onto a blank canvas, drawn at 2&nbsp;px/mm so a faceplate
+       is legible on its own.</p>
+    <div class="row">
+      <label>Scope <select id="scope">
+        <option value="vendor">this vendor</option>
+        <option value="all">every vendor</option>
+      </select></label>
+      <label><input type="checkbox" id="tint"> show port cells</label>
+      <label><input type="checkbox" id="bays"> include bays</label>
+      <button id="dl-lib">Download .xml</button>
+    </div>
+    <div class="stat" id="stat-lib"></div>
+  </div>
+
+  <div class="card">
+    <h2>Rack-ready library</h2>
+    <p>The same devices sized for draw.io’s own rack: 138&nbsp;×&nbsp;14.8 per RU.
+       Drop one into a <em>rackCabinet3</em> and it snaps to a unit.</p>
+    <div class="row">
+      <label>Scope <select id="rscope">
+        <option value="vendor">this vendor</option>
+        <option value="all">every vendor</option>
+      </select></label>
+      <button id="dl-rack-lib">Download .xml</button>
+    </div>
+    <div class="stat" id="stat-rack"></div>
+  </div>
+
+  <div class="card">
+    <h2>Rack diagram</h2>
+    <p>A finished <code>.drawio</code> page: draw.io’s cabinet with these devices
+       already mounted and numbered. Rails and U numbers are draw.io’s, not ours.</p>
+    <div class="row">
+      <label>Height <select id="units">
+        <option>12</option><option selected>24</option><option>42</option><option>48</option>
+      </select></label>
+      <button id="dl-rack">Download .drawio</button>
+    </div>
+    <div class="stat" id="stat-diag"></div>
+  </div>
+</div>
+
+<p class="note" id="detail"></p>
+
+<p class="note">
+  <strong>Why this shape and not a stencil.</strong> An inline stencil is about
+  thirty times smaller and stays vector, but <code>mxStencil</code> renders no
+  text — a faceplate loses every port number and every silkscreen line. It can
+  carry <em>named</em> connection points, which draw.io then discards: it writes
+  <code>exitX</code>/<code>exitY</code> into the edge and never the name. An
+  image plus port cells keeps both the picture and the names.
+</p>
+
+</div>
+<script type="module" src="site/drawio-page.js"></script>
+</body>
+</html>
