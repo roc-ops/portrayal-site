@@ -23,6 +23,28 @@ const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
 const RECESS_DEFAULT = 30;          // how far back the faceplate sits from the rails
 const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a flank
+
+// Named opening views. `iso` is the direction this stage was composed with,
+// kept as a unit vector so its look survives the distance being fitted; `front`
+// is straight on, which is the 3D answer to a 2D elevation and lets a viewer
+// toggle between the two without the picture jumping.
+//
+// Each carries where it looks AT as a fraction of rack height, and how much
+// room to leave. Straight on needs less than the oblique view, which is turned
+// away from the camera and foreshortened.
+// `wide` is how much room to leave across, as a multiple of the rail width, and
+// `aimX` shifts what the camera looks at sideways by the same measure. Both
+// exist because the scene is not symmetric about the rails: RU numbers sit
+// 34 mm to the left of them and device tags start 120 mm out and run further
+// left again by the width of their own text, so content spans roughly -510 to
+// +241 mm. Straight on that asymmetry is the whole picture and the tags fall off
+// the edge without it; obliquely the margin already swallows it.
+const VIEWS = {
+  iso:   {dir: [0.4647, 0.1608, 0.8707], aim: 0.42, margin: 1.72, z: -60,
+          wide: 1.1, aimX: 0},
+  front: {dir: [0, 0, 1],                aim: 0.50, margin: 1.12, z: -60,
+          wide: 2.4, aimX: -0.28},
+};
 const PXMM_RELIEF = 8;
 
 export function createRackScene(container, opts = {}) {
@@ -47,6 +69,12 @@ export function createRackScene(container, opts = {}) {
   // flush and wants 0; the default is the setback the showcase was drawn with,
   // so passing nothing changes nothing.
   const RECESS = opts.recess ?? RECESS_DEFAULT;
+
+  // Which view the scene opens at, and which one double-click returns to.
+  // Named rather than a vector, because the useful ones carry their own aim and
+  // margin - see VIEWS. roc-ops/portrayal-site#9 was reaching into
+  // scene.three.camera to do this by hand.
+  const VIEW = VIEWS[opts.view] ? opts.view : 'iso';
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
@@ -74,7 +102,8 @@ export function createRackScene(container, opts = {}) {
   // build meant the whole rack assembled itself somewhere above the default
   // camera and then snapped into place - and did it again on every rebuild,
   // throwing away wherever the viewer had orbited to.
-  function frameCamera() {
+  function frameCamera(which) {
+    const v = VIEWS[which] || VIEWS[VIEW] || VIEWS.iso;
     const H = UNITS * RU;
     // Flush the damping residual BEFORE setting the camera, not after.
     //
@@ -97,7 +126,7 @@ export function createRackScene(container, opts = {}) {
     //
     // The viewing DIRECTION is the one the stage was composed with, kept as a
     // unit vector so the look does not change - only how far back it sits.
-    const target = new THREE.Vector3(0, H * 0.42, -60);
+    const target = new THREE.Vector3(RACK_W * (v.aimX || 0), H * v.aim, v.z);
     controls.target.copy(target);
 
     // The container may not have been measured yet - resize() runs after the
@@ -108,9 +137,9 @@ export function createRackScene(container, opts = {}) {
     const aspect = cw / ch;
     const half = Math.tan((camera.fov * Math.PI / 180) / 2);
     // Whichever of height or width needs more room wins.
-    const need = Math.max(H / (2 * half), (RACK_W * 1.1) / (2 * half * aspect));
+    const need = Math.max(H / (2 * half), (RACK_W * v.wide) / (2 * half * aspect));
     camera.position.copy(target)
-      .addScaledVector(new THREE.Vector3(0.4647, 0.1608, 0.8707), need * 1.72);
+      .addScaledVector(new THREE.Vector3(...v.dir), need * v.margin);
 
     controls.update();                       // now a no-op delta
     controls.enableDamping = damped;
