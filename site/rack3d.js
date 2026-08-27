@@ -88,8 +88,30 @@ export function createRackScene(container, opts = {}) {
     const damped = controls.enableDamping;
     controls.enableDamping = false;
     controls.update();                       // spend and clear the residual
-    controls.target.set(0, H * 0.42, -60);
-    camera.position.set(RACK_W * 1.15, H * 0.78, 980);
+
+    // Distance is FITTED to the rack, not a constant. It used to be a flat 980,
+    // which framed the 12RU stage this was drawn against and nothing else: a
+    // 42RU rack is 1867 mm tall and ran off the top and bottom of the frame,
+    // with anything above the mid-twenties simply not on screen. heightRU has
+    // always been an option; it was only ever usable at one value.
+    //
+    // The viewing DIRECTION is the one the stage was composed with, kept as a
+    // unit vector so the look does not change - only how far back it sits.
+    const target = new THREE.Vector3(0, H * 0.42, -60);
+    controls.target.copy(target);
+
+    // The container may not have been measured yet - resize() runs after the
+    // first framing - so take the aspect from the element rather than from a
+    // camera still holding its constructor default of 1.
+    const cw = container.clientWidth || 1;
+    const ch = container.clientHeight || 1;
+    const aspect = cw / ch;
+    const half = Math.tan((camera.fov * Math.PI / 180) / 2);
+    // Whichever of height or width needs more room wins.
+    const need = Math.max(H / (2 * half), (RACK_W * 1.1) / (2 * half * aspect));
+    camera.position.copy(target)
+      .addScaledVector(new THREE.Vector3(0.4647, 0.1608, 0.8707), need * 1.72);
+
     controls.update();                       // now a no-op delta
     controls.enableDamping = damped;
   }
