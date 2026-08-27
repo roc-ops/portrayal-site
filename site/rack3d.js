@@ -76,11 +76,35 @@ export function createRackScene(container, opts = {}) {
   // throwing away wherever the viewer had orbited to.
   function frameCamera() {
     const H = UNITS * RU;
+    // Flush the damping residual BEFORE setting the camera, not after.
+    //
+    // OrbitControls keeps the leftover inertia of the last drag and applies it
+    // inside update(), so assigning a position and calling update() lands the
+    // camera near the framing rather than on it - measured 195 mm off after a
+    // drag, and it stays there, because the residual decays to nothing once
+    // spent. Turning damping off makes update() apply the residual once and
+    // then zero it, so the first call absorbs the inertia and the second
+    // applies a delta of zero, which leaves the assignment intact.
+    const damped = controls.enableDamping;
+    controls.enableDamping = false;
+    controls.update();                       // spend and clear the residual
     controls.target.set(0, H * 0.42, -60);
     camera.position.set(RACK_W * 1.15, H * 0.78, 980);
-    controls.update();
+    controls.update();                       // now a no-op delta
+    controls.enableDamping = damped;
   }
   frameCamera();
+
+  // Double-click to get back to the opening view. OrbitControls has no such
+  // binding of its own - `reset()` restores whatever position it was
+  // constructed with, which is the camera's zero, not the framing above - so
+  // this calls frameCamera rather than controls.reset().
+  //
+  // On the renderer's canvas, not the container: a dblclick on a label or the
+  // surrounding page is not a request to reframe. Damping is enabled, so the
+  // move eases rather than snapping.
+  const onDblClick = () => frameCamera();
+  renderer.domElement.addEventListener('dblclick', onDblClick);
 
   // ── labels ─────────────────────────────────────────────────────────────
   function tex(cv) {
@@ -313,6 +337,7 @@ export function createRackScene(container, opts = {}) {
       alive = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      renderer.domElement.removeEventListener('dblclick', onDblClick);
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;
