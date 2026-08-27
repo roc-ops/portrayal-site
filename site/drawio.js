@@ -246,40 +246,85 @@ export function library(entries) {
  * rack, we fill one. `childLayout=rack` snaps a child to whole units, so a
  * device only has to be the right size and at the right U.
  */
-export function rackDiagram(mounted, {units = 12, name = 'Rack 1'} = {}) {
+/**
+ * Rack elevations as a multi-PAGE .drawio: one page per group.
+ *
+ * `groups` is [{label, racks: [{label, mounted}]}]. Everything on one canvas
+ * becomes a wall you navigate rather than a diagram you read, and an .mxfile
+ * takes as many <diagram> elements as you give it - each is a tab along the
+ * bottom of the editor.
+ */
+export function rackDiagram(groups, {units = 12, faces = ['front']} = {}) {
   const h = RACK.marginTop + RACK.marginBottom + units * RACK.unit;
   const style =
     `shape=mxgraph.rackGeneral.rackCabinet3;rackUnitSize=${RACK.unit};` +
     `fillColor2=#f4f4f4;container=1;collapsible=0;childLayout=rack;allowGaps=1;` +
     `marginLeft=${RACK.marginL};marginRight=${RACK.marginR};` +
     `marginTop=${RACK.marginTop};marginBottom=${RACK.marginBottom};` +
-    `textColor=#666666;numDisp=ascend;html=1;`;
-  const cells = [cell('rack', name, style, 40, 40, RACK.outer, h)];
-  for (const m of mounted) {
-    const ru = m.ru || 1;
-    const id = slug(m.name);
-    // Which end U1 is at follows the container's numbering, not the machine
-    // room. `numDisp=ascend` prints 1 at the TOP and counts down the rails, so
-    // placing from the bottom the way a real rack is counted puts every device
-    // against a number it is not in.
-    const top = RACK.marginTop + (m.u - 1) * RACK.unit;
-    const w = RACK.width, dh = RACK.unit * ru;
-    const sub = deviceCells(id, m.svg, m.vb, m.ports, RACK.marginL, top, w, dh,
-                            {visible: false});
-    // The group keeps the name as its value - it is what Outline lists, what
-    // search finds and what an edge's endpoint reports - but does not PRINT it.
-    // Drawn, it lands a couple of units off its own device and collides with
-    // the U numbers, and a label against the wrong number is worse than none.
-    // The faceplate carries the model in silkscreen anyway.
-    sub[0] = cell(id, m.name, 'group;html=1;noLabel=1;',
-                  RACK.marginL, top, w, dh, 'rack');
-    for (let i = 1; i < sub.length; i++) sub[i] = sub[i].replace(/parent="1"/, `parent="${id}"`);
-    cells.push(...sub);
-  }
-  return `<mxfile host="portrayal"><diagram name="${esc(name)}" id="rack">` +
-    `<mxGraphModel dx="1200" dy="800" grid="0" page="1" pageWidth="${RACK.outer + 120}" ` +
-    `pageHeight="${h + 120}"><root><mxCell id="0"/><mxCell id="1" parent="0"/>` +
-    cells.join('') + `</root></mxGraphModel></diagram></mxfile>`;
+    // The label sits ABOVE the cabinet. Centred in it - the default - a name
+    // long enough to be useful is wider than 180 units and runs into the rack
+    // either side of it.
+    `textColor=#666666;numDisp=ascend;html=1;` +
+    `verticalLabelPosition=top;verticalAlign=bottom;fontSize=11;fontStyle=1;`;
+  // Room for the U gutter between cabinets, and more between racks than between
+  // the two sides of one rack - so a front/rear pair reads as a pair.
+  const FACE_GAP = 90, RACK_GAP = 190;
+  const pairWidth = faces.length * RACK.outer + (faces.length - 1) * FACE_GAP;
+
+  const pages = groups.map((group, gi) => {
+    const cells = [];
+    let x = 40;
+    group.racks.forEach((rack, r) => {
+      faces.forEach((face, i) => {
+        const rackId = `g${gi}r${r}-${face}`;
+        const fx = x + i * (RACK.outer + FACE_GAP);
+        // The PAGE is named for the vendor and family, so the cabinet only
+        // has to say which rack and which side.
+        cells.push(cell(rackId, rack.label ? `${rack.label} · ${face}` : face,
+                        style, fx, 60, RACK.outer, h));
+        for (const m of rack.mounted) {
+          const f = m.faces[face];
+          // A device with nothing drawn on this side leaves its units empty
+          // rather than borrowing the other side's picture. An optical shelf
+          // that is only a front is a real thing, and putting its face on the
+          // back of the rack would be a straightforward lie.
+          if (!f) continue;
+          const ru = m.ru || 1;
+          const id = `${slug(m.name)}-g${gi}r${r}-${face}`;
+          // Which end U1 is at follows the container's numbering, not the
+          // machine room. `numDisp=ascend` prints 1 at the TOP and counts down,
+          // so placing from the bottom the way a real rack is counted puts
+          // every device against a number it is not in.
+          const top = RACK.marginTop + (m.u - 1) * RACK.unit;
+          const dh = RACK.unit * ru;
+          const sub = deviceCells(id, f.svg, f.vb, f.ports, RACK.marginL, top,
+                                  RACK.width, dh, {visible: false});
+          // The group keeps the name as its value - Outline lists it, search
+          // finds it, an edge endpoint reports it - but does not PRINT it.
+          // Drawn, it lands a couple of units off its own device and collides
+          // with the U numbers, and a label against the wrong number is worse
+          // than none. The faceplate carries the model in silkscreen anyway.
+          sub[0] = cell(id, m.name, 'group;html=1;noLabel=1;',
+                        RACK.marginL, top, RACK.width, dh, rackId);
+          for (let k = 1; k < sub.length; k++) {
+            sub[k] = sub[k].replace(/parent="1"/, `parent="${id}"`);
+          }
+          cells.push(...sub);
+        }
+      });
+      x += pairWidth + RACK_GAP;
+    });
+    return `<diagram name="${esc(group.label)}" id="page${gi}">` +
+      `<mxGraphModel dx="1200" dy="800" grid="0" page="1" ` +
+      `pageWidth="${x - RACK_GAP + 60}" pageHeight="${h + 140}"><root>` +
+      `<mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}` +
+      `</root></mxGraphModel></diagram>`;
+  });
+  // Front and rear are NOT mirrored. Walking round a rack does reverse
+  // left-to-right, but every DCIM elevation - NetBox's and Nautobot's included -
+  // shows both sides in the same order, because the point of the pair is to
+  // read one device across two views. Mirroring makes that a puzzle.
+  return `<mxfile host="portrayal">${pages.join('')}</mxfile>`;
 }
 
 /** Fetch a compiled face and read it, once per url. */

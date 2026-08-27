@@ -176,27 +176,88 @@ async function buildLibrary({rack}) {
 async function buildRackDiagram() {
   const btn = $('dl-rack'), stat = $('stat-diag');
   const units = Number($('units').value);
+  const gap = $('gap').checked ? 1 : 0;
+  const both = $('rfaces').value === 'both';
+  const faces = both ? ['front', 'rear'] : [$('rfaces').value];
   btn.disabled = true;
   try {
-    const {loaded, missing} = await gather($('scope').value, stat, {faces: ['front']});
-    if (!loaded.length) { stat.textContent = 'nothing to mount'; return; }
-    // Stack from U1 up, skipping anything that will not fit in the cabinet.
-    let u = 1;
-    const mounted = [];
-    for (const f of loaded) {
-      if (f.kind !== 'device') continue;
-      const ru = f.ru;
-      if (u + ru - 1 > units) break;
-      mounted.push({name: f.label, svg: f.text, vb: f.vb, ports: f.ports, u, ru});
-      u += ru;
+    const scope = $('scope').value;
+    // Both sides of every device, so one mounting serves both cabinets and a
+    // device sits at the same U in each.
+    const {loaded, missing} = await gather(scope, stat, {faces: ['front', 'rear']});
+    const devs = loaded.filter(f => f.kind === 'device');
+    if (!devs.length) { stat.textContent = 'nothing to mount'; return; }
+
+    const byName = new Map();
+    for (const f of devs) {
+      const key = f.label.replace(/ \((front|rear)\)$/, '');
+      if (!byName.has(key)) byName.set(key, {name: key, ru: f.ru, faces: {}});
+      byName.get(key).faces[f.face] = {svg: f.text, vb: f.vb, ports: f.ports};
     }
-    const label = (scopeOf($('scope').value) || {}).label || 'Portrayal';
-    const xml = rackDiagram(mounted, {units, name: `${label} rack`});
-    save(xml, `portrayal-${vendorTag($('scope').value)}-rack-${units}u.drawio`,
+
+    // Group before filling. A flat spill across racks is arbitrary - you get
+    // whatever alphabetical order happened to give you - whereas a rack per
+    // vendor per family is how anyone would actually lay this out, and reads as
+    // a labelled list rather than a wall.
+    const groupOf = m => {
+      const d = DEVICES.find(x => (x.model || x.name) === m.name) || {};
+      const p = d.portfolio || {};
+      const kind = p.family || p.series || null;
+      return {
+        key: `${d.manufacturer || '?'}|${kind || ''}`,
+        label: kind ? `${d.manufacturer} — ${kind}` : (d.manufacturer || 'Devices'),
+      };
+    };
+    const groups = new Map();
+    for (const m of byName.values()) {
+      const g = groupOf(m);
+      if (!groups.has(g.key)) groups.set(g.key, {label: g.label, items: []});
+      groups.get(g.key).items.push(m);
+    }
+
+    // A unit of air between devices, so two chassis of the same colour do not
+    // read as one tall one. It costs rack height, which is why it is a choice.
+    // Anything that overflows starts another rack rather than being dropped -
+    // a device missing from a diagram is worse than a diagram that is wide.
+    const pages = [];
+    let tooTall = [];
+    for (const {label, items} of [...groups.values()]
+           .sort((a, b) => a.label.localeCompare(b.label))) {
+      const racks = [];
+      let current = [], u = 1;
+      const flush = () => {
+        if (current.length) { racks.push({mounted: current}); current = []; u = 1; }
+      };
+      for (const m of items) {
+        if (m.ru > units) { tooTall.push(m.name); continue; }
+        if (u + m.ru - 1 > units) flush();
+        current.push({...m, u});
+        u += m.ru + gap;
+      }
+      flush();
+      if (!racks.length) continue;
+      // Only number racks when a group actually needed more than one.
+      // The page already says whose these are; a cabinet only needs its number.
+      racks.forEach((r, i) => {
+        r.label = racks.length > 1 ? `Rack ${i + 1}` : '';
+      });
+      pages.push({label, racks});
+    }
+    if (!pages.length) { stat.textContent = `nothing fits in ${units}U`; return; }
+    const racksAll = pages.flatMap(p => p.racks);
+    const mounted = racksAll.flatMap(r => r.mounted);
+
+    const xml = rackDiagram(pages, {units, faces});
+    save(xml, `portrayal-${vendorTag(scope)}-rack-${units}u${both ? '-both' : ''}.drawio`,
          'application/xml');
-    const short = loaded.length - mounted.length;
-    report(stat, mounted.map(m => ({ports: m.ports})), missing,
-      `, ${u - 1} of ${units}U used` + (short ? ` — ${short} did not fit` : ''));
+    const rears = mounted.filter(m => m.faces.rear).length;
+    stat.textContent =
+      `${mounted.length} devices, ${racksAll.length} rack${racksAll.length === 1 ? '' : 's'} of ${units}U ` +
+      `across ${pages.length} page${pages.length === 1 ? '' : 's'}` +
+      (both ? `, ${rears} with a rear face` : '') +
+      `, ${(xml.length / 1048576).toFixed(1)} MB` +
+      (tooTall.length ? ` — ${tooTall.length} taller than the rack` : '') +
+      (missing.length ? ` — ${missing.length} skipped` : '');
   } catch (err) {
     stat.textContent = `failed: ${err.message}`;
   } finally {
