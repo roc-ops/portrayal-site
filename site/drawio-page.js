@@ -173,9 +173,18 @@ async function buildLibrary({rack}) {
   }
 }
 
+// How tall a rack may get before the next device starts a new one. 42U is the
+// common tall cabinet; a device taller than that needs a rack of its own, and
+// gets the next real size up rather than a cabinet cut to its exact height,
+// because nothing goes in a rack that is precisely as tall as it is.
+const PACK_CAP = 42;
+const OVERSIZE = [45, 48];
+
+const rackHeightFor = used =>
+  used <= PACK_CAP ? used : (OVERSIZE.find(n => n >= used) || used);
+
 async function buildRackDiagram() {
   const btn = $('dl-rack'), stat = $('stat-diag');
-  const units = Number($('units').value);
   const gap = $('gap').checked ? 1 : 0;
   const both = $('rfaces').value === 'both';
   const faces = both ? ['front', 'rear'] : [$('rfaces').value];
@@ -215,48 +224,46 @@ async function buildRackDiagram() {
       groups.get(g.key).items.push(m);
     }
 
-    // A unit of air between devices, so two chassis of the same colour do not
-    // read as one tall one. It costs rack height, which is why it is a choice.
-    // Anything that overflows starts another rack rather than being dropped -
-    // a device missing from a diagram is worse than a diagram that is wide.
+    // Each rack is grown to hold what is in it rather than being a fixed height
+    // the contents rattle around in. Four 1RU boxes with a unit between them is
+    // a 7U rack, not a 42U one that is 83% empty. A unit of air goes BETWEEN
+    // devices and not after the last one, so the rack ends at the last device.
     const pages = [];
-    let tooTall = [];
     for (const {label, items} of [...groups.values()]
            .sort((a, b) => a.label.localeCompare(b.label))) {
       const racks = [];
       let current = [], u = 1;
       const flush = () => {
-        if (current.length) { racks.push({mounted: current}); current = []; u = 1; }
+        if (!current.length) return;
+        const used = u - 1 - gap;           // drop the trailing gap
+        racks.push({mounted: current, units: rackHeightFor(used)});
+        current = []; u = 1;
       };
       for (const m of items) {
-        if (m.ru > units) { tooTall.push(m.name); continue; }
-        if (u + m.ru - 1 > units) flush();
+        if (current.length && u + m.ru - 1 > PACK_CAP) flush();
         current.push({...m, u});
         u += m.ru + gap;
       }
       flush();
       if (!racks.length) continue;
-      // Only number racks when a group actually needed more than one.
-      // The page already says whose these are; a cabinet only needs its number.
-      racks.forEach((r, i) => {
-        r.label = racks.length > 1 ? `Rack ${i + 1}` : '';
-      });
+      racks.forEach((r, i) => { r.label = racks.length > 1 ? `Rack ${i + 1}` : ''; });
       pages.push({label, racks});
     }
-    if (!pages.length) { stat.textContent = `nothing fits in ${units}U`; return; }
+    if (!pages.length) { stat.textContent = 'nothing to mount'; return; }
     const racksAll = pages.flatMap(p => p.racks);
     const mounted = racksAll.flatMap(r => r.mounted);
 
-    const xml = rackDiagram(pages, {units, faces});
-    save(xml, `portrayal-${vendorTag(scope)}-rack-${units}u${both ? '-both' : ''}.drawio`,
+    const xml = rackDiagram(pages, {faces});
+    save(xml, `portrayal-${vendorTag(scope)}-racks${both ? '-both' : ''}.drawio`,
          'application/xml');
     const rears = mounted.filter(m => m.faces.rear).length;
+    const sizes = [...new Set(racksAll.map(r => r.units))].sort((a, b) => a - b);
     stat.textContent =
-      `${mounted.length} devices, ${racksAll.length} rack${racksAll.length === 1 ? '' : 's'} of ${units}U ` +
+      `${mounted.length} devices, ${racksAll.length} rack${racksAll.length === 1 ? '' : 's'} ` +
       `across ${pages.length} page${pages.length === 1 ? '' : 's'}` +
+      `, ${sizes.length === 1 ? `${sizes[0]}U` : `${sizes[0]}–${sizes[sizes.length - 1]}U`}` +
       (both ? `, ${rears} with a rear face` : '') +
       `, ${(xml.length / 1048576).toFixed(1)} MB` +
-      (tooTall.length ? ` — ${tooTall.length} taller than the rack` : '') +
       (missing.length ? ` — ${missing.length} skipped` : '');
   } catch (err) {
     stat.textContent = `failed: ${err.message}`;

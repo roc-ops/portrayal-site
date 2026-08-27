@@ -254,8 +254,9 @@ export function library(entries) {
  * takes as many <diagram> elements as you give it - each is a tab along the
  * bottom of the editor.
  */
-export function rackDiagram(groups, {units = 12, faces = ['front']} = {}) {
-  const h = RACK.marginTop + RACK.marginBottom + units * RACK.unit;
+export function rackDiagram(groups, {faces = ['front']} = {}) {
+  // Each rack carries its own height, because each is grown to its contents.
+  const heightOf = units => RACK.marginTop + RACK.marginBottom + units * RACK.unit;
   const style =
     `shape=mxgraph.rackGeneral.rackCabinet3;rackUnitSize=${RACK.unit};` +
     `fillColor2=#f4f4f4;container=1;collapsible=0;childLayout=rack;allowGaps=1;` +
@@ -275,6 +276,8 @@ export function rackDiagram(groups, {units = 12, faces = ['front']} = {}) {
     const cells = [];
     let x = 40;
     group.racks.forEach((rack, r) => {
+      const units = rack.units || 12;
+      const h = heightOf(units);
       faces.forEach((face, i) => {
         const rackId = `g${gi}r${r}-${face}`;
         const fx = x + i * (RACK.outer + FACE_GAP);
@@ -314,9 +317,10 @@ export function rackDiagram(groups, {units = 12, faces = ['front']} = {}) {
       });
       x += pairWidth + RACK_GAP;
     });
+    const tallest = Math.max(...group.racks.map(r => heightOf(r.units || 12)));
     return `<diagram name="${esc(group.label)}" id="page${gi}">` +
       `<mxGraphModel dx="1200" dy="800" grid="0" page="1" ` +
-      `pageWidth="${x - RACK_GAP + 60}" pageHeight="${h + 140}"><root>` +
+      `pageWidth="${x - RACK_GAP + 60}" pageHeight="${tallest + 140}"><root>` +
       `<mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}` +
       `</root></mxGraphModel></diagram>`;
   });
