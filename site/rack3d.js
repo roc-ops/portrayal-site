@@ -46,7 +46,22 @@ const VIEWS = {
   front: {dir: [0, 0, 1],                aim: 0.50, margin: 1.12, z: -60,
           wide: 2.4, aimX: -0.28},
 };
-const PXMM_RELIEF = 8;
+// Face raster density for the rack. The single-device viewer defaults to 4 and
+// is looked at from arm's length; a rack is seen from further back, across six
+// devices at once, so it had no business being denser than the close-up. Kept
+// as an option because a host wanting a poster-quality still can pay for it.
+const PXMM_RELIEF = 5;
+
+// BoxGeometry takes its materials as [+x, -x, +y, -y, +z, -z].
+const MAT_SLOT = {right: 0, left: 1, top: 2, bottom: 3, front: 4, rear: 5};
+
+// What each opening view can actually see. Everything else is built afterwards.
+// 'front' is dead-on, so only the front face; 'iso' looks down from the front
+// right, so it also catches the right side and the top of the topmost device.
+const VISIBLE_FACES = {
+  front: new Set(['front']),
+  iso:   new Set(['front', 'right', 'top']),
+};
 
 export function createRackScene(container, opts = {}) {
   const DIST = opts.dist || 'assets/dist/';
@@ -103,7 +118,8 @@ export function createRackScene(container, opts = {}) {
   fill.position.set(-0.8, 0.3, -0.6);
   scene.add(fill);
 
-  configureRelief({THREE, renderer, PXMM: PXMM_RELIEF, FRU_PATHS: new Set()});
+  const PXMM = opts.pxmm || PXMM_RELIEF;
+  configureRelief({THREE, renderer, PXMM, FRU_PATHS: new Set()});
 
   // This scene's own override map. relief.js used to keep ONE, module-wide, so
   // two scenes in a page showing the same device with different occupants fought
@@ -312,16 +328,41 @@ export function createRackScene(container, opts = {}) {
       {view: 'left',  fw: () => D, fh: () => H, pos: () => [-W / 2, 0, 0], rot: [0, -Math.PI / 2, 0]},
       {view: 'top',   fw: () => W, fh: () => D, pos: () => [0, H / 2, 0],  rot: [-Math.PI / 2, 0, 0]},
     ];
+      // A rack is not a single device turned over in the hand: it opens at a known
+    // view and most of what is built is never seen. At 'front' four of the five
+    // faces face nothing; even at 'iso' the left and rear do. So the faces the
+    // opening camera can actually see are built first and the device goes up
+    // with them, and the rest arrive afterwards without anybody waiting. The
+    // total work is the same - the wait before the scrim can drop is not.
     const meshes = [], faceCv = {}, faceSvg = {}, facePunch = {};
-    for (const F of FACES) {
-      await buildFaceRelief(F, {scope: relief, src: f(F.view), faceCv, faceSvg, facePunch, meshes,
-        FRU_GROUPS: {}, FRU_META: {}, BODY_META: {}, D, bodyBoxMesh: null});
-    }
-    const bottomCv = await svgCanvas(f('bottom'), W, D, true, true, relief).catch(() => null);
+    // The five faces are independent: separate URLs, and every result is keyed
+    // by view. Building them serially left the main thread idle through each
+    // face's image decode in turn, which is most of what a face costs. Each
+    // gets its own mesh array so the concat below stays in FACES order rather
+    // than in whichever order the decodes happened to finish.
     const plain = () => new THREE.MeshLambertMaterial({color: 0x3a3f44});
     const mat = cv => cv ? new THREE.MeshLambertMaterial(
       {map: canvasTex(cv), transparent: true, alphaTest: 0.08}) : plain();
-    const mats = [faceCv.right, faceCv.left, faceCv.top, bottomCv, faceCv.front, faceCv.rear].map(mat);
+
+    // FLAT FIRST. Nearly all of a device's build time is buildFaceRelief turning
+    // every cage, dome and vent into its own extruded geometry - measured at
+    // 5.4 s across this stack's six front faces, against 0.3 s for fetching,
+    // extracting and rasterising the same faces. That relief is what makes a
+    // device convincing at arm's length in the single-device viewer. In a rack
+    // it is sub-millimetre detail seen from across the room.
+    //
+    // So the box goes up with plain rasterised faces, which is the whole
+    // picture minus the depth, and the relief is added afterwards for anyone
+    // who zooms in. Same end state, reached with nobody watching a scrim.
+    const flatCv = {};
+    await Promise.all([
+      ...FACES.map(F => svgCanvas(f(F.view), F.fw(), F.fh(), false, false, relief)
+        .then(cv => { flatCv[F.view] = cv; }).catch(() => {})),
+      svgCanvas(f('bottom'), W, D, true, true, relief)
+        .then(cv => { flatCv.bottom = cv; }).catch(() => {}),
+    ]);
+    const mats = ['right', 'left', 'top', 'bottom', 'front', 'rear']
+      .map(v => mat(flatCv[v]));
 
     const group = new THREE.Group();
     const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), mats);
@@ -342,6 +383,38 @@ export function createRackScene(container, opts = {}) {
     scene.add(tag);
     scene.add(group);
     mounted.push({entry, group, tag, ears});
+
+    // The faces nobody is looking at yet, plus the underside. Deliberately not
+    // awaited: build() resolves once every device is standing, so the scrim
+    // comes off then rather than after five faces per device. `mine` guards
+    // against a rebuild or a dispose landing while this is still going - the
+    // group would be gone and its materials disposed.
+    // The relief pass, deliberately not awaited: build() resolves once every
+    // device is standing. The faces the opening view can see are done first so
+    // a viewer who is already looking gets depth before the hidden sides do.
+    // `mine` guards a rebuild or dispose landing mid-pass, when this group and
+    // its materials are gone.
+    const mine = epoch;
+    const shownNow = VISIBLE_FACES[VIEW] || VISIBLE_FACES.iso;
+    const order = [...FACES].sort((a, b) =>
+      (shownNow.has(b.view) ? 1 : 0) - (shownNow.has(a.view) ? 1 : 0));
+    pending.push((async () => {
+      for (const F of order) {
+        const per = [];
+        await buildFaceRelief(F, {scope: relief, src: f(F.view), faceCv, faceSvg,
+          facePunch, meshes: per, FRU_GROUPS: {}, FRU_META: {}, BODY_META: {},
+          D, bodyBoxMesh: null});
+        if (mine !== epoch) return;
+        per.forEach(m => { group.add(m); meshes.push(m); });
+        const i = MAT_SLOT[F.view], cv = faceCv[F.view];
+        if (cv && body.material[i]) {
+          const prev = body.material[i];
+          body.material[i] = mat(cv);
+          prev.map && prev.map.dispose();
+          prev.dispose();
+        }
+      }
+    })());
     return group;
   }
 
@@ -367,6 +440,10 @@ export function createRackScene(container, opts = {}) {
   // Resolved into a parallel array rather than written back onto the caller's
   // objects. An entry that already carries them keeps them, so the callers that
   // pass the full shape today are untouched.
+  // Bumped whenever the standing devices are torn down, so deferred face work
+  // from a previous build knows its group no longer exists.
+  let epoch = 0;
+  let pending = [];
   let RESOLVED = [], COMPONENTS = null;
   async function hydrate() {
     const configs = new Map();
@@ -405,6 +482,8 @@ export function createRackScene(container, opts = {}) {
   }
 
   async function buildAll() {
+    epoch++;             // anything still filling in faces is now building for
+    pending = [];        // groups that are about to be disposed
     for (const m of mounted) {
       scene.remove(m.group); scene.remove(m.tag); scene.remove(m.ears);
       disposeTree(m.group); disposeTree(m.ears);
@@ -468,8 +547,13 @@ export function createRackScene(container, opts = {}) {
     toGLB: () => toGLB(scene),
     toUSDZ: () => toUSDZ(scene),
     three: {THREE, scene, camera, renderer, controls},
+    // Resolves when the deferred faces - sides, rear, underside - have all been
+    // installed. build() does not wait for these on purpose; this is here for a
+    // host that wants a complete scene before exporting or grabbing a still.
+    complete: async () => { await Promise.all(pending); },
     dispose() {
       alive = false;
+      epoch++;
       cancelAnimationFrame(raf);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
