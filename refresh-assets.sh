@@ -60,12 +60,14 @@ fi
 #
 # The Explorer is the shell plus its own panel, so the shell's graph comes too:
 # shell.js -> devsel.js, swap.js, dist.js, and the Explorer itself reads
-# states.js. marks.js arrives with the Annotator; gif.js and hl.js when
-# something here imports them.
+# states.js. marks.js arrives with the Annotator, and gif.js with marks.js -
+# nothing here names gif.js, but marks.toGif does `await import('./gif.js')`,
+# so a page that never mentions it still falls over without it.
 #
 # These modules are Portrayal's to own - they are how you talk to a drawing.
 # The pages built on them are this repository's.
-for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js states.js; do
+for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js \
+         states.js marks.js gif.js; do
   cp "$SRC/viewer/$m" "$HERE/vendor/$m"
 done
 
@@ -289,7 +291,8 @@ PYEOF
 # right and every tool page blank, so assert on the files - and on the export
 # each page actually imports, because an empty file is also a file.
 missing=0
-for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js states.js; do
+for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js \
+         states.js marks.js gif.js; do
   f="$HERE/vendor/$m"
   if [ ! -s "$f" ] || ! grep -q '^export' "$f"; then
     echo "  MISSING or empty: vendor/$m" >&2
