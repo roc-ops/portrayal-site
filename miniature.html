@@ -39,12 +39,13 @@
       </select></label>
     <button id="one">download this device</button>
     <button id="all">download every device of this vendor</button>
+    <button id="mods">download the modules as a shape library</button>
   </div>
   <pre id="out">loading…</pre>
 
 <script type="module">
 import { loadFace, portsOf } from './site/drawio.js';
-import { miniaturePage, bandsOf } from './site/miniature.js';
+import { miniaturePage, bandsOf, moduleLibrary } from './site/miniature.js';
 
 const DIST = 'assets/dist/';
 const $ = s => document.querySelector(s);
@@ -64,16 +65,20 @@ function fillDevices() {
   describe();
 }
 
+// Ports AND the slots they sit in. The slots come from the compiled index
+// rather than from the drawing, because a slot with nothing in it draws
+// nothing - and those are exactly the ones worth showing.
 async function portsFor(dev) {
-  const cfg = await (await fetch(`${DIST}${dev.name}.configs.json`)).json()
-    .catch(() => null);
+  const cfg = await fetch(`${DIST}${dev.name}.configs.json`)
+    .then(r => r.json()).catch(() => null);
   const c = cfg?.default;
   const face = $('#face').value;
+  const bays = (cfg?.bays?.[face] || []).map(b => ({...b}));
   for (const url of [`${DIST}${dev.name}.${c}.${face}.svg`,
                      `${DIST}${dev.name}.${face}.svg`]) {
     try {
       const f = await loadFace(url);
-      return portsOf(f.zones);
+      return {ports: portsOf(f.zones), bays};
     } catch { /* a device need not have this face */ }
   }
   return null;
@@ -83,12 +88,17 @@ async function describe() {
   const dev = DEVICES.find(d => d.name === $('#device').value);
   if (!dev) return;
   say('reading…');
-  const ports = await portsFor(dev);
-  if (!ports) return say(`${dev.model}: no ${$('#face').value} face compiled.`);
-  const bands = bandsOf(ports);
-  say(`${dev.model || dev.name} — ${ports.length} ports in ${bands.length} bands\n\n`
-    + bands.map(b => `  ${b.key.padEnd(20)} ${String(b.ports.length).padStart(3)}`
-        + `   ${[...new Set(b.ports.map(p => p.media).filter(Boolean))].join(', ')}`)
+  const got = await portsFor(dev);
+  if (!got) return say(`${dev.model}: no ${$('#face').value} face compiled.`);
+  const {ports, bays} = got;
+  const bands = bandsOf(ports, bays);
+  const empty = bands.filter(b => b.slot).length;
+  say(`${dev.model || dev.name} — ${ports.length} ports, ${bands.length} bands, `
+    + `${empty} empty slot${empty === 1 ? '' : 's'}\n\n`
+    + bands.map(b => `  ${(b.label || b.key).padEnd(30)} `
+        + (b.slot ? `empty · accepts ${b.slot.accepts.slice(0, 2).join(' / ')}`
+                  : `${String(b.ports.length).padStart(3)}  `
+                    + [...new Set(b.ports.map(p => p.media).filter(Boolean))].join(', ')))
         .join('\n'));
 }
 
@@ -102,9 +112,9 @@ const tag = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 $('#one').onclick = async () => {
   const dev = DEVICES.find(d => d.name === $('#device').value);
-  const ports = await portsFor(dev);
-  if (!ports) return say('nothing to draw for this face.');
-  save(miniaturePage([{name: dev.model || dev.name, ports}],
+  const got = await portsFor(dev);
+  if (!got) return say('nothing to draw for this face.');
+  save(miniaturePage([{name: dev.model || dev.name, ...got}],
                      {label: dev.model || dev.name}),
        `${tag(dev.manufacturer)}-${tag(dev.model || dev.name)}-mini-portrayal.drawio`);
 };
@@ -116,12 +126,37 @@ $('#all').onclick = async () => {
   let n = 0;
   for (const d of mine) {
     say(`reading ${++n}/${mine.length}…`);
-    const ports = await portsFor(d);
-    if (ports && ports.length) devs.push({name: d.model || d.name, ports});
+    const got = await portsFor(d);
+    if (got && (got.ports.length || got.bays.length))
+      devs.push({name: d.model || d.name, ...got});
   }
   if (!devs.length) return say('nothing to draw.');
   save(miniaturePage(devs, {label: v}), `${tag(v)}-minis-portrayal.drawio`);
   say(`${devs.length} devices written.`);
+};
+
+// Every module this vendor's devices can seat, drawn the same way, as a
+// library you can drag from into the empty slots the chassis draws.
+$('#mods').onclick = async () => {
+  const v = $('#vendor').value;
+  const comps = (await (await fetch(DIST + 'components.json')).json()).components;
+  const wanted = comps.filter(c => c.kind === 'module'
+    && (c.ns === v.toLowerCase().split(' ')[0] || c.ns === 'common'));
+  const mods = [];
+  let n = 0;
+  for (const c of wanted) {
+    say(`reading module ${++n}/${wanted.length}…`);
+    const skin = (c.skins || ['default'])[0];
+    try {
+      const f = await loadFace(
+        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+      const ports = portsOf(f.zones);
+      if (ports.length) mods.push({name: (c.attrs || {}).model || c.name, ports});
+    } catch { /* a module without a compiled skin is not drawable */ }
+  }
+  if (!mods.length) return say('no modules with ports for this vendor.');
+  save(moduleLibrary(mods), `${tag(v)}-modules-mini-portrayal.xml`);
+  say(`${mods.length} modules written as a shape library.`);
 };
 
 $('#vendor').onchange = fillDevices;

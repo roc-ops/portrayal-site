@@ -41,30 +41,57 @@ const cell = (id, value, style, x, y, w, h, parent = '1') =>
 const byId = (a, b) => String(a.id).localeCompare(String(b.id), undefined,
                                                  {numeric: true});
 
+const shortRef = r => String(r || '').split('/').pop().split('@')[0];
+
 /**
- * Split ports into the bands the symbol draws.
+ * Split a device into the bands the symbol draws.
  *
- * A modular chassis says which bay a port is on in its own path - an MX960's
- * ports are `fpc0/module/port-3` - so the bands are the bays, and swapping a
- * card changes the band without the generator knowing anything about cards. A
- * fixed-config box has no bays, so it bands by the port group the model already
- * declares, which is what puts the four SFP+ in one row and the RJ45s in
- * another rather than in one undifferentiated column of forty.
+ * A CHASSIS SHOWS EVERY SLOT, NOT EVERY POPULATED SLOT. This is the difference
+ * between a symbol you can plan with and a picture of one particular build. A
+ * C100G has fourteen front slots; the default configuration seats modules in
+ * two of them, so banding by "bays that have ports" drew a fourteen-slot chassis
+ * as a two-slot one. The other twelve are where the rest of the line cards go,
+ * and somewhere to put them is the entire reason to draw the chassis small.
+ *
+ * So bays come from the compiled index, in declared order, and a bay with
+ * nothing in it is drawn as an empty slot saying what it accepts. Ports are
+ * matched to their bay by path - an MX960's are already `fpc0/module/port-3` -
+ * which is also what makes a swapped card follow its band without this code
+ * knowing what a card is.
+ *
+ * Ports belonging to no bay - a fixed-config box's, or a chassis's own
+ * management - band by the port group the model declares.
  */
-export function bandsOf(ports) {
-  const bands = new Map();
-  const key = p => {
-    const seg = String(p.path || p.id).split('/');
-    if (seg.length > 1) return seg[0];              // the bay it is seated in
-    return p.group || p.media || 'ports';
-  };
-  for (const p of ports) {
-    const k = key(p);
-    if (!bands.has(k)) bands.set(k, {key: k, ports: []});
-    bands.get(k).ports.push(p);
+export function bandsOf(ports, bays = []) {
+  const bands = [];
+  const claimed = new Set();
+  for (const bay of bays) {
+    const id = bay.id;
+    const mine = ports.filter(p => String(p.path || p.id).startsWith(`${id}/`));
+    mine.forEach(p => claimed.add(p));
+    // A blank faceplate is what a free slot ships with, not something in it.
+    // Naming it would make twelve empty slots read as twelve fitted modules.
+    const occ = bay.occupant || bay.default;
+    const occupant = /blank|filler/i.test(shortRef(occ)) ? null : occ;
+    bands.push({
+      key: id,
+      label: occupant ? `${id} · ${shortRef(occupant)}` : id,
+      ports: mine.sort(byId),
+      // An empty slot is not a failure to draw something; it is the fact that
+      // the slot is free, which is what somebody planning a build needs.
+      slot: mine.length ? null : {accepts: (bay.accepts || []).map(shortRef)},
+    });
   }
-  for (const b of bands.values()) b.ports.sort(byId);
-  return [...bands.values()];
+  const rest = new Map();
+  for (const p of ports) {
+    if (claimed.has(p)) continue;
+    const seg = String(p.path || p.id).split('/');
+    const k = seg.length > 1 ? seg[0] : (p.group || p.media || 'ports');
+    if (!rest.has(k)) rest.set(k, {key: k, label: k, ports: [], slot: null});
+    rest.get(k).ports.push(p);
+  }
+  for (const b of rest.values()) b.ports.sort(byId);
+  return [...rest.values(), ...bands];
 }
 
 /** The label a stub carries: the last path segment, which is the port's own name. */
@@ -76,9 +103,9 @@ const stubLabel = p => String(p.path || p.id).split('/').pop();
  * Returns {xml, w, h}. Ports alternate left and right down each band, so a
  * forty-port card is twenty rows rather than forty, and both edges get used.
  */
-export function miniature(name, ports, {id = 'dev', x = 0, y = 0} = {}) {
-  const bands = bandsOf(ports);
-  const rows = b => Math.ceil(b.ports.length / 2);
+export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {}) {
+  const bands = bandsOf(ports, bays);
+  const rows = b => Math.max(1, Math.ceil(b.ports.length / 2));
   const bodyH = bands.reduce((a, b) => a + rows(b) * PITCH + PAD, 0);
   const h = HEAD + bodyH + PAD;
   const w = STUB + BODY + STUB;
@@ -93,10 +120,19 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0} = {}) {
   let cy = HEAD;
   for (const b of bands) {
     const bh = rows(b) * PITCH;
-    cells.push(cell(`${id}-${b.key}`, b.key,
-      'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
-      'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;',
-      STUB, cy, BODY, bh, id));
+    // An empty slot is drawn as one, dashed and saying what fits, so the
+    // chassis reads as "twelve of these free" rather than as a gap.
+    const style = b.slot
+      ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
+        'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
+        'verticalAlign=middle;align=center;'
+      : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
+        'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;';
+    const label = b.slot
+      ? `${b.key} — empty${b.slot.accepts.length
+          ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
+      : b.label || b.key;
+    cells.push(cell(`${id}-${b.key}`, label, style, STUB, cy, BODY, bh, id));
     b.ports.forEach((p, i) => {
       const right = i % 2 === 1;
       const ry = cy + Math.floor(i / 2) * PITCH;
@@ -119,7 +155,7 @@ export function miniaturePage(devices, {label = 'Miniatures'} = {}) {
   const GAP = 60;
   let x = 0, tallest = 0;
   const parts = devices.map((d, i) => {
-    const m = miniature(d.name, d.ports, {id: `m${i}`, x, y: 0});
+    const m = miniature(d.name, d.ports, {id: `m${i}`, x, y: 0, bays: d.bays});
     x += m.w + GAP;
     tallest = Math.max(tallest, m.h);
     return m.xml;
@@ -129,4 +165,22 @@ export function miniaturePage(devices, {label = 'Miniatures'} = {}) {
     `pageWidth="${Math.ceil(x - GAP + 20)}" pageHeight="${Math.ceil(tallest + 20)}">` +
     `<root><mxCell id="0"/><mxCell id="1" parent="0"/>${parts.join('')}` +
     `</root></mxGraphModel></diagram></mxfile>`;
+}
+
+/**
+ * The modules as a draw.io SHAPE LIBRARY, so a free slot can be filled.
+ *
+ * The chassis symbol draws its empty slots; this is what goes in them. A
+ * library rather than a page because that is how draw.io lets you keep shapes
+ * to hand and drag one in - the same mechanism the faceplate library already
+ * uses, carrying miniatures instead of images.
+ */
+export function moduleLibrary(modules) {
+  const entries = modules.map(m => {
+    const {xml, w, h} = miniature(m.name, m.ports, {id: 'mod'});
+    return {xml, w, h, aspect: 'fixed', title: m.name};
+  });
+  const payload = JSON.stringify(entries)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<mxlibrary>${payload}</mxlibrary>`;
 }
