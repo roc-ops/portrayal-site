@@ -107,8 +107,16 @@ if face is None:
 else:
     for attr in ("data-path", "data-class", "data-device"):
         check(attr in face, f"compiled SVG carries {attr}")
+    # ACROSS THE LIBRARY, NOT ON ONE DEVICE. Sampling the first compiled front
+    # face and demanding ports on it broke the day base configurations landed:
+    # a C100G's default is now a bare chassis - fourteen blanks, no modules, no
+    # ports and no lamps - which is a change we asked for, not drift. The
+    # classes still have to EXIST, or the exports find nothing; they just do not
+    # have to exist on whichever device sorts first.
+    faces = sorted(DIST.glob("*.front.svg"))
     for cls in ("port", "led", "region", "chassis"):
-        check(f'data-class="{cls}"' in face, f'data-class="{cls}" present',
+        n = sum(1 for f in faces if f'data-class="{cls}"' in f.read_text())
+        check(n > 0, f'data-class="{cls}" on {n} of {len(faces)} front faces',
               "the draw.io export finds ports by it")
     check(re.search(r'\.state-[a-z]+', face) is not None,
           "the .state-* stylesheet is compiled in",

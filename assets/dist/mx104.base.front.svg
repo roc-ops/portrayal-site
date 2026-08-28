@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="437.0mm" height="154.7mm" viewBox="0 0 437.0 154.7" data-device="mx104" data-view="front" data-config="base" data-weight="9 kg bare; 14.5 kg with power supplies, fan tray and MICs" data-operating-temp="-40 C to 65 C (datasheet - environmentally hardened)" data-eol="announced" data-eol-announcement="https://support.juniper.net/support/eol/product/m_series/">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    #led-sys-ok.state-ok, #led-sys-ok .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"config":"base","device":"Juniper MX104","device-version":"0.2.2","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","juniper/mx-mic-blank@1":"1.0.0","juniper/mx104-psu-dc@1":"1.0.0","juniper/mx104-re@1":"1.0.0","std/rj45@1":"1.3.0","std/sfp-ganged@1":"1.1.0","std/smb@1":"1.0.0","std/usb-a@1":"1.2.0"},"source":{"attrs":{"environmental":{"operating-temp":"-40 C to 65 C (datasheet - environmentally hardened)"},"lifecycle":{"eol":"announced","eol-announcement":"https://support.juniper.net/support/eol/product/m_series/"},"physical":{"weight":"9 kg bare; 14.5 kg with power supplies, fan tray and MICs"}},"chassis":{"color":"#8b8f94","depth":240.0,"height":154.7,"ru":3.5,"width":437.0},"configurations":{"base":{"bays":{"mic-0-0":"juniper/mx-mic-blank@1","mic-0-1":"juniper/mx-mic-blank@1","mic-1-0":"juniper/mx-mic-blank@1","mic-1-1":"juniper/mx-mic-blank@1"},"default":true,"description":"Chassis only - what you spec before deciding what goes in it. The 4 slot bays are EMPTY; psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.","kind":"base","source":"derived - built from the group roles rather than from a vendor bundle: every bay whose group is `service` or `management` keeps its seat, every `traffic` bay takes a blank. This vendor publishes no base configuration for this chassis, so the library defines one. Where a vendor DOES publish one, follow it instead and say so here."}},"description":"Juniper MX104 - a 3.5RU ETSI-depth modular edge router (EOL) for space- and temperature-constrained deployments. Fixed top panel with four 10GbE SFP+ ports, alarm connector, timing block (EXT REF CLOCK and ToD RJ45s, 1PPS and 10 MHz SMB in/out); four MIC slots in two rows (1/0, 1/1 above 0/0, 0/1); two slim Routing Engines stacked at the lower right and two DC power supplies at the lower left. The fan tray is side-mounted; the rear is a plain panel with the earthing plate.","format":1,"gaps":[{"reason":"sources-disagree","wanted":"a corrected MX104 physical table - the module rows scramble width/depth/height (a MIC listed 15.9 cm wide when the photographed face is ~168 mm, PSU axes likewise); faces are photo-sized and marked approximate.","what":"vendor-table-axes"},{"reason":"needs-photo","scope":["psus"],"wanted":"the AC supply face (guide Figure 9 is isometric line art only); only the photographed DC variant is modelled.","what":"ac-power-variant"},{"reason":"vendor-silent","scope":["mics","res","psus"],"wanted":"the remaining per-module wattage rows - only the 20x1GE MIC's 26 W was inside this extraction's text layer.","what":"per-module-power"},{"reason":"needs-drawing","scope":["mgmt"],"wanted":"a DB-15 standard part - the ALARM connector is drawn as a plain cutout with its legend.","what":"alarm-connector"}],"groups":{"grounding":{"description":"the protective-earthing stud pair under the rear earth symbol","index-origin":0,"role":"furniture","term":"Point"},"mgmt":{"index-origin":0,"mixed":"the ALARM DB-15 and the SYS OK lamp / ONLINE-OFFLINE button cluster on the fixed panel","role":"management","term":"Port"},"mics":{"description":"MIC slots 1/0 and 1/1 (upper row), 0/0 and 0/1 (lower row)","index-origin":0,"role":"traffic","term":"Slot"},"psus":{"index-origin":0,"role":"service","term":"PEM"},"res":{"description":"Two slim Routing Engine bays, RE0 below RE1","index-origin":0,"role":"service","term":"Slot"},"status-leds":{"index-origin":0,"role":"indicator","term":"LED"},"timing":{"index-origin":0,"mixed":"the timing block - EXT REF CLOCK and ToD RJ45s plus the 1PPS and 10 MHz SMB in/out quad","role":"management","term":"Port"},"xe":{"attrs":{"media":"sfp-plus","speed":"10g"},"description":"The four fixed 10GbE ports on the top panel, silkscreened 2/0/0 to 2/0/3","index-origin":0,"role":"traffic","term":"Port"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX104","name":"mx104","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"provenance":{"chassis":"datasheet-table - physical table: 6.09 in (154.7 mm) high, 17.22 in (437 mm) wide, 9.461 in (240 mm) deep; 9 kg bare / 14.5 kg configured. NOTE the same table scrambles width/depth/height axes on the module rows - the chassis row is self-consistent and carried; ears NOT MODELLED (19.2 in is over the brackets)","color":"photo - medium grey face and rear","fixed-panel":"photo - ALARM DB-15 at the left, four fixed XE SFP+ cages at centres 97.8-140.6 silkscreened 2/0/0-2/0/3, SYS OK lamp and ONLINE/OFFLINE button, EXT REF CLOCK and ToD RJ45s at 269.9/285.5, the 1PPS / 10 MHz IN-OUT SMB quad inline at 311.5-334.2, and the junos badge","lifecycle":"announced - MX104 is EOL (TSB seen in the family tables; image-library page redirects). Per-SKU dates on the Juniper milestones page","other-faces":"left face carries the estimated fan-tray band (side-mounted cooling per the guide); other faces rail-band estimates. Axis conventions per viewer3d.js as the siblings","populated-with":"photo - slot 1/0 and 0/1 carry MIC-3D-20GE-SFP, slot 1/1 the MIC-3D-4CHOC3-1OC12-CE, slot 0/0 the MIC-3D-2XGE-XFP; both RE bays carry the slim MX104 RE and both PSU bays the DC supply. Defaults reproduce that configuration","power":"guide power table - the 20x1GE MIC row (26 W) was captured; the chassis-level and remaining per-module rows fell outside this extraction's text layer and their L27 warnings stand. Max thermal and draw figures not carried rather than guessed","rear":"photo - a plain panel with the two-hole earthing plate at the bottom centre; nothing else. The fan tray and air filter are SIDE-mounted per the guide (Figure 7/8) and appear on the left face as an estimated band","scale":"photo - the front photograph is isotropic at 3.087 px/mm once the brackets are excluded (aspect with brackets matches the 48.7 cm over-brackets figure). Rows: fixed panel 0-44.4, MIC rows 44.4-76.5 and 76.5-108.5, PSU/RE band to 154.7. A FIRST READING put the RE rows at 13.9 mm - too thin to hold their photographed RJ45s - and the row boundary was re-derived; positions are single-pass and approximate to ~2 mm throughout","sources":"MX104 Hardware Guide (extracted into working/images/mx104/), the MX104 datasheet, and the image-library photographs mx104-front-high and mx104-rear-high. No mechanical drawing was available"},"version":"0.2.2","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#6d7175","size":[5.0,240.0],"source":"side edge; estimated"},{"at":[432.0,0.0],"confidence":"estimated","fill":"#6d7175","size":[5.0,240.0],"source":"side edge; estimated"}]},"size":{"h":240.0,"w":437.0}},"front":{"components":{"bays":[{"accepts":["juniper/mic-3d-16che1-t1-ce@1","juniper/mic-3d-1oc192-xfp@1","juniper/mic-3d-20ge-sfp@1","juniper/mic-3d-2xge-xfp@1","juniper/mic-3d-4choc3-1oc12@1","juniper/mic-3d-4choc3-2choc12@1","juniper/mic-3d-4oc3oc12-1oc48@1","juniper/mic-3d-8choc3-4choc12@1","juniper/mic-3d-8oc3oc12-4oc48@1","juniper/mic-macsec-20ge@1","juniper/ms-mic-16g@1","juniper/mx-mic-blank@1"],"at":[17.8,49.0],"default":"juniper/mic-3d-20ge-sfp@1","group":"mics","id":"mic-1-0","rel-pos":2,"size":{"h":27.0,"w":168.0}},{"accepts":["juniper/mic-3d-16che1-t1-ce@1","juniper/mic-3d-1oc192-xfp@1","juniper/mic-3d-20ge-sfp@1","juniper/mic-3d-2xge-xfp@1","juniper/mic-3d-4choc3-1oc12@1","juniper/mic-3d-4choc3-2choc12@1","juniper/mic-3d-4oc3oc12-1oc48@1","juniper/mic-3d-8choc3-4choc12@1","juniper/mic-3d-8oc3oc12-4oc48@1","juniper/mic-macsec-20ge@1","juniper/ms-mic-16g@1","juniper/mx-mic-blank@1"],"at":[193.0,49.0],"default":"juniper/mic-3d-4choc3-1oc12@1","group":"mics","id":"mic-1-1","rel-pos":3,"size":{"h":27.0,"w":168.0}},{"accepts":["juniper/mic-3d-16che1-t1-ce@1","juniper/mic-3d-1oc192-xfp@1","juniper/mic-3d-20ge-sfp@1","juniper/mic-3d-2xge-xfp@1","juniper/mic-3d-4choc3-1oc12@1","juniper/mic-3d-4choc3-2choc12@1","juniper/mic-3d-4oc3oc12-1oc48@1","juniper/mic-3d-8choc3-4choc12@1","juniper/mic-3d-8oc3oc12-4oc48@1","juniper/mic-macsec-20ge@1","juniper/ms-mic-16g@1","juniper/mx-mic-blank@1"],"at":[17.8,81.0],"default":"juniper/mic-3d-2xge-xfp@1","group":"mics","id":"mic-0-0","rel-pos":0,"size":{"h":27.0,"w":168.0}},{"accepts":["juniper/mic-3d-16che1-t1-ce@1","juniper/mic-3d-1oc192-xfp@1","juniper/mic-3d-20ge-sfp@1","juniper/mic-3d-2xge-xfp@1","juniper/mic-3d-4choc3-1oc12@1","juniper/mic-3d-4choc3-2choc12@1","juniper/mic-3d-4oc3oc12-1oc48@1","juniper/mic-3d-8choc3-4choc12@1","juniper/mic-3d-8oc3oc12-4oc48@1","juniper/mic-macsec-20ge@1","juniper/ms-mic-16g@1","juniper/mx-mic-blank@1"],"at":[193.0,81.0],"default":"juniper/mic-3d-20ge-sfp@1","group":"mics","id":"mic-0-1","rel-pos":1,"size":{"h":27.0,"w":168.0}},{"accepts":["juniper/mx104-psu-dc@1"],"at":[9.7,108.7],"default":"juniper/mx104-psu-dc@1","group":"psus","id":"pem0","rel-pos":0,"size":{"h":45.0,"w":103.7}},{"accepts":["juniper/mx104-psu-dc@1"],"at":[123.1,108.7],"default":"juniper/mx104-psu-dc@1","group":"psus","id":"pem1","rel-pos":1,"size":{"h":45.0,"w":103.7}},{"accepts":["juniper/mx104-re@1"],"at":[258.0,108.2],"default":"juniper/mx104-re@1","group":"res","id":"re1","rel-pos":1,"size":{"h":22.5,"w":145.0}},{"accepts":["juniper/mx104-re@1"],"at":[258.0,131.2],"default":"juniper/mx104-re@1","group":"res","id":"re0","rel-pos":0,"size":{"h":22.5,"w":145.0}}],"placements":[{"at":[90.68,20.0],"group":"xe","id":"xe-0","ref":"std/sfp-ganged@1","rel-pos":0},{"at":[104.93,20.0],"group":"xe","id":"xe-1","ref":"std/sfp-ganged@1","rel-pos":1},{"at":[119.18,20.0],"group":"xe","id":"xe-2","ref":"std/sfp-ganged@1","rel-pos":2},{"at":[133.43,20.0],"group":"xe","id":"xe-3","ref":"std/sfp-ganged@1","rel-pos":3},{"at":[260.9,8.0],"attrs":{"function":"external reference clock"},"group":"timing","id":"ext-ref-clock","ref":"std/rj45@1","rel-pos":0},{"at":[277.9,8.0],"attrs":{"function":"time of day"},"group":"timing","id":"tod","ref":"std/rj45@1","rel-pos":1},{"at":[309.09,10.09],"attrs":{"function":"1PPS input"},"group":"timing","id":"smb-1pps-in","ref":"std/smb@1","rel-pos":2},{"at":[316.29,10.09],"attrs":{"function":"1PPS output"},"group":"timing","id":"smb-1pps-out","ref":"std/smb@1","rel-pos":3},{"at":[324.59,10.09],"attrs":{"function":"10 MHz input"},"group":"timing","id":"smb-10mhz-in","ref":"std/smb@1","rel-pos":4},{"at":[331.79,10.09],"attrs":{"function":"10 MHz output"},"group":"timing","id":"smb-10mhz-out","ref":"std/smb@1","rel-pos":5},{"at":[155.0,21.0],"description":"SYS OK - green when the system is up (guide table)","for":"chassis","group":"status-leds","id":"led-sys-ok","ref":"common/led-dot@1","rel-pos":0,"states":["off",{"color":"#22c55e","name":"ok"}]},{"at":[153.8,28.0],"attrs":{"function":"online/offline"},"for":"chassis","group":"mgmt","id":"btn-online","ref":"common/reset-button@1","rel-pos":0}]},"panel":{"cutouts":[{"at":[33.0,18.5],"id":"alarm","size":[18.0,9.0]},{"at":[90.68,20.0],"id":"xe-0","size":[14.25,10.4]},{"at":[104.93,20.0],"id":"xe-1","size":[14.25,10.4]},{"at":[119.18,20.0],"id":"xe-2","size":[14.25,10.4]},{"at":[133.43,20.0],"id":"xe-3","size":[14.25,10.4]},{"at":[154.8,20.8],"id":"led-sys-ok","shape":"circle","size":[2.4,2.4]},{"at":[153.8,28.0],"id":"btn-online","shape":"circle","size":[3.6,3.6]},{"at":[260.9,8.0],"id":"ext-ref-clock","size":[16.0,14.0]},{"at":[277.9,8.0],"id":"tod","size":[16.0,14.0]},{"at":[309.09,10.09],"id":"smb-1pps-in","shape":"circle","size":[4.83,4.83]},{"at":[316.29,10.09],"id":"smb-1pps-out","shape":"circle","size":[4.83,4.83]},{"at":[324.59,10.09],"id":"smb-10mhz-in","shape":"circle","size":[4.83,4.83]},{"at":[331.79,10.09],"id":"smb-10mhz-out","shape":"circle","size":[4.83,4.83]}],"decor":[{"at":[0.0,0.0],"fill":"#84888d","rx":0.0,"size":[437.0,44.4]},{"at":[370.0,44.4],"fill":"#84888d","rx":0.8,"size":[67.0,64.1]}]},"silkscreen":[{"anchor":"start","at":[12.0,10.0],"fill":"#f0f1f2","font-size":3.8,"for":"chassis","text":"JUNIPER"},{"anchor":"middle","at":[27.0,12.6],"fill":"#d7dadd","font-size":1.3,"for":"chassis","text":"NETWORKS"},{"anchor":"start","at":[44.0,10.0],"fill":"#f0f1f2","font-size":3.0,"for":"chassis","text":"MX104"},{"anchor":"middle","at":[42.0,32.5],"fill":"#e8eaec","font-size":1.6,"for":"chassis","text":"ALARM"},{"anchor":"middle","at":[115.5,13.0],"fill":"#e8eaec","font-size":1.8,"for":"chassis","text":"XE"},{"anchor":"middle","at":[97.8,16.6],"fill":"#e8eaec","font-size":1.5,"for":"xe-0","text":"2/0/0"},{"anchor":"middle","at":[112.1,16.6],"fill":"#e8eaec","font-size":1.5,"for":"xe-1","text":"2/0/1"},{"anchor":"middle","at":[126.3,16.6],"fill":"#e8eaec","font-size":1.5,"for":"xe-2","text":"2/0/2"},{"anchor":"middle","at":[140.6,16.6],"fill":"#e8eaec","font-size":1.5,"for":"xe-3","text":"2/0/3"},{"anchor":"start","at":[162.0,22.0],"fill":"#e8eaec","font-size":1.5,"for":"led-sys-ok","text":"SYS OK"},{"anchor":"start","at":[160.0,31.5],"fill":"#e8eaec","font-size":1.4,"for":"btn-online","text":"ONLINE"},{"anchor":"start","at":[160.0,33.6],"fill":"#e8eaec","font-size":1.4,"for":"btn-online","text":"OFFLINE"},{"anchor":"middle","at":[269.9,26.6],"fill":"#e8eaec","font-size":1.4,"for":"ext-ref-clock","text":"EXT REF"},{"anchor":"middle","at":[269.9,28.7],"fill":"#e8eaec","font-size":1.4,"for":"ext-ref-clock","text":"CLOCK"},{"anchor":"middle","at":[285.5,27.6],"fill":"#e8eaec","font-size":1.4,"for":"tod","text":"ToD"},{"anchor":"middle","at":[315.1,6.4],"fill":"#e8eaec","font-size":1.5,"for":["smb-1pps-in","smb-1pps-out"],"text":"1PPS"},{"anchor":"middle","at":[330.7,6.4],"fill":"#e8eaec","font-size":1.5,"for":["smb-10mhz-in","smb-10mhz-out"],"text":"10MHz"},{"anchor":"middle","at":[311.5,19.0],"fill":"#e8eaec","font-size":1.3,"for":"smb-1pps-in","text":"IN"},{"anchor":"middle","at":[318.7,19.0],"fill":"#e8eaec","font-size":1.3,"for":"smb-1pps-out","text":"OUT"},{"anchor":"middle","at":[327.0,19.0],"fill":"#e8eaec","font-size":1.3,"for":"smb-10mhz-in","text":"IN"},{"anchor":"middle","at":[334.2,19.0],"fill":"#e8eaec","font-size":1.3,"for":"smb-10mhz-out","text":"OUT"},{"anchor":"middle","at":[365.0,10.0],"fill":"#f0f1f2","font-size":3.0,"for":"chassis","text":"junos"},{"anchor":"middle","at":[8.0,50.0],"fill":"#e8eaec","font-size":2.0,"for":"mic-1-0","text":"1/0"},{"anchor":"middle","at":[430.0,50.0],"fill":"#e8eaec","font-size":2.0,"for":"mic-1-1","text":"1/1"},{"anchor":"middle","at":[8.0,92.0],"fill":"#e8eaec","font-size":2.0,"for":"mic-0-0","text":"0/0"},{"anchor":"middle","at":[430.0,92.0],"fill":"#e8eaec","font-size":2.0,"for":"mic-0-1","text":"0/1"},{"anchor":"middle","at":[430.0,118.0],"fill":"#e8eaec","font-size":1.8,"for":"re1","text":"RE1"},{"anchor":"middle","at":[430.0,141.0],"fill":"#e8eaec","font-size":1.8,"for":"re0","text":"RE0"}],"size":{"h":154.7,"w":437.0}},"left":{"panel":{"decor":[{"at":[20.0,15.0],"confidence":"estimated","pattern":"holes","size":[200.0,125.0],"source":"side-mounted fan tray and intake field per guide Figures 7/8; extent estimated"}]},"size":{"h":154.7,"w":240.0}},"rear":{"components":{"placements":[{"at":[193.5,132.5],"for":"chassis","group":"grounding","id":"ground-stud-0","ref":"juniper/mx-ground-stud@1","rel-pos":0},{"at":[209.5,132.5],"for":"chassis","group":"grounding","id":"ground-stud-1","ref":"juniper/mx-ground-stud@1","rel-pos":1}]},"panel":{"cutouts":[{"at":[194.0,133.0],"id":"ground-stud-0","shape":"circle","size":[6.0,6.0]},{"at":[210.0,133.0],"id":"ground-stud-1","shape":"circle","size":[6.0,6.0]}],"decor":[{"at":[186.0,128.0],"fill":"#c9ccd0","rx":1.2,"size":[40.0,16.0]}]},"silkscreen":[{"at":[206.0,124.0],"fill":"#e8eaec","for":"chassis","path":"M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7"}],"size":{"h":154.7,"w":437.0}},"right":{"panel":{"decor":[{"at":[20.0,15.0],"confidence":"estimated","pattern":"holes","size":[200.0,125.0],"source":"side exhaust field per guide Figure 8; extent estimated"}]},"size":{"h":154.7,"w":240.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#6d7175","size":[5.0,240.0],"source":"side edge; estimated"},{"at":[432.0,0.0],"confidence":"estimated","fill":"#6d7175","size":[5.0,240.0],"source":"side edge; estimated"}]},"size":{"h":240.0,"w":437.0}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX104" x="0" y="0" width="437" height="154.7" rx="1.2" fill="#8b8f94" stroke="#22262a" stroke-width="0.5" />
+  <rect x="0" y="0" width="437" height="44.4" rx="0" fill="#84888d" />
+  <rect x="370" y="44.4" width="67" height="64.1" rx="0.8" fill="#84888d" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="33" y="18.5" width="18" height="9" id="cutout--alarm" data-path="cutout:alarm" data-class="cutout" fill="#101214" />
+    <rect x="90.68" y="20" width="14.25" height="10.4" id="cutout--xe-0" data-path="cutout:xe-0" data-class="cutout" fill="#101214" />
+    <rect x="104.93" y="20" width="14.25" height="10.4" id="cutout--xe-1" data-path="cutout:xe-1" data-class="cutout" fill="#101214" />
+    <rect x="119.18" y="20" width="14.25" height="10.4" id="cutout--xe-2" data-path="cutout:xe-2" data-class="cutout" fill="#101214" />
+    <rect x="133.43" y="20" width="14.25" height="10.4" id="cutout--xe-3" data-path="cutout:xe-3" data-class="cutout" fill="#101214" />
+    <ellipse cx="156" cy="22" rx="1.2" ry="1.2" id="cutout--led-sys-ok" data-path="cutout:led-sys-ok" data-class="cutout" fill="#101214" />
+    <ellipse cx="155.6" cy="29.8" rx="1.8" ry="1.8" id="cutout--btn-online" data-path="cutout:btn-online" data-class="cutout" fill="#101214" />
+    <rect x="260.9" y="8" width="16" height="14" id="cutout--ext-ref-clock" data-path="cutout:ext-ref-clock" data-class="cutout" fill="#101214" />
+    <rect x="277.9" y="8" width="16" height="14" id="cutout--tod" data-path="cutout:tod" data-class="cutout" fill="#101214" />
+    <ellipse cx="311.505" cy="12.505" rx="2.415" ry="2.415" id="cutout--smb-1pps-in" data-path="cutout:smb-1pps-in" data-class="cutout" fill="#101214" />
+    <ellipse cx="318.705" cy="12.505" rx="2.415" ry="2.415" id="cutout--smb-1pps-out" data-path="cutout:smb-1pps-out" data-class="cutout" fill="#101214" />
+    <ellipse cx="327.005" cy="12.505" rx="2.415" ry="2.415" id="cutout--smb-10mhz-in" data-path="cutout:smb-10mhz-in" data-class="cutout" fill="#101214" />
+    <ellipse cx="334.205" cy="12.505" rx="2.415" ry="2.415" id="cutout--smb-10mhz-out" data-path="cutout:smb-10mhz-out" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="12" y="10" font-family="sans-serif" font-size="3.8" text-anchor="start" fill="#f0f1f2" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">JUNIPER</text>
+    <text x="27" y="12.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d7dadd" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">NETWORKS</text>
+    <text x="44" y="10" font-family="sans-serif" font-size="3" text-anchor="start" fill="#f0f1f2" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">MX104</text>
+    <text x="42" y="32.5" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#e8eaec" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ALARM</text>
+    <text x="115.5" y="13" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e8eaec" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">XE</text>
+    <text x="97.8" y="16.6" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-0">2/0/0</text>
+    <text x="112.1" y="16.6" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-1">2/0/1</text>
+    <text x="126.3" y="16.6" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-2">2/0/2</text>
+    <text x="140.6" y="16.6" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="xe-3">2/0/3</text>
+    <text x="162" y="22" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#e8eaec" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys-ok">SYS OK</text>
+    <text x="160" y="31.5" font-family="sans-serif" font-size="1.4" text-anchor="start" fill="#e8eaec" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-online">ONLINE</text>
+    <text x="160" y="33.6" font-family="sans-serif" font-size="1.4" text-anchor="start" fill="#e8eaec" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-online">OFFLINE</text>
+    <text x="269.9" y="26.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e8eaec" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ext-ref-clock">EXT REF</text>
+    <text x="269.9" y="28.7" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e8eaec" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ext-ref-clock">CLOCK</text>
+    <text x="285.5" y="27.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e8eaec" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="tod">ToD</text>
+    <text x="315.1" y="6.4" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="smb-1pps-in smb-1pps-out">1PPS</text>
+    <text x="330.7" y="6.4" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="smb-10mhz-in smb-10mhz-out">10MHz</text>
+    <text x="311.5" y="19" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8eaec" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="smb-1pps-in">IN</text>
+    <text x="318.7" y="19" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8eaec" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="smb-1pps-out">OUT</text>
+    <text x="327" y="19" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8eaec" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="smb-10mhz-in">IN</text>
+    <text x="334.2" y="19" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e8eaec" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="smb-10mhz-out">OUT</text>
+    <text x="365" y="10" font-family="sans-serif" font-size="3" text-anchor="middle" fill="#f0f1f2" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">junos</text>
+    <text x="8" y="50" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e8eaec" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mic-1-0">1/0</text>
+    <text x="430" y="50" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e8eaec" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mic-1-1">1/1</text>
+    <text x="8" y="92" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e8eaec" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mic-0-0">0/0</text>
+    <text x="430" y="92" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#e8eaec" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mic-0-1">0/1</text>
+    <text x="430" y="118" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e8eaec" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="re1">RE1</text>
+    <text x="430" y="141" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e8eaec" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="re0">RE0</text>
+  </g>
+  <g id="xe-0" data-path="xe-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-group="xe" data-rel-pos="0" transform="translate(90.68,20.0)" data-group-role="traffic" data-description="The four fixed 10GbE ports on the top panel, silkscreened 2/0/0 to 2/0/3">
+    <title>xe-0</title>
+    <rect id="xe-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="xe-0/opening" data-class="cutout" />
+    <rect id="xe-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="xe-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="xe-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="xe-1" data-path="xe-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-group="xe" data-rel-pos="1" transform="translate(104.93,20.0)" data-group-role="traffic" data-description="The four fixed 10GbE ports on the top panel, silkscreened 2/0/0 to 2/0/3">
+    <title>xe-1</title>
+    <rect id="xe-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="xe-1/opening" data-class="cutout" />
+    <rect id="xe-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="xe-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="xe-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="xe-2" data-path="xe-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-group="xe" data-rel-pos="2" transform="translate(119.18,20.0)" data-group-role="traffic" data-description="The four fixed 10GbE ports on the top panel, silkscreened 2/0/0 to 2/0/3">
+    <title>xe-2</title>
+    <rect id="xe-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="xe-2/opening" data-class="cutout" />
+    <rect id="xe-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="xe-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="xe-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="xe-3" data-path="xe-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-group="xe" data-rel-pos="3" transform="translate(133.43,20.0)" data-group-role="traffic" data-description="The four fixed 10GbE ports on the top panel, silkscreened 2/0/0 to 2/0/3">
+    <title>xe-3</title>
+    <rect id="xe-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="xe-3/opening" data-class="cutout" />
+    <rect id="xe-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="xe-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="xe-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="ext-ref-clock" data-path="ext-ref-clock" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="external reference clock" data-media="rj45" data-group="timing" data-rel-pos="0" transform="translate(260.9,8.0)" data-group-role="management">
+    <title>ext-ref-clock</title>
+    <rect id="ext-ref-clock--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="ext-ref-clock/opening" data-class="cutout" />
+    <path id="ext-ref-clock--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="ext-ref-clock--pins" fill="#a8873c">
+      <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+      <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+      <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+      <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+      <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+      <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+      <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+      <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+    </g>
+  </g>
+  <g id="tod" data-path="tod" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="time of day" data-media="rj45" data-group="timing" data-rel-pos="1" transform="translate(277.9,8.0)" data-group-role="management">
+    <title>tod</title>
+    <rect id="tod--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="tod/opening" data-class="cutout" />
+    <path id="tod--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="tod--pins" fill="#a8873c">
+      <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+      <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+      <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+      <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+      <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+      <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+      <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+      <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+    </g>
+  </g>
+  <g id="smb-1pps-in" data-path="smb-1pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS input" data-media="coax-smb" data-group="timing" data-rel-pos="2" transform="translate(309.09,10.09)" data-group-role="management">
+    <title>smb-1pps-in</title>
+    <circle id="smb-1pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="smb-1pps-in/opening" data-class="cutout" />
+    <g id="smb-1pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+      <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+      <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+      <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+    </g>
+  </g>
+  <g id="smb-1pps-out" data-path="smb-1pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS output" data-media="coax-smb" data-group="timing" data-rel-pos="3" transform="translate(316.29,10.09)" data-group-role="management">
+    <title>smb-1pps-out</title>
+    <circle id="smb-1pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="smb-1pps-out/opening" data-class="cutout" />
+    <g id="smb-1pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+      <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+      <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+      <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+    </g>
+  </g>
+  <g id="smb-10mhz-in" data-path="smb-10mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10 MHz input" data-media="coax-smb" data-group="timing" data-rel-pos="4" transform="translate(324.59,10.09)" data-group-role="management">
+    <title>smb-10mhz-in</title>
+    <circle id="smb-10mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="smb-10mhz-in/opening" data-class="cutout" />
+    <g id="smb-10mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+      <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+      <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+      <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+    </g>
+  </g>
+  <g id="smb-10mhz-out" data-path="smb-10mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10 MHz output" data-media="coax-smb" data-group="timing" data-rel-pos="5" transform="translate(331.79,10.09)" data-group-role="management">
+    <title>smb-10mhz-out</title>
+    <circle id="smb-10mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="smb-10mhz-out/opening" data-class="cutout" />
+    <g id="smb-10mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+      <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+      <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+      <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+    </g>
+  </g>
+  <g id="led-sys-ok" data-path="led-sys-ok" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="0" transform="translate(155.0,21.0)" data-group-role="indicator" data-states="off ok" data-description="SYS OK - green when the system is up (guide table)" data-for="chassis">
+    <title>led-sys-ok</title>
+    <circle id="led-sys-ok--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sys-ok--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sys-ok/lamp" data-class="led" data-states="off ok" data-z-dome="0.3" />
+  </g>
+  <g id="btn-online" data-path="btn-online" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="online/offline" data-group="mgmt" data-rel-pos="0" transform="translate(153.8,28.0)" data-group-role="management" data-for="chassis">
+    <title>btn-online</title>
+    <circle id="btn-online--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="btn-online--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="btn-online/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="mic-1-0" data-path="mic-1-0" data-class="bay" data-group="mics" data-group-role="traffic" data-rel-pos="2">
+    <title>mic-1-0</title>
+    <rect id="mic-1-0--opening" x="17.8" y="49" width="168" height="27" fill="#101214" />
+    <g id="mic-1-0--module" data-path="mic-1-0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx-mic-blank@1:1.0.0" data-states="ok absent" transform="translate(101.8,62.5) translate(-84,-13.5)">
+      <title>mic-1-0--module</title>
+      <rect id="mic-1-0--module--face" x="0" y="0" width="168.0" height="27.0" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="mic-1-0--module--stiffener">
+        <rect x="8" y="10.5" width="152.0" height="6" rx="3.0" fill="#aeb3b9" />
+      </g>
+    </g>
+  </g>
+  <g id="mic-1-1" data-path="mic-1-1" data-class="bay" data-group="mics" data-group-role="traffic" data-rel-pos="3">
+    <title>mic-1-1</title>
+    <rect id="mic-1-1--opening" x="193" y="49" width="168" height="27" fill="#101214" />
+    <g id="mic-1-1--module" data-path="mic-1-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx-mic-blank@1:1.0.0" data-states="ok absent" transform="translate(277,62.5) translate(-84,-13.5)">
+      <title>mic-1-1--module</title>
+      <rect id="mic-1-1--module--face" x="0" y="0" width="168.0" height="27.0" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="mic-1-1--module--stiffener">
+        <rect x="8" y="10.5" width="152.0" height="6" rx="3.0" fill="#aeb3b9" />
+      </g>
+    </g>
+  </g>
+  <g id="mic-0-0" data-path="mic-0-0" data-class="bay" data-group="mics" data-group-role="traffic" data-rel-pos="0">
+    <title>mic-0-0</title>
+    <rect id="mic-0-0--opening" x="17.8" y="81" width="168" height="27" fill="#101214" />
+    <g id="mic-0-0--module" data-path="mic-0-0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx-mic-blank@1:1.0.0" data-states="ok absent" transform="translate(101.8,94.5) translate(-84,-13.5)">
+      <title>mic-0-0--module</title>
+      <rect id="mic-0-0--module--face" x="0" y="0" width="168.0" height="27.0" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="mic-0-0--module--stiffener">
+        <rect x="8" y="10.5" width="152.0" height="6" rx="3.0" fill="#aeb3b9" />
+      </g>
+    </g>
+  </g>
+  <g id="mic-0-1" data-path="mic-0-1" data-class="bay" data-group="mics" data-group-role="traffic" data-rel-pos="1">
+    <title>mic-0-1</title>
+    <rect id="mic-0-1--opening" x="193" y="81" width="168" height="27" fill="#101214" />
+    <g id="mic-0-1--module" data-path="mic-0-1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/mx-mic-blank@1:1.0.0" data-states="ok absent" transform="translate(277,94.5) translate(-84,-13.5)">
+      <title>mic-0-1--module</title>
+      <rect id="mic-0-1--module--face" x="0" y="0" width="168.0" height="27.0" rx="0.6" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="mic-0-1--module--stiffener">
+        <rect x="8" y="10.5" width="152.0" height="6" rx="3.0" fill="#aeb3b9" />
+      </g>
+    </g>
+  </g>
+  <g id="pem0" data-path="pem0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>pem0</title>
+    <rect id="pem0--opening" x="9.7" y="108.7" width="103.7" height="45" fill="#101214" />
+    <g id="pem0--module" data-path="pem0/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx104-psu-dc@1:1.0.0" data-input="24 VDC or -48 to -60 VDC, 40 A / 20 A per the nameplate" data-model="MX104 DC PSU" data-power-output-w="800" data-redundancy="1+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(61.55,131.2) translate(-51.85,-22.5)">
+      <title>pem0--module</title>
+      <rect id="pem0--module--face" x="0" y="0" width="103.7" height="45.0" rx="0.8" fill="#8b8f94" stroke="#6d7278" stroke-width="0.4" />
+      <g id="pem0--module--screws">
+        <circle cx="8.0" cy="6.5" r="2.2" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="95.0" cy="6.5" r="2.2" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+      <g id="pem0--module--warn-chip">
+        <path d="M 62.0 8.0 l 4.6 8.2 l -9.2 0 Z" fill="#f2c93c" stroke="#8f7714" stroke-width="0.5" />
+        <path d="M 62.0 10.6 l 0 3.0 M 62.0 15.0 l 0 0.4" stroke="#3a3226" stroke-width="0.7" fill="none" />
+      </g>
+      <g id="pem0--module--terminals" data-path="pem0/module/terminals" data-class="terminal" data-z-out="2.4" data-z-color="#17191c">
+        <rect id="pem0--module--terminal-plate" x="8.0" y="20.0" width="42.0" height="20.0" rx="1.6" fill="#17191c" stroke="#0d0f11" stroke-width="0.5" />
+        <g id="pem0--module--stud-0" data-z-cyl="6.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="20.0" cy="30.0" r="4.6" fill="#4a4f55" stroke="#6d7379" stroke-width="0.4" />
+          <circle cx="20.0" cy="30.0" r="2.4" fill="#33373c" />
+        </g>
+        <g id="pem0--module--stud-1" data-z-cyl="6.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="38.0" cy="30.0" r="4.6" fill="#4a4f55" stroke="#6d7379" stroke-width="0.4" />
+          <circle cx="38.0" cy="30.0" r="2.4" fill="#33373c" />
+        </g>
+      </g>
+      <g id="pem0--module--silkscreen">
+        <g id="pem0--module--t22-silkscreen">
+          <text x="14.0" y="19.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">V-</text>
+        </g>
+        <g id="pem0--module--t23-silkscreen">
+          <text x="32.0" y="19.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">V+</text>
+        </g>
+        <g id="pem0--module--t24-silkscreen">
+          <text x="52.0" y="43.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">24V=== / -48V~-60V=== 40A/20A</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="pem1" data-path="pem1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>pem1</title>
+    <rect id="pem1--opening" x="123.1" y="108.7" width="103.7" height="45" fill="#101214" />
+    <g id="pem1--module" data-path="pem1/module" data-class="psu" data-behaviour="fills" data-ref="juniper/mx104-psu-dc@1:1.0.0" data-input="24 VDC or -48 to -60 VDC, 40 A / 20 A per the nameplate" data-model="MX104 DC PSU" data-power-output-w="800" data-redundancy="1+1" data-role="dc-power-supply" data-states="ok fault absent" transform="translate(174.95,131.2) translate(-51.85,-22.5)">
+      <title>pem1--module</title>
+      <rect id="pem1--module--face" x="0" y="0" width="103.7" height="45.0" rx="0.8" fill="#8b8f94" stroke="#6d7278" stroke-width="0.4" />
+      <g id="pem1--module--screws">
+        <circle cx="8.0" cy="6.5" r="2.2" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle cx="95.0" cy="6.5" r="2.2" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.35" />
+      </g>
+      <g id="pem1--module--warn-chip">
+        <path d="M 62.0 8.0 l 4.6 8.2 l -9.2 0 Z" fill="#f2c93c" stroke="#8f7714" stroke-width="0.5" />
+        <path d="M 62.0 10.6 l 0 3.0 M 62.0 15.0 l 0 0.4" stroke="#3a3226" stroke-width="0.7" fill="none" />
+      </g>
+      <g id="pem1--module--terminals" data-path="pem1/module/terminals" data-class="terminal" data-z-out="2.4" data-z-color="#17191c">
+        <rect id="pem1--module--terminal-plate" x="8.0" y="20.0" width="42.0" height="20.0" rx="1.6" fill="#17191c" stroke="#0d0f11" stroke-width="0.5" />
+        <g id="pem1--module--stud-0" data-z-cyl="6.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="20.0" cy="30.0" r="4.6" fill="#4a4f55" stroke="#6d7379" stroke-width="0.4" />
+          <circle cx="20.0" cy="30.0" r="2.4" fill="#33373c" />
+        </g>
+        <g id="pem1--module--stud-1" data-z-cyl="6.0" data-z-lift="2.4" data-z-thread="1.0">
+          <circle cx="38.0" cy="30.0" r="4.6" fill="#4a4f55" stroke="#6d7379" stroke-width="0.4" />
+          <circle cx="38.0" cy="30.0" r="2.4" fill="#33373c" />
+        </g>
+      </g>
+      <g id="pem1--module--silkscreen">
+        <g id="pem1--module--t22-silkscreen">
+          <text x="14.0" y="19.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">V-</text>
+        </g>
+        <g id="pem1--module--t23-silkscreen">
+          <text x="32.0" y="19.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">V+</text>
+        </g>
+        <g id="pem1--module--t24-silkscreen">
+          <text x="52.0" y="43.0" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="middle">24V=== / -48V~-60V=== 40A/20A</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="re1" data-path="re1" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="1">
+    <title>re1</title>
+    <rect id="re1--opening" x="258" y="108.2" width="145" height="22.5" fill="#101214" />
+    <g id="re1--module" data-path="re1/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/mx104-re@1:1.0.0" data-model="RE-MX-104" data-power-absent="not-published" data-states="ok fail absent" transform="translate(330.5,119.45) translate(-72.5,-11.25)">
+      <title>re1--module</title>
+      <rect id="re1--module--face" x="0" y="0" width="145.0" height="22.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="re1--module--lamps">
+        <circle id="re1--module--led-master" cx="12.0" cy="6.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="re1--module--led-ok-fail" cx="17.0" cy="6.5" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="re1--module--led-online" cx="12.0" cy="12.0" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="re1--module--btn-reset" cx="24.0" cy="6.5" r="1.1" fill="#17191c" />
+        <circle id="re1--module--btn-online" cx="24.0" cy="13.5" r="1.6" fill="#26292d" stroke="#565b60" stroke-width="0.35" />
+      </g>
+      <g id="re1--module--silkscreen">
+        <g id="re1--module--t11-silkscreen">
+          <text x="14.5" y="3.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">OK/FAIL</text>
+        </g>
+        <g id="re1--module--t12-silkscreen">
+          <text x="8.0" y="7.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="end">MASTER</text>
+        </g>
+        <g id="re1--module--t13-silkscreen">
+          <text x="8.0" y="12.7" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="end">ONLINE</text>
+        </g>
+        <g id="re1--module--t14-silkscreen">
+          <text x="28.0" y="7.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="start">RESET</text>
+        </g>
+        <g id="re1--module--t15-silkscreen">
+          <text x="28.0" y="12.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">ONLINE/</text>
+        </g>
+        <g id="re1--module--t16-silkscreen">
+          <text x="28.0" y="14.5" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">OFFLINE</text>
+        </g>
+        <g id="re1--module--t17-silkscreen">
+          <text x="45.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB 0</text>
+        </g>
+        <g id="re1--module--t18-silkscreen">
+          <text x="53.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB 1</text>
+        </g>
+        <g id="re1--module--t19-silkscreen">
+          <text x="70.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">AUX</text>
+        </g>
+        <g id="re1--module--t20-silkscreen">
+          <text x="88.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
+        </g>
+        <g id="re1--module--t21-silkscreen">
+          <text x="116.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">ETHERNET</text>
+        </g>
+      </g>
+      <g id="re1--module--usb0" data-path="re1/module/usb0" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 0" data-media="usb-a" transform="translate(39.0,9.75) rotate(90 6.0 2.25)">
+        <title>re1--module--usb0</title>
+        <rect id="re1--module--usb0--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="re1/module/usb0/opening" data-class="cutout" />
+        <rect id="re1--module--usb0--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+      </g>
+      <g id="re1--module--usb1" data-path="re1/module/usb1" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 1" data-media="usb-a" transform="translate(47.0,9.75) rotate(90 6.0 2.25)">
+        <title>re1--module--usb1</title>
+        <rect id="re1--module--usb1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="re1/module/usb1/opening" data-class="cutout" />
+        <rect id="re1--module--usb1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+      </g>
+      <g id="re1--module--aux" data-path="re1/module/aux" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="auxiliary console" data-media="rj45" transform="translate(62.0,5.75)">
+        <title>re1--module--aux</title>
+        <rect id="re1--module--aux--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re1/module/aux/opening" data-class="cutout" />
+        <path id="re1--module--aux--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re1--module--aux--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <g id="re1--module--console" data-path="re1/module/console" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(80.0,5.75)">
+        <title>re1--module--console</title>
+        <rect id="re1--module--console--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re1/module/console/opening" data-class="cutout" />
+        <path id="re1--module--console--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re1--module--console--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <g id="re1--module--ethernet" data-path="re1/module/ethernet" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="out-of-band management" data-media="rj45" transform="translate(108.0,5.75)">
+        <title>re1--module--ethernet</title>
+        <rect id="re1--module--ethernet--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re1/module/ethernet/opening" data-class="cutout" />
+        <path id="re1--module--ethernet--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re1--module--ethernet--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="re0" data-path="re0" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="0">
+    <title>re0</title>
+    <rect id="re0--opening" x="258" y="131.2" width="145" height="22.5" fill="#101214" />
+    <g id="re0--module" data-path="re0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/mx104-re@1:1.0.0" data-model="RE-MX-104" data-power-absent="not-published" data-states="ok fail absent" transform="translate(330.5,142.45) translate(-72.5,-11.25)">
+      <title>re0--module</title>
+      <rect id="re0--module--face" x="0" y="0" width="145.0" height="22.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+      <g id="re0--module--lamps">
+        <circle id="re0--module--led-master" cx="12.0" cy="6.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="re0--module--led-ok-fail" cx="17.0" cy="6.5" r="0.9" fill="var(--led-color, #3a3f44)" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="re0--module--led-online" cx="12.0" cy="12.0" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+        <circle id="re0--module--btn-reset" cx="24.0" cy="6.5" r="1.1" fill="#17191c" />
+        <circle id="re0--module--btn-online" cx="24.0" cy="13.5" r="1.6" fill="#26292d" stroke="#565b60" stroke-width="0.35" />
+      </g>
+      <g id="re0--module--silkscreen">
+        <g id="re0--module--t11-silkscreen">
+          <text x="14.5" y="3.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">OK/FAIL</text>
+        </g>
+        <g id="re0--module--t12-silkscreen">
+          <text x="8.0" y="7.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="end">MASTER</text>
+        </g>
+        <g id="re0--module--t13-silkscreen">
+          <text x="8.0" y="12.7" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="end">ONLINE</text>
+        </g>
+        <g id="re0--module--t14-silkscreen">
+          <text x="28.0" y="7.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="start">RESET</text>
+        </g>
+        <g id="re0--module--t15-silkscreen">
+          <text x="28.0" y="12.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">ONLINE/</text>
+        </g>
+        <g id="re0--module--t16-silkscreen">
+          <text x="28.0" y="14.5" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">OFFLINE</text>
+        </g>
+        <g id="re0--module--t17-silkscreen">
+          <text x="45.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB 0</text>
+        </g>
+        <g id="re0--module--t18-silkscreen">
+          <text x="53.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB 1</text>
+        </g>
+        <g id="re0--module--t19-silkscreen">
+          <text x="70.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">AUX</text>
+        </g>
+        <g id="re0--module--t20-silkscreen">
+          <text x="88.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
+        </g>
+        <g id="re0--module--t21-silkscreen">
+          <text x="116.0" y="4.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">ETHERNET</text>
+        </g>
+      </g>
+      <g id="re0--module--usb0" data-path="re0/module/usb0" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 0" data-media="usb-a" transform="translate(39.0,9.75) rotate(90 6.0 2.25)">
+        <title>re0--module--usb0</title>
+        <rect id="re0--module--usb0--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="re0/module/usb0/opening" data-class="cutout" />
+        <rect id="re0--module--usb0--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+      </g>
+      <g id="re0--module--usb1" data-path="re0/module/usb1" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 1" data-media="usb-a" transform="translate(47.0,9.75) rotate(90 6.0 2.25)">
+        <title>re0--module--usb1</title>
+        <rect id="re0--module--usb1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="re0/module/usb1/opening" data-class="cutout" />
+        <rect id="re0--module--usb1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+      </g>
+      <g id="re0--module--aux" data-path="re0/module/aux" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="auxiliary console" data-media="rj45" transform="translate(62.0,5.75)">
+        <title>re0--module--aux</title>
+        <rect id="re0--module--aux--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re0/module/aux/opening" data-class="cutout" />
+        <path id="re0--module--aux--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re0--module--aux--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <g id="re0--module--console" data-path="re0/module/console" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(80.0,5.75)">
+        <title>re0--module--console</title>
+        <rect id="re0--module--console--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re0/module/console/opening" data-class="cutout" />
+        <path id="re0--module--console--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re0--module--console--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <g id="re0--module--ethernet" data-path="re0/module/ethernet" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="out-of-band management" data-media="rj45" transform="translate(108.0,5.75)">
+        <title>re0--module--ethernet</title>
+        <rect id="re0--module--ethernet--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="re0/module/ethernet/opening" data-class="cutout" />
+        <path id="re0--module--ethernet--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="re0--module--ethernet--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
