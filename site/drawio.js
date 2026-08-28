@@ -353,8 +353,17 @@ export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
     // opened the file scrolled off its own content - the racks above the
     // viewport with a sliver of cabinet showing, which reads as an empty file
     // until you think to zoom out. Omitted, draw.io fits the page itself.
+    // PAGE FRAME OFF. With page="1" draw.io opened the file scrolled past the
+    // bottom of its own content - the rack feet at the top of the viewport and
+    // everything else above it. Putting the content at the origin and drawing
+    // the page tight around it both moved it slightly and neither fixed it, so
+    // the page is what it is scrolling to rather than the drawing. With no page
+    // it has nothing to scroll to but the graph, and fits that instead.
+    //
+    // pageWidth/pageHeight are kept: they are what a later File > Page Setup or
+    // an export reads, and only `page` decides whether a frame is drawn.
     return `<diagram name="${esc(group.label)}" id="page${gi}">` +
-      `<mxGraphModel grid="0" page="1" ` +
+      `<mxGraphModel grid="0" page="0" pageScale="1" ` +
       `pageWidth="${Math.ceil(x - RACK_GAP + 20)}" ` +
       `pageHeight="${Math.ceil(tallest + TOP + 20)}"><root>` +
       `<mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}` +
