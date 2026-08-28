@@ -16,6 +16,13 @@
   pre { white-space: pre-wrap; font-size: .78rem; color: var(--pt-ink-muted);
         border-top: 1px solid var(--pt-line-soft); padding-top: 1rem; margin-top: 1.5rem; }
   .note { max-width: 68ch; color: var(--pt-ink-muted); font-size: .9rem; }
+  table { border-collapse: collapse; margin: 1rem 0; font-size: .82rem; }
+  th, td { text-align: left; padding: .3rem .7rem .3rem 0;
+           border-bottom: 1px solid var(--pt-line-soft); }
+  th { color: var(--pt-ink-faint); font-weight: 600; font-size: .72rem;
+       text-transform: uppercase; letter-spacing: .04em; }
+  td select { font-size: .8rem; padding: .2rem .3rem; }
+  .ports { color: var(--pt-ink-faint); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -41,6 +48,7 @@
     <button id="all">download every device of this vendor</button>
     <button id="mods">download the modules as a shape library</button>
   </div>
+  <div id="slots"></div>
   <pre id="out">loading…</pre>
 
 <script type="module">
@@ -62,44 +70,139 @@ function fillDevices() {
     .sort((a, b) => (a.model || a.name).localeCompare(b.model || b.name));
   $('#device').innerHTML = mine
     .map(d => `<option value="${d.name}">${d.model || d.name}</option>`).join('');
-  describe();
+  refresh();
 }
 
-// Ports AND the slots they sit in. The slots come from the compiled index
-// rather than from the drawing, because a slot with nothing in it draws
-// nothing - and those are exactly the ones worth showing.
-async function portsFor(dev) {
+// ---------------------------------------------------------------------------
+// Resolving a device to ports.
+//
+// The drawing only shows what the DEFAULT configuration seats, so it cannot be
+// the source for a chassis somebody is configuring. Slots come from the compiled
+// index, the occupant of each is chosen below, and that module's ports come from
+// the module's own drawing - re-pathed as `<bay>/<port>` so they land in the
+// right band and read like the seated ports they represent.
+// ---------------------------------------------------------------------------
+
+let CTX = null;          // {dev, face, bays, chassisPorts, components}
+const COMPONENTS = (await (await fetch(DIST + 'components.json')).json()).components;
+const byRef = new Map(COMPONENTS.map(c => [`${c.ns}/${c.name}`, c]));
+const refKey = r => String(r || '').split('@')[0];
+const shortRef = r => refKey(r).split('/').pop();
+const isBlank = r => /blank|filler/i.test(shortRef(r));
+
+const modCache = new Map();
+async function modulePorts(ref) {
+  const key = refKey(ref);
+  if (modCache.has(key)) return modCache.get(key);
+  const c = byRef.get(key);
+  let ports = [];
+  if (c) {
+    const skin = (c.skins || ['default'])[0];
+    try {
+      const f = await loadFace(
+        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
+      ports = portsOf(f.zones);
+    } catch { /* a module with no compiled skin draws no ports */ }
+  }
+  modCache.set(key, ports);
+  return ports;
+}
+
+async function loadDevice() {
+  const dev = DEVICES.find(d => d.name === $('#device').value);
+  const face = $('#face').value;
   const cfg = await fetch(`${DIST}${dev.name}.configs.json`)
     .then(r => r.json()).catch(() => null);
-  const c = cfg?.default;
-  const face = $('#face').value;
-  const bays = (cfg?.bays?.[face] || []).map(b => ({...b}));
-  for (const url of [`${DIST}${dev.name}.${c}.${face}.svg`,
+  const bays = (cfg?.bays?.[face] || []).map(b => ({
+    ...b, chosen: isBlank(b.default) ? '' : refKey(b.default),
+  }));
+  let chassisPorts = [];
+  for (const url of [`${DIST}${dev.name}.${cfg?.default}.${face}.svg`,
                      `${DIST}${dev.name}.${face}.svg`]) {
     try {
       const f = await loadFace(url);
-      return {ports: portsOf(f.zones), bays};
+      // Only the chassis's OWN ports. Anything under a bay belongs to whatever
+      // is seated there, which is the thing being configured.
+      chassisPorts = portsOf(f.zones).filter(p =>
+        !bays.some(b => String(p.path || p.id).startsWith(`${b.id}/`)));
+      break;
     } catch { /* a device need not have this face */ }
   }
-  return null;
+  CTX = {dev, face, bays, chassisPorts};
+  return CTX;
+}
+
+/** The device as it is currently configured: chassis ports plus each slot's. */
+async function resolved() {
+  if (!CTX) return null;
+  const ports = [...CTX.chassisPorts];
+  const bays = [];
+  for (const b of CTX.bays) {
+    const occ = b.chosen;
+    if (occ) {
+      const mp = await modulePorts(occ);
+      for (const p of mp) {
+        // Re-pathed under the bay, so bandsOf files it with its card and the
+        // stub still carries a name that means something.
+        ports.push({...p, path: `${b.id}/${String(p.path || p.id).split('--').pop()}`});
+      }
+    }
+    bays.push({...b, occupant: occ || null});
+  }
+  return {ports, bays};
+}
+
+function renderSlots() {
+  const host = $('#slots');
+  if (!CTX || !CTX.bays.length) { host.innerHTML = ''; return; }
+  const rows = CTX.bays.map((b, i) => {
+    // A slot offers ONLY what it accepts. That is the whole reason this lives
+    // here rather than in draw.io, which cannot be told the rule.
+    const opts = ['<option value="">— empty —</option>'].concat(
+      (b.accepts || []).filter(a => !isBlank(a)).map(a => {
+        const k = refKey(a);
+        const c = byRef.get(k);
+        const label = (c?.attrs || {}).model || shortRef(a);
+        return `<option value="${k}"${k === b.chosen ? ' selected' : ''}>${label}</option>`;
+      }));
+    return `<tr><td>${b.id}</td><td><select data-bay="${i}">${opts.join('')}</select></td>` +
+           `<td class="ports" id="np-${i}"></td></tr>`;
+  });
+  host.innerHTML = `<table><thead><tr><th>slot</th><th>module</th><th>ports</th>` +
+    `</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  host.querySelectorAll('select[data-bay]').forEach(sel => {
+    sel.onchange = () => {
+      CTX.bays[Number(sel.dataset.bay)].chosen = sel.value;
+      describe();
+    };
+  });
 }
 
 async function describe() {
-  const dev = DEVICES.find(d => d.name === $('#device').value);
-  if (!dev) return;
-  say('reading…');
-  const got = await portsFor(dev);
-  if (!got) return say(`${dev.model}: no ${$('#face').value} face compiled.`);
-  const {ports, bays} = got;
-  const bands = bandsOf(ports, bays);
+  if (!CTX) return;
+  const r = await resolved();
+  const bands = bandsOf(r.ports, r.bays);
   const empty = bands.filter(b => b.slot).length;
-  say(`${dev.model || dev.name} — ${ports.length} ports, ${bands.length} bands, `
-    + `${empty} empty slot${empty === 1 ? '' : 's'}\n\n`
+  CTX.bays.forEach(async (b, i) => {
+    const el = $(`#np-${i}`);
+    if (el) el.textContent = b.chosen ? `${(await modulePorts(b.chosen)).length}` : '';
+  });
+  say(`${CTX.dev.model || CTX.dev.name} — ${r.ports.length} ports, `
+    + `${bands.length} bands, ${empty} empty slot${empty === 1 ? '' : 's'}\n\n`
     + bands.map(b => `  ${(b.label || b.key).padEnd(30)} `
-        + (b.slot ? `empty · accepts ${b.slot.accepts.slice(0, 2).join(' / ')}`
-                  : `${String(b.ports.length).padStart(3)}  `
-                    + [...new Set(b.ports.map(p => p.media).filter(Boolean))].join(', ')))
+        + (b.slot ? `empty · accepts ${b.slot.accepts.slice(0, 3).join(' / ')}`
+                  : b.ports.length
+                    ? `${String(b.ports.length).padStart(3)}  `
+                      + [...new Set(b.ports.map(p => p.media).filter(Boolean))].join(', ')
+                    : `  seated, no ports on this face`))
         .join('\n'));
+}
+
+async function refresh() {
+  say('reading…');
+  await loadDevice();
+  renderSlots();
+  await describe();
 }
 
 const save = (xml, name) => {
@@ -111,12 +214,11 @@ const tag = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-')
   .replace(/^-|-$/g, '');
 
 $('#one').onclick = async () => {
-  const dev = DEVICES.find(d => d.name === $('#device').value);
-  const got = await portsFor(dev);
-  if (!got) return say('nothing to draw for this face.');
-  save(miniaturePage([{name: dev.model || dev.name, ...got}],
-                     {label: dev.model || dev.name}),
-       `${tag(dev.manufacturer)}-${tag(dev.model || dev.name)}-mini-portrayal.drawio`);
+  const r = await resolved();
+  if (!r) return say('nothing to draw for this face.');
+  const name = CTX.dev.model || CTX.dev.name;
+  save(miniaturePage([{name, ...r}], {label: name}),
+       `${tag(CTX.dev.manufacturer)}-${tag(name)}-mini-portrayal.drawio`);
 };
 
 $('#all').onclick = async () => {
@@ -124,12 +226,17 @@ $('#all').onclick = async () => {
   const mine = DEVICES.filter(d => d.manufacturer === v);
   const devs = [];
   let n = 0;
+  const was = $('#device').value;
   for (const d of mine) {
     say(`reading ${++n}/${mine.length}…`);
-    const got = await portsFor(d);
-    if (got && (got.ports.length || got.bays.length))
-      devs.push({name: d.model || d.name, ...got});
+    $('#device').value = d.name;
+    await loadDevice();
+    const r = await resolved();
+    if (r && (r.ports.length || r.bays.length))
+      devs.push({name: d.model || d.name, ...r});
   }
+  $('#device').value = was;
+  await loadDevice(); renderSlots();
   if (!devs.length) return say('nothing to draw.');
   save(miniaturePage(devs, {label: v}), `${tag(v)}-minis-portrayal.drawio`);
   say(`${devs.length} devices written.`);
@@ -160,9 +267,9 @@ $('#mods').onclick = async () => {
 };
 
 $('#vendor').onchange = fillDevices;
-$('#device').onchange = describe;
-$('#face').onchange = describe;
-$('#vendor').value = 'Cisco';
+$('#device').onchange = refresh;
+$('#face').onchange = refresh;
+$('#vendor').value = 'Casa Systems';
 fillDevices();
 </script>
 </body>

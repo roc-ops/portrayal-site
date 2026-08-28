@@ -101,9 +101,13 @@ export function bandsOf(ports, bays = []) {
       label: occupant ? `${id} · ${shortRef(occupant)}` : id,
       occupant: occupant || null,
       ports: mine.sort(byId),
-      // An empty slot is not a failure to draw something; it is the fact that
-      // the slot is free, which is what somebody planning a build needs.
-      slot: mine.length ? null : {accepts: (bay.accepts || []).map(shortRef)},
+      // EMPTY MEANS NOTHING IS SEATED, not that nothing was drawn. Deciding it
+      // from the port count called a slot empty when it held a card with no
+      // ports on this face - which several do: a DOCSIS US 16X8 does its work
+      // on the RF side and shows nothing on the front. Saying "empty, accepts
+      // bdm / bdm2" about a slot with a card in it is worse than saying
+      // nothing, because somebody planning a build would fill it twice.
+      slot: occupant ? null : {accepts: (bay.accepts || []).map(shortRef)},
     });
   }
   const rest = new Map();
@@ -154,18 +158,30 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {
     // Collapsed hides the stubs and with them their connection points, so
     // nothing starts collapsed except the slots that have nothing to connect
     // to. Folding a card away is a choice the reader makes.
+    // NOT A DROP TARGET. An earlier cut made slots containers you could drag a
+    // module miniature into, and it did not work: a slot is one 150x16 band and
+    // a module symbol is 242 wide by three rows or more, so anything dropped
+    // covered its neighbours and hung over both edges. The deeper reason is
+    // that draw.io will not re-flow the chassis around a card that needs more
+    // room than the slot has - the symbol is laid out when it is generated.
+    //
+    // So the configuration is chosen HERE, where the accepts list can be
+    // enforced and the symbol sized to what is actually in it, and draw.io
+    // receives a finished symbol to CONNECT rather than a kit to assemble.
+    // Collapsing stays, because folding a 40-port card away is decluttering
+    // rather than editing.
     const style = b.slot
       ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
         'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
-        'verticalAlign=middle;align=center;container=1;collapsible=0;' +
-        'childLayout=stackLayout;horizontalStack=0;resizeParent=0;marginTop=0;'
+        'verticalAlign=middle;align=center;container=0;collapsible=0;'
       : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
         'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
         'container=1;collapsible=1;';
     const label = b.slot
       ? `${b.key} — empty${b.slot.accepts.length
           ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
-      : b.label || b.key;
+      : b.ports.length ? (b.label || b.key)
+      : `${b.label || b.key} — no ports on this face`;
     const bandId = `${id}-${b.key}`;
     // alternateBounds is the size it takes when folded: one row, still labelled.
     const alt = b.slot ? ''
