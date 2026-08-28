@@ -144,26 +144,19 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
   const all = bandsOf(ports, bays);
   const bands = showEmpty ? all : all.filter(b => b.ports.length);
 
-  // TWO FACES, TWO COLUMNS. One column of every band on both sides of a chassis
-  // is a very long thing to fill. Split by face and each column keeps its own
-  // outer edge for stubs, so every connection point is still on the perimeter
-  // and no cable has to cross the symbol to reach the far side.
-  const faces = [...new Set(bands.map(b => b.face).filter(Boolean))];
-  const twoCol = faces.length > 1;
-  const cols = twoCol
-    ? faces.map(f => ({face: f, bands: bands.filter(b => b.face === f)}))
-    : [{face: faces[0] || null, bands}];
+  // ONE COLUMN. Splitting the symbol by face was a misread of a complaint about
+  // the configurator's slot list, and it costs something real: with two columns
+  // the inner stubs route their cables through the gutter between them rather
+  // than straight out, which is the one thing the shape exists to avoid. Bands
+  // are ordered front then rear and carry their face as data; a bay id says
+  // which side it is on anyway.
+  const bandsByFace = [...new Set(bands.map(b => b.face).filter(Boolean))];
+  bands.sort((a, b) => bandsByFace.indexOf(a.face) - bandsByFace.indexOf(b.face));
 
-  // Wide enough for a stub column on each side of it. Giving each column only
-  // its outer edge kept the middle clear and made a C100G 3310px tall, which is
-  // not a symbol - it is a wall. Both edges halves that; the gutter is where the
-  // inner cables run, and it is sized to hold them rather than to look tidy.
-  const GAPX = STUB * 2 + 12;
   const rows = b => Math.max(1, Math.ceil(b.ports.length / 2));
-  const colH = c => c.bands.reduce((a, b) => a + rows(b) * PITCH + PAD, 0);
-  const bodyH = Math.max(0, ...cols.map(colH));
+  const bodyH = bands.reduce((a, b) => a + rows(b) * PITCH + PAD, 0);
   const h = HEAD + bodyH + PAD;
-  const w = twoCol ? STUB + BODY + GAPX + BODY + STUB : STUB + BODY + STUB;
+  const w = STUB + BODY + STUB;
   const cells = [];
 
   cells.push(cell(id, name,
@@ -172,65 +165,56 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
     'spacingTop=4;container=1;collapsible=0;',
     x, y, w, h));
 
-  cols.forEach((col, ci) => {
-    const right = twoCol && ci === 1;
-    const bx = right ? STUB + BODY + GAPX : STUB;
-    if (twoCol && col.face) {
-      cells.push(cell(`${id}-face-${col.face}`, col.face,
-        'text;html=1;strokeColor=none;fillColor=none;fontColor=#7c848c;' +
-        'fontSize=9;align=center;verticalAlign=bottom;',
-        bx, HEAD - 14, BODY, 14, id));
-    }
-    let cy = HEAD;
-    for (const b of col.bands) {
-      const bh = rows(b) * PITCH;
-      const style = b.slot
-        ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
-          'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
-          'verticalAlign=middle;align=center;container=0;collapsible=0;'
-        : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
-          'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
-          'container=1;collapsible=1;';
-      const label = b.slot
-        ? `${b.key} — empty${b.slot.accepts.length
-            ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
-        : b.ports.length ? (b.label || b.key)
-        : `${b.label || b.key} — no ports on this face`;
-      const bandId = `${id}-${b.key}`;
-      const alt = b.slot ? ''
-        : `<mxRectangle x="${bx}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
-          `as="alternateBounds"/>`;
-      cells.push(dataCell(bandId, label, style, bx, cy, BODY, bh, id, {
-        'portrayal-bay': b.isBay ? b.key : null,
-        'portrayal-face': b.face || null,
-        'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
-        'portrayal-occupant': b.occupant || null,
-        tooltip: b.slot
-          ? `empty slot — accepts ${b.slot.accepts.join(', ') || 'a module'}`
-          : `${b.ports.length} port${b.ports.length === 1 ? '' : 's'}`,
-      }, alt));
+  let cy = HEAD;
+  for (const b of bands) {
+    const bh = rows(b) * PITCH;
+    const style = b.slot
+      ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
+        'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
+        'verticalAlign=middle;align=center;container=0;collapsible=0;'
+      : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
+        'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
+        'container=1;collapsible=1;';
+    const label = b.slot
+      ? `${b.key} — empty${b.slot.accepts.length
+          ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
+      : b.ports.length ? (b.label || b.key)
+      : `${b.label || b.key} — no ports on this face`;
+    const bandId = `${id}-${b.key}`;
+    const alt = b.slot ? ''
+      : `<mxRectangle x="${STUB}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
+        `as="alternateBounds"/>`;
+    cells.push(dataCell(bandId, label, style, STUB, cy, BODY, bh, id, {
+      'portrayal-bay': b.isBay ? b.key : null,
+      'portrayal-face': b.face || null,
+      'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
+      'portrayal-occupant': b.occupant || null,
+      tooltip: b.slot
+        ? `empty slot — accepts ${b.slot.accepts.join(', ') || 'a module'}`
+        : `${b.ports.length} port${b.ports.length === 1 ? '' : 's'}`
+          + (b.face ? ` · ${b.face}` : ''),
+    }, alt));
 
-      b.ports.forEach((p, i) => {
-        // One column uses both edges; two columns each use the outer one only.
-        const onRight = i % 2 === 1;
-        const ry = Math.floor(i / 2) * PITCH;
-        const pt = onRight ? 'points=[[1,0.5,0]];' : 'points=[[0,0.5,0]];';
-        cells.push(dataCell(`${id}-${b.key}-${stubLabel(p)}`, stubLabel(p),
-          'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
-          `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
-          `align=${onRight ? 'left' : 'right'};` +
-          `spacing${onRight ? 'Left' : 'Right'}=3;` +
-          'container=0;movable=0;resizable=0;deletable=0;connectable=1;',
-          onRight ? BODY : -STUB, ry, STUB, PITCH, bandId, {
-            'portrayal-port': p.path || p.id,
-            'portrayal-media': p.media || null,
-            'portrayal-speed': p.speed || null,
-            tooltip: [p.media, p.speed].filter(Boolean).join(' · ') || null,
-          }));
-      });
-      cy += bh + PAD;
-    }
-  });
+    b.ports.forEach((p, i) => {
+      const onRight = i % 2 === 1;
+      const ry = Math.floor(i / 2) * PITCH;
+      const pt = onRight ? 'points=[[1,0.5,0]];' : 'points=[[0,0.5,0]];';
+      cells.push(dataCell(`${id}-${b.key}-${stubLabel(p)}`, stubLabel(p),
+        'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
+        `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
+        `align=${onRight ? 'left' : 'right'};` +
+        `spacing${onRight ? 'Left' : 'Right'}=3;` +
+        'container=0;movable=0;resizable=0;deletable=0;connectable=1;',
+        onRight ? BODY : -STUB, ry, STUB, PITCH, bandId, {
+          'portrayal-port': p.path || p.id,
+          'portrayal-media': p.media || null,
+          'portrayal-speed': p.speed || null,
+          'portrayal-face': p.face || b.face || null,
+          tooltip: [p.media, p.speed].filter(Boolean).join(' · ') || null,
+        }));
+    });
+    cy += bh + PAD;
+  }
   return {xml: cells.join(''), w, h};
 }
 
