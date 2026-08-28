@@ -98,6 +98,7 @@ export function bandsOf(ports, bays = []) {
     const occupant = /blank|filler/i.test(shortRef(occ)) ? null : occ;
     bands.push({
       isBay: true,
+      face: bay.face || null,
       key: id,
       label: occupant ? `${id} · ${shortRef(occupant)}` : id,
       occupant: occupant || null,
@@ -116,7 +117,8 @@ export function bandsOf(ports, bays = []) {
     if (claimed.has(p)) continue;
     const seg = String(p.path || p.id).split('/');
     const k = seg.length > 1 ? seg[0] : (p.group || p.media || 'ports');
-    if (!rest.has(k)) rest.set(k, {key: k, label: k, ports: [], slot: null});
+    if (!rest.has(k)) rest.set(k, {key: k, label: k, ports: [], slot: null,
+                                   face: p.face || null});
     rest.get(k).ports.push(p);
   }
   for (const b of rest.values()) b.ports.sort(byId);
@@ -132,12 +134,36 @@ const stubLabel = p => String(p.path || p.id).split('/').pop();
  * Returns {xml, w, h}. Ports alternate left and right down each band, so a
  * forty-port card is twenty rows rather than forty, and both edges get used.
  */
-export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {}) {
-  const bands = bandsOf(ports, bays);
+export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
+                                        showEmpty = false} = {}) {
+  // ONLY WHAT YOU CAN CONNECT TO. A band with no stubs is a row of nothing: an
+  // empty slot, or a card that does its work on the other side of the chassis.
+  // Both were noise in a symbol whose whole purpose is being cabled, and on a
+  // C100G they were most of it - 22 of 33 bands. Where a card can go is a
+  // question the configuration answers; this is the answer, not the form.
+  const all = bandsOf(ports, bays);
+  const bands = showEmpty ? all : all.filter(b => b.ports.length);
+
+  // TWO FACES, TWO COLUMNS. One column of every band on both sides of a chassis
+  // is a very long thing to fill. Split by face and each column keeps its own
+  // outer edge for stubs, so every connection point is still on the perimeter
+  // and no cable has to cross the symbol to reach the far side.
+  const faces = [...new Set(bands.map(b => b.face).filter(Boolean))];
+  const twoCol = faces.length > 1;
+  const cols = twoCol
+    ? faces.map(f => ({face: f, bands: bands.filter(b => b.face === f)}))
+    : [{face: faces[0] || null, bands}];
+
+  // Wide enough for a stub column on each side of it. Giving each column only
+  // its outer edge kept the middle clear and made a C100G 3310px tall, which is
+  // not a symbol - it is a wall. Both edges halves that; the gutter is where the
+  // inner cables run, and it is sized to hold them rather than to look tidy.
+  const GAPX = STUB * 2 + 12;
   const rows = b => Math.max(1, Math.ceil(b.ports.length / 2));
-  const bodyH = bands.reduce((a, b) => a + rows(b) * PITCH + PAD, 0);
+  const colH = c => c.bands.reduce((a, b) => a + rows(b) * PITCH + PAD, 0);
+  const bodyH = Math.max(0, ...cols.map(colH));
   const h = HEAD + bodyH + PAD;
-  const w = STUB + BODY + STUB;
+  const w = twoCol ? STUB + BODY + GAPX + BODY + STUB : STUB + BODY + STUB;
   const cells = [];
 
   cells.push(cell(id, name,
@@ -146,85 +172,65 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {
     'spacingTop=4;container=1;collapsible=0;',
     x, y, w, h));
 
-  let cy = HEAD;
-  for (const b of bands) {
-    const bh = rows(b) * PITCH;
-    // A BAND IS A CONTAINER, which buys two things draw.io already knows how to
-    // do. Its stubs are its children, so collapsing it folds a forty-port card
-    // into one row and the symbol stops being mostly cable stubs. And an empty
-    // slot being a container is what lets a module miniature be DROPPED into
-    // it: draw.io reparents the shape to the slot it lands on, so the chassis
-    // ends up actually holding the card rather than having one placed near it.
-    //
-    // Collapsed hides the stubs and with them their connection points, so
-    // nothing starts collapsed except the slots that have nothing to connect
-    // to. Folding a card away is a choice the reader makes.
-    // NOT A DROP TARGET. An earlier cut made slots containers you could drag a
-    // module miniature into, and it did not work: a slot is one 150x16 band and
-    // a module symbol is 242 wide by three rows or more, so anything dropped
-    // covered its neighbours and hung over both edges. The deeper reason is
-    // that draw.io will not re-flow the chassis around a card that needs more
-    // room than the slot has - the symbol is laid out when it is generated.
-    //
-    // So the configuration is chosen HERE, where the accepts list can be
-    // enforced and the symbol sized to what is actually in it, and draw.io
-    // receives a finished symbol to CONNECT rather than a kit to assemble.
-    // Collapsing stays, because folding a 40-port card away is decluttering
-    // rather than editing.
-    const style = b.slot
-      ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
-        'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
-        'verticalAlign=middle;align=center;container=0;collapsible=0;'
-      : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
-        'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
-        'container=1;collapsible=1;';
-    const label = b.slot
-      ? `${b.key} — empty${b.slot.accepts.length
-          ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
-      : b.ports.length ? (b.label || b.key)
-      : `${b.label || b.key} — no ports on this face`;
-    const bandId = `${id}-${b.key}`;
-    // alternateBounds is the size it takes when folded: one row, still labelled.
-    const alt = b.slot ? ''
-      : `<mxRectangle x="${STUB}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
-        `as="alternateBounds"/>`;
-    cells.push(dataCell(bandId, label, style, STUB, cy, BODY, bh, id, {
-      // Set for every bay, seated or not. Deriving it from "has a slot or has
-      // ports" quietly dropped it from seated cards with no ports on this
-      // face - the same class of card that used to report itself empty.
-      'portrayal-bay': b.isBay ? b.key : null,
-      'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
-      'portrayal-occupant': b.occupant || null,
-      tooltip: b.slot
-        ? `empty slot — accepts ${b.slot.accepts.join(', ') || 'a module'}`
-        : `${b.ports.length} port${b.ports.length === 1 ? '' : 's'}`,
-    }, alt));
+  cols.forEach((col, ci) => {
+    const right = twoCol && ci === 1;
+    const bx = right ? STUB + BODY + GAPX : STUB;
+    if (twoCol && col.face) {
+      cells.push(cell(`${id}-face-${col.face}`, col.face,
+        'text;html=1;strokeColor=none;fillColor=none;fontColor=#7c848c;' +
+        'fontSize=9;align=center;verticalAlign=bottom;',
+        bx, HEAD - 14, BODY, 14, id));
+    }
+    let cy = HEAD;
+    for (const b of col.bands) {
+      const bh = rows(b) * PITCH;
+      const style = b.slot
+        ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
+          'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
+          'verticalAlign=middle;align=center;container=0;collapsible=0;'
+        : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
+          'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
+          'container=1;collapsible=1;';
+      const label = b.slot
+        ? `${b.key} — empty${b.slot.accepts.length
+            ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
+        : b.ports.length ? (b.label || b.key)
+        : `${b.label || b.key} — no ports on this face`;
+      const bandId = `${id}-${b.key}`;
+      const alt = b.slot ? ''
+        : `<mxRectangle x="${bx}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
+          `as="alternateBounds"/>`;
+      cells.push(dataCell(bandId, label, style, bx, cy, BODY, bh, id, {
+        'portrayal-bay': b.isBay ? b.key : null,
+        'portrayal-face': b.face || null,
+        'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
+        'portrayal-occupant': b.occupant || null,
+        tooltip: b.slot
+          ? `empty slot — accepts ${b.slot.accepts.join(', ') || 'a module'}`
+          : `${b.ports.length} port${b.ports.length === 1 ? '' : 's'}`,
+      }, alt));
 
-    b.ports.forEach((p, i) => {
-      const right = i % 2 === 1;
-      // Relative to the BAND now, so a stub folds away with its card. The left
-      // column sits at a negative x, which is where it has always been drawn -
-      // outside the body, on the perimeter of the symbol.
-      const ry = Math.floor(i / 2) * PITCH;
-      const pt = right ? 'points=[[1,0.5,0]];' : 'points=[[0,0.5,0]];';
-      // A stub is a place to land a cable and nothing else: not a container,
-      // not a drop target, and not something to drag out of the symbol by
-      // accident. Its id and media travel with it so a diagram built from this
-      // can still be joined back to the model.
-      cells.push(dataCell(`${id}-${b.key}-${stubLabel(p)}`, stubLabel(p),
-        'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
-        `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
-        `align=${right ? 'left' : 'right'};spacing${right ? 'Left' : 'Right'}=3;` +
-        'container=0;movable=0;resizable=0;deletable=0;connectable=1;',
-        right ? BODY : -STUB, ry, STUB, PITCH, bandId, {
-          'portrayal-port': p.path || p.id,
-          'portrayal-media': p.media || null,
-          'portrayal-speed': p.speed || null,
-          tooltip: [p.media, p.speed].filter(Boolean).join(' · ') || null,
-        }));
-    });
-    cy += bh + PAD;
-  }
+      b.ports.forEach((p, i) => {
+        // One column uses both edges; two columns each use the outer one only.
+        const onRight = i % 2 === 1;
+        const ry = Math.floor(i / 2) * PITCH;
+        const pt = onRight ? 'points=[[1,0.5,0]];' : 'points=[[0,0.5,0]];';
+        cells.push(dataCell(`${id}-${b.key}-${stubLabel(p)}`, stubLabel(p),
+          'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
+          `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
+          `align=${onRight ? 'left' : 'right'};` +
+          `spacing${onRight ? 'Left' : 'Right'}=3;` +
+          'container=0;movable=0;resizable=0;deletable=0;connectable=1;',
+          onRight ? BODY : -STUB, ry, STUB, PITCH, bandId, {
+            'portrayal-port': p.path || p.id,
+            'portrayal-media': p.media || null,
+            'portrayal-speed': p.speed || null,
+            tooltip: [p.media, p.speed].filter(Boolean).join(' · ') || null,
+          }));
+      });
+      cy += bh + PAD;
+    }
+  });
   return {xml: cells.join(''), w, h};
 }
 
