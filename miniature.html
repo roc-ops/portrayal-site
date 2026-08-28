@@ -23,6 +23,11 @@
        text-transform: uppercase; letter-spacing: .04em; }
   td select { font-size: .8rem; padding: .2rem .3rem; }
   .ports { color: var(--pt-ink-faint); font-variant-numeric: tabular-nums; }
+  .faces { display: flex; gap: clamp(1.5rem, 5vw, 4rem); flex-wrap: wrap;
+           align-items: flex-start; }
+  .face-col h3 { font-size: .78rem; text-transform: uppercase;
+                 letter-spacing: .06em; color: var(--pt-ink-faint);
+                 margin: 1rem 0 .2rem; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -167,22 +172,35 @@ async function resolved() {
 function renderSlots() {
   const host = $('#slots');
   if (!CTX || !CTX.bays.length) { host.innerHTML = ''; return; }
-  const rows = CTX.bays.map((b, i) => {
-    // A slot offers ONLY what it accepts. That is the whole reason this lives
-    // here rather than in draw.io, which cannot be told the rule.
-    const opts = ['<option value="">— empty —</option>'].concat(
-      (b.accepts || []).filter(a => !isBlank(a)).map(a => {
-        const k = refKey(a);
-        const c = byRef.get(k);
-        const label = (c?.attrs || {}).model || shortRef(a);
-        return `<option value="${k}"${k === b.chosen ? ' selected' : ''}>${label}</option>`;
-      }));
-    return `<tr><td>${b.face}</td><td>${b.id}</td>` +
-           `<td><select data-bay="${i}">${opts.join('')}</select></td>` +
-           `<td class="ports" id="np-${i}"></td></tr>`;
-  });
-  host.innerHTML = `<table><thead><tr><th>face</th><th>slot</th><th>module</th>` +
-    `<th>ports</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  // A COLUMN PER FACE. Thirty-three slots in one list is a long way to scroll
+  // to reach the rear of a chassis, and the two sides are read together anyway -
+  // a front card and the rear module it pairs with are one decision.
+  const faces = [...new Set(CTX.bays.map(b => b.face))];
+  const table = face => {
+    const rows = CTX.bays
+      .map((b, i) => ({b, i}))
+      .filter(({b}) => b.face === face)
+      .map(({b, i}) => {
+        // A slot offers ONLY what it accepts. That is the whole reason this
+        // lives here rather than in draw.io, which cannot be told the rule.
+        const opts = ['<option value="">— empty —</option>'].concat(
+          (b.accepts || []).filter(a => !isBlank(a)).map(a => {
+            const k = refKey(a);
+            const c = byRef.get(k);
+            const label = (c?.attrs || {}).model || shortRef(a);
+            return `<option value="${k}"${k === b.chosen ? ' selected' : ''}>` +
+                   `${label}</option>`;
+          }));
+        return `<tr><td>${b.id}</td>` +
+               `<td><select data-bay="${i}">${opts.join('')}</select></td>` +
+               `<td class="ports" id="np-${i}"></td></tr>`;
+      });
+    if (!rows.length) return '';
+    return `<div class="face-col"><h3>${face}</h3><table><thead><tr>` +
+      `<th>slot</th><th>module</th><th>ports</th></tr></thead>` +
+      `<tbody>${rows.join('')}</tbody></table></div>`;
+  };
+  host.innerHTML = `<div class="faces">${faces.map(table).join('')}</div>`;
   host.querySelectorAll('select[data-bay]').forEach(sel => {
     sel.onchange = () => {
       CTX.bays[Number(sel.dataset.bay)].chosen = sel.value;
