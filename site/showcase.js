@@ -860,9 +860,15 @@ const three = (() => {
         readout.replaceChildren(el('p', {class: 'panel-lead', text: 'Hover the model to identify a component.'}));
       } catch (err) {
         if (stale(mine)) return;
+        const {webglTrouble} = await import('./webgl.js');
+        // A refused context is almost never this page's doing, and saying so
+        // saves somebody debugging the wrong thing.
+        const why = webglTrouble();
         loading.hidden = false;
-        loading.textContent = `3D failed to start: ${err.message}`;
-        setPanel(title('3D'), lead('The viewer needs WebGL and the three.js module map. It failed to start here — the 2D tabs are unaffected.'));
+        loading.textContent = why || `3D failed to start: ${err.message}`;
+        setPanel(title('3D'), lead(why
+          ? 'The 2D tabs are unaffected — they need no WebGL.'
+          : 'The viewer needs WebGL and the three.js module map. It failed to start here — the 2D tabs are unaffected.'));
       }
     },
     exit() {
@@ -1065,13 +1071,28 @@ const rack = (() => {
     stageRack.hidden = true; stage3d.hidden = false;
     loading.hidden = false; loading.textContent = 'Building the rack in 3D…';
     const mine = epoch;
-    const {createRackScene} = await import('./rack3d.js');
-    if (stale(mine)) return;
-    const stack = STACK.map(e => ({...e, chassis: chassisOf(e.ref), bays: baysOf(e.ref),
-      componentIndex: components,
-      overrides: e.ref === SWAPPABLE ? {...overrides} : null}));
-    scene3d = createRackScene(stage3d, {dist: DIST, stack, heightRU: UNITS, background: 0x0E1013});
-    await scene3d.build();
+    // WITHOUT THIS THE SCRIM NEVER COMES DOWN. three.js throws when it cannot
+    // get a context, the exception escaped this handler, and the tab sat on
+    // "Building the rack in 3D…" forever - which reads as a slow build rather
+    // than a browser that has graphics acceleration switched off.
+    const {guard3d} = await import('./webgl.js');
+    const built = await guard3d(async () => {
+      const {createRackScene} = await import('./rack3d.js');
+      if (stale(mine)) return null;
+      const stack = STACK.map(e => ({...e, chassis: chassisOf(e.ref), bays: baysOf(e.ref),
+        componentIndex: components,
+        overrides: e.ref === SWAPPABLE ? {...overrides} : null}));
+      const sc = createRackScene(stage3d, {dist: DIST, stack, heightRU: UNITS,
+                                           background: 0x0E1013});
+      await sc.build();
+      return sc;
+    }, msg => {
+      if (stale(mine)) return;
+      loading.hidden = false;
+      loading.textContent = msg;
+    });
+    if (!built) return;
+    scene3d = built;
     if (stale(mine)) { scene3d.dispose(); scene3d = null; return; }
     loading.hidden = true;
     setExports([
@@ -1079,6 +1100,8 @@ const rack = (() => {
       {label: 'USDZ', run: async () => { const b = await scene3d.toUSDZ(); save(b, 'rack.usdz', 'model/vnd.usdz+zip'); }},
     ]);
   }
+
+
 
   function to2d() {
     mode = '2d';
