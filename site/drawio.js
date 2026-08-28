@@ -282,9 +282,15 @@ export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
   const FACE_GAP = 90, RACK_GAP = 190;
   const pairWidth = faces.length * RACK.outer + (faces.length - 1) * FACE_GAP;
 
+  // CONTENT STARTS AT THE ORIGIN. Whatever draw.io decides to scroll to when it
+  // opens a file - and it is not the page's top-left, which was tried - the one
+  // place it will not be looking is off past the end of an empty canvas. So the
+  // first rack is at x=0 and the page is drawn tight around what is on it,
+  // leaving only the headroom the cabinet's own label needs above it.
+  const TOP = 30;
   const pages = groups.map((group, gi) => {
     const cells = [];
-    let x = 40;
+    let x = 0;
     group.racks.forEach((rack, r) => {
       const units = rack.units || 12;
       const h = heightOf(units);
@@ -294,7 +300,7 @@ export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
         // The PAGE is named for the vendor and family, so the cabinet only
         // has to say which rack and which side.
         cells.push(cell(rackId, rack.label ? `${rack.label} · ${face}` : face,
-                        style, fx, 60, RACK.outer, h));
+                        style, fx, TOP, RACK.outer, h));
         for (const m of rack.mounted) {
           const f = m.faces[face];
           // A device with nothing drawn on this side leaves its units empty
@@ -349,7 +355,8 @@ export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
     // until you think to zoom out. Omitted, draw.io fits the page itself.
     return `<diagram name="${esc(group.label)}" id="page${gi}">` +
       `<mxGraphModel grid="0" page="1" ` +
-      `pageWidth="${x - RACK_GAP + 60}" pageHeight="${tallest + 140}"><root>` +
+      `pageWidth="${Math.ceil(x - RACK_GAP + 20)}" ` +
+      `pageHeight="${Math.ceil(tallest + TOP + 20)}"><root>` +
       `<mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}` +
       `</root></mxGraphModel></diagram>`;
   });
