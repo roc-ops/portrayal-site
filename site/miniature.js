@@ -174,16 +174,20 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
         'verticalAlign=middle;align=center;container=0;collapsible=0;'
       : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
         'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
-        'container=1;collapsible=1;';
+        'container=1;collapsible=0;';
     const label = b.slot
       ? `${b.key} — empty${b.slot.accepts.length
           ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
       : b.ports.length ? (b.label || b.key)
       : `${b.label || b.key} — no ports on this face`;
     const bandId = `${id}-${b.key}`;
-    const alt = b.slot ? ''
-      : `<mxRectangle x="${STUB}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
-        `as="alternateBounds"/>`;
+    // NOTHING COLLAPSES. A band folded to one row, and its siblings stayed
+    // exactly where they were - draw.io shrinks the cell and does not reflow
+    // what is around it, so collapsing bought a gap rather than a smaller
+    // symbol. A control that hides your connection points and saves no space is
+    // worse than no control. The band stays a container so its stubs travel
+    // with it when it is moved; it is simply not foldable.
+    const alt = '';
     cells.push(dataCell(bandId, label, style, STUB, cy, BODY, bh, id, {
       'portrayal-bay': b.isBay ? b.key : null,
       'portrayal-face': b.face || null,
