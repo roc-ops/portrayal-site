@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Portrayal — miniature stencils (prototype)</title>
+<title>Portrayal — device schematics (prototype)</title>
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="brand/tokens.css">
 <link rel="stylesheet" href="site/site.css">
@@ -31,9 +31,11 @@
 </style>
 </head>
 <body>
-  <h1>Miniature stencils <span style="opacity:.5;font-size:.6em">prototype</span></h1>
+  <h1>Device schematics <span style="opacity:.5;font-size:.6em">prototype</span></h1>
   <p class="note">
-    The device as a schematic symbol rather than a footprint: a compact block
+    The compiled drawing is a <strong>footprint</strong> — true millimetres,
+    every part where it really is. This is the <strong>schematic</strong>: a
+    compact block
     with every port as a stub on the outside edge, so a cable never has to cross
     the device to reach a port. Bands are the device's own bays where it has
     them — swap a card and the band follows — and its port groups where it does
@@ -52,7 +54,7 @@
 
 <script type="module">
 import { loadFace, portsOf } from './site/drawio.js';
-import { miniaturePage, bandsOf } from './site/miniature.js';
+import { schematicPage, bandsOf } from './site/schematic.js';
 
 const DIST = 'assets/dist/';
 const $ = s => document.querySelector(s);
@@ -251,8 +253,8 @@ $('#one').onclick = async () => {
   const r = await resolved();
   if (!r) return say('nothing to draw for this face.');
   const name = CTX.dev.model || CTX.dev.name;
-  save(miniaturePage([{name, ...r}], {label: name}),
-       `${tag(CTX.dev.manufacturer)}-${tag(name)}-mini-portrayal.drawio`);
+  save(schematicPage([{name, ...r}], {label: name}),
+       `${tag(CTX.dev.manufacturer)}-${tag(name)}-schematic-portrayal.drawio`);
 };
 
 $('#all').onclick = async () => {
@@ -272,7 +274,7 @@ $('#all').onclick = async () => {
   $('#device').value = was;
   await loadDevice(); renderSlots();
   if (!devs.length) return say('nothing to draw.');
-  save(miniaturePage(devs, {label: v}), `${tag(v)}-minis-portrayal.drawio`);
+  save(schematicPage(devs, {label: v}), `${tag(v)}-schematics-portrayal.drawio`);
   say(`${devs.length} devices written.`);
 };
 

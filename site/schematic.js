@@ -1,12 +1,16 @@
 /**
- * A device as a MINIATURE: the schematic symbol, not the footprint.
+ * A device as a SCHEMATIC: drawn for connecting, not for where things are.
  *
- * The compiled drawing is a footprint - true millimetres, every part where it
+ * The compiled drawing is a FOOTPRINT - true millimetres, every part where it
  * really is. That is the right picture for a rack elevation and the wrong one
  * for a topology, where what you need is "how many ports, of what kind, and
- * let me draw a cable to one". Electronics has had this split for decades: a
- * part has a footprint for the board and a SYMBOL for the schematic, with pins
- * arranged for legibility rather than position. Nobody confuses the two.
+ * let me draw a cable to one". Electronics has meant exactly these two words
+ * for decades: one component, drawn once where it physically sits and once for
+ * connecting. Naming them the same way is the shortest explanation available -
+ * anyone who has drawn a circuit already knows what to expect.
+ *
+ * It was called a "miniature" first, which was wrong: this is not a smaller
+ * version of the drawing, it is a different drawing of the same device.
  *
  * There is no standard for this in networking. ISO 14617 and IEC 60617 cover
  * diagram symbols generally, tried to merge in the late 1990s, and abandoned
@@ -134,7 +138,7 @@ const stubLabel = p => String(p.path || p.id).split('/').pop();
  * Returns {xml, w, h}. Ports alternate left and right down each band, so a
  * forty-port card is twenty rows rather than forty, and both edges get used.
  */
-export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
+export function schematic(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
                                         showEmpty = false} = {}) {
   // ONLY WHAT YOU CAN CONNECT TO. A band with no stubs is a row of nothing: an
   // empty slot, or a card that does its work on the other side of the chassis.
@@ -222,12 +226,12 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
   return {xml: cells.join(''), w, h};
 }
 
-/** A whole page of miniatures, laid out in a row. */
-export function miniaturePage(devices, {label = 'Miniatures'} = {}) {
+/** A whole page of schematics, laid out in a row. */
+export function schematicPage(devices, {label = 'Schematics'} = {}) {
   const GAP = 60;
   let x = 0, tallest = 0;
   const parts = devices.map((d, i) => {
-    const m = miniature(d.name, d.ports, {id: `m${i}`, x, y: 0, bays: d.bays});
+    const m = schematic(d.name, d.ports, {id: `m${i}`, x, y: 0, bays: d.bays});
     x += m.w + GAP;
     tallest = Math.max(tallest, m.h);
     return m.xml;
