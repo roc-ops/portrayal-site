@@ -582,15 +582,25 @@ export function createRackScene(container, opts = {}) {
     complete: async () => { await Promise.all(pending); },
     dispose() {
       alive = false;
-      epoch++;
+      epoch++;      // stops any deferred relief pass from touching a dead scene
+      pending = [];  // and drops the closures it was holding
       cancelAnimationFrame(raf);
       ro.disconnect();
       renderer.domElement.removeEventListener('dblclick', onDblClick);
       controls.dispose();
       for (const m of mounted) { disposeTree(m.group); disposeTree(m.ears); }
       mounted.length = 0;
+      disposeTree(scene);
+      scene.clear();
       clearSvgOverrides(relief);
       renderer.dispose();
+      // A GL CONTEXT IS NOT RELEASED WHEN THE LAST REFERENCE DROPS. The browser
+      // keeps around sixteen alive and silently kills the oldest, so a page that
+      // builds and tears down scenes - entering and leaving this tab - runs out
+      // and the next one fails to start. renderer.dispose() frees the objects,
+      // not the context; only this frees the context. viewer3d.js has always
+      // done it and this module never has.
+      renderer.forceContextLoss();
       renderer.domElement.remove();
     },
   };
