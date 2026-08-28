@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — miniature stencils (prototype)</title>
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/site.css">
+<style>
+  body { padding: 2rem clamp(1rem, 4vw, 3rem); }
+  .row { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; margin: 1rem 0; }
+  label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem;
+          color: var(--pt-ink-muted); }
+  select, button { padding: .45rem .6rem; font: inherit; }
+  pre { white-space: pre-wrap; font-size: .78rem; color: var(--pt-ink-muted);
+        border-top: 1px solid var(--pt-line-soft); padding-top: 1rem; margin-top: 1.5rem; }
+  .note { max-width: 68ch; color: var(--pt-ink-muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+  <h1>Miniature stencils <span style="opacity:.5;font-size:.6em">prototype</span></h1>
+  <p class="note">
+    The device as a schematic symbol rather than a footprint: a compact block
+    with every port as a stub on the outside edge, so a cable never has to cross
+    the device to reach a port. Bands are the device's own bays where it has
+    them — swap a card and the band follows — and its port groups where it does
+    not. Every stub keeps the port's real id.
+  </p>
+  <div class="row">
+    <label>vendor
+      <select id="vendor"></select></label>
+    <label>device
+      <select id="device"></select></label>
+    <label>face
+      <select id="face">
+        <option value="front">front</option>
+        <option value="rear">rear</option>
+      </select></label>
+    <button id="one">download this device</button>
+    <button id="all">download every device of this vendor</button>
+  </div>
+  <pre id="out">loading…</pre>
+
+<script type="module">
+import { loadFace, portsOf } from './site/drawio.js';
+import { miniaturePage, bandsOf } from './site/miniature.js';
+
+const DIST = 'assets/dist/';
+const $ = s => document.querySelector(s);
+const out = $('#out');
+const say = t => { out.textContent = t; };
+
+const DEVICES = (await (await fetch(DIST + 'devices.json')).json()).devices;
+const vendors = [...new Set(DEVICES.map(d => d.manufacturer))].sort();
+$('#vendor').innerHTML = vendors.map(v => `<option>${v}</option>`).join('');
+
+function fillDevices() {
+  const v = $('#vendor').value;
+  const mine = DEVICES.filter(d => d.manufacturer === v)
+    .sort((a, b) => (a.model || a.name).localeCompare(b.model || b.name));
+  $('#device').innerHTML = mine
+    .map(d => `<option value="${d.name}">${d.model || d.name}</option>`).join('');
+  describe();
+}
+
+async function portsFor(dev) {
+  const cfg = await (await fetch(`${DIST}${dev.name}.configs.json`)).json()
+    .catch(() => null);
+  const c = cfg?.default;
+  const face = $('#face').value;
+  for (const url of [`${DIST}${dev.name}.${c}.${face}.svg`,
+                     `${DIST}${dev.name}.${face}.svg`]) {
+    try {
+      const f = await loadFace(url);
+      return portsOf(f.zones);
+    } catch { /* a device need not have this face */ }
+  }
+  return null;
+}
+
+async function describe() {
+  const dev = DEVICES.find(d => d.name === $('#device').value);
+  if (!dev) return;
+  say('reading…');
+  const ports = await portsFor(dev);
+  if (!ports) return say(`${dev.model}: no ${$('#face').value} face compiled.`);
+  const bands = bandsOf(ports);
+  say(`${dev.model || dev.name} — ${ports.length} ports in ${bands.length} bands\n\n`
+    + bands.map(b => `  ${b.key.padEnd(20)} ${String(b.ports.length).padStart(3)}`
+        + `   ${[...new Set(b.ports.map(p => p.media).filter(Boolean))].join(', ')}`)
+        .join('\n'));
+}
+
+const save = (xml, name) => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([xml], {type: 'application/xml'}));
+  a.download = name; a.click();
+};
+const tag = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-|-$/g, '');
+
+$('#one').onclick = async () => {
+  const dev = DEVICES.find(d => d.name === $('#device').value);
+  const ports = await portsFor(dev);
+  if (!ports) return say('nothing to draw for this face.');
+  save(miniaturePage([{name: dev.model || dev.name, ports}],
+                     {label: dev.model || dev.name}),
+       `${tag(dev.manufacturer)}-${tag(dev.model || dev.name)}-mini-portrayal.drawio`);
+};
+
+$('#all').onclick = async () => {
+  const v = $('#vendor').value;
+  const mine = DEVICES.filter(d => d.manufacturer === v);
+  const devs = [];
+  let n = 0;
+  for (const d of mine) {
+    say(`reading ${++n}/${mine.length}…`);
+    const ports = await portsFor(d);
+    if (ports && ports.length) devs.push({name: d.model || d.name, ports});
+  }
+  if (!devs.length) return say('nothing to draw.');
+  save(miniaturePage(devs, {label: v}), `${tag(v)}-minis-portrayal.drawio`);
+  say(`${devs.length} devices written.`);
+};
+
+$('#vendor').onchange = fillDevices;
+$('#device').onchange = describe;
+$('#face').onchange = describe;
+$('#vendor').value = 'Cisco';
+fillDevices();
+</script>
+</body>
+</html>

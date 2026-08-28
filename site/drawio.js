@@ -110,11 +110,23 @@ export function readSvg(text) {
     // ports of a C100G live, named front-6--module--xg0, and nesting them
     // under their bay loses every one of them.
     if (tag === 'g' && el.id) {
+      // The model's own words about the thing, carried through. A miniature
+      // symbol needs to know which bay a port belongs to and what kind of port
+      // it is; geometry alone cannot say either.
+      const meta = {
+        path: el.getAttribute('data-path') || el.id,
+        group: el.getAttribute('data-group') || null,
+        media: el.getAttribute('data-media') || null,
+        speed: el.getAttribute('data-speed') || null,
+        model: el.getAttribute('data-model') || null,
+      };
       if (cls === 'port' && !port) {
-        port = {id: el.id, cls, x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
+        port = {id: el.id, cls, ...meta,
+                x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
         zones.push(port);
       } else if (cls === 'bay' && !bay) {
-        bay = {id: el.id, cls, x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
+        bay = {id: el.id, cls, ...meta,
+               x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
         zones.push(bay);
       }
     }
@@ -136,7 +148,9 @@ export function readSvg(text) {
   })(root, I, {port: null, bay: null});
   const sized = zones
     .filter(z => Number.isFinite(z.x))
-    .map(z => ({id: z.id, cls: z.cls, x: z.x, y: z.y, w: z.x1 - z.x, h: z.y1 - z.y}));
+    .map(z => ({id: z.id, cls: z.cls, path: z.path, group: z.group,
+                media: z.media, speed: z.speed, model: z.model,
+                x: z.x, y: z.y, w: z.x1 - z.x, h: z.y1 - z.y}));
   return {vb, zones: sized};
 }
 
