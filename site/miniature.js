@@ -234,9 +234,20 @@ export function miniaturePage(devices, {label = 'Miniatures'} = {}) {
  * uses, carrying miniatures instead of images.
  */
 export function moduleLibrary(modules) {
-  const entries = modules.map(m => {
-    const {xml, w, h} = miniature(m.name, m.ports, {id: 'mod'});
-    return {xml, w, h, aspect: 'fixed', title: m.name};
+  const entries = modules.map((m, i) => {
+    const {xml, w, h} = miniature(m.name, m.ports, {id: `mod${i}`});
+    return {
+      // A LIBRARY ENTRY IS A WHOLE MODEL, not a run of cells. The faceplate
+      // library has always wrapped its cells this way; this one did not, and
+      // draw.io answered by loading the file and showing an empty library
+      // rather than by complaining - the same silent shrug it gives malformed
+      // XML. The roots are what it parses against.
+      xml: `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>` +
+           `${xml}</root></mxGraphModel>`,
+      w, h,
+      title: m.name,
+      tags: `portrayal miniature module ${m.name}`,
+    };
   });
   const payload = JSON.stringify(entries)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
