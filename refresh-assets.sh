@@ -25,6 +25,12 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 #
 UPSTREAM="${PORTRAYAL_UPSTREAM:-/Volumes/External/portrayal-upstream}"
 SRC="${1:-$UPSTREAM/library}"
+# The viewer modules used to live in library/viewer. They are now portrayal-kit,
+# a published package at the repository root with its own package.json and an
+# exports map - the consumer half, which reads compiled artifacts and never
+# reads YAML. Derived from SRC so a caller pointing at another checkout's
+# library still finds the kit beside it.
+KIT="${PORTRAYAL_KIT:-$(cd "$SRC/.." && pwd -P)/kit}"
 
 # Refuse to read Portrayal's working tree. A comment saying "use the clone" is
 # advice; this is the part that makes it true. PORTRAYAL_ALLOW_LIVE=1 is the
@@ -49,6 +55,12 @@ case "$(cd "$SRC" && pwd -P)" in
     echo "WARNING: building from Portrayal's live working tree" >&2
     ;;
 esac
+if [ ! -d "$KIT" ]; then
+  echo "no portrayal-kit at $KIT" >&2
+  echo "The viewer modules moved out of library/viewer into a top-level kit/." >&2
+  echo "Set PORTRAYAL_KIT if this checkout puts it somewhere else." >&2
+  exit 1
+fi
 if [ ! -d "$SRC/dist" ]; then
   echo "no compiled output at $SRC/dist - run ./build.sh in $UPSTREAM first" >&2
   exit 1
@@ -65,10 +77,11 @@ fi
 # so a page that never mentions it still falls over without it.
 #
 # These modules are Portrayal's to own - they are how you talk to a drawing.
-# The pages built on them are this repository's.
+# The pages built on them are this repository's, and the demo pages that used to
+# sit beside them upstream are gone: this site owns those now.
 for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js \
          states.js marks.js gif.js; do
-  cp "$SRC/viewer/$m" "$HERE/vendor/$m"
+  cp "$KIT/$m" "$HERE/vendor/$m"
 done
 
 # Every device, because the Explorer offers the whole library and a picker with
@@ -94,6 +107,15 @@ mkdir -p "$HERE/assets/dist"
 
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
+# Published as of the kit split, when the exporter stopped needing a checkout.
+# vendors.json carries the alias and lineage registry - who owns a brand now,
+# which is what stops an ArcOS box being filed under the metal it runs on.
+# overlays.json is the NOS join: the entity-map rules that turn what a box calls
+# its own components into the ids on the drawing. portrayal-site#12 has been
+# waiting on that artifact existing; it exists now.
+for f in vendors.json overlays.json gaps.json; do
+  [ -f "$SRC/dist/$f" ] && cp "$SRC/dist/$f" "$HERE/assets/dist/"
+done
 for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json; do
   cp "$f" "$HERE/assets/dist/"
 done
@@ -303,7 +325,7 @@ done
 # any page, so nothing in this repository names them and a missing one surfaces
 # only as a broken tool at runtime. They are on the list above for that reason.
 if [ "$missing" != "0" ]; then
-  echo "vendoring incomplete - check $SRC/viewer" >&2
+  echo "vendoring incomplete - check $KIT" >&2
   exit 1
 fi
 

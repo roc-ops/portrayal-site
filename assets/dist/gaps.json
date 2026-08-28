@@ -1,0 +1,3116 @@
+{
+ "blocked": {},
+ "by-kind": {
+  "declared": 126,
+  "derived": 140
+ },
+ "devices": 36,
+ "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "c100g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "The BDM2/BDM2m datasheet states \"Total Power 300 W\" in a technical specifications table headed \"BDM2/2 m with 6+12 IO Card\", whose RF connector row describes that card's six downstream and twelve upstream ports. The figure is the assembly's. A BDM position is TWO modules here - casa/bdm in a front bay and casa/io-6p12 in the paired rear bay, which is why casa/bdm already carries `pairs-with` - and no document we hold divides the 300 W between them. Writing it onto the front module would make the chassis total come out right and the answer to \"what does a BDM front module draw\" come out wrong, so neither half carries a figure and the chassis total stays a floor. The arithmetic does not settle it either way: 12 x 300 W lands on the C100G's stated 3.6 kW whether the 300 W is the pair or the front half with small rear cards. The C100G HIG corroborates the assembly reading and hedges it: Tables A-10 and A-11 both read \"Approximately 300W per BDM\" under titles scoping them to the BDM WITH its 6+12 I/O. THE LIBRARY IS CURRENTLY INCONSISTENT ABOUT THIS, ON PURPOSE AND VISIBLY. The three BDM variants carry NO power figure, for the reason above. The DQM and DCU cards added later DO carry one - DS8x8 220, DS8x96 320, DS8x192 350, US16x8 220, US16x4 150 - each with a `power-scope` provenance entry saying in the vendor's own words that the number covers the card WITH its I/O module and must not have a rear figure added to it. Both are defensible readings of the same problem: one keeps the per-module answer honest and the chassis total a floor, the other keeps the vendor's only published number reachable. They should not stay different once a pairing-scoped mechanism exists, and this is the record of which way each went and why, so that whoever unifies them is not guessing. THE THREE REAR RF I/O CARDS ADDED LATER FALL ON THE SAME SIDE OF THIS AS THE 6+12. casa/rfd, casa/rfu-16x8 and casa/ups-32x4 carry NO power figure, because Tables A-8 and A-9 give their port counts and connector types and no watts at all, and every figure Casa does publish for the slot is already the pair's - Table A-3 heads the DQM column \"Maximum consumption with I/O module\" and Table A-4 gives \"Single DCU w/ RFU I/O\" 200 W against \"Single DCU w/ RFU UPS 32x4 I/O\" 220 W for the same US16x8. Subtracting one from the other to get a rear card's share would be our arithmetic and would also be the wrong subtraction - the 20 W is the difference between two PAIRINGS, not between two I/O cards.",
+   "scope": [
+    "casa/bdm2@1",
+    "casa/bdm2m@1",
+    "casa/bdm@1",
+    "casa/ds-8x192@1",
+    "casa/ds-8x8@1",
+    "casa/ds-8x96@1",
+    "casa/io-6p12-io2@1",
+    "casa/io-6p12-sw-io2@1",
+    "casa/io-6p12-sw@2",
+    "casa/io-6p12@2",
+    "casa/rfd@1",
+    "casa/rfu-16x8@1",
+    "casa/ups-32x4@1",
+    "casa/us-16x4@1",
+    "casa/us-16x8@1"
+   ],
+   "wanted": "a pairable unit that can carry properties, so that a figure measured on a pair can be attached to the pair. The scope is now DATA - every card here declares `power-draw-scope: module-with-paired-io`, so a chassis sum knows not to add the rear partner and L30 catches it if one gains its own figure - but the scope says only THAT the figure covers a pair, not WHICH pair. The C100G HIG gives the same US16x8 200 W with the RFU I/O and 220 W with the RFU UPS 32x4, and the manifest can carry only one of them. Asking for \"a per-module figure\" was the wrong question: Casa states none, and one may not exist to be divided out. What is missing is the mechanism, and enough vendors doing this to design one from - Casa is the only one in the corpus.",
+   "what": "paired-module-power"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "c100g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "The HIG body text states \"Each fan assembly module has a maximum power consumption of 100W, totaling 300W across the three fan assemblies\". Table A-2 of the same guide gives the row \"Fan assembly (3)\" as \"330W maximum, 220W typical\". Both are about the set of three and 300 is not 330. The contract takes 100 W because it is the only figure stated PER MODULE, which is the granularity a bay occupant needs; dividing 330 by three would be our arithmetic, not the vendor's. A chassis total is therefore 30 W light against the guide's own set figure, and no per-module typical exists at all.",
+   "scope": [
+    "casa/fan@1"
+   ],
+   "wanted": "a measurement from a running chassis, a vendor erratum, or a later revision of the guide that drops one of the two figures",
+   "what": "fan-power-sources"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "c100g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "Casa rates a power ENTRY module in amps and volts, never in watts. Table A-1 gives \"Voltage -42 to -60VDC\" and \"Current 20A nominal per feed\", and the chassis nameplate at Figure 1-3 gives \"-48VDC, 30A per Feed (4+4 Feeds)\" - but no document states a wattage, and deriving one means choosing a point the vendor left open: two current figures across a voltage range put V x I anywhere from about 810 W to 1800 W per feed. A power entry module also does not convert or regulate; it filters and distributes what the plant feeds it, so its rating is a current-carrying limit rather than the continuous output power-output-w means. The stated volts and amps are recorded in the contract's attrs; the L27 warning stays standing as the record that the watt figure is missing.",
+   "scope": [
+    "casa/pem@1"
+   ],
+   "wanted": "a wattage for the C100G power entry module from Casa - a nameplate photograph of the module itself would do it, or any document that rates it in watts rather than amps",
+   "what": "power-entry-rating"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 10,
+   "device": "c100g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "c100g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "c100g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "`physical-context` on 33 bays (front 14, rear 19) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "c100g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "c40g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "Casa says two things about this terminal and they do not agree. The prose in \"Connecting the chassis to ground\" says it \"provides two M6 screws to connect a double-lug ground terminal cable\". Figures 1-2 and 1-4 both DRAW three studs, in a 2x2 grid with the protective-earth mark in the fourth corner, and the two figures agree with each other. THE DRAWING IS FOLLOWED, and the model carries three. The figure is the only source that says anything about arrangement at all, so following the prose would mean inventing a layout for the two it describes; and a third stud has easy explanations - a spare, an alternate lug pitch - while a stud drawn twice that is not there has none. That is a judgement, not a reading, which is why it is filed here. THE PITCH IS NOT MEASURED FROM EITHER. It is borrowed from casa/ground-bolts@1, 15.3, off Jason`s hand-built C100G rear SVG. Figure 1-4 gives 13.2 across and 14.7 down for what must be one square grid - an 11 percent disagreement with itself, which is that figure`s anisotropy rather than a rectangular pattern.",
+   "scope": [
+    "ground-studs-rear"
+   ],
+   "wanted": "a photograph of the C40G rear lower-left corner, which would settle the count and the pitch together in one look",
+   "what": "ground-stud-count"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "c40g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "The card band runs 37.5 to 386.7 in a body 432.95 wide, so it sits 37.5 from the left edge and 46.25 from the right - 8.75 mm out of centre, or 4.375 on the band's own centreline. Everything inside the band agrees with everything else; the question is whether the band is really off-centre in the metal, and nothing we hold answers it. IT IS NOT COSMETIC, and the AC input panel is where it bites. Its four C14 inlets sit behind the four front power supplies. Reflect the supply centres about the PANEL and the inlets are 1.2 out; reflect them about the CHASSIS - which is what walking round a box actually does - and they are 9.95 out. The gap between those two answers IS this asymmetry, and no arrangement of the parts inside the band can close it, because the disagreement is between the band and the chassis rather than within either. THE SUPPORTING NUMBERS ARE ALSO ODD IN THE SAME DIRECTION. The two front fan strips measure 36.0 wide each - equal, as you would expect - but leave 1.5 outside them on the left and 10.25 on the right. Two equal strips with unequal surrounds is exactly the shape of a band that has been positioned from one edge. NOT RESOLVED BY GUESSING, deliberately. Re-centring the band would move the two fan strips, the card bays on both faces, the PSU row, the PSU cover and the AC panel - and it would be one estimate reconciled against another, which this device's `pem-band-top-edge` note already records going wrong twice in opposite directions.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "a dimensioned C40G front or rear elevation from Casa, or a tape measure across a real chassis from its left edge to the first card slot and from the last card slot to its right edge",
+   "what": "band-not-centred-in-chassis"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "c40g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "The PEM band's BOTTOM edge at 264.5 is agreed by every source and is not in doubt. Its TOP edge is known only to about 2 mm, and the three candidates each have support: 194.0 is the direct reading of Figure 1-4 and is impossible, because the card slot above ends at 194.82; 194.82 is flush against that slot; 196.0 is what the bays carry and is what the manifest now uses, on the argument that 194.82 is an accumulation of six DERIVED slot pitches (426.6 mm over 14 slots on the C100G, carried across) and that the front face shows a measured 1.48 mm margin in the equivalent position. That argument is sound but it is an argument, not a measurement, and the whole disagreement is six pixels at 2.982 px/mm. A tape measure on a real C40G, or any Casa drawing that dimensions the rear panel, would settle it in one number. FIGURE 1-12 HAS NOW BEEN LOOKED AT AND DOES NOT SETTLE IT, recorded so nobody spends the search twice. \"C40G power entry module\" is the only isolated drawing of this part and the first independent look anything has had at it. Its body measures 866 x 381 px for an aspect of 2.273. The modelled 158.0 x 68.5 is 2.307 and the superseded 158.0 x 70.5 is 2.241, and 2.273 lands 0.04 percent off the midpoint of those two - at 158.0 wide it implies a height of 69.51. IT IS EQUIDISTANT AND CONFIRMS NEITHER. This guide's isolated part drawings are in any case demonstrably about 10 percent wrong about their own aspect - Figure 1-20 draws a card at 12.54 whose real aspect is 11.34 - so a 1.5 percent lean is well inside the drawing's own error. THE NUMBER IS THEREFORE NOT MOVED. It has been moved twice already, in both directions, and a third move on evidence that splits the difference would be the reconciliation loop rather than an escape from it. What Figure 1-12 does confirm is the ARRANGEMENT, which is what a figure is good for: a bolted terminal cover across the top with three fasteners, a minus pair of studs above a plus pair inside two outlined blocks, two release levers standing proud of the body top and bottom, and the yellow disconnect-power label to their right - all of which casa/c40g-pem draws. RECORDED BECAUSE THE MODULE AND THE BAY NOW AGREE, which means nothing will ever flag this again - the fit check that found the original 2 mm discrepancy is satisfied by both being wrong together as easily as by both being right.",
+   "scope": [
+    "pem-1",
+    "pem-2"
+   ],
+   "wanted": "a dimensioned C40G rear elevation, or a tape measure on the PEM opening",
+   "what": "pem-band-top-edge"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "c40g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "The BDM2/BDM2m datasheet states \"Total Power 300 W\" in a technical specifications table headed \"BDM2/2 m with 6+12 IO Card\", whose RF connector row describes that card's six downstream and twelve upstream ports. The figure is the assembly's. A BDM position is TWO modules here - casa/bdm in a front bay and casa/io-6p12 in the paired rear bay, which is why casa/bdm already carries `pairs-with` - and no document we hold divides the 300 W between them. Writing it onto the front module would make the chassis total come out right and the answer to \"what does a BDM front module draw\" come out wrong, so neither half carries a figure and the chassis total stays a floor. The arithmetic does not settle it either way: 12 x 300 W lands on the C100G's stated 3.6 kW whether the 300 W is the pair or the front half with small rear cards. THE THREE REAR RF I/O CARDS ADDED LATER FALL ON THE SAME SIDE OF THIS AS THE 6+12. casa/rfd, casa/rfu-16x8 and casa/ups-32x4 carry NO power figure, because Tables A-8 and A-9 give their port counts and connector types and no watts at all, and every figure Casa does publish for the slot is already the pair's - Table A-3 heads the DQM column \"Maximum consumption with I/O module\" and Table A-4 gives \"Single DCU w/ RFU I/O\" 200 W against \"Single DCU w/ RFU UPS 32x4 I/O\" 220 W for the same US16x8. Subtracting one from the other to get a rear card's share would be our arithmetic and would also be the wrong subtraction - the 20 W is the difference between two PAIRINGS, not between two I/O cards.",
+   "scope": [
+    "casa/bdm2@1",
+    "casa/bdm2m@1",
+    "casa/bdm@1",
+    "casa/ds-8x192@1",
+    "casa/ds-8x8@1",
+    "casa/ds-8x96@1",
+    "casa/io-6p12-io2@1",
+    "casa/io-6p12-sw-io2@1",
+    "casa/io-6p12-sw@2",
+    "casa/io-6p12@2",
+    "casa/rfd@1",
+    "casa/rfu-16x8@1",
+    "casa/ups-32x4@1",
+    "casa/us-16x4@1",
+    "casa/us-16x8@1"
+   ],
+   "wanted": "a pairable unit that can carry properties, so that a figure measured on a pair can be attached to the pair. The scope is now DATA - every card here declares `power-draw-scope: module-with-paired-io`, so a chassis sum knows not to add the rear partner and L30 catches it if one gains its own figure - but the scope says only THAT the figure covers a pair, not WHICH pair. The C100G HIG gives the same US16x8 200 W with the RFU I/O and 220 W with the RFU UPS 32x4, and the manifest can carry only one of them. Asking for \"a per-module figure\" was the wrong question: Casa states none, and one may not exist to be divided out. What is missing is the mechanism, and enough vendors doing this to design one from - Casa is the only one in the corpus.",
+   "what": "paired-module-power"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "c40g",
+   "kind": "declared",
+   "manufacturer": "Casa Systems",
+   "note": "Casa rates a power ENTRY module in amps and volts, never in watts. Table A-1 gives \"DC current 20A nominal per feed @ -48VDC\" and the PEM section says the modules \"receive -40.5 to -60 VDC (-48VDC nominal) power from separate 20A power supply sources\" - but no document states a wattage, and deriving one means choosing a point the vendor left open: two current figures across a voltage range put V x I anywhere from about 810 W to 1800 W per feed. A power entry module also does not convert or regulate; it filters and distributes what the plant feeds it, so its rating is a current-carrying limit rather than the continuous output power-output-w means. The stated volts and amps are recorded in the contract's attrs; the L27 warning stays standing as the record that the watt figure is missing.",
+   "scope": [
+    "casa/c40g-pem@1"
+   ],
+   "wanted": "a wattage for the C40G power entry module from Casa - a nameplate photograph of the module itself would do it, or any document that rates it in watts rather than amps",
+   "what": "power-entry-rating"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 10,
+   "device": "c40g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "c40g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "c40g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "`physical-context` on 20 bays (front 12, rear 8) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "c40g",
+   "kind": "derived",
+   "manufacturer": "Casa Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "es1010",
+   "kind": "derived",
+   "manufacturer": "Celestica",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "es1010",
+   "kind": "derived",
+   "manufacturer": "Celestica",
+   "wanted": "`physical-context` on 2 bays (rear 2); `physical-context` on port groups rj45-1g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "es1010",
+   "kind": "derived",
+   "manufacturer": "Celestica",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9001",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The ASR 9001-S is the same metal as the ASR 9001 with two of its four fixed SFP+ ports disabled until a licence is applied. That is not a population fact - the cages are physically present and identical - so `bays:` cannot express it, and the ports are correctly drawn present in both configurations. INVESTIGATED AND IT DOES NOT REACH: `component-attrs` is the closest mechanism the format has, and it is keyed by component NAME rather than by placement id. render.py computes `comp_name = ref.split(\"/\")[-1].split(\"@\")[0]` and looks the overrides up by that, so `component-attrs: {sfp-ganged: ...}` would mark all SIX std/sfp-ganged instances on this chassis - both CLUSTER ports and all four SFP+ - when only two are disabled. A placement can carry `attrs:` per instance but not per configuration; `component-attrs` is per configuration but not per instance. The 9001-S needs both at once and neither mechanism spans the gap. The same edge stops this configuration carrying its own 60 Gbps fabric figure, since a configuration cannot override device attrs at all.",
+   "scope": [
+    "sfp-plus-2",
+    "sfp-plus-3"
+   ],
+   "wanted": "per-instance attrs in a configuration - `component-attrs` keyed by placement id as well as by component name would do it - or a device-attrs override in a configuration. This is a second instance of the shape recorded in working/notes/config-scoped-placements.md, from a different vendor: the format can say what OCCUPIES a bay per configuration, but not what is TRUE of a part per configuration.",
+   "what": "per-instance-config-attrs"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9001",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Table 4 of the fixed-port install guide gives the 10MHz and 1PPS connectors as DIN 1.0/2.3. The standards registry has no key for it - sma, smb, mcx and f-type are there, DIN 1.0/2.3 is not - so these two openings are declared as panel cutouts at their measured size rather than composed from a std/ part. Substituting sma or smb would name a connector Cisco does not. THE REASON WAS vendor-silent AND THAT WAS THE WRONG TOKEN. Cisco is not silent - it names the connector outright. What is missing is a panel-cutout dimension, which is needs-drawing, and the difference matters because the two tokens ask different things of a reader: vendor-silent reads as closed until better documents appear, needs-drawing reads as an errand somebody can run today. The correction came from asr9k-cards, who had just been wrong in exactly this direction about the XFP - concluding a figure was unsourceable after searching the intake rather than the standards - and found it in INF-8077i ten minutes after looking somewhere else. IEC 61169-8 is the somewhere else here, and nobody has opened it yet.",
+   "scope": [
+    "clk-10mhz",
+    "clk-1pps"
+   ],
+   "wanted": "a std/din-1-0-2-3 part and its standards.yaml key. THE CONNECTOR IS STANDARDISED, so a sourced dimension exists to be found rather than estimated - DIN 1.0/2.3 is specified in IEC 61169-8, and any manufacturer's bulkhead-jack panel drawing carries the D-hole figure. std/mcx is the worked example of exactly this being done properly earlier tonight: registered from IEC 61169-36 / CECC 22220 at 4.95 x 4.50 with confidence verified, replacing an estimate that was 28 percent too small. This should be done the same way, and until it is, an sma or smb standing in would be a plausible wrong answer - which is the failure mode this project keeps having to dig back out",
+   "what": "din-1-0-2-3-connector"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 5,
+   "device": "asr-9001",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 5,
+   "device": "asr-9001",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 2,
+   "device": "asr-9001",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9001",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9001",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "cisco/a9k-pwr-3kw-ac@1 states 142.78 mm wide. Three of them need 428.34 mm and this chassis's power shelf interior measures 416.50, so they do not fit - lint L13 flagged the overlap directly when they were placed at the measured centres. Against that, the stencil's shape box for the 'A9K Power Module' master reads 0.5477 in, which is 139.12 mm at the stencil's 1:10 scale, and my own measurement of the three openings in the ASR 9006 front master gives 138.35, 137.50 and 138.23. Those two agree to under a millimetre, and three at 139.12 come to 417.36 against a 416.50 shelf - the arithmetic a shelf that holds exactly three ought to produce. The 142.78 is most likely the art measured over something that is not the module's seating width, the same class of error as reading a card's shape box instead of its art. The bays here are sized to the measured openings, so the chassis is right and the component and the chassis disagree by about 3.7 mm until someone re-measures the master.",
+   "scope": [
+    "power-modules"
+   ],
+   "wanted": "a re-measurement of the 'A9K Power Module' stencil master, or a Cisco dimension for the version 1 power module",
+   "what": "power-module-width-disagrees-with-the-component"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "NINE CARDS SHARE THESE SIX SLOTS AND TWO FAMILIES DISAGREE BY 32.8 mm ON THE ONE AXIS THAT HAS TO FIT ONE OPENING. The line cards and the blank filler are 395.7 mm; all four RSP-880 variants are 428.5. The measured cage opening is 352.59. The line-card story is coherent: a9k-slot-cover's own art measures a PLATE of 362.24 inside a 395.7 envelope, so the plate covers the 352.59 opening with 4.8 mm of overlap per side and the ejector brackets account for the remaining 16.7 per side. Every number has a job. The RSP-880's does not. 428.5 needs 37.96 mm of overlap per side to cover the same opening, and a card centred on this cage reaches x 22.99 to 451.49 in a 444.5 mm chassis - 6.99 mm PAST the outer wall, which is visible in the 3D view as the card's end standing proud of the side of the box. WHERE 428.5 COMES FROM, AND WHY IT IS THE SUSPECT: the RSP-880 data sheet's 'Physical specifications' row. This library's own a9k-rsp880-se provenance already records that NINE RSP AND RP MASTERS IN THE STENCIL ARE ONE DRAWING, scaled to four different stated widths - 402.8, 428.5, 428.2 and 403.4 - so \"the drawing is generic across the family and cannot be all four sizes\". The cage, by contrast, is measured off this chassis's own master and independently supported by Figure 19. NOT RESOLVED HERE. Two numbers describing different things is the likeliest reading - the same trap as a plate against an envelope - but nothing we hold says WHICH thing 428.5 measures, and inventing a smaller one would be the reconciliation this project keeps digging back out.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a Cisco mechanical drawing of an RSP-880 faceplate, or one measurement across a real card from ejector tip to ejector tip. Either settles it for all four variants at once and for every chassis they go in. REQUESTED FROM THE LAB, 2026-08-26, and tracked as roc-ops/ndv#16 - that issue carries the three conflicting Cisco figures and what to do when the number arrives.",
+   "what": "rsp880-width-cannot-fit-this-cage"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "NARROWED, not closed. This file and the ASR 9010's carried pitches that disagreed - 46.60 here against 44.33 there - for two chassis that take the same cards. Cisco's RSP-880 sheet resolved the 9010 half: the card is 46.0 mm thick and Cisco names the 9010 among the chassis it serves, so a 44.33 slot is impossible there and that cage is now divided on published card thicknesses. THIS CHASSIS IS NOT DISCRIMINATED BY THAT EVIDENCE. Its 279.63 mm cage admits both readings: four line card slots at 41.4 plus two RSP slots at 46.0 is 257.6, leaving 22.03 for guides; and an even six-way division at 46.60 is also >= 46.0 and so also admits the RSP-880. The even division is kept because it is what the cage measures and because nothing here favours the other, but it is an assumption and the 9010 shows the family does not always divide evenly. Neither this master nor the 9010's prints slot labels or draws cage dividers, which is why both were assumptions in the first place - the 9904, 9906, 9910, 9912 and 9922 all have a ruler in the picture and these two do not.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned front elevation of the ASR 9006, or a per-slot width from any Cisco document",
+   "what": "slot-pitch-even-division-is-unconfirmed"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Two figures in b-asr9k-overview-reference-guide.pdf give the ASR 9006 body width differently. Table 13 \"Cisco ASR 9000 Series Routers Physical Descriptions\" (p130) says 17.50 inches (44.45 cm). Figure 9 \"Cisco ASR 9006 Router Chassis Footprint Dimensions - Top Down View\" (p24) dimensions the same body at 17.38 inches (44.15 cm). Same measure, same part, 3 mm apart, so this is a real conflict and not two scopes. The manifest carries 44.45 because the spec table is authoritative for overall dimensions and because Cisco's own Visio master independently records 1.9 in at 1:10 over the flanges, which back-solves to Table 13's split once the 19.05 mm flange protrusion is subtracted. The likeliest reconciliation is that 17.50 is over the outer skin and 17.38 is the sheet metal at the section plane Figure 9 cuts, but no document we hold says that, so it is not written as though one does. The height is unaffected - both sources and the stencil agree on 17.50 in there.",
+   "scope": [
+    "front",
+    "rear",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a Cisco mechanical drawing with a tolerance, or a tape measure on a real ASR 9006",
+   "what": "chassis-width-sources-disagree"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The power modules load from the front but their inlets are on the rear, and the only artwork we hold for that rear panel is the stencil's ASR-9006-AC Rear master, which draws the VERSION 1 tray: three IEC inlets labelled M2, M1, M0 left to right (mirrored from the front's M0, M1, M2) with the legend \"100-240V 50/60 Hz 16A MAX (3X)\" and a yellow warning label. This chassis is modelled as version 2, which has four modules and therefore four inlets, and no figure in any document we hold shows the version 2 rear panel. Rather than mirror three inlets into four and invent a pitch, the rear carries the inlet panel's outer band only. The DC rear is a further unknown again - there is no ASR-9006-DC master in the stencil at all.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a figure or photograph of the version 2 AC rear panel, and of the DC rear panel",
+   "what": "rear-power-inlet-detail"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The air filter is real, sourced and correctly typed as a bay - Table 17 of b-asr9k-hardware-installation-guide.pdf places it along the right side accessible from the rear, and Figure 207 shows the panel and its thumb screw. What is NOT sourced is its geometry. Figure 207 is a three-quarter perspective view with no dimension lines on it, so its aspect is foreshortened and it fails gate 1 as a source of absolute size. The filter's 52 mm width and its 8 mm standoff from the rear edge are read as fractions of that figure and anchored to the chassis depth, and its height is set to the card cage band rather than measured. Treat the filter's extent as the one feature here that a tape measure would most likely move. Its presence, its side, its access direction and the fact that it is user-replaceable are all stated in words by the guide and are not in doubt.",
+   "scope": [
+    "right",
+    "filters"
+   ],
+   "wanted": "a dimensioned side elevation of the ASR 9006, or the air filter's own spare-part drawing",
+   "what": "air-filter-position"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Seven measured openings on this chassis have no occupant in the library: fan trays FT0 and FT1 (175.65 x 70.97 each), power modules M0 to M3 (103.22 x 46.34 each) and the right-side air filter (52 x 279.63). All seven are drawn as cutouts, so the sheet metal is complete and every dimension is recorded; what is absent is the parts. This is NOT the machine-findable kind of gap - a missing ref lints - but the fact that these openings are cutouts rather than bays IS invisible to any rule, and a reader could reasonably assume the chassis simply has no fan bays. It has them; they are waiting. Cisco's own numbering for them is FT0/FT1 and M0-M3 per Figure 19, and the groups are ready to be reinstated with index-origin 0.",
+   "scope": [
+    "front",
+    "right"
+   ],
+   "wanted": "an ASR 9006 fan tray, the version 2 AC and DC power modules, and the chassis air filter",
+   "what": "openings-awaiting-components"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9006",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "RENAMED FROM blank-faces AND REWORDED, because both faces stopped being blank and the gap was still describing the file as it stood two commits ago. NO DOCUMENT WE HOLD SHOWS EITHER FACE OF AN ASR 9006 - that part is unchanged and is the gap. What each face now carries is derived from a figure of a DIFFERENT face, which is a weaker thing than being drawn and is why the gap stays open. The bottom carries the rack mounting surface, because the plane is dimensioned in Figure 9's top-down view and necessarily cuts the underside at the same depth it cuts the top. The left carries one of the three NEBS bonding points, because Figure 58 callouts a left-side pad and its position is INFERRED from a three-quarter view rather than dimensioned. Neither is a bottom or left drawing; both are a fact about the chassis that has to intersect this face. Everything else about these two faces - feet, labels, vents, plates, the flange profile - is still unknown, and the guide's \"There is no clearance requirement for the left side of the chassis\" (b-asr9k-hardware-installation-guide.pdf p1172) is consistent with a solid unfeatured panel without proving one. The sizes are from Table 13 and Figure 9 and are right, so the rack elevation and the 3D box are right, which is the load these two views actually carry.",
+   "scope": [
+    "bottom",
+    "left"
+   ],
+   "wanted": "a six-face photograph set, or the mechanical drawings behind Figure 9",
+   "what": "undocumented-faces"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 4,
+   "device": "asr-9006",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9006",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9006",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 403.10 on 8 bays - the 5th-generation envelope, 403.10 long 406.40 on 2 bays - a9k-rsp, 406.40 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "what": "bay-extents-reconciled-rather-than-measured"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
+   "what": "neighbour-constraint-excludes-the-control-card-length"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
+   "what": "rsp880-length-also-exceeds-the-cage"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
+   "what": "rsp880-width-exceeds-every-measured-pitch"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "cisco/a9k-pwr-3kw-ac@1 states 142.78 mm wide. Three of them need 428.34 mm and this chassis's power shelf interior measures 416.50, so they do not fit - lint L13 flagged the overlap directly when they were placed at the measured centres. Against that, the stencil's shape box for the 'A9K Power Module' master reads 0.5477 in, which is 139.12 mm at the stencil's 1:10 scale, and my own measurement of the three openings in the ASR 9006 front master gives 138.35, 137.50 and 138.23. Those two agree to under a millimetre, and three at 139.12 come to 417.36 against a 416.50 shelf - the arithmetic a shelf that holds exactly three ought to produce. The 142.78 is most likely the art measured over something that is not the module's seating width, the same class of error as reading a card's shape box instead of its art. The bays here are sized to the measured openings, so the chassis is right and the component and the chassis disagree by about 3.7 mm until someone re-measures the master.",
+   "scope": [
+    "power-modules"
+   ],
+   "wanted": "a re-measurement of the 'A9K Power Module' stencil master, or a Cisco dimension for the version 1 power module",
+   "what": "power-module-width-disagrees-with-the-component"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The two RSP slots are 46.0 mm because that is the RSP-880's published thickness and Cisco names this chassis as one it serves - so 46.0 is a LOWER BOUND on the slot, not a measurement of it. The eight line card slots are 41.4 on the same basis. The 20.12 mm those twenty-two millimetres of card leave over is distributed as eleven equal guides, which is arithmetic rather than observation: the real chassis may well have wider guides between the cages and narrower ones within them. What IS solid is that an even ten-way division is impossible, since 44.33 is thinner than a card Cisco says seats here. Searched and not found: any per-slot width in the Ethernet Line Card Installation Guide, the Hardware Installation Guide or the Overview and Reference Guide, and the stencil master draws the cage as a single undivided rectangle.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned front elevation, a per-slot width from any Cisco document, or a tape measure on a real ASR 9010",
+   "what": "rsp-slot-width-is-a-lower-bound"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The ASR 9010's two fan trays occupy the band between the card guide bar at 566.51 mm and the front air intake grille at 673.60 mm - 107.09 mm for the pair, which is measured and solid. Where one ended and the other began was NOT measured. Scanning that band finds a dark separator at about 605.8 mm, but it does not bisect the band (39.3 mm above it, 66.9 mm below), so it was read as internal faceplate detail rather than the boundary, and an EVEN split was recorded as the right inference: the master labels both trays \"ASR-9010-FAN\", so they are the same part stacked twice and the same part is the same height. RESOLVED, AND THE SEPARATOR WAS THE BOUNDARY AFTER ALL. Dismissing it assumed the two trays fill the band, and they do not - two trays of 33.32 come to 66.64 of 107.09. cisco/asr-9010-fan was measured off this chassis's own front master at y 571.44 to 604.76, and that bottom edge and the separator at 605.8 agree to 1.04 mm: two measurements taken for different reasons, landing on the same line. Both trays are seated there now rather than split evenly, so the placement is measured and the inference is retired. What the band holds BELOW them - about 34 mm between the second tray and the grille starting at 675.08 - is still unnamed, and the band stays ONE cutout because a single opening with two trays in the top of it and intake beneath is what the guide's own cooling-path figure (Figure 71) draws.",
+   "scope": [
+    "front",
+    "fan-trays"
+   ],
+   "wanted": "a dimensioned front elevation, or the ASR-9010-FAN spare-part drawing",
+   "what": "fan-tray-split"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The card slots are bays and accept the line card and RSP blank. THE FAN TRAYS HAVE SINCE LEFT THIS LIST - cisco/asr-9010-fan now exists and both are seated as bays at the positions its own size provenance measured off this chassis's front master. The eight power module positions and the air filter are still NOT modelled as bays, because a bay must name a component that fits it and library/components/cisco/ carries no version 2 or 3 power module and no filter. Their openings ARE measured and are drawn as cutouts, so the metal is right and only the occupants are missing. The power shelf openings are 13.96 to 431.66 mm at y 811.74 and 873.33; the fan band is 566.51 to 673.60. Pointing them at the line card blank would lint clean and claim something false - a 41.4 x 395.7 filler plate does not cover a power module opening.",
+   "scope": [
+    "front",
+    "fan-trays",
+    "power-shelves",
+    "power-modules"
+   ],
+   "wanted": "an ASR 9010 fan tray, the version 2 and 3 AC and DC power modules, and the chassis air filter",
+   "what": "bays-awaiting-components"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The cisco logo, the \"ASR 9000 Series\" wordmark and an \"OPEN\" legend are printed on the CABLE MANAGEMENT TRAY, not on chassis metal - the stencil master draws them inside that band. Per the skill, text on a part's own face is that part's silkscreen, so this chassis deliberately carries none and the tray is not modelled as a placement for want of a component. The band itself is measured (0 to 163.76 mm) and drawn as decor, so the metal is right and only the printing and the tray are absent. This is the same decision taken on the ASR 9006's fan tray door.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a cable management tray component carrying its own branding",
+   "what": "cable-management-tray-branding"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9010",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE BOTTOM IS THE ONLY FACE OF THIS CHASSIS WITH NO SOURCE, and it is not a gap in this file's research. There is no bottom view of ANY ASR 9000 chassis anywhere in the 78-document intake: every figure caption in all 65 PDFs was searched for \"Bottom View\", \"underside\" and \"bottom of the chassis\", and the result is zero hits. That is a fact about how Cisco documents a rack chassis rather than about this model - a face that sits on rack rails and is never serviced gets no figure. The face is SIZED correctly from Table 13, so a rack elevation and the 3D box are the right shape; what it lacks is any statement of what is on it. Nothing is invented to fill it, and no region is added naming the absence, because a check passed by annotating that you have nothing is worse than a check failed honestly. THIS HOLDS THE CHASSIS AT CAPABILITY 2. Front, rear, top, left and right all now carry sourced content; the bottom alone does not, and level 3's implementation requires content on all six. The written design asks only that six faces be \"present, sized, and mutually consistent\", which this file satisfies - the content requirement comes from `_has_content`, which was written for level 1. See working/notes/deliberately-empty-faces.md.",
+   "scope": [
+    "bottom"
+   ],
+   "wanted": "a bottom elevation, a photograph of the underside, or a way for a view to declare itself deliberately empty so that empty-by-verification counts where empty-by-omission does not",
+   "what": "bottom-face-is-undocumented-family-wide"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 9,
+   "device": "asr-9010",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9010",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9010",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9904",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The power shelf is drawn as one opening, 423.85 x 48 mm, rather than four module openings. Figure 20 and Table 15 both establish that there are FOUR modules and that Cisco numbers them M0 to M3, so the count and the numbering are not in doubt - what is missing is where the boundaries fall. The stencil master draws this shelf POPULATED, with each module rendered as a pair of fan wheels, so scanning the band returns grille detail rather than separators and the per-module pitch could not be recovered the way the ASR 9006's was from its bare shelf. An even four-way division would be arithmetic rather than measurement, and the 9006 showed the gaps between modules are not uniform with the end margins.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a bare-shelf figure, or a front elevation with the power shelf dimensioned",
+   "what": "power-module-openings"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9904",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "top, bottom and left are sized from Table 13 and Figure 10 (the 9904's top-down footprint) and are deliberately EMPTY. No document we hold shows any of the three. The right side is not blank - the guide states the air inlet and the air filter are both there - and the rear carries the single fan tray and two grounding points, so four of the six faces have sourced content. The sizes here are right, which is what these views are carrying for a rack elevation and the 3D box.",
+   "scope": [
+    "top",
+    "bottom",
+    "left"
+   ],
+   "wanted": "a six-face photograph set, or the mechanical drawings behind Figure 10",
+   "what": "blank-faces"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 4,
+   "device": "asr-9904",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9904",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9904",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9906",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 6 bays - a9k-4hg-flex, 42.67 thick 403.40 on 6 bays - a99-rsp-se, 403.40 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "what": "bay-extents-reconciled-rather-than-measured"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9906",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
+   "what": "rsp880-length-also-exceeds-the-cage"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9906",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
+   "what": "rsp880-width-exceeds-every-measured-pitch"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9906",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The vertical power shelf is drawn as one opening rather than three module openings. Figure 21 and Table 15 both establish three modules stacked M0 at the bottom to M2 at the top, so the count and numbering are not in doubt; the boundaries are. The master draws this column POPULATED - each module rendered with its own fan wheel - so a scan returns grille detail rather than separators, the same obstacle the ASR 9904's horizontal shelf presents. The column's outer rectangle is measured and drawn.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a figure showing the power shelf empty, or a dimensioned front elevation",
+   "what": "power-module-openings"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9906",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The ASR 9906's rear carries the fabric card cage and we know a great deal ABOUT it and almost nothing about its geometry. There is no ASR-9906 Rear master in Cisco's stencil, and Figure 21 shows only the front. The count is sourced but indirectly: Table 13 quotes the configured weight for a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\", so five, and the sibling ASR 9910's Figure 22 shows fabric slots numbered from 0. Nothing states their width, their height, or where the PEM sits. The rear is therefore sized and carries regions naming what is there, with no cutouts invented to fill it.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "an ASR 9906 rear elevation, or a rear photograph",
+   "what": "rear-face"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9906",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE BOTTOM IS THE ONLY FACE OF THIS CHASSIS WITH NO SOURCE, and it is not a gap in this file's research. There is no bottom view of ANY ASR 9000 chassis anywhere in the 78-document intake: every figure caption in all 65 PDFs was searched for \"Bottom View\", \"underside\" and \"bottom of the chassis\", and the result is zero hits. That is a fact about how Cisco documents a rack chassis rather than about this model - a face that sits on rack rails and is never serviced gets no figure. The face is SIZED correctly from Table 13, so a rack elevation and the 3D box are the right shape; what it lacks is any statement of what is on it. Nothing is invented to fill it, and no region is added naming the absence, because a check passed by annotating that you have nothing is worse than a check failed honestly. THIS NO LONGER HOLDS THE CHASSIS BACK, and the reason is worth recording rather than deleting. The face now carries what IS sourced about it - the two rack mounting surfaces, at 5.00 in and 9.45 in from the front - so it is no longer content-free and the chassis reads at capability 4. That is not the gap closing. The bottom still has no elevation and nothing is drawn of what sits between those rails; what changed is that the little which is published got written down. The sibling ASR 9910, which has no bottom view at all, is the one still held at capability 2.",
+   "scope": [
+    "bottom"
+   ],
+   "wanted": "a bottom elevation or a photograph of the underside. What is on this face between the rack rails remains unstated by every document in the intake",
+   "what": "bottom-face-is-undocumented-family-wide"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 9,
+   "device": "asr-9906",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9906",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9906",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9910",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 10 bays - a9k-4hg-flex, 42.67 thick 403.40 on 10 bays - a99-rsp-se, 403.40 long 492.10 on 5 bays - a99-sfc3-s, 492.10 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "what": "bay-extents-reconciled-rather-than-measured"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9910",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
+   "what": "neighbour-constraint-excludes-the-control-card-length"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9910",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
+   "what": "rsp880-length-also-exceeds-the-cage"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9910",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
+   "what": "rsp880-width-exceeds-every-measured-pitch"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9910",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Two power shelves are drawn as single openings rather than three module openings each. Table 15 establishes the count - \"ASR 9910: Version 3 power system: Up to six AC power modules per system, three per tray\" - and Figure 22 numbers them M0 to M3 for the DC system, which is four per tray, so the count itself DIFFERS BETWEEN AC AND DC on this chassis and neither figure nor table gives boundaries. The master draws both shelves populated, so a scan returns module detail rather than separators. The shelves' outer rectangles are measured and drawn.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a figure showing the power shelves empty, and a statement of the AC and DC module counts on one page",
+   "what": "power-module-openings"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9910",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE BOTTOM FACE IS EMPTY BY VERIFICATION, NOT BY OMISSION, and this is the only chassis in the Cisco family where that is still true. Its seven siblings each earn this face from a rack mounting surface strip dimensioned in their own footprint figure. FOUR ROUTES WERE TRIED HERE AND ALL FOUR FAIL: (1) Figure 12's Top View, read whole at 300 dpi, carries exactly one dimension - 17.600, the width - and no mounting offset. (2) The fraction route needs a scale, and that view has none that reconciles: 17.600 across its short axis makes its long axis 28.04 in, which is 11 percent off Table 13's 31.50 and 10 percent off its own side view's 31.266. (3) The HIG's 4-post mounting figures for this chassis are undimensioned illustrations. (4) Transferring the ASR 9906's 127.0 and 240.0 mm would cross two chassis differing by 313 mm in height, which is the sibling transfer this work has spent the session correcting. Separately and for the whole family: no bottom VIEW of any ASR 9000 chassis exists in the 78-document intake - every figure caption in all 65 PDFs was searched for \"Bottom View\", \"underside\" and \"bottom of the chassis\", returning zero hits. Nothing is drawn and no region names the absence. The face is correctly SIZED, so the 3D box and a rack elevation are the right shape; what is missing is a statement of what is on it, and this chassis holds at capability 2 rather than borrow a number it cannot source.",
+   "scope": [
+    "bottom"
+   ],
+   "wanted": "a dimensioned rail or mounting-flange position for the ASR 9910 from any figure, or a way for a view to declare itself deliberately empty so empty-by-verification can count",
+   "what": "rack-mounting-plane-not-dimensioned-for-this-chassis"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 10,
+   "device": "asr-9910",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9910",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9910",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 10 bays - a9k-4hg-flex, 42.67 thick 403.10 on 10 bays - the 5th-generation envelope, 403.10 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "what": "bay-extents-reconciled-rather-than-measured"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
+   "what": "neighbour-constraint-excludes-the-control-card-length"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
+   "what": "rsp880-length-also-exceeds-the-cage"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
+   "what": "rsp880-width-exceeds-every-measured-pitch"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "cisco/a99-sfc3@1 carries power-draw-max-w 340, and that figure is the ASR 9922's. Table 23 of b-asr9k-overview-reference-guide.pdf lists the SAME part number twice with different figures scoped by chassis - \"A99-SFC3 Card (ASR 9922)\" at 320/330/340 W across the three ambients, and a separate ASR 9912 row at a lower number. These are two scopes rather than two answers: the same card draws less in this chassis than in the 9922. A chassis total built from the component here is therefore CONSERVATIVE - it over-counts each of the seven fabric cards - which is the safe direction but is not the right number. The component cannot carry both without a chassis-scoped mechanism, which the library does not have; casa/c100g records the same species of problem for paired modules.",
+   "scope": [
+    "fabric"
+   ],
+   "wanted": "a per-chassis power scope on a component contract, or a separate PID for the 9912 variant",
+   "what": "fabric-card-power-is-scoped-to-the-9922"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Three power shelves are drawn as single openings rather than four module openings each. Figure 23 numbers them M0 to M3 per shelf and Table 15 gives \"Version 2 power system: Up to twelve AC power modules per system, four per tray\" - so twelve, and the count is not in doubt. The boundaries are: the master draws all three shelves populated, so scanning returns module detail rather than separators. The shelves' vertical extents here are estimated from the band below the RP/FC cage rather than measured off separator rules, which is weaker than everything else in this file and is why they are cutouts and not bays.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a figure showing the power shelves empty, or a dimensioned front elevation",
+   "what": "power-module-openings"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9912",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE BOTTOM IS THE ONLY FACE OF THIS CHASSIS WITH NO SOURCE, and it is not a gap in this file's research. There is no bottom view of ANY ASR 9000 chassis anywhere in the 78-document intake: every figure caption in all 65 PDFs was searched for \"Bottom View\", \"underside\" and \"bottom of the chassis\", and the result is zero hits. That is a fact about how Cisco documents a rack chassis rather than about this model - a face that sits on rack rails and is never serviced gets no figure. The face is SIZED correctly from Table 13, so a rack elevation and the 3D box are the right shape; what it lacks is any statement of what is on it. Nothing is invented to fill it, and no region is added naming the absence, because a check passed by annotating that you have nothing is worse than a check failed honestly. THIS HOLDS THE CHASSIS AT CAPABILITY 2. Front, rear, top, left and right all now carry sourced content; the bottom alone does not, and level 3's implementation requires content on all six. The written design asks only that six faces be \"present, sized, and mutually consistent\", which this file satisfies - the content requirement comes from `_has_content`, which was written for level 1. See working/notes/deliberately-empty-faces.md.",
+   "scope": [
+    "bottom"
+   ],
+   "wanted": "a bottom elevation, a photograph of the underside, or a way for a view to declare itself deliberately empty so that empty-by-verification counts where empty-by-omission does not",
+   "what": "bottom-face-is-undocumented-family-wide"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 9,
+   "device": "asr-9912",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9912",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9912",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 20 bays - a9k-4hg-flex, 42.67 thick 403.10 on 20 bays - the 5th-generation envelope, 403.10 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "what": "bay-extents-reconciled-rather-than-measured"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
+   "what": "neighbour-constraint-excludes-the-control-card-length"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
+   "what": "rsp880-length-also-exceeds-the-cage"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
+   "what": "rsp880-width-exceeds-every-measured-pitch"
+  },
+  {
+   "because": "needs-hardware",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The guide states that \"line cards must be installed upside down in slots 10 through 19 of the bottom card cage, whereas in slots 0 though 9 of the top card cage, the line cards are installed right side up\". This is a real property of the chassis and the model cannot currently express it. The bays for 10 to 19 are geometrically identical to 0 to 9 and carry no rotation, because the card is inverted about its own long axis rather than rotated in the plane of the panel - a `rotate: 180` would spin the faceplate end for end, which is a different thing and would put the ejectors at the wrong ends. So a card rendered in slot 15 will show its ports and its part number the same way up as one in slot 5, and on real hardware it would not. Anyone reading port positions off the lower cage should know that.",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "a mirror or flip transform on a bay, distinct from rotation, or a photograph settling exactly which way an inverted card reads",
+   "what": "lower-cage-cards-are-inverted"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "RP0 and RP1 are CUTOUTS rather than bays. The candidate component is cisco/asr-9922-rp-se/-tr, named for this chassis and carrying Table 23's \"RP Card\" figure of 259 W, but it declares a slot envelope of 46.0 mm and this cage's nine positions divide its measured 429.04 mm span into 47.67 mm each - which the RP would fit - while the LINE CARD cages divide into 43.388 and the rail pitch is 44.06. A 46.0 mm supervisor does not fit a 44 mm slot, and the same 46.0 x 428.5 x 628.9 appears on a9k-rsp880-se/-tr, byte for byte, which suggests one derivation reused rather than two measurements. Until that width is re-derived from the shapesheet these two positions stay openings. The seven fabric positions beside them ARE bays, because a99-sfc3's 41.4 fits comfortably.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a re-derivation of asr-9922-rp's width from the stencil shapesheet, both axes from one source",
+   "what": "rp-positions-have-no-occupant-that-fits"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "The four fan trays are BAYS now, seating cisco/asr-9922-fan-v3, which is how the ASR 9910 and ASR 9010 already model theirs - a fan tray is a module you pull, not a hole in a plate. That moved the complaint from L39, which could only say the opening had nothing in it, to L33, which says the thing that goes in it is 36.95 mm too wide. Same disagreement, stated where the numbers are. cisco/asr-9922-fan-v3 declares 475.96 mm wide and this chassis's BODY is 447.0, so the component is 29 mm wider than the box it goes in. Compare cisco/asr-9910-fan at 445.2, which sits inside its own 447 mm body correctly. Both are class cooling and one of them is measured against the rack face rather than the body - the stencil records rack-face widths for trays and covers, and 475.96 is within a few millimetres of the 482.6 mm rack face. The openings here are the measured bands and the component is not placed.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "asr-9922-fan-v3's width re-derived against the body, or confirmation that the fan tray really does span the rack face and needs a negative offset like a mounting ear",
+   "what": "fan-tray-openings"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "asr-9922",
+   "kind": "declared",
+   "manufacturer": "Cisco",
+   "note": "THE BOTTOM IS THE ONLY FACE OF THIS CHASSIS WITH NO SOURCE, and it is not a gap in this file's research. There is no bottom view of ANY ASR 9000 chassis anywhere in the 78-document intake: every figure caption in all 65 PDFs was searched for \"Bottom View\", \"underside\" and \"bottom of the chassis\", and the result is zero hits. That is a fact about how Cisco documents a rack chassis rather than about this model - a face that sits on rack rails and is never serviced gets no figure. The face is SIZED correctly from Table 13, so a rack elevation and the 3D box are the right shape; what it lacks is any statement of what is on it. Nothing is invented to fill it, and no region is added naming the absence, because a check passed by annotating that you have nothing is worse than a check failed honestly. THIS HOLDS THE CHASSIS AT CAPABILITY 2. Front, rear, top, left and right all now carry sourced content; the bottom alone does not, and level 3's implementation requires content on all six. The written design asks only that six faces be \"present, sized, and mutually consistent\", which this file satisfies - the content requirement comes from `_has_content`, which was written for level 1. See working/notes/deliberately-empty-faces.md.",
+   "scope": [
+    "bottom"
+   ],
+   "wanted": "a bottom elevation, a photograph of the underside, or a way for a view to declare itself deliberately empty so that empty-by-verification counts where empty-by-omission does not",
+   "what": "bottom-face-is-undocumented-family-wide"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 10,
+   "device": "asr-9922",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "asr-9922",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "asr-9922",
+   "kind": "derived",
+   "manufacturer": "Cisco",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 6,
+   "device": "as5912-54x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "as5912-54x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "as5912-54x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port groups qsfp28, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "as5912-54x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 6,
+   "device": "as7326-56x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "as7326-56x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "as7326-56x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "as7326-56x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port groups mgmt, qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "as7326-56x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 6,
+   "device": "as7726-32x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "as7726-32x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "as7726-32x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "as7726-32x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port group qsfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "as7726-32x",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "as7946-30xb",
+   "kind": "declared",
+   "manufacturer": "Edgecore",
+   "note": "The datasheet states \"Power Consumption - Max: 527 W, Typical: 186 W\" with no ambient. The quick start guide for the same SKU states \"Power Consumption 638 W at 25 C, 695 W at 45 C\". This is not the usual measure-versus-measure difference that explains most such pairs: the QSG's LOWEST figure, at the cooler ambient, already exceeds the datasheet's stated MAXIMUM by 111 W, so neither typical-against-max nor an ambient axis accounts for it. Both rows are labelled Power Consumption and neither states a scope or a population. 527 W is kept because it is the datasheet's, which is the source of record for a spec-table fact; if the QSG is right the device draws 21 percent more than this manifest says.",
+   "scope": [
+    "power-max-w"
+   ],
+   "wanted": "a measurement from a running unit, or any Edgecore document stating what each figure covers - populated or bare, input power or system draw. Note that the AGR420's QSG gives 527 W at 25 C, the same number this datasheet gives as the AGR400's maximum, which may mean one of the four figures is a copy error",
+   "what": "power-consumption-sources"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "as7946-30xb",
+   "kind": "declared",
+   "manufacturer": "Edgecore",
+   "note": "Searched and absent, which is why this is asserted rather than left to L27 to imply. Both documents we hold - the datasheet and the QSG - rate the AGR PSUs by INPUT only (\"DC Input: -40 to -75V, 40 A, per PS\"; \"AC Input: 100-120 V 12 A or 200-240 V 7.5 A per PS\") and state no output wattage anywhere. The fan module gets no power figure at all. Unlike the Casa PEMs, these PSUs genuinely CONVERT, so `power-output-w` is the right key for them and the only thing missing is the number - which is exactly why it must not be derived from the input current, where 12 A at 100-120 V and 7.5 A at 200-240 V give different products and neither is an output rating.",
+   "scope": [
+    "edgecore/agr-psu-ac@1",
+    "edgecore/agr-psu-dc@1",
+    "edgecore/agr-fan@1"
+   ],
+   "wanted": "a photograph of either PSU's nameplate, which is where this figure normally lives, or an Edgecore part datasheet for the PSU and fan FRUs rather than for the chassis. The 550 W CRPS nameplate already in working/intake is the worked example of what would close it",
+   "what": "fru-power-unpublished"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 5,
+   "device": "as7946-30xb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "as7946-30xb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 4,
+   "device": "as7946-30xb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "as7946-30xb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "as7946-30xb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp28, qsfpdd-100g, qsfpdd-400g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "as7946-30xb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "as7946-74xksb",
+   "kind": "declared",
+   "manufacturer": "Edgecore",
+   "note": "The QSG's Front LEDs section tables every port family and every system lamp with a colour, and for the management jack says only \"RJ-45 OOB Port - Left (link), Right (activity)\". No colour, and no behaviour. The AGR420 datasheet has no LED section at all, so the QSG is the only source we hold. The two lamps therefore declare what the guide does say - the right lamp blinks for activity, which is the behaviour the same guide gives every other activity lamp on this device - and the left lamp keeps led-rect's generic off/on rather than an invented green-for-link. The AGR400's QSG (AS7946-30XB-QSG-R04) prints the identical sentence, so this is Edgecore's house style for the OOB jack and not a gap in one revision.",
+   "scope": [
+    "mgmt-leds"
+   ],
+   "wanted": "a NOS LED table, or photographs of the OOB jack with a link up and traffic running",
+   "what": "mgmt-led-colours"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "as7946-74xksb",
+   "kind": "declared",
+   "manufacturer": "Edgecore",
+   "note": "The datasheet states \"Power Consumption - Max: 692 W, Typical: 201 W\" with no ambient. The QSG for the same SKU states \"527 W at 25 C, 723 W at 45 C\". Most of that is explained by ambient rather than by disagreement - 527 W at 25 C sits comfortably below the datasheet maximum - but the 45 C figure EXCEEDS the stated maximum by 31 W, and 45 C is the top of this device's own rated operating range (0 to 45 C), so the figure at that ambient should BE the maximum. 692 W is kept as the datasheet's own maximum.",
+   "scope": [
+    "power-max-w"
+   ],
+   "wanted": "an Edgecore statement of what ambient the datasheet's 692 W assumes, or a measurement at 45 C. Note that the QSG's 25 C figure here, 527 W, is identical to the AGR400 datasheet's stated maximum, which may mean one of the four Edgecore figures is a copy error",
+   "what": "power-consumption-sources"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "as7946-74xksb",
+   "kind": "declared",
+   "manufacturer": "Edgecore",
+   "note": "Searched and absent, which is why this is asserted rather than left to L27 to imply. Both documents we hold - the datasheet and the QSG - rate the AGR PSUs by INPUT only (\"DC Input: -40 to -75V, 40 A, per PS\"; \"AC Input: 100-120 V 12 A or 200-240 V 7.5 A per PS\") and state no output wattage anywhere. The fan module gets no power figure at all. Unlike the Casa PEMs, these PSUs genuinely CONVERT, so `power-output-w` is the right key for them and the only thing missing is the number - which is exactly why it must not be derived from the input current, where 12 A at 100-120 V and 7.5 A at 200-240 V give different products and neither is an output rating.",
+   "scope": [
+    "edgecore/agr-psu-ac@1",
+    "edgecore/agr-psu-dc@1",
+    "edgecore/agr-fan@1"
+   ],
+   "wanted": "a photograph of either PSU's nameplate, which is where this figure normally lives, or an Edgecore part datasheet for the PSU and fan FRUs rather than for the chassis. The 550 W CRPS nameplate already in working/intake is the worked example of what would close it",
+   "what": "fru-power-unpublished"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 5,
+   "device": "as7946-74xksb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "as7946-74xksb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 3,
+   "device": "as7946-74xksb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "as7946-74xksb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "as7946-74xksb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp28, qsfpdd-100g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "as7946-74xksb",
+   "kind": "derived",
+   "manufacturer": "Edgecore",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "hlx-tgv",
+   "kind": "derived",
+   "manufacturer": "Halny",
+   "wanted": "an `attrs.performance` section; `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "hlx-tgv",
+   "kind": "derived",
+   "manufacturer": "Halny",
+   "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "hlx-tgv",
+   "kind": "derived",
+   "manufacturer": "Halny",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10003",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the DC PSM face (the guide's DC figures are isometric line art; the DC supply is also deeper - 274.3 vs 235.2 mm).",
+   "what": "dc-power-variant"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10003",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the printed PSM slot labels - the rear drawing's edge legends are not legible in any source, so left-stack-top-down 0-2 / right-stack 3-5 is an assumption.",
+   "what": "psm-slot-numbering"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx10003",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the position of the two-hole protective earthing bracket on the side rail (M4 studs at 19.1 mm centres per the guide, location not drawn).",
+   "what": "side-earthing-bracket"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10003",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a photograph of the rear - only the schematic line drawing g009801 exists in the intake, so rear finish is inferred.",
+   "what": "rear-photo"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx10003",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx10003",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 14 bays (front 4, rear 10) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx10003",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10004",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the JNP10K-PWR-AC3, DC2 and DC3 faces (AC3 adds four feeds A0/A1/B0/B1 and six LEDs; only AC2 is photographed usably).",
+   "what": "psu-variants"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10004",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "LC2101, LC4800 and LC4802 faceplates - the guide names them and gives dimensions and power, but the extraction has no usable face art; only LC9600 and LC480 are modelled.",
+   "what": "line-card-catalogue"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10004",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "legible FPC slot labels - the top-down 0-3 order follows the family convention, not a readable print.",
+   "what": "slot-label-print"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx10004",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "res"
+   ],
+   "wanted": "a vendor dimension for the RCB face - the FRU table covers chassis, cards and PSUs but not the RCB; 389 mm is photo-derived.",
+   "what": "rcb-vendor-width"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx10004",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "cooling"
+   ],
+   "wanted": "per-tray power draw - not in the extraction's text layer.",
+   "what": "fan-tray-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx10004",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx10004",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 11 bays (front 6, rear 5) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx10004",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a photograph of the rear - only the isometric line drawing g050553 exists, so PSU stack and fan tray geometry are fractional readings and finish is inferred.",
+   "what": "rear-photo"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the JNP10K-PWR-AC3 (four-feed) and DC faces; only AC2 is modelled.",
+   "what": "psu-variants"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "LC4800/LC4802 faceplates - named with dimensions and power in the guides but with no usable face art in the extraction.",
+   "what": "line-card-catalogue"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx10008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "cooling"
+   ],
+   "wanted": "per-tray power draw - not in the extraction's text layer.",
+   "what": "fan-tray-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx10008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx10008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 18 bays (front 10, rear 8) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx10008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10016",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a photograph of the rear - only the isometric drawing g050702 exists, so PSU column and fan geometry are fractional readings.",
+   "what": "rear-photo"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10016",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the JNP10K-PWR-AC (first generation), AC3 and DC faces; only AC2 is modelled.",
+   "what": "psu-variants"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10016",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "the LC9600 is not listed for the MX10016 in the extracted guide (LC2101/LC480 are), so the accepts list stays narrow; a compatibility table would widen it.",
+   "what": "line-card-catalogue"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx10016",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "legible FPC slot labels - top-down 0-15 follows the family convention.",
+   "what": "slot-label-print"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx10016",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx10016",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 30 bays (front 18, rear 12) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx10016",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "mx104",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a corrected MX104 physical table - the module rows scramble width/depth/height (a MIC listed 15.9 cm wide when the photographed face is ~168 mm, PSU axes likewise); faces are photo-sized and marked approximate.",
+   "what": "vendor-table-axes"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx104",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the AC supply face (guide Figure 9 is isometric line art only); only the photographed DC variant is modelled.",
+   "what": "ac-power-variant"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx104",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "mics",
+    "res",
+    "psus"
+   ],
+   "wanted": "the remaining per-module wattage rows - only the 20x1GE MIC's 26 W was inside this extraction's text layer.",
+   "what": "per-module-power"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "mx104",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "mgmt"
+   ],
+   "wanted": "a DB-15 standard part - the ALARM connector is drawn as a plain cutout with its legend.",
+   "what": "alarm-connector"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx104",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 1,
+   "device": "mx104",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx104",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx104",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 8 bays (front 8) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx104",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "mx150",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "proper MX150 fixed-fan and rocker components - the rear reuses common/fan-module (a generic square FRU face) behind circular grille cutouts and common/power-button for the rocker; both are stand-ins sized to the photo.",
+   "what": "fan-and-switch-representation"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx150",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "status-leds"
+   ],
+   "wanted": "the SPD/DX/EN selector lamp semantics tied to the mode button - the guide's port-parameter table is transcribed only as legends here.",
+   "what": "port-parameter-leds"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx150",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "ge",
+    "xe"
+   ],
+   "wanted": "transceiver list (external compatibility tool).",
+   "what": "supported-optics"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 4,
+   "device": "mx150",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 1,
+   "device": "mx150",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx150",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx150",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on port group ge - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx150",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a photograph of the rear - only the isometric drawing g009401 exists, so the PSM wall, PDMs and fan door are fractional readings and finish is inferred; the drawing shows AC PSMs while the shared author is the DC face.",
+   "what": "rear-photo"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "as the MX2000 siblings - the photographed unit carries blanks in every LC slot.",
+   "what": "mpc-catalogue"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "res"
+   ],
+   "wanted": "a close photograph of the MX2008 RCB faceplate - the jack stack is summarised from a ~1.4 px/mm image.",
+   "what": "rcb-face-detail"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2008",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the two fan trays and two PDMs as FRU bays - drawn as the zones and door they sit behind.",
+   "what": "fan-trays-and-pdms"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx2008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx2008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx2008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 30 bays (front 21, rear 9) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx2008",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2010",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "vertical authors for the MX2000 MPC range and the adapter card as its own layer - the photographed unit seats several card types the extraction cannot identify; only a dense 32xSFP+ class card (identified by arrangement, not legend) and the blank exist.",
+   "what": "mpc-catalogue"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2010",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "res"
+   ],
+   "wanted": "a close photograph of the CB-RE faceplate - the jack stack is summarised from a ~1 px/mm image and the per-jack legends are unreadable.",
+   "what": "cb-re-face-detail"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2010",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the four fan trays and two PDMs as FRU bays - they sit behind the rear grilles and zones drawn as decor; tray/PDM face photographs would let them become bays.",
+   "what": "fan-trays-and-pdms"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2010",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the AC, 240V-China and HVAC/HVDC PSM faces; the photographed unit is -48 V DC.",
+   "what": "psu-variants"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 2,
+   "device": "mx2010",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx2010",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx2010",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 30 bays (front 21, rear 9) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx2010",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2020",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the printed PSM slot numbering across the two walls, and a dimensioned PSM - the bay is drawn at the family 430 mm where this photograph reads nearer 375.",
+   "what": "psm-numbering-and-bay-height"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2020",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "as the MX2010 - vertical authors for the MPC range and the adapter card; the photographed MX2020 front carries blanks in every LC slot.",
+   "what": "mpc-catalogue"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx2020",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the four fan trays and four PDMs as FRU bays - drawn as the grilles and zones they sit behind.",
+   "what": "fan-trays-and-pdms"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 2,
+   "device": "mx2020",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx2020",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx2020",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 49 bays (front 31, rear 18) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx2020",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "mx204",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "note": "The photographed faceplate prints PPS under the left SMB column and 100MHz under the right; the guide art prints 10MHz left and 1PPS right, and the guide text calls the ports 10-MHz throughout (pinouts, clocking topics). The silkscreen follows the photograph; the cutout ids follow the guide's functional naming (smb-10mhz-* left, smb-1pps-* right), which therefore disagrees with the printed legend under them.",
+   "scope": [
+    "timing"
+   ],
+   "wanted": "a photograph of a second production unit's SMB legend",
+   "what": "smb-column-legend"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "mx204",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "note": "Table 19 states the fan module 1.89 in (48.0 mm) wide; the rear drawing's bay apertures measure ~42 mm on a 49.1 mm pitch and the photograph shows the orange face filling the aperture. Modelled at 42.0 (drawing aperture); the 48.0 envelope presumably includes body rails behind the panel.",
+   "scope": [
+    "fans"
+   ],
+   "wanted": "a mechanical drawing or a caliper on the hardware",
+   "what": "fan-module-width"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx204",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "identification of the small hole at x 250.0, y 28.9 right of fan bay 2 (drawing shows it with no icon or number; not modelled)",
+   "what": "rear-extra-hole"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx204",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "qsfp28",
+    "sfp-plus",
+    "timing"
+   ],
+   "wanted": "the MX204 transceiver list - the guide points at the external Hardware Compatibility Tool (\"MX204 Transceivers\") and no document in the intake carries the table, so the port groups declare no interface",
+   "what": "supported-optics"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx204",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the face and position of the chassis serial-number label - guide Figure 60 shows the label but names no face and carries no locating dimension",
+   "what": "serial-label-location"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx204",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 2,
+   "device": "mx204",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx204",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx204",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 5 bays (rear 5); `physical-context` on port groups qsfp28, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx204",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx240",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "orthographic imagery for the current MPC/SCBE2-SCBE3/RE-S-X6 generation - the intake holds their figures and power tables but no straight-on photography, so the EOL FRUs the reference photograph carries are what is modelled. The power tables for the newer FRUs are already transcribed in the guide extraction for when they are built.",
+   "what": "current-generation-frus"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx240",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "faces for the high-capacity AC/DC supplies (figures 15/17 are isometric line art only).",
+   "what": "high-capacity-psus"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx240",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "craft",
+    "slots"
+   ],
+   "wanted": "vendor dimensions for the craft panel and cards - no physical dimension for either exists in the intake, so faces are sized to the photographed apertures.",
+   "what": "craft-and-card-dimensions"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx240",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "transceiver lists per DPC/MPC (external compatibility tool).",
+   "what": "supported-optics"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx240",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx240",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx240",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 11 bays (front 5, rear 6) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx240",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "mx304",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "res",
+    "lmics",
+    "psus"
+   ],
+   "wanted": "a mechanical drawing resolving the module envelopes against the drawn apertures - Table 22 states 203.5 mm module and 73.5 mm PSU envelopes while the photographed apertures measure 197.6 and 66.0; the bays and module faces are both drawn at the aperture and the envelopes live in each contract's attrs. That reconciliation is a judgement (rails hidden behind the panel), not a measurement, and this gap is its record.",
+   "what": "module-envelope-vs-aperture"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx304",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "front"
+   ],
+   "wanted": "geometry for the optional JNP-FLTRDR-2RU cover and JNP-AIRFLTR-2RU filter that bolt over the front face (Table 22 gives envelopes; no straight-on image exists in the intake). Not modelled; the bare front is the photographed configuration.",
+   "what": "front-cover-and-air-filter"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "mx304",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fans"
+   ],
+   "wanted": "a corrected vendor dimension for the fan module - Table 22's row reads 0.31 x 5.62 x 0.31 in, dimensionally impossible for a module holding two 80 mm fans; the model carries the photographed 82.0 x 85.5 aperture and the table's 143 mm depth.",
+   "what": "fan-module-table-error"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx304",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the 400GbE-configuration chassis power totals (guide Table 26) - the rows fell outside the docling text layer; only the 100GbE Table 25 totals are carried.",
+   "what": "table-26-totals"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx304",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "lmics",
+    "timing"
+   ],
+   "wanted": "the MX304 transceiver list - the guide points at the external Hardware Compatibility Tool and no document in the intake carries the table.",
+   "what": "supported-optics"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "mx304",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "res",
+    "lmics"
+   ],
+   "wanted": "the removable front brackets carrying the RE 0 / LMIC0 / RE1/LMIC2 / LMIC1 slot legends, should ears-and-brackets modelling ever be wanted; with ears unmodelled the chassis prints no slot names.",
+   "what": "slot-label-brackets"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx304",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx304",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 9 bays (front 4, rear 5) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx304",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "mx480",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a mechanical drawing or an isotropic front photograph - the DAM front photo is 5.1% compressed in y, so the 31.86 mm slot pitch here and the MX240's 30.45 mm disagree for the same card family; each device is internally consistent and the truth is between them.",
+   "what": "front-photo-anisotropy"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx480",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a clean Table 88-equivalent weight row - the extraction carries the rack-planning prose (five routers > 371 kg combined) but the per-chassis maximum row fell outside the text layer.",
+   "what": "weight-and-max-config"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx480",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "slots"
+   ],
+   "wanted": "orthographic imagery for MPC/SCBE2-3/RE-S-X6 FRUs (as on the MX240).",
+   "what": "current-generation-frus"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx480",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a rear photograph resolving the earthing studs and ESD socket - placed at the MX240's positions, estimated.",
+   "what": "rear-ground-and-esd"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx480",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx480",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx480",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 15 bays (front 9, rear 6) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx480",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx80",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the fixed MX80 faceplate (Figure 8, built-in 48x1GbE) - a different front panel that would be a second device or configuration; only the modular chassis is modelled.",
+   "what": "mx80-fixed-variant"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx80",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the DC supply face (guide Figure 16 is isometric line art).",
+   "what": "dc-power-variant"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx80",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the weight and power tables - outside this extraction's text layer; L27/L29 warnings stand on the modules.",
+   "what": "chassis-weight-and-power"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx80",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "timing"
+   ],
+   "wanted": "confirmation whether the rear CLK/SYNC jacks are SMB or BNC - drawn SMB, photo resolution insufficient.",
+   "what": "rear-clock-jack-type"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx80",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 1,
+   "device": "mx80",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx80",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx80",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 6 bays (front 5, rear 1) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx80",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx960",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "fpcs"
+   ],
+   "wanted": "vertical authors for the rest of the MX960 card range (the photographed unit also shows a 4-port tunnel-services card that is not identified in the extraction); only the 40x1GE DPC, SCB and blank are modelled.",
+   "what": "card-catalogue"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx960",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "the two horizontal fan trays - they sit behind the front bezels above and below the cage and are drawn as the bezels, not as FRU bays; a tray face photograph would let them become bays.",
+   "what": "fan-trays"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "mx960",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [
+    "psus"
+   ],
+   "wanted": "the DC PEM and high-capacity variants; only the photographed AC unit is modelled, and no vendor wattage table was captured.",
+   "what": "dc-power-variant"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "mx960",
+   "kind": "declared",
+   "manufacturer": "Juniper",
+   "scope": [],
+   "wanted": "a chassis or per-PEM power table - not in the captured text layer of the three-part extraction.",
+   "what": "chassis-power"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "mx960",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "mx960",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "mx960",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "`physical-context` on 19 bays (front 15, rear 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "mx960",
+   "kind": "derived",
+   "manufacturer": "Juniper",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "dcp-r-34d-cs",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "dcp-r-34d-cs",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "`physical-context` on port group line - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "dcp-r-34d-cs",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "dcp-r-9d-cs",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "dcp-r-9d-cs",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "`physical-context` on port groups channels, line, xc - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "dcp-r-9d-cs",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 1,
+   "device": "dcp-sc-28p",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "dcp-sc-28p",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "an `attrs.performance` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "dcp-sc-28p",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "`physical-context` on port groups probe, rj45-1g, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "dcp-sc-28p",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "s9510-28dc",
+   "kind": "declared",
+   "manufacturer": "UfiSpace",
+   "note": "HIG section 10 (pages 20-21) tables the GNSS, SYNC, STAT, FAN and PWR system lamps, the PSU and Fan FRU lamps and the management jack, and gives no table at all for the port lamps. The twenty-four led-arrow, four led-dot and two qsfp-lane-leds placements therefore keep their component default of off/on rather than an invented link/activity vocabulary. Nine rows elsewhere in those same tables read \"need NOS to activate this feature\", so these may be NOS-defined rather than simply undocumented - which is a different fix, and the reason this is filed as vendor-silent rather than nos-dependent: we do not know which, and guessing would put an answer where the unknown belongs.",
+   "scope": [
+    "sfp28",
+    "qsfp28",
+    "qsfpdd-400g",
+    "port-leds"
+   ],
+   "wanted": "a per-NOS LED table from UfiSpace or from a NOS vendor, or photographs of a live unit with the ports in known states (down, 1G/10G/25G link, traffic)",
+   "what": "port-led-semantics"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "s9510-28dc",
+   "kind": "declared",
+   "manufacturer": "UfiSpace",
+   "note": "Searched and absent. The S9510-28DC hardware installation guide dimensions and weighs the fan FRU (51.5 x 57.8 x 42.2 mm) and tables its LED, and gives no power figure for it. The guide's only wattage is a provisioning instruction - \"a reserve of at least 400 watts on each power circuit\" - which is supply to be provided and not a fan's draw. The PSUs are sourced from their own model numbers (PSU-401); the fan has no equivalent.",
+   "scope": [
+    "ufispace/fan-402825@1"
+   ],
+   "wanted": "a photograph of the fan module's label, or a UfiSpace FRU datasheet",
+   "what": "fru-power-unpublished"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 7,
+   "device": "s9510-28dc",
+   "kind": "derived",
+   "manufacturer": "UfiSpace",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "s9510-28dc",
+   "kind": "derived",
+   "manufacturer": "UfiSpace",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "s9510-28dc",
+   "kind": "derived",
+   "manufacturer": "UfiSpace",
+   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
+   "what": "profile-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "s9510-28dc",
+   "kind": "derived",
+   "manufacturer": "UfiSpace",
+   "wanted": "`physical-context` on 7 bays (front 2, rear 5); `physical-context` on port groups qsfp28, qsfpdd-400g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "s9510-28dc",
+   "kind": "derived",
+   "manufacturer": "UfiSpace",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  }
+ ]
+}
