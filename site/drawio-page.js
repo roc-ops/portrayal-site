@@ -70,7 +70,8 @@ function scopesFor(dev) {
   }
   for (const [label, names] of [...seen.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const set = new Set(names);
-    out.push({key: `g:${label}`, label, n: names.length, pred: d => set.has(d.name)});
+    out.push({key: `g:${label}`, label, n: names.length,
+            vendor: dev.manufacturer, pred: d => set.has(d.name)});
   }
   // Devices with no portfolio at all would otherwise be reachable only through
   // the vendor, which is fine - but say so rather than leaving them invisible.
@@ -78,7 +79,7 @@ function scopesFor(dev) {
   if (loose.length && seen.size) {
     const set = new Set(loose.map(d => d.name));
     out.push({key: 'g:ungrouped', label: 'ungrouped', n: loose.length,
-              pred: d => set.has(d.name)});
+              vendor: dev.manufacturer, pred: d => set.has(d.name)});
   }
   // Shown as "selected device (AS7726-32X)" rather than just the model. The
   // bare name reads as a fixed entry for that one box; naming the ROLE says it
@@ -87,8 +88,9 @@ function scopesFor(dev) {
   // filename wants.
   out.push({key: 'device', label: dev.model || dev.name, n: 1,
             display: `selected device (${dev.model || dev.name})`,
-            pred: d => d.name === dev.name});
+            vendor: dev.manufacturer, pred: d => d.name === dev.name});
   out.push({key: 'vendor', label: `all of ${dev.manufacturer}`, n: mine.length,
+            vendor: dev.manufacturer,
             pred: d => d.manufacturer === dev.manufacturer});
   return out;
 }
@@ -129,14 +131,22 @@ const inScope = key => allVendors()
   ? DEVICES
   : DEVICES.filter((scopeOf(key) || {pred: () => true}).pred);
 
+const kebab = t => String(t || '').toLowerCase()
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// THE VENDOR GOES FIRST. draw.io names an imported shape library after its file
+// and truncates it in the sidebar, so a name beginning "portrayal-" showed every
+// library as "portrayal-" and nothing else. It is also the first thing somebody
+// looking for a file wants: "service-provider-aggregation-services-router" does
+// not say Cisco anywhere.
 const vendorTag = key => {
   if (allVendors()) return 'all-vendors';
   const s = scopeOf(key);
-  // Strip the rung name off the front - a filename wants "ethernet-switch",
-  // not "family-ethernet-switch".
-  const label = s ? s.label.replace(/^all of /, '') : 'portrayal';
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    || 'portrayal';
+  if (!s) return 'portrayal';
+  // "all of Cisco" is already the vendor; a group or a model needs it prefixed.
+  const label = s.label.replace(/^all of /, '');
+  const v = kebab(s.vendor), l = kebab(label);
+  return (v && l !== v ? `${v}-${l}` : l) || 'portrayal';
 };
 
 /** Load every device in scope, skipping any whose face is missing rather than
@@ -226,7 +236,7 @@ async function buildLibrary({rack}) {
       '',
       ...seen.values(),
     ].join('\n'));
-    save(xml, `portrayal-${vendorTag(scope)}${rack ? '-rack' : ''}.xml`, 'application/xml');
+    save(xml, `${vendorTag(scope)}${rack ? '-rack' : ''}-portrayal.xml`, 'application/xml');
     report(stat, loaded, missing, `, ${(xml.length / 1048576).toFixed(1)} MB`);
   } catch (err) {
     stat.textContent = `failed: ${err.message}`;
@@ -248,6 +258,7 @@ const rackHeightFor = used =>
 async function buildRackDiagram() {
   const btn = $('dl-rack'), stat = $('stat-diag');
   const gap = $('gap').checked ? 1 : 0;
+  const labels = $('rlabels') ? $('rlabels').checked : true;
   const both = $('rfaces').value === 'both';
   const faces = both ? ['front', 'rear'] : [$('rfaces').value];
   btn.disabled = true;
@@ -299,7 +310,11 @@ async function buildRackDiagram() {
       let current = [], u = 1;
       const flush = () => {
         if (!current.length) return;
-        const used = u - 1 - gap;           // drop the trailing gap
+        // Normally the rack ends at the last device rather than on a unit of
+        // air. With labels on, the LAST device still needs the gutter under it
+        // that every other device gets, or it is the one box in the rack with
+        // no name against it.
+        const used = u - 1 - gap + (labels ? 1 : 0);
         racks.push({mounted: current, units: rackHeightFor(used)});
         current = []; u = 1;
       };
@@ -317,8 +332,8 @@ async function buildRackDiagram() {
     const racksAll = pages.flatMap(p => p.racks);
     const mounted = racksAll.flatMap(r => r.mounted);
 
-    const xml = rackDiagram(pages, {faces});
-    save(xml, `portrayal-${vendorTag(scope)}-racks${both ? '-both' : ''}.drawio`,
+    const xml = rackDiagram(pages, {faces, labels});
+    save(xml, `${vendorTag(scope)}-racks${both ? '-both' : ''}-portrayal.drawio`,
          'application/xml');
     const rears = mounted.filter(m => m.faces.rear).length;
     const sizes = [...new Set(racksAll.map(r => r.units))].sort((a, b) => a - b);

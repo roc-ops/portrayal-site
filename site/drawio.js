@@ -264,7 +264,7 @@ export function library(entries, provenance = null) {
  * takes as many <diagram> elements as you give it - each is a tab along the
  * bottom of the editor.
  */
-export function rackDiagram(groups, {faces = ['front']} = {}) {
+export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
   // Each rack carries its own height, because each is grown to its contents.
   const heightOf = units => RACK.marginTop + RACK.marginBottom + units * RACK.unit;
   const style =
@@ -323,13 +323,32 @@ export function rackDiagram(groups, {faces = ['front']} = {}) {
             sub[k] = sub[k].replace(/parent="1"/, `parent="${id}"`);
           }
           cells.push(...sub);
+          // NAMED IN THE GUTTER BELOW, NOT ON THE DEVICE. Printed on the device
+          // the label lands a couple of units off its own faceplate and collides
+          // with the U numbers, and a label against the wrong number is worse
+          // than none - which is why these were suppressed. In the unit of air
+          // that already sits between devices it belongs to nothing, cannot be
+          // mistaken for a U number, and the arrow says which way to read it.
+          // Rows of white 1RU boxes are otherwise genuinely hard to tell apart.
+          if (labels) {
+            const ly = RACK.marginTop + (m.u - 1 + ru) * RACK.unit;
+            cells.push(cell(`${id}-label`, `▲ ${m.name}`,
+              'text;html=1;strokeColor=none;fillColor=none;align=left;' +
+              'verticalAlign=middle;fontSize=9;fontColor=#333333;spacingLeft=4;' +
+              'movable=0;resizable=0;editable=0;connectable=0;',
+              RACK.marginL, ly, RACK.width, RACK.unit, rackId));
+          }
         }
       });
       x += pairWidth + RACK_GAP;
     });
     const tallest = Math.max(...group.racks.map(r => heightOf(r.units || 12)));
+    // NO dx/dy. Those are draw.io's stored scroll offset, and hard-coding them
+    // opened the file scrolled off its own content - the racks above the
+    // viewport with a sliver of cabinet showing, which reads as an empty file
+    // until you think to zoom out. Omitted, draw.io fits the page itself.
     return `<diagram name="${esc(group.label)}" id="page${gi}">` +
-      `<mxGraphModel dx="1200" dy="800" grid="0" page="1" ` +
+      `<mxGraphModel grid="0" page="1" ` +
       `pageWidth="${x - RACK_GAP + 60}" pageHeight="${tallest + 140}"><root>` +
       `<mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}` +
       `</root></mxGraphModel></diagram>`;

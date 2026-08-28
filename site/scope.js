@@ -33,21 +33,23 @@ export function scopesFor(dev, devices) {
   }
   for (const [label, names] of [...seen.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
     const set = new Set(names);
-    out.push({key: `g:${label}`, label, n: names.length, pred: d => set.has(d.name)});
+    out.push({key: `g:${label}`, label, n: names.length, vendor: dev.manufacturer,
+              pred: d => set.has(d.name)});
   }
   const loose = mine.filter(d => !groupLabel(d));
   if (loose.length && seen.size) {
     const set = new Set(loose.map(d => d.name));
     out.push({key: 'g:ungrouped', label: 'ungrouped', n: loose.length,
-              pred: d => set.has(d.name)});
+              vendor: dev.manufacturer, pred: d => set.has(d.name)});
   }
   // Named for the ROLE, with the model in brackets: listed as a bare model it
   // reads as a fixed entry for that one box rather than a slot following the
   // device menu above.
   out.push({key: 'device', label: dev.model || dev.name, n: 1,
             display: `selected device (${dev.model || dev.name})`,
-            pred: d => d.name === dev.name});
+            vendor: dev.manufacturer, pred: d => d.name === dev.name});
   out.push({key: 'vendor', label: `all of ${dev.manufacturer}`, n: mine.length,
+            vendor: dev.manufacturer,
             pred: d => d.manufacturer === dev.manufacturer});
   return out;
 }
