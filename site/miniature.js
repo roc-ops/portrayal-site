@@ -97,6 +97,7 @@ export function bandsOf(ports, bays = []) {
     const occ = bay.occupant || bay.default;
     const occupant = /blank|filler/i.test(shortRef(occ)) ? null : occ;
     bands.push({
+      isBay: true,
       key: id,
       label: occupant ? `${id} · ${shortRef(occupant)}` : id,
       occupant: occupant || null,
@@ -188,7 +189,10 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {
       : `<mxRectangle x="${STUB}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
         `as="alternateBounds"/>`;
     cells.push(dataCell(bandId, label, style, STUB, cy, BODY, bh, id, {
-      'portrayal-bay': b.slot || b.ports.length ? b.key : null,
+      // Set for every bay, seated or not. Deriving it from "has a slot or has
+      // ports" quietly dropped it from seated cards with no ports on this
+      // face - the same class of card that used to report itself empty.
+      'portrayal-bay': b.isBay ? b.key : null,
       'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
       'portrayal-occupant': b.occupant || null,
       tooltip: b.slot
@@ -207,7 +211,7 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {
       // not a drop target, and not something to drag out of the symbol by
       // accident. Its id and media travel with it so a diagram built from this
       // can still be joined back to the model.
-      cells.push(dataCell(`${id}-${stubLabel(p)}`, stubLabel(p),
+      cells.push(dataCell(`${id}-${b.key}-${stubLabel(p)}`, stubLabel(p),
         'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
         `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
         `align=${right ? 'left' : 'right'};spacing${right ? 'Left' : 'Right'}=3;` +
@@ -239,33 +243,4 @@ export function miniaturePage(devices, {label = 'Miniatures'} = {}) {
     `pageWidth="${Math.ceil(x - GAP + 20)}" pageHeight="${Math.ceil(tallest + 20)}">` +
     `<root><mxCell id="0"/><mxCell id="1" parent="0"/>${parts.join('')}` +
     `</root></mxGraphModel></diagram></mxfile>`;
-}
-
-/**
- * The modules as a draw.io SHAPE LIBRARY, so a free slot can be filled.
- *
- * The chassis symbol draws its empty slots; this is what goes in them. A
- * library rather than a page because that is how draw.io lets you keep shapes
- * to hand and drag one in - the same mechanism the faceplate library already
- * uses, carrying miniatures instead of images.
- */
-export function moduleLibrary(modules) {
-  const entries = modules.map((m, i) => {
-    const {xml, w, h} = miniature(m.name, m.ports, {id: `mod${i}`});
-    return {
-      // A LIBRARY ENTRY IS A WHOLE MODEL, not a run of cells. The faceplate
-      // library has always wrapped its cells this way; this one did not, and
-      // draw.io answered by loading the file and showing an empty library
-      // rather than by complaining - the same silent shrug it gives malformed
-      // XML. The roots are what it parses against.
-      xml: `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>` +
-           `${xml}</root></mxGraphModel>`,
-      w, h,
-      title: m.name,
-      tags: `portrayal miniature module ${m.name}`,
-    };
-  });
-  const payload = JSON.stringify(entries)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<mxlibrary>${payload}</mxlibrary>`;
 }

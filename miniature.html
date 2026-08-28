@@ -39,21 +39,15 @@
       <select id="vendor"></select></label>
     <label>device
       <select id="device"></select></label>
-    <label>face
-      <select id="face">
-        <option value="front">front</option>
-        <option value="rear">rear</option>
-      </select></label>
     <button id="one">download this device</button>
     <button id="all">download every device of this vendor</button>
-    <button id="mods">download the modules as a shape library</button>
   </div>
   <div id="slots"></div>
   <pre id="out">loading…</pre>
 
 <script type="module">
 import { loadFace, portsOf } from './site/drawio.js';
-import { miniaturePage, bandsOf, moduleLibrary } from './site/miniature.js';
+import { miniaturePage, bandsOf } from './site/miniature.js';
 
 const DIST = 'assets/dist/';
 const $ = s => document.querySelector(s);
@@ -108,27 +102,44 @@ async function modulePorts(ref) {
   return ports;
 }
 
+// A SYMBOL IS THE WHOLE DEVICE, NOT ONE SIDE OF IT. The footprint has faces
+// because a faceplate does; a schematic symbol does not. A cable into a rear
+// port is still a cable into that device, and a C100G whose front cards pair
+// with rear RF modules cannot be configured one side at a time - which is what
+// asking for a face at a time made you do. Bands carry their face so you still
+// know where the card physically goes.
+const FACES = ['front', 'rear'];
+
 async function loadDevice() {
   const dev = DEVICES.find(d => d.name === $('#device').value);
-  const face = $('#face').value;
   const cfg = await fetch(`${DIST}${dev.name}.configs.json`)
     .then(r => r.json()).catch(() => null);
-  const bays = (cfg?.bays?.[face] || []).map(b => ({
-    ...b, chosen: isBlank(b.default) ? '' : refKey(b.default),
-  }));
-  let chassisPorts = [];
-  for (const url of [`${DIST}${dev.name}.${cfg?.default}.${face}.svg`,
-                     `${DIST}${dev.name}.${face}.svg`]) {
-    try {
-      const f = await loadFace(url);
-      // Only the chassis's OWN ports. Anything under a bay belongs to whatever
-      // is seated there, which is the thing being configured.
-      chassisPorts = portsOf(f.zones).filter(p =>
-        !bays.some(b => String(p.path || p.id).startsWith(`${b.id}/`)));
-      break;
-    } catch { /* a device need not have this face */ }
+  const bays = [];
+  const chassisPorts = [];
+  const seen = new Set();
+  for (const face of FACES) {
+    const here = (cfg?.bays?.[face] || []).map(b => ({
+      ...b,
+      face,
+      // Bay ids are unique per device in practice, but a symbol holding both
+      // sides cannot assume it - two cells with one id is a broken file.
+      key: seen.has(b.id) ? `${face}-${b.id}` : b.id,
+      chosen: isBlank(b.default) ? '' : refKey(b.default),
+    }));
+    here.forEach(b => seen.add(b.id));
+    bays.push(...here);
+    for (const url of [`${DIST}${dev.name}.${cfg?.default}.${face}.svg`,
+                       `${DIST}${dev.name}.${face}.svg`]) {
+      try {
+        const f = await loadFace(url);
+        chassisPorts.push(...portsOf(f.zones)
+          .filter(p => !here.some(b => String(p.path || p.id).startsWith(`${b.id}/`)))
+          .map(p => ({...p, face})));
+        break;
+      } catch { /* a device need not have this face */ }
+    }
   }
-  CTX = {dev, face, bays, chassisPorts};
+  CTX = {dev, bays, chassisPorts};
   return CTX;
 }
 
@@ -144,10 +155,11 @@ async function resolved() {
       for (const p of mp) {
         // Re-pathed under the bay, so bandsOf files it with its card and the
         // stub still carries a name that means something.
-        ports.push({...p, path: `${b.id}/${String(p.path || p.id).split('--').pop()}`});
+        ports.push({...p,
+          path: `${b.key}/${String(p.path || p.id).split('--').pop()}`});
       }
     }
-    bays.push({...b, occupant: occ || null});
+    bays.push({...b, id: b.key, occupant: occ || null});
   }
   return {ports, bays};
 }
@@ -165,11 +177,12 @@ function renderSlots() {
         const label = (c?.attrs || {}).model || shortRef(a);
         return `<option value="${k}"${k === b.chosen ? ' selected' : ''}>${label}</option>`;
       }));
-    return `<tr><td>${b.id}</td><td><select data-bay="${i}">${opts.join('')}</select></td>` +
+    return `<tr><td>${b.face}</td><td>${b.id}</td>` +
+           `<td><select data-bay="${i}">${opts.join('')}</select></td>` +
            `<td class="ports" id="np-${i}"></td></tr>`;
   });
-  host.innerHTML = `<table><thead><tr><th>slot</th><th>module</th><th>ports</th>` +
-    `</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  host.innerHTML = `<table><thead><tr><th>face</th><th>slot</th><th>module</th>` +
+    `<th>ports</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
   host.querySelectorAll('select[data-bay]').forEach(sel => {
     sel.onchange = () => {
       CTX.bays[Number(sel.dataset.bay)].chosen = sel.value;
@@ -187,8 +200,11 @@ async function describe() {
     const el = $(`#np-${i}`);
     if (el) el.textContent = b.chosen ? `${(await modulePorts(b.chosen)).length}` : '';
   });
+  const perFace = FACES.map(f =>
+    `${f} ${CTX.bays.filter(b => b.face === f).length}`).join(', ');
   say(`${CTX.dev.model || CTX.dev.name} — ${r.ports.length} ports, `
-    + `${bands.length} bands, ${empty} empty slot${empty === 1 ? '' : 's'}\n\n`
+    + `${bands.length} bands, ${empty} empty slot${empty === 1 ? '' : 's'}`
+    + ` (slots: ${perFace})\n\n`
     + bands.map(b => `  ${(b.label || b.key).padEnd(30)} `
         + (b.slot ? `empty · accepts ${b.slot.accepts.slice(0, 3).join(' / ')}`
                   : b.ports.length
@@ -242,33 +258,8 @@ $('#all').onclick = async () => {
   say(`${devs.length} devices written.`);
 };
 
-// Every module this vendor's devices can seat, drawn the same way, as a
-// library you can drag from into the empty slots the chassis draws.
-$('#mods').onclick = async () => {
-  const v = $('#vendor').value;
-  const comps = (await (await fetch(DIST + 'components.json')).json()).components;
-  const wanted = comps.filter(c => c.kind === 'module'
-    && (c.ns === v.toLowerCase().split(' ')[0] || c.ns === 'common'));
-  const mods = [];
-  let n = 0;
-  for (const c of wanted) {
-    say(`reading module ${++n}/${wanted.length}…`);
-    const skin = (c.skins || ['default'])[0];
-    try {
-      const f = await loadFace(
-        `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`);
-      const ports = portsOf(f.zones);
-      if (ports.length) mods.push({name: (c.attrs || {}).model || c.name, ports});
-    } catch { /* a module without a compiled skin is not drawable */ }
-  }
-  if (!mods.length) return say('no modules with ports for this vendor.');
-  save(moduleLibrary(mods), `${tag(v)}-modules-mini-portrayal.xml`);
-  say(`${mods.length} modules written as a shape library.`);
-};
-
 $('#vendor').onchange = fillDevices;
 $('#device').onchange = refresh;
-$('#face').onchange = refresh;
 $('#vendor').value = 'Casa Systems';
 fillDevices();
 </script>
