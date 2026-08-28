@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50.5mm" height="40.2mm" viewBox="0 0 50.5 40.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/psu-202-ac@'] .state-critical { --led-color: #ef4444; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-input-lost { --led-color: #ef4444; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-input-lost { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-warning { --led-color: #22c55e; --led-color-alt: #ef4444; }
+    g[data-ref^='ufispace/psu-202-ac@'] .state-warning { animation: portrayal-alternate 1s linear infinite; }</style>
+  <g id="psu-202-ac" data-path="psu-202-ac" data-class="psu" data-behaviour="fills" data-ref="ufispace/psu-202-ac@1:1.0.0" data-airflow="exhaust" data-input="ac" data-model="PSU-202-AESR" data-power-output-w="2000" transform="translate(0,0)">
+    <title>psu-202-ac</title>
+    <rect id="psu-202-ac--body" x="0" y="0" width="50.5" height="40.2" rx="0.6" fill="#1c1f22" stroke="#0d0f11" stroke-width="0.4" />
+    <g id="psu-202-ac--vent-grid" data-z-vent="30">
+      <rect x="1.0" y="1.6" width="17.5" height="37.0" rx="0.5" fill="#0b0d0f" stroke="#7d8288" stroke-width="0.35" />
+      <g fill="#17191c">
+        <rect x="2.2" y="8.2" width="3.4" height="3.4" rx="0.3" />
+        <rect x="6.6" y="8.2" width="3.4" height="3.4" rx="0.3" />
+        <rect x="11.0" y="8.2" width="3.4" height="3.4" rx="0.3" />
+        <rect x="15.4" y="8.2" width="2.2" height="3.4" rx="0.3" />
+        <rect x="2.2" y="12.6" width="3.4" height="3.4" rx="0.3" />
+        <rect x="6.6" y="12.6" width="3.4" height="3.4" rx="0.3" />
+        <rect x="11.0" y="12.6" width="3.4" height="3.4" rx="0.3" />
+        <rect x="15.4" y="12.6" width="2.2" height="3.4" rx="0.3" />
+        <rect x="2.2" y="17.0" width="3.4" height="3.4" rx="0.3" />
+        <rect x="6.6" y="17.0" width="3.4" height="3.4" rx="0.3" />
+        <rect x="11.0" y="17.0" width="3.4" height="3.4" rx="0.3" />
+        <rect x="15.4" y="17.0" width="2.2" height="3.4" rx="0.3" />
+        <rect x="2.2" y="21.4" width="3.4" height="3.4" rx="0.3" />
+        <rect x="6.6" y="21.4" width="3.4" height="3.4" rx="0.3" />
+        <rect x="11.0" y="21.4" width="3.4" height="3.4" rx="0.3" />
+        <rect x="15.4" y="21.4" width="2.2" height="3.4" rx="0.3" />
+        <rect x="2.2" y="25.8" width="3.4" height="3.4" rx="0.3" />
+        <rect x="6.6" y="25.8" width="3.4" height="3.4" rx="0.3" />
+        <rect x="11.0" y="25.8" width="3.4" height="3.4" rx="0.3" />
+        <rect x="15.4" y="25.8" width="2.2" height="3.4" rx="0.3" />
+        <rect x="2.2" y="30.2" width="3.4" height="3.4" rx="0.3" />
+        <rect x="6.6" y="30.2" width="3.4" height="3.4" rx="0.3" />
+        <rect x="11.0" y="30.2" width="3.4" height="3.4" rx="0.3" />
+        <rect x="15.4" y="30.2" width="2.2" height="3.4" rx="0.3" />
+        <rect x="2.2" y="34.6" width="3.4" height="3.0" rx="0.3" />
+        <rect x="6.6" y="34.6" width="3.4" height="3.0" rx="0.3" />
+        <rect x="11.0" y="34.6" width="3.4" height="3.0" rx="0.3" />
+        <rect x="15.4" y="34.6" width="2.2" height="3.0" rx="0.3" />
+      </g>
+    </g>
+    <rect id="psu-202-ac--edge-strip" x="44.6" y="0.6" width="5.3" height="39.0" rx="0.5" fill="#c9ced4" />
+    <rect id="psu-202-ac--inlet-bracket" x="19.4" y="34.6" width="25.2" height="2.2" rx="0.3" fill="#c9ced4" />
+    <g id="psu-202-ac--inlet" data-path="psu-202-ac/inlet" data-class="inlet" data-ref="std/c20-inlet@1:1.3.0" data-depth="15.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(15.8,6.3) rotate(270 16.2 12.2)">
+      <title>psu-202-ac--inlet</title>
+      <rect id="psu-202-ac--inlet--opening" x="0" y="0" width="32.4" height="24.4" rx="4.5" fill="#17191c" data-path="psu-202-ac/inlet/opening" data-class="cutout" />
+      <rect id="psu-202-ac--inlet--inlet-face" x="2.7" y="2.7" width="27.0" height="19.0" rx="3" fill="#0d0f11" />
+      <rect id="psu-202-ac--inlet--pin-earth" x="14.8" y="5.8" width="2.8" height="5.4" rx="0.3" fill="#7a8087" data-z-top="14.2" data-z-color="#c0c5cb" />
+      <rect id="psu-202-ac--inlet--pin-line" x="7.6" y="12.4" width="2.8" height="5.4" rx="0.3" fill="#7a8087" data-z-top="14.2" data-z-color="#c0c5cb" />
+      <rect id="psu-202-ac--inlet--pin-neutral" x="22.0" y="12.4" width="2.8" height="5.4" rx="0.3" fill="#7a8087" data-z-top="14.2" data-z-color="#c0c5cb" />
+    </g>
+    <rect id="psu-202-ac--handle" x="20.4" y="35.6" width="23.2" height="3.6" rx="1.0" fill="#17191c" stroke="#0b0d0f" stroke-width="0.3" data-path="psu-202-ac/handle" data-class="handle" data-z-uhandle="30" />
+    <rect id="psu-202-ac--latch" x="45.4" y="11.0" width="4.3" height="18.2" rx="1.1" fill="#c8102e" stroke="#8f0b21" stroke-width="0.3" data-path="psu-202-ac/latch" data-class="latch" data-z-out="1.2" />
+    <circle id="psu-202-ac--status-led" cx="8.5" cy="5.1" r="1.45" fill="var(--led-color, #3a3f44)" stroke="#8d9297" stroke-width="0.2" data-path="psu-202-ac/status-led" data-class="led" data-states="off ok critical standby input-lost warning" data-description="HIG PSU FRU LED table - Off (no input power to all power supplies), Green (output ON and OK), Red (a critical event causing a shutdown - failure, overcurrent, short circuit, over voltage, fan failure or over temperature), Blinking Green (standby state, input power present and only +5VSB on; the firmware-updating boot-loader row is visually identical and shares this state), Blinking Red (input cord unplugged or input lost with a second supply in parallel still fed), Blinking between Green and Red (warning events where the supply keeps operating - high temp, high power, high current, slow fan)" data-z-dome="0.4" />
+  </g>
+</svg>

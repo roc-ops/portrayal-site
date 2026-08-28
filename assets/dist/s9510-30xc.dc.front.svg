@@ -1,0 +1,757 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440mm" height="43.5mm" viewBox="0 0 440 43.5" data-device="s9510-30xc" data-view="front" data-config="dc" data-switching-capacity="360 Gbps" data-packet-buffer="2 GB deep buffer" data-power-typical-w="126" data-power-envelope="unstated" data-input="AC 100 to 240V, 6A; DC -36 to -75V, 16A" data-operating-temp="-40 to 65 C (temperature hardened)" data-operating-humidity="5% to 85% RH non-condensing" data-storage-temp="-40 to 70 C" data-storage-humidity="5% to 93% RH non-condensing" data-asic="Broadcom Qumran2u BCM88284" data-cpu="Intel Denverton-NS 4-core @ 1.6GHz" data-memory="8 GB DDR4" data-storage="32 GB SSD" data-bmc="ASPEED AST2620" data-optics-sfp28="25G SFP28 SR/LR/ER, 10G SFP+ SR/LR/ER/ZR (datasheet Compatible Transceiver Types; HIG Port Overview gives 1/10/25G on these ports)" data-optics-qsfp28="100G QSFP28 SR4/LR4/ER4 (datasheet Compatible Transceiver Types; 40/100G with FlexE support)" data-timing="Stratum 3E OCXO; SyncE; IEEE 1588v2 (default, G.8265.1, G.8275.1, G.8275.2, SMPTE ST 2059-2, T-GM, T-BC/OC, T-TC); TSN; Class C accuracy - NOS integration required to activate, and SMPTE ST 2059-2 needs an additional licence (the vendor's own footnotes)" data-gnss="internal receiver for master clock implementations" data-flexe="OIF FlexE 1.1 and 2.0, 200G total bandwidth" data-srv6="full Segment Routing over IPv6" data-console="RJ45 RS-232 serial, 115200 8N1 (port labelled IOIO)" data-oob="1x 100M/1G RJ45 management port" data-usb="1 x USB 3.0 Type-A port" data-timing-inputs="GNSS SMA in, 10MHz SMB in/out, 1PPS SMB in/out, ToD RJ45 in, BITS RJ48 in/out" data-safety="UL 62368-1, IEC 62368-1" data-emc="FCC Part 15 Subpart B Class A; ICES-003 Class A; EN 55032 Class A; EN 300 386; EN 55035; EN 301 489; EN 303 413; EN 62479; EN 50663; VCCI CISPR 32 Class A" data-nebs="NEBS GR-63, GR-1089 and GR-3108 named in the datasheet's Regulatory Compliance section; no NEBS level is claimed there and none is claimed here" data-environment="WEEE" data-eol="none-announced" data-airflow="front-to-back">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/psu-401-dc@'] .state-fail { --led-color: #ef4444; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-no-dc { --led-color: #ef4444; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-no-dc { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-warning { --led-color: #22c55e; --led-color-alt: #ef4444; }
+    g[data-ref^='ufispace/psu-401-dc@'] .state-warning { animation: portrayal-alternate 1s linear infinite; }
+    #led-sync.state-acquiring, #led-sync .state-acquiring { --led-color: #eab308; }
+    #led-gnss.state-antenna-short, #led-gnss .state-antenna-short { --led-color: #eab308; }
+    #led-gnss.state-antenna-short [data-class='led'], #led-gnss .state-antenna-short { animation: portrayal-blink 1s linear infinite; }
+    #led-pwr.state-bmc-power-fail, #led-pwr .state-bmc-power-fail { --led-color: #22c55e; }
+    #led-pwr.state-bmc-power-fail [data-class='led'], #led-pwr .state-bmc-power-fail { animation: portrayal-blink 1s linear infinite; }
+    #led-stat.state-boot-complete, #led-stat .state-boot-complete { --led-color: #22c55e; }
+    #led-stat.state-booting, #led-stat .state-booting { --led-color: #22c55e; }
+    #led-stat.state-booting [data-class='led'], #led-stat .state-booting { animation: portrayal-blink 1s linear infinite; }
+    #led-pwr.state-cpu-power-fail, #led-pwr .state-cpu-power-fail { --led-color: #eab308; }
+    #led-fan.state-fault, #led-fan .state-fault { --led-color: #eab308; }
+    #led-fan.state-fault [data-class='led'], #led-fan .state-fault { animation: portrayal-blink 1s linear infinite; }
+    #led-gnss.state-learning, #led-gnss .state-learning { --led-color: #22c55e; }
+    #led-gnss.state-learning [data-class='led'], #led-gnss .state-learning { animation: portrayal-blink 1s linear infinite; }
+    #led-gnss.state-no-satellite, #led-gnss .state-no-satellite { --led-color: #eab308; }
+    #led-fan.state-ok, #led-fan .state-ok, #led-pwr.state-ok, #led-pwr .state-ok { --led-color: #22c55e; }
+    #led-pwr.state-power-fail, #led-pwr .state-power-fail { --led-color: #eab308; }
+    #led-pwr.state-power-fail [data-class='led'], #led-pwr .state-power-fail { animation: portrayal-blink 1s linear infinite; }
+    #led-gnss.state-survey-complete, #led-gnss .state-survey-complete { --led-color: #22c55e; }
+    #led-sync.state-sync-fail, #led-sync .state-sync-fail { --led-color: #eab308; }
+    #led-sync.state-sync-fail [data-class='led'], #led-sync .state-sync-fail { animation: portrayal-blink 1s linear infinite; }
+    #led-sync.state-synce, #led-sync .state-synce { --led-color: #22c55e; }
+    #led-sync.state-synce [data-class='led'], #led-sync .state-synce { animation: portrayal-blink 1s linear infinite; }
+    #led-sync.state-synced, #led-sync .state-synced { --led-color: #22c55e; }
+</style>
+  <metadata>{"config":"dc","device":"UfiSpace S9510-30XC","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/ground-symbol@1":"1.0.0","common/led-dot@1":"1.1.0","common/qsfp-cage@2":"2.0.0","common/reset-button@1":"1.1.0","common/sma-jack@1":"1.0.0","common/smb-jack@1":"1.0.0","std/qsfp-ganged@1":"1.4.0","std/rj45-ganged@1":"1.3.0","std/sfp-ganged@1":"1.1.0","std/sma@1":"1.1.0","std/smb@1":"1.0.0","std/usb-a@1":"1.2.0","ufispace/psu-401-dc@1":"1.3.0"},"source":{"attrs":{"compliance":{"emc":"FCC Part 15 Subpart B Class A; ICES-003 Class A; EN 55032 Class A; EN 300 386; EN 55035; EN 301 489; EN 303 413; EN 62479; EN 50663; VCCI CISPR 32 Class A","environment":"WEEE","nebs":"NEBS GR-63, GR-1089 and GR-3108 named in the datasheet's Regulatory Compliance section; no NEBS level is claimed there and none is claimed here","safety":"UL 62368-1, IEC 62368-1"},"environmental":{"operating-humidity":"5% to 85% RH non-condensing","operating-temp":"-40 to 65 C (temperature hardened)","storage-humidity":"5% to 93% RH non-condensing","storage-temp":"-40 to 70 C"},"features":{"flexe":"OIF FlexE 1.1 and 2.0, 200G total bandwidth","gnss":"internal receiver for master clock implementations","optics-qsfp28":"100G QSFP28 SR4/LR4/ER4 (datasheet Compatible Transceiver Types; 40/100G with FlexE support)","optics-sfp28":"25G SFP28 SR/LR/ER, 10G SFP+ SR/LR/ER/ZR (datasheet Compatible Transceiver Types; HIG Port Overview gives 1/10/25G on these ports)","srv6":"full Segment Routing over IPv6","timing":"Stratum 3E OCXO; SyncE; IEEE 1588v2 (default, G.8265.1, G.8275.1, G.8275.2, SMPTE ST 2059-2, T-GM, T-BC/OC, T-TC); TSN; Class C accuracy - NOS integration required to activate, and SMPTE ST 2059-2 needs an additional licence (the vendor's own footnotes)"},"lifecycle":{"eol":"none-announced"},"management":{"console":"RJ45 RS-232 serial, 115200 8N1 (port labelled IOIO)","oob":"1x 100M/1G RJ45 management port","timing-inputs":"GNSS SMA in, 10MHz SMB in/out, 1PPS SMB in/out, ToD RJ45 in, BITS RJ48 in/out","usb":"1 x USB 3.0 Type-A port"},"performance":{"packet-buffer":"2 GB deep buffer","switching-capacity":"360 Gbps"},"platform":{"asic":"Broadcom Qumran2u BCM88284","bmc":"ASPEED AST2620","cpu":"Intel Denverton-NS 4-core @ 1.6GHz","memory":"8 GB DDR4","storage":"32 GB SSD"},"power":{"input":"AC 100 to 240V, 6A; DC -36 to -75V, 16A","power-envelope":"unstated","power-typical-w":"126"}},"chassis":{"depth":302,"height":43.5,"ru":1,"weight-kg":4.5,"width":440},"configurations":{"ac":{"airflow":"front-to-back","bays":{"psu-0":"ufispace/psu-401-ac@1","psu-1":"ufispace/psu-401-ac@1"},"component-attrs":{"fan-402825":{"model":"FAN-402825-HD"},"psu-401-ac":{"model":"PSU-401-AISB"}},"description":"Dual 400W AC PSUs (PSU-401-AISB, intake airflow) 1+1, five FAN-402825-HD fan modules 4+1, per HIG Figure 7","kind":"orderable"},"dc":{"airflow":"front-to-back","component-attrs":{"fan-402825":{"model":"FAN-402825-HD"},"psu-401-dc":{"model":"PSU-401-DISB-1"}},"default":true,"description":"Dual 400W DC PSUs (PSU-401-DISB-1, intake airflow) 1+1, five FAN-402825-HD fan modules 4+1 - the build both vendor renders and HIG Figures 5, 6 and 8 show","kind":"base"}},"datasheet":{"sha256":"15ce46c5e24db8bcf7415acc712b599d856eadbe9d5fc03fddc5ffcddd67e0a8","title":"UfiSpace S9510-30XC Datasheet","url":"https://www.ufispace.com/products/telco/access/s9510-30xc-flexe-tsn-disaggregated-cell-site-gateway"},"description":"UfiSpace S9510-30XC - 1RU FlexE/TSN disaggregated cell site gateway router with 28x 1/10/25G SFP28 and 2x 40/100G QSFP28; Broadcom Qumran2u BCM88284 at 360 Gbps with a 2 GB deep buffer, Intel Denverton-NS, full timing (GNSS/1PPS/10MHz/ToD/BITS) on a Stratum 3E OCXO, 1+1 hot-swap 400W PSUs, 4+1 hot-swap fans, NEBS, -40 to 65 C hardened","format":1,"gaps":[{"note":"the HIG's front-panel LED section tables the GNSS, SYNC, STAT, FAN and PWR system lamps and the management port's pair, and gives no table at all for the port lamps. The fourteen sfp-led-pair and two qsfp-lane-leds placements therefore carry positions and no states. The sibling S9510-28DC files the same gap against the same silence in the same guide family, and several rows in those tables read 'need NOS to activate this feature', so these may be NOS-defined rather than simply undocumented - which is why this is vendor-silent and not nos-dependent.","reason":"vendor-silent","scope":["sfp28","qsfp28","port-leds"],"wanted":"a per-NOS LED table, or photographs of a live unit with ports in known states.","what":"port-led-semantics"},{"note":"the silver band between the two QSFP28 cages carries four green lane triangles with TWO round dark lamps between them, at about x 207.3 and 211.3. Port 1's four lane triangles sit in two boxes below the block, so the four in the band are port 0's - but nothing states what the two round lamps are, or whether they belong to port 0, to port 1 or one to each. They are drawn as two common/led-dot placements attached to the two ports one apiece, which is a guess at attachment and is said so here.","reason":"vendor-silent","scope":["port-leds"],"wanted":"a NOS LED table, or a labelled faceplate drawing of the QSFP28 block.","what":"qsfp-centre-lamp-ownership"},{"note":"the OOB jack carries two integrated lamps, visible in the front render at x 156.06 and 166.67 and tabled in full by the HIG (left green for 1G link and activity, right amber for 10M/100M). The sibling S9510-28DC draws them because it uses common/rj45-port@4, which is 17.0 x 14.9; this device's measured bezel plate is 15.76 wide and 30.97 tall and cannot hold three parts that size, so std/rj45-ganged is used and the lamps sit inside an aperture that draws only the opening.","reason":"needs-drawing","scope":["mgmt"],"wanted":"an rj45-ganged variant that can draw corner lamps inside the aperture, or a narrower lamped RJ45 part.","what":"mgmt-port-lamps-not-drawn"},{"note":"no held image of this device resolves which way the stacked SFP28 cages face: at 9x the vendor render draws both rows as plain rectangles. They are modelled mirrored (top row rotate 180) on the physical argument that a belly-to-belly block keeps both bails reachable, which three other devices in this library show at resolutions that do resolve it. THE SIBLING S9510-28DC DOES NOT MIRROR ITS TOP ROW, so either that file or this one is wrong about the same family of hardware, and one photograph settles both.","reason":"needs-photo","scope":["sfp28"],"wanted":"a straight-on photograph of the SFP28 field at better than 8 px/mm.","what":"sfp-cage-orientation-unresolved"},{"note":"'FAN \u25c40' through 'FAN \u25c44' are printed on each fan module's own right-hand strip in both the HIG Figure 8 rear strip and the vendor rear render, alongside the red 'E' airflow badge. They are module printing, not chassis printing, so they cannot be device silkscreen - and ufispace/fan-402825 is shared with the S9510-28DC, so it cannot carry a per-position digit either. Five legends exist on the hardware and none in the drawing.","reason":"needs-hardware","scope":["fans"],"wanted":"a per-placement legend mechanism for module skins, or a photograph of an empty fan bay showing whether the chassis behind carries the digit too.","what":"fan-position-legends"},{"note":"ufispace/fan-402825 states no power draw and its own contract records the search across eight UfiSpace datasheets. This device's datasheet names FAN-402825-HD only as an ordering line and its HIG dimensions and weighs the fan FRU without a wattage; the only watt figures in either document are the 126 W typical and the input ratings. L29's standing warning is the live count of how much of the chassis total is a floor rather than a total.","reason":"vendor-silent","scope":["fans"],"wanted":"a photograph of the fan module's label, or a UfiSpace FRU datasheet.","what":"fru-power-unpublished"},{"note":"no orthographic side elevation of the S9510-30XC exists in the intake. HIG Figure 5 shows the grounding lug on the right side wall in a callout inset and section 8 shows the lug and its screws in isolation, but nothing places them against a dimensioned side. The lug and the bracket screws are positioned from the sibling S9510-28DC's side faces, which are themselves unsourced in that file - so this is an estimate resting on an estimate, and it is said plainly rather than inherited quietly.","reason":"needs-drawing","scope":["grounding","furniture"],"wanted":"a side elevation, or a photograph of either side with a known feature in frame.","what":"side-faces-estimated"}],"groups":{"fans":{"index-origin":0,"role":"service","term":"Fan"},"furniture":{"index-origin":1,"role":"furniture","term":"Item"},"grounding":{"index-origin":1,"role":"furniture","term":"Point"},"mgmt":{"index-origin":1,"mixed":"the management block - the out-of-band RJ45, a USB 3.0 service port and the RS-232 console in one bezel plate - plus the RESET button","role":"management","term":"Port"},"port-leds":{"description":"every indicator that belongs to a particular port - the \u25b2\u25bc pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports","index-origin":1,"role":"indicator","term":"LED"},"psus":{"index-origin":0,"role":"service","term":"PSU"},"qsfp28":{"attrs":{"media":"qsfp28","speed":"100g"},"description":"the two 40/100G QSFP28 ports with FlexE support, 0 and 1, stacked in one block left of the SFP28 field","index-origin":0,"role":"traffic","term":"Port"},"sfp28":{"attrs":{"media":"sfp28","speed":"25g"},"description":"the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six","index-origin":0,"role":"traffic","term":"Port"},"status-leds":{"description":"the five front-panel system lamps beside their printed legend box - GNSS SYNC STAT FAN PWR","index-origin":1,"role":"indicator","term":"LED"},"timing":{"index-origin":1,"mixed":"the timing block at the centre of the faceplate - a GNSS antenna on SMA, 10MHz and 1PPS on SMB, BITS on RJ48 and ToD on RJ45. Five media, one job","role":"management","term":"Port"}},"kind":"device","manufacturer":"UfiSpace","maturity":"modelled","model":"S9510-30XC","name":"s9510-30xc","provenance":{"attrs":"datasheet Specifications, Performance, Regulatory Compliance and Accessories sections. The timing rows carry the vendor's own footnotes - '*NOS integration is necessary to activate the specific feature' and '**Additional license is required' (which attaches to SMPTE ST 2059-2) - because dropping them would turn a conditional capability into an unconditional one. The NEBS rows are transcribed as the three standards the datasheet names and no level is claimed, because the datasheet claims none.","bottom":"deliberately size-only. The sibling S9510-28DC puts a compliance sticker on its bottom face; no figure or photograph in THIS device's intake shows the underside, so copying that sticker would be asserting a label position from another model's file. L45's size-only warning stands as the record.","chassis":"datasheet - 'Chassis (W x D x H) 1 RU, 440 x 302 x 43.5mm or 17.32' x 11.89' x 1.713\" Weight: 4.5kg or 9.92lb (without FRU)'. HIG Figure 5's top view dimensions the same W = 17.32\" (440 mm) and D = 11.89\" (302 mm), and separately D = 12.89\" (325 mm) over the projecting handles, D = 1\" (25 mm) for the fan handles at the rear and D = 1.06\" (27 mm) for the PSU handles at the front. chassis.depth carries the 302 body; the two projections belong to the FRU contracts. Note the weight differs from the sibling S9510-28DC's 4.9 kg - same shell, different board and port field, and both are the vendors' own figures for their own device.","fan-fru":"ufispace/fan-402825@1 reused - the datasheet's Fan Types line is 'FAN-402825-HD, exhaust air flow', the same ordering line the S9510-28DC carries, so it is the same part and not a lookalike. Two skin-level deltas were seen in the matched-scale comparison and are recorded rather than fixed: this device's modules show a large red LOOP handle where the component draws a straight red bar, and a red 'E' airflow badge with a 'FAN \u25c4n' legend on the right-hand strip that the component does not draw at all. Both belong to the shared component's art, and changing them would move the S9510-28DC too.","fan-legends":"NOT DRAWN, and lint is why the first pass had them wrong. 'FAN \u25c40' through 'FAN \u25c44' are printed once per module in both rear sources, at x 63.4 + 52.49n - which is INSIDE each module's own 51.5 mm face, not on the chassis behind it. Put on the device's silkscreen they sat 1.56 mm inside their bays and L21 reported that the module would paint over them, which is the correct answer for the wrong reason: they are not chassis printing at all. Text on a module's faceplate belongs in that module's skin, and ufispace/fan-402825 is shared with the S9510-28DC and cannot carry a per-position digit. Removed rather than nudged clear - see gaps.","front-layout":"photo-measured - the vendor front render s9510-30xc-2-view.png. GATE 1: the chassis in it measures 1648 x 164 px, aspect 10.049 against the datasheet's 10.115 (440/43.5) - 0.65% out, at 3.745 px/mm. Every front number below is measured on it. HIG Figure 5's front elevation and its callout strip (GNSS, 10MHz, 1PPS, Mgt. Port, USB, LED, Reset, BITS, TOD, Console, 100G QSFP28, 25G SFP28, 2 x AC or DC PSUs, Grounding Lug) corroborate the arrangement and name every block.","lifecycle":"searched 2026-08-28, 'UfiSpace S9510-30XC end of life' - no announcement. The vendor lists the product on its telecom access pages as a current FlexE/TSN cell site gateway. none-announced is a checked state, not an absence.","mgmt-cluster":"measured, AND THE SIBLING'S COMPONENTS DO NOT FIT. The plate holding the OOB jack, the USB and the console measures x 153.71-169.47, y 5.87-36.84 - 15.76 wide and 30.97 tall - with apertures at y 5.9-17.0, 18.5-24.0 and 25.5-36.8. The S9510-28DC uses common/rj45-port@4 and common/rj45-bezel@2, both 17.0 x 14.9, and common/usb-a@3 at 17.0 x 9.3: three of those need 39.1 mm of height and are 1.2 mm too wide for this plate. So this device uses std/rj45-ganged (12.7 x 11.0) for the OOB and console jacks and std/usb-a (12.0 x 4.5) for the USB, which fit the measured apertures. The cost is the OOB jack's two integrated lamps, visible in the render at x 156.06 and 166.67 and tabled in full by the HIG - std/rj45-ganged draws the bare opening, so they are not drawn. Recorded in gaps.","port-grid":"measured - the 28 green \u25b2\u25bc lamp pairs are the ruler. Block A (ports 2-17, eight columns) gives centres 231.94 to 331.655 on a pitch of 14.245; block B (ports 18-29, six columns) gives 351.155 to 422.405 on 14.25. Both land on SFF-8433's 14.25 Basic, which is as close as a 3.745 px/mm image comes to the standard. Ports sit at each centre minus half of std/sfp-ganged's 14.25. The printed yellow number bands independently span x 224.00-338.81 and 342.82-429.32, bracketing the computed block extents (224.22-339.42 and 343.43-430.13) to within 0.8 mm at each end.","port-leds":"measured - one lamp per port, a \u25b2\u25bc pair in each column's centre silver band at y 21.9-22.3, the \u25b2 at the column centre minus 1.69 and the \u25bc at plus 1.69. THREE LIBRARY INDICATOR PARTS WERE TRIED AND ALL THREE ARE TOO BIG FOR THIS PANEL, which is worth recording as one finding rather than three excuses: common/sfp-led-pair puts its two lamps 8 mm apart inside a 12 mm part against a measured 3.38 mm pair spacing; common/led-arrow, which the sibling S9510-28DC uses for exactly this job at a 5.9 mm spacing, is 3.6 mm wide and two of them at 3.38 apart overlap; and common/qsfp-lane-leds is one 19.5 mm part that swallows the two round lamps measured inside the QSFP band. All 38 port lamps are therefore placed individually with common/led-dot (2.0 mm), which fits every measured pitch on this face. The cost is shape - the real lamps are triangles - and it is paid deliberately: a part at the right pitch in the wrong shape is closer to the hardware than a part in the right shape at the wrong pitch, and only the second kind collides with its neighbour.","port-orientation":"REASONED, NOT MEASURED, and the distinction matters. At 9x the render draws both cage rows as plain rectangles with a faint centre line and does not resolve the latch, so no held image of THIS device settles which way the cages face. They are drawn mirrored - top row rotate 180, latch toward the centre band - on the physical argument that a belly-to-belly stacked SFP block mirrors so both bails stay reachable, which the S6301-56STP, S9321-64E and S9502-12SM all show at resolutions that do resolve it. The sibling S9510-28DC does NOT rotate its top row; that is a difference from the sibling arrived at deliberately rather than overlooked, and it is filed in gaps so somebody can check the sibling too.","port-rows":"measured - the silver centre band between the two cage rows runs y 19.0-25.1 across both blocks, and at 9x zoom on the render the top cage reads 9.9-19.2 and the bottom 25.5-34.7. std/sfp-ganged's 10.4 mm opening is seated against those edges: top row at y 8.8, bottom at 25.5.","power":"datasheet gives 'Typical power: 126 Watts (no transceiver)' and the inputs 'AC input: 100 to 240V, 6A' and 'DC input: -36 to -75V, 16A'. NO MAXIMUM IS PUBLISHED for this device in either document - the HIG's Connecting Power sections give provisioning instructions and fuse ratings but no system maximum, unlike the S6301, S9321 and S9502 guides, and unlike the sibling S9510-28DC, whose 306 W DC / 301.2 W AC figures belong to a different board and are NOT borrowed here. So power-typical-w is the only draw figure and power-envelope is `unstated`: the vendor gives no ambient, optics population or traffic load with the 126 W either.","psu-bays":"measured, AND IT MOVES THE SIBLING'S NUMBERS. Cross-correlating the two identical PSU faces on the front render gives a step of 58.738 mm (correlation 0.968), and the two blue intake latches independently give 58.74 - the sibling S9510-28DC has 58.7, so the pitch is confirmed. The ABSOLUTE anchor differs: ufispace/psu-401-dc draws its latch at local x 0.6-4.2 (centre 2.4) and the render puts PSU 0's latch centre at 8.14, which places the bay at x 5.74 against the sibling's 4.5. The sibling's front layout is 'drawing-inferred ... pending photo overlay calibration' by its own provenance and this is a photograph that passed Gate 1 at 0.65%, so the photograph is used: bays at 5.7 and 64.44, y 1.6, 50.5 x 40.2. Whoever revisits the S9510-28DC should check its 4.5 against this.","qsfp-block":"measured - the two QSFP28 ports are stacked in one silver block at x 199.90-218.86, y 9.61-34.17, with a silver lamp band across its middle at y 18.7-25.0 and a green number band printed above ('0') and below ('1') at x 206.3-212.3. common/qsfp-cage@2 (19.5 x 10.18) is seated top and bottom, the top one rotate 180 as the sibling does. The lamp band carries FOUR green triangles at x 202.04, 204.34, 214.40 and 216.70 with TWO round dark lamps between them at about 207.3 and 211.3; a second set of four triangles sits in two small boxes below the block at y 39.72. Read as port 0's four lane lamps in the band and port 1's four below it. common/qsfp-lane-leds was tried first, as the sibling S9510-28DC uses it, and DOES NOT FIT: it is one 19.5 mm part spanning the whole band, so the two round lamps measured at 207.3 and 211.3 land inside it and lint reported the collision. The real arrangement is four triangles clustered 2 + 2 at the ends of the band with the round pair between them, on a 2.3 mm within-pair pitch, so all ten lamps are placed individually with common/led-dot - the nearest part that fits a 2.3 mm pitch. The shape is wrong (the lane lamps are triangles) and that is the cost of fitting the pitch; the two round lamps' meaning and ownership are NOT resolved - see gaps.","rear":"drawing+photo - HIG Figure 8's rear strip and the vendor rear render s9510-30xc-3-view.png. NEITHER PASSES GATE 1 (9.27 and 9.29 against a true 10.115) because both include a perspective view of the top cover above the face, so the y axis is not taken from either. The x axis is: the five red 'E' airflow badges are flat on the face, keep a constant 8.1-8.8 mm drawn width across the frame, and give a step of 52.49 in the figure and 52.45 in the photograph - two independent sources agreeing to 0.04. THE HANDLES DO NOT AGREE and that is the tell: they measure 10.4, 8.8, 6.6, 5.0 and 4.7 wide across the same five modules, shrinking monotonically, because they project 25 mm out of the face and are seen at increasing angle. A step read from them would have been 54.4 and wrong. Bays are placed on the badge step at x 18.9, 71.4, 123.9, 176.4 and 228.9, which puts the last module's right edge at 280.4 against a vent field measured to start at 285.7 - the sibling S9510-28DC has its five bays at 8.0 on a 53.2 step, which this measurement does not support.","sibling":"THE S9510-28DC IS THE SAME CHASSIS SHELL AND IS ALREADY IN THIS LIBRARY, so every number below says whether it was measured here or taken from there. Both are 440 x 302 x 43.5 with two front PSU bays, five rear fan bays and the same timing cluster, and both order PSU-401-DISB-1 / PSU-401-AISB and FAN-402825-HD - so ufispace/psu-401-dc, ufispace/psu-401-ac and ufispace/fan-402825 are reused unchanged. What is NOT taken from the sibling is the front geometry: this device has a different port field (28 SFP28 + 2 QSFP28 against 24 SFP28 + 2 QSFP28 + 2 QSFP-DD) and its own vendor render, and the sibling's own provenance calls its layout 'drawing-inferred ... pending photo overlay calibration - marketing photos are low resolution'. Where the two disagree, this file uses its own measurement and says so at the number.","sides":"estimated, and thinner than this device deserves. No orthographic side elevation exists in the intake for the S9510-30XC. HIG Figure 5's callout inset shows the grounding lug on the RIGHT side wall near the front, and HIG section 8's figures show the lug and its two screws in isolation without placing them on a dimensioned side. The right view therefore carries the grounding lug and its GND legend near the front and the left view carries the rack-bracket screw positions, both taken from the sibling S9510-28DC's own side faces - which are themselves unsourced in that file - and both marked estimated here. AXIS CONVENTION: on the RIGHT view x = 0 is the FRONT; on the LEFT view x = 0 is the REAR (renderer convention). The lug is at the front of the right side, so this face is asymmetric and the convention matters.","system-leds":"measured - five lamps in a column at x 122.94-125.87, y bands 18.96-20.83, 21.36-23.23, 23.76-25.63, 26.43-28.30 and 28.83-30.70, beside a printed white legend box at x 117.40-122.48, y 18.69-30.97. Those are the five the HIG front-panel LED table defines - GNSS, SYNC, STAT, FAN, PWR - in the table's order, and the labels are printed to the LEFT of the lamps inside the box. Each lamp is 2.93 x 1.87 on a 2.47 mm pitch, so common/led-rect (4.6 x 2.6) - which the sibling uses at its own 2.9 pitch - CANNOT be stacked here without adjacent lamps overlapping. common/led-dot (2.0) is used instead and the shape difference is recorded rather than forced. The lamp states are transcribed from the HIG table on each placement, and they are the same five vocabularies the sibling carries because it is the same table in the same guide family - said here so the agreement reads as a shared source and not as a second reading.","timing-cluster":"measured - GNSS ANT is a 9.9 mm yellow SMA bezel centring (123.94, 8.51), 10MHz a 6.4 mm SMB centring (135.96, 8.62) and 1PPS a 6.7 mm SMB centring (146.90, 8.64). common/sma-jack (9.5) and common/smb-jack (7.0) are seated on those centres, which puts GNSS at x 119.19 against the sibling's 119.2 and 1PPS at 143.40 against its 143.5 - independent agreement on the two ends of the cluster. BITS and ToD are two jacks stacked in a shared silver plate measured at x 134.76-149.71, y 16.29-38.71.","top":"drawing - HIG Figure 5's top view, which carries its own W = 440 and D = 302 dimension lines. GATE 1 FAILS: the drawn cover measures 922 x 687 px for a 440 x 302 object, aspect 1.342 against a true 1.457, 7.9% out, so nothing absolute is taken from it and every position is a fraction of the dimensioned 440 and 302. Two long recessed grooves at y 42.6-56.3 and 172.8-185.9 from the rear; a row of six screw holes at y 10.85 (x 109.8 to 372.9 on a 52.6 pitch, one per fan bay) and a row of five at y 81.4 (x 114.5 to 325.1 on 52.65). The grooves' x extent is the weak number - their rims resolve top and bottom but not at the ends - and is ESTIMATED at 15-420. AXIS: y = 0 is the REAR, which this figure states rather than implies: the fan handles project from its top edge and the PSU handles from its bottom.","vents":"measured - one hex vent strip on the front, x 211.46-430.39, y 0.8-6.2, read as dark-hole density on the render. The other perforated areas on this face belong to the two PSU modules' own grilles and are drawn by ufispace/psu-401-dc, not here."},"references":[{"sha256":"4e570e61a75b44c5a04c93feaae4ac9ac9d6ebb791443db8bd644ef2f9fdeb70","title":"UfiSpace S9510-30XC Hardware Installation Guide"}],"version":"0.1.0","views":{"bottom":{"size":{"h":302,"w":440}},"front":{"components":{"bays":[{"accepts":["ufispace/psu-401-dc@1","ufispace/psu-401-ac@1"],"at":[5.7,1.6],"default":"ufispace/psu-401-dc@1","group":"psus","id":"psu-0","rel-pos":0,"size":{"h":40.2,"w":50.5}},{"accepts":["ufispace/psu-401-dc@1","ufispace/psu-401-ac@1"],"at":[64.44,1.6],"default":"ufispace/psu-401-dc@1","group":"psus","id":"psu-1","rel-pos":1,"size":{"h":40.2,"w":50.5}}],"placements":[{"at":[119.19,3.76],"attrs":{"role":"gnss-in"},"group":"timing","id":"gnss-ant","ref":"common/sma-jack@1","rel-pos":1},{"at":[132.46,5.12],"attrs":{"role":"10mhz-io"},"group":"timing","id":"clk-10mhz","ref":"common/smb-jack@1","rel-pos":2},{"at":[143.4,5.14],"attrs":{"role":"1pps-io"},"group":"timing","id":"clk-1pps","ref":"common/smb-jack@1","rel-pos":3},{"at":[123.4,18.9],"description":"HIG GNSS row - Off (not configured), Solid Green (normal state, self-survey complete), Blinking Green (learning state, self-survey not complete), Solid Yellow (power up, not tracking any satellite), Blinking Yellow (antenna short to ground). Every row but Solid Yellow is annotated \"need NOS to activate this feature\"","for":"gnss-ant","group":"status-leds","id":"led-gnss","ref":"common/led-dot@1","rel-pos":1,"states":["off",{"color":"#22c55e","name":"survey-complete"},{"behavior":"blinking","color":"#22c55e","name":"learning"},{"color":"#eab308","name":"no-satellite"},{"behavior":"blinking","color":"#eab308","name":"antenna-short"}]},{"at":[123.4,21.37],"description":"HIG SYNC row - Off (timing synchronization disabled or free-run), Solid Green (timing core, 1588 and SyncE, synchronized to an external source), Blinking Green (synchronized in SyncE mode), Solid Yellow (acquiring state or holdover), Blinking Yellow (synchronization fail)","for":"chassis","group":"status-leds","id":"led-sync","ref":"common/led-dot@1","rel-pos":2,"states":["off",{"color":"#22c55e","name":"synced"},{"behavior":"blinking","color":"#22c55e","name":"synce"},{"color":"#eab308","name":"acquiring"},{"behavior":"blinking","color":"#eab308","name":"sync-fail"}]},{"at":[123.4,23.84],"description":"HIG STAT row - Off (X86 and BMC initializing, or not powered), Solid Green (boot complete), Blinking Green (system is booting). The table lists no yellow for this lamp","for":"chassis","group":"status-leds","id":"led-stat","ref":"common/led-dot@1","rel-pos":3,"states":["off",{"color":"#22c55e","name":"boot-complete"},{"behavior":"blinking","color":"#22c55e","name":"booting"}]},{"at":[123.4,26.3],"description":"HIG FAN row - Off (X86 and BMC initializing, or not powered), Solid Green (all fan modules work well), Blinking Yellow (one or more fan modules fail or no fan module present)","for":["rear/fan-0","rear/fan-1","rear/fan-2","rear/fan-3","rear/fan-4"],"group":"status-leds","id":"led-fan","ref":"common/led-dot@1","rel-pos":4,"states":["off",{"color":"#22c55e","name":"ok"},{"behavior":"blinking","color":"#eab308","name":"fault"}]},{"at":[123.4,28.77],"description":"HIG PWR row - Off (no power or shutdown), Solid Green (system power good), Blinking Green (system power good but BMC power fail), Solid Yellow (system power good but CPU power fail), Blinking Yellow (system power fail). Four meanings out of two colours and two behaviours","for":"chassis","group":"status-leds","id":"led-pwr","ref":"common/led-dot@1","rel-pos":5,"states":["off",{"color":"#22c55e","name":"ok"},{"behavior":"blinking","color":"#22c55e","name":"bmc-power-fail"},{"color":"#eab308","name":"cpu-power-fail"},{"behavior":"blinking","color":"#eab308","name":"power-fail"}]},{"at":[122.6,36.6],"for":"chassis","group":"mgmt","id":"reset","ref":"common/reset-button@1","rel-pos":4},{"at":[135.89,16.3],"attrs":{"media":"rj48","role":"bits-io"},"description":"BITS input/output on RJ48; HIG Connecting a Cable to the BITS Interface. Drawn with std/rj45-ganged because the shared bezel plate is 14.95 mm wide and 22.42 tall - two 17 x 14.9 single-port bezels do not fit in it","group":"timing","id":"bits","ref":"std/rj45-ganged@1","rel-pos":4,"rotate":180},{"at":[135.89,27.7],"attrs":{"media":"rj45","role":"tod-in"},"description":"ToD input on RJ45; HIG Connecting a Cable to the ToD Interface - a shielded straight-through cable from a GNSS unit","group":"timing","id":"tod","ref":"std/rj45-ganged@1","rel-pos":5},{"at":[155.24,6.0],"attrs":{"role":"mgmt","speed":"100m-1g"},"description":"the OOB management jack; its two integrated lamps - visible in the front render at x 156.06 and 166.67, and tabled by the HIG as left green for 1G link/activity and right amber for 10M/100M - sit inside this aperture and are not drawn, see gaps","group":"mgmt","id":"mgmt","ref":"std/rj45-ganged@1","rel-pos":1,"rotate":180},{"at":[155.59,19.5],"attrs":{"role":"storage"},"group":"mgmt","id":"usb","ref":"std/usb-a@1","rel-pos":2},{"at":[155.24,25.8],"attrs":{"media":"rj45-serial","role":"console"},"group":"mgmt","id":"console","ref":"std/rj45-ganged@1","rel-pos":3},{"at":[199.6,8.6],"group":"qsfp28","id":"port-0","ref":"common/qsfp-cage@2","rel-pos":0,"rotate":180},{"at":[199.6,24.0],"group":"qsfp28","id":"port-1","ref":"common/qsfp-cage@2","rel-pos":1},{"at":[201.04,21.49],"attrs":{"port":"0","role":"lane"},"for":"port-0","group":"port-leds","id":"led-p0-l1","ref":"common/led-dot@1","rel-pos":29},{"at":[203.34,21.49],"attrs":{"port":"0","role":"lane"},"for":"port-0","group":"port-leds","id":"led-p0-l2","ref":"common/led-dot@1","rel-pos":30},{"at":[213.4,21.49],"attrs":{"port":"0","role":"lane"},"for":"port-0","group":"port-leds","id":"led-p0-l3","ref":"common/led-dot@1","rel-pos":31},{"at":[215.7,21.49],"attrs":{"port":"0","role":"lane"},"for":"port-0","group":"port-leds","id":"led-p0-l4","ref":"common/led-dot@1","rel-pos":32},{"at":[206.3,21.49],"description":"one of the two ROUND lamps sitting between the four lane triangles in the QSFP block's centre band; nothing in either document says what it shows or which port owns it - the attachment here is a guess and is filed in gaps","for":"port-0","group":"port-leds","id":"led-qsfp-x1","ref":"common/led-dot@1","rel-pos":33},{"at":[210.3,21.49],"description":"one of the two ROUND lamps sitting between the four lane triangles in the QSFP block's centre band; nothing in either document says what it shows or which port owns it - the attachment here is a guess and is filed in gaps","for":"port-1","group":"port-leds","id":"led-qsfp-x2","ref":"common/led-dot@1","rel-pos":34},{"at":[201.12,38.72],"attrs":{"port":"1","role":"lane"},"for":"port-1","group":"port-leds","id":"led-p1-l1","ref":"common/led-dot@1","rel-pos":35},{"at":[203.48,38.72],"attrs":{"port":"1","role":"lane"},"for":"port-1","group":"port-leds","id":"led-p1-l2","ref":"common/led-dot@1","rel-pos":36},{"at":[213.39,38.72],"attrs":{"port":"1","role":"lane"},"for":"port-1","group":"port-leds","id":"led-p1-l3","ref":"common/led-dot@1","rel-pos":37},{"at":[215.76,38.72],"attrs":{"port":"1","role":"lane"},"for":"port-1","group":"port-leds","id":"led-p1-l4","ref":"common/led-dot@1","rel-pos":38},{"at":[430.4,18.7],"description":"the earth symbol printed at the right-hand end of the front panel, marking the grounding lug that HIG Figure 5's callout inset shows on the right side wall","for":"right/ground-1","group":"grounding","id":"ground-mark","ref":"common/ground-symbol@1","rel-pos":1},{"at":[224.82,8.8],"group":"sfp28","id":"port-2","ref":"std/sfp-ganged@1","rel-pos":2,"rotate":180},{"at":[224.82,25.1],"group":"sfp28","id":"port-3","ref":"std/sfp-ganged@1","rel-pos":3},{"at":[229.25,21.1],"attrs":{"port":"2"},"for":"port-2","group":"port-leds","id":"led-port-2","ref":"common/led-dot@1","rel-pos":1},{"at":[232.63,21.1],"attrs":{"port":"3"},"for":"port-3","group":"port-leds","id":"led-port-3","ref":"common/led-dot@1","rel-pos":2},{"at":[239.07,8.8],"group":"sfp28","id":"port-4","ref":"std/sfp-ganged@1","rel-pos":4,"rotate":180},{"at":[239.07,25.1],"group":"sfp28","id":"port-5","ref":"std/sfp-ganged@1","rel-pos":5},{"at":[243.5,21.1],"attrs":{"port":"4"},"for":"port-4","group":"port-leds","id":"led-port-4","ref":"common/led-dot@1","rel-pos":3},{"at":[246.88,21.1],"attrs":{"port":"5"},"for":"port-5","group":"port-leds","id":"led-port-5","ref":"common/led-dot@1","rel-pos":4},{"at":[253.32,8.8],"group":"sfp28","id":"port-6","ref":"std/sfp-ganged@1","rel-pos":6,"rotate":180},{"at":[253.32,25.1],"group":"sfp28","id":"port-7","ref":"std/sfp-ganged@1","rel-pos":7},{"at":[257.75,21.1],"attrs":{"port":"6"},"for":"port-6","group":"port-leds","id":"led-port-6","ref":"common/led-dot@1","rel-pos":5},{"at":[261.13,21.1],"attrs":{"port":"7"},"for":"port-7","group":"port-leds","id":"led-port-7","ref":"common/led-dot@1","rel-pos":6},{"at":[267.57,8.8],"group":"sfp28","id":"port-8","ref":"std/sfp-ganged@1","rel-pos":8,"rotate":180},{"at":[267.57,25.1],"group":"sfp28","id":"port-9","ref":"std/sfp-ganged@1","rel-pos":9},{"at":[272.0,21.1],"attrs":{"port":"8"},"for":"port-8","group":"port-leds","id":"led-port-8","ref":"common/led-dot@1","rel-pos":7},{"at":[275.38,21.1],"attrs":{"port":"9"},"for":"port-9","group":"port-leds","id":"led-port-9","ref":"common/led-dot@1","rel-pos":8},{"at":[281.82,8.8],"group":"sfp28","id":"port-10","ref":"std/sfp-ganged@1","rel-pos":10,"rotate":180},{"at":[281.82,25.1],"group":"sfp28","id":"port-11","ref":"std/sfp-ganged@1","rel-pos":11},{"at":[286.25,21.1],"attrs":{"port":"10"},"for":"port-10","group":"port-leds","id":"led-port-10","ref":"common/led-dot@1","rel-pos":9},{"at":[289.63,21.1],"attrs":{"port":"11"},"for":"port-11","group":"port-leds","id":"led-port-11","ref":"common/led-dot@1","rel-pos":10},{"at":[296.07,8.8],"group":"sfp28","id":"port-12","ref":"std/sfp-ganged@1","rel-pos":12,"rotate":180},{"at":[296.07,25.1],"group":"sfp28","id":"port-13","ref":"std/sfp-ganged@1","rel-pos":13},{"at":[300.5,21.1],"attrs":{"port":"12"},"for":"port-12","group":"port-leds","id":"led-port-12","ref":"common/led-dot@1","rel-pos":11},{"at":[303.88,21.1],"attrs":{"port":"13"},"for":"port-13","group":"port-leds","id":"led-port-13","ref":"common/led-dot@1","rel-pos":12},{"at":[310.32,8.8],"group":"sfp28","id":"port-14","ref":"std/sfp-ganged@1","rel-pos":14,"rotate":180},{"at":[310.32,25.1],"group":"sfp28","id":"port-15","ref":"std/sfp-ganged@1","rel-pos":15},{"at":[314.75,21.1],"attrs":{"port":"14"},"for":"port-14","group":"port-leds","id":"led-port-14","ref":"common/led-dot@1","rel-pos":13},{"at":[318.13,21.1],"attrs":{"port":"15"},"for":"port-15","group":"port-leds","id":"led-port-15","ref":"common/led-dot@1","rel-pos":14},{"at":[324.57,8.8],"group":"sfp28","id":"port-16","ref":"std/sfp-ganged@1","rel-pos":16,"rotate":180},{"at":[324.57,25.1],"group":"sfp28","id":"port-17","ref":"std/sfp-ganged@1","rel-pos":17},{"at":[329.0,21.1],"attrs":{"port":"16"},"for":"port-16","group":"port-leds","id":"led-port-16","ref":"common/led-dot@1","rel-pos":15},{"at":[332.38,21.1],"attrs":{"port":"17"},"for":"port-17","group":"port-leds","id":"led-port-17","ref":"common/led-dot@1","rel-pos":16},{"at":[344.03,8.8],"group":"sfp28","id":"port-18","ref":"std/sfp-ganged@1","rel-pos":18,"rotate":180},{"at":[344.03,25.1],"group":"sfp28","id":"port-19","ref":"std/sfp-ganged@1","rel-pos":19},{"at":[348.46,21.1],"attrs":{"port":"18"},"for":"port-18","group":"port-leds","id":"led-port-18","ref":"common/led-dot@1","rel-pos":17},{"at":[351.84,21.1],"attrs":{"port":"19"},"for":"port-19","group":"port-leds","id":"led-port-19","ref":"common/led-dot@1","rel-pos":18},{"at":[358.28,8.8],"group":"sfp28","id":"port-20","ref":"std/sfp-ganged@1","rel-pos":20,"rotate":180},{"at":[358.28,25.1],"group":"sfp28","id":"port-21","ref":"std/sfp-ganged@1","rel-pos":21},{"at":[362.71,21.1],"attrs":{"port":"20"},"for":"port-20","group":"port-leds","id":"led-port-20","ref":"common/led-dot@1","rel-pos":19},{"at":[366.09,21.1],"attrs":{"port":"21"},"for":"port-21","group":"port-leds","id":"led-port-21","ref":"common/led-dot@1","rel-pos":20},{"at":[372.53,8.8],"group":"sfp28","id":"port-22","ref":"std/sfp-ganged@1","rel-pos":22,"rotate":180},{"at":[372.53,25.1],"group":"sfp28","id":"port-23","ref":"std/sfp-ganged@1","rel-pos":23},{"at":[376.96,21.1],"attrs":{"port":"22"},"for":"port-22","group":"port-leds","id":"led-port-22","ref":"common/led-dot@1","rel-pos":21},{"at":[380.34,21.1],"attrs":{"port":"23"},"for":"port-23","group":"port-leds","id":"led-port-23","ref":"common/led-dot@1","rel-pos":22},{"at":[386.78,8.8],"group":"sfp28","id":"port-24","ref":"std/sfp-ganged@1","rel-pos":24,"rotate":180},{"at":[386.78,25.1],"group":"sfp28","id":"port-25","ref":"std/sfp-ganged@1","rel-pos":25},{"at":[391.21,21.1],"attrs":{"port":"24"},"for":"port-24","group":"port-leds","id":"led-port-24","ref":"common/led-dot@1","rel-pos":23},{"at":[394.59,21.1],"attrs":{"port":"25"},"for":"port-25","group":"port-leds","id":"led-port-25","ref":"common/led-dot@1","rel-pos":24},{"at":[401.03,8.8],"group":"sfp28","id":"port-26","ref":"std/sfp-ganged@1","rel-pos":26,"rotate":180},{"at":[401.03,25.1],"group":"sfp28","id":"port-27","ref":"std/sfp-ganged@1","rel-pos":27},{"at":[405.46,21.1],"attrs":{"port":"26"},"for":"port-26","group":"port-leds","id":"led-port-26","ref":"common/led-dot@1","rel-pos":25},{"at":[408.84,21.1],"attrs":{"port":"27"},"for":"port-27","group":"port-leds","id":"led-port-27","ref":"common/led-dot@1","rel-pos":26},{"at":[415.28,8.8],"group":"sfp28","id":"port-28","ref":"std/sfp-ganged@1","rel-pos":28,"rotate":180},{"at":[415.28,25.1],"group":"sfp28","id":"port-29","ref":"std/sfp-ganged@1","rel-pos":29},{"at":[419.71,21.1],"attrs":{"port":"28"},"for":"port-28","group":"port-leds","id":"led-port-28","ref":"common/led-dot@1","rel-pos":27},{"at":[423.09,21.1],"attrs":{"port":"29"},"for":"port-29","group":"port-leds","id":"led-port-29","ref":"common/led-dot@1","rel-pos":28}]},"panel":{"decor":[{"at":[211.5,1.0],"pattern":"vent","size":[219.0,5.2],"vent":25},{"at":[117.4,18.69],"fill":"#e6e9ec","rx":0.3,"size":[5.08,12.28]},{"at":[134.76,16.29],"fill":"#b0b5bb","rx":0.6,"size":[14.95,22.42]},{"at":[153.09,5.87],"fill":"#b0b5bb","rx":0.6,"size":[17.0,30.97]},{"at":[199.9,9.61],"fill":"#b0b5bb","rx":0.6,"size":[18.96,24.56]},{"at":[200.4,10.11],"fill":"#22262a","size":[17.96,23.56]},{"at":[199.9,18.7],"fill":"#b0b5bb","size":[18.96,6.3]},{"at":[206.3,6.6],"fill":"#8fbc6a","rx":0.3,"size":[6.0,2.4]},{"at":[206.3,35.5],"fill":"#8fbc6a","rx":0.3,"size":[6.0,2.4]},{"at":[224.0,6.67],"fill":"#f2ea1c","rx":0.3,"size":[114.81,2.41]},{"at":[224.0,35.8],"fill":"#f2ea1c","rx":0.3,"size":[114.81,2.2]},{"at":[342.82,6.67],"fill":"#f2ea1c","rx":0.3,"size":[86.5,2.41]},{"at":[342.82,35.8],"fill":"#f2ea1c","rx":0.3,"size":[86.5,2.2]},{"at":[224.22,19.2],"fill":"#b0b5bb","size":[115.2,5.9]},{"at":[343.43,19.2],"fill":"#b0b5bb","size":[86.7,5.9]}]},"regions":[{"at":[4,0],"id":"intake","label":"PSU intake","members":["psu-0","psu-1"],"physical-context":"Intake","size":{"h":43.5,"w":112}},{"at":[116,1],"id":"timing","label":"Timing block","members":["gnss-ant","clk-10mhz","clk-1pps","bits","tod"],"size":{"h":42,"w":36}},{"at":[152.5,4.5],"id":"mgmt-block","label":"Management","members":["mgmt","usb","console"],"size":{"h":34,"w":18.5}}],"silkscreen":[{"anchor":"end","at":[61.0,20.0],"fill":"#f5f7fa","font-size":2.4,"for":"psu-0","rotate":90,"text":"PSU0 \u25b2"},{"anchor":"start","at":[61.0,23.5],"fill":"#f5f7fa","font-size":2.4,"for":"psu-1","rotate":90,"text":"\u25bc PSU1"},{"anchor":"middle","at":[123.94,14.6],"fill":"#f5f7fa","font-size":1.9,"for":"gnss-ant","text":"GNSS ANT"},{"anchor":"middle","at":[135.96,13.2],"fill":"#f5f7fa","font-size":1.8,"for":"clk-10mhz","text":"10MHZ"},{"anchor":"middle","at":[146.9,13.2],"fill":"#f5f7fa","font-size":1.8,"for":"clk-1pps","text":"1PPS"},{"anchor":"start","at":[117.9,20.5],"fill":"#22262a","font-size":1.5,"for":"led-gnss","text":"GNSS"},{"anchor":"start","at":[117.9,22.97],"fill":"#22262a","font-size":1.5,"for":"led-sync","text":"SYNC"},{"anchor":"start","at":[117.9,25.44],"fill":"#22262a","font-size":1.5,"for":"led-stat","text":"STAT"},{"anchor":"start","at":[117.9,27.9],"fill":"#22262a","font-size":1.5,"for":"led-fan","text":"FAN"},{"anchor":"start","at":[117.9,30.37],"fill":"#22262a","font-size":1.5,"for":"led-pwr","text":"PWR"},{"anchor":"end","at":[133.6,23.6],"fill":"#f5f7fa","font-size":1.8,"for":"bits","text":"BITS"},{"anchor":"end","at":[133.6,26.6],"fill":"#f5f7fa","font-size":1.8,"for":"chassis","text":"\u25b2\u25bc"},{"anchor":"end","at":[133.6,29.6],"fill":"#f5f7fa","font-size":1.8,"for":"tod","text":"TOD"},{"anchor":"start","at":[117.5,35.4],"fill":"#f5f7fa","font-size":2.2,"for":"chassis","text":"S9510-30XC"},{"anchor":"start","at":[127.2,39.4],"fill":"#f5f7fa","font-size":1.8,"for":"reset","text":"RESET"},{"anchor":"middle","at":[173.1,4.4],"font-size":2.4,"for":"mgmt","text":"\u29c9"},{"anchor":"start","at":[151.8,40.8],"fill":"#f5f7fa","font-size":1.7,"for":"console","text":"SS\u26a1 \u25b2\u25bc IOIOI"},{"anchor":"middle","at":[209.3,8.4],"fill":"#f5f7fa","font-size":2.2,"for":"port-0","text":"0"},{"anchor":"middle","at":[209.3,37.7],"fill":"#f5f7fa","font-size":2.2,"for":"port-1","text":"1"},{"anchor":"middle","at":[231.94,8.5],"fill":"#17191c","font-size":2.2,"for":"port-2","text":"2"},{"anchor":"middle","at":[231.94,38.3],"fill":"#17191c","font-size":2.2,"for":"port-3","text":"3"},{"anchor":"middle","at":[246.19,8.5],"fill":"#17191c","font-size":2.2,"for":"port-4","text":"4"},{"anchor":"middle","at":[246.19,38.3],"fill":"#17191c","font-size":2.2,"for":"port-5","text":"5"},{"anchor":"middle","at":[260.44,8.5],"fill":"#17191c","font-size":2.2,"for":"port-6","text":"6"},{"anchor":"middle","at":[260.44,38.3],"fill":"#17191c","font-size":2.2,"for":"port-7","text":"7"},{"anchor":"middle","at":[274.69,8.5],"fill":"#17191c","font-size":2.2,"for":"port-8","text":"8"},{"anchor":"middle","at":[274.69,38.3],"fill":"#17191c","font-size":2.2,"for":"port-9","text":"9"},{"anchor":"middle","at":[288.94,8.5],"fill":"#17191c","font-size":2.2,"for":"port-10","text":"10"},{"anchor":"middle","at":[288.94,38.3],"fill":"#17191c","font-size":2.2,"for":"port-11","text":"11"},{"anchor":"middle","at":[303.19,8.5],"fill":"#17191c","font-size":2.2,"for":"port-12","text":"12"},{"anchor":"middle","at":[303.19,38.3],"fill":"#17191c","font-size":2.2,"for":"port-13","text":"13"},{"anchor":"middle","at":[317.44,8.5],"fill":"#17191c","font-size":2.2,"for":"port-14","text":"14"},{"anchor":"middle","at":[317.44,38.3],"fill":"#17191c","font-size":2.2,"for":"port-15","text":"15"},{"anchor":"middle","at":[331.69,8.5],"fill":"#17191c","font-size":2.2,"for":"port-16","text":"16"},{"anchor":"middle","at":[331.69,38.3],"fill":"#17191c","font-size":2.2,"for":"port-17","text":"17"},{"anchor":"middle","at":[351.15,8.5],"fill":"#17191c","font-size":2.2,"for":"port-18","text":"18"},{"anchor":"middle","at":[351.15,38.3],"fill":"#17191c","font-size":2.2,"for":"port-19","text":"19"},{"anchor":"middle","at":[365.4,8.5],"fill":"#17191c","font-size":2.2,"for":"port-20","text":"20"},{"anchor":"middle","at":[365.4,38.3],"fill":"#17191c","font-size":2.2,"for":"port-21","text":"21"},{"anchor":"middle","at":[379.65,8.5],"fill":"#17191c","font-size":2.2,"for":"port-22","text":"22"},{"anchor":"middle","at":[379.65,38.3],"fill":"#17191c","font-size":2.2,"for":"port-23","text":"23"},{"anchor":"middle","at":[393.9,8.5],"fill":"#17191c","font-size":2.2,"for":"port-24","text":"24"},{"anchor":"middle","at":[393.9,38.3],"fill":"#17191c","font-size":2.2,"for":"port-25","text":"25"},{"anchor":"middle","at":[408.15,8.5],"fill":"#17191c","font-size":2.2,"for":"port-26","text":"26"},{"anchor":"middle","at":[408.15,38.3],"fill":"#17191c","font-size":2.2,"for":"port-27","text":"27"},{"anchor":"middle","at":[422.4,8.5],"fill":"#17191c","font-size":2.2,"for":"port-28","text":"28"},{"anchor":"middle","at":[422.4,38.3],"fill":"#17191c","font-size":2.2,"for":"port-29","text":"29"}],"size":{"h":43.5,"w":440}},"left":{"components":{"placements":[{"at":[40,20],"group":"furniture","id":"screw-l1","ref":"common/screw-head@1","rel-pos":13},{"at":[150,20],"group":"furniture","id":"screw-l2","ref":"common/screw-head@1","rel-pos":14},{"at":[260,20],"group":"furniture","id":"screw-l3","ref":"common/screw-head@1","rel-pos":15}]},"size":{"h":43.5,"w":302}},"rear":{"components":{"bays":[{"accepts":["ufispace/fan-402825@1"],"at":[18.9,0.65],"default":"ufispace/fan-402825@1","group":"fans","id":"fan-0","rel-pos":0,"size":{"h":42.2,"w":51.5}},{"accepts":["ufispace/fan-402825@1"],"at":[71.4,0.65],"default":"ufispace/fan-402825@1","group":"fans","id":"fan-1","rel-pos":1,"size":{"h":42.2,"w":51.5}},{"accepts":["ufispace/fan-402825@1"],"at":[123.9,0.65],"default":"ufispace/fan-402825@1","group":"fans","id":"fan-2","rel-pos":2,"size":{"h":42.2,"w":51.5}},{"accepts":["ufispace/fan-402825@1"],"at":[176.4,0.65],"default":"ufispace/fan-402825@1","group":"fans","id":"fan-3","rel-pos":3,"size":{"h":42.2,"w":51.5}},{"accepts":["ufispace/fan-402825@1"],"at":[228.9,0.65],"default":"ufispace/fan-402825@1","group":"fans","id":"fan-4","rel-pos":4,"size":{"h":42.2,"w":51.5}}]},"panel":{"decor":[{"at":[285.7,2.5],"pattern":"vent","size":[147.1,38.5],"vent":25}]},"regions":[{"at":[18,0],"id":"exhaust","label":"Fan exhaust","members":["fan-0","fan-1","fan-2","fan-3","fan-4"],"physical-context":"Exhaust","size":{"h":43.5,"w":264}}],"size":{"h":43.5,"w":440}},"right":{"components":{"placements":[{"at":[31,15],"group":"grounding","id":"ground-1","ref":"common/ground-lug@1","rel-pos":2},{"at":[42,15],"group":"grounding","id":"ground-2","ref":"common/ground-lug@1","rel-pos":3},{"at":[150,20],"group":"furniture","id":"screw-r7","ref":"common/screw-head@1","rel-pos":16},{"at":[260,20],"group":"furniture","id":"screw-r8","ref":"common/screw-head@1","rel-pos":17}]},"silkscreen":[{"anchor":"start","at":[40,12.8],"fill":"#f5f7fa","font-size":2.4,"for":"ground-1","text":"GND"}],"size":{"h":43.5,"w":302}},"top":{"components":{"placements":[{"at":[108.0,9.05],"group":"furniture","id":"screw-r1","ref":"common/screw-head@1","rel-pos":2},{"at":[160.5,9.05],"group":"furniture","id":"screw-r2","ref":"common/screw-head@1","rel-pos":3},{"at":[213.3,9.05],"group":"furniture","id":"screw-r3","ref":"common/screw-head@1","rel-pos":4},{"at":[266.3,9.05],"group":"furniture","id":"screw-r4","ref":"common/screw-head@1","rel-pos":5},{"at":[318.6,9.05],"group":"furniture","id":"screw-r5","ref":"common/screw-head@1","rel-pos":6},{"at":[371.1,9.05],"group":"furniture","id":"screw-r6","ref":"common/screw-head@1","rel-pos":7},{"at":[112.7,79.6],"group":"furniture","id":"screw-m1","ref":"common/screw-head@1","rel-pos":8},{"at":[165.2,79.6],"group":"furniture","id":"screw-m2","ref":"common/screw-head@1","rel-pos":9},{"at":[218.1,79.6],"group":"furniture","id":"screw-m3","ref":"common/screw-head@1","rel-pos":10},{"at":[271.0,79.6],"group":"furniture","id":"screw-m4","ref":"common/screw-head@1","rel-pos":11},{"at":[323.3,79.6],"group":"furniture","id":"screw-m5","ref":"common/screw-head@1","rel-pos":12}]},"panel":{"decor":[{"at":[15.0,42.6],"fill":"#26292d","rx":6,"sink":1,"size":[405.0,13.7]},{"at":[15.0,172.8],"fill":"#26292d","rx":6,"sink":1,"size":[405.0,13.1]}]},"size":{"h":302,"w":440}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="S9510-30XC" x="0" y="0" width="440" height="43.5" rx="1.2" fill="#3a3f45" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <rect x="211.5" y="1" width="219" height="5.2" rx="0.6" fill="url(#portrayal-vent)" data-vent="25" />
+  <rect x="117.4" y="18.69" width="5.08" height="12.28" rx="0.3" fill="#e6e9ec" />
+  <rect x="134.76" y="16.29" width="14.95" height="22.42" rx="0.6" fill="#b0b5bb" />
+  <rect x="153.09" y="5.87" width="17" height="30.97" rx="0.6" fill="#b0b5bb" />
+  <rect x="199.9" y="9.61" width="18.96" height="24.56" rx="0.6" fill="#b0b5bb" />
+  <rect x="200.4" y="10.11" width="17.96" height="23.56" rx="0.6" fill="#22262a" />
+  <rect x="199.9" y="18.7" width="18.96" height="6.3" rx="0.6" fill="#b0b5bb" />
+  <rect x="206.3" y="6.6" width="6" height="2.4" rx="0.3" fill="#8fbc6a" />
+  <rect x="206.3" y="35.5" width="6" height="2.4" rx="0.3" fill="#8fbc6a" />
+  <rect x="224" y="6.67" width="114.81" height="2.41" rx="0.3" fill="#f2ea1c" />
+  <rect x="224" y="35.8" width="114.81" height="2.2" rx="0.3" fill="#f2ea1c" />
+  <rect x="342.82" y="6.67" width="86.5" height="2.41" rx="0.3" fill="#f2ea1c" />
+  <rect x="342.82" y="35.8" width="86.5" height="2.2" rx="0.3" fill="#f2ea1c" />
+  <rect x="224.22" y="19.2" width="115.2" height="5.9" rx="0.6" fill="#b0b5bb" />
+  <rect x="343.43" y="19.2" width="86.7" height="5.9" rx="0.6" fill="#b0b5bb" />
+  <rect id="region--intake" data-path="region:intake" data-class="region" data-physical-context="Intake" data-members="psu-0 psu-1" x="4" y="0" width="112" height="43.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--timing" data-path="region:timing" data-class="region" data-members="gnss-ant clk-10mhz clk-1pps bits tod" x="116" y="1" width="36" height="42" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--mgmt-block" data-path="region:mgmt-block" data-class="region" data-members="mgmt usb console" x="152.5" y="4.5" width="18.5" height="34" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="61" y="20" font-family="sans-serif" font-size="2.4" text-anchor="end" fill="#f5f7fa" transform="rotate(90 61 20)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-0">PSU0 ▲</text>
+    <text x="61" y="23.5" font-family="sans-serif" font-size="2.4" text-anchor="start" fill="#f5f7fa" transform="rotate(90 61 23.5)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">▼ PSU1</text>
+    <text x="123.94" y="14.6" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#f5f7fa" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="gnss-ant">GNSS ANT</text>
+    <text x="135.96" y="13.2" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#f5f7fa" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="clk-10mhz">10MHZ</text>
+    <text x="146.9" y="13.2" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#f5f7fa" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="clk-1pps">1PPS</text>
+    <text x="117.9" y="20.5" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#22262a" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-gnss">GNSS</text>
+    <text x="117.9" y="22.97" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#22262a" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sync">SYNC</text>
+    <text x="117.9" y="25.44" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#22262a" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-stat">STAT</text>
+    <text x="117.9" y="27.9" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#22262a" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-fan">FAN</text>
+    <text x="117.9" y="30.37" font-family="sans-serif" font-size="1.5" text-anchor="start" fill="#22262a" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="133.6" y="23.6" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f5f7fa" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="bits">BITS</text>
+    <text x="133.6" y="26.6" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f5f7fa" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">▲▼</text>
+    <text x="133.6" y="29.6" font-family="sans-serif" font-size="1.8" text-anchor="end" fill="#f5f7fa" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="tod">TOD</text>
+    <text x="117.5" y="35.4" font-family="sans-serif" font-size="2.2" text-anchor="start" fill="#f5f7fa" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">S9510-30XC</text>
+    <text x="127.2" y="39.4" font-family="sans-serif" font-size="1.8" text-anchor="start" fill="#f5f7fa" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="reset">RESET</text>
+    <text x="173.1" y="4.4" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#c7ccd1" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">⧉</text>
+    <text x="151.8" y="40.8" font-family="sans-serif" font-size="1.7" text-anchor="start" fill="#f5f7fa" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">SS⚡ ▲▼ IOIOI</text>
+    <text x="209.3" y="8.4" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f5f7fa" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-0">0</text>
+    <text x="209.3" y="37.7" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#f5f7fa" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="231.94" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="231.94" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="246.19" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="246.19" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="260.44" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="260.44" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="274.69" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="274.69" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="288.94" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="288.94" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="303.19" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="303.19" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="317.44" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="317.44" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="331.69" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="331.69" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="351.15" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="351.15" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="365.4" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="365.4" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:38" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21</text>
+    <text x="379.65" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:39" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22</text>
+    <text x="379.65" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:40" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23</text>
+    <text x="393.9" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:41" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24</text>
+    <text x="393.9" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:42" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="408.15" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:43" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="408.15" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:44" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="422.4" y="8.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:45" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="422.4" y="38.3" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#17191c" data-path="silk:46" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29">29</text>
+  </g>
+  <g id="gnss-ant" data-path="gnss-ant" data-class="port" data-ref="common/sma-jack@1:1.0.0" data-media="coax-sma" data-role="gnss-in" data-group="timing" data-rel-pos="1" transform="translate(119.19,3.76)" data-group-role="management">
+    <title>gnss-ant</title>
+    <g id="gnss-ant--jack" data-path="gnss-ant/jack" data-class="port" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+      <title>gnss-ant--jack</title>
+      <circle id="gnss-ant--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="gnss-ant/jack/opening" data-class="cutout" />
+      <g id="gnss-ant--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+        <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+        <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+        <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+      </g>
+    </g>
+    <path id="gnss-ant--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+  </g>
+  <g id="clk-10mhz" data-path="clk-10mhz" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" data-role="10mhz-io" data-group="timing" data-rel-pos="2" transform="translate(132.46,5.12)" data-group-role="management">
+    <title>clk-10mhz</title>
+    <g id="clk-10mhz--jack" data-path="clk-10mhz/jack" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+      <title>clk-10mhz--jack</title>
+      <circle id="clk-10mhz--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="clk-10mhz/jack/opening" data-class="cutout" />
+      <g id="clk-10mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+    </g>
+    <path id="clk-10mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+  </g>
+  <g id="clk-1pps" data-path="clk-1pps" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" data-role="1pps-io" data-group="timing" data-rel-pos="3" transform="translate(143.4,5.14)" data-group-role="management">
+    <title>clk-1pps</title>
+    <g id="clk-1pps--jack" data-path="clk-1pps/jack" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+      <title>clk-1pps--jack</title>
+      <circle id="clk-1pps--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="clk-1pps/jack/opening" data-class="cutout" />
+      <g id="clk-1pps--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+    </g>
+    <path id="clk-1pps--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+  </g>
+  <g id="led-gnss" data-path="led-gnss" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="1" transform="translate(123.4,18.9)" data-group-role="indicator" data-states="off survey-complete learning no-satellite antenna-short" data-description="HIG GNSS row - Off (not configured), Solid Green (normal state, self-survey complete), Blinking Green (learning state, self-survey not complete), Solid Yellow (power up, not tracking any satellite), Blinking Yellow (antenna short to ground). Every row but Solid Yellow is annotated &quot;need NOS to activate this feature&quot;" data-for="gnss-ant">
+    <title>led-gnss</title>
+    <circle id="led-gnss--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-gnss--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-gnss/lamp" data-class="led" data-states="off survey-complete learning no-satellite antenna-short" data-z-dome="0.3" />
+  </g>
+  <g id="led-sync" data-path="led-sync" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="2" transform="translate(123.4,21.37)" data-group-role="indicator" data-states="off synced synce acquiring sync-fail" data-description="HIG SYNC row - Off (timing synchronization disabled or free-run), Solid Green (timing core, 1588 and SyncE, synchronized to an external source), Blinking Green (synchronized in SyncE mode), Solid Yellow (acquiring state or holdover), Blinking Yellow (synchronization fail)" data-for="chassis">
+    <title>led-sync</title>
+    <circle id="led-sync--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sync--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sync/lamp" data-class="led" data-states="off synced synce acquiring sync-fail" data-z-dome="0.3" />
+  </g>
+  <g id="led-stat" data-path="led-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="3" transform="translate(123.4,23.84)" data-group-role="indicator" data-states="off boot-complete booting" data-description="HIG STAT row - Off (X86 and BMC initializing, or not powered), Solid Green (boot complete), Blinking Green (system is booting). The table lists no yellow for this lamp" data-for="chassis">
+    <title>led-stat</title>
+    <circle id="led-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-stat/lamp" data-class="led" data-states="off boot-complete booting" data-z-dome="0.3" />
+  </g>
+  <g id="led-fan" data-path="led-fan" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="4" transform="translate(123.4,26.3)" data-group-role="indicator" data-states="off ok fault" data-description="HIG FAN row - Off (X86 and BMC initializing, or not powered), Solid Green (all fan modules work well), Blinking Yellow (one or more fan modules fail or no fan module present)" data-for="/rear/fan-0 /rear/fan-1 /rear/fan-2 /rear/fan-3 /rear/fan-4">
+    <title>led-fan</title>
+    <circle id="led-fan--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-fan--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fan/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="5" transform="translate(123.4,28.77)" data-group-role="indicator" data-states="off ok bmc-power-fail cpu-power-fail power-fail" data-description="HIG PWR row - Off (no power or shutdown), Solid Green (system power good), Blinking Green (system power good but BMC power fail), Solid Yellow (system power good but CPU power fail), Blinking Yellow (system power fail). Four meanings out of two colours and two behaviours" data-for="chassis">
+    <title>led-pwr</title>
+    <circle id="led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr/lamp" data-class="led" data-states="off ok bmc-power-fail cpu-power-fail power-fail" data-z-dome="0.3" />
+  </g>
+  <g id="reset" data-path="reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-group="mgmt" data-rel-pos="4" transform="translate(122.6,36.6)" data-group-role="management" data-for="chassis">
+    <title>reset</title>
+    <circle id="reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+  </g>
+  <g id="bits" data-path="bits" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj48" data-role="bits-io" data-group="timing" data-rel-pos="4" transform="translate(135.89,16.3) rotate(180 6.35 5.5)" data-group-role="management" data-description="BITS input/output on RJ48; HIG Connecting a Cable to the BITS Interface. Drawn with std/rj45-ganged because the shared bezel plate is 14.95 mm wide and 22.42 tall - two 17 x 14.9 single-port bezels do not fit in it">
+    <title>bits</title>
+    <rect id="bits--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="bits/opening" data-class="cutout" />
+    <path id="bits--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="bits--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="tod" data-path="tod" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-role="tod-in" data-group="timing" data-rel-pos="5" transform="translate(135.89,27.7)" data-group-role="management" data-description="ToD input on RJ45; HIG Connecting a Cable to the ToD Interface - a shielded straight-through cable from a GNSS unit">
+    <title>tod</title>
+    <rect id="tod--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="tod/opening" data-class="cutout" />
+    <path id="tod--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="tod--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" data-role="mgmt" data-speed="100m-1g" data-group="mgmt" data-rel-pos="1" transform="translate(155.24,6.0) rotate(180 6.35 5.5)" data-group-role="management" data-description="the OOB management jack; its two integrated lamps - visible in the front render at x 156.06 and 166.67, and tabled by the HIG as left green for 1G link/activity and right amber for 10M/100M - sit inside this aperture and are not drawn, see gaps">
+    <title>mgmt</title>
+    <rect id="mgmt--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="mgmt/opening" data-class="cutout" />
+    <path id="mgmt--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="mgmt--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-role="storage" data-group="mgmt" data-rel-pos="2" transform="translate(155.59,19.5)" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" data-z-color="#2b6cb0" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45-ganged@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-group="mgmt" data-rel-pos="3" transform="translate(155.24,25.8)" data-group-role="management">
+    <title>console</title>
+    <rect id="console--opening" x="0" y="0" width="12.7" height="11" rx="0.3" fill="#17191c" data-path="console/opening" data-class="cutout" />
+    <path id="console--cavity" d="M 0.405 0.775 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="2.519" y="1.325" width="0.55" height="2.0" />
+      <rect x="3.535" y="1.325" width="0.55" height="2.0" />
+      <rect x="4.551" y="1.325" width="0.55" height="2.0" />
+      <rect x="5.567" y="1.325" width="0.55" height="2.0" />
+      <rect x="6.583" y="1.325" width="0.55" height="2.0" />
+      <rect x="7.599" y="1.325" width="0.55" height="2.0" />
+      <rect x="8.615" y="1.325" width="0.55" height="2.0" />
+      <rect x="9.631" y="1.325" width="0.55" height="2.0" />
+    </g>
+  </g>
+  <g id="port-0" data-path="port-0" data-class="port" data-ref="common/qsfp-cage@2:2.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" data-group="qsfp28" data-rel-pos="0" transform="translate(199.6,8.6) rotate(180 9.75 5.09)" data-group-role="traffic" data-description="the two 40/100G QSFP28 ports with FlexE support, 0 and 1, stacked in one block left of the SFP28 field">
+    <title>port-0</title>
+    <rect id="port-0--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="port-0/cage" data-class="cage" />
+    <g id="port-0--aperture" data-path="port-0/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.575,0.6)">
+      <title>port-0--aperture</title>
+      <rect id="port-0--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-0/aperture/opening" data-class="cutout" />
+      <rect id="port-0--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-0--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-0--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="common/qsfp-cage@2:2.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" data-group="qsfp28" data-rel-pos="1" transform="translate(199.6,24.0)" data-group-role="traffic" data-description="the two 40/100G QSFP28 ports with FlexE support, 0 and 1, stacked in one block left of the SFP28 field">
+    <title>port-1</title>
+    <rect id="port-1--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="port-1/cage" data-class="cage" />
+    <g id="port-1--aperture" data-path="port-1/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.575,0.6)">
+      <title>port-1--aperture</title>
+      <rect id="port-1--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-1/aperture/opening" data-class="cutout" />
+      <rect id="port-1--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-1--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-1--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="led-p0-l1" data-path="led-p0-l1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="0" data-role="lane" data-group="port-leds" data-rel-pos="29" transform="translate(201.04,21.49)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-0">
+    <title>led-p0-l1</title>
+    <circle id="led-p0-l1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p0-l1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p0-l1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p0-l2" data-path="led-p0-l2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="0" data-role="lane" data-group="port-leds" data-rel-pos="30" transform="translate(203.34,21.49)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-0">
+    <title>led-p0-l2</title>
+    <circle id="led-p0-l2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p0-l2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p0-l2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p0-l3" data-path="led-p0-l3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="0" data-role="lane" data-group="port-leds" data-rel-pos="31" transform="translate(213.4,21.49)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-0">
+    <title>led-p0-l3</title>
+    <circle id="led-p0-l3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p0-l3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p0-l3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p0-l4" data-path="led-p0-l4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="0" data-role="lane" data-group="port-leds" data-rel-pos="32" transform="translate(215.7,21.49)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-0">
+    <title>led-p0-l4</title>
+    <circle id="led-p0-l4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p0-l4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p0-l4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-x1" data-path="led-qsfp-x1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="33" transform="translate(206.3,21.49)" data-group-role="indicator" data-description="one of the two ROUND lamps sitting between the four lane triangles in the QSFP block's centre band; nothing in either document says what it shows or which port owns it - the attachment here is a guess and is filed in gaps" data-for="port-0">
+    <title>led-qsfp-x1</title>
+    <circle id="led-qsfp-x1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-x1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-x1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-qsfp-x2" data-path="led-qsfp-x2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="port-leds" data-rel-pos="34" transform="translate(210.3,21.49)" data-group-role="indicator" data-description="one of the two ROUND lamps sitting between the four lane triangles in the QSFP block's centre band; nothing in either document says what it shows or which port owns it - the attachment here is a guess and is filed in gaps" data-for="port-1">
+    <title>led-qsfp-x2</title>
+    <circle id="led-qsfp-x2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-qsfp-x2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-qsfp-x2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p1-l1" data-path="led-p1-l1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="1" data-role="lane" data-group="port-leds" data-rel-pos="35" transform="translate(201.12,38.72)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-1">
+    <title>led-p1-l1</title>
+    <circle id="led-p1-l1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p1-l1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p1-l1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p1-l2" data-path="led-p1-l2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="1" data-role="lane" data-group="port-leds" data-rel-pos="36" transform="translate(203.48,38.72)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-1">
+    <title>led-p1-l2</title>
+    <circle id="led-p1-l2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p1-l2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p1-l2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p1-l3" data-path="led-p1-l3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="1" data-role="lane" data-group="port-leds" data-rel-pos="37" transform="translate(213.39,38.72)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-1">
+    <title>led-p1-l3</title>
+    <circle id="led-p1-l3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p1-l3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p1-l3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-p1-l4" data-path="led-p1-l4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="1" data-role="lane" data-group="port-leds" data-rel-pos="38" transform="translate(215.76,38.72)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-1">
+    <title>led-p1-l4</title>
+    <circle id="led-p1-l4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-p1-l4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-p1-l4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="ground-mark" data-path="ground-mark" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-group="grounding" data-rel-pos="1" transform="translate(430.4,18.7)" data-group-role="furniture" data-description="the earth symbol printed at the right-hand end of the front panel, marking the grounding lug that HIG Figure 5's callout inset shows on the right side wall" data-for="/right/ground-1">
+    <title>ground-mark</title>
+    <g id="ground-mark--symbol" stroke="#c7ccd1" fill="none" data-path="ground-mark/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="2" transform="translate(224.82,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="3" transform="translate(224.82,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-2" data-path="led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="2" data-group="port-leds" data-rel-pos="1" transform="translate(229.25,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-2">
+    <title>led-port-2</title>
+    <circle id="led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-3" data-path="led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="3" data-group="port-leds" data-rel-pos="2" transform="translate(232.63,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-3">
+    <title>led-port-3</title>
+    <circle id="led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="4" transform="translate(239.07,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="5" transform="translate(239.07,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-4" data-path="led-port-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="4" data-group="port-leds" data-rel-pos="3" transform="translate(243.5,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-4">
+    <title>led-port-4</title>
+    <circle id="led-port-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-5" data-path="led-port-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="5" data-group="port-leds" data-rel-pos="4" transform="translate(246.88,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-5">
+    <title>led-port-5</title>
+    <circle id="led-port-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-5/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="6" transform="translate(253.32,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="7" transform="translate(253.32,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-6" data-path="led-port-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="6" data-group="port-leds" data-rel-pos="5" transform="translate(257.75,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-6">
+    <title>led-port-6</title>
+    <circle id="led-port-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-6/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-7" data-path="led-port-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="7" data-group="port-leds" data-rel-pos="6" transform="translate(261.13,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-7">
+    <title>led-port-7</title>
+    <circle id="led-port-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-7/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="8" transform="translate(267.57,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="9" transform="translate(267.57,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-8" data-path="led-port-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="8" data-group="port-leds" data-rel-pos="7" transform="translate(272.0,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-8">
+    <title>led-port-8</title>
+    <circle id="led-port-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-8/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-9" data-path="led-port-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="9" data-group="port-leds" data-rel-pos="8" transform="translate(275.38,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-9">
+    <title>led-port-9</title>
+    <circle id="led-port-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-9/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="10" transform="translate(281.82,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-10--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="11" transform="translate(281.82,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-11--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-10" data-path="led-port-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="10" data-group="port-leds" data-rel-pos="9" transform="translate(286.25,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-10">
+    <title>led-port-10</title>
+    <circle id="led-port-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-10/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-11" data-path="led-port-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="11" data-group="port-leds" data-rel-pos="10" transform="translate(289.63,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-11">
+    <title>led-port-11</title>
+    <circle id="led-port-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-11/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="12" transform="translate(296.07,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-12--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="13" transform="translate(296.07,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-13--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-12" data-path="led-port-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="12" data-group="port-leds" data-rel-pos="11" transform="translate(300.5,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-12">
+    <title>led-port-12</title>
+    <circle id="led-port-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-12/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-13" data-path="led-port-13" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="13" data-group="port-leds" data-rel-pos="12" transform="translate(303.88,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-13">
+    <title>led-port-13</title>
+    <circle id="led-port-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-13/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="14" transform="translate(310.32,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-14--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="15" transform="translate(310.32,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-15--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-14" data-path="led-port-14" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="14" data-group="port-leds" data-rel-pos="13" transform="translate(314.75,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-14">
+    <title>led-port-14</title>
+    <circle id="led-port-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-14/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-15" data-path="led-port-15" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="15" data-group="port-leds" data-rel-pos="14" transform="translate(318.13,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-15">
+    <title>led-port-15</title>
+    <circle id="led-port-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-15/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="16" transform="translate(324.57,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-16--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="17" transform="translate(324.57,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-17--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-16" data-path="led-port-16" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="16" data-group="port-leds" data-rel-pos="15" transform="translate(329.0,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-16">
+    <title>led-port-16</title>
+    <circle id="led-port-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-16/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-17" data-path="led-port-17" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="17" data-group="port-leds" data-rel-pos="16" transform="translate(332.38,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-17">
+    <title>led-port-17</title>
+    <circle id="led-port-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-17/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="18" transform="translate(344.03,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-18--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="19" transform="translate(344.03,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-19--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-18" data-path="led-port-18" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="18" data-group="port-leds" data-rel-pos="17" transform="translate(348.46,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-18">
+    <title>led-port-18</title>
+    <circle id="led-port-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-18/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-19" data-path="led-port-19" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="19" data-group="port-leds" data-rel-pos="18" transform="translate(351.84,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-19">
+    <title>led-port-19</title>
+    <circle id="led-port-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-19/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="20" transform="translate(358.28,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-20--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="21" transform="translate(358.28,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-21--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-20" data-path="led-port-20" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="20" data-group="port-leds" data-rel-pos="19" transform="translate(362.71,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-20">
+    <title>led-port-20</title>
+    <circle id="led-port-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-20/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-21" data-path="led-port-21" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="21" data-group="port-leds" data-rel-pos="20" transform="translate(366.09,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-21">
+    <title>led-port-21</title>
+    <circle id="led-port-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-21/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="22" transform="translate(372.53,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-22--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="23" transform="translate(372.53,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-23--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-22" data-path="led-port-22" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="22" data-group="port-leds" data-rel-pos="21" transform="translate(376.96,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-22">
+    <title>led-port-22</title>
+    <circle id="led-port-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-22/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-23" data-path="led-port-23" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="23" data-group="port-leds" data-rel-pos="22" transform="translate(380.34,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-23">
+    <title>led-port-23</title>
+    <circle id="led-port-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-23/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="24" transform="translate(386.78,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-24--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="25" transform="translate(386.78,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-25</title>
+    <rect id="port-25--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-25/opening" data-class="cutout" />
+    <rect id="port-25--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-25--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-25--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-24" data-path="led-port-24" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="24" data-group="port-leds" data-rel-pos="23" transform="translate(391.21,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-24">
+    <title>led-port-24</title>
+    <circle id="led-port-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-24/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-25" data-path="led-port-25" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="25" data-group="port-leds" data-rel-pos="24" transform="translate(394.59,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-25">
+    <title>led-port-25</title>
+    <circle id="led-port-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-25/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="26" transform="translate(401.03,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-26</title>
+    <rect id="port-26--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-26/opening" data-class="cutout" />
+    <rect id="port-26--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-26--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-26--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="27" transform="translate(401.03,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-27</title>
+    <rect id="port-27--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-27/opening" data-class="cutout" />
+    <rect id="port-27--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-27--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-27--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-26" data-path="led-port-26" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="26" data-group="port-leds" data-rel-pos="25" transform="translate(405.46,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-26">
+    <title>led-port-26</title>
+    <circle id="led-port-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-26/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-27" data-path="led-port-27" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="27" data-group="port-leds" data-rel-pos="26" transform="translate(408.84,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-27">
+    <title>led-port-27</title>
+    <circle id="led-port-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-27/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="28" transform="translate(415.28,8.8) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-28</title>
+    <rect id="port-28--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-28/opening" data-class="cutout" />
+    <rect id="port-28--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-28--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-28--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="sfp28" data-rel-pos="29" transform="translate(415.28,25.1)" data-group-role="traffic" data-description="the 28 1/10/25G SFP28 ports, 2-29, in two blocks of belly-to-belly rows - eight columns then six">
+    <title>port-29</title>
+    <rect id="port-29--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-29/opening" data-class="cutout" />
+    <rect id="port-29--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-29--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-29--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="led-port-28" data-path="led-port-28" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="28" data-group="port-leds" data-rel-pos="27" transform="translate(419.71,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-28">
+    <title>led-port-28</title>
+    <circle id="led-port-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-28/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-29" data-path="led-port-29" data-class="led" data-ref="common/led-dot@1:1.1.0" data-port="29" data-group="port-leds" data-rel-pos="28" transform="translate(423.09,21.1)" data-group-role="indicator" data-description="every indicator that belongs to a particular port - the ▲▼ pair in each SFP28 column's centre band, and the four-lane strips on the two QSFP28 ports" data-for="port-29">
+    <title>led-port-29</title>
+    <circle id="led-port-29--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-29--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-29/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="psu-0" data-path="psu-0" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="0">
+    <title>psu-0</title>
+    <rect id="psu-0--opening" x="5.7" y="1.6" width="50.5" height="40.2" fill="#101214" />
+    <g id="psu-0--module" data-path="psu-0/module" data-class="psu" data-behaviour="fills" data-ref="ufispace/psu-401-dc@1:1.3.0" data-input="dc" data-model="PSU-401-DISB-1" data-power-output-w="400" transform="translate(30.95,21.7) translate(-25.25,-20.1)">
+      <title>psu-0--module</title>
+      <defs>
+        <pattern id="psu-0--module--hex" width="4.43" height="2.555" patternUnits="userSpaceOnUse">
+          <path d="M 1.275 0 L 0.6375 1.104 L -0.6375 1.104 L -1.275 0 L -0.6375 -1.104 L 0.6375 -1.104 Z" fill="#0d0f11" />
+          <path d="M 5.705 0 L 5.0675 1.104 L 3.7925 1.104 L 3.155 0 L 3.7925 -1.104 L 5.0675 -1.104 Z" fill="#0d0f11" />
+          <path d="M 3.49 1.2775 L 2.8525 2.3815 L 1.5775 2.3815 L 0.94 1.2775 L 1.5775 0.1735 L 2.8525 0.1735 Z" fill="#0d0f11" />
+          <path d="M 1.275 2.555 L 0.6375 3.659 L -0.6375 3.659 L -1.275 2.555 L -0.6375 1.451 L 0.6375 1.451 Z" fill="#0d0f11" />
+          <path d="M 5.705 2.555 L 5.0675 3.659 L 3.7925 3.659 L 3.155 2.555 L 3.7925 1.451 L 5.0675 1.451 Z" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="psu-0--module--body" x="0" y="0" width="50.5" height="40.2" rx="0.6" fill="#33373c" stroke="#22262a" stroke-width="0.4" />
+      <rect id="psu-0--module--vent-field" x="5.8" y="1.8" width="31.0" height="17.5" fill="url(#psu-0--module--hex)" data-z-vent="30" />
+      <rect id="psu-0--module--latch" x="0.6" y="4.5" width="3.6" height="14" rx="0.8" fill="#2f66b5" stroke="#234b8c" stroke-width="0.3" data-path="psu-0/module/latch" data-class="latch" data-z-out="2.2" />
+      <rect id="psu-0--module--handle" x="38.6" y="6" width="3.4" height="26" rx="1.6" fill="#17191c" stroke="#0d0f11" stroke-width="0.3" data-path="psu-0/module/handle" data-class="handle" data-z-uhandle="27" />
+      <g id="psu-0--module--terminal-block" data-path="psu-0/module/terminal-block" data-class="inlet" data-z-out="8">
+        <rect x="5.8" y="21" width="30.2" height="16.5" rx="0.8" fill="#1c1f23" stroke="#0d0f11" stroke-width="0.35" />
+        <circle cx="11.3" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="20.9" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="30.5" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+        <line x1="8.9" y1="29.2" x2="13.7" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+        <line x1="18.5" y1="29.2" x2="23.3" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+        <line x1="28.1" y1="29.2" x2="32.9" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+      </g>
+      <circle id="psu-0--module--status-led" cx="45.8" cy="3.8" r="1.6" fill="var(--led-color, #3a3f44)" data-path="psu-0/module/status-led" data-class="led" data-states="off ok fail standby no-dc warning" data-description="HIG PSU FRU LED table - Off (no DC power to any PSU), Green (DC output on and OK), Red (PSU failure), Flashing Green (DC present, only standby output on - poor contact), Flashing Red (no DC power to THIS PSU), Flashing between Green and Red (warning: working condition not satisfied, check voltage, current and temperature)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="64.44" y="1.6" width="50.5" height="40.2" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="ufispace/psu-401-dc@1:1.3.0" data-input="dc" data-model="PSU-401-DISB-1" data-power-output-w="400" transform="translate(89.69,21.7) translate(-25.25,-20.1)">
+      <title>psu-1--module</title>
+      <defs>
+        <pattern id="psu-1--module--hex" width="4.43" height="2.555" patternUnits="userSpaceOnUse">
+          <path d="M 1.275 0 L 0.6375 1.104 L -0.6375 1.104 L -1.275 0 L -0.6375 -1.104 L 0.6375 -1.104 Z" fill="#0d0f11" />
+          <path d="M 5.705 0 L 5.0675 1.104 L 3.7925 1.104 L 3.155 0 L 3.7925 -1.104 L 5.0675 -1.104 Z" fill="#0d0f11" />
+          <path d="M 3.49 1.2775 L 2.8525 2.3815 L 1.5775 2.3815 L 0.94 1.2775 L 1.5775 0.1735 L 2.8525 0.1735 Z" fill="#0d0f11" />
+          <path d="M 1.275 2.555 L 0.6375 3.659 L -0.6375 3.659 L -1.275 2.555 L -0.6375 1.451 L 0.6375 1.451 Z" fill="#0d0f11" />
+          <path d="M 5.705 2.555 L 5.0675 3.659 L 3.7925 3.659 L 3.155 2.555 L 3.7925 1.451 L 5.0675 1.451 Z" fill="#0d0f11" />
+        </pattern>
+      </defs>
+      <rect id="psu-1--module--body" x="0" y="0" width="50.5" height="40.2" rx="0.6" fill="#33373c" stroke="#22262a" stroke-width="0.4" />
+      <rect id="psu-1--module--vent-field" x="5.8" y="1.8" width="31.0" height="17.5" fill="url(#psu-1--module--hex)" data-z-vent="30" />
+      <rect id="psu-1--module--latch" x="0.6" y="4.5" width="3.6" height="14" rx="0.8" fill="#2f66b5" stroke="#234b8c" stroke-width="0.3" data-path="psu-1/module/latch" data-class="latch" data-z-out="2.2" />
+      <rect id="psu-1--module--handle" x="38.6" y="6" width="3.4" height="26" rx="1.6" fill="#17191c" stroke="#0d0f11" stroke-width="0.3" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="27" />
+      <g id="psu-1--module--terminal-block" data-path="psu-1/module/terminal-block" data-class="inlet" data-z-out="8">
+        <rect x="5.8" y="21" width="30.2" height="16.5" rx="0.8" fill="#1c1f23" stroke="#0d0f11" stroke-width="0.35" />
+        <circle cx="11.3" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="20.9" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="30.5" cy="29.2" r="3.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" />
+        <line x1="8.9" y1="29.2" x2="13.7" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+        <line x1="18.5" y1="29.2" x2="23.3" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+        <line x1="28.1" y1="29.2" x2="32.9" y2="29.2" stroke="#4a4f55" stroke-width="0.5" />
+      </g>
+      <circle id="psu-1--module--status-led" cx="45.8" cy="3.8" r="1.6" fill="var(--led-color, #3a3f44)" data-path="psu-1/module/status-led" data-class="led" data-states="off ok fail standby no-dc warning" data-description="HIG PSU FRU LED table - Off (no DC power to any PSU), Green (DC output on and OK), Red (PSU failure), Flashing Green (DC present, only standby output on - poor contact), Flashing Red (no DC power to THIS PSU), Flashing between Green and Red (warning: working condition not satisfied, check voltage, current and temperature)" data-z-dome="0.4" />
+    </g>
+  </g>
+</svg>

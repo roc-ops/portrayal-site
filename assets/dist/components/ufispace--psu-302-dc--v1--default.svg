@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="68.0mm" height="40.6mm" viewBox="0 0 68.0 40.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/psu-302-dc@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='ufispace/psu-302-dc@'] .state-in-range { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-302-dc@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-302-dc@'] .state-over-temp { --led-color: #f59e0b; }
+    g[data-ref^='ufispace/psu-302-dc@'] .state-over-temp { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-302-dc@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-302-dc@'] .state-standby { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="psu-302-dc" data-path="psu-302-dc" data-class="psu" data-behaviour="fills" data-ref="ufispace/psu-302-dc@1:1.0.0" data-input="dc" data-model="PSU-302-DESR" data-power-output-w="3000" transform="translate(0,0)">
+    <title>psu-302-dc</title>
+    <defs>
+      <pattern id="psu-302-dc--perf302d" width="2.0" height="2.0" patternUnits="userSpaceOnUse">
+        <circle cx="1.0" cy="1.0" r="0.68" fill="#101315" />
+      </pattern>
+    </defs>
+    <rect id="psu-302-dc--body" x="0" y="0" width="68" height="40.6" rx="0.6" fill="#b9bec4" stroke="#7d848c" stroke-width="0.4" />
+    <g id="psu-302-dc--vent-field" data-z-vent="30">
+      <rect x="1.2" y="17.2" width="16.4" height="21.8" fill="url(#psu-302-dc--perf302d)" />
+      <rect x="53.6" y="1.6" width="13.2" height="37.4" fill="url(#psu-302-dc--perf302d)" />
+      <rect x="19.8" y="30.2" width="33.0" height="8.8" fill="url(#psu-302-dc--perf302d)" />
+    </g>
+    <g id="psu-302-dc--terminal-block" data-path="psu-302-dc/terminal-block" data-class="terminal" data-z-out="3.0">
+      <rect x="19.8" y="5.4" width="30.0" height="21.4" rx="1.2" fill="#22262a" stroke="#4a4f55" stroke-width="0.4" />
+      <rect x="21.4" y="7.0" width="26.8" height="4.0" rx="0.6" fill="#3a3f44" />
+      <circle cx="28.0" cy="18.4" r="4.1" fill="#8a9099" stroke="#4a4f55" stroke-width="0.4" />
+      <circle cx="41.6" cy="18.4" r="4.1" fill="#8a9099" stroke="#4a4f55" stroke-width="0.4" />
+      <line x1="24.6" y1="18.4" x2="31.4" y2="18.4" stroke="#4a4f55" stroke-width="0.5" />
+      <line x1="38.2" y1="18.4" x2="45.0" y2="18.4" stroke="#4a4f55" stroke-width="0.5" />
+    </g>
+    <rect id="psu-302-dc--handle" x="11.5" y="29.8" width="44.6" height="7.7" rx="3.6" fill="#1d2023" data-path="psu-302-dc/handle" data-class="handle" data-z-uhandle="30" />
+    <rect id="psu-302-dc--handle-grip" x="14.0" y="31.8" width="39.6" height="3.7" rx="1.8" fill="#2b2f33" />
+    <rect id="psu-302-dc--clip" x="62.0" y="10.1" width="5.5" height="16.7" rx="1.4" fill="#c22f2f" data-path="psu-302-dc/clip" data-class="latch" data-z-out="2.2" />
+    <rect id="psu-302-dc--input-led" x="4.7" y="3.9" width="2.6" height="2.6" rx="1.3" fill="var(--led-color, #3a3f44)" data-path="psu-302-dc/input-led" data-class="led" data-states="off in-range" data-description="S9321-64E HIG PSU FRU LED table, Input LED - Green (input within range), Off (input out of range, or firmware upgrading)" data-z-dome="0.4" />
+    <rect id="psu-302-dc--output-led" x="4.7" y="11.4" width="2.6" height="2.6" rx="1.3" fill="var(--led-color, #3a3f44)" data-path="psu-302-dc/output-led" data-class="led" data-states="off ok standby over-temp fault" data-description="S9321-64E HIG PSU FRU LED table, Output LED - Solid Green (12.3V main output OK), Blinking Green (12.3V main output in standby mode), Off (12.3V main output off due to input out of range), Blinking Amber (over temp warning, or fan error), Solid Amber (12.3V main output or 12VSB out of range; OTP, OVP, UVP, OCP)" data-z-dome="0.4" />
+  </g>
+</svg>

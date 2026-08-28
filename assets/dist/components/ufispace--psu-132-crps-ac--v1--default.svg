@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="73.5mm" height="40.0mm" viewBox="0 0 73.5 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/psu-132-crps-ac@'] .state-critical { --led-color: #eab308; }
+    g[data-ref^='ufispace/psu-132-crps-ac@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-132-crps-ac@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='ufispace/psu-132-crps-ac@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/psu-132-crps-ac@'] .state-warning { --led-color: #eab308; }
+    g[data-ref^='ufispace/psu-132-crps-ac@'] .state-warning { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="psu-132-crps-ac" data-path="psu-132-crps-ac" data-class="psu" data-behaviour="fills" data-ref="ufispace/psu-132-crps-ac@1:1.0.0" data-airflow="exhaust" data-input="ac" data-model="PSU-132-AEAR-NN" data-power-output-w="1300" transform="translate(0,0)">
+    <title>psu-132-crps-ac</title>
+    <rect id="psu-132-crps-ac--body" x="0" y="0" width="73.5" height="40" rx="0.6" fill="#1c1f22" stroke="#0d0f11" stroke-width="0.4" />
+    <g id="psu-132-crps-ac--fan-frame">
+      <rect x="0.8" y="0.8" width="40.2" height="38.4" rx="1.2" fill="#0b0d0f" stroke="#c9ced4" stroke-width="0.9" />
+      <g stroke="#c9ced4" stroke-width="2.6" stroke-linecap="round" fill="none">
+        <path d="M 5.8 5.6 L 15.6 14.8" />
+        <path d="M 35.8 5.6 L 26.0 14.8" />
+        <path d="M 5.8 34.4 L 15.6 25.2" />
+        <path d="M 35.8 34.4 L 26.0 25.2" />
+      </g>
+      <g fill="#0b0d0f" stroke="#c9ced4" stroke-width="1.3">
+        <circle cx="4.8" cy="4.8" r="2.3" />
+        <circle cx="37.0" cy="4.8" r="2.3" />
+        <circle cx="4.8" cy="35.2" r="2.3" />
+        <circle cx="37.0" cy="35.2" r="2.3" />
+      </g>
+    </g>
+    <g id="psu-132-crps-ac--rotor-grille" data-z-vent="25">
+      <circle cx="20.9" cy="20.0" r="14.3" fill="#17191c" stroke="#2b2f33" stroke-width="0.4" />
+    </g>
+    <rect id="psu-132-crps-ac--edge-strip" x="61.0" y="0.8" width="11.7" height="38.4" rx="0.5" fill="#c9ced4" />
+    <rect id="psu-132-crps-ac--inlet-bracket" x="41.3" y="35.0" width="19.4" height="4.2" rx="0.4" fill="#c9ced4" />
+    <g id="psu-132-crps-ac--inlet" data-path="psu-132-crps-ac/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(37.7,10.0) rotate(270 14.0 10.0)">
+      <title>psu-132-crps-ac--inlet</title>
+      <rect id="psu-132-crps-ac--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-132-crps-ac/inlet/opening" data-class="cutout" />
+      <path id="psu-132-crps-ac--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="psu-132-crps-ac--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-132-crps-ac--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-132-crps-ac--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    </g>
+    <g id="psu-132-crps-ac--rotor-bulge" data-z-dome="3.0">
+      <circle cx="20.9" cy="20.0" r="6.4" fill="#101315" stroke="#2b2f33" stroke-width="0.3" />
+    </g>
+    <rect id="psu-132-crps-ac--handle" x="1.2" y="16.4" width="40.4" height="6.6" rx="0.5" fill="#17191c" stroke="#0b0d0f" stroke-width="0.3" data-path="psu-132-crps-ac/handle" data-class="handle" data-z-out="3.5" />
+    <rect id="psu-132-crps-ac--latch" x="62.5" y="12.7" width="5.3" height="18.8" rx="1.3" fill="#e0405f" stroke="#9c1d36" stroke-width="0.3" data-path="psu-132-crps-ac/latch" data-class="latch" data-z-out="1.2" />
+    <circle id="psu-132-crps-ac--status-led" cx="68.0" cy="8.8" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#8d9297" stroke-width="0.2" data-path="psu-132-crps-ac/status-led" data-class="led" data-states="off ok standby critical warning" data-description="HIG PSU FRU LED table - Off (no input power to all power supplies), Green (output ON and OK), Blinking Green (standby: input power present with only +12VSB on, or the supply in smart standby; the boot-loader firmware-update row is visually identical and shares this state), Amber (a critical event causing shutdown - failure, overcurrent, short circuit, overvoltage, fan failure, overtemperature - and separately an input cord unplugged or input lost with a second supply still fed), Blinking Amber (warning events where the supply keeps operating - high temp, high power, high current, slow fan)" data-z-dome="0.4" />
+  </g>
+</svg>

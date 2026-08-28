@@ -466,7 +466,11 @@
    },
    "description": "AC power. Four 1100 W PSUs in a row across the bottom front behind the snap-on cover, instead of the two DC power entry modules at the bottom rear. Redundancy is unchanged - this axis is orthogonal to the BDM and classic schemes, and the guide draws the rear both ways (Figures 1-2 and 1-3 AC, 1-4 and 1-5 DC).",
    "name": "ac-power",
-   "part-numbers": {}
+   "part-numbers": {
+    "C40G-CHASSIS-AC": {
+     "part": "C40G-CHASSIS-AC"
+    }
+   }
   },
   {
    "bays": {
@@ -507,6 +511,16 @@
    "description": "BDM \"3+1\". Redundancy collapses to a single protecting slot: rear 1 takes the LC-BDM-SWITCH, and rear 4 takes a combined 6+12 SW-IO which frees slot 4 to carry traffic.",
    "name": "bdm-3plus1",
    "part-numbers": {}
+  },
+  {
+   "bays": {},
+   "description": "DC power. The two power entry modules at the bottom rear, where the AC chassis carries its inlet panel. THIS EXISTS TO CARRY A SKU THAT THE OTHER CONFIGURATIONS COULD NOT: the ordering sheet sells the chassis by power feed, and the three DOCSIS configurations happen to be drawn DC because their figures are, which made a line-card population the only place a power part number could have gone. It draws no cards for the same reason `ac-power` draws none - the power feed is orthogonal to what is in the slots.",
+   "name": "dc-power",
+   "part-numbers": {
+    "C40G-CHASSIS-DC": {
+     "part": "C40G-CHASSIS-DC"
+    }
+   }
   },
   {
    "bays": {
@@ -554,6 +568,20 @@
  "default": "base",
  "device": "c40g",
  "gaps": [
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "THE ORDERING SHEET SELLS FOUR CHASSIS AND THIS LIBRARY MODELS TWO. C40G_DS_RevA lists C40G-CHASSIS-AC and C40G-CHASSIS-DC, which are here, and C40G-CHASSIS-ACR and C40G-CHASSIS-DCR, described as \"with Redundant Power and Cooling\", which are not. The sheet gives the phrase and nothing else - no count, no which modules, no dimensions - and the installation guide never uses the word for a chassis variant. What the guide DOES say is that the C40G takes up to four 1100 W PSUs operating concurrently and that fewer than two cannot power a C40G-20, which tells you the supplies are redundant by population rather than by chassis. That makes the R variants most likely a populated bundle rather than different metal - but \"most likely\" is not a source, and inventing two configurations from a four-word description would put a guess where a part number goes.",
+   "scope": [
+    "ac-power",
+    "dc-power",
+    "power",
+    "fans"
+   ],
+   "wanted": "a Casa or CommScope ordering guide saying what the R bundles contain - how many PSUs and fan modules, and whether the chassis itself differs at all",
+   "what": "redundant-power-and-cooling-variants"
+  },
   {
    "because": "sources-disagree",
    "blocks": [],

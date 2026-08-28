@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50.7mm" height="40.0mm" viewBox="0 0 50.7 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/fan-405637@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='ufispace/fan-405637@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="fan-405637" data-path="fan-405637" data-class="fan" data-behaviour="fills" data-ref="ufispace/fan-405637@1:1.0.0" data-airflow="exhaust" data-model="FAN-405637-HD" data-power-absent="not-published" transform="translate(0,0)">
+    <title>fan-405637</title>
+    <defs>
+      <pattern id="fan-405637--hex" width="4.43" height="2.555" patternUnits="userSpaceOnUse">
+        <path d="M 1.275 0 L 0.6375 1.104 L -0.6375 1.104 L -1.275 0 L -0.6375 -1.104 L 0.6375 -1.104 Z" fill="#0d0f11" />
+        <path d="M 5.705 0 L 5.0675 1.104 L 3.7925 1.104 L 3.155 0 L 3.7925 -1.104 L 5.0675 -1.104 Z" fill="#0d0f11" />
+        <path d="M 3.49 1.2775 L 2.8525 2.3815 L 1.5775 2.3815 L 0.94 1.2775 L 1.5775 0.1735 L 2.8525 0.1735 Z" fill="#0d0f11" />
+        <path d="M 1.275 2.555 L 0.6375 3.659 L -0.6375 3.659 L -1.275 2.555 L -0.6375 1.451 L 0.6375 1.451 Z" fill="#0d0f11" />
+        <path d="M 5.705 2.555 L 5.0675 3.659 L 3.7925 3.659 L 3.155 2.555 L 3.7925 1.451 L 5.0675 1.451 Z" fill="#0d0f11" />
+      </pattern>
+      <mask id="fan-405637--fanmask" maskUnits="userSpaceOnUse">
+        <circle cx="21.4" cy="20" r="15.6" fill="white" />
+        <rect x="1.2" y="1.2" width="40.4" height="37.6" fill="url(#fan-405637--hex)" />
+      </mask>
+    </defs>
+    <rect id="fan-405637--body" x="0" y="0" width="50.7" height="40" rx="0.6" fill="#2b2f33" stroke="#1a1d20" stroke-width="0.4" />
+    <circle id="fan-405637--rotor-behind" cx="21.4" cy="20" r="15.6" fill="#0b0d0f" data-z-vent="25" />
+    <path id="fan-405637--rotor-grille" fill-rule="evenodd" fill="url(#fan-405637--hex)" d="M 1.2 1.2 h 40.4 v 37.6 h -40.4 z        M 21.4 4.4 a 15.6 15.6 0 1 0 0.001 0 z" data-z-vent="25" />
+    <g id="fan-405637--rotor-bulge" data-z-dome="3.2">
+      <circle cx="21.4" cy="20" r="15.6" fill="#17191c" mask="url(#fan-405637--fanmask)" />
+      <circle id="fan-405637--rotor-hub" cx="21.4" cy="20" r="4.4" fill="#22262a" />
+      <circle id="fan-405637--rotor-ring" cx="21.4" cy="20" r="15.6" fill="none" stroke="#4a4f55" stroke-width="0.4" />
+    </g>
+    <circle id="fan-405637--corner-hole" cx="37.9" cy="6.1" r="2.2" fill="#0b0d0f" stroke="#4a4f55" stroke-width="0.3" />
+    <rect id="fan-405637--handle" x="10.9" y="3.5" width="3.4" height="33" rx="1.6" fill="#2f66b5" data-path="fan-405637/handle" data-class="handle" data-z-uhandle="25" />
+    <g id="fan-405637--flange">
+      <rect x="42.7" y="0" width="8" height="40" fill="#24272b" />
+      <rect x="43.6" y="14.2" width="6.2" height="24.4" rx="0.6" fill="#1a1d20" />
+    </g>
+    <g id="fan-405637--airflow-label" data-path="fan-405637/airflow-label" data-class="label" data-z-out="0.3">
+      <rect x="43.9" y="19.8" width="4.2" height="4.7" rx="0.5" fill="#2f66b5" />
+      <rect x="45.65" y="21.0" width="0.7" height="2.3" fill="#17191c" />
+      <rect x="44.9" y="20.6" width="2.2" height="0.7" fill="#17191c" />
+      <rect x="44.9" y="23.0" width="2.2" height="0.7" fill="#17191c" />
+    </g>
+    <g id="fan-405637--thumbscrew" data-path="fan-405637/thumbscrew" data-class="screw" data-z-cyl="5" data-z-knurl="1">
+      <circle cx="46.8" cy="28.7" r="2.4" fill="#8a9099" stroke="#4a4f55" stroke-width="0.25" />
+      <line x1="45.1" y1="28.7" x2="48.5" y2="28.7" stroke="#4a4f55" stroke-width="0.4" />
+      <line x1="46.8" y1="27.0" x2="46.8" y2="30.4" stroke="#4a4f55" stroke-width="0.4" />
+    </g>
+    <circle id="fan-405637--status-led" cx="46.8" cy="35.3" r="1.3" fill="var(--led-color, #3a3f44)" data-path="fan-405637/status-led" data-class="led" data-states="off ok fault" data-description="HIG Fan FRU LED table - Off (no input power), Solid Green (fan is functioning normal), Solid Amber (fan is abnormal, service is required)" data-z-dome="0.4" />
+  </g>
+</svg>
