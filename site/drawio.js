@@ -216,9 +216,51 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
   out.push(cell(`${id}-face`, '',
     `shape=image;imageAspect=0;editableCssRules=.*;image=${svgDataUri(svgText)};`,
     0, 0, w, h, id));
+
+  // A MODULAR CHASSIS GROUPS ITS PORTS UNDER THE CARD THEY ARE ON. The cells
+  // are still at their real positions over the image - this is the footprint,
+  // not the miniature - but a bay is now a collapsible container holding its
+  // own card's ports. Fold one and its forty connection points go with it,
+  // which is the difference between a diagram you can cable and a faceplate
+  // wearing forty invisible hit targets. It also gives the bay an identity a
+  // cable can be checked against later.
+  const bays = ports.filter(p => p.cls === 'bay');
+  const owned = new Set();
+  for (const b of bays) {
+    const mine = ports.filter(p => p.cls === 'port'
+      && String(p.path || p.id).startsWith(`${b.id}/`));
+    if (!mine.length) continue;
+    mine.forEach(p => owned.add(p));
+    const bx = b.x * sx, by = b.y * sy;
+    const bw = Math.max(b.w * sx, 1.5), bh = Math.max(b.h * sy, 1.5);
+    out.push(
+      `<object label="" portrayal-bay="${esc(b.id)}"` +
+      (b.model ? ` portrayal-module="${esc(b.model)}"` : '') +
+      ` id="${esc(`${id}-${b.id}`)}"><mxCell style="${tint('bay')}html=1;` +
+      `container=1;collapsible=1;connectable=0;" vertex="1" ` +
+      `parent="${esc(id)}"><mxGeometry x="${bx}" y="${by}" width="${bw}" ` +
+      `height="${bh}" as="geometry"><mxRectangle x="${bx}" y="${by}" ` +
+      `width="${bw}" height="${bh}" as="alternateBounds"/></mxGeometry>` +
+      `</mxCell></object>`);
+    for (const p of mine) {
+      out.push(cell(`${id}-${p.id}`, '',
+        `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
+        p.x * sx - bx, p.y * sy - by,
+        Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), `${id}-${b.id}`));
+    }
+  }
   for (const p of ports) {
+    if (owned.has(p) || p.cls === 'bay') continue;
     out.push(cell(`${id}-${p.id}`, '', `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
       p.x * sx, p.y * sy, Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), id));
+  }
+  // A bay with no ports of its own is still worth being a cell - it is an empty
+  // slot - so it keeps the behaviour it had before this change.
+  for (const b of bays) {
+    if (ports.some(p => p.cls === 'port'
+        && String(p.path || p.id).startsWith(`${b.id}/`))) continue;
+    out.push(cell(`${id}-${b.id}`, '', `${tint('bay')}html=1;connectable=1;${PORT_POINT}`,
+      b.x * sx, b.y * sy, Math.max(b.w * sx, 1.5), Math.max(b.h * sy, 1.5), id));
   }
   return out;
 }

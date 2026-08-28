@@ -32,6 +32,29 @@ const PITCH = 16, STUB = 46, BODY = 150, HEAD = 26, PAD = 6;
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
   .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/**
+ * A cell that CARRIES WHAT THE MODEL KNOWS, not just what it looks like.
+ *
+ * draw.io cannot be told from a file which shapes a container will accept -
+ * `container`, `collapsible` and `childLayout` are all it has, and none of them
+ * restricts by type. Enforcing "this slot takes a BDM" needs the Extension API
+ * and a plugin, which is not something an exported file can ask for.
+ *
+ * What a file CAN do is carry the constraint. Custom attributes on an <object>
+ * survive a round trip, show in Edit Data, and can be read back - so a diagram
+ * someone builds from these can be checked against the library afterwards even
+ * though draw.io let them put anything anywhere while they were drawing.
+ */
+const dataCell = (id, value, style, x, y, w, h, parent, data = {}, extra = '') => {
+  const attrs = Object.entries(data)
+    .filter(([, v]) => v != null && v !== '')
+    .map(([k, v]) => ` ${k}="${esc(v)}"`).join('');
+  return `<object label="${esc(value)}"${attrs} id="${esc(id)}">` +
+    `<mxCell style="${style}" vertex="1" parent="${esc(parent)}">` +
+    `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry">` +
+    `${extra}</mxGeometry></mxCell></object>`;
+};
+
 const cell = (id, value, style, x, y, w, h, parent = '1') =>
   `<mxCell id="${esc(id)}" value="${esc(value)}" style="${style}" vertex="1" ` +
   `parent="${esc(parent)}"><mxGeometry x="${x}" y="${y}" width="${w}" ` +
@@ -76,6 +99,7 @@ export function bandsOf(ports, bays = []) {
     bands.push({
       key: id,
       label: occupant ? `${id} · ${shortRef(occupant)}` : id,
+      occupant: occupant || null,
       ports: mine.sort(byId),
       // An empty slot is not a failure to draw something; it is the fact that
       // the slot is free, which is what somebody planning a build needs.
@@ -120,30 +144,64 @@ export function miniature(name, ports, {id = 'dev', x = 0, y = 0, bays = []} = {
   let cy = HEAD;
   for (const b of bands) {
     const bh = rows(b) * PITCH;
-    // An empty slot is drawn as one, dashed and saying what fits, so the
-    // chassis reads as "twelve of these free" rather than as a gap.
+    // A BAND IS A CONTAINER, which buys two things draw.io already knows how to
+    // do. Its stubs are its children, so collapsing it folds a forty-port card
+    // into one row and the symbol stops being mostly cable stubs. And an empty
+    // slot being a container is what lets a module miniature be DROPPED into
+    // it: draw.io reparents the shape to the slot it lands on, so the chassis
+    // ends up actually holding the card rather than having one placed near it.
+    //
+    // Collapsed hides the stubs and with them their connection points, so
+    // nothing starts collapsed except the slots that have nothing to connect
+    // to. Folding a card away is a choice the reader makes.
     const style = b.slot
       ? 'rounded=0;html=1;dashed=1;dashPattern=3 3;fillColor=#22282c;' +
         'strokeColor=#454f57;fontColor=#7c848c;fontSize=8;' +
-        'verticalAlign=middle;align=center;'
+        'verticalAlign=middle;align=center;container=1;collapsible=0;' +
+        'childLayout=stackLayout;horizontalStack=0;resizeParent=0;marginTop=0;'
       : 'rounded=0;html=1;fillColor=#2b3238;strokeColor=#3d464e;' +
-        'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;';
+        'fontColor=#9aa1a8;fontSize=9;verticalAlign=middle;align=center;' +
+        'container=1;collapsible=1;';
     const label = b.slot
       ? `${b.key} — empty${b.slot.accepts.length
           ? ` · ${b.slot.accepts.slice(0, 2).join(' / ')}` : ''}`
       : b.label || b.key;
-    cells.push(cell(`${id}-${b.key}`, label, style, STUB, cy, BODY, bh, id));
+    const bandId = `${id}-${b.key}`;
+    // alternateBounds is the size it takes when folded: one row, still labelled.
+    const alt = b.slot ? ''
+      : `<mxRectangle x="${STUB}" y="${cy}" width="${BODY}" height="${PITCH}" ` +
+        `as="alternateBounds"/>`;
+    cells.push(dataCell(bandId, label, style, STUB, cy, BODY, bh, id, {
+      'portrayal-bay': b.slot || b.ports.length ? b.key : null,
+      'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
+      'portrayal-occupant': b.occupant || null,
+      tooltip: b.slot
+        ? `empty slot — accepts ${b.slot.accepts.join(', ') || 'a module'}`
+        : `${b.ports.length} port${b.ports.length === 1 ? '' : 's'}`,
+    }, alt));
+
     b.ports.forEach((p, i) => {
       const right = i % 2 === 1;
-      const ry = cy + Math.floor(i / 2) * PITCH;
-      // The connection point sits on the OUTER edge of the stub, so a cable
-      // leaves the symbol without crossing it.
+      // Relative to the BAND now, so a stub folds away with its card. The left
+      // column sits at a negative x, which is where it has always been drawn -
+      // outside the body, on the perimeter of the symbol.
+      const ry = Math.floor(i / 2) * PITCH;
       const pt = right ? 'points=[[1,0.5,0]];' : 'points=[[0,0.5,0]];';
-      cells.push(cell(`${id}-${stubLabel(p)}`, stubLabel(p),
+      // A stub is a place to land a cable and nothing else: not a container,
+      // not a drop target, and not something to drag out of the symbol by
+      // accident. Its id and media travel with it so a diagram built from this
+      // can still be joined back to the model.
+      cells.push(dataCell(`${id}-${stubLabel(p)}`, stubLabel(p),
         'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
         `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
-        `align=${right ? 'left' : 'right'};spacing${right ? 'Left' : 'Right'}=3;`,
-        right ? STUB + BODY : 0, ry, STUB, PITCH, id));
+        `align=${right ? 'left' : 'right'};spacing${right ? 'Left' : 'Right'}=3;` +
+        'container=0;movable=0;resizable=0;deletable=0;connectable=1;',
+        right ? BODY : -STUB, ry, STUB, PITCH, bandId, {
+          'portrayal-port': p.path || p.id,
+          'portrayal-media': p.media || null,
+          'portrayal-speed': p.speed || null,
+          tooltip: [p.media, p.speed].filter(Boolean).join(' · ') || null,
+        }));
     });
     cy += bh + PAD;
   }
