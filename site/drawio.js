@@ -303,13 +303,36 @@ export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
                         style, fx, TOP, RACK.outer, h));
         for (const m of rack.mounted) {
           const f = m.faces[face];
-          // A device with nothing drawn on this side leaves its units empty
-          // rather than borrowing the other side's picture. An optical shelf
-          // that is only a front is a real thing, and putting its face on the
-          // back of the rack would be a straightforward lie.
-          if (!f) continue;
           const ru = m.ru || 1;
           const id = `${slug(m.name)}-g${gi}r${r}-${face}`;
+          // A device with nothing drawn on this side does NOT borrow the other
+          // side's picture. An optical shelf that is only a front is a real
+          // thing, and putting a faceplate on the back of a rack would be a
+          // straightforward lie.
+          //
+          // It says so rather than leaving a hole, though. A rear cabinet with
+          // two devices in it and nothing drawn reads as a broken export; the
+          // same cabinet saying "no rear drawing" against each device reads as
+          // the library being honest about what it has. The unit span is still
+          // right, so the device occupies its real U either way.
+          if (!f) {
+            const top0 = RACK.marginTop + (m.u - 1) * RACK.unit;
+            cells.push(cell(`${id}-none`, `no ${face} drawing`,
+              'rounded=0;html=1;dashed=1;dashPattern=4 4;fillColor=#f0f0f0;' +
+              'strokeColor=#b0b0b0;fontColor=#8a8a8a;fontSize=9;' +
+              'verticalAlign=middle;align=center;movable=0;resizable=0;' +
+              'editable=0;connectable=0;',
+              RACK.marginL, top0, RACK.width, RACK.unit * ru, rackId));
+            if (labels) {
+              const ly0 = RACK.marginTop + (m.u - 1 + ru) * RACK.unit;
+              cells.push(cell(`${id}-label`, `\u25B2 ${m.name}`,
+                'text;html=1;strokeColor=none;fillColor=none;align=left;' +
+                'verticalAlign=middle;fontSize=9;fontColor=#333333;spacingLeft=4;' +
+                'movable=0;resizable=0;editable=0;connectable=0;',
+                RACK.marginL, ly0, RACK.width, RACK.unit, rackId));
+            }
+            continue;
+          }
           // Which end U1 is at follows the container's numbering, not the
           // machine room. `numDisp=ascend` prints 1 at the TOP and counts down,
           // so placing from the bottom the way a real rack is counted puts
