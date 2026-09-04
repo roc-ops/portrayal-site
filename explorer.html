@@ -36,7 +36,39 @@
   #mode button:last-child { border-radius:0 6px 6px 0; margin-left:-1px; }
   #mode button:disabled { opacity:0.45; cursor:not-allowed; }
   #mode button:disabled:hover { background:var(--pt-surface-2); }
+  /* A HOVER READOUT MUST NOT SHARE A LAYOUT WITH WHAT YOU ARE HOVERING.
+     `#status` is a span in the shell's header, and that header is
+     `display:flex; flex-wrap:wrap`. Text in it wraps the header onto a second
+     row - 120px to 138px, measured - which pushes the stage down 18px and
+     shrinks it by 18px.
+     In 2D that is only a jolt: hover is `:hover` on a DOM element, and the
+     element moves WITH the layout, so the pointer stays on it. In 3D the pick
+     is a ray from a fixed SCREEN point, so the model slides out from under a
+     stationary cursor. Near an edge 18px is enough to leave the front face,
+     which empties the readout, which unwraps the header, which slides the model
+     back - and the R740xd's front plate is the only surface `pick()` returns a
+     path for, which is why it was the front panel and nowhere else.
+     Reserving a row in the header stopped the loop and cost 18px of stage,
+     permanently, to hold a line that is empty most of the time. Taking the
+     readout OUT of the layout costs nothing and removes the whole class: no
+     content it can ever hold can move the thing being hovered. 173x17px over a
+     1032x770 stage is 0.37% of it, only while the pointer is on something.
+     `pointer-events: none` is load-bearing, not decoration - without it the
+     readout becomes a surface you can hover, which is this bug again wearing a
+     different hat. With it the ray passes straight through: the browser reports
+     the CANVAS under the overlay's own centre. */
+  /* NOT `position: relative` HERE. `.stage-host` is `position:absolute;
+     inset:0`, and overriding that collapses the stage to nothing - the canvas
+     went to 150px and the model with it. An absolutely positioned element is
+     already a containing block for its own absolute children, so the readout
+     anchors to this box with no help. */
   #stage-3d { background:var(--pt-surface); }
+  #hoverpath { position: absolute; left: 8px; top: 8px; max-width: 60%;
+    padding: 2px 7px; border-radius: 3px; pointer-events: none; z-index: 5;
+    font: 11px ui-monospace, monospace; color: var(--pt-ink);
+    background: rgba(16,18,21,.72); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; opacity: 0; transition: opacity .08s linear; }
+  #hoverpath.on { opacity: 1; }
   #stage-3d canvas { display:block; }
   #frus { display:flex; gap:0.2rem; flex-wrap:wrap; }
   #frus[hidden] { display:none; }        /* display:flex outranks the hidden attribute */
@@ -210,6 +242,31 @@ function pushStates() {
   Promise.resolve(viewer.setStates(liveStates()))
     .catch(err => console.warn('[portrayal] 3D state sync failed', err));
 }
+
+// A PULL IS A STATE THE SCENE HAS TO BE TOLD ABOUT TOO.
+// The shell takes a cover off by hiding the element in the drawing, which is
+// the whole of the job in 2D and none of it in 3D: the scene is built from the
+// compiled faces, so it keeps showing a bezel the tree has already struck
+// through. `viewer3d.js` has exported `setPulled` all along and this page never
+// called it - the tree said "1 removed" and the model was unchanged, which
+// reads as a control that does nothing.
+//
+// Read off the drawing rather than trusting the event's payload, for the same
+// reason `liveStates` does: it is the same answer after a swap or a config
+// change as after a click, and it cannot drift from what is on screen.
+// The shell knows every face it holds; asking it is what keeps a pull on the
+// lid - a top-face part - reaching the scene while the front drawing is the one
+// mounted. Reading `state.svg` alone reported only the mounted face's pulls.
+const livePulled = () => typeof shell.pulledPaths === 'function'
+  ? shell.pulledPaths()
+  : (state.svg ? [...state.svg.querySelectorAll('[data-portrayal-pulled]')]
+      .map(e => e.dataset.path).filter(Boolean) : []);
+function pushPulled() {
+  if (mode !== '3d' || !viewer) return;
+  Promise.resolve(viewer.setPulled(livePulled()))
+    .catch(err => console.warn('[portrayal] 3D pull sync failed', err));
+}
+shell.on('pulled', pushPulled);
 
 // ---------------------------------------------------------------- About panel
 
@@ -433,16 +490,32 @@ async function ensureViewer() {
     // happened to resolve correctly because the page sat beside it; here the
     // page is at the site root and that default would point outside the site.
     const v = createViewer(host3d, {dist: 'assets/dist/'});
+    // A HANDLE FOR MEASURING, not for using. `?debug=1` puts the viewer on
+    // window so a console or a harness can ask it what it selected and where
+    // the halo landed - which is how the ear-offset bug was pinned to a number
+    // instead of an impression. Off by default: nothing on the page reads it.
+    if (new URLSearchParams(location.search).get('debug') === '1') window.__viewer = v;
     // 3D shows every face at once and the tree shows one view, so the scene can
     // report a part the drawing on the other tab does not contain - click a PSU
     // while the view is `front`. Say so rather than clearing the selection to
     // nothing and looking broken.
-    v.on('select', p => {
-      if (!p) return;
-      if (state.svg?.querySelector(`[data-path="${CSS.escape(p)}"]`)) return shell.select(p, false);
-      shell.el.status.textContent = `${p} — not in the ${state.view} view`;
+    // EVERY PART THE SCENE CAN PICK IS IN THE MERGED TREE, because the
+    // scene's index and the tree are built from the same six face drawings.
+    // The old branch reported "not in the front view" for a heatsink on the
+    // lid - true of the 2D drawing, and exactly the limitation the merge
+    // removes. The shell now resolves a path across every face it holds.
+    v.on('select', p => { if (p) shell.select(p, false); });
+    // THE READOUT, AND NOT THE HEADER. Writing hover into `#status` also wiped
+    // the shell's own `N bays` line the first time you moved the pointer, so
+    // the header lost a fact it was holding to show one that changes 60 times a
+    // second. Two reasons for one move.
+    const readout = document.createElement('div');
+    readout.id = 'hoverpath';
+    host3d.appendChild(readout);
+    v.on('hover', p => {
+      readout.textContent = p || '';
+      readout.classList.toggle('on', !!p);
     });
-    v.on('hover', p => { shell.el.status.textContent = p || ''; });
     mountExtras(v);
     return v;
   })();
@@ -599,6 +672,10 @@ async function sync3d() {
   // because build() reads them, so a scene comes up already lit instead of
   // flashing dark and repainting itself.
   await v.setStates(liveStates());
+  // Before the early return for the same reason the states are: a cover taken
+  // off while the drawing was showing is exactly the case where the device and
+  // the swaps have not changed and the scene still has to catch up.
+  await v.setPulled(livePulled());
   if (key === loadedKey) return;
   await v.load({device: state.device, config: state.cfg,
                 overrides: swapOverrides()});
@@ -614,6 +691,19 @@ async function setMode(m) {
   shell.el.svgHost.hidden = m !== '2d';
   host3d.hidden = m !== '3d';
   shell.emit('mode', m);
+  // IN 3D THE VIEW IS NOT A CHOICE. A 2D drawing shows one face, so picking
+  // which is a real control; a 3D scene shows all six at once, and a tree
+  // still pinned to one of them listed a sixth of what was on screen. So the
+  // tree merges - one section per face, the 2D view's first - and the view
+  // picker steps aside until the drawing is back.
+  const viewPick = shell.el.view.closest('label') || shell.el.view;
+  shell.state.merge = m === '3d';
+  // not `hidden`: the shell styles `label.f { display:flex }`, which outranks
+  // the UA's [hidden] rule, so the attribute alone left the picker on screen
+  viewPick.style.display = m === '3d' ? 'none' : '';
+  if (m === '3d') shell.loadFaces().then(() => shell.refreshTree())
+    .catch(err => console.warn('[portrayal] faces for the merged tree', err));
+  else shell.refreshTree();
   if (m === '2d') {
     // the SVG could not be measured while it was hidden, so the halo and the fit
     // both have to be recomputed now that it can be
