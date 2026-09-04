@@ -512,7 +512,10 @@ async function ensureViewer() {
     // shell rather than the viewer alone, so the row, the inspector and the
     // covers that reveal took off all follow, the same as clicking the
     // drawing's background in 2D.
-    v.on('select', p => shell.select(p || null, false));
+    // And clicking the selected part again clears it, as the drawing does:
+    // the 2D handler reads `path !== state.sel ? path : null`, and a scene
+    // that answered differently would be the same click meaning two things.
+    v.on('select', p => shell.select(p && p !== state.sel ? p : null, false));
     // THE READOUT, AND NOT THE HEADER. Writing hover into `#status` also wiped
     // the shell's own `N bays` line the first time you moved the pointer, so
     // the header lost a fact it was holding to show one that changes 60 times a
@@ -705,11 +708,18 @@ async function setMode(m) {
   // tree merges - one section per face, the 2D view's first - and the view
   // picker steps aside until the drawing is back.
   const viewPick = shell.el.view.closest('label') || shell.el.view;
-  shell.state.merge = m === '3d';
+  // ONLY IF THE SHELL CAN. This page runs against whichever shell.js is
+  // vendored beside it, and a shell without loadFaces() - main's, or a branch
+  // that has not taken it - threw here, inside an async setMode, so sync3d
+  // never ran and 3D never came up at all: the button lit and the stage
+  // stayed empty. An older shell keeps its one-view tree and its picker.
+  const canMerge = typeof shell.loadFaces === 'function';
+  const merge = m === '3d' && canMerge;
+  shell.state.merge = merge;
   // not `hidden`: the shell styles `label.f { display:flex }`, which outranks
   // the UA's [hidden] rule, so the attribute alone left the picker on screen
-  viewPick.style.display = m === '3d' ? 'none' : '';
-  if (m === '3d') shell.loadFaces().then(() => shell.refreshTree())
+  viewPick.style.display = merge ? 'none' : '';
+  if (merge) shell.loadFaces().then(() => shell.refreshTree())
     .catch(err => console.warn('[portrayal] faces for the merged tree', err));
   else shell.refreshTree();
   if (m === '2d') {
