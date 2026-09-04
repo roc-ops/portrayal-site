@@ -34,7 +34,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             # connection and correct if a refresh rewrites a file in place.
             self.send_header("Cache-Control", "public, max-age=60, must-revalidate")
         else:
-            self.send_header("Cache-Control", "no-cache")
+            # EVERYTHING ELSE IS SOURCE, AND SOURCE IS BEING EDITED.
+            # `no-cache` still lets a reload serve a stale body out of the
+            # memory cache. Three times now I have read a stale module, a stale
+            # page or a stale device list as a bug in code that was already
+            # correct, and scoping the rule to one directory just moved the
+            # trap somewhere else. On a dev server nothing outside the built
+            # assets above is worth caching at all.
+            self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
     def log_message(self, fmt, *args):

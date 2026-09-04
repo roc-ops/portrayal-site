@@ -86,6 +86,13 @@ code { font-size: 0.875em; color: var(--pt-ink); }
   font-weight: 800; letter-spacing: -0.045em;
   margin: 1.15rem 0 1.4rem;
 }
+/* THE TAGLINE. Sits above the h1 as the framing the headline then answers.
+   The second sentence is the one carrying the claim, so it gets the ink and
+   the first is set back as the setup it is. */
+.tagline { font-size: clamp(1.05rem, 1.9vw, 1.35rem); line-height: 1.45;
+           color: var(--pt-ink-faint); margin: 0 0 0.9rem; max-width: 46ch; }
+.tagline-turn { color: var(--pt-ink); }
+
 .lede { font-size: clamp(1.02rem, 1.6vw, 1.18rem); color: var(--pt-ink-muted); max-width: 60ch; }
 .lede-2 { margin-top: 0.9rem; color: var(--pt-ink-faint); }
 .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2.25rem; }
@@ -513,4 +520,143 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .masthead-nav .nav-sep {
   width: 1px; align-self: stretch; margin: 0.15rem 0.25rem;
   background: var(--pt-line);
+}
+
+/* ── the hero reveal ──────────────────────────────────────────────────────
+   A flat PNG and the compiled SVG of the same drawing, in the same place,
+   with a divider between them. Both layers are sized from the same aspect so
+   the two halves line up exactly; if they ever drift, the drawing changed and
+   the export did not, which is worth seeing rather than hiding. */
+.reveal { margin: 1.1rem 0 1.1rem; max-width: 72rem; }
+/* DRAGGING A DIVIDER IS NOT SELECTING TEXT. The faceplate carries real
+   silkscreen - port numbers, model, legends - and a drag across it was
+   sweeping all of it into a selection, which looked like the page had come
+   apart. The pointer is here to move the divider. */
+/* The well under the device holds the callout AND the two labels, stacked -
+   card first, since it hangs off the port it points at, then the labels along
+   the bottom. Sized so neither can reach the status line below, which is what
+   happened when the two shared a shallower well. */
+.reveal-stage { --split: 50%; position: relative; touch-action: none;
+                padding: 4.6rem 0 7.6rem; cursor: ew-resize;
+                user-select: none; -webkit-user-select: none; }
+/* Holds only the drawing. The stage's padding is the well the callout throws
+   into, above or below; an overlay pinned to the stage would be offset from
+   the image by exactly that padding. */
+.reveal-frame { position: relative; }
+.reveal-stage * { user-select: none; -webkit-user-select: none; }
+.reveal-png { -webkit-user-drag: none; user-drag: none; }
+.reveal-media { position: relative; aspect-ratio: 436 / 87.7; }
+.reveal-png { display: block; width: 100%; height: 100%; object-fit: contain; }
+.reveal-rich { position: absolute; inset: 0;
+               clip-path: inset(0 0 0 var(--split)); }
+.reveal-rich svg { display: block; width: 100%; height: 100%; }
+
+/* Lit ports. Green is a link, violet an overlay service, brass wants looking
+   at - the same three the lab pages use, for the same three things. */
+.pt-mark { fill: rgba(63, 191, 127, .34); stroke: #3fbf7f; stroke-width: .35;
+           pointer-events: all; cursor: pointer; }
+.pt-mark.pt-service { fill: rgba(171, 139, 219, .38); stroke: #a98bdb; }
+.pt-mark.pt-attention { fill: rgba(199, 147, 80, .42); stroke: var(--pt-brass-light); }
+.pt-mark.is-on, .pt-mark:hover { fill: rgba(125, 255, 191, .62); stroke: #d8fff0; }
+.pt-mark.pt-service.is-on, .pt-mark.pt-service:hover {
+  fill: rgba(203, 184, 240, .62); stroke: #eee6ff; }
+.pt-mark.pt-attention.is-on, .pt-mark.pt-attention:hover {
+  fill: rgba(227, 188, 132, .66); stroke: #f4dcb8; }
+
+/* The callout is part of the SVG's half of the story. When the divider passes
+   it, the port it points at is a flat image again and the callout has nothing
+   to be attached to - so it goes, rather than hovering over a picture that
+   cannot answer for it. */
+/* The label inside a mark. `paint-order: stroke` draws the dark outline first
+   and the light face over it, so one treatment survives a green wash, a violet
+   one and the dark metal between them - the same reason a map label is haloed
+   rather than given a colour per background. */
+.pt-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700; text-anchor: middle; dominant-baseline: central;
+  fill: #f2f6f8; stroke: rgba(6, 8, 10, .82); stroke-width: 1.1;
+  paint-order: stroke fill; pointer-events: none; letter-spacing: -.08px; }
+/* Below about 640px the cages are 20px across and a label in one is a smudge.
+   The colours still carry the state; the text is what goes. */
+.reveal-stage.is-tight .pt-label { display: none; }
+
+/* A ZERO-WIDTH ANCHOR ON THE PORT. The wrapper used to be centred with its
+   own translate(-50%) and the card inside centred again with a second one, so
+   every card sat half its own width to the left of the column it belonged to -
+   and the row nudge, being small, just made that worse or slightly less bad.
+   With no width there is one centring, done by the card, about the port. */
+.reveal-call { position: absolute; width: 0; pointer-events: none; z-index: 3;
+               transition: opacity .12s linear; }
+/* Thrown upward: lifted by its own height so the leader still ends on the
+   port, with the card stacked above it. */
+.reveal-call.is-above { transform: translateY(-100%); }
+.reveal-call[hidden] { display: block; opacity: 0; }
+/* A HALO'D LEADER, the way a map draws a route over varied ground.
+   The line crosses a near-black faceplate and then the page, which is white in
+   one theme and near-black in the other; no single colour survives all three.
+   A brass core with a light edge either side does: over the dark faceplate the
+   edge carries it, over a light page the core does. It was also a gradient
+   that faded out at the port end - exactly where it had the most to cross. */
+.reveal-pin { display: block; width: 3px; height: var(--pin, 1.5rem);
+  margin-left: -1.5px;
+  background:
+    linear-gradient(to right,
+      rgba(255, 255, 255, .85) 0 1px,
+      var(--pt-brass) 1px 2px,
+      rgba(255, 255, 255, .85) 2px 3px); }
+/* The card is dark in BOTH themes - it belongs to the dark faceplate above it,
+   not to the page behind it - so its ink is fixed rather than tokenised. Under
+   the light theme the tokens inverted and the port name went dark-on-dark. */
+.reveal-card { display: inline-block;
+  transform: translateX(calc(-50% + var(--nudge, 0px)));
+  background: #14171b; border: 1px solid #2C3137;
+  border-radius: 3px; padding: .35rem .55rem; font-size: .72rem;
+  font-family: ui-monospace, monospace; color: #9AA1A8;
+  white-space: nowrap; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.reveal-card b { color: #E4E7EA; font-weight: 600; }
+.reveal-speed { color: #E3BC84; margin-left: .4rem; }
+.reveal-optic { color: #7dffbf; margin-left: .4rem; }
+
+/* Wide enough to read as the seam between two pictures rather than as a stray
+   hairline in the drawing - the faceplate is full of 1px lines and the divider
+   was competing with them. */
+.reveal-handle { position: absolute; top: 0; bottom: 0;
+  left: var(--split); width: 6px; background: var(--pt-brass);
+  transform: translateX(-3px); z-index: 4; pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+.reveal-grip { position: absolute; top: 50%; left: 50%; width: 1.7rem;
+  height: 1.7rem; margin: -.85rem 0 0 -.85rem; border-radius: 50%;
+  background: var(--pt-brass); box-shadow: 0 2px 10px rgba(0, 0, 0, .45); }
+.reveal-grip::before, .reveal-grip::after {
+  content: ''; position: absolute; top: 50%; width: 0; height: 0;
+  border: .3rem solid transparent; }
+.reveal-grip::before { left: .18rem; border-right-color: #16181c;
+                       margin-top: -.3rem; }
+.reveal-grip::after { right: .18rem; border-left-color: #16181c;
+                      margin-top: -.3rem; }
+/* The real control, kept for keyboard and screen readers; the handle above is
+   what it looks like.
+   POINTER-EVENTS OFF, or it is an invisible slider lying across the whole
+   drawing - which is exactly what it was. It swallowed every hover before it
+   could reach a port, and a click on a port moved the divider instead of
+   answering, because the pointer never touched the port at all. The mouse is
+   served by the stage's own drag handler; this element is here for the
+   keyboard, which pointer-events does not affect. */
+.reveal-range { position: absolute; inset: 0; width: 100%;
+  opacity: 0; margin: 0; cursor: ew-resize; pointer-events: none; }
+.reveal-range:focus-visible { opacity: .001; outline: 2px solid var(--pt-brass);
+                              outline-offset: 3px; }
+
+.reveal-tags { position: absolute; left: 0; right: 0; bottom: .4rem;
+  display: flex; justify-content: space-between;
+  font-size: .74rem; letter-spacing: .06em; text-transform: uppercase;
+  font-family: ui-monospace, monospace; }
+.reveal-tag.left { color: var(--pt-ink-faint); }
+.reveal-tag.right { color: var(--pt-brass); }
+
+@media (max-width: 48rem) {
+  /* The card wraps to two lines at this width, so the well below the device
+     has to be deeper or it lands on the headline. */
+  /* The card wraps to two lines at this width, so the well is deeper still. */
+  .reveal-card { font-size: .64rem; white-space: normal; max-width: 15rem; }
+  .reveal-stage { padding: 4.6rem 0 8.6rem; }
 }

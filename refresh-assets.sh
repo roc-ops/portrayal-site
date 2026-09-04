@@ -167,17 +167,37 @@ TOOLS="${PORTRAYAL_TOOLS:-$SRC/../spec/tools/portrayal}"
 INDEX="$EXPORTS/index.json"
 
 if [ -f "$TOOLS/dcim_export.py" ]; then
+  # THE EXPORT READS THE BUILD, NOT THE CHECKOUT (roc-ops/ndv#87). It used to
+  # take a device.yaml path and reach into library/; it now takes --dist and
+  # opens nothing under library/devices or library/components. The device list
+  # comes from the build for the same reason: this whole step should work
+  # against a release tarball, and globbing their source tree would be the one
+  # thing left that does not.
+  #
+  # Three CLI changes at once, all flagged in that PR as a coordinated break:
+  # the positional path became --device NAME, --modules became a bare flag, and
+  # rasterising is now --images rather than implied by --dist.
+  DEVLIST=$(python3 -c 'import json,sys
+print("\n".join(d["name"] for d in json.load(open(sys.argv[1]))["devices"]))' \
+    "$SRC/dist/devices.json")
   : > "$EXPORTS/.paths"
-  for d in "$SRC"/devices/*/*/device.yaml; do
-    name=$(basename "$(dirname "$d")")
-    python3 "$TOOLS/dcim_export.py" "$d" --out "$EXPORTS"       --nos arcos --nos sonic --dist "$SRC/dist"       | sed "s|^|$name\t|" >> "$EXPORTS/.paths"
+  # ONE DEVICE PER CALL, DELIBERATELY. A single pass exports all 84 in 1.5s
+  # against roughly 25s for the loop, but it prints paths without saying which
+  # device each came from - and index.json is keyed by device, because that is
+  # what the Exporter page offers a visitor. Naming the device per call gets
+  # that attribution from the tool instead of inferring it here from filenames
+  # that are SKUs. The 25s is bought on a refresh that already takes minutes.
+  for name in $DEVLIST; do
+    python3 "$TOOLS/dcim_export.py" --dist "$SRC/dist" --device "$name" \
+      --out "$EXPORTS" --nos arcos --nos sonic --images \
+      | sed "s|^|$name\t|" >> "$EXPORTS/.paths"
   done
-  # Module types are per component, not per device: one pass over the library.
-  # --dist earns its place here too: with it the pass also rasterises each
-  # card's faceplate into module-images/, which is the half of a module type a
-  # person actually recognises in a rack. Without it the YAML still writes.
-  python3 "$TOOLS/dcim_export.py" --modules "$SRC" --out "$EXPORTS" \
-    --dist "$SRC/dist" >/dev/null 2>&1 || \
+  # Module types are per component, not per device: one pass over the index.
+  # --images earns its place here for the same reason it does above - the pass
+  # also rasterises each card's faceplate into module-images/, which is the half
+  # of a module type a person actually recognises in a rack.
+  python3 "$TOOLS/dcim_export.py" --dist "$SRC/dist" --modules \
+    --out "$EXPORTS" --images >/dev/null 2>&1 || \
     echo "  note: this exporter has no --modules pass" >&2
 
   python3 - "$EXPORTS" "$SRC" <<'PYEOF'

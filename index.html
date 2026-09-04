@@ -66,6 +66,13 @@
   <!-- ── Hero ───────────────────────────────────────────────────────── -->
   <section class="hero">
     <div class="wrap">
+      <p class="tagline">A picture is worth a thousand words.<br>
+         <span class="tagline-turn">An addressable picture answers questions.</span></p>
+      <div class="reveal" id="hero-reveal"></div>
+      <!-- The status line sits AFTER the demonstration, not before it. At the
+           top it was the first thing read - a schema version and two counts,
+           ahead of the claim they are evidence for - and it took the edge off
+           the drawing before anyone had looked at it. -->
       <p class="eyebrow"><span data-stat="schema">v0</span> · schemas will change ·
           <span class="on"><span data-stat="devices">—</span> devices, <span data-stat="vendors">—</span> vendors</span></p>
       <h1>Every physical thing,<br>individually addressable.</h1>
@@ -456,6 +463,13 @@
   </div>
 </footer>
 
+<script type="module">
+  import { heroReveal } from './site/hero-reveal.js';
+  const host = document.getElementById('hero-reveal');
+  // Logged, not swallowed. A silent catch here cost real time: the hero simply
+  // stopped rendering and the console said nothing at all.
+  if (host) heroReveal(host).catch(err => console.error('hero reveal:', err));
+</script>
 <script type="module" src="site/stats.js"></script>
 <script type="module" src="site/showcase.js"></script>
 <script>
