@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.8mm" height="12.5mm" viewBox="0 0 30.8 12.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="db9-receptacle" data-path="db9-receptacle" data-class="port" data-ref="common/db9-receptacle@1:1.0.0" data-depth="6.73" data-media="db9" transform="translate(0,0)">
+    <title>db9-receptacle</title>
+    <g id="db9-receptacle--standoffs" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25">
+      <polygon points="4.90,7.40 2.91,8.55 0.91,7.40 0.91,5.10 2.91,3.95 4.90,5.10" />
+      <polygon points="29.89,7.40 27.89,8.55 25.90,7.40 25.90,5.10 27.89,3.95 29.89,5.10" />
+    </g>
+    <g fill="#4a4f55">
+      <circle cx="2.905" cy="6.25" r="1.15" />
+      <circle cx="27.895" cy="6.25" r="1.15" />
+    </g>
+    <g id="db9-receptacle--shell" data-path="db9-receptacle/shell" data-class="port" data-ref="std/db9@1:1.0.0" data-depth="6.73" data-wall="#3a3e43" data-cavity="opening" data-media="db9" transform="translate(5.165,0.55)">
+      <title>db9-receptacle--shell</title>
+      <path id="db9-receptacle--shell--opening" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="db9-receptacle/shell/opening" data-class="cutout" />
+      <path id="db9-receptacle--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-top="4.2" data-z-color="#17191c" />
+      <g id="db9-receptacle--shell--pins" fill="#cfd6dd" data-z-top="6.4" data-z-color="#cfd6dd">
+        <circle cx="4.97" cy="4.23" r="0.52" />
+        <circle cx="7.63" cy="4.23" r="0.52" />
+        <circle cx="10.30" cy="4.23" r="0.52" />
+        <circle cx="12.97" cy="4.23" r="0.52" />
+        <circle cx="15.63" cy="4.23" r="0.52" />
+        <circle cx="6.35" cy="7.36" r="0.52" />
+        <circle cx="9.02" cy="7.36" r="0.52" />
+        <circle cx="11.68" cy="7.36" r="0.52" />
+        <circle cx="14.35" cy="7.36" r="0.52" />
+      </g>
+    </g>
+  </g>
+</svg>

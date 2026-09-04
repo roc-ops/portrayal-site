@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.47mm" height="345.5mm" viewBox="0 0 30.47 345.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="oob-2p8" data-path="oob-2p8" data-class="line-card" data-behaviour="fills" data-ref="casa/oob-2p8@1:0.1.0" data-body-depth="380.0" data-connector="f-type" data-downstream="2" data-media="coax" data-model="OOB 2+8 I/O" data-power-absent="not-applicable" data-role="oob-signalling" data-upstream="8" transform="translate(0,0)">
+    <title>oob-2p8</title>
+    <rect id="oob-2p8--plate" x="0" y="0" width="30.47" height="345.5" fill="#a7a9ac" stroke="#6d6f71" stroke-width="0.25" />
+    <rect id="oob-2p8--band" x="1.1" y="17.5" width="28.27" height="2.6" fill="#f7931d" />
+    <g id="oob-2p8--silkscreen">
+      <text id="oob-2p8--model" x="15.23" y="26.5" font-family="sans-serif" font-size="2.6" font-weight="bold" text-anchor="middle" fill="#231f20">OOB 2+8</text>
+      <text x="9.29" y="44.85" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDF0</text>
+      <text x="9.29" y="68.49" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDF1</text>
+      <text x="9.29" y="92.13" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR0</text>
+      <text x="9.29" y="115.77" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR1</text>
+      <text x="9.29" y="139.41" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR2</text>
+      <text x="9.29" y="163.04" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR3</text>
+      <text x="9.29" y="186.68" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR4</text>
+      <text x="9.29" y="210.32" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR5</text>
+      <text x="9.29" y="233.96" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR6</text>
+      <text x="9.29" y="257.59" font-family="sans-serif" font-size="2.0" text-anchor="end" fill="#3a4046">NDR7</text>
+    </g>
+    <g id="oob-2p8--ndf0" data-path="oob-2p8/ndf0" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,39.455)">
+      <title>oob-2p8--ndf0</title>
+      <path id="oob-2p8--ndf0--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndf0/opening" data-class="cutout" />
+      <g id="oob-2p8--ndf0--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndf0--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndf1" data-path="oob-2p8/ndf1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,63.093)">
+      <title>oob-2p8--ndf1</title>
+      <path id="oob-2p8--ndf1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndf1/opening" data-class="cutout" />
+      <g id="oob-2p8--ndf1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndf1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr0" data-path="oob-2p8/ndr0" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,86.731)">
+      <title>oob-2p8--ndr0</title>
+      <path id="oob-2p8--ndr0--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr0/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr0--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr0--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr1" data-path="oob-2p8/ndr1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,110.368)">
+      <title>oob-2p8--ndr1</title>
+      <path id="oob-2p8--ndr1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr1/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr2" data-path="oob-2p8/ndr2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,134.006)">
+      <title>oob-2p8--ndr2</title>
+      <path id="oob-2p8--ndr2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr2/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr3" data-path="oob-2p8/ndr3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,157.644)">
+      <title>oob-2p8--ndr3</title>
+      <path id="oob-2p8--ndr3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr3/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr4" data-path="oob-2p8/ndr4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,181.282)">
+      <title>oob-2p8--ndr4</title>
+      <path id="oob-2p8--ndr4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr4/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr5" data-path="oob-2p8/ndr5" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,204.919)">
+      <title>oob-2p8--ndr5</title>
+      <path id="oob-2p8--ndr5--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr5/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr5--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr5--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr6" data-path="oob-2p8/ndr6" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,228.557)">
+      <title>oob-2p8--ndr6</title>
+      <path id="oob-2p8--ndr6--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr6/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr6--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr6--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+    <g id="oob-2p8--ndr7" data-path="oob-2p8/ndr7" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" transform="translate(10.385,252.195)">
+      <title>oob-2p8--ndr7</title>
+      <path id="oob-2p8--ndr7--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="oob-2p8/ndr7/opening" data-class="cutout" />
+      <g id="oob-2p8--ndr7--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="oob-2p8--ndr7--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+    </g>
+  </g>
+</svg>

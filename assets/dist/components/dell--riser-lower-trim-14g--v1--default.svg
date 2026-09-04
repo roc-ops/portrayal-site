@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="121.06mm" height="1.81mm" viewBox="0 0 121.06 1.81">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="riser-lower-trim-14g" data-path="riser-lower-trim-14g" data-class="mechanical" data-behaviour="mounts" data-ref="dell/riser-lower-trim-14g@1:1.1.0" data-depth="2.0" transform="translate(0,0)">
+    <title>riser-lower-trim-14g</title>
+    <rect id="riser-lower-trim-14g--trim-1" x="0.00" y="0" width="4.93" height="1.81" rx="0.3" fill="#9aa1a8" stroke="#7d848c" stroke-width="0.2" data-path="riser-lower-trim-14g/trim-1" data-class="bezel" />
+    <rect id="riser-lower-trim-14g--trim-2" x="10.13" y="0" width="18.97" height="1.81" rx="0.3" fill="#9aa1a8" stroke="#7d848c" stroke-width="0.2" data-path="riser-lower-trim-14g/trim-2" data-class="bezel" />
+    <rect id="riser-lower-trim-14g--trim-3" x="45.10" y="0" width="3.52" height="1.81" rx="0.3" fill="#9aa1a8" stroke="#7d848c" stroke-width="0.2" data-path="riser-lower-trim-14g/trim-3" data-class="bezel" />
+    <rect id="riser-lower-trim-14g--trim-4" x="53.82" y="0" width="30.55" height="1.81" rx="0.3" fill="#9aa1a8" stroke="#7d848c" stroke-width="0.2" data-path="riser-lower-trim-14g/trim-4" data-class="bezel" />
+    <rect id="riser-lower-trim-14g--trim-5" x="89.57" y="0" width="21.91" height="1.81" rx="0.3" fill="#9aa1a8" stroke="#7d848c" stroke-width="0.2" data-path="riser-lower-trim-14g/trim-5" data-class="bezel" />
+    <rect id="riser-lower-trim-14g--trim-6" x="116.68" y="0" width="4.38" height="1.81" rx="0.3" fill="#9aa1a8" stroke="#7d848c" stroke-width="0.2" />
+  </g>
+</svg>

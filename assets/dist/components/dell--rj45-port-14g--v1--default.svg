@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="17.0mm" height="14.9mm" viewBox="0 0 17.0 14.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/rj45-port-14g@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='dell/rj45-port-14g@'] .state-active { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/rj45-port-14g@'] .state-degraded { --led-color: #eab308; }
+    g[data-ref^='dell/rj45-port-14g@'] .state-identify { --led-color: #22c55e; }
+    g[data-ref^='dell/rj45-port-14g@'] .state-identify { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/rj45-port-14g@'] .state-up { --led-color: #22c55e; }</style>
+  <g id="rj45-port-14g" data-path="rj45-port-14g" data-class="port" data-ref="dell/rj45-port-14g@1:1.0.0" data-depth="16.0" transform="translate(0,0)">
+    <title>rj45-port-14g</title>
+    <g id="rj45-port-14g--port" data-path="rj45-port-14g/port" data-class="port" data-ref="common/rj45-port@4:4.6.0" data-depth="16.0" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>rj45-port-14g--port</title>
+      <g id="rj45-port-14g--port--jack" data-path="rj45-port-14g/port/jack" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(0.5,0.5) rotate(180 8.0 7.0)">
+        <title>rj45-port-14g--port--jack</title>
+        <rect id="rj45-port-14g--port--jack--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="rj45-port-14g/port/jack/opening" data-class="cutout" />
+        <path id="rj45-port-14g--port--jack--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+        <g id="rj45-port-14g--port--jack--pins" fill="#a8873c">
+          <rect x="4.134" y="2.925" width="0.62" height="2.3" />
+          <rect x="5.150" y="2.925" width="0.62" height="2.3" />
+          <rect x="6.166" y="2.925" width="0.62" height="2.3" />
+          <rect x="7.182" y="2.925" width="0.62" height="2.3" />
+          <rect x="8.198" y="2.925" width="0.62" height="2.3" />
+          <rect x="9.214" y="2.925" width="0.62" height="2.3" />
+          <rect x="10.230" y="2.925" width="0.62" height="2.3" />
+          <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        </g>
+      </g>
+      <path id="rj45-port-14g--port--body" fill-rule="evenodd" fill="#2b2f33" d="     M 1.75 1.6 h 13.5 a 0.8 0.8 0 0 1 0.8 0.8 v 10.525 a 0.8 0.8 0 0 1 -0.8 0.8 h -13.5 a 0.8 0.8 0 0 1 -0.8 -0.8 v -10.525 a 0.8 0.8 0 0 1 0.8 -0.8 z     M 2.555 5.375 h 3.945 v -2.6 h 4 v 2.6 h 3.945 v 6.85 h -11.89 z" />
+      <path id="rj45-port-14g--port--bezel" fill-rule="evenodd" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.25" d="     M 1.75 1.6 h 13.5 a 0.8 0.8 0 0 1 0.8 0.8 v 10.525 a 0.8 0.8 0 0 1 -0.8 0.8 h -13.5 a 0.8 0.8 0 0 1 -0.8 -0.8 v -10.525 a 0.8 0.8 0 0 1 0.8 -0.8 z     M 2.555 5.375 h 3.945 v -2.6 h 4 v 2.6 h 3.945 v 6.85 h -11.89 z     M 1.85 2.00 h 3.5 v 2.1 h -3.5 z     M 11.65 2.00 h 3.5 v 2.1 h -3.5 z" data-z-out="0.5" data-z-color="#9aa1a8" />
+      <rect id="rj45-port-14g--port--led-left" x="1.95" y="2.10" width="3.3" height="1.9" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rj45-port-14g/port/led-left" data-class="led" data-states="off up degraded identify" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="rj45-port-14g--port--led-right" x="11.75" y="2.10" width="3.3" height="1.9" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="rj45-port-14g/port/led-right" data-class="led" data-states="off active" data-z-out="0.3" data-z-color="#0d0f11" />
+    </g>
+  </g>
+</svg>

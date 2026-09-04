@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="17.4mm" height="12.1mm" viewBox="0 0 17.4 12.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='f'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-0 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-1 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-2 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-3 [data-seg='f'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-4 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-5 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-6 [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='c'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-7 [data-seg='g'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-8 [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='g'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-9 [data-seg='e'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='g'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-a [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-b [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-blank [data-seg='g'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-c [data-seg='g'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-d [data-seg='f'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='d'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-e [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='g'] ,g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='e'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-f [data-seg='dp'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='dp'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-off [data-seg='g'] { opacity: 0; }
+    g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='dp'] { opacity: 1; }
+    g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='a'] ,g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='b'] ,g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='c'] ,g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='d'] ,g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='e'] ,g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='f'] ,g[data-ref^='common/seven-segment-dual@'] .state-on [data-seg='g'] { opacity: 0; }</style>
+  <g id="seven-segment-dual" data-path="seven-segment-dual" data-class="display" data-ref="common/seven-segment-dual@1:1.1.1" transform="translate(0,0)">
+    <title>seven-segment-dual</title>
+    <rect id="seven-segment-dual--bezel" x="0" y="0" width="17.4" height="12.1" rx="0.5" fill="#26292c" />
+    <rect id="seven-segment-dual--window" x="0.4" y="0.4" width="16.6" height="11.3" rx="0.35" fill="#9fa4a1" data-path="seven-segment-dual/window" data-class="display" />
+    <g id="seven-segment-dual--digit-1" fill="#d9dcd2" data-path="seven-segment-dual/digit-1" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 a b c d e f blank" data-description="the left digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle. The drawing's own face is '0'.">
+      <rect data-seg="a" x="3.2" y="1.65" width="3.2" height="0.75" rx="0.2" opacity="0" />
+      <rect data-seg="f" x="2.30" y="2.55" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="b" x="6.55" y="2.55" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="g" x="3.2" y="5.675" width="3.2" height="0.75" rx="0.2" opacity="0" />
+      <rect data-seg="e" x="2.30" y="6.45" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="c" x="6.55" y="6.45" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="d" x="3.2" y="9.70" width="3.2" height="0.75" rx="0.2" opacity="0" />
+    </g>
+    <g id="seven-segment-dual--point-1" fill="#d9dcd2" data-path="seven-segment-dual/point-1" data-class="display" data-states="on off" data-description="the left digit's decimal point, driven separately from the digit as it is on the part. Unlit in the drawing, which is why the face reads '00' and not the vendor artwork's '8.8.'">
+      <rect data-seg="dp" x="7.60" y="9.75" width="0.7" height="0.7" rx="0.2" opacity="0" />
+    </g>
+    <g id="seven-segment-dual--digit-2" fill="#d9dcd2" data-path="seven-segment-dual/digit-2" data-class="display" data-states="0 1 2 3 4 5 6 7 8 9 a b c d e f blank" data-description="the right digit. Its states are the characters a seven-segment cell can form, each naming the segments it lights - a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle. The drawing's own face is '0'.">
+      <rect data-seg="a" x="11.0" y="1.65" width="3.2" height="0.75" rx="0.2" opacity="0" />
+      <rect data-seg="f" x="10.10" y="2.55" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="b" x="14.35" y="2.55" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="g" x="11.0" y="5.675" width="3.2" height="0.75" rx="0.2" opacity="0" />
+      <rect data-seg="e" x="10.10" y="6.45" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="c" x="14.35" y="6.45" width="0.75" height="3.1" rx="0.2" opacity="0" />
+      <rect data-seg="d" x="11.0" y="9.70" width="3.2" height="0.75" rx="0.2" opacity="0" />
+    </g>
+    <g id="seven-segment-dual--point-2" fill="#d9dcd2" data-path="seven-segment-dual/point-2" data-class="display" data-states="on off" data-description="the right digit's decimal point, driven separately from the digit as it is on the part. Unlit in the drawing, which is why the face reads '00' and not the vendor artwork's '8.8.'">
+      <rect data-seg="dp" x="15.40" y="9.75" width="0.7" height="0.7" rx="0.2" opacity="0" />
+    </g>
+    <line id="seven-segment-dual--split" x1="8.7" y1="0.4" x2="8.7" y2="11.7" stroke="#8d918e" stroke-width="0.15" />
+  </g>
+</svg>

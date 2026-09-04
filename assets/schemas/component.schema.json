@@ -375,6 +375,19 @@
             "type": "number",
             "exclusiveMinimum": 0,
             "description": "mm this composed part sits proud of the parent's face. Use when the parent itself protrudes (a transceiver body, a raised bezel) and the part's cavity should recess from THAT surface rather than from the panel."
+          },
+          "behind": {
+            "type": "boolean",
+            "description": "draw this composed part BENEATH this component's own skin instead of over it. The default is over, which is right for a bezel framing an aperture - the aperture belongs on top of the plate. A blanking plate is the other way round: it composes a bracket for its outline and then covers the connector opening with vented metal, and drawn over, the bracket's own dark opening lands back on the vents and the plate renders as an empty slot."
+          },
+                    "mirror": {"type": "boolean", "description": "flip the occupant horizontally about its own centre line; handedness, not rotation - a riser whose cards face the other way"},
+          "states": {
+            "type": "object",
+            "description": "what this part's lamps MEAN here, as {element-id: states}. A component declares what a lamp IS - a 2 mm round lamp, a jack with two indicators - and can only guess what it signifies; the thing composing it knows. The same override device placements already take, one level down, so a card can compose a generic jack and attach its own indicator table rather than redrawing the lamps over the ones it composed. Addresses one element at a time, because a jack's two lamps routinely do NOT share a vocabulary.",
+            "additionalProperties": {
+              "type": "array",
+              "minItems": 1
+            }
           }
         }
       }
@@ -461,6 +474,14 @@
               "null"
             ],
             "description": "ref populated by default; null = open"
+          },
+          "behind": {
+            "type": "boolean",
+            "description": "seat this bay's occupant BEHIND the module's own skin instead of on top of it. For a faceplate the occupant shows through: a PCIe card sits behind its riser's sheet metal and only its working area, through a punched window, and its retention tab, clear of the plate, are visible - the flange end is covered. Requires the skin to have real holes; a stroked outline is a drawing of a window, not a window, and with `behind` the occupant simply disappears behind it. Same word and same mechanism as `behind` on `parts:`."
+          },
+          "mirror": {
+            "type": "boolean",
+            "description": "flip this bay's occupant horizontally about its own centre line. HANDEDNESS, NOT ROTATION: a riser at the far end of a chassis presents its cards facing out the other way - tapered end toward the chassis edge, flange toward the middle - and `rotate: 180` gets that wrong by also turning the card upside down, putting a bracket's louvre row at the top and its retention tab at the bottom. Mirroring the BAY rather than authoring a mirrored component is what lets the same bay still accept either a vendor filler or a std/ bracket."
           }
         }
       }
@@ -488,13 +509,14 @@
               "$ref": "#/$defs/segment"
             },
             "behavior": {
-              "description": "how the lamp is lit, as opposed to what colour it is lit. Omitted means solid. A state is colour AND behaviour: solid green and blinking green are different facts on real hardware. The object form takes a second `color` for `alternating`, and exists so that a blink `rate` can be added later as one more property rather than a coercion",
+              "description": "how the lamp is lit, as opposed to what colour it is lit. Omitted means solid. A state is colour AND behaviour: solid green and blinking green are different facts on real hardware. `rate` is the blink frequency in hertz, because a lamp blinking twice a second and one blinking four times a second are two different documented conditions on the same drive and flattening both to `blinking` throws the distinction away. `sequence` is for a pattern no single colour and rate can express - Dell's drive status lamp blinks green three seconds, amber three seconds, then off for six, which is three phases with durations rather than a blink of anything.",
               "oneOf": [
                 {
                   "enum": [
                     "solid",
                     "blinking",
-                    "alternating"
+                    "alternating",
+                    "sequence"
                   ]
                 },
                 {
@@ -508,12 +530,38 @@
                       "enum": [
                         "solid",
                         "blinking",
-                        "alternating"
+                        "alternating",
+                        "sequence"
                       ]
                     },
                     "color": {
                       "type": "string",
                       "description": "the second colour, for `alternating` - the lamp flashes between `color` and this one"
+                    },
+                    "rate": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "blink frequency in hertz, for `blinking` and `alternating`. Omitted means once a second, which is what every state written before this property existed meant by `blinking`."
+                    },
+                    "phases": {
+                      "type": "array",
+                      "minItems": 2,
+                      "description": "for `sequence`: the cycle in order. Each phase names a colour and how long it holds; a phase with NO colour is the lamp off, which is a phase like any other and is how 'blinks green, amber, and turns off' gets said. Durations are seconds and may be omitted, in which case the phases divide the cycle evenly - some vendors give the order without the timing, and recording that as an even division is more honest than inventing durations.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "color": {
+                            "type": "string",
+                            "description": "the colour this phase holds; absent means the lamp is off for it"
+                          },
+                          "seconds": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "description": "how long this phase holds"
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -522,6 +570,14 @@
             "color": {
               "type": "string",
               "description": "LED color for this state, emitted as scoped CSS"
+            },
+            "lights": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/segment"
+              },
+              "minItems": 0,
+              "description": "the sub-elements this state lights, by their `data-seg` name. A lamp state changes what COLOUR one element is; a segment display changes WHICH elements are lit, and a seven-segment digit showing '4' is not a colour at all. Naming the lit segments lets the same state machinery drive both: the renderer emits one rule per state setting every named segment opaque and every other one transparent. The skin draws the default character, so a reader that applies no CSS still sees a sensible face rather than every segment lit at once. An EMPTY list is a real state and not an omission: a blank digit and an unlit decimal point are both `lights: []`, and without it the only way to turn a segment off would be to remove the class rather than to set a state."
             }
           }
         }

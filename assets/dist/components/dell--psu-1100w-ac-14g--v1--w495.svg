@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="86.3mm" height="39.1mm" viewBox="0 0 86.3 39.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/psu-1100w-ac-14g@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/psu-1100w-ac-14g@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    @keyframes portrayal-seq-dell-psu-1100w-ac-14g-mismatch {
+      0%, 3.9% { opacity: 1; fill: #22c55e; }
+      4%, 7.9% { opacity: 0; }
+      8%, 11.9% { opacity: 1; fill: #22c55e; }
+      12%, 15.9% { opacity: 0; }
+      16%, 19.9% { opacity: 1; fill: #22c55e; }
+      20%, 23.9% { opacity: 0; }
+      24%, 27.9% { opacity: 1; fill: #22c55e; }
+      28%, 31.9% { opacity: 0; }
+      32%, 35.9% { opacity: 1; fill: #22c55e; }
+      36%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/psu-1100w-ac-14g@'] .state-mismatch { animation: portrayal-seq-dell-psu-1100w-ac-14g-mismatch 3.125s steps(1, end) infinite; }
+    g[data-ref^='dell/psu-1100w-ac-14g@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='dell/psu-1100w-ac-14g@'] .state-updating { --led-color: #22c55e; }
+    g[data-ref^='dell/psu-1100w-ac-14g@'] .state-updating { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="psu-1100w-ac-14g" data-path="psu-1100w-ac-14g" data-class="psu" data-behaviour="fills" data-ref="dell/psu-1100w-ac-14g@1:1.0.0" data-wall="#3a4045" data-efficiency="platinum" data-form-factor="crps" data-inlet="c14" data-power-output-w="1100" transform="translate(0,0)">
+    <title>psu-1100w-ac-14g</title>
+    <g id="psu-1100w-ac-14g--inlet" data-path="psu-1100w-ac-14g/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(6.7,11.0) rotate(90 14.0 10.0)">
+      <title>psu-1100w-ac-14g--inlet</title>
+      <rect id="psu-1100w-ac-14g--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1100w-ac-14g/inlet/opening" data-class="cutout" />
+      <path id="psu-1100w-ac-14g--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="psu-1100w-ac-14g--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-1100w-ac-14g--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-1100w-ac-14g--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    </g>
+    <path id="psu-1100w-ac-14g--body" fill-rule="evenodd" d="M0.2 1.2 a1 1 0 0 1 1 -1 h83.90 a1 1 0 0 1 1 1 v36.70 a1 1 0 0 1 -1 1 h-83.90 a1 1 0 0 1 -1 -1 Z M10.10 5.50 h20.00 v28.00 h-20.00 Z" fill="#8d949c" stroke="#5f666d" stroke-width="0.4" />
+    <path id="psu-1100w-ac-14g--inlet-bezel" fill-rule="evenodd" d="M7.55 4.70 a1.2 1.2 0 0 1 1.2 -1.2 h21.84 a1.2 1.2 0 0 1 1.2 1.2 v29.40 a1.2 1.2 0 0 1 -1.2 1.2 h-21.84 a1.2 1.2 0 0 1 -1.2 -1.2 Z M10.10 5.50 h20.00 v28.00 h-20.00 Z" fill="#1b1f22" stroke="#41474d" stroke-width="0.4" data-path="psu-1100w-ac-14g/inlet-bezel" data-class="inlet" data-description="the recess the C14 sits back inside. The CONNECTOR is std/c14-inlet@1, composed rather than drawn - see `inlet` in provenance." />
+    <rect id="psu-1100w-ac-14g--latch-slot-top" x="0.4" y="12.5" width="4.3" height="2.8" rx="0.4" fill="#141719" />
+    <rect id="psu-1100w-ac-14g--latch-slot-bottom" x="0.4" y="26.3" width="4.3" height="2.8" rx="0.4" fill="#141719" />
+    <rect id="psu-1100w-ac-14g--latch-leg" x="0.4" y="15.30" width="4.3" height="11.00" rx="0.4" fill="#9aa1a8" stroke="#7a8189" stroke-width="0.3" />
+    <path id="psu-1100w-ac-14g--fan" d="M51.63 1.80 H71.93 L80.53 10.40 V28.90 L72.63 36.80 H51.63 L43.03 28.20 V10.40 Z" fill="#141719" stroke="#41474d" stroke-width="0.4" data-path="psu-1100w-ac-14g/fan" data-class="vent" data-description="the exhaust aperture" />
+    <g stroke="#2c3237" stroke-width="1.1" fill="none" stroke-linecap="round">
+      <path d="M48.19 6.96 L53.56 11.76 M75.37 6.96 L70.55 11.52 M75.79 32.06 L70.63 27.29 M48.19 31.64 L53.46 27.04" />
+    </g>
+    <g>
+      <circle id="psu-1100w-ac-14g--screw-1" cx="45.73" cy="3.50" r="3.1" fill="#c3c8cd" stroke="#8b9299" stroke-width="0.3" data-z-dome="1.6" data-z-color="#c3c8cd" />
+      <path d="M43.93 3.50 h3.6 M45.73 1.70 v3.6" stroke="#7b8288" stroke-width="0.55" />
+    </g>
+    <g>
+      <circle id="psu-1100w-ac-14g--screw-2" cx="78.33" cy="3.50" r="3.1" fill="#c3c8cd" stroke="#8b9299" stroke-width="0.3" data-z-dome="1.6" data-z-color="#c3c8cd" />
+      <path d="M76.53 3.50 h3.6 M78.33 1.70 v3.6" stroke="#7b8288" stroke-width="0.55" />
+    </g>
+    <g>
+      <circle id="psu-1100w-ac-14g--screw-3" cx="78.33" cy="35.10" r="3.1" fill="#c3c8cd" stroke="#8b9299" stroke-width="0.3" data-z-dome="1.6" data-z-color="#c3c8cd" />
+      <path d="M76.53 35.10 h3.6 M78.33 33.30 v3.6" stroke="#7b8288" stroke-width="0.55" />
+    </g>
+    <g>
+      <circle id="psu-1100w-ac-14g--screw-4" cx="45.73" cy="35.10" r="3.1" fill="#c3c8cd" stroke="#8b9299" stroke-width="0.3" data-z-dome="1.6" data-z-color="#c3c8cd" />
+      <path d="M43.93 35.10 h3.6 M45.73 33.30 v3.6" stroke="#7b8288" stroke-width="0.55" />
+    </g>
+    <circle cx="62.16" cy="19.45" r="11.54" fill="#e8ebee" stroke="#9aa0a6" stroke-width="0.35" />
+    <path d="M50.62 17.55 A11.54 11.54 0 0 1 73.70 17.55 Z" fill="#1f8b57" />
+    <g id="psu-1100w-ac-14g--silkscreen">
+      <text x="62.16" y="15.85" font-family="sans-serif" font-size="5.0" font-weight="bold" font-style="italic" fill="#eaf5ef" text-anchor="middle">EPP</text>
+      <text id="psu-1100w-ac-14g--watts" x="62.16" y="23.45" font-family="sans-serif" font-size="6.2" font-weight="bold" fill="#22262a" text-anchor="middle">495W</text>
+      <text x="62.16" y="26.65" font-family="sans-serif" font-size="2.0" fill="#6d747a" text-anchor="middle">94.3% efficiency</text>
+    </g>
+    <path id="psu-1100w-ac-14g--lever" d="M7.47 12.99 h3.20 a2.6 2.6 0 0 1 2.6 2.6 v10.47 a2.6 2.6 0 0 1 -2.6 2.6 h-3.20 Z" fill="var(--led-color, #e8a33d)" stroke="#9a6a1e" stroke-width="0.35" data-z-out="19.05" data-z-color="#e8a33d" />
+    <rect id="psu-1100w-ac-14g--grip" x="33.04" y="3.65" width="8.24" height="34.64" rx="1.2" fill="#c9ced3" stroke="#8b9299" stroke-width="0.35" data-path="psu-1100w-ac-14g/grip" data-class="led" data-states="off ok fault updating mismatch" data-description="The translucent handle, lit from within. ISM table 12 entire: green - a valid source is connected and the supply is operational; blinking amber - a problem with the supply; not illuminated - no power connected; blinking green - firmware is being updated. `mismatch` IS WHY THE SEQUENCE MECHANISM EXISTS, for the fourth time on this chassis: Dell's wording is &quot;the PSU handle blinks green five times at a rate of 4 Hz and turns off&quot;, which gives the phase length exactly - 4 Hz is 0.125 s lit and 0.125 s dark - and then a dark tail that the article does not time. The five blinks and their rate are Dell's; the 2 second tail is this library's reading of &quot;and turns off&quot;. NO RATE IS PUBLISHED for the amber fault or the firmware blink, so 1 Hz is a reading and not a figure - unlike the mismatch, where 4 Hz is stated." data-z-uhandle="25.4" data-z-color="#c9ced3" />
+  </g>
+</svg>

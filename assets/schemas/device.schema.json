@@ -413,6 +413,23 @@
           "source": {
             "type": "string",
             "description": "where this configuration comes from. A `base` is either DERIVED - built from the group roles, populating everything `service` and `management` and blanking everything `traffic` - or SOURCED, when the vendor publishes the configuration as an orderable bundle and the library should follow it rather than invent one. Juniper publishes MX10016-BASE and MX10016-PREMIUM with their exact component counts; Cisco and Casa do not, for the chassis here. The two are not equally good and a consumer should be able to tell them apart, which is what this says."
+          },
+          "views": {
+            "type": "object",
+            "propertyNames": {
+              "enum": [
+                "front",
+                "rear",
+                "top",
+                "bottom",
+                "left",
+                "right"
+              ]
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/segment"
+            },
+            "description": "which panel each face wears in this configuration, as {face: view name}. Faces not named fall back to the view named after them, so a configuration that overrides only the front keeps the standard rear and sides. THIS IS WHAT COUPLES THE FACES: a front and a rear that do not go together on real hardware cannot both be named here, so the impossible machine has nowhere to live. Scoping a bay with `only-in` cannot do that - it varies occupants within one panel and says nothing about any other face."
           }
         }
       }
@@ -568,6 +585,14 @@
                       "$ref": "#/$defs/xy",
                       "description": "shift the pattern phase under this rect (align lattice rows across corners)"
                     },
+                    "id": {
+                      "type": "string",
+                      "description": "name this rect in the drawing. Without one it is numbered by kind, and somebody opening the SVG in an editor finds an anonymous rectangle they can only identify by clicking it and watching what highlights"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "description": "what this rect IS - port-shell, recess, label-plate, bezel. A vent field and a stroked outline name themselves from `pattern` and `stroke`; everything else is an unlabelled grey box unless the author says otherwise. It reaches the drawing as data-kind, so the file can be READ rather than clicked through"
+                    },
                     "out": {
                       "type": "number",
                       "exclusiveMinimum": 0,
@@ -607,6 +632,16 @@
                     "rotate": {
                       "type": "number",
                       "description": "text decor rotation in degrees about its anchor"
+                    },
+                    "shape": {
+                      "enum": [
+                        "rect",
+                        "circle",
+                        "d-sub",
+                        "slot"
+                      ],
+                      "default": "rect",
+                      "description": "outline of the painted patch. `rect` (with optional `rx`) is the default; `d-sub` is the D-subminiature outline of TE 114-40010 Figure 3 and `slot` a stadium. THE SAME VOCABULARY A CUTOUT'S `shape` TAKES, because paint printed around a connector takes the connector's shape and until now had no way to say so - a patch behind a D-sub could only be a rectangle or a rounded one. `circle` is accepted for symmetry and still draws as a rect; decor has `rx`."
                     }
                   }
                 }
@@ -714,6 +749,17 @@
                 "path": {
                   "type": "string",
                   "description": "printed line or symbol as an SVG path in view mm - a leader line, a polarity arrow, an earth mark. Exactly one of text or path"
+                },
+                "filled": {
+                  "type": "boolean",
+                  "description": "this path ENCLOSES ink rather than tracing a route. A leader line is stroked; a solid arrowhead is filled. Without it every symbol is an outline held shut by its own stroke width, which leaves a pinhole in anything small and cannot be scaled - at twice the size the hole is four times as obvious"
+                },
+                "fill-rule": {
+                  "enum": [
+                    "nonzero",
+                    "evenodd"
+                  ],
+                  "description": "evenodd where a filled mark has a hole in it - a bored nut, a ring"
                 },
                 "stroke-width": {
                   "type": "number"
@@ -825,6 +871,7 @@
                       "type": "number",
                       "description": "degrees to rotate the occupant, e.g. a line card mounted horizontally in one chassis and vertically in another"
                     },
+                    "mirror": {"type": "boolean", "description": "flip the occupant horizontally about its own centre line; handedness, not rotation - a riser whose cards face the other way"},
                     "for": {
                       "description": "the placement or bay this one belongs to. A bay is a hole in this face; what it belongs to is on this face too, so a bare id and nothing else. Emitted as data-for.",
                       "oneOf": [
@@ -968,6 +1015,21 @@
                           }
                         }
                       ]
+                    },
+                    "frames": {
+                      "oneOf": [
+                        {
+                          "$ref": "#/$defs/segment"
+                        },
+                        {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "$ref": "#/$defs/segment"
+                          }
+                        }
+                      ],
+                      "description": "ids this part SURROUNDS rather than covers - a frame whose bounding box takes in openings its ink does not. L13 compares boxes, which is right for almost every part and wrong for a frame; this is the declaration that makes the difference checkable instead of assumed. Name only what the openings actually clear. NOT a way to silence a real overlap: a part that genuinely paints over another is an error. Distinct from `behaviour: mounts`, which says a part lies OVER what is behind it and draws after the bays - a drive cage surrounds its drives and must draw BEFORE them, so the two are not interchangeable."
                     }
                   },
                   "oneOf": [
@@ -1032,6 +1094,17 @@
                 }
               }
             }
+          },
+          "face": {
+            "enum": [
+              "front",
+              "rear",
+              "top",
+              "bottom",
+              "left",
+              "right"
+            ],
+            "description": "which face this view draws, when the view is not NAMED after one. A view called `front` needs no `face`; a second front - a different panel for the same face, say a 12 x 3.5 inch front beside a 24 x 2.5 inch one - declares `face: front` and is a VARIANT. A variant draws only when a configuration binds it, and draws under the face's name, so a consumer still asks for `front` and gets whichever front that configuration wears."
           }
         }
       }
@@ -1052,6 +1125,15 @@
         "series": {
           "type": "string",
           "description": "marketing series, e.g. 'AGR400'; the model is the SKU root"
+        },
+        "also-listed-in": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "other catalogue categories the vendor ALSO files this device under, in the vendor's own words. `line` is the category of the vendor's own canonical product URL; this is everywhere else it appears. A consumer filtering by category should union the two, so a box the vendor lists twice shows up in both lists."
         }
       }
     },
@@ -1110,7 +1192,7 @@
   },
   "$defs": {
     "state": {
-      "description": "one state a lamp can be in. The name is a token because `state-<name>` is a CSS class; the sentence explaining it belongs in `description` alongside",
+      "description": "one state a lamp can be in. The name is a token because `state-<name>` is a CSS class; the sentence explaining it belongs in `description` alongside THE BEHAVIOR BLOCK IS THE SAME SHAPE AS component.schema.json's and is kept that way deliberately: a state means one thing whether it is declared on a part or overridden on a placement. When `rate` and `sequence` were added they went into the component schema only, and a device that stated a blink frequency on a placement was rejected by a rule nobody had thought about - two definitions of one concept, drifting.",
       "oneOf": [
         {
           "$ref": "#/$defs/segment"
@@ -1126,13 +1208,14 @@
               "$ref": "#/$defs/segment"
             },
             "behavior": {
-              "description": "how the lamp is lit, as opposed to what colour it is lit. Omitted means solid. A state is colour AND behaviour: solid green and blinking green are different facts on real hardware. The object form takes a second `color` for `alternating`, and exists so that a blink `rate` can be added later as one more property rather than a coercion",
+              "description": "how the lamp is lit, as opposed to what colour it is lit. Omitted means solid. A state is colour AND behaviour: solid green and blinking green are different facts on real hardware. `rate` is the blink frequency in hertz, because a lamp blinking twice a second and one blinking four times a second are two different documented conditions on the same drive and flattening both to `blinking` throws the distinction away. `sequence` is for a pattern no single colour and rate can express - Dell's drive status lamp blinks green three seconds, amber three seconds, then off for six, which is three phases with durations rather than a blink of anything.",
               "oneOf": [
                 {
                   "enum": [
                     "solid",
                     "blinking",
-                    "alternating"
+                    "alternating",
+                    "sequence"
                   ]
                 },
                 {
@@ -1146,12 +1229,38 @@
                       "enum": [
                         "solid",
                         "blinking",
-                        "alternating"
+                        "alternating",
+                        "sequence"
                       ]
                     },
                     "color": {
                       "type": "string",
                       "description": "the second colour, for `alternating` - the lamp flashes between `color` and this one"
+                    },
+                    "rate": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "blink frequency in hertz, for `blinking` and `alternating`. Omitted means once a second, which is what every state written before this property existed meant by `blinking`."
+                    },
+                    "phases": {
+                      "type": "array",
+                      "minItems": 2,
+                      "description": "for `sequence`: the cycle in order. Each phase names a colour and how long it holds; a phase with NO colour is the lamp off, which is a phase like any other and is how 'blinks green, amber, and turns off' gets said. Durations are seconds and may be omitted, in which case the phases divide the cycle evenly - some vendors give the order without the timing, and recording that as an even division is more honest than inventing durations.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "color": {
+                            "type": "string",
+                            "description": "the colour this phase holds; absent means the lamp is off for it"
+                          },
+                          "seconds": {
+                            "type": "number",
+                            "exclusiveMinimum": 0,
+                            "description": "how long this phase holds"
+                          }
+                        }
+                      }
                     }
                   }
                 }
