@@ -504,7 +504,15 @@ async function ensureViewer() {
     // The old branch reported "not in the front view" for a heatsink on the
     // lid - true of the 2D drawing, and exactly the limitation the merge
     // removes. The shell now resolves a path across every face it holds.
-    v.on('select', p => { if (p) shell.select(p, false); });
+    //
+    // AND A CLICK ON NOTHING CLEARS IT. The viewer already said so - it emits
+    // null for a click that hits no part, and only for a click, since a drag
+    // to orbit is filtered before it gets here - and this handler threw that
+    // away, so the only way out of a selection was the tree. Through the
+    // shell rather than the viewer alone, so the row, the inspector and the
+    // covers that reveal took off all follow, the same as clicking the
+    // drawing's background in 2D.
+    v.on('select', p => shell.select(p || null, false));
     // THE READOUT, AND NOT THE HEADER. Writing hover into `#status` also wiped
     // the shell's own `N bays` line the first time you moved the pointer, so
     // the header lost a fact it was holding to show one that changes 60 times a
