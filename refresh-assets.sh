@@ -79,7 +79,7 @@ fi
 # These modules are Portrayal's to own - they are how you talk to a drawing.
 # The pages built on them are this repository's, and the demo pages that used to
 # sit beside them upstream are gone: this site owns those now.
-for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js \
+for m in viewer3d.js relief.js lamps.js share.js swap.js dist.js shell.js devsel.js \
          states.js marks.js gif.js; do
   cp "$KIT/$m" "$HERE/vendor/$m"
 done
@@ -333,7 +333,7 @@ PYEOF
 # right and every tool page blank, so assert on the files - and on the export
 # each page actually imports, because an empty file is also a file.
 missing=0
-for m in viewer3d.js relief.js share.js swap.js dist.js shell.js devsel.js \
+for m in viewer3d.js relief.js lamps.js share.js swap.js dist.js shell.js devsel.js \
          states.js marks.js gif.js; do
   f="$HERE/vendor/$m"
   if [ ! -s "$f" ] || ! grep -q '^export' "$f"; then
