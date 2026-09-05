@@ -55,6 +55,26 @@ case "$(cd "$SRC" && pwd -P)" in
     echo "WARNING: building from Portrayal's live working tree" >&2
     ;;
 esac
+
+# A DIST OLDER THAN ITS CHECKOUT IS NOT A SYNC. library/dist is gitignored
+# build output: `git pull` moves the kit, the schemas and the sources and
+# leaves the drawings and the exports exactly where the last ./build.sh put
+# them. Two refreshes in one day vendored a current viewer over three-day-old
+# drawings that way, and nothing said so - the counts came out plausible and
+# the contract passed. Compare the build against the commit it should come
+# from and refuse to go on when it is older; PORTRAYAL_ALLOW_STALE=1 is the
+# escape hatch for a deliberate mixed read.
+if [ -d "$SRC/../.git" ] || git -C "$SRC" rev-parse --git-dir >/dev/null 2>&1; then
+  head_ts=$(git -C "$SRC" log -1 --format=%ct 2>/dev/null || echo 0)
+  dist_ts=$(stat -f %m "$SRC/dist/devices.json" 2>/dev/null || stat -c %Y "$SRC/dist/devices.json" 2>/dev/null || echo 0)
+  if [ "$dist_ts" -lt "$head_ts" ] && [ "${PORTRAYAL_ALLOW_STALE:-}" != "1" ]; then
+    echo "refusing: $SRC/dist was built before the checkout's last commit" >&2
+    echo "  dist:     $(date -r "$dist_ts" 2>/dev/null || echo "$dist_ts")" >&2
+    echo "  checkout: $(date -r "$head_ts" 2>/dev/null || echo "$head_ts")  $(git -C "$SRC" log -1 --format=%h)" >&2
+    echo "rebuild first:  (cd $(cd "$SRC/.." && pwd -P) && ./build.sh) && $0" >&2
+    exit 1
+  fi
+fi
 if [ ! -d "$KIT" ]; then
   echo "no portrayal-kit at $KIT" >&2
   echo "The viewer modules moved out of library/viewer into a top-level kit/." >&2
@@ -180,6 +200,15 @@ if [ -f "$TOOLS/dcim_export.py" ]; then
   DEVLIST=$(python3 -c 'import json,sys
 print("\n".join(d["name"] for d in json.load(open(sys.argv[1]))["devices"]))' \
     "$SRC/dist/devices.json")
+  # THE NOS LIST COMES FROM THE BUILD TOO (roc-ops/ndv#127). A NOS is data: a
+  # device's overlays/<nos>.yaml declares it, and the exporter now refuses a
+  # --nos that no overlay in the build declares - `--nos sonic`, hard-coded
+  # here since the day the flag existed, started exiting non-zero and took
+  # every device export with it. Ask overlays.json what is declared instead.
+  NOS_ARGS=$(python3 -c 'import json,sys
+d = json.load(open(sys.argv[1])).get("overlays", {})
+seen = sorted({ov.get("nos") for per in d.values() for ov in per.values() if ov.get("nos")})
+print(" ".join("--nos " + n for n in seen))' "$SRC/dist/overlays.json")
   : > "$EXPORTS/.paths"
   # ONE DEVICE PER CALL, DELIBERATELY. A single pass exports all 84 in 1.5s
   # against roughly 25s for the loop, but it prints paths without saying which
@@ -189,7 +218,7 @@ print("\n".join(d["name"] for d in json.load(open(sys.argv[1]))["devices"]))' \
   # that are SKUs. The 25s is bought on a refresh that already takes minutes.
   for name in $DEVLIST; do
     python3 "$TOOLS/dcim_export.py" --dist "$SRC/dist" --device "$name" \
-      --out "$EXPORTS" --nos arcos --nos sonic --images \
+      --out "$EXPORTS" $NOS_ARGS --images \
       | sed "s|^|$name\t|" >> "$EXPORTS/.paths"
   done
   # Module types are per component, not per device: one pass over the index.
@@ -253,13 +282,27 @@ for f in sorted(glob.glob(os.path.join(lib, 'devices', '*', '*', 'device.yaml'))
             enrichment['module-bays'].setdefault(key, {})[name] = {
                 'accepts': [a.split('/')[-1].split('@')[0] for a in b['accepts']]}
 
-# default_platform: a NOS-suffixed device type is named for that NOS, and
-# platform is the field both products use to say so.
+# default_platform: a device type exported for a NOS is filed under the
+# software vendor its overlay names (roc-ops/ndv#127: `ArcOS on 7726-32X` under
+# Arrcus), and platform is the field both products use to say so. The
+# manufacturer directory is the tell now - the `-arcos` suffix that used to
+# be is gone, and the exporter knows no NOS by name, so this reads the same
+# overlays.json the exporter did.
+platform_of = {}
+try:
+    for per in json.load(open(os.path.join(lib, 'dist', 'overlays.json'))).get('overlays', {}).values():
+        for ov in per.values():
+            vendor = (ov.get('identity') or {}).get('vendor')
+            if vendor and ov.get('nos'):
+                platform_of[vendor.lower()] = ov['nos']
+except (OSError, ValueError):
+    pass
 for dev, targets in index.items():
     for rel in targets.get('netbox', []):
-        m = re.search(r'-(arcos|sonic)\.yaml$', rel)
-        if m:
-            enrichment['device-types'][rel[:-5]] = {'default_platform': m.group(1)}
+        m = re.search(r'device-types/([^/]+)/', rel)
+        nos = m and platform_of.get(m.group(1).lower())
+        if nos:
+            enrichment['device-types'][rel[:-5]] = {'default_platform': nos}
 
 json.dump(index, open(os.path.join(root, 'index.json'), 'w'), indent=1, sort_keys=True)
 json.dump(files, open(os.path.join(root, 'files.json'), 'w'), indent=1)

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="69.85mm" height="100.45mm" viewBox="0 0 69.85 100.45">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="drive-25-plan" data-path="drive-25-plan" data-class="drive" data-behaviour="fills" data-ref="std/drive-25-plan@1:1.4.0" data-body-depth="15.0" data-capacity="1.2" data-capacity-unit="TB" transform="translate(0,0)">
+    <title>drive-25-plan</title>
+    <g id="drive-25-plan--body" data-path="drive-25-plan/body" data-class="bezel">
+      <rect x="0" y="0.0" width="69.85" height="100.45" rx="1" fill="#6a7076" stroke="#3a4045" stroke-width="0.7" />
+      <g fill="#5b6167">
+        <circle cx="4.5" cy="95.95" r="1.6" />
+        <circle cx="65.35" cy="95.95" r="1.6" />
+        <circle cx="4.5" cy="4.5" r="1.6" />
+        <circle cx="65.35" cy="4.5" r="1.6" />
+      </g>
+      <rect x="12" y="3.45" width="45.85" height="9" rx="0.8" fill="#3f4348" />
+    </g>
+    <rect id="drive-25-plan--label" x="6" y="49.45" width="57.85" height="42" rx="0.8" fill="#c8ccd0" stroke="#9aa1a8" stroke-width="0.35" data-path="drive-25-plan/label" data-class="label" />
+    <g id="drive-25-plan--silkscreen">
+      <text data-from="capacity" x="33.90" y="74.00" font-family="sans-serif" font-size="7.0" font-weight="bold" fill="#22262a" text-anchor="end">1.2</text>
+      <text data-from="capacity-unit" x="35.40" y="74.00" font-family="sans-serif" font-size="3.85" fill="#41474d" text-anchor="start">TB</text>
+    </g>
+  </g>
+</svg>

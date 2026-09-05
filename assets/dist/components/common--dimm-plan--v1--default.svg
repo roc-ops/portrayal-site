@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="3.8mm" height="133.4mm" viewBox="0 0 3.8 133.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dimm-plan" data-path="dimm-plan" data-class="memory" data-behaviour="fills" data-ref="common/dimm-plan@1:1.2.0" data-body-depth="31.3" data-wall="#1a1d21" data-capacity="32GB" data-speed="2933" transform="translate(0,0)">
+    <title>dimm-plan</title>
+    <g id="dimm-plan--body" data-path="dimm-plan/body" data-class="bezel">
+      <rect x="0" y="0" width="3.8" height="133.4" rx="0.4" fill="#14171a" stroke="#0b0d0f" stroke-width="0.3" />
+      <rect x="0.9" y="2.0" width="2.0" height="129.4" rx="0.3" fill="#3d4349" />
+    </g>
+    <g id="dimm-plan--silkscreen">
+      <text data-from="capacity" x="2.75" y="128.0" transform="rotate(-90 2.75 128.0)" font-family="sans-serif" font-size="2.2" font-weight="bold" fill="#c8ced3">32GB</text>
+      <text data-from="speed" x="2.75" y="100.0" transform="rotate(-90 2.75 100.0)" font-family="sans-serif" font-size="1.8" fill="#9aa1a8">2933</text>
+    </g>
+  </g>
+</svg>
