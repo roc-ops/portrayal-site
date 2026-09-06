@@ -23,7 +23,7 @@
   ]
  },
  "by-kind": {
-  "declared": 488,
+  "declared": 485,
   "derived": 325
  },
  "devices": 84,
@@ -1725,7 +1725,7 @@
    "manufacturer": "Edgecore",
    "note": "The QSG's Front LEDs section tables every port family and every system lamp with a colour, and for the management jack says only \"RJ-45 OOB Port - Left (link), Right (activity)\". No colour, and no behaviour. The AGR420 datasheet has no LED section at all, so the QSG is the only source we hold. The two lamps therefore declare what the guide does say - the right lamp blinks for activity, which is the behaviour the same guide gives every other activity lamp on this device - and the left lamp keeps led-rect's generic off/on rather than an invented green-for-link. The AGR400's QSG (AS7946-30XB-QSG-R04) prints the identical sentence, so this is Edgecore's house style for the OOB jack and not a gap in one revision.",
    "scope": [
-    "mgmt-leds"
+    "mgmt-eth"
    ],
    "wanted": "a NOS LED table, or photographs of the OOB jack with a link up and traffic running",
    "what": "mgmt-led-colours"
@@ -1895,6 +1895,19 @@
    ],
    "wanted": "Sized from the datasheet triple and carried over from the sibling DCS510, which shares this shell - a lid seam, a rear vent strip and the side rail lines, all estimated there and no better sourced here. No mechanical drawing in this intake dimensions a single feature on these four faces.",
    "what": "minor-face-geometry"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "cor580",
+   "kind": "declared",
+   "manufacturer": "Edgecore",
+   "scope": [
+    "mgmt-eth",
+    "console-1"
+   ],
+   "wanted": "A bezel plate part or a skin variant for the white-bezelled RJ-45 the photo shows; the four-part RJ45 family draws one dark housing.",
+   "what": "rj45-bezel-colour"
   },
   {
    "because": "L29",
@@ -3845,19 +3858,6 @@
    "what": "templated"
   },
   {
-   "because": "needs-drawing",
-   "blocks": [],
-   "device": "s6301-56st",
-   "kind": "declared",
-   "manufacturer": "UfiSpace",
-   "note": "the datasheet's LED row promises 'Link and Activity LEDs per port' and the front elevation shows lit corners inside every RJ45 aperture; std/rj45-ganged draws the bare opening and any lamp sits inside that aperture, so 48 jacks' worth of lamps exist on the hardware and none in the drawing - the MX150 and S6301-56STP treatment, recorded so the absence is a decision rather than an oversight.",
-   "scope": [
-    "ge"
-   ],
-   "wanted": "an rj45-ganged variant (or overlay mechanism) that can draw a corner lamp inside the aperture without colliding with the placement.",
-   "what": "rj45-port-lamps-not-drawn"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "s6301-56st",
@@ -3965,19 +3965,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
    "what": "templated"
-  },
-  {
-   "because": "needs-drawing",
-   "blocks": [],
-   "device": "s6301-56stp",
-   "kind": "declared",
-   "manufacturer": "UfiSpace",
-   "note": "every RJ45 jack carries one integrated corner lamp (mode-switched LNK/SPD or PoE per the HIG table); std/rj45-ganged draws the bare opening and the lamp sits inside the aperture, so 48 lamps exist on the hardware and none in the drawing - the MX150 treatment, recorded so the absence is a decision rather than an oversight.",
-   "scope": [
-    "ge-poe"
-   ],
-   "wanted": "an rj45-ganged variant (or overlay mechanism) that can draw a corner lamp inside the aperture without colliding with the placement.",
-   "what": "rj45-port-lamps-not-drawn"
   },
   {
    "because": "needs-hardware",
@@ -4158,7 +4145,7 @@
   {
    "because": "L21",
    "blocks": [],
-   "count": 15,
+   "count": 16,
    "device": "s7801-54xs",
    "kind": "derived",
    "manufacturer": "UfiSpace",
@@ -5748,19 +5735,6 @@
    "what": "ac-build-front-panel-not-drawn"
   },
   {
-   "because": "needs-drawing",
-   "blocks": [],
-   "device": "s9502-12sm",
-   "kind": "declared",
-   "manufacturer": "UfiSpace",
-   "note": "the OOB management jack carries two integrated lamps in the corners of its own aperture - visible as a green and an amber square in the front render, and tabled in full by the HIG's Management port LED section (left green for 1G link and activity, right amber for 10M/100M). std/rj45-ganged draws the bare opening and any lamp sits inside that aperture, so they exist on the hardware and not in the drawing.",
-   "scope": [
-    "mgmt"
-   ],
-   "wanted": "an rj45-ganged variant that can draw corner lamps inside the aperture.",
-   "what": "mgmt-port-lamps-not-drawn"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9502-12sm",
@@ -6100,19 +6074,6 @@
    ],
    "wanted": "a NOS LED table, or a labelled faceplate drawing of the QSFP28 block.",
    "what": "qsfp-centre-lamp-ownership"
-  },
-  {
-   "because": "needs-drawing",
-   "blocks": [],
-   "device": "s9510-30xc",
-   "kind": "declared",
-   "manufacturer": "UfiSpace",
-   "note": "the OOB jack carries two integrated lamps, visible in the front render at x 156.06 and 166.67 and tabled in full by the HIG (left green for 1G link and activity, right amber for 10M/100M). The sibling S9510-28DC draws them because it uses common/rj45-port@4, which is 17.0 x 14.9; this device's measured bezel plate is 15.76 wide and 30.97 tall and cannot hold three parts that size, so std/rj45-ganged is used and the lamps sit inside an aperture that draws only the opening.",
-   "scope": [
-    "mgmt"
-   ],
-   "wanted": "an rj45-ganged variant that can draw corner lamps inside the aperture, or a narrower lamped RJ45 part.",
-   "what": "mgmt-port-lamps-not-drawn"
   },
   {
    "because": "needs-photo",
@@ -6519,8 +6480,7 @@
    "manufacturer": "UfiSpace",
    "note": "The management RJ45 carries two green lamps at its bottom corners, plainly drawn in HIG Figure 8. Unlike the S9501-28SMT and M3000-14XC guides, this HIG's section 10 has NO 'Management port LED' table - it stops after the Fan FRU LED. So the two lamps are placed where the figure puts them and keep the component default rather than borrowing the sibling devices' left-green-1G / right-amber-100M vocabulary, which would be an assumption dressed as a citation. Note also that both lamps are drawn GREEN here where the siblings draw one green and one amber.",
    "scope": [
-    "led-mgmt-l",
-    "led-mgmt-r"
+    "mgmt"
    ],
    "wanted": "this family's management port LED table, or a photograph of a linked unit",
    "what": "management-jack-led-semantics"
@@ -6922,9 +6882,7 @@
    "manufacturer": "UfiSpace",
    "note": "The two lamps in the out-of-band jack's aperture are drawn green in HIG Figure 8 and are modelled, but THIS guide tables them nowhere. The link/activity vocabulary they carry is borrowed from the S9510-28DC and S9311-64D hardware guides, whose Management Port LED tables give 1G green on the left and 10M/100M amber on the right for the same class of jack on the same vendor's boxes. That is an inference from a sibling document and is recorded as one rather than being left to look sourced.",
    "scope": [
-    "oob",
-    "led-oob-left",
-    "led-oob-right"
+    "oob"
    ],
    "wanted": "a management-port LED table in a later revision of this guide",
    "what": "mgmt-jack-led-semantics"
@@ -7848,9 +7806,7 @@
    "manufacturer": "UfiSpace",
    "note": "The two lamps in the out-of-band jack's aperture are drawn BLUE in HIG Figure 8 - not green, as the S9600-56DX's figure draws the same jack - and are modelled, but this guide tables them nowhere. Because the colour differs from the sibling, the sibling's borrowed green-1G/amber-100M vocabulary is NOT carried over here: both lamps are left with a plain on state in the colour the figure draws them, and what they mean is recorded as unknown rather than guessed from a different device.",
    "scope": [
-    "oob",
-    "led-oob-left",
-    "led-oob-right"
+    "oob"
    ],
    "wanted": "a management-port LED table in a later revision of this guide",
    "what": "mgmt-jack-led-semantics"
@@ -8999,9 +8955,7 @@
    "manufacturer": "UfiSpace",
    "note": "HIG section 10's Management port LED table names a Left LED (1G link and activity, green) and a Right LED (10M/100M link and activity, amber), so the two lamps and their vocabulary ARE sourced for this device. Where they sit is not: at 20x the figure resolves ONE small dark window on the LEFT of each jack's aperture, at (43.1-44.4, 68.1-70.1) for the out-of-band jack, and no matching window on the right. The two lamps are therefore drawn symmetrically in the aperture as the table requires, and the right-hand position is placement by symmetry rather than by measurement. The upper (console) jack shows the same single left-hand window; the guide tables no lamps for a console port, so none are drawn there.",
    "scope": [
-    "oob",
-    "led-oob-left",
-    "led-oob-right"
+    "oob"
    ],
    "wanted": "a straight-on high-resolution photograph of the stacked management jacks",
    "what": "mgmt-jack-led-semantics"

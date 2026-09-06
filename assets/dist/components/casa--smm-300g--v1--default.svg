@@ -4,6 +4,8 @@
     [data-path] { cursor: pointer; }
     .state-on    { --led-color: #22c55e; }
     .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
     .state-activity { --led-color: #86efac; }
     .state-ok    { --led-color: #22c55e; }
     .state-fault { --led-color: #ef4444; }
@@ -31,10 +33,8 @@
     .portrayal-dim { opacity: 0.25; }
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
-
-    g[data-ref^='common/rj45-shielded@'] .state-activity { --led-color: #f59e0b; }
-    g[data-ref^='common/rj45-shielded@'] .state-link { --led-color: #22c55e; }</style>
-  <g id="smm-300g" data-path="smm-300g" data-class="supervisor" data-behaviour="fills" data-ref="casa/smm-300g@1:1.5.0" data-body-depth="380.0" data-wall="#4a4f55" data-console="RS-232" data-mgmt="10/100BASE-T" data-model="SMM 300G" data-nebs="Designed to NEBS level 3 requirements" data-power-draw-max-w="160" data-qsfp28="2" data-role="supervisor" data-sfp-plus="10" data-switching-throughput="300G bidirectional per module" data-timing="IEEE 1588v2" transform="translate(0,0)">
+</style>
+  <g id="smm-300g" data-path="smm-300g" data-class="supervisor" data-behaviour="fills" data-ref="casa/smm-300g@1:1.6.0" data-body-depth="380.0" data-wall="#4a4f55" data-console="RS-232" data-mgmt="10/100BASE-T" data-model="SMM 300G" data-nebs="Designed to NEBS level 3 requirements" data-power-draw-max-w="160" data-qsfp28="2" data-role="supervisor" data-sfp-plus="10" data-switching-throughput="300G bidirectional per module" data-timing="IEEE 1588v2" transform="translate(0,0)">
     <title>smm-300g</title>
     <rect id="smm-300g--plate" x="0" y="0" width="30.47" height="345.5" fill="#a7a9ac" stroke="#6d6f71" stroke-width="0.25" />
     <g id="smm-300g--silkscreen">
@@ -188,41 +188,43 @@
       <rect id="smm-300g--cg1--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
       <rect id="smm-300g--cg1--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
     </g>
-    <g id="smm-300g--mgmt" data-path="smm-300g/mgmt" data-class="port" data-ref="common/rj45-shielded@2:2.0.0" data-depth="12.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(7.335,261.05) rotate(90 7.9 6.25)">
+    <g id="smm-300g--mgmt" data-path="smm-300g/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.0.0" data-depth="18.6" data-media="rj45" transform="translate(7.33,260.7) rotate(90 7.9 6.6)">
       <title>smm-300g--mgmt</title>
-      <rect id="smm-300g--mgmt--body" x="0" y="0" width="15.8" height="12.5" rx="0.4" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.3" />
-      <rect id="smm-300g--mgmt--jack" x="0.6" y="1.0" width="14.6" height="10.5" rx="0.4" fill="#17191c" data-path="smm-300g/mgmt/jack" data-class="cutout" />
-      <path id="smm-300g--mgmt--cavity" d="M 1.955 1.525 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
-      <g id="smm-300g--mgmt--pins" fill="#a8873c">
-        <rect x="4.034" y="2.175" width="0.62" height="2.3" />
-        <rect x="5.050" y="2.175" width="0.62" height="2.3" />
-        <rect x="6.066" y="2.175" width="0.62" height="2.3" />
-        <rect x="7.082" y="2.175" width="0.62" height="2.3" />
-        <rect x="8.098" y="2.175" width="0.62" height="2.3" />
-        <rect x="9.114" y="2.175" width="0.62" height="2.3" />
-        <rect x="10.130" y="2.175" width="0.62" height="2.3" />
-        <rect x="11.146" y="2.175" width="0.62" height="2.3" />
+      <g id="smm-300g--mgmt--jack" data-path="smm-300g/mgmt/jack" data-class="port" data-ref="std/rj45@2:2.0.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>smm-300g--mgmt--jack</title>
+        <path id="smm-300g--mgmt--jack--housing" fill-rule="evenodd" fill="#2b2f33" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="smm-300g--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="smm-300g--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="smm-300g/mgmt/jack/opening" data-class="cutout" />
+        <g id="smm-300g--mgmt--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
       </g>
-      <rect id="smm-300g--mgmt--led-a" x="1.5" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-300g/mgmt/led-a" data-class="led" data-states="off link activity" data-z-dome="0.2" />
-      <rect id="smm-300g--mgmt--led-b" x="11.7" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-300g/mgmt/led-b" data-class="led" data-states="off link activity" data-z-dome="0.2" />
+      <path id="smm-300g--mgmt--face" fill-rule="evenodd" fill="#2b2f33" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="smm-300g--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="smm-300g/mgmt/led-a" data-class="led" data-states="off link activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="smm-300g--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="smm-300g/mgmt/led-b" data-class="led" data-states="off link activity" data-z-out="0.3" data-z-color="#0d0f11" />
     </g>
-    <g id="smm-300g--console" data-path="smm-300g/console" data-class="port" data-ref="common/rj45-shielded@2:2.0.0" data-depth="12.0" data-wall="#b9bec4" data-cavity="cavity" data-media="rj45" transform="translate(7.335,279.95) rotate(90 7.9 6.25)">
+    <g id="smm-300g--console" data-path="smm-300g/console" data-class="port" data-ref="std/rj45@2:2.0.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.33,279.6) rotate(90 7.9 6.6)">
       <title>smm-300g--console</title>
-      <rect id="smm-300g--console--body" x="0" y="0" width="15.8" height="12.5" rx="0.4" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.3" />
-      <rect id="smm-300g--console--jack" x="0.6" y="1.0" width="14.6" height="10.5" rx="0.4" fill="#17191c" data-path="smm-300g/console/jack" data-class="cutout" />
-      <path id="smm-300g--console--cavity" d="M 1.955 1.525 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <path id="smm-300g--console--housing" fill-rule="evenodd" fill="#2b2f33" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="smm-300g--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="smm-300g--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="smm-300g/console/opening" data-class="cutout" />
       <g id="smm-300g--console--pins" fill="#a8873c">
-        <rect x="4.034" y="2.175" width="0.62" height="2.3" />
-        <rect x="5.050" y="2.175" width="0.62" height="2.3" />
-        <rect x="6.066" y="2.175" width="0.62" height="2.3" />
-        <rect x="7.082" y="2.175" width="0.62" height="2.3" />
-        <rect x="8.098" y="2.175" width="0.62" height="2.3" />
-        <rect x="9.114" y="2.175" width="0.62" height="2.3" />
-        <rect x="10.130" y="2.175" width="0.62" height="2.3" />
-        <rect x="11.146" y="2.175" width="0.62" height="2.3" />
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
       </g>
-      <rect id="smm-300g--console--led-a" x="1.5" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-300g/console/led-a" data-class="led" data-states="off link activity" data-z-dome="0.2" />
-      <rect id="smm-300g--console--led-b" x="11.7" y="1.3" width="2.6" height="1.3" rx="0.2" fill="var(--led-color, #3c4147)" data-path="smm-300g/console/led-b" data-class="led" data-states="off link activity" data-z-dome="0.2" />
     </g>
   </g>
 </svg>

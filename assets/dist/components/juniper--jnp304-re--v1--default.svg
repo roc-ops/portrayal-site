@@ -4,6 +4,8 @@
     [data-path] { cursor: pointer; }
     .state-on    { --led-color: #22c55e; }
     .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
     .state-activity { --led-color: #86efac; }
     .state-ok    { --led-color: #22c55e; }
     .state-fault { --led-color: #ef4444; }
@@ -31,8 +33,12 @@
     .portrayal-dim { opacity: 0.25; }
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
-</style>
-  <g id="jnp304-re" data-path="jnp304-re" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp304-re@1:1.0.0" data-body-depth="203.2" data-cpu="Intel Icelake based multicore processor" data-envelope="203.5 x 40.1 x 203.2 mm (Table 22)" data-memory="4x32-GB DDR4 default, 128 GB maximum, ECC" data-model="JNP304-RE" data-platform-security="TPM 2.0, secure boot" data-power-draw-max-w="59" data-power-draw-typical-w="49" data-storage="2x200-GB M.2 SATA SSD" data-states="ok fail absent" transform="translate(0,0)">
+
+    g[data-ref^='juniper/jnp304-re@'] .state-10-100 { --led-color: #eab308; }
+    g[data-ref^='juniper/jnp304-re@'] .state-1000 { --led-color: #22c55e; }
+    g[data-ref^='juniper/jnp304-re@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='juniper/jnp304-re@'] .state-activity { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="jnp304-re" data-path="jnp304-re" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp304-re@1:1.2.0" data-body-depth="203.2" data-cpu="Intel Icelake based multicore processor" data-envelope="203.5 x 40.1 x 203.2 mm (Table 22)" data-memory="4x32-GB DDR4 default, 128 GB maximum, ECC" data-model="JNP304-RE" data-platform-security="TPM 2.0, secure boot" data-power-draw-max-w="59" data-power-draw-typical-w="49" data-storage="2x200-GB M.2 SATA SSD" data-states="ok fail absent" transform="translate(0,0)">
     <title>jnp304-re</title>
     <rect id="jnp304-re--face" x="0" y="0" width="197.6" height="39.7" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
     <g id="jnp304-re--vents">
@@ -394,8 +400,6 @@
       <circle id="jnp304-re--btn-offline" cx="70.5" cy="29.3" r="1.7" fill="#b0b4b9" stroke="#7d8288" stroke-width="0.4" />
       <circle cx="70.5" cy="29.3" r="0.8" fill="#17191c" />
       <circle id="jnp304-re--btn-reset" cx="108.9" cy="27.5" r="1.1" fill="#17191c" />
-      <circle id="jnp304-re--led-mgmt-act" cx="121.5" cy="16.2" r="0.8" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
-      <circle id="jnp304-re--led-mgmt-status" cx="131.1" cy="16.2" r="0.8" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
       <circle id="jnp304-re--led-online" cx="152.8" cy="25.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
       <circle id="jnp304-re--led-disk0" cx="167.0" cy="25.6" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
       <circle id="jnp304-re--led-master" cx="152.8" cy="30.7" r="1.0" fill="#0f1113" stroke="#3a3e43" stroke-width="0.3" />
@@ -436,35 +440,43 @@
       <circle cx="192.9" cy="14.3" r="2.6" fill="#b9bec3" stroke="#7d8288" stroke-width="0.4" />
       <circle cx="192.9" cy="14.3" r="1.1" fill="#8a8f95" />
     </g>
-    <g id="jnp304-re--console" data-path="jnp304-re/console" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(82.8,17.3)">
+    <g id="jnp304-re--console" data-path="jnp304-re/console" data-class="port" data-ref="std/rj45@2:2.0.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(82.9,17.7)">
       <title>jnp304-re--console</title>
-      <rect id="jnp304-re--console--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="jnp304-re/console/opening" data-class="cutout" />
-      <path id="jnp304-re--console--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
+      <path id="jnp304-re--console--housing" fill-rule="evenodd" fill="#2b2f33" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="jnp304-re--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="jnp304-re--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="jnp304-re/console/opening" data-class="cutout" />
       <g id="jnp304-re--console--pins" fill="#a8873c">
-        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
-        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
-        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
-        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
-        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
-        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
-        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
-        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
       </g>
     </g>
-    <g id="jnp304-re--mgmt" data-path="jnp304-re/mgmt" data-class="port" data-ref="std/rj45@1:1.3.0" data-depth="16.0" data-wall="#b9bec4" data-cavity="cavity" data-function="out-of-band management" data-media="rj45" data-speed="10/100/1000" transform="translate(118.3,17.3)">
+    <g id="jnp304-re--mgmt" data-path="jnp304-re/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.0.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" data-speed="10/100/1000" transform="translate(118.4,17.7)">
       <title>jnp304-re--mgmt</title>
-      <rect id="jnp304-re--mgmt--opening" x="0" y="0" width="16" height="14" rx="0.4" fill="#17191c" data-path="jnp304-re/mgmt/opening" data-class="cutout" />
-      <path id="jnp304-re--mgmt--cavity" d="M 2.055 2.275 h 11.89 v 6.85 h -3.945 v 2.6 h -4 v -2.6 h -3.945 z" fill="#0a0c0e" />
-      <g id="jnp304-re--mgmt--pins" fill="#a8873c">
-        <rect x="4.134" y="2.925" width="0.62" height="2.3" />
-        <rect x="5.150" y="2.925" width="0.62" height="2.3" />
-        <rect x="6.166" y="2.925" width="0.62" height="2.3" />
-        <rect x="7.182" y="2.925" width="0.62" height="2.3" />
-        <rect x="8.198" y="2.925" width="0.62" height="2.3" />
-        <rect x="9.214" y="2.925" width="0.62" height="2.3" />
-        <rect x="10.230" y="2.925" width="0.62" height="2.3" />
-        <rect x="11.246" y="2.925" width="0.62" height="2.3" />
+      <g id="jnp304-re--mgmt--jack" data-path="jnp304-re/mgmt/jack" data-class="port" data-ref="std/rj45@2:2.0.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>jnp304-re--mgmt--jack</title>
+        <path id="jnp304-re--mgmt--jack--housing" fill-rule="evenodd" fill="#2b2f33" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="jnp304-re--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="jnp304-re--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="jnp304-re/mgmt/jack/opening" data-class="cutout" />
+        <g id="jnp304-re--mgmt--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
       </g>
+      <path id="jnp304-re--mgmt--face" fill-rule="evenodd" fill="#2b2f33" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="jnp304-re--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="jnp304-re/mgmt/led-a" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="jnp304-re--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="jnp304-re/mgmt/led-b" data-class="led" data-states="off 10-100 1000" data-z-out="0.3" data-z-color="#0d0f11" />
     </g>
     <g id="jnp304-re--usb" data-path="jnp304-re/usb" data-class="port" data-ref="std/usb-a@1:1.2.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB 3.0 service port" data-media="usb-a" transform="translate(137.4,21.75) rotate(90 6.0 2.25)">
       <title>jnp304-re--usb</title>
