@@ -125,6 +125,21 @@ done
 rm -rf "$HERE/assets/dist"
 mkdir -p "$HERE/assets/dist"
 
+# THE LICENCE TRAVELS WITH WHAT IT COVERS. This site redistributes Portrayal's
+# compiled drawings, its DCIM exports and its viewer modules to the public, and
+# Apache-2.0 section 4 asks a redistribution to carry the licence and the
+# NOTICE. Upstream made them part of the artifact sets for that reason
+# (build.sh and publish.sh copy them into dist/ and exports/), and vendoring
+# that dropped them: the site claimed Apache-2.0 in prose on its front page and
+# shipped no licence text anywhere. Copied beside each set rather than once at
+# the root, so a set stays complete wherever it is served from.
+# assets/exports is cleared and regenerated further down, so its copy is made
+# there rather than here - put it here and the rm -rf takes it straight back out.
+for f in LICENSE NOTICE; do
+  [ -f "$SRC/dist/$f" ] && cp "$SRC/dist/$f" "$HERE/assets/dist/$f"
+done
+[ -f "$SRC/../LICENSE" ] && cp "$SRC/../LICENSE" "$HERE/vendor/LICENSE"
+[ -f "$SRC/../NOTICE" ] && cp "$SRC/../NOTICE" "$HERE/vendor/NOTICE"
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
 # Published as of the kit split, when the exporter stopped needing a checkout.
@@ -179,6 +194,10 @@ PYEOF
 EXPORTS="$HERE/assets/exports"
 rm -rf "$EXPORTS"
 mkdir -p "$EXPORTS"
+# and the licence for this set, after the clear that would have removed it
+for f in LICENSE NOTICE; do
+  [ -f "$SRC/exports/$f" ] && cp "$SRC/exports/$f" "$EXPORTS/$f"
+done
 # Derived from SRC, so the exporter and the library it reads are always the same
 # checkout. When these could differ, they did: an earlier run took the exporter
 # from the clone and the drawings from the live tree, which is how the partial
