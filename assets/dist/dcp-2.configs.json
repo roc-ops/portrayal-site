@@ -6,6 +6,7 @@
    {
     "accepts": [
      "smartoptics/dcp-404@1",
+     "smartoptics/dcp-f-a22@1",
      "smartoptics/dcp-2-blank@1"
     ],
     "at": [
@@ -25,6 +26,7 @@
    {
     "accepts": [
      "smartoptics/dcp-404@1",
+     "smartoptics/dcp-f-a22@1",
      "smartoptics/dcp-2-blank@1"
     ],
     "at": [
@@ -119,11 +121,8 @@
  },
  "configs": [
   {
-   "bays": {
-    "slot-1": "",
-    "slot-2": ""
-   },
-   "description": "The chassis as it is specified before deciding what goes in it: two AC supplies, the fan tray, the management board, and both traffic slots empty. so-ds-dcp-2-r4.3 orders this as DCP-2-FB/HW. The box actually ships with a blind plate as well (UM s4.1), which the dcp-404-x1 configuration shows in place.",
+   "bays": {},
+   "description": "The chassis as it is specified before deciding what goes in it: two AC supplies, the fan tray, the management board, and BOTH TRAFFIC SLOTS BLANKED. so-ds-dcp-2-r4.3 orders this as DCP-2-FB/HW. The slots carry the blind plate rather than being drawn as bare holes, which is a deliberate departure from the schema's \"TRAFFIC SLOTS EMPTY\" wording for a `base`. Two reasons: UM s4.1 lists the blind plate in the box, so a chassis as delivered HAS one, and UM s2.5 asks for it in any slot that is not carrying a unit - an empty hole is a configuration the vendor tells you not to run. It also reads far better.",
    "kind": "base",
    "name": "ac-f2b",
    "part-numbers": {},
@@ -132,9 +131,7 @@
   {
    "bays": {
     "psu-1": "smartoptics/dcp-2-psu-dc@1",
-    "psu-2": "smartoptics/dcp-2-psu-dc@1",
-    "slot-1": "",
-    "slot-2": ""
+    "psu-2": "smartoptics/dcp-2-psu-dc@1"
    },
    "description": "The same chassis with both supplies ordered as DCP-2-PSU-DC-FB, -40 to -72 VDC at 7A max. UM s2.3 is explicit that the bay geometry does not change and that \"Both types can be used simultaneously\", so a mixed AC/DC chassis is legal and this configuration is simply the all-DC case. Named explicitly rather than left implied by the base, so asking for the DC variant does not require knowing which flavour the base happens to carry.",
    "kind": "orderable",
@@ -279,6 +276,7 @@
   "power": "UM spec table, \"POWER CONSUMPTION (CHASSI ONLY): DCP-2 chassis with fans and 2 PSU (AC) Min: 14W Max: 17W\". The manual's other rows bundle a traffic unit, which answers for itself. NO AMBIENT TEMPERATURE is quoted against any DCP power figure, so none is asserted.",
   "psu-positions": "the PSU sticker reads \"CRPS 460W AC Gold\", which names the form factor; 1U CRPS is 73.5 x 40. The two installed bays measure 81 and 75 for what is demonstrably the same part, so the standard is worth more than either edge read. 73.5 at the measured 352.3 pitch puts the pair at 4.0 and 356.3, matching the right bay to under a millimetre.",
   "rear-layout": "photo-measured - UM figs 2-5 and 2-6. These are SEPARATE PHOTOGRAPHS and they agree on the PSU fan-sticker pitch to 0.15% (352.3 and 351.8), which is what says the x axis is trustworthy in both. The y axis is ~3% compressed in each (both were shot slightly from above), so y is scaled from the 45mm height and never from the same factor as x. Left to right: PSU bay, fan tray, management plate, PSU bay.",
+  "slot-occupants": "the traffic slots accept smartoptics/dcp-f-a22@1 as well as the DCP-404. Both are 205 x 44 x 270 - the DCP traffic-unit envelope is one shared footprint, stated independently by each part's own datasheet - so a slot that fits one fits the other. The A22 is what makes an ILA node out of this chassis.",
   "vents": "photo-measured - the rear vent area is the fan tray's own faceplate and belongs to smartoptics/dcp-2-fan@1, not to the chassis. The chassis draws none of its own."
  },
  "views": [
