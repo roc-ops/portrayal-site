@@ -14,7 +14,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
-         setSvgOverride, clearSvgOverrides, createReliefScope } from '../vendor/relief.js';
+         setSvgOverride, clearSvgOverrides, createReliefScope,
+         setPulled as setReliefPulled, applyPulled, nodeTools } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { applyOverrides } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
@@ -57,6 +58,30 @@ const PXMM_HIDDEN = 2;
 
 // BoxGeometry takes its materials as [+x, -x, +y, -y, +z, -z].
 const MAT_SLOT = {right: 0, left: 1, top: 2, bottom: 3, front: 4, rear: 5};
+
+// WHERE EACH FACE SITS ON A DEVICE, in device-local millimetres: the plane's
+// centre, how it is turned, and the size of the drawing painted on it.
+//
+// Written once because two things read it. The builder puts the relief for a
+// face in this frame, and portAnchor() answers where a drawn port is in the
+// same frame - and an anchor computed against a second, hand-copied idea of
+// where the front plane is would be right until one of them moved. That is
+// exactly the failure a consumer reported when the only way to place a port
+// was to read RACK_FACE_Z out of this file: see the note on portAnchor.
+//
+// The underside is authored mirrored in both axes, which is what flipLX/flipLY
+// carry - the same pair relief.js uses when it rasterises that face.
+function faceFrames(W, H, D) {
+  return [
+    {view: 'front',  fw: W, fh: H, pos: [0, 0, D / 2],  rot: [0, 0, 0]},
+    {view: 'rear',   fw: W, fh: H, pos: [0, 0, -D / 2], rot: [0, Math.PI, 0]},
+    {view: 'right',  fw: D, fh: H, pos: [W / 2, 0, 0],  rot: [0, Math.PI / 2, 0]},
+    {view: 'left',   fw: D, fh: H, pos: [-W / 2, 0, 0], rot: [0, -Math.PI / 2, 0]},
+    {view: 'top',    fw: W, fh: D, pos: [0, H / 2, 0],  rot: [-Math.PI / 2, 0, 0]},
+    {view: 'bottom', fw: W, fh: D, pos: [0, -H / 2, 0], rot: [Math.PI / 2, 0, 0],
+     flipLX: true, flipLY: true},
+  ];
+}
 
 // What each opening view can actually see. Everything else is built afterwards.
 // 'front' is dead-on, so only the front face; 'iso' looks down from the front
@@ -156,6 +181,57 @@ export function createRackScene(container, opts = {}) {
   const COARSE = createReliefScope({PXMM: opts.hiddenPxmm || PXMM_HIDDEN});
   COARSE.overrides = relief.overrides;
   const scopeFor = view => (view === 'top' || view === 'bottom') ? COARSE : relief;
+
+  // ── parts taken off ────────────────────────────────────────────────────
+  // WHAT IS NOT THERE. `opts.pulled` is a set of data-paths this scene draws
+  // without - a blanking plate off a bay, the dust caps off the ports a cable
+  // actually lands in. The consumer that asked for it (roc-ops/portrayal-site#10)
+  // knows its cabled endpoints and emits `xc04/cap-tx`, `xc04/cap-rx`, so an
+  // uncapped port reads as a cabled port at a glance.
+  //
+  // BOTH SCOPES, ALWAYS. Density is the only thing that should differ between
+  // the fine scope and the coarse one, so a part taken off the front must be
+  // off the top as well - setting one and not the other is a device whose lid
+  // is missing from every angle but above.
+  //
+  // AND THE FLAT PASS TOO, which is why pullFaces() exists below. A face goes
+  // up as a plain raster first and grows its relief afterwards; svgCanvas()
+  // rasterises the source text and never consults the pulled set, so setting
+  // only the scopes drops a part's GEOMETRY and leaves it painted on the
+  // texture underneath. Both halves or neither.
+  //
+  // SCENE-WIDE, not per device. The scopes are shared by every device in the
+  // rack, and the deferred relief pass for one device interleaves with the
+  // build of the next, so a set that changed between devices would be read by
+  // whichever pass happened to be mid-flight. A rack holding the same model
+  // twice therefore takes a path off both. Say so rather than pretend
+  // otherwise; per-device pulls need the paths carried on the entry, and
+  // nobody has asked for that yet.
+  let PULLED = new Set(opts.pulled || []);
+  const applyPulledScopes = () => {
+    setReliefPulled(PULLED, relief);
+    setReliefPulled(PULLED, COARSE);
+  };
+  applyPulledScopes();
+
+  // Bake the pulled set into each of a device's faces, on top of whatever bay
+  // override is already registered for it, so the flat raster agrees with the
+  // relief. Registered per URL exactly as overrideFaces does, and re-read by
+  // extractRelief's own applyPulled, which clears and re-applies from the
+  // scope - the same answer twice, not two different ones.
+  async function pullFaces(entry) {
+    if (!PULLED.size) return;
+    for (const fr of faceFrames(0, 0, 0)) {
+      const url = `${DIST}${entry.ref}.${entry.cfg}.${fr.view}.svg`;
+      let text;
+      try { text = await svgSource(url, relief); } catch { continue; }
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      if (doc.querySelector('parsererror')) continue;
+      applyPulled(doc.documentElement, relief);
+      if (!doc.querySelector('[data-portrayal-pulled]')) continue;   // nothing here
+      setSvgOverride(url, new XMLSerializer().serializeToString(doc), relief);
+    }
+  }
 
   // Framed up front, before a single device exists. Framing at the END of a
   // build meant the whole rack assembled itself somewhere above the default
@@ -349,13 +425,11 @@ export function createRackScene(container, opts = {}) {
   async function buildDevice(entry) {
     const {w: W, h: H, d: D} = entry.chassis;
     const f = v => `${DIST}${entry.ref}.${entry.cfg}.${v}.svg`;
-    const FACES = [
-      {view: 'front', fw: () => W, fh: () => H, pos: () => [0, 0, D / 2],  rot: [0, 0, 0]},
-      {view: 'rear',  fw: () => W, fh: () => H, pos: () => [0, 0, -D / 2], rot: [0, Math.PI, 0]},
-      {view: 'right', fw: () => D, fh: () => H, pos: () => [W / 2, 0, 0],  rot: [0, Math.PI / 2, 0]},
-      {view: 'left',  fw: () => D, fh: () => H, pos: () => [-W / 2, 0, 0], rot: [0, -Math.PI / 2, 0]},
-      {view: 'top',   fw: () => W, fh: () => D, pos: () => [0, H / 2, 0],  rot: [-Math.PI / 2, 0, 0]},
-    ];
+    // The underside is left out here and rasterised on its own below: it gets
+    // no relief pass, and its art is mirrored. Everything else comes from the
+    // one table portAnchor() also reads.
+    const FACES = faceFrames(W, H, D).filter(fr => fr.view !== 'bottom').map(fr => (
+      {view: fr.view, fw: () => fr.fw, fh: () => fr.fh, pos: () => fr.pos, rot: fr.rot}));
       // A rack is not a single device turned over in the hand: it opens at a known
     // view and most of what is built is never seen. At 'front' four of the five
     // faces face nothing; even at 'iso' the left and rear do. So the faces the
@@ -447,6 +521,101 @@ export function createRackScene(container, opts = {}) {
     return group;
   }
 
+  // ── where a drawn port is, in the room ─────────────────────────────────
+  // A host drawing cables between racks needs the world point of a port it can
+  // name in the drawing. Before this the only way to get one was to read
+  // RACK_FACE_Z out of this file and re-derive the mount transform by hand
+  // (roc-ops/portrayal-site#10), and that constant is not enough on its own:
+  // the faceplate setback is the caller's to choose through `opts.recess`, and
+  // the device's own depth and height are in the same arithmetic. A consumer
+  // holding the constant alone is right for the default recess and wrong the
+  // moment a scene sets its own - silently, and in millimetres that look
+  // plausible. So the answer offered is the anchor itself, computed in the
+  // frame the builder actually used.
+  //
+  // The measurement comes from the drawing rather than from a table of port
+  // positions, because the drawing is the only thing that knows: a bay swap
+  // changes what is on the face, and svgSource() hands back the overridden
+  // text, so an anchor taken after a swap is an anchor on the part now fitted.
+  const anchorDocs = new Map();
+  function dropAnchorDocs() {
+    for (const rec of anchorDocs.values()) if (rec) rec.div.remove();
+    anchorDocs.clear();
+  }
+  async function faceDoc(entry, view) {
+    const key = `${entry.ref}|${entry.cfg}|${view}`;
+    if (anchorDocs.has(key)) return anchorDocs.get(key);
+    const url = `${DIST}${entry.ref}.${entry.cfg}.${view}.svg`;
+    let rec = null;
+    try {
+      const text = await svgSource(url, relief);
+      // getBBox and getScreenCTM read nothing from a detached tree, so this has
+      // to be in the document - parked off-screen and hidden, never painted.
+      const div = document.createElement('div');
+      div.style.cssText = 'position:absolute;left:-10000px;top:0;'
+        + 'width:1000px;visibility:hidden;pointer-events:none';
+      div.innerHTML = text;
+      document.body.append(div);
+      const svg = div.querySelector('svg');
+      if (svg) rec = {div, svg, tools: nodeTools(svg)};
+      else div.remove();
+    } catch (e) { rec = null; }
+    anchorDocs.set(key, rec);
+    return rec;
+  }
+  function findMounted(which) {
+    if (which == null) return null;
+    if (typeof which === 'object') {
+      return mounted.find(m =>
+        (which.ru == null || m.entry.ru === which.ru) &&
+        (which.ref == null || m.entry.ref === which.ref) &&
+        (which.label == null || m.entry.label === which.label)) || null;
+    }
+    // A rack may hold the same model twice, so a bare ref is the first of them.
+    // Pass {ref, ru} - or {label} - to name which.
+    return mounted.find(m => m.entry.ref === which)
+        || mounted.find(m => m.entry.label === which) || null;
+  }
+  async function portAnchor(which, path, o = {}) {
+    const m = findMounted(which);
+    if (!m || !path) return null;
+    const {entry, group} = m;
+    const {w: W, h: H, d: D} = entry.chassis;
+    const frames = faceFrames(W, H, D);
+    const views = o.view ? [o.view]
+      : ['front', 'rear', 'right', 'left', 'top', 'bottom'];
+    group.updateMatrixWorld(true);
+    for (const view of views) {
+      const fr = frames.find(x => x.view === view);
+      const doc = fr && await faceDoc(entry, view);
+      if (!doc) continue;
+      let el = null;
+      try { el = doc.svg.querySelector(`[data-path="${CSS.escape(path)}"]`); }
+      catch (e) { return null; }        // a path that cannot be a selector
+      if (!el) continue;
+      const r = doc.tools.mmRect(el);
+      // face millimetres -> the face's own plane (x right, y up, z out of it),
+      // then the plane into the device, then the device into the room. The
+      // flips are the underside's mirrored art, exactly as relief.js reads it.
+      const lx = (fr.flipLX ? -1 : 1) * (r.x + r.w / 2 - fr.fw / 2);
+      const ly = (fr.flipLY ? -1 : 1) * (fr.fh / 2 - (r.y + r.h / 2));
+      const rot = new THREE.Euler(...fr.rot);
+      const local = new THREE.Vector3(lx, ly, 0).applyEuler(rot)
+        .add(new THREE.Vector3(...fr.pos));
+      return {
+        position: group.localToWorld(local),
+        // Straight out of the face, so a cable can leave at a right angle
+        // instead of starting inside the metal.
+        normal: new THREE.Vector3(0, 0, 1).applyEuler(rot)
+          .applyQuaternion(group.getWorldQuaternion(new THREE.Quaternion())).normalize(),
+        view, path,
+        mm: {x: r.x, y: r.y, w: r.w, h: r.h},
+        ref: entry.ref, ru: entry.ru, label: entry.label,
+      };
+    }
+    return null;
+  }
+
   function disposeTree(root) {
     root.traverse(o => {
       if (o.geometry) o.geometry.dispose();
@@ -519,6 +688,8 @@ export function createRackScene(container, opts = {}) {
     }
     mounted.length = 0;
     clearSvgOverrides(relief);
+    applyPulledScopes();      // a setPulled() since the last build lands here
+    dropAnchorDocs();         // measured against overrides that are now gone
     await hydrate();
     if (FIT) {
       const want = fitUnits();
@@ -530,6 +701,7 @@ export function createRackScene(container, opts = {}) {
     }
     for (const entry of RESOLVED) {
       await overrideFaces(entry);
+      await pullFaces(entry);      // after the bay override: it composes onto it
       await buildDevice(entry);
     }
   }
@@ -565,6 +737,30 @@ export function createRackScene(container, opts = {}) {
       const e = STACK.find(x => x.ref === ref);
       if (e) e.overrides = {...ov};
     },
+    // Which parts this scene draws without. Set at construction with
+    // `opts.pulled`, or changed here and picked up by the next build() - the
+    // same mutate-then-rebuild shape setOverrides has, and for the same
+    // reason: a pull is read when a face is extracted and rasterised, so
+    // nothing short of rebuilding those faces can show it. Provided now so a
+    // host that wants to take parts off after the fact has a supported way to
+    // do it, rather than one that has to be invented later.
+    setPulled(paths) {
+      PULLED = new Set(paths || []);
+      applyPulledScopes();
+    },
+    pulled: () => new Set(PULLED),
+    // The world point of a drawn port, and the way the face it is on is
+    // pointing: {position, normal, view, path, mm, ref, ru, label}, or null
+    // when nothing on this device carries that data-path. `which` is a ref, a
+    // label, or {ref, ru} when a rack holds the same model twice; pass
+    // {view} to look at one face instead of searching them.
+    portAnchor,
+    // The measurements this scene mounts by, for a host that needs the frame
+    // rather than one point in it. `faceZ` is only ever meaningful with
+    // `recess`, which is why they are handed over together rather than as a
+    // constant somebody has to pair up correctly on their own.
+    metrics: () => ({RU, rackWidth: RACK_W, faceZ: RACK_FACE_Z, recess: RECESS,
+                     heightRU: UNITS, pxmm: PXMM}),
     resize,
     reframe: frameCamera,
     // What the scene resolved: the stack with chassis, bays and the component
@@ -582,6 +778,7 @@ export function createRackScene(container, opts = {}) {
     complete: async () => { await Promise.all(pending); },
     dispose() {
       alive = false;
+      dropAnchorDocs();
       epoch++;      // stops any deferred relief pass from touching a dead scene
       pending = [];  // and drops the closures it was holding
       cancelAnimationFrame(raf);
