@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440mm" height="45mm" viewBox="0 0 440 45" data-device="dcp-2" data-view="front" data-config="ila-node">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"ila-node","device":"Smartoptics DCP-2","device-version":"1.6.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/laser-warning@1":"1.0.0","common/lc-duplex-adapter@3":"3.1.0","common/led-rect@1":"1.1.0","common/rj45-eth@1":"1.2.0","common/warning-triangle@1":"1.0.0","smartoptics/dcp-2-blank@1":"1.2.0","smartoptics/dcp-f-a22@1":"1.2.0","smartoptics/ppm-ad1-1510@1":"1.0.0","smartoptics/ppm-dummy@1":"1.0.0","std/lc-bore@3":"3.0.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.0"},"source":{"chassis":{"color":"#1b1e21","depth":500,"height":45,"ru":1,"width":440},"configurations":{"ac-f2b":{"airflow":"front-to-back","default":true,"description":"The chassis as it is specified before deciding what goes in it: two AC supplies, the fan tray, the management board, and BOTH TRAFFIC SLOTS BLANKED. so-ds-dcp-2-r4.3 orders this as DCP-2-FB/HW. The slots carry the blind plate rather than being drawn as bare holes, which is a deliberate departure from the schema's \"TRAFFIC SLOTS EMPTY\" wording for a `base`. Two reasons: UM s4.1 lists the blind plate in the box, so a chassis as delivered HAS one, and UM s2.5 asks for it in any slot that is not carrying a unit - an empty hole is a configuration the vendor tells you not to run. It also reads far better.","kind":"base"},"dc-f2b":{"airflow":"front-to-back","bays":{"psu-1":"smartoptics/dcp-2-psu-dc@1","psu-2":"smartoptics/dcp-2-psu-dc@1"},"description":"The same chassis with both supplies ordered as DCP-2-PSU-DC-FB, -40 to -72 VDC at 7A max. UM s2.3 is explicit that the bay geometry does not change and that \"Both types can be used simultaneously\", so a mixed AC/DC chassis is legal and this configuration is simply the all-DC case. Named explicitly rather than left implied by the base, so asking for the DC variant does not require knowing which flavour the base happens to carry.","kind":"orderable"},"dcp-404-x1":{"bays":{"slot-1":"smartoptics/dcp-404@1","slot-2":"smartoptics/dcp-2-blank@1"},"description":"One DCP-404 in slot 1 and the blind plate in slot 2 - the single-unit install UM s2.5 asks for, where the plate \"should be mounted to the empty slot to help guide the airflow through the traffic unit\". The DCP-404 technical description backs it with a high-temperature warning that tells the operator to check the second slot has a card or a dummy front panel.","kind":"example"},"dcp-404-x2":{"bays":{"slot-1":"smartoptics/dcp-404@1","slot-2":"smartoptics/dcp-404@1"},"description":"Both traffic slots carrying a DCP-404 400G muxponder - the fully populated chassis, 8x QSFP28 client and 2x QSFP-DD line in 1RU. Illustrative: the two units are ordered separately from the chassis, so this is a picture rather than a SKU.","kind":"example"},"ila-node":{"bays":{"slot-1":"smartoptics/dcp-f-a22@1","slot-1/ppm-1":"smartoptics/ppm-ad1-1510@1","slot-1/ppm-2":"smartoptics/ppm-dummy@1","slot-2":"smartoptics/dcp-2-blank@1"},"description":"THE ILA NODE, which is what a DCP-F-A22 is for: a 22 dB EDFA in slot 1 carrying a PPM-AD1-1510 in its upper bay and the dummy cover in its lower one, with the blind plate in slot 2. The 1510 adds and drops the supervisory channel at the amplifier site; the second PPM position is unused at a plain ILA, and UM s2.5 wants the empty one covered rather than open. Illustrative, like the other examples: the units are ordered separately from the chassis. It is also the ONLY configuration in the library that seats a relief-bearing module in a bay on a raised carrier, which is why it is worth having as a drawing and not just as a note - smartoptics/ppm-dummy@1 declares no relief, so with the bays at their defaults nothing exercises the depth arithmetic that puts an occupant on the A22's raised block.","kind":"example"}},"description":"1RU 19-inch chassis for the DCP transponder and muxponder family. Two half-width traffic slots at the front; two hot-pluggable PSUs, a four-fan tray and the management board at the rear.","format":1,"gaps":[{"note":"UM s3.1.5 says \"The air inlets and outlets are positioned in the front and back\", but fig 2-4 is an empty chassis shot into a dark cavity and resolves no vent pattern on the chassis front itself. The populated render (fig 1-1) does show honeycomb mesh, but that mesh is on the TRAFFIC UNITS' faceplates, not the chassis. So the front view draws no vent of its own and whether the chassis carries any is unresolved.","reason":"needs-photo","scope":["front"],"wanted":"a face-on photograph of a populated DCP-2, which would show the chassis front beside a unit faceplate and separate the two. Every front image in the corpus is either an empty chassis or a three-quarter render.","what":"front-vents"},{"note":"These four views carry the ENVELOPE ONLY - the 440 x 45 x 500 box from the manual's spec table, with the front faceplate shown edge-on as a dark band - and no observed surface detail: no lid screws, no side rails, no ventilation. That is the same treatment dcp-r-9d-cs gives its four, and it is honest rather than complete. The populated three-quarter render (fig 1-1) does show the lid and the left flank, but it is a lit marketing render on a black ground at an angle that measures nothing.","reason":"needs-photo","scope":["left","right","top","bottom"],"wanted":"a square-on photograph of the lid and of one flank. Failing that, the 3/4 render would support screw positions on the lid if it were rectified, which is what was done for smartoptics/dcp-404@1's top face.","what":"side-top-bottom-detail"},{"note":"The management board is called \"mgmt-board\" in the DCP-2-FB/HW ordering description and \"part of the DCP-2 chassis\" in UM s2.6, and it has no orderable part number of its own. Its ports are placed directly on the rear view with the plate drawn as decor, rather than modelled as a bay.","reason":"vendor-silent","scope":["mgmt"],"wanted":"a statement either way on whether the board is field-replaceable. If it is, this becomes a bay accepting a management-board component, and the seven ports move onto that part.","what":"mgmt-board-fru"},{"note":"UM s3.2.8 puts the protective ground on the FRONT RACK BRACKET - \"It is located on the right-side front rack mount(s)\" - with an M5 nut and an unpainted pad around it, and notes the brackets are interchangeable left to right if the terminal is wanted on the other side. common/rack-ear@1 carries no terminal, and a separate lug placed at the bracket's position simply overlaps it, so the DCP-2 draws none. The terminal is real and is on the bracket, not on the chassis body.","reason":"needs-drawing","scope":["furniture"],"wanted":"a common/rack-ear variant, or a skin, carrying the ground stud - the same need any device whose ground is on its bracket will have. Until then this is recorded rather than drawn.","what":"ground-terminal"},{"note":"Both jacks of the ETH0/CONSOLE pair show small light features at their corners in fig 2-5. On ETH0 those read as link lamps; on an RS-232 console jack they are more likely shield retention tabs. CONSOLE is drawn as a bare std/rj45-ganged rather than the lamped common/rj45-ganged-eth used for the Ethernet ports.","reason":"needs-photo","scope":["console"],"wanted":"a rear photograph above about 5 px/mm, which would separate a lamp window from a retention tab. The best in the corpus is 2.7.","what":"console-lamps"}],"groups":{"fans":{"description":"one tray of four fans. UM s2.4 - the system \"is designed to operate with 3 working fans\", and a failed fan raises an alarm to replace the tray.","index-origin":1,"role":"service","term":"Fan"},"furniture":{"index-origin":1,"role":"furniture","term":"Item"},"mgmt":{"index-origin":1,"mixed":"the management interfaces, all at the rear on one board. ETH1-4 are RJ45 100/1000Base-T; ETH4 is ALSO available as an SFP, shared with the electrical jack so that only one may be used at a time; ETH0 is the local craft port and CONSOLE is the RS-232 serial port. Two connector families in one block because UM s2.6 lists them as one set of network management interfaces, and because the shared ETH4 pair would be split across blocks otherwise.","role":"management","term":"Port"},"psus":{"attrs":{"redundancy":"1+1","redundancy-note":"so-ds-dcp-2-r4.3, Power Supply Characteristics - \"Dual redundant supply\". UM s2.3 adds that \"The DCP-2 is dual feed and the power supplies are hot swappable\", and the chassis draws at most 17W against a 400W rating, so either supply carries the whole load alone."},"description":"two hot-pluggable supplies. UM s2.3 - AC and DC modules share a footprint and \"Both types can be used simultaneously\", so the two bays accept either.","index-origin":1,"role":"service","term":"PSU"},"slots":{"description":"the two half-width traffic slots. UM s2.2 - \"In the front 2 traffic slots are available. The left slot is called slot '1' and the right slot is nominated as slot '2'.\" Either may hold a traffic unit or the blind plate, and UM s2.5 asks for the plate whenever only one unit is fitted so the airflow still passes through it.","index-origin":1,"role":"service","term":"Slot"}},"kind":"device","manufacturer":"Smartoptics","model":"DCP-2","name":"dcp-2","profile":"optical","provenance":{"caption-size":"photo-measured, and corrected after looking at the render beside the photograph. In fig 2-5 the port captions stand about 1.33mm cap-height against the 1.8 a font-size of 1.9 produces, so the first cut was ~35% oversized - the same defect the DCP-404's Tx/Rx captions had. Font-size is 1.45, which puts the cap height at about 1.05 and the caption back in proportion to the jacks beside it.","chassis":"datasheet and manual agree - 440mm (W) x 45mm (H) x 500mm (D), ~7kg without traffic units, 1 RU. Note 45, not the 44.45 of a nominal 1RU; both documents say 45.","ears":"UM s3.2 - the rack brackets are a separate kit with seven part numbers and several mounting depths, not integral to the chassis. The front figure (fig 2-4) spans 440 with no ears fitted, which is what confirms the body width. Ears are therefore drawn `optional`, as on dcp-r-9d-cs.","eth4-shared":"silkscreen. BOTH ETH4 labels - the electrical jack's and the SFP's - are printed in a box on the real faceplate while no other caption is, so the artwork itself marks the shared pair that UM s2.6 describes in prose. The boxes are reproduced here.","front-layout":"photo-measured - UM fig 2-4, scaled across from the 440 body. Side rails ~7 each, a centre assembly at ~213-226, and slot apertures of ~206.5. The assembly centres on 219.8 against a true centreline of 220, which is UM s2.2's \"extraction mechanism is based in the center of the chassis\". The apertures against a 205 DCP-404 leave 1.5 of clearance - the two numbers were measured independently and confirm each other.","ground":"UM s3.2.8 - \"The front rack mount brackets include a grounding terminal ... located on the right-side front rack mount(s)\", M5 nut, with the surface around it left unpainted. It is on the BRACKET, so it is drawn on the ear and disappears with it. The manual adds that the brackets are interchangeable left to right if the ground is wanted on the other side.","method":"FACT SHEET FIRST, THEN THE ARTWORK. The inventory came from DCP-Series_User_Manual_14.0_A and so-ds-dcp-2-r4.3 before any figure was opened (working/intake/factsheets/dcp-2.md), and the residual pass afterwards named everything on both faces the sheet had not predicted. Nine residuals were found and each is either promoted below with a source or written off in that sheet.","mgmt-geometry":"photo-measured from fig 2-5, which is the sharper of the two rear plates. Jack apertures give a column pitch of 13.95 - the library's 13.97 RJ45 standard - and a row pitch of 15.13, which is the 0.6in row pitch of a standard 2xN magjack. Aperture centres: quad at x 288.26 and 302.23, rows at y 17.39 and 32.52; the ETH0/CONSOLE pair at x 340.3, rows at y 17.96 and 32.33; the SFP at x 321.47, y 32.52. CORROBORATED INDEPENDENTLY: scaling the `DCP-2 Rear` master on its own height rather than on the rack width gives a plate 77.7 wide against ~78 measured, and its seven connection points land within 1.7mm of these centres.","mgmt-ports":"UM s2.6 gives the inventory - 4x RJ45 ETH1-4, 1x SFP ETH4 \"shared with the electrical ETH4 port and only one can be used at a time\", 1x ETH0 local, 1x RS-232 console. That is 6 RJ45 + 1 SFP, and the `DCP-2 Rear` stencil master reports exactly 7 connection points, which is what identifies that 80mm master as the management block alone rather than the 440mm face.","model":"the product is the DCP-2; DCP-2-FB/HW is the ORDERING CODE for its base hardware configuration (\"Base HW, 1 RU chassis, 19in, 2-traffic slots, dual power, fan units, mgmt-board\" in so-ds-dcp-2-r4.3). The \"/HW\" suffix distinguishes it from the DCP-2-ENL-7.x_SW embedded node licence ordered alongside, and is not part of the model name. Recorded because the Vyve gap list names the part by its ordering code. NOTE FOR THE NEXT SMARTOPTICS PART: a slash in `model:` breaks the NetBox exporter, which builds a file path from it - DCP-M32-CSO-ZR+/HW will need the same treatment.","no-front-silkscreen":"the chassis front carries NO marking. \"SLOT 1\" and \"SLOT 2\" appear in UM fig 2-4 in white capitals across the two openings, and the first cut of this model put them on the faceplate as silkscreen. They are the FIGURE'S CALLOUT ANNOTATIONS, added to the photograph to explain s2.2's slot nomination, not paint on the metal - which is visible in the figure itself, where they float over the dark cavity rather than sitting on any surface. The slot numbering is carried by the bay ids instead.","port-numbering":"silkscreen, and it is not in any manual. The gang is column-major and bottom-first - ETH1 bottom-left, ETH2 top-left, ETH3 bottom-right, ETH4 top-right. UM s2.6 names the four ports and never arranges them.","power":"UM spec table, \"POWER CONSUMPTION (CHASSI ONLY): DCP-2 chassis with fans and 2 PSU (AC) Min: 14W Max: 17W\". The manual's other rows bundle a traffic unit, which answers for itself. NO AMBIENT TEMPERATURE is quoted against any DCP power figure, so none is asserted.","psu-positions":"the PSU sticker reads \"CRPS 460W AC Gold\", which names the form factor; 1U CRPS is 73.5 x 40. The two installed bays measure 81 and 75 for what is demonstrably the same part, so the standard is worth more than either edge read. 73.5 at the measured 352.3 pitch puts the pair at 4.0 and 356.3, matching the right bay to under a millimetre.","rear-layout":"photo-measured - UM figs 2-5 and 2-6. These are SEPARATE PHOTOGRAPHS and they agree on the PSU fan-sticker pitch to 0.15% (352.3 and 351.8), which is what says the x axis is trustworthy in both. The y axis is ~3% compressed in each (both were shot slightly from above), so y is scaled from the 45mm height and never from the same factor as x. Left to right: PSU bay, fan tray, management plate, PSU bay.","slot-occupants":"the traffic slots accept smartoptics/dcp-f-a22@1 as well as the DCP-404. Both are 205 x 44 x 270 - the DCP traffic-unit envelope is one shared footprint, stated independently by each part's own datasheet - so a slot that fits one fits the other. The A22 is what makes an ILA node out of this chassis.","vents":"photo-measured - the rear vent area is the fan tray's own faceplate and belongs to smartoptics/dcp-2-fan@1, not to the chassis. The chassis draws none of its own."},"version":"1.6.0","views":{"bottom":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[440,500]},{"at":[0,0],"fill":"#17191c","size":[440,12.7]}]},"size":{"h":500,"w":440}},"front":{"components":{"bays":[{"accepts":["smartoptics/dcp-404@1","smartoptics/dcp-f-a22@1","smartoptics/dcp-2-blank@1"],"at":[7.5,0.5],"default":"smartoptics/dcp-2-blank@1","group":"slots","id":"slot-1","rel-pos":1,"size":{"h":44.0,"w":205.0}},{"accepts":["smartoptics/dcp-404@1","smartoptics/dcp-f-a22@1","smartoptics/dcp-2-blank@1"],"at":[227.5,0.5],"default":"smartoptics/dcp-2-blank@1","group":"slots","id":"slot-2","rel-pos":2,"size":{"h":44.0,"w":205.0}}],"placements":[{"at":[-14,0.75],"group":"furniture","id":"ear-left","optional":"ears","ref":"common/rack-ear@1","rel-pos":1,"skin":"left"},{"at":[440,0.75],"group":"furniture","id":"ear-right","optional":"ears","ref":"common/rack-ear@1","rel-pos":2,"skin":"right"}]},"panel":{"decor":[{"at":[212.5,0.5],"fill":"#2a2e32","rx":0.6,"size":[15,44],"stroke":"#181b1e","stroke-width":0.2},{"at":[214.6,2.0],"fill":"#c8ced4","rx":0.8,"size":[4.6,12.0],"stroke":"#8d939a","stroke-width":0.2},{"at":[220.8,2.0],"fill":"#c8ced4","rx":0.8,"size":[4.6,12.0],"stroke":"#8d939a","stroke-width":0.2}]},"size":{"h":45,"w":440}},"left":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[500,45]},{"at":[487.3,0],"fill":"#17191c","size":[12.7,45]}]},"size":{"h":45,"w":500}},"rear":{"components":{"bays":[{"accepts":["smartoptics/dcp-2-psu-ac@1","smartoptics/dcp-2-psu-dc@1"],"at":[4.0,2.5],"default":"smartoptics/dcp-2-psu-ac@1","group":"psus","id":"psu-1","rel-pos":1,"size":{"h":40.0,"w":73.5}},{"accepts":["smartoptics/dcp-2-fan@1"],"at":[85.0,2.5],"default":"smartoptics/dcp-2-fan@1","group":"fans","id":"fan-1","rel-pos":1,"size":{"h":40.0,"w":192.0}},{"accepts":["smartoptics/dcp-2-psu-ac@1","smartoptics/dcp-2-psu-dc@1"],"at":[356.3,2.5],"default":"smartoptics/dcp-2-psu-ac@1","group":"psus","id":"psu-2","rel-pos":2,"size":{"h":40.0,"w":73.5}}],"placements":[{"at":[-14,0.75],"group":"furniture","id":"ear-left-r","optional":"ears","ref":"common/rack-ear@1","rel-pos":4,"skin":"left"},{"at":[440,0.75],"group":"furniture","id":"ear-right-r","optional":"ears","ref":"common/rack-ear@1","rel-pos":5,"skin":"right"},{"at":[281.91,11.89],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth2","ref":"common/rj45-ganged-eth@1","rel-pos":2,"rotate":180},{"at":[295.88,11.89],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth4","ref":"common/rj45-ganged-eth@1","rel-pos":4,"rotate":180},{"at":[281.91,27.02],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth1","ref":"common/rj45-ganged-eth@1","rel-pos":1},{"at":[295.88,27.02],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth3","ref":"common/rj45-ganged-eth@1","rel-pos":3},{"at":[314.22,27.52],"attrs":{"media":"sfp","role":"mgmt","speed":"100m-1g"},"group":"mgmt","id":"eth4-sfp","ref":"std/sfp@1","rel-pos":5},{"at":[333.95,12.46],"attrs":{"role":"mgmt","speed":"1000base-t"},"group":"mgmt","id":"eth0","ref":"common/rj45-ganged-eth@1","rel-pos":6,"rotate":180},{"at":[333.95,26.83],"attrs":{"media":"rj45-serial","role":"console"},"group":"mgmt","id":"console","ref":"std/rj45-ganged@2","rel-pos":7}]},"panel":{"cutouts":[{"at":[281.91,11.89],"id":"eth2","shape":"rect","size":[12.7,11]},{"at":[295.88,11.89],"id":"eth4","shape":"rect","size":[12.7,11]},{"at":[281.91,27.02],"id":"eth1","shape":"rect","size":[12.7,11]},{"at":[295.88,27.02],"id":"eth3","shape":"rect","size":[12.7,11]},{"at":[314.22,27.52],"id":"eth4-sfp","shape":"rect","size":[14.5,10]},{"at":[333.95,12.46],"id":"eth0","shape":"rect","size":[12.7,11]},{"at":[333.95,26.83],"id":"console","shape":"rect","size":[12.7,11]}],"decor":[{"at":[277.5,1.5],"fill":"#2b2f33","rx":0.6,"size":[78,42]},{"at":[272.0,6.5],"fill":"#9aa0a6","rx":2.5,"size":[5.0,5.0]},{"at":[279.6,11.2],"fill":"#b0b5bb","rx":0.5,"size":[31.6,27.2]},{"at":[332.1,12.2],"fill":"#b0b5bb","rx":0.5,"size":[16.2,25.8]},{"at":[298.53,8.98],"fill":"#e8eaec","rx":0.5,"size":[7.4,2.2]},{"at":[317.77,24.68],"fill":"#e8eaec","rx":0.5,"size":[7.4,2.2]}]},"silkscreen":[{"at":[288.26,10.6],"fill":"#e2e5e8","font-size":1.45,"for":"eth2","text":"ETH 2"},{"at":[302.23,10.6],"fill":"#1b1e21","font-size":1.45,"for":"eth4","text":"ETH 4"},{"at":[288.26,40.6],"fill":"#e2e5e8","font-size":1.45,"for":"eth1","text":"ETH 1"},{"at":[302.23,40.6],"fill":"#e2e5e8","font-size":1.45,"for":"eth3","text":"ETH 3"},{"at":[321.47,26.3],"fill":"#1b1e21","font-size":1.45,"for":"eth4-sfp","text":"ETH 4"},{"at":[340.3,10.6],"fill":"#e2e5e8","font-size":1.45,"for":"eth0","text":"ETH 0 / LOCAL"},{"at":[340.3,40.6],"fill":"#e2e5e8","font-size":1.45,"for":"console","text":"CONSOLE"}],"size":{"h":45,"w":440}},"right":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[500,45]},{"at":[0,0],"fill":"#17191c","size":[12.7,45]}]},"size":{"h":45,"w":500}},"top":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[440,500]},{"at":[0,487.3],"fill":"#17191c","size":[440,12.7]}]},"size":{"h":500,"w":440}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DCP-2" x="0" y="0" width="440" height="45" rx="1.2" fill="#1b1e21" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="outline-0" data-kind="outline" x="212.5" y="0.5" width="15" height="44" rx="0.6" fill="none" stroke="#181b1e" stroke-width="0.2" />
+    <rect id="outline-1" data-kind="outline" x="214.6" y="2" width="4.6" height="12" rx="0.8" fill="none" stroke="#8d939a" stroke-width="0.2" />
+    <rect id="outline-2" data-kind="outline" x="220.8" y="2" width="4.6" height="12" rx="0.8" fill="none" stroke="#8d939a" stroke-width="0.2" />
+  </g>
+  <g id="slot-1" data-path="slot-1" data-class="bay" data-group="slots" data-group-role="service" data-rel-pos="1">
+    <title>slot-1</title>
+    <rect id="slot-1--opening" x="7.5" y="0.5" width="205" height="44" fill="#101214" />
+    <g id="slot-1--module" data-path="slot-1/module" data-class="line-card" data-behaviour="fills" data-ref="smartoptics/dcp-f-a22@1:1.2.0" data-gain-db="22" data-laser-class="1" data-model="DCP-F-A22" data-power-draw-max-w="35" data-power-draw-typical-w="30" data-role="amplifier" transform="translate(110,22.5) translate(-102.5,-22)">
+      <title>slot-1--module</title>
+      <defs>
+        <linearGradient id="slot-1--module--plate" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#4a4f55" />
+          <stop offset="0.22" stop-color="#33383d" />
+          <stop offset="1" stop-color="#1c1f22" />
+        </linearGradient>
+        <linearGradient id="slot-1--module--topband" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2b3035" />
+          <stop offset="1" stop-color="#1a1d20" />
+        </linearGradient>
+      </defs>
+      <g id="slot-1--module--body">
+        <g id="slot-1--module--body-ramp" data-z-out="44.0" data-z-profile-y="0:0,8.9:44,44:44">
+          <path id="slot-1--module--plate-ramp" fill="url(#slot-1--module--plate)" d="M 1.2 0 H 147.3 V 44 H 1.2 A 1.2 1.2 0 0 1 0 42.8 V 1.2 A 1.2 1.2 0 0 1 1.2 0 Z" />
+          <path id="slot-1--module--edge-ramp" fill="none" stroke="#111417" stroke-width="0.3" d="M 147.3 0 H 1.2 A 1.2 1.2 0 0 0 0 1.2 V 42.8 A 1.2 1.2 0 0 0 1.2 44 H 147.3" />
+          <rect id="slot-1--module--ramp-band" x="0" y="0" width="147.3" height="8.9" rx="1.2" fill="url(#slot-1--module--topband)" />
+          <g id="slot-1--module--vent-top" fill="#0a0c0e" data-path="slot-1/module/vent-top" data-class="vent" data-z-vent="44.0">
+            <polygon points="14.00,5.000 15.30,4.554 17.90,4.554 19.20,5.000 17.90,5.446 15.30,5.446" />
+            <polygon points="20.50,6.900 21.80,6.454 24.40,6.454 25.70,6.900 24.40,7.346 21.80,7.346" />
+            <polygon points="27.00,5.000 28.30,4.554 30.90,4.554 32.20,5.000 30.90,5.446 28.30,5.446" />
+            <polygon points="33.50,6.900 34.80,6.454 37.40,6.454 38.70,6.900 37.40,7.346 34.80,7.346" />
+            <polygon points="40.00,5.000 41.30,4.554 43.90,4.554 45.20,5.000 43.90,5.446 41.30,5.446" />
+            <polygon points="46.50,6.900 47.80,6.454 50.40,6.454 51.70,6.900 50.40,7.346 47.80,7.346" />
+            <polygon points="53.00,5.000 54.30,4.554 56.90,4.554 58.20,5.000 56.90,5.446 54.30,5.446" />
+            <polygon points="59.50,6.900 60.80,6.454 63.40,6.454 64.70,6.900 63.40,7.346 60.80,7.346" />
+            <polygon points="66.00,5.000 67.30,4.554 69.90,4.554 71.20,5.000 69.90,5.446 67.30,5.446" />
+            <polygon points="72.50,6.900 73.80,6.454 76.40,6.454 77.70,6.900 76.40,7.346 73.80,7.346" />
+            <polygon points="79.00,5.000 80.30,4.554 82.90,4.554 84.20,5.000 82.90,5.446 80.30,5.446" />
+            <polygon points="85.50,6.900 86.80,6.454 89.40,6.454 90.70,6.900 89.40,7.346 86.80,7.346" />
+            <polygon points="92.00,5.000 93.30,4.554 95.90,4.554 97.20,5.000 95.90,5.446 93.30,5.446" />
+            <polygon points="98.50,6.900 99.80,6.454 102.40,6.454 103.70,6.900 102.40,7.346 99.80,7.346" />
+            <polygon points="105.00,5.000 106.30,4.554 108.90,4.554 110.20,5.000 108.90,5.446 106.30,5.446" />
+            <polygon points="111.50,6.900 112.80,6.454 115.40,6.454 116.70,6.900 115.40,7.346 112.80,7.346" />
+            <polygon points="118.00,5.000 119.30,4.554 121.90,4.554 123.20,5.000 121.90,5.446 119.30,5.446" />
+            <polygon points="124.50,6.900 125.80,6.454 128.40,6.454 129.70,6.900 128.40,7.346 125.80,7.346" />
+            <polygon points="131.00,5.000 132.30,4.554 134.90,4.554 136.20,5.000 134.90,5.446 132.30,5.446" />
+            <polygon points="137.50,6.900 138.80,6.454 141.40,6.454 142.70,6.900 141.40,7.346 138.80,7.346" />
+          </g>
+          <g id="slot-1--module--brand-silkscreen" font-family="sans-serif">
+            <text id="slot-1--module--brand" x="4.7" y="14.1" font-size="3.4" fill="#eef1f4">smartoptics</text>
+            <text id="slot-1--module--model" x="4.7" y="18.4" font-size="2.4" fill="#b9bfc5">DCP-F-A22</text>
+          </g>
+          <g id="slot-1--module--caption-silkscreen" font-family="sans-serif" text-anchor="middle">
+            <text id="slot-1--module--caption-power" x="8.68" y="40.6" font-size="1.9" fill="#dfe4e8" data-path="slot-1/module/caption-power" data-class="marking">Power</text>
+            <text id="slot-1--module--caption-status" x="17.79" y="40.6" font-size="1.9" fill="#dfe4e8" data-path="slot-1/module/caption-status" data-class="marking">Status</text>
+            <text x="37.8" y="21.9" font-size="2.1" fill="#e8ecef">ETH1</text>
+            <text x="60.2" y="21.9" font-size="2.1" fill="#e8ecef">ETH2</text>
+            <text x="94.68" y="21.9" font-size="2.1" fill="#e8ecef">EDFA</text>
+            <text x="120.58" y="21.9" font-size="2.1" fill="#e8ecef">OCM</text>
+            <text x="138.0" y="23.0" font-size="2.1" fill="#e8ecef">SFP</text>
+          </g>
+          <g id="slot-1--module--port-caption-boxes">
+            <rect x="88.08" y="36.0" width="13.2" height="2.7" rx="0.3" fill="#eef0f2" />
+            <rect x="113.98" y="36.0" width="6.6" height="2.7" rx="0.3" fill="#eef0f2" />
+          </g>
+          <g id="slot-1--module--txrx-silkscreen" font-family="sans-serif" text-anchor="middle">
+            <text x="91.4" y="38.0" font-size="1.9" fill="#1c1f22">Tx</text>
+            <text x="97.9" y="38.0" font-size="1.9" fill="#1c1f22">Rx</text>
+            <text x="117.3" y="38.0" font-size="1.9" fill="#1c1f22">Tx</text>
+          </g>
+        </g>
+        <g id="slot-1--module--body-square" data-z-out="44.0">
+          <path id="slot-1--module--plate-square" fill="url(#slot-1--module--plate)" d="M 147.3 0 H 203.8 A 1.2 1.2 0 0 1 205 1.2 V 42.8 A 1.2 1.2 0 0 1 203.8 44 H 147.3 Z" />
+          <path id="slot-1--module--edge-square" fill="none" stroke="#111417" stroke-width="0.3" d="M 147.3 0 H 203.8 A 1.2 1.2 0 0 1 205 1.2 V 42.8 A 1.2 1.2 0 0 1 203.8 44 H 147.3" />
+          <g id="slot-1--module--ppm-1" data-path="slot-1/module/ppm-1" data-class="bay" data-z-lift="44.0">
+            <rect id="slot-1--module--ppm-1--opening" x="147.3" y="2.5" width="55.4" height="19.5" rx="0.8" fill="#101315" stroke="#0a0c0e" stroke-width="0.25" />
+            <g id="slot-1--module--ppm-1--module" data-path="slot-1/module/ppm-1/module" data-class="filter" data-behaviour="fills" data-ref="smartoptics/ppm-ad1-1510@1:1.0.0" data-wall="#22262a" data-channel-nm="1511" data-media="fiber" data-model="PPM-AD1-1510-2F" data-role="osc-filter" transform="translate(147.3,2.5)">
+              <title>slot-1--module--ppm-1--module</title>
+              <defs>
+                <linearGradient id="slot-1--module--ppm-1--module--plate" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#4a4f55" />
+                  <stop offset="0.35" stop-color="#33383d" />
+                  <stop offset="1" stop-color="#22262a" />
+                </linearGradient>
+              </defs>
+              <rect id="slot-1--module--ppm-1--module--body" x="0" y="0" width="55.4" height="19.5" rx="1.0" fill="url(#slot-1--module--ppm-1--module--plate)" stroke="#15181a" stroke-width="0.25" />
+              <g id="slot-1--module--ppm-1--module--captions">
+                <rect id="slot-1--module--ppm-1--module--caption-osc" x="5.57" y="15.4" width="13.2" height="2.7" rx="0.3" fill="#eef0f2" data-path="slot-1/module/ppm-1/module/caption-osc" data-class="marking" data-z-out="44.15" />
+                <rect id="slot-1--module--ppm-1--module--caption-edfa" x="22.50" y="15.4" width="13.2" height="2.7" rx="0.3" fill="#eef0f2" data-path="slot-1/module/ppm-1/module/caption-edfa" data-class="marking" data-z-out="44.15" />
+                <rect id="slot-1--module--ppm-1--module--caption-line" x="35.70" y="15.4" width="13.2" height="2.7" rx="0.3" fill="#eef0f2" data-path="slot-1/module/ppm-1/module/caption-line" data-class="marking" data-z-out="44.15" />
+              </g>
+              <g id="slot-1--module--ppm-1--module--port-silkscreen" font-family="sans-serif" text-anchor="middle">
+                <text x="12.17" y="3.3" font-size="2.5" fill="#f2f4f6">OSC</text>
+                <text x="29.10" y="3.3" font-size="2.5" fill="#f2f4f6">EDFA</text>
+                <text x="42.30" y="3.3" font-size="2.5" fill="#f2f4f6">Line</text>
+                <text x="8.9" y="17.4" font-size="1.9" fill="#1c1f22">Tx</text>
+                <text x="15.4" y="17.4" font-size="1.9" fill="#1c1f22">Rx</text>
+                <text x="25.9" y="17.4" font-size="1.9" fill="#1c1f22">Tx</text>
+                <text x="32.4" y="17.4" font-size="1.9" fill="#1c1f22">Rx</text>
+                <text x="39.0" y="17.4" font-size="1.9" fill="#1c1f22">Tx</text>
+                <text x="45.5" y="17.4" font-size="1.9" fill="#1c1f22">Rx</text>
+              </g>
+              <g id="slot-1--module--ppm-1--module--part-silkscreen" font-family="sans-serif">
+                <text x="53.4" y="9.75" font-size="1.9" fill="#dfe3e7" text-anchor="middle" transform="rotate(90 53.4 9.75)">PPM-AD1-1510-2F</text>
+              </g>
+              <g id="slot-1--module--ppm-1--module--osc" data-path="slot-1/module/ppm-1/module/osc" data-class="port" data-ref="common/lc-duplex-adapter@3:3.1.0" data-connector="lc-duplex" data-media="fiber" data-role="osc" transform="translate(5.57,4.0)">
+                <title>slot-1--module--ppm-1--module--osc</title>
+                <path id="slot-1--module--ppm-1--module--osc--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.98 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z            M 8.58 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z" data-z-out="47.175" />
+                <rect id="slot-1--module--ppm-1--module--osc--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+                <rect id="slot-1--module--ppm-1--module--osc--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+                <rect id="slot-1--module--ppm-1--module--osc--cap-tx" x="0.95" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ppm-1/module/osc/cap-tx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+                <rect id="slot-1--module--ppm-1--module--osc--cap-rx" x="7.55" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ppm-1/module/osc/cap-rx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+                <g id="slot-1--module--ppm-1--module--osc--tx" data-path="slot-1/module/ppm-1/module/osc/tx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.95,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+                  <title>slot-1--module--ppm-1--module--osc--tx</title>
+                  <path id="slot-1--module--ppm-1--module--osc--tx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ppm-1/module/osc/tx/bore" data-class="cutout" />
+                  <rect id="slot-1--module--ppm-1--module--osc--tx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+                  <rect id="slot-1--module--ppm-1--module--osc--tx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+                  <rect id="slot-1--module--ppm-1--module--osc--tx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+                  <circle id="slot-1--module--ppm-1--module--osc--tx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+                  <circle id="slot-1--module--ppm-1--module--osc--tx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+                </g>
+                <g id="slot-1--module--ppm-1--module--osc--rx" data-path="slot-1/module/ppm-1/module/osc/rx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.55,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+                  <title>slot-1--module--ppm-1--module--osc--rx</title>
+                  <path id="slot-1--module--ppm-1--module--osc--rx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ppm-1/module/osc/rx/bore" data-class="cutout" />
+                  <rect id="slot-1--module--ppm-1--module--osc--rx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+                  <rect id="slot-1--module--ppm-1--module--osc--rx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+                  <rect id="slot-1--module--ppm-1--module--osc--rx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+                  <circle id="slot-1--module--ppm-1--module--osc--rx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+                  <circle id="slot-1--module--ppm-1--module--osc--rx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+                </g>
+              </g>
+              <g id="slot-1--module--ppm-1--module--edfa" data-path="slot-1/module/ppm-1/module/edfa" data-class="port" data-ref="common/lc-duplex-adapter@3:3.1.0" data-connector="lc-duplex" data-media="fiber" data-role="edfa" transform="translate(22.5,4.0)">
+                <title>slot-1--module--ppm-1--module--edfa</title>
+                <path id="slot-1--module--ppm-1--module--edfa--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.98 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z            M 8.58 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z" data-z-out="47.175" />
+                <rect id="slot-1--module--ppm-1--module--edfa--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+                <rect id="slot-1--module--ppm-1--module--edfa--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+                <rect id="slot-1--module--ppm-1--module--edfa--cap-tx" x="0.95" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ppm-1/module/edfa/cap-tx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+                <rect id="slot-1--module--ppm-1--module--edfa--cap-rx" x="7.55" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ppm-1/module/edfa/cap-rx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+                <g id="slot-1--module--ppm-1--module--edfa--tx" data-path="slot-1/module/ppm-1/module/edfa/tx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.95,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+                  <title>slot-1--module--ppm-1--module--edfa--tx</title>
+                  <path id="slot-1--module--ppm-1--module--edfa--tx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ppm-1/module/edfa/tx/bore" data-class="cutout" />
+                  <rect id="slot-1--module--ppm-1--module--edfa--tx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+                  <rect id="slot-1--module--ppm-1--module--edfa--tx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+                  <rect id="slot-1--module--ppm-1--module--edfa--tx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+                  <circle id="slot-1--module--ppm-1--module--edfa--tx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+                  <circle id="slot-1--module--ppm-1--module--edfa--tx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+                </g>
+                <g id="slot-1--module--ppm-1--module--edfa--rx" data-path="slot-1/module/ppm-1/module/edfa/rx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.55,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+                  <title>slot-1--module--ppm-1--module--edfa--rx</title>
+                  <path id="slot-1--module--ppm-1--module--edfa--rx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ppm-1/module/edfa/rx/bore" data-class="cutout" />
+                  <rect id="slot-1--module--ppm-1--module--edfa--rx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+                  <rect id="slot-1--module--ppm-1--module--edfa--rx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+                  <rect id="slot-1--module--ppm-1--module--edfa--rx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+                  <circle id="slot-1--module--ppm-1--module--edfa--rx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+                  <circle id="slot-1--module--ppm-1--module--edfa--rx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+                </g>
+              </g>
+              <g id="slot-1--module--ppm-1--module--line" data-path="slot-1/module/ppm-1/module/line" data-class="port" data-ref="common/lc-duplex-adapter@3:3.1.0" data-connector="lc-duplex" data-media="fiber" data-role="line" transform="translate(35.7,4.0)">
+                <title>slot-1--module--ppm-1--module--line</title>
+                <path id="slot-1--module--ppm-1--module--line--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.98 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z            M 8.58 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z" data-z-out="47.175" />
+                <rect id="slot-1--module--ppm-1--module--line--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+                <rect id="slot-1--module--ppm-1--module--line--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+                <rect id="slot-1--module--ppm-1--module--line--cap-tx" x="0.95" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ppm-1/module/line/cap-tx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+                <rect id="slot-1--module--ppm-1--module--line--cap-rx" x="7.55" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ppm-1/module/line/cap-rx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+                <g id="slot-1--module--ppm-1--module--line--tx" data-path="slot-1/module/ppm-1/module/line/tx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.95,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+                  <title>slot-1--module--ppm-1--module--line--tx</title>
+                  <path id="slot-1--module--ppm-1--module--line--tx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ppm-1/module/line/tx/bore" data-class="cutout" />
+                  <rect id="slot-1--module--ppm-1--module--line--tx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+                  <rect id="slot-1--module--ppm-1--module--line--tx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+                  <rect id="slot-1--module--ppm-1--module--line--tx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+                  <circle id="slot-1--module--ppm-1--module--line--tx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+                  <circle id="slot-1--module--ppm-1--module--line--tx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+                </g>
+                <g id="slot-1--module--ppm-1--module--line--rx" data-path="slot-1/module/ppm-1/module/line/rx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.55,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+                  <title>slot-1--module--ppm-1--module--line--rx</title>
+                  <path id="slot-1--module--ppm-1--module--line--rx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ppm-1/module/line/rx/bore" data-class="cutout" />
+                  <rect id="slot-1--module--ppm-1--module--line--rx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+                  <rect id="slot-1--module--ppm-1--module--line--rx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+                  <rect id="slot-1--module--ppm-1--module--line--rx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+                  <circle id="slot-1--module--ppm-1--module--line--rx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+                  <circle id="slot-1--module--ppm-1--module--line--rx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+                </g>
+              </g>
+            </g>
+          </g>
+          <g id="slot-1--module--ppm-2" data-path="slot-1/module/ppm-2" data-class="bay" data-z-lift="44.0">
+            <rect id="slot-1--module--ppm-2--opening" x="147.3" y="22.0" width="55.4" height="19.5" rx="0.8" fill="#101315" stroke="#0a0c0e" stroke-width="0.25" />
+            <g id="slot-1--module--ppm-2--module" data-path="slot-1/module/ppm-2/module" data-class="blank" data-behaviour="fills" data-ref="smartoptics/ppm-dummy@1:1.0.0" data-model="PPM-DUMMY" data-role="slot-blank" transform="translate(147.3,22.0)">
+              <title>slot-1--module--ppm-2--module</title>
+              <defs>
+                <linearGradient id="slot-1--module--ppm-2--module--plate" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#4a4f55" />
+                  <stop offset="0.35" stop-color="#33383d" />
+                  <stop offset="1" stop-color="#22262a" />
+                </linearGradient>
+              </defs>
+              <rect id="slot-1--module--ppm-2--module--body" x="0" y="0" width="55.4" height="19.5" rx="1.0" fill="url(#slot-1--module--ppm-2--module--plate)" stroke="#15181a" stroke-width="0.25" />
+              <g id="slot-1--module--ppm-2--module--part-silkscreen" font-family="sans-serif">
+                <text x="53.4" y="9.75" font-size="1.9" fill="#dfe3e7" text-anchor="middle" transform="rotate(90 53.4 9.75)">PPM-DUMMY</text>
+              </g>
+            </g>
+          </g>
+        </g>
+      </g>
+      <g id="slot-1--module--warn-laser" data-path="slot-1/module/warn-laser" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" transform="translate(10.7,21.4)" data-z-lift="44.0">
+        <title>slot-1--module--warn-laser</title>
+        <path id="slot-1--module--warn-laser--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+        <g id="slot-1--module--warn-laser--burst" fill="#1a1a1a">
+          <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+          <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+          <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+          <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+        </g>
+      </g>
+      <g id="slot-1--module--warn-general" data-path="slot-1/module/warn-general" data-class="marking" data-behaviour="mounts" data-ref="common/warning-triangle@1:1.0.0" transform="translate(10.7,27.7)" data-z-lift="44.0">
+        <title>slot-1--module--warn-general</title>
+        <path id="slot-1--module--warn-general--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+        <g id="slot-1--module--warn-general--exclamation" fill="#1a1a1a">
+          <path d="M 2.43 2.15 h 0.54 l -0.10 1.45 h -0.34 z" />
+          <circle cx="2.70" cy="4.02" r="0.27" />
+        </g>
+      </g>
+      <g id="slot-1--module--led-power" data-path="slot-1/module/led-power" data-class="led" data-ref="common/led-rect@1:1.1.0" data-function="power" transform="translate(6.38,35.1)" data-z-lift="44.0">
+        <title>slot-1--module--led-power</title>
+        <rect id="slot-1--module--led-power--bezel" x="0" y="0" width="4.6" height="2.6" rx="0.3" fill="#17191c" />
+        <rect id="slot-1--module--led-power--lamp" x="0.4" y="0.4" width="3.8" height="1.8" rx="0.2" fill="var(--led-color, #2a6b3f)" data-path="slot-1/module/led-power/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--led-status" data-path="slot-1/module/led-status" data-class="led" data-ref="common/led-rect@1:1.1.0" data-function="status" transform="translate(15.49,35.1)" data-z-lift="44.0">
+        <title>slot-1--module--led-status</title>
+        <rect id="slot-1--module--led-status--bezel" x="0" y="0" width="4.6" height="2.6" rx="0.3" fill="#17191c" />
+        <rect id="slot-1--module--led-status--lamp" x="0.4" y="0.4" width="3.8" height="1.8" rx="0.2" fill="var(--led-color, #2a6b3f)" data-path="slot-1/module/led-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+      </g>
+      <g id="slot-1--module--eth1" data-path="slot-1/module/eth1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1000base-t" transform="translate(29.9,23.8)" data-z-lift="44.0">
+        <title>slot-1--module--eth1</title>
+        <g id="slot-1--module--eth1--jack" data-path="slot-1/module/eth1/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>slot-1--module--eth1--jack</title>
+          <path id="slot-1--module--eth1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="slot-1--module--eth1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="slot-1--module--eth1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="slot-1/module/eth1/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--eth1--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+        </g>
+        <path id="slot-1--module--eth1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="slot-1--module--eth1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/eth1/led-a" data-class="led" data-states="off link" data-z-out="44.3" data-z-color="#0d0f11" />
+        <rect id="slot-1--module--eth1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/eth1/led-b" data-class="led" data-states="off activity" data-z-out="44.3" data-z-color="#0d0f11" />
+      </g>
+      <g id="slot-1--module--eth2" data-path="slot-1/module/eth2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1000base-t" transform="translate(52.3,23.8)" data-z-lift="44.0">
+        <title>slot-1--module--eth2</title>
+        <g id="slot-1--module--eth2--jack" data-path="slot-1/module/eth2/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>slot-1--module--eth2--jack</title>
+          <path id="slot-1--module--eth2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="slot-1--module--eth2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="slot-1--module--eth2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="slot-1/module/eth2/jack/opening" data-class="cutout" />
+          <g id="slot-1--module--eth2--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+        </g>
+        <path id="slot-1--module--eth2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="slot-1--module--eth2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/eth2/led-a" data-class="led" data-states="off link" data-z-out="44.3" data-z-color="#0d0f11" />
+        <rect id="slot-1--module--eth2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="slot-1/module/eth2/led-b" data-class="led" data-states="off activity" data-z-out="44.3" data-z-color="#0d0f11" />
+      </g>
+      <g id="slot-1--module--edfa" data-path="slot-1/module/edfa" data-class="port" data-ref="common/lc-duplex-adapter@3:3.1.0" data-connector="lc-duplex" data-media="fiber" data-role="edfa" transform="translate(88.08,23.8)" data-z-lift="44.0">
+        <title>slot-1--module--edfa</title>
+        <path id="slot-1--module--edfa--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.98 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z            M 8.58 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z" data-z-out="47.175" />
+        <rect id="slot-1--module--edfa--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+        <rect id="slot-1--module--edfa--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+        <rect id="slot-1--module--edfa--cap-tx" x="0.95" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/edfa/cap-tx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+        <rect id="slot-1--module--edfa--cap-rx" x="7.55" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/edfa/cap-rx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+        <g id="slot-1--module--edfa--tx" data-path="slot-1/module/edfa/tx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.95,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+          <title>slot-1--module--edfa--tx</title>
+          <path id="slot-1--module--edfa--tx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/edfa/tx/bore" data-class="cutout" />
+          <rect id="slot-1--module--edfa--tx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+          <rect id="slot-1--module--edfa--tx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+          <rect id="slot-1--module--edfa--tx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+          <circle id="slot-1--module--edfa--tx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="slot-1--module--edfa--tx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        </g>
+        <g id="slot-1--module--edfa--rx" data-path="slot-1/module/edfa/rx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.55,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+          <title>slot-1--module--edfa--rx</title>
+          <path id="slot-1--module--edfa--rx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/edfa/rx/bore" data-class="cutout" />
+          <rect id="slot-1--module--edfa--rx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+          <rect id="slot-1--module--edfa--rx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+          <rect id="slot-1--module--edfa--rx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+          <circle id="slot-1--module--edfa--rx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="slot-1--module--edfa--rx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        </g>
+      </g>
+      <g id="slot-1--module--ocm" data-path="slot-1/module/ocm" data-class="port" data-ref="common/lc-duplex-adapter@3:3.1.0" data-connector="lc-duplex" data-media="fiber" data-role="monitor" transform="translate(113.98,23.8)" data-z-lift="44.0">
+        <title>slot-1--module--ocm</title>
+        <path id="slot-1--module--ocm--bezel" fill-rule="evenodd" fill="#2b3035" stroke="#585f66" stroke-width="0.2" d="M 0.1 0.1 h 13 v 10.8 h -13 z            M 1.98 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z            M 8.58 1.55 h 2.64 v 0.69 h 1.03 v 0.49 h -0.62 v 0.42 h 0.62 v 4.7              h -4.7 v -4.7 h 0.62 v -0.42 h -0.62 v -0.49 h 1.03 z" data-z-out="47.175" />
+        <rect id="slot-1--module--ocm--cap-tx-inset" x="1.95" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+        <rect id="slot-1--module--ocm--cap-rx-inset" x="8.55" y="4.15" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-sink="0.9" data-z-lift="9.525" />
+        <rect id="slot-1--module--ocm--cap-tx" x="0.95" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ocm/cap-tx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+        <rect id="slot-1--module--ocm--cap-rx" x="7.55" y="3.15" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" data-path="slot-1/module/ocm/cap-rx" data-class="cap" data-z-out="50.35" data-z-lift="3.175" data-z-color="#e9ecef" />
+        <g id="slot-1--module--ocm--tx" data-path="slot-1/module/ocm/tx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(0.95,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+          <title>slot-1--module--ocm--tx</title>
+          <path id="slot-1--module--ocm--tx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ocm/tx/bore" data-class="cutout" />
+          <rect id="slot-1--module--ocm--tx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+          <rect id="slot-1--module--ocm--tx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+          <rect id="slot-1--module--ocm--tx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+          <circle id="slot-1--module--ocm--tx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="slot-1--module--ocm--tx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        </g>
+        <g id="slot-1--module--ocm--rx" data-path="slot-1/module/ocm/rx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.55,1.55) rotate(180 2.35 3.15)" data-z-lift="3.175">
+          <title>slot-1--module--ocm--rx</title>
+          <path id="slot-1--module--ocm--rx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="slot-1/module/ocm/rx/bore" data-class="cutout" />
+          <rect id="slot-1--module--ocm--rx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+          <rect id="slot-1--module--ocm--rx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+          <rect id="slot-1--module--ocm--rx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+          <circle id="slot-1--module--ocm--rx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="slot-1--module--ocm--rx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        </g>
+      </g>
+      <g id="slot-1--module--sfp-1" data-path="slot-1/module/sfp-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-role="mgmt" data-speed="100m-1g" transform="translate(130.75,10.0)" data-z-lift="44.0">
+        <title>slot-1--module--sfp-1</title>
+        <rect id="slot-1--module--sfp-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="slot-1/module/sfp-1/opening" data-class="cutout" />
+        <rect id="slot-1--module--sfp-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="slot-1--module--sfp-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="slot-1--module--sfp-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="slot-1--module--sfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="45.0" data-z-color="#7d848c" />
+      </g>
+      <g id="slot-1--module--sfp-2" data-path="slot-1/module/sfp-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-role="mgmt" data-speed="100m-1g" transform="translate(130.75,24.0)" data-z-lift="44.0">
+        <title>slot-1--module--sfp-2</title>
+        <rect id="slot-1--module--sfp-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="slot-1/module/sfp-2/opening" data-class="cutout" />
+        <rect id="slot-1--module--sfp-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="slot-1--module--sfp-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="slot-1--module--sfp-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="slot-1--module--sfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="45.0" data-z-color="#7d848c" />
+      </g>
+    </g>
+  </g>
+  <g id="slot-2" data-path="slot-2" data-class="bay" data-group="slots" data-group-role="service" data-rel-pos="2">
+    <title>slot-2</title>
+    <rect id="slot-2--opening" x="227.5" y="0.5" width="205" height="44" fill="#101214" />
+    <g id="slot-2--module" data-path="slot-2/module" data-class="blank" data-behaviour="fills" data-ref="smartoptics/dcp-2-blank@1:1.2.0" data-wall="#17191b" data-role="slot-blank" transform="translate(330,22.5) translate(-102.5,-22)">
+      <title>slot-2--module</title>
+      <defs>
+        <linearGradient id="slot-2--module--moulding" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a3d40" />
+          <stop offset="0.4" stop-color="#26292b" />
+          <stop offset="1" stop-color="#17191b" />
+        </linearGradient>
+        <radialGradient id="slot-2--module--boss" cx="0.38" cy="0.34" r="0.75">
+          <stop offset="0" stop-color="#4a4e51" />
+          <stop offset="1" stop-color="#1d1f21" />
+        </radialGradient>
+      </defs>
+      <rect id="slot-2--module--body" x="0" y="0" width="205" height="44" rx="1.2" fill="url(#slot-2--module--moulding)" stroke="#0e1011" stroke-width="0.3" />
+      <g id="slot-2--module--vent-left" fill="#0a0b0c" data-path="slot-2/module/vent-left" data-class="vent" data-z-vent="12.0">
+        <circle cx="33.50" cy="11.94" r="1.25" />
+        <circle cx="36.90" cy="11.94" r="1.25" />
+        <circle cx="40.30" cy="11.94" r="1.25" />
+        <circle cx="43.70" cy="11.94" r="1.25" />
+        <circle cx="47.10" cy="11.94" r="1.25" />
+        <circle cx="50.50" cy="11.94" r="1.25" />
+        <circle cx="53.90" cy="11.94" r="1.25" />
+        <circle cx="57.30" cy="11.94" r="1.25" />
+        <circle cx="31.80" cy="14.89" r="1.25" />
+        <circle cx="35.20" cy="14.89" r="1.25" />
+        <circle cx="38.60" cy="14.89" r="1.25" />
+        <circle cx="42.00" cy="14.89" r="1.25" />
+        <circle cx="45.40" cy="14.89" r="1.25" />
+        <circle cx="48.80" cy="14.89" r="1.25" />
+        <circle cx="52.20" cy="14.89" r="1.25" />
+        <circle cx="55.60" cy="14.89" r="1.25" />
+        <circle cx="59.00" cy="14.89" r="1.25" />
+        <circle cx="62.40" cy="14.89" r="1.25" />
+        <circle cx="26.70" cy="17.83" r="1.25" />
+        <circle cx="30.10" cy="17.83" r="1.25" />
+        <circle cx="33.50" cy="17.83" r="1.25" />
+        <circle cx="36.90" cy="17.83" r="1.25" />
+        <circle cx="40.30" cy="17.83" r="1.25" />
+        <circle cx="50.50" cy="17.83" r="1.25" />
+        <circle cx="53.90" cy="17.83" r="1.25" />
+        <circle cx="57.30" cy="17.83" r="1.25" />
+        <circle cx="60.70" cy="17.83" r="1.25" />
+        <circle cx="64.10" cy="17.83" r="1.25" />
+        <circle cx="28.40" cy="20.78" r="1.25" />
+        <circle cx="31.80" cy="20.78" r="1.25" />
+        <circle cx="35.20" cy="20.78" r="1.25" />
+        <circle cx="38.60" cy="20.78" r="1.25" />
+        <circle cx="52.20" cy="20.78" r="1.25" />
+        <circle cx="55.60" cy="20.78" r="1.25" />
+        <circle cx="59.00" cy="20.78" r="1.25" />
+        <circle cx="62.40" cy="20.78" r="1.25" />
+        <circle cx="65.80" cy="20.78" r="1.25" />
+        <circle cx="26.70" cy="23.72" r="1.25" />
+        <circle cx="30.10" cy="23.72" r="1.25" />
+        <circle cx="33.50" cy="23.72" r="1.25" />
+        <circle cx="36.90" cy="23.72" r="1.25" />
+        <circle cx="40.30" cy="23.72" r="1.25" />
+        <circle cx="53.90" cy="23.72" r="1.25" />
+        <circle cx="57.30" cy="23.72" r="1.25" />
+        <circle cx="60.70" cy="23.72" r="1.25" />
+        <circle cx="64.10" cy="23.72" r="1.25" />
+        <circle cx="28.40" cy="26.67" r="1.25" />
+        <circle cx="31.80" cy="26.67" r="1.25" />
+        <circle cx="35.20" cy="26.67" r="1.25" />
+        <circle cx="38.60" cy="26.67" r="1.25" />
+        <circle cx="42.00" cy="26.67" r="1.25" />
+        <circle cx="48.80" cy="26.67" r="1.25" />
+        <circle cx="52.20" cy="26.67" r="1.25" />
+        <circle cx="55.60" cy="26.67" r="1.25" />
+        <circle cx="59.00" cy="26.67" r="1.25" />
+        <circle cx="62.40" cy="26.67" r="1.25" />
+        <circle cx="30.10" cy="29.61" r="1.25" />
+        <circle cx="33.50" cy="29.61" r="1.25" />
+        <circle cx="36.90" cy="29.61" r="1.25" />
+        <circle cx="40.30" cy="29.61" r="1.25" />
+        <circle cx="43.70" cy="29.61" r="1.25" />
+        <circle cx="47.10" cy="29.61" r="1.25" />
+        <circle cx="50.50" cy="29.61" r="1.25" />
+        <circle cx="53.90" cy="29.61" r="1.25" />
+        <circle cx="57.30" cy="29.61" r="1.25" />
+        <circle cx="60.70" cy="29.61" r="1.25" />
+        <circle cx="35.20" cy="32.56" r="1.25" />
+        <circle cx="38.60" cy="32.56" r="1.25" />
+        <circle cx="42.00" cy="32.56" r="1.25" />
+        <circle cx="45.40" cy="32.56" r="1.25" />
+        <circle cx="48.80" cy="32.56" r="1.25" />
+        <circle cx="52.20" cy="32.56" r="1.25" />
+        <circle cx="55.60" cy="32.56" r="1.25" />
+      </g>
+      <g id="slot-2--module--vent-right" fill="#0a0b0c" data-path="slot-2/module/vent-right" data-class="vent" data-z-vent="12.0">
+        <circle cx="146.50" cy="11.94" r="1.25" />
+        <circle cx="149.90" cy="11.94" r="1.25" />
+        <circle cx="153.30" cy="11.94" r="1.25" />
+        <circle cx="156.70" cy="11.94" r="1.25" />
+        <circle cx="160.10" cy="11.94" r="1.25" />
+        <circle cx="163.50" cy="11.94" r="1.25" />
+        <circle cx="166.90" cy="11.94" r="1.25" />
+        <circle cx="170.30" cy="11.94" r="1.25" />
+        <circle cx="144.80" cy="14.89" r="1.25" />
+        <circle cx="148.20" cy="14.89" r="1.25" />
+        <circle cx="151.60" cy="14.89" r="1.25" />
+        <circle cx="155.00" cy="14.89" r="1.25" />
+        <circle cx="158.40" cy="14.89" r="1.25" />
+        <circle cx="161.80" cy="14.89" r="1.25" />
+        <circle cx="165.20" cy="14.89" r="1.25" />
+        <circle cx="168.60" cy="14.89" r="1.25" />
+        <circle cx="172.00" cy="14.89" r="1.25" />
+        <circle cx="175.40" cy="14.89" r="1.25" />
+        <circle cx="139.70" cy="17.83" r="1.25" />
+        <circle cx="143.10" cy="17.83" r="1.25" />
+        <circle cx="146.50" cy="17.83" r="1.25" />
+        <circle cx="149.90" cy="17.83" r="1.25" />
+        <circle cx="153.30" cy="17.83" r="1.25" />
+        <circle cx="163.50" cy="17.83" r="1.25" />
+        <circle cx="166.90" cy="17.83" r="1.25" />
+        <circle cx="170.30" cy="17.83" r="1.25" />
+        <circle cx="173.70" cy="17.83" r="1.25" />
+        <circle cx="177.10" cy="17.83" r="1.25" />
+        <circle cx="141.40" cy="20.78" r="1.25" />
+        <circle cx="144.80" cy="20.78" r="1.25" />
+        <circle cx="148.20" cy="20.78" r="1.25" />
+        <circle cx="151.60" cy="20.78" r="1.25" />
+        <circle cx="165.20" cy="20.78" r="1.25" />
+        <circle cx="168.60" cy="20.78" r="1.25" />
+        <circle cx="172.00" cy="20.78" r="1.25" />
+        <circle cx="175.40" cy="20.78" r="1.25" />
+        <circle cx="178.80" cy="20.78" r="1.25" />
+        <circle cx="139.70" cy="23.72" r="1.25" />
+        <circle cx="143.10" cy="23.72" r="1.25" />
+        <circle cx="146.50" cy="23.72" r="1.25" />
+        <circle cx="149.90" cy="23.72" r="1.25" />
+        <circle cx="153.30" cy="23.72" r="1.25" />
+        <circle cx="166.90" cy="23.72" r="1.25" />
+        <circle cx="170.30" cy="23.72" r="1.25" />
+        <circle cx="173.70" cy="23.72" r="1.25" />
+        <circle cx="177.10" cy="23.72" r="1.25" />
+        <circle cx="141.40" cy="26.67" r="1.25" />
+        <circle cx="144.80" cy="26.67" r="1.25" />
+        <circle cx="148.20" cy="26.67" r="1.25" />
+        <circle cx="151.60" cy="26.67" r="1.25" />
+        <circle cx="155.00" cy="26.67" r="1.25" />
+        <circle cx="161.80" cy="26.67" r="1.25" />
+        <circle cx="165.20" cy="26.67" r="1.25" />
+        <circle cx="168.60" cy="26.67" r="1.25" />
+        <circle cx="172.00" cy="26.67" r="1.25" />
+        <circle cx="175.40" cy="26.67" r="1.25" />
+        <circle cx="143.10" cy="29.61" r="1.25" />
+        <circle cx="146.50" cy="29.61" r="1.25" />
+        <circle cx="149.90" cy="29.61" r="1.25" />
+        <circle cx="153.30" cy="29.61" r="1.25" />
+        <circle cx="156.70" cy="29.61" r="1.25" />
+        <circle cx="160.10" cy="29.61" r="1.25" />
+        <circle cx="163.50" cy="29.61" r="1.25" />
+        <circle cx="166.90" cy="29.61" r="1.25" />
+        <circle cx="170.30" cy="29.61" r="1.25" />
+        <circle cx="173.70" cy="29.61" r="1.25" />
+        <circle cx="148.20" cy="32.56" r="1.25" />
+        <circle cx="151.60" cy="32.56" r="1.25" />
+        <circle cx="155.00" cy="32.56" r="1.25" />
+        <circle cx="158.40" cy="32.56" r="1.25" />
+        <circle cx="161.80" cy="32.56" r="1.25" />
+        <circle cx="165.20" cy="32.56" r="1.25" />
+        <circle cx="168.60" cy="32.56" r="1.25" />
+      </g>
+      <circle id="slot-2--module--boss-left" cx="46" cy="22" r="2.6" fill="url(#slot-2--module--boss)" stroke="#111314" stroke-width="0.25" data-path="slot-2/module/boss-left" data-class="fastener" data-z-cyl="15.0" />
+      <circle id="slot-2--module--boss-right" cx="159" cy="22" r="2.6" fill="url(#slot-2--module--boss)" stroke="#111314" stroke-width="0.25" data-path="slot-2/module/boss-right" data-class="fastener" data-z-cyl="15.0" />
+    </g>
+  </g>
+</svg>
