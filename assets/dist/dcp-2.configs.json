@@ -1,0 +1,292 @@
+{
+ "attrs": {},
+ "bays": {
+  "bottom": [],
+  "front": [
+   {
+    "accepts": [
+     "smartoptics/dcp-404@1",
+     "smartoptics/dcp-2-blank@1"
+    ],
+    "at": [
+     7.5,
+     0.5
+    ],
+    "default": "smartoptics/dcp-2-blank@1",
+    "group": "slots",
+    "id": "slot-1",
+    "rel-pos": 1,
+    "rotate": null,
+    "size": {
+     "h": 44.0,
+     "w": 205.0
+    }
+   },
+   {
+    "accepts": [
+     "smartoptics/dcp-404@1",
+     "smartoptics/dcp-2-blank@1"
+    ],
+    "at": [
+     227.5,
+     0.5
+    ],
+    "default": "smartoptics/dcp-2-blank@1",
+    "group": "slots",
+    "id": "slot-2",
+    "rel-pos": 2,
+    "rotate": null,
+    "size": {
+     "h": 44.0,
+     "w": 205.0
+    }
+   }
+  ],
+  "left": [],
+  "rear": [
+   {
+    "accepts": [
+     "smartoptics/dcp-2-psu-ac@1",
+     "smartoptics/dcp-2-psu-dc@1"
+    ],
+    "at": [
+     4.0,
+     2.5
+    ],
+    "default": "smartoptics/dcp-2-psu-ac@1",
+    "group": "psus",
+    "id": "psu-1",
+    "rel-pos": 1,
+    "rotate": null,
+    "size": {
+     "h": 40.0,
+     "w": 73.5
+    }
+   },
+   {
+    "accepts": [
+     "smartoptics/dcp-2-fan@1"
+    ],
+    "at": [
+     85.0,
+     2.5
+    ],
+    "default": "smartoptics/dcp-2-fan@1",
+    "group": "fans",
+    "id": "fan-1",
+    "rel-pos": 1,
+    "rotate": null,
+    "size": {
+     "h": 40.0,
+     "w": 192.0
+    }
+   },
+   {
+    "accepts": [
+     "smartoptics/dcp-2-psu-ac@1",
+     "smartoptics/dcp-2-psu-dc@1"
+    ],
+    "at": [
+     356.3,
+     2.5
+    ],
+    "default": "smartoptics/dcp-2-psu-ac@1",
+    "group": "psus",
+    "id": "psu-2",
+    "rel-pos": 2,
+    "rotate": null,
+    "size": {
+     "h": 40.0,
+     "w": 73.5
+    }
+   }
+  ],
+  "right": [],
+  "top": []
+ },
+ "capability": {
+  "blocked": [],
+  "flags": [],
+  "level": 4,
+  "name": "addressable",
+  "unknown": []
+ },
+ "chassis": {
+  "d": 500,
+  "h": 45,
+  "ru": 1,
+  "w": 440
+ },
+ "configs": [
+  {
+   "bays": {
+    "slot-1": "",
+    "slot-2": ""
+   },
+   "description": "The chassis as it is specified before deciding what goes in it: two AC supplies, the fan tray, the management board, and both traffic slots empty. so-ds-dcp-2-r4.3 orders this as DCP-2-FB/HW. The box actually ships with a blind plate as well (UM s4.1), which the dcp-404-x1 configuration shows in place.",
+   "kind": "base",
+   "name": "ac-f2b",
+   "part-numbers": {},
+   "views": {}
+  },
+  {
+   "bays": {
+    "psu-1": "smartoptics/dcp-2-psu-dc@1",
+    "psu-2": "smartoptics/dcp-2-psu-dc@1",
+    "slot-1": "",
+    "slot-2": ""
+   },
+   "description": "The same chassis with both supplies ordered as DCP-2-PSU-DC-FB, -40 to -72 VDC at 7A max. UM s2.3 is explicit that the bay geometry does not change and that \"Both types can be used simultaneously\", so a mixed AC/DC chassis is legal and this configuration is simply the all-DC case. Named explicitly rather than left implied by the base, so asking for the DC variant does not require knowing which flavour the base happens to carry.",
+   "kind": "orderable",
+   "name": "dc-f2b",
+   "part-numbers": {},
+   "views": {}
+  },
+  {
+   "bays": {
+    "slot-1": "smartoptics/dcp-404@1",
+    "slot-2": "smartoptics/dcp-2-blank@1"
+   },
+   "description": "One DCP-404 in slot 1 and the blind plate in slot 2 - the single-unit install UM s2.5 asks for, where the plate \"should be mounted to the empty slot to help guide the airflow through the traffic unit\". The DCP-404 technical description backs it with a high-temperature warning that tells the operator to check the second slot has a card or a dummy front panel.",
+   "kind": "example",
+   "name": "dcp-404-x1",
+   "part-numbers": {},
+   "views": {}
+  },
+  {
+   "bays": {
+    "slot-1": "smartoptics/dcp-404@1",
+    "slot-2": "smartoptics/dcp-404@1"
+   },
+   "description": "Both traffic slots carrying a DCP-404 400G muxponder - the fully populated chassis, 8x QSFP28 client and 2x QSFP-DD line in 1RU. Illustrative: the two units are ordered separately from the chassis, so this is a picture rather than a SKU.",
+   "kind": "example",
+   "name": "dcp-404-x2",
+   "part-numbers": {},
+   "views": {}
+  }
+ ],
+ "default": "ac-f2b",
+ "device": "dcp-2",
+ "gaps": [
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "UM s3.1.5 says \"The air inlets and outlets are positioned in the front and back\", but fig 2-4 is an empty chassis shot into a dark cavity and resolves no vent pattern on the chassis front itself. The populated render (fig 1-1) does show honeycomb mesh, but that mesh is on the TRAFFIC UNITS' faceplates, not the chassis. So the front view draws no vent of its own and whether the chassis carries any is unresolved.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a face-on photograph of a populated DCP-2, which would show the chassis front beside a unit faceplate and separate the two. Every front image in the corpus is either an empty chassis or a three-quarter render.",
+   "what": "front-vents"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "These four views carry the ENVELOPE ONLY - the 440 x 45 x 500 box from the manual's spec table, with the front faceplate shown edge-on as a dark band - and no observed surface detail: no lid screws, no side rails, no ventilation. That is the same treatment dcp-r-9d-cs gives its four, and it is honest rather than complete. The populated three-quarter render (fig 1-1) does show the lid and the left flank, but it is a lit marketing render on a black ground at an angle that measures nothing.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a square-on photograph of the lid and of one flank. Failing that, the 3/4 render would support screw positions on the lid if it were rectified, which is what was done for smartoptics/dcp-404@1's top face.",
+   "what": "side-top-bottom-detail"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "kind": "declared",
+   "note": "The management board is called \"mgmt-board\" in the DCP-2-FB/HW ordering description and \"part of the DCP-2 chassis\" in UM s2.6, and it has no orderable part number of its own. Its ports are placed directly on the rear view with the plate drawn as decor, rather than modelled as a bay.",
+   "scope": [
+    "mgmt"
+   ],
+   "wanted": "a statement either way on whether the board is field-replaceable. If it is, this becomes a bay accepting a management-board component, and the seven ports move onto that part.",
+   "what": "mgmt-board-fru"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "kind": "declared",
+   "note": "UM s3.2.8 puts the protective ground on the FRONT RACK BRACKET - \"It is located on the right-side front rack mount(s)\" - with an M5 nut and an unpainted pad around it, and notes the brackets are interchangeable left to right if the terminal is wanted on the other side. common/rack-ear@1 carries no terminal, and a separate lug placed at the bracket's position simply overlaps it, so the DCP-2 draws none. The terminal is real and is on the bracket, not on the chassis body.",
+   "scope": [
+    "furniture"
+   ],
+   "wanted": "a common/rack-ear variant, or a skin, carrying the ground stud - the same need any device whose ground is on its bracket will have. Until then this is recorded rather than drawn.",
+   "what": "ground-terminal"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "note": "Both jacks of the ETH0/CONSOLE pair show small light features at their corners in fig 2-5. On ETH0 those read as link lamps; on an RS-232 console jack they are more likely shield retention tabs. CONSOLE is drawn as a bare std/rj45-ganged rather than the lamped common/rj45-ganged-eth used for the Ethernet ports.",
+   "scope": [
+    "console"
+   ],
+   "wanted": "a rear photograph above about 5 px/mm, which would separate a lamp window from a retention tab. The best in the corpus is 2.7.",
+   "what": "console-lamps"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "kind": "derived",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "kind": "derived",
+   "wanted": "an `attrs.performance` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "kind": "derived",
+   "wanted": "`physical-context` on 5 bays (front 2, rear 3) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "kind": "derived",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  }
+ ],
+ "model": "DCP-2",
+ "provenance": {
+  "caption-size": "photo-measured, and corrected after looking at the render beside the photograph. In fig 2-5 the port captions stand about 1.33mm cap-height against the 1.8 a font-size of 1.9 produces, so the first cut was ~35% oversized - the same defect the DCP-404's Tx/Rx captions had. Font-size is 1.45, which puts the cap height at about 1.05 and the caption back in proportion to the jacks beside it.",
+  "chassis": "datasheet and manual agree - 440mm (W) x 45mm (H) x 500mm (D), ~7kg without traffic units, 1 RU. Note 45, not the 44.45 of a nominal 1RU; both documents say 45.",
+  "ears": "UM s3.2 - the rack brackets are a separate kit with seven part numbers and several mounting depths, not integral to the chassis. The front figure (fig 2-4) spans 440 with no ears fitted, which is what confirms the body width. Ears are therefore drawn `optional`, as on dcp-r-9d-cs.",
+  "eth4-shared": "silkscreen. BOTH ETH4 labels - the electrical jack's and the SFP's - are printed in a box on the real faceplate while no other caption is, so the artwork itself marks the shared pair that UM s2.6 describes in prose. The boxes are reproduced here.",
+  "front-layout": "photo-measured - UM fig 2-4, scaled across from the 440 body. Side rails ~7 each, a centre assembly at ~213-226, and slot apertures of ~206.5. The assembly centres on 219.8 against a true centreline of 220, which is UM s2.2's \"extraction mechanism is based in the center of the chassis\". The apertures against a 205 DCP-404 leave 1.5 of clearance - the two numbers were measured independently and confirm each other.",
+  "ground": "UM s3.2.8 - \"The front rack mount brackets include a grounding terminal ... located on the right-side front rack mount(s)\", M5 nut, with the surface around it left unpainted. It is on the BRACKET, so it is drawn on the ear and disappears with it. The manual adds that the brackets are interchangeable left to right if the ground is wanted on the other side.",
+  "method": "FACT SHEET FIRST, THEN THE ARTWORK. The inventory came from DCP-Series_User_Manual_14.0_A and so-ds-dcp-2-r4.3 before any figure was opened (working/intake/factsheets/dcp-2.md), and the residual pass afterwards named everything on both faces the sheet had not predicted. Nine residuals were found and each is either promoted below with a source or written off in that sheet.",
+  "mgmt-geometry": "photo-measured from fig 2-5, which is the sharper of the two rear plates. Jack apertures give a column pitch of 13.95 - the library's 13.97 RJ45 standard - and a row pitch of 15.13, which is the 0.6in row pitch of a standard 2xN magjack. Aperture centres: quad at x 288.26 and 302.23, rows at y 17.39 and 32.52; the ETH0/CONSOLE pair at x 340.3, rows at y 17.96 and 32.33; the SFP at x 321.47, y 32.52. CORROBORATED INDEPENDENTLY: scaling the `DCP-2 Rear` master on its own height rather than on the rack width gives a plate 77.7 wide against ~78 measured, and its seven connection points land within 1.7mm of these centres.",
+  "mgmt-ports": "UM s2.6 gives the inventory - 4x RJ45 ETH1-4, 1x SFP ETH4 \"shared with the electrical ETH4 port and only one can be used at a time\", 1x ETH0 local, 1x RS-232 console. That is 6 RJ45 + 1 SFP, and the `DCP-2 Rear` stencil master reports exactly 7 connection points, which is what identifies that 80mm master as the management block alone rather than the 440mm face.",
+  "model": "the product is the DCP-2; DCP-2-FB/HW is the ORDERING CODE for its base hardware configuration (\"Base HW, 1 RU chassis, 19in, 2-traffic slots, dual power, fan units, mgmt-board\" in so-ds-dcp-2-r4.3). The \"/HW\" suffix distinguishes it from the DCP-2-ENL-7.x_SW embedded node licence ordered alongside, and is not part of the model name. Recorded because the Vyve gap list names the part by its ordering code. NOTE FOR THE NEXT SMARTOPTICS PART: a slash in `model:` breaks the NetBox exporter, which builds a file path from it - DCP-M32-CSO-ZR+/HW will need the same treatment.",
+  "no-front-silkscreen": "the chassis front carries NO marking. \"SLOT 1\" and \"SLOT 2\" appear in UM fig 2-4 in white capitals across the two openings, and the first cut of this model put them on the faceplate as silkscreen. They are the FIGURE'S CALLOUT ANNOTATIONS, added to the photograph to explain s2.2's slot nomination, not paint on the metal - which is visible in the figure itself, where they float over the dark cavity rather than sitting on any surface. The slot numbering is carried by the bay ids instead.",
+  "port-numbering": "silkscreen, and it is not in any manual. The gang is column-major and bottom-first - ETH1 bottom-left, ETH2 top-left, ETH3 bottom-right, ETH4 top-right. UM s2.6 names the four ports and never arranges them.",
+  "power": "UM spec table, \"POWER CONSUMPTION (CHASSI ONLY): DCP-2 chassis with fans and 2 PSU (AC) Min: 14W Max: 17W\". The manual's other rows bundle a traffic unit, which answers for itself. NO AMBIENT TEMPERATURE is quoted against any DCP power figure, so none is asserted.",
+  "psu-positions": "the PSU sticker reads \"CRPS 460W AC Gold\", which names the form factor; 1U CRPS is 73.5 x 40. The two installed bays measure 81 and 75 for what is demonstrably the same part, so the standard is worth more than either edge read. 73.5 at the measured 352.3 pitch puts the pair at 4.0 and 356.3, matching the right bay to under a millimetre.",
+  "rear-layout": "photo-measured - UM figs 2-5 and 2-6. These are SEPARATE PHOTOGRAPHS and they agree on the PSU fan-sticker pitch to 0.15% (352.3 and 351.8), which is what says the x axis is trustworthy in both. The y axis is ~3% compressed in each (both were shot slightly from above), so y is scaled from the 45mm height and never from the same factor as x. Left to right: PSU bay, fan tray, management plate, PSU bay.",
+  "vents": "photo-measured - the rear vent area is the fan tray's own faceplate and belongs to smartoptics/dcp-2-fan@1, not to the chassis. The chassis draws none of its own."
+ },
+ "views": [
+  "front",
+  "rear",
+  "left",
+  "right",
+  "top",
+  "bottom"
+ ]
+}

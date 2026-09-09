@@ -23,10 +23,10 @@
   ]
  },
  "by-kind": {
-  "declared": 487,
-  "derived": 325
+  "declared": 492,
+  "derived": 329
  },
- "devices": 84,
+ "devices": 85,
  "gaps": [
   {
    "because": "vendor-silent",
@@ -3517,6 +3517,117 @@
    "device": "gl-8xep",
    "kind": "derived",
    "manufacturer": "ReadyLinks",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "dcp-2",
+   "kind": "declared",
+   "manufacturer": "Smartoptics",
+   "note": "UM s3.1.5 says \"The air inlets and outlets are positioned in the front and back\", but fig 2-4 is an empty chassis shot into a dark cavity and resolves no vent pattern on the chassis front itself. The populated render (fig 1-1) does show honeycomb mesh, but that mesh is on the TRAFFIC UNITS' faceplates, not the chassis. So the front view draws no vent of its own and whether the chassis carries any is unresolved.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a face-on photograph of a populated DCP-2, which would show the chassis front beside a unit faceplate and separate the two. Every front image in the corpus is either an empty chassis or a three-quarter render.",
+   "what": "front-vents"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "dcp-2",
+   "kind": "declared",
+   "manufacturer": "Smartoptics",
+   "note": "These four views carry the ENVELOPE ONLY - the 440 x 45 x 500 box from the manual's spec table, with the front faceplate shown edge-on as a dark band - and no observed surface detail: no lid screws, no side rails, no ventilation. That is the same treatment dcp-r-9d-cs gives its four, and it is honest rather than complete. The populated three-quarter render (fig 1-1) does show the lid and the left flank, but it is a lit marketing render on a black ground at an angle that measures nothing.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a square-on photograph of the lid and of one flank. Failing that, the 3/4 render would support screw positions on the lid if it were rectified, which is what was done for smartoptics/dcp-404@1's top face.",
+   "what": "side-top-bottom-detail"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "dcp-2",
+   "kind": "declared",
+   "manufacturer": "Smartoptics",
+   "note": "The management board is called \"mgmt-board\" in the DCP-2-FB/HW ordering description and \"part of the DCP-2 chassis\" in UM s2.6, and it has no orderable part number of its own. Its ports are placed directly on the rear view with the plate drawn as decor, rather than modelled as a bay.",
+   "scope": [
+    "mgmt"
+   ],
+   "wanted": "a statement either way on whether the board is field-replaceable. If it is, this becomes a bay accepting a management-board component, and the seven ports move onto that part.",
+   "what": "mgmt-board-fru"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "dcp-2",
+   "kind": "declared",
+   "manufacturer": "Smartoptics",
+   "note": "UM s3.2.8 puts the protective ground on the FRONT RACK BRACKET - \"It is located on the right-side front rack mount(s)\" - with an M5 nut and an unpainted pad around it, and notes the brackets are interchangeable left to right if the terminal is wanted on the other side. common/rack-ear@1 carries no terminal, and a separate lug placed at the bracket's position simply overlaps it, so the DCP-2 draws none. The terminal is real and is on the bracket, not on the chassis body.",
+   "scope": [
+    "furniture"
+   ],
+   "wanted": "a common/rack-ear variant, or a skin, carrying the ground stud - the same need any device whose ground is on its bracket will have. Until then this is recorded rather than drawn.",
+   "what": "ground-terminal"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "dcp-2",
+   "kind": "declared",
+   "manufacturer": "Smartoptics",
+   "note": "Both jacks of the ETH0/CONSOLE pair show small light features at their corners in fig 2-5. On ETH0 those read as link lamps; on an RS-232 console jack they are more likely shield retention tabs. CONSOLE is drawn as a bare std/rj45-ganged rather than the lamped common/rj45-ganged-eth used for the Ethernet ports.",
+   "scope": [
+    "console"
+   ],
+   "wanted": "a rear photograph above about 5 px/mm, which would separate a lamp window from a retention tab. The best in the corpus is 2.7.",
+   "what": "console-lamps"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "dcp-2",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "dcp-2",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "an `attrs.performance` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "dcp-2",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
+   "wanted": "`physical-context` on 5 bays (front 2, rear 3) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "dcp-2",
+   "kind": "derived",
+   "manufacturer": "Smartoptics",
    "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
    "what": "templated"
   },
