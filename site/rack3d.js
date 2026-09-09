@@ -222,14 +222,14 @@ export function createRackScene(container, opts = {}) {
   async function pullFaces(entry) {
     if (!PULLED.size) return;
     for (const fr of faceFrames(0, 0, 0)) {
-      const url = `${DIST}${entry.ref}.${entry.cfg}.${fr.view}.svg`;
       let text;
-      try { text = await svgSource(url, relief); } catch { continue; }
+      // this mount's own text if a bay swap already made one, else the model's
+      try { text = await svgSource(faceSrc(entry, fr.view), relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
       applyPulled(doc.documentElement, relief);
       if (!doc.querySelector('[data-portrayal-pulled]')) continue;   // nothing here
-      setSvgOverride(url, new XMLSerializer().serializeToString(doc), relief);
+      putFace(entry, fr.view, new XMLSerializer().serializeToString(doc));
     }
   }
 
@@ -393,6 +393,29 @@ export function createRackScene(container, opts = {}) {
   // ── devices ────────────────────────────────────────────────────────────
   const mounted = [];   // {entry, group}
 
+  // A FACE BELONGS TO A MOUNT, NOT TO A MODEL. The override table is keyed by
+  // the URL a face is fetched from, and that URL is `<ref>.<cfg>.<view>.svg` -
+  // identical for two of the same model in one rack. So a bay swap on the
+  // lower of two ASR-9001s registered against the URL both of them read, and
+  // whichever was built second won: both drew the same occupant, and pulling a
+  // part from one took it off the other. The rack that shows this is the rack
+  // anybody with redundant hardware builds.
+  //
+  // A mount that needs its own text gets its own key, and the key is only used
+  // once there is text registered under it - svgSource() falls through to a
+  // fetch otherwise, and a synthetic key has nothing to fetch. So `faceSrc`
+  // asks whether this mount has one before handing it out.
+  const SYNTH = new Set();
+  const faceUrl = (entry, view) => `${DIST}${entry.ref}.${entry.cfg}.${view}.svg`;
+  const faceKey = (entry, view) => `${faceUrl(entry, view)}#mount-${entry.slot}`;
+  const faceSrc = (entry, view) =>
+    SYNTH.has(faceKey(entry, view)) ? faceKey(entry, view) : faceUrl(entry, view);
+  function putFace(entry, view, text) {
+    const k = faceKey(entry, view);
+    setSvgOverride(k, text, relief);
+    SYNTH.add(k);
+  }
+
   // Apply a bay override map to a device's compiled faces before relief is
   // taken from them. relief.js consults its override table ahead of its own
   // cache, so one substitution per face reaches the texture, the cavity mask
@@ -412,19 +435,18 @@ export function createRackScene(container, opts = {}) {
     for (const [view, bays] of Object.entries(entry.bays)) {
       if (!bays.length) continue;
       if (!bays.some(b => Object.prototype.hasOwnProperty.call(ov, b.id))) continue;
-      const url = `${DIST}${entry.ref}.${entry.cfg}.${view}.svg`;
       let text;
-      try { text = await svgSource(url, relief); } catch { continue; }
+      try { text = await svgSource(faceUrl(entry, view), relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
       const n = await applyOverrides(doc.documentElement, bays, ov, loadSkin);
-      if (n) setSvgOverride(url, new XMLSerializer().serializeToString(doc), relief);
+      if (n) putFace(entry, view, new XMLSerializer().serializeToString(doc));
     }
   }
 
   async function buildDevice(entry) {
     const {w: W, h: H, d: D} = entry.chassis;
-    const f = v => `${DIST}${entry.ref}.${entry.cfg}.${v}.svg`;
+    const f = v => faceSrc(entry, v);
     // The underside is left out here and rasterised on its own below: it gets
     // no relief pass, and its art is mirrored. Everything else comes from the
     // one table portAnchor() also reads.
@@ -543,12 +565,14 @@ export function createRackScene(container, opts = {}) {
     anchorDocs.clear();
   }
   async function faceDoc(entry, view) {
-    const key = `${entry.ref}|${entry.cfg}|${view}`;
+    // Cached per MOUNT, and measured from the mount's own face: two of the same
+    // model can hold different modules, so an anchor keyed on ref+cfg would
+    // hand back the other one's geometry.
+    const key = `${entry.slot}|${view}`;
     if (anchorDocs.has(key)) return anchorDocs.get(key);
-    const url = `${DIST}${entry.ref}.${entry.cfg}.${view}.svg`;
     let rec = null;
     try {
-      const text = await svgSource(url, relief);
+      const text = await svgSource(faceSrc(entry, view), relief);
       // getBBox and getScreenCTM read nothing from a detached tree, so this has
       // to be in the document - parked off-screen and hidden, never painted.
       const div = document.createElement('div');
@@ -660,6 +684,12 @@ export function createRackScene(container, opts = {}) {
     for (const e of STACK) {
       const cfg = configs.has(e.ref) ? await configs.get(e.ref) : null;
       RESOLVED.push({...e,
+        // WHICH MOUNT THIS IS. Two of the same model in one rack are the same
+        // `ref` and the same `cfg`, so neither names a device - and everything
+        // keyed on the pair silently treated them as one thing. Position in the
+        // stack does name one, and unlike `ru` it cannot be duplicated by a
+        // caller that gets its numbering wrong.
+        slot: RESOLVED.length,
         cfg: e.cfg || cfg?.default,
         chassis: e.chassis || cfg?.chassis || {},
         bays: e.bays || cfg?.bays || {},
@@ -688,6 +718,7 @@ export function createRackScene(container, opts = {}) {
     }
     mounted.length = 0;
     clearSvgOverrides(relief);
+    SYNTH.clear();            // the keys those overrides were registered under
     applyPulledScopes();      // a setPulled() since the last build lands here
     dropAnchorDocs();         // measured against overrides that are now gone
     await hydrate();
