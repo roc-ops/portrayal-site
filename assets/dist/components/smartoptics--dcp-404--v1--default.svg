@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="205.0mm" height="44.0mm" viewBox="0 0 205.0 44.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dcp-404" data-path="dcp-404" data-class="line-card" data-behaviour="fills" data-ref="smartoptics/dcp-404@1:1.0.0" data-client-ports="4" data-client-rate="100GBASE" data-line-ports="1" data-line-rate="400G OpenZR+ coherent DWDM" data-model="DCP-404" data-power-draw-max-w="64" data-power-draw-typical-w="56" data-qsfp-dd="1" data-qsfp28="4" data-role="muxponder" data-weight-kg="1.8" transform="translate(0,0)">
+    <title>dcp-404</title>
+    <defs>
+      <linearGradient id="dcp-404--plate" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3c4247" />
+        <stop offset="0.26" stop-color="#23272b" />
+        <stop offset="1" stop-color="#191c1f" />
+      </linearGradient>
+    </defs>
+    <g id="dcp-404--vent-angled" fill="#0b0d0f" data-path="dcp-404/vent-angled" data-class="vent">
+      <g id="dcp-404--vent-angled-a">
+        <polygon points="5.60,4.67 7.40,5.11 7.40,5.99 5.60,6.42 3.80,5.99 3.80,5.11" />
+        <polygon points="14.80,4.67 16.60,5.11 16.60,5.99 14.80,6.42 13.00,5.99 13.00,5.11" />
+        <polygon points="24.00,4.67 25.80,5.11 25.80,5.99 24.00,6.42 22.20,5.99 22.20,5.11" />
+        <polygon points="33.20,4.67 35.00,5.11 35.00,5.99 33.20,6.42 31.40,5.99 31.40,5.11" />
+        <polygon points="42.40,4.67 44.20,5.11 44.20,5.99 42.40,6.42 40.60,5.99 40.60,5.11" />
+        <polygon points="51.60,4.67 53.40,5.11 53.40,5.99 51.60,6.42 49.80,5.99 49.80,5.11" />
+        <polygon points="60.80,4.67 62.60,5.11 62.60,5.99 60.80,6.42 59.00,5.99 59.00,5.11" />
+        <polygon points="70.00,4.67 71.80,5.11 71.80,5.99 70.00,6.42 68.20,5.99 68.20,5.11" />
+        <polygon points="79.20,4.67 81.00,5.11 81.00,5.99 79.20,6.42 77.40,5.99 77.40,5.11" />
+        <polygon points="88.40,4.67 90.20,5.11 90.20,5.99 88.40,6.42 86.60,5.99 86.60,5.11" />
+        <polygon points="97.60,4.67 99.40,5.11 99.40,5.99 97.60,6.42 95.80,5.99 95.80,5.11" />
+        <polygon points="106.80,4.67 108.60,5.11 108.60,5.99 106.80,6.42 105.00,5.99 105.00,5.11" />
+        <polygon points="116.00,4.67 117.80,5.11 117.80,5.99 116.00,6.42 114.20,5.99 114.20,5.11" />
+        <polygon points="125.20,4.67 127.00,5.11 127.00,5.99 125.20,6.42 123.40,5.99 123.40,5.11" />
+        <polygon points="134.40,4.67 136.20,5.11 136.20,5.99 134.40,6.42 132.60,5.99 132.60,5.11" />
+        <polygon points="143.60,4.67 145.40,5.11 145.40,5.99 143.60,6.42 141.80,5.99 141.80,5.11" />
+        <polygon points="152.80,4.67 154.60,5.11 154.60,5.99 152.80,6.42 151.00,5.99 151.00,5.11" />
+        <polygon points="162.00,4.67 163.80,5.11 163.80,5.99 162.00,6.42 160.20,5.99 160.20,5.11" />
+        <polygon points="171.20,4.67 173.00,5.11 173.00,5.99 171.20,6.42 169.40,5.99 169.40,5.11" />
+        <polygon points="180.40,4.67 182.20,5.11 182.20,5.99 180.40,6.42 178.60,5.99 178.60,5.11" />
+        <polygon points="189.60,4.67 191.40,5.11 191.40,5.99 189.60,6.42 187.80,5.99 187.80,5.11" />
+        <polygon points="198.80,4.67 200.60,5.11 200.60,5.99 198.80,6.42 197.00,5.99 197.00,5.11" />
+      </g>
+      <g id="dcp-404--vent-angled-b">
+        <polygon points="10.20,6.58 12.00,7.01 12.00,7.89 10.20,8.32 8.40,7.89 8.40,7.01" />
+        <polygon points="19.40,6.58 21.20,7.01 21.20,7.89 19.40,8.32 17.60,7.89 17.60,7.01" />
+        <polygon points="28.60,6.58 30.40,7.01 30.40,7.89 28.60,8.32 26.80,7.89 26.80,7.01" />
+        <polygon points="37.80,6.58 39.60,7.01 39.60,7.89 37.80,8.32 36.00,7.89 36.00,7.01" />
+        <polygon points="47.00,6.58 48.80,7.01 48.80,7.89 47.00,8.32 45.20,7.89 45.20,7.01" />
+        <polygon points="56.20,6.58 58.00,7.01 58.00,7.89 56.20,8.32 54.40,7.89 54.40,7.01" />
+        <polygon points="65.40,6.58 67.20,7.01 67.20,7.89 65.40,8.32 63.60,7.89 63.60,7.01" />
+        <polygon points="74.60,6.58 76.40,7.01 76.40,7.89 74.60,8.32 72.80,7.89 72.80,7.01" />
+        <polygon points="83.80,6.58 85.60,7.01 85.60,7.89 83.80,8.32 82.00,7.89 82.00,7.01" />
+        <polygon points="93.00,6.58 94.80,7.01 94.80,7.89 93.00,8.32 91.20,7.89 91.20,7.01" />
+        <polygon points="102.20,6.58 104.00,7.01 104.00,7.89 102.20,8.32 100.40,7.89 100.40,7.01" />
+        <polygon points="111.40,6.58 113.20,7.01 113.20,7.89 111.40,8.32 109.60,7.89 109.60,7.01" />
+        <polygon points="120.60,6.58 122.40,7.01 122.40,7.89 120.60,8.32 118.80,7.89 118.80,7.01" />
+        <polygon points="129.80,6.58 131.60,7.01 131.60,7.89 129.80,8.32 128.00,7.89 128.00,7.01" />
+        <polygon points="139.00,6.58 140.80,7.01 140.80,7.89 139.00,8.32 137.20,7.89 137.20,7.01" />
+        <polygon points="148.20,6.58 150.00,7.01 150.00,7.89 148.20,8.32 146.40,7.89 146.40,7.01" />
+        <polygon points="157.40,6.58 159.20,7.01 159.20,7.89 157.40,8.32 155.60,7.89 155.60,7.01" />
+        <polygon points="166.60,6.58 168.40,7.01 168.40,7.89 166.60,8.32 164.80,7.89 164.80,7.01" />
+        <polygon points="175.80,6.58 177.60,7.01 177.60,7.89 175.80,8.32 174.00,7.89 174.00,7.01" />
+        <polygon points="185.00,6.58 186.80,7.01 186.80,7.89 185.00,8.32 183.20,7.89 183.20,7.01" />
+        <polygon points="194.20,6.58 196.00,7.01 196.00,7.89 194.20,8.32 192.40,7.89 192.40,7.01" />
+      </g>
+    </g>
+    <g id="dcp-404--vent-top-edge" fill="#0b0d0f" data-path="dcp-404/vent-top-edge" data-class="vent">
+      <rect x="5.20" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="14.50" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="23.80" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="33.10" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="42.40" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="51.70" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="61.00" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="70.30" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="79.60" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="88.90" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="98.20" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="107.50" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="116.80" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="126.10" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="135.40" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="144.70" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="154.00" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="163.30" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="172.60" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="181.90" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="191.20" y="10.35" width="4.80" height="1.85" rx="0.55" />
+      <rect x="200.50" y="10.35" width="4.80" height="1.85" rx="0.55" />
+    </g>
+    <g id="dcp-404--vent-bottom-edge" fill="#0b0d0f" data-path="dcp-404/vent-bottom-edge" data-class="vent">
+      <rect x="5.20" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="14.50" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="23.80" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="33.10" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="42.40" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="51.70" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="61.00" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="70.30" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="79.60" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="88.90" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="98.20" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="107.50" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="116.80" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="126.10" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="135.40" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="144.70" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="154.00" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="163.30" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="172.60" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="181.90" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="191.20" y="41.95" width="4.80" height="1.55" rx="0.5" />
+      <rect x="200.50" y="41.95" width="4.80" height="1.55" rx="0.5" />
+    </g>
+    <g id="dcp-404--brand-silkscreen" font-family="sans-serif">
+      <text id="dcp-404--brand" x="4.6" y="17.6" font-size="3.5" fill="#e8ecef">smartoptics</text>
+      <text id="dcp-404--model" x="4.6" y="21.6" font-size="2.3" fill="#b8bec4">DCP-404</text>
+    </g>
+    <g id="dcp-404--vent-columns">
+      <g id="dcp-404--vent-col-left">
+        <rect x="25.89" y="19.90" width="5.50" height="14.20" rx="2.6" fill="#3a4045" />
+        <g fill="#0b0d0f">
+          <polygon points="28.64,21.10 30.74,22.05 30.74,23.95 28.64,24.90 26.54,23.95 26.54,22.05" />
+          <polygon points="28.64,25.10 30.74,26.05 30.74,27.95 28.64,28.90 26.54,27.95 26.54,26.05" />
+          <polygon points="28.64,29.10 30.74,30.05 30.74,31.95 28.64,32.90 26.54,31.95 26.54,30.05" />
+        </g>
+      </g>
+      <g id="dcp-404--vent-col-right">
+        <rect x="177.95" y="19.90" width="5.50" height="14.20" rx="2.6" fill="#3a4045" />
+        <g fill="#0b0d0f">
+          <polygon points="180.70,21.10 182.80,22.05 182.80,23.95 180.70,24.90 178.60,23.95 178.60,22.05" />
+          <polygon points="180.70,25.10 182.80,26.05 182.80,27.95 180.70,28.90 178.60,27.95 178.60,26.05" />
+          <polygon points="180.70,29.10 182.80,30.05 182.80,31.95 180.70,32.90 178.60,31.95 178.60,30.05" />
+        </g>
+      </g>
+    </g>
+    <g id="dcp-404--vent-client">
+      <g id="dcp-404--vent-c1">
+        <rect x="40.12" y="19.05" width="15.10" height="5.30" rx="1.4" fill="#3a4045" />
+        <g fill="#0b0d0f">
+          <polygon points="42.82,19.60 45.12,20.65 45.12,22.75 42.82,23.80 40.52,22.75 40.52,20.65" />
+          <polygon points="47.67,19.60 49.97,20.65 49.97,22.75 47.67,23.80 45.37,22.75 45.37,20.65" />
+          <polygon points="52.52,19.60 54.82,20.65 54.82,22.75 52.52,23.80 50.22,22.75 50.22,20.65" />
+        </g>
+      </g>
+      <g id="dcp-404--vent-c2">
+        <rect x="59.10" y="19.05" width="15.10" height="5.30" rx="1.4" fill="#3a4045" />
+        <g fill="#0b0d0f">
+          <polygon points="61.80,19.60 64.10,20.65 64.10,22.75 61.80,23.80 59.50,22.75 59.50,20.65" />
+          <polygon points="66.65,19.60 68.95,20.65 68.95,22.75 66.65,23.80 64.35,22.75 64.35,20.65" />
+          <polygon points="71.50,19.60 73.80,20.65 73.80,22.75 71.50,23.80 69.20,22.75 69.20,20.65" />
+        </g>
+      </g>
+      <g id="dcp-404--vent-c3">
+        <rect x="78.08" y="19.05" width="15.10" height="5.30" rx="1.4" fill="#3a4045" />
+        <g fill="#0b0d0f">
+          <polygon points="80.78,19.60 83.08,20.65 83.08,22.75 80.78,23.80 78.48,22.75 78.48,20.65" />
+          <polygon points="85.63,19.60 87.93,20.65 87.93,22.75 85.63,23.80 83.33,22.75 83.33,20.65" />
+          <polygon points="90.48,19.60 92.78,20.65 92.78,22.75 90.48,23.80 88.18,22.75 88.18,20.65" />
+        </g>
+      </g>
+      <g id="dcp-404--vent-c4">
+        <rect x="97.07" y="19.05" width="15.10" height="5.30" rx="1.4" fill="#3a4045" />
+        <g fill="#0b0d0f">
+          <polygon points="99.77,19.60 102.07,20.65 102.07,22.75 99.77,23.80 97.47,22.75 97.47,20.65" />
+          <polygon points="104.62,19.60 106.92,20.65 106.92,22.75 104.62,23.80 102.32,22.75 102.32,20.65" />
+          <polygon points="109.47,19.60 111.77,20.65 111.77,22.75 109.47,23.80 107.17,22.75 107.17,20.65" />
+        </g>
+      </g>
+    </g>
+    <g id="dcp-404--vent-honeycomb">
+      <rect x="123.60" y="23.30" width="15.20" height="13.60" rx="2.0" fill="#3a4045" />
+      <g fill="#0b0d0f">
+        <polygon points="126.45,24.12 128.60,25.11 128.60,27.09 126.45,28.08 124.30,27.09 124.30,25.11" />
+        <polygon points="126.45,28.38 128.60,29.36 128.60,31.34 126.45,32.33 124.30,31.34 124.30,29.36" />
+        <polygon points="126.45,32.62 128.60,33.61 128.60,35.59 126.45,36.58 124.30,35.59 124.30,33.61" />
+        <polygon points="131.20,26.24 133.35,27.23 133.35,29.21 131.20,30.20 129.05,29.21 129.05,27.23" />
+        <polygon points="131.20,30.49 133.35,31.48 133.35,33.46 131.20,34.45 129.05,33.46 129.05,31.48" />
+        <polygon points="135.95,24.12 138.10,25.11 138.10,27.09 135.95,28.08 133.80,27.09 133.80,25.11" />
+        <polygon points="135.95,28.38 138.10,29.36 138.10,31.34 135.95,32.33 133.80,31.34 133.80,29.36" />
+        <polygon points="135.95,32.62 138.10,33.61 138.10,35.59 135.95,36.58 133.80,35.59 133.80,33.61" />
+      </g>
+    </g>
+    <g id="dcp-404--vent-line">
+      <rect x="147.48" y="17.60" width="19.80" height="9.40" rx="1.4" fill="#3a4045" />
+      <g fill="#0b0d0f">
+        <polygon points="152.63,17.88 154.83,18.89 154.83,20.91 152.63,21.92 150.43,20.91 150.43,18.89" />
+        <polygon points="157.38,17.88 159.58,18.89 159.58,20.91 157.38,21.92 155.18,20.91 155.18,18.89" />
+        <polygon points="162.13,17.88 164.33,18.89 164.33,20.91 162.13,21.92 159.93,20.91 159.93,18.89" />
+        <polygon points="150.23,21.93 152.43,22.94 152.43,24.96 150.23,25.97 148.03,24.96 148.03,22.94" />
+        <polygon points="154.98,21.93 157.18,22.94 157.18,24.96 154.98,25.97 152.78,24.96 152.78,22.94" />
+        <polygon points="159.78,21.93 161.98,22.94 161.98,24.96 159.78,25.97 157.58,24.96 157.58,22.94" />
+        <polygon points="164.53,21.93 166.73,22.94 166.73,24.96 164.53,25.97 162.33,24.96 162.33,22.94" />
+      </g>
+    </g>
+    <g id="dcp-404--port-numbers-silkscreen" font-family="sans-serif" font-size="2.5" fill="#e8ecef" text-anchor="middle">
+      <text x="47.67" y="18.10">1</text>
+      <text x="66.65" y="18.10">2</text>
+      <text x="85.63" y="18.10">3</text>
+      <text x="104.62" y="18.10">4</text>
+      <text x="157.38" y="16.60">5</text>
+    </g>
+    <g id="dcp-404--txrx-silkscreen" font-family="sans-serif" font-size="1.45" fill="#dfe4e8" text-anchor="middle">
+      <text x="42.62" y="27.28">Tx</text>
+      <text x="52.72" y="27.28">Rx</text>
+      <text x="61.60" y="27.28">Tx</text>
+      <text x="71.70" y="27.28">Rx</text>
+      <text x="80.58" y="27.28">Tx</text>
+      <text x="90.68" y="27.28">Rx</text>
+      <text x="99.57" y="27.28">Tx</text>
+      <text x="109.67" y="27.28">Rx</text>
+    </g>
+    <g id="dcp-404--line-txrx-silkscreen" font-family="sans-serif" font-size="1.8" fill="#dfe4e8" text-anchor="middle">
+      <text x="143.20" y="35.75">Tx</text>
+      <text x="171.60" y="35.75">Rx</text>
+    </g>
+    <g id="dcp-404--status-silkscreen" font-family="sans-serif" font-size="1.8" fill="#dfe4e8" text-anchor="middle">
+      <text x="7.60" y="41.30">Power</text>
+      <text x="14.20" y="41.30">Status</text>
+    </g>
+    <rect id="dcp-404--body" x="0" y="0" width="205" height="44" rx="1.0" fill="url(#dcp-404--plate)" stroke="#0d0f11" stroke-width="0.3" data-z-out="2.5" data-z-profile-y="0:0.35,4:1.3,10.4:2.5,12.2:2.5,44:2.5" data-z-color="#23272b" />
+    <g id="dcp-404--c1" data-path="dcp-404/c1" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-role="client" transform="translate(38.42,29.3)">
+      <title>dcp-404--c1</title>
+      <rect id="dcp-404--c1--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="dcp-404/c1/opening" data-class="cutout" />
+      <rect id="dcp-404--c1--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="dcp-404--c1--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="dcp-404--c1--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="dcp-404--c2" data-path="dcp-404/c2" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-role="client" transform="translate(57.4,29.3)">
+      <title>dcp-404--c2</title>
+      <rect id="dcp-404--c2--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="dcp-404/c2/opening" data-class="cutout" />
+      <rect id="dcp-404--c2--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="dcp-404--c2--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="dcp-404--c2--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="dcp-404--c3" data-path="dcp-404/c3" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-role="client" transform="translate(76.38,29.3)">
+      <title>dcp-404--c3</title>
+      <rect id="dcp-404--c3--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="dcp-404/c3/opening" data-class="cutout" />
+      <rect id="dcp-404--c3--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="dcp-404--c3--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="dcp-404--c3--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="dcp-404--c4" data-path="dcp-404/c4" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp28" data-role="client" transform="translate(95.37,29.3)">
+      <title>dcp-404--c4</title>
+      <rect id="dcp-404--c4--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="dcp-404/c4/opening" data-class="cutout" />
+      <rect id="dcp-404--c4--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="dcp-404--c4--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="dcp-404--c4--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+    <g id="dcp-404--line" data-path="dcp-404/line" data-class="port" data-ref="std/qsfp-dd@1:1.3.0" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-role="line" transform="translate(147.88,29.09)">
+      <title>dcp-404--line</title>
+      <rect id="dcp-404--line--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="dcp-404/line/opening" data-class="cutout" />
+      <rect id="dcp-404--line--cage-lip" x="1.2" y="1.2" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="dcp-404--line--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="dcp-404--line--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+    </g>
+    <g id="dcp-404--led-c1-tx" data-path="dcp-404/led-c1-tx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="tx" transform="translate(45.07,25.75)">
+      <title>dcp-404--led-c1-tx</title>
+      <circle id="dcp-404--led-c1-tx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c1-tx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c1-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c1-rx" data-path="dcp-404/led-c1-rx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="rx" transform="translate(48.27,25.75)">
+      <title>dcp-404--led-c1-rx</title>
+      <circle id="dcp-404--led-c1-rx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c1-rx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c1-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c2-tx" data-path="dcp-404/led-c2-tx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="tx" transform="translate(64.05,25.75)">
+      <title>dcp-404--led-c2-tx</title>
+      <circle id="dcp-404--led-c2-tx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c2-tx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c2-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c2-rx" data-path="dcp-404/led-c2-rx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="rx" transform="translate(67.25,25.75)">
+      <title>dcp-404--led-c2-rx</title>
+      <circle id="dcp-404--led-c2-rx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c2-rx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c2-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c3-tx" data-path="dcp-404/led-c3-tx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="tx" transform="translate(83.03,25.75)">
+      <title>dcp-404--led-c3-tx</title>
+      <circle id="dcp-404--led-c3-tx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c3-tx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c3-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c3-rx" data-path="dcp-404/led-c3-rx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="rx" transform="translate(86.23,25.75)">
+      <title>dcp-404--led-c3-rx</title>
+      <circle id="dcp-404--led-c3-rx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c3-rx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c3-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c4-tx" data-path="dcp-404/led-c4-tx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="tx" transform="translate(102.02,25.75)">
+      <title>dcp-404--led-c4-tx</title>
+      <circle id="dcp-404--led-c4-tx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c4-tx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c4-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-c4-rx" data-path="dcp-404/led-c4-rx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="rx" transform="translate(105.22,25.75)">
+      <title>dcp-404--led-c4-rx</title>
+      <circle id="dcp-404--led-c4-rx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="dcp-404--led-c4-rx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="dcp-404/led-c4-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-line-tx" data-path="dcp-404/led-line-tx" data-class="led" data-ref="common/led-rect@1:1.1.0" data-function="tx" transform="translate(140.9,36.49)">
+      <title>dcp-404--led-line-tx</title>
+      <rect id="dcp-404--led-line-tx--bezel" x="0" y="0" width="4.6" height="2.6" rx="0.3" fill="#17191c" />
+      <rect id="dcp-404--led-line-tx--lamp" x="0.4" y="0.4" width="3.8" height="1.8" rx="0.2" fill="var(--led-color, #2a6b3f)" data-path="dcp-404/led-line-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-line-rx" data-path="dcp-404/led-line-rx" data-class="led" data-ref="common/led-rect@1:1.1.0" data-function="rx" transform="translate(169.3,36.49)">
+      <title>dcp-404--led-line-rx</title>
+      <rect id="dcp-404--led-line-rx--bezel" x="0" y="0" width="4.6" height="2.6" rx="0.3" fill="#17191c" />
+      <rect id="dcp-404--led-line-rx--lamp" x="0.4" y="0.4" width="3.8" height="1.8" rx="0.2" fill="var(--led-color, #2a6b3f)" data-path="dcp-404/led-line-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-power" data-path="dcp-404/led-power" data-class="led" data-ref="common/led-rect@1:1.1.0" data-function="power" transform="translate(5.3,36.7)">
+      <title>dcp-404--led-power</title>
+      <rect id="dcp-404--led-power--bezel" x="0" y="0" width="4.6" height="2.6" rx="0.3" fill="#17191c" />
+      <rect id="dcp-404--led-power--lamp" x="0.4" y="0.4" width="3.8" height="1.8" rx="0.2" fill="var(--led-color, #2a6b3f)" data-path="dcp-404/led-power/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--led-status" data-path="dcp-404/led-status" data-class="led" data-ref="common/led-rect@1:1.1.0" data-function="status" transform="translate(11.9,36.7)">
+      <title>dcp-404--led-status</title>
+      <rect id="dcp-404--led-status--bezel" x="0" y="0" width="4.6" height="2.6" rx="0.3" fill="#17191c" />
+      <rect id="dcp-404--led-status--lamp" x="0.4" y="0.4" width="3.8" height="1.8" rx="0.2" fill="var(--led-color, #2a6b3f)" data-path="dcp-404/led-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="dcp-404--warn-laser" data-path="dcp-404/warn-laser" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" data-marking="laser" transform="translate(7.8,24.1)">
+      <title>dcp-404--warn-laser</title>
+      <path id="dcp-404--warn-laser--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+      <g id="dcp-404--warn-laser--burst" fill="#1a1a1a">
+        <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+        <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+        <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+        <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+      </g>
+    </g>
+    <g id="dcp-404--warn-general" data-path="dcp-404/warn-general" data-class="marking" data-behaviour="mounts" data-ref="common/warning-triangle@1:1.0.0" data-marking="general" transform="translate(7.8,29.62)">
+      <title>dcp-404--warn-general</title>
+      <path id="dcp-404--warn-general--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+      <g id="dcp-404--warn-general--exclamation" fill="#1a1a1a">
+        <path d="M 2.43 2.15 h 0.54 l -0.10 1.45 h -0.34 z" />
+        <circle cx="2.70" cy="4.02" r="0.27" />
+      </g>
+    </g>
+  </g>
+</svg>
