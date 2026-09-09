@@ -44,7 +44,7 @@ A bay inside a COMPONENT is a bare rect, with its occupant as a SIBLING:
 Everything downstream assumes the first shape, so both symptoms fall out of the
 second:
 
-**The tree.** `shell.js:546` decides occupancy with
+**The tree.** `shell.js:544` decides occupancy with
 `n.el.querySelector('[data-ref]')` — a DESCENDANT query. A rect has no
 descendants, so an occupied nested bay is always "open".
 
