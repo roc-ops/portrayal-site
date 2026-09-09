@@ -183,52 +183,50 @@ export function createRackScene(container, opts = {}) {
   const scopeFor = view => (view === 'top' || view === 'bottom') ? COARSE : relief;
 
   // ── parts taken off ────────────────────────────────────────────────────
-  // WHAT IS NOT THERE. `opts.pulled` is a set of data-paths this scene draws
-  // without - a blanking plate off a bay, the dust caps off the ports a cable
-  // actually lands in. The consumer that asked for it (roc-ops/portrayal-site#10)
-  // knows its cabled endpoints and emits `xc04/cap-tx`, `xc04/cap-rx`, so an
-  // uncapped port reads as a cabled port at a glance.
+  // WHAT IS NOT THERE. A set of data-paths a device is drawn without - a
+  // blanking plate off a bay, the dust caps off the ports a cable actually
+  // lands in. The consumer that asked for it (roc-ops/portrayal-site#10) knows
+  // its cabled endpoints and emits `xc04/cap-tx`, `xc04/cap-rx`, so an uncapped
+  // port reads as a cabled port at a glance.
   //
-  // BOTH SCOPES, ALWAYS. Density is the only thing that should differ between
-  // the fine scope and the coarse one, so a part taken off the front must be
-  // off the top as well - setting one and not the other is a device whose lid
-  // is missing from every angle but above.
+  // `opts.pulled` is the scene's default and `entry.pulled` is one mount's own
+  // answer, REPLACING the default rather than adding to it: three DCP-Rs
+  // cross-connected differently have three different lists, and a union
+  // uncaps a port on every unit that a cable only reaches on one. An entry
+  // that says nothing gets the scene default, so the simple case stays simple.
   //
-  // AND THE FLAT PASS TOO, which is why pullFaces() exists below. A face goes
-  // up as a plain raster first and grows its relief afterwards; svgCanvas()
-  // rasterises the source text and never consults the pulled set, so setting
-  // only the scopes drops a part's GEOMETRY and leaves it painted on the
-  // texture underneath. Both halves or neither.
+  // TAKEN OUT OF THE MOUNT'S OWN TEXT, not set on a scope. The scopes are
+  // shared by every device in the rack and a device's deferred relief pass
+  // interleaves with the next device's build, so a scope-level set could only
+  // ever say one thing for the whole scene - which is what made this
+  // scene-wide before faces were keyed per mount. Removing the elements from
+  // that mount's face instead is per-mount by construction, and it is what
+  // extractRelief does with a pulled element anyway once it has found it.
   //
-  // SCENE-WIDE, not per device. The scopes are shared by every device in the
-  // rack, and the deferred relief pass for one device interleaves with the
-  // build of the next, so a set that changed between devices would be read by
-  // whichever pass happened to be mid-flight. A rack holding the same model
-  // twice therefore takes a path off both. Say so rather than pretend
-  // otherwise; per-device pulls need the paths carried on the entry, and
-  // nobody has asked for that yet.
+  // It also covers the flat pass for free. A face goes up as a plain raster and
+  // grows its relief afterwards, and svgCanvas() consults no pulled set at all,
+  // so anything that only reached the relief would drop a part's geometry and
+  // leave it painted on the texture underneath.
   let PULLED = new Set(opts.pulled || []);
-  const applyPulledScopes = () => {
-    setReliefPulled(PULLED, relief);
-    setReliefPulled(PULLED, COARSE);
-  };
-  applyPulledScopes();
+  const pulledFor = entry => new Set(entry.pulled || PULLED);
+  // one scratch scope, re-aimed per mount, purely to borrow relief.js's own
+  // matching - nested paths and a part's projections on other faces included
+  const PULL_SCOPE = createReliefScope();
 
-  // Bake the pulled set into each of a device's faces, on top of whatever bay
-  // override is already registered for it, so the flat raster agrees with the
-  // relief. Registered per URL exactly as overrideFaces does, and re-read by
-  // extractRelief's own applyPulled, which clears and re-applies from the
-  // scope - the same answer twice, not two different ones.
   async function pullFaces(entry) {
-    if (!PULLED.size) return;
+    const want = pulledFor(entry);
+    if (!want.size) return;
+    setReliefPulled(want, PULL_SCOPE);
     for (const fr of faceFrames(0, 0, 0)) {
       let text;
       // this mount's own text if a bay swap already made one, else the model's
       try { text = await svgSource(faceSrc(entry, fr.view), relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
-      applyPulled(doc.documentElement, relief);
-      if (!doc.querySelector('[data-portrayal-pulled]')) continue;   // nothing here
+      applyPulled(doc.documentElement, PULL_SCOPE);
+      const gone = [...doc.querySelectorAll('[data-portrayal-pulled]')];
+      if (!gone.length) continue;              // nothing of this mount's list here
+      for (const el of gone) el.remove();
       putFace(entry, fr.view, new XMLSerializer().serializeToString(doc));
     }
   }
@@ -496,6 +494,22 @@ export function createRackScene(container, opts = {}) {
 
     const ruHeight = Math.max(1, Math.round(H / RU));
     group.position.set(0, (entry.ru - 1) * RU + H / 2, RACK_FACE_Z - RECESS - D / 2);
+    // RACKED BACK TO FRONT. `reversed: true` on the entry turns the unit round
+    // in its bay: its faceplate looks out of the BACK of the rack and what you
+    // see from the front is its rear panel. Not a drawing preference - on the
+    // OK ROADM shelf every management port but the controller's is already on a
+    // rear face, so turning the controller round is what makes each management
+    // run a short rear-to-rear jumper, and that is how it would be installed.
+    //
+    // A HALF TURN AND NOTHING ELSE. The chassis keeps the depth it already
+    // occupies, so the position above stands: the faceplate lands where the
+    // rear panel was, at RACK_FACE_Z - RECESS - D, and the rear panel comes
+    // forward to RACK_FACE_Z - RECESS, which is where a faceplate normally
+    // sits. Everything that hangs off this group - relief, FRU subgroups, the
+    // tweens that pull a module out along its own normal - is in device space
+    // and turns with it. The ears do not: they are parented to the SCENE, not
+    // to the device, because a reversed unit still bolts to the same posts.
+    if (entry.reversed) group.rotation.y = Math.PI;
 
     // The ears live in RACK space, not device space. Parenting them to the
     // device and cancelling only the Y offset left them displaced by the Z
@@ -719,7 +733,6 @@ export function createRackScene(container, opts = {}) {
     mounted.length = 0;
     clearSvgOverrides(relief);
     SYNTH.clear();            // the keys those overrides were registered under
-    applyPulledScopes();      // a setPulled() since the last build lands here
     dropAnchorDocs();         // measured against overrides that are now gone
     await hydrate();
     if (FIT) {
@@ -768,16 +781,15 @@ export function createRackScene(container, opts = {}) {
       const e = STACK.find(x => x.ref === ref);
       if (e) e.overrides = {...ov};
     },
-    // Which parts this scene draws without. Set at construction with
-    // `opts.pulled`, or changed here and picked up by the next build() - the
+    // The scene's DEFAULT set of parts to draw without: `opts.pulled` at
+    // construction, or changed here and picked up by the next build() - the
     // same mutate-then-rebuild shape setOverrides has, and for the same
     // reason: a pull is read when a face is extracted and rasterised, so
-    // nothing short of rebuilding those faces can show it. Provided now so a
-    // host that wants to take parts off after the fact has a supported way to
-    // do it, rather than one that has to be invented later.
+    // nothing short of rebuilding those faces can show it.
+    // A stack entry carrying its own `pulled` uses that instead, which is how
+    // three of one model each lose a different port's cap.
     setPulled(paths) {
       PULLED = new Set(paths || []);
-      applyPulledScopes();
     },
     pulled: () => new Set(PULLED),
     // The world point of a drawn port, and the way the face it is on is
