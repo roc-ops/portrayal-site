@@ -1,91 +1,104 @@
-# A bay inside a seated module cannot be populated
+# A bay inside a component is emitted in a different shape from a bay on a device
 
-Against `kit/shell.js` and `spec/tools/portrayal/components_index.py` at
-`0a08c00f`. No patch attached: the fix is small but the shape of the index entry
-is upstream's call.
+Against `spec/tools/portrayal/render.py`, `spec/tools/portrayal/components_index.py`
+and `kit/shell.js` at `acbe4fd5`. No patch attached: the fix is in render.py's
+output shape and that is upstream's call.
 
 ## Symptom
 
-A component that hosts bays of its own has them drawn, seated with their
-defaults, and named correctly in the tree — and there is no way to change what
-is in one. The occupant picker never appears for it.
+A component that hosts bays of its own has them drawn and seated with their
+defaults, and two things are wrong with them downstream:
 
-Concretely, on `dcp-2`: seat `smartoptics/dcp-f-a22@1` in `slot-1` and the tree
-gains `slot-1/module/ppm-1` holding `smartoptics/ppm-dummy@1`. That bay accepts
-`smartoptics/ppm-ad1-1510@1` and always has. Selecting the row gives an empty
-inspector. Selecting `slot-2` — a device bay — gives the picker.
+- the tree calls an occupied bay **open**, and
+- there is no way to change what is in one.
 
-It reads as a modelling gap and is not one. The contract is right, the drawing
-is right, the default is correctly seated; the only thing missing is the offer.
+On `dcp-2`, seat `smartoptics/dcp-f-a22@1` in `slot-2`. The drawing shows both
+its PPM bays carrying `PPM-DUMMY`; the tree reads `ppm-1 — open`, `ppm-2 —
+open`; and selecting either gives an inspector with a class and a path and no
+occupant control. The contract, the drawing and the seated default are all
+correct. Nothing offers to change it, and the tree contradicts the picture.
 
 ## Not one device
 
 39 components across the library declare their own bays, 84 nested bays in
 total — the Cisco A9K modular line cards and SIPs, the Dell 14G risers, these
-Smartoptics shelf cards. None of them can be populated. `component.schema.json`
-already describes the case and puts the count at 51 across 25 components, so
-it has grown by two thirds since that line was written.
+Smartoptics shelf cards. `component.schema.json` already describes the case and
+puts the count at 51 across 25 components, so it has grown by two thirds since
+that line was written.
 
-## Root cause
+## Root cause: two shapes for one idea
 
-Two lookups key a bay by exact id against the DEVICE's compiled bay list:
+A bay on a DEVICE face is a group that contains its opening and its occupant:
 
-    kit/shell.js:812   inspect()   const bay = (state.meta?.bays?.[bayView()] || []).find(b => b.id === path);
-    kit/shell.js:860   swapBay()   const bay = (state.meta.bays[bayView()] || []).find(b => b.id === bayId);
+    <g id="slot-1" data-path="slot-1" data-class="bay">
+      <rect id="slot-1--opening" .../>
+      <g id="slot-1--module" data-path="slot-1/module" data-ref="…dcp-2-blank@1:1.2.0"> … </g>
+    </g>
 
-For `dcp-2` that list is `slot-1`, `slot-2`, `psu-1`, `psu-2`, `fan-1`. The path
-`slot-1/module/ppm-1` is in neither, so `inspect` draws no `<select>` and
-`swapBay` returns before it does anything. One cause, two symptoms: a scripted
-swap is refused for the same reason the picker is absent.
+A bay inside a COMPONENT is a bare rect, with its occupant as a SIBLING:
 
-Underneath that, `components_index.py` emits `parts`, `elements`, `body`,
-`files`, `skins` and the rest for each component, but never `bays`. So nothing
-the shell loads knows what a nested bay accepts or defaults to. The information
-exists only in the component's contract on disk.
+    <rect id="dcp-f-a22--ppm-1" data-path="dcp-f-a22/ppm-1" data-class="bay" .../>
+    <g id="dcp-f-a22--ppm-1--module" data-path="dcp-f-a22/ppm-1/module"
+       data-ref="…ppm-dummy@1:1.0.0" transform="translate(147.3,2.5)"> … </g>
 
-## The seating machinery already handles it
+Everything downstream assumes the first shape, so both symptoms fall out of the
+second:
 
-Worth stating plainly, because it bounds the work: `swap.js` needs no change.
-Measured against the compiled artifacts, two passes of `applyOverrides` on one
-`dcp-2` front face —
+**The tree.** `shell.js:546` decides occupancy with
+`n.el.querySelector('[data-ref]')` — a DESCENDANT query. A rect has no
+descendants, so an occupied nested bay is always "open".
 
-    pass 1   bays: the device's own      overrides: {slot-1: smartoptics/dcp-f-a22@1}
-             -> seats the A22; slot-1/module/ppm-1 appears carrying ppm-dummy@1
+**The swap.** `swap.js` `bayGroup()` finds the bay by `data-path` and
+`applyOverrides` then does `g.querySelector('#<id>--module')?.remove()` followed
+by `g.appendChild(...)`. Against a rect that removes nothing — the dummy is a
+sibling, and its id does not match the pattern either — and appends the new
+occupant INSIDE a `<rect>`, where SVG will not render it. Measured on one
+`dcp-2` front face, seating `ppm-ad1-1510@1` into `slot-1/module/ppm-1` after
+seating the A22:
 
-    pass 2   bays: [{id: 'slot-1/module/ppm-1', at: [147.3, 2.5],
-                     size: {w: 55.4, h: 19.5}, accepts: [...], default: ...}]
-             overrides: {slot-1/module/ppm-1: smartoptics/ppm-ad1-1510@1}
-             -> seats the 1510, transform translate(175,12.25) translate(-27.7,-9.75),
-                children addressed slot-1/module/ppm-1/module/osc/cap-tx and so on
+    occupant nodes after the swap:
+      g  data-ref=…ppm-ad1-1510@1   parent: rect     <- appended, will not draw
+      g  data-ref=…ppm-dummy@1      parent: g        <- never removed
 
-The descriptor in pass 2 was typed out of the A22's contract by hand. That is
-the whole of what is missing. `bayGroup` finds the nested opening by
-`data-path` like any other, `rename` re-addresses the occupant into it
-correctly, and the bay's own `at`/`size` are already in the carrier's
-coordinate space, which is the space the nested group sits in.
+So the drawing is unchanged and the DOM now claims two occupants for one bay.
+
+**And the index.** Separately, `components_index.py` emits `parts`, `elements`,
+`body`, `files`, `skins` and the rest, but never `bays`. So even with the shape
+fixed, nothing the shell loads knows what a nested bay accepts or defaults to;
+that lives only in the component's contract on disk.
 
 ## What we think it needs
 
 Offered as a starting point, not a design.
 
-1. **`components_index.py` carries a component's `bays`.** Normalised to the
+1. **render.py emits a component's bays in the device shape** — a `<g>` carrying
+   `data-path` and `data-class="bay"`, with the opening and the occupant inside
+   it. That alone fixes the "open" mislabel and makes `bayGroup` +
+   `appendChild` land in the right place, with no change to `swap.js` or to the
+   tree.
+
+2. **`components_index.py` carries a component's `bays`**, normalised to the
    shape a device bay already has — the contract writes `size: [55.4, 19.5]`
    while a device bay carries `size: {w, h}`, and one shape means one code path
    in the consumer rather than two.
 
-2. **The shell resolves a nested bay.** A tree node with `data-class="bay"`
-   whose path is not a device bay is a nested one: its carrier is the path up to
-   the last `/module`, whose `data-ref` names the component, whose bays come
-   from (1). `swapBay` needs the same resolution, and `state.cfgBays` needs to
-   key on the full path so two carriers of the same model do not share an
-   answer.
+3. **The shell resolves a nested bay.** A `data-class="bay"` node whose path is
+   not a device bay is a nested one: its carrier is the path up to the last
+   `/module`, whose `data-ref` names the component, whose bays come from (2).
+   `shell.js:812` and `:860` both key on `b.id === path` against the device's
+   list and would need that resolution. `state.cfgBays` needs to key on the full
+   path too, so two carriers of the same model do not share an answer.
 
-The second half is where the judgement is, which is why there is no patch here:
-whether a nested bay belongs in `state.meta.bays` under its full path, or is
-resolved on demand, changes what `bays` means elsewhere — the `N bays` count in
-the status line among them.
+Whether a nested bay belongs in `state.meta.bays` under its full path or is
+resolved on demand changes what `bays` means elsewhere — the `N bays` count in
+the status line among them — which is the judgement call we are not making for
+you.
 
-## What we would not change
+## Correction
 
-`swap.js`. It already does this correctly, and the measurement above is the
-evidence.
+An earlier version of this note claimed `swap.js` already handled nested bays
+and cited a two-pass `applyOverrides` measurement as evidence. That was wrong.
+The measurement only checked that a node with the right `data-path` existed
+afterwards; it did not check that the node would render or that the previous
+occupant had gone. Neither is true, for the reason above. The seating machinery
+does not handle the component shape, and item 1 is what makes it able to.
