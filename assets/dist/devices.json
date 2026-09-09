@@ -2,7 +2,7 @@
  "decor-confidence": {
   "estimated": 31,
   "measured": 1,
-  "unstated": 704
+  "unstated": 710
  },
  "devices": [
   {
@@ -4025,6 +4025,100 @@
    "portfolio": {},
    "search": "furniture item slots slot psus psu fans fan mgmt port 1000base-t sfp 100m-1g rj45-serial console rack-ear rj45-ganged-eth dcp-2-blank dcp-2-fan dcp-2-psu-ac dcp-2-psu-dc dcp-404 dcp-f-a22 rj45-ganged",
    "version": "1.3.0"
+  },
+  {
+   "capability": {
+    "blocked": [],
+    "flags": [],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {},
+   "decor-confidence": {
+    "unstated": 6
+   },
+   "description": "32-channel 150 GHz coherent open line system, 1RU. Mux/demux with EDFA, OCM and OSC, 32 client channels on LC duplex adapters in two rows, plus Line, a 1510nm OSC filter port and a 1625nm OTDR port.",
+   "gaps": [
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The 32 client lamps are placed coincident with each channel's Tx/Rx strip. The COUNT and the FUNCTION are datasheet and manual; the POSITION is arrived at by elimination on a photograph - only three features repeat per channel, and the number and the adapter are ruled out - rather than by seeing a lit lamp. The part carries the objection in full, including the two ports on this same face that wear the identical strip with no datasheet LED behind it.",
+     "scope": [
+      "client-leds"
+     ],
+     "wanted": "a photograph of a unit CARRYING TRAFFIC. Every image held shows Power and Status green while every client strip is white, which says the channels are dark, not that the lamps are elsewhere. With light on a few channels, whatever turns green settles it outright.",
+     "what": "client-lamp-positions"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The rear carries two PSU bays, a fan tray and ETH1-ETH5, and the DCP-M manual's rear figures are of the DCP-M40, a different product with all its management at the back. No photograph or figure of THIS unit's rear exists in the corpus, so the rear view is the chassis envelope and its bays only.",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "a photograph of a DCP-M32 rear, or a manual figure that names it as such.",
+     "what": "rear-face"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Only front and rear are modelled. 510 deep is stated but nothing in the corpus shows a side, top or bottom of this unit.",
+     "scope": [
+      "left",
+      "right",
+      "top",
+      "bottom"
+     ],
+     "wanted": "a square-on photograph of the lid or a flank.",
+     "what": "side-top-bottom-views"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "an `attrs.performance` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 3 bays (rear 3); `physical-context` on port group line - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "templated"
+     ],
+     "kind": "derived",
+     "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+     "what": "templated"
+    }
+   ],
+   "manufacturer": "Smartoptics",
+   "model": "DCP-M32-CSO-ZR+",
+   "name": "dcp-m32-cso-zr",
+   "ns": "smartoptics",
+   "portfolio": {},
+   "search": "furniture item mgmt port line channels fiber channel client-leds led line-leds status-leds markings marking psus psu fans fan 1000base-t rj45-serial console sfp osc tx rx power status 1510 otdr laser-warning lc-duplex-adapter led-dot led-rect rack-ear rj45-ganged-eth warning-triangle dcp-2-fan dcp-2-psu-ac dcp-2-psu-dc m32-client-lamp rj45-ganged",
+   "version": "1.0.0"
   },
   {
    "capability": {
