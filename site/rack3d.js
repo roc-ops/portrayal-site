@@ -17,7 +17,7 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
          setPulled as setReliefPulled, applyPulled, nodeTools } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
-import { applyOverrides } from '../vendor/swap.js';
+import { applyOverrides, nestedBays } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 
 export const RU = 44.45;            // EIA-310 rack unit
@@ -430,14 +430,29 @@ export function createRackScene(container, opts = {}) {
       return {comp: c, text: await svgSource(
         `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`, relief)};
     };
+    // A NESTED KEY NAMES NO DEVICE BAY, so the per-view guard below - which
+    // asks whether this view holds any bay the map mentions - skips every view
+    // for a map that carries only nested keys. A host swapping just the module
+    // inside a seated carrier would watch nothing happen.
+    const nestedOverride = Object.keys(ov).some(k => k.includes('/module/'));
     for (const [view, bays] of Object.entries(entry.bays)) {
       if (!bays.length) continue;
-      if (!bays.some(b => Object.prototype.hasOwnProperty.call(ov, b.id))) continue;
+      if (!nestedOverride
+          && !bays.some(b => Object.prototype.hasOwnProperty.call(ov, b.id))) continue;
       let text;
       try { text = await svgSource(faceUrl(entry, view), relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
-      const n = await applyOverrides(doc.documentElement, bays, ov, loadSkin);
+      // TWO PASSES, AND THE SECOND HAS TO LOOK AGAIN. Which nested bays exist,
+      // and where they are, is a property of the carrier CURRENTLY seated, so
+      // deriving them before the device pass reads them off the carrier that
+      // pass is about to replace. An override map that swaps a carrier AND
+      // something under it would seat the nested module at the old carrier's
+      // `at`, or miss a bay the new carrier brings with it.
+      let n = await applyOverrides(doc.documentElement, bays, ov, loadSkin);
+      const nested = nestedBays(doc.documentElement, byRef);
+      if (nested.length)
+        n += await applyOverrides(doc.documentElement, nested, ov, loadSkin);
       if (n) putFace(entry, view, new XMLSerializer().serializeToString(doc));
     }
   }
