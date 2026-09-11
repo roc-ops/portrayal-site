@@ -323,6 +323,38 @@ Visio shape name cannot contain a slash.**
 - A shape is named with dots, `ndc.module.port-1`, while `PortPath` keeps the
   real `ndc/module/port-1`. The name is for Visio; the path is for us.
 
+**Shape Data reads correctly** - `mgmt` gives rj45 and 100m-1g, `port-6` sfp28
+and 25g, `port-0` qsfp-dd and 400g, and the nested NIC port gives
+`ndc/module/port-2`. Quoting the strings was the fix.
+
+The nested ports were STILL called `Sheet.14`, though: a dot is Visio's own
+separator, as in `Sheet.14`, so dots were no better than slashes. Round 10 uses
+underscores - `ndc_module_port-1` - and the path stays in Shape Data.
+
+### Round 11 — modules, and whether a bay can take one
+
+Everything until now shipped a device as compiled. This is the case that cannot
+be expressed that way: an A22 card seated in a DCP-2 slot, and a PPM inside the
+A22. The card and the PPM are things the USER seats, so they have to be separate
+shapes.
+
+A drawing has no library to drag from - that is what a stencil is for - but it
+can put the cards on the page beside the chassis, which answers the question
+underneath: when a card is dragged onto a slot, does Visio understand the card
+is IN the slot?
+
+| variant | the bays |
+|---|---|
+| `modules-drag` | locked. A card dropped on a slot is parked on top of it |
+| `modules-container` | each bay declares itself a Visio CONTAINER - a shape others are dropped INTO, listed as members of, and carried with |
+
+The container variant cannot lock its bays, because a container has to be
+selectable - which brings back round 7's problem of ports competing for the
+click. That trade is the point of the test.
+
+One page holds the DCP-2 front, the A22, and both PPMs. The A22 carries its own
+two bays, so the nested case is really in there.
+
 Result: _pending_
 
 ### Still open

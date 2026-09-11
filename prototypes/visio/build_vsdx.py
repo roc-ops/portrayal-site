@@ -71,7 +71,8 @@ def cell(name, v, f=None):
     return f'<Cell N="{name}" V="{esc(v)}"' + (f' F="{esc(f)}"/>' if f else '/>')
 
 
-def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False):
+def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False,
+               container=False):
     """One port or bay: a rectangle a connector can glue to.
 
     ROUND 2. Two fixes, both found by round 1 opening in Visio and Lucidchart
@@ -103,6 +104,18 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False):
     # device and does not compete with it for the click.
     lock = (cell('LockMoveX', '1') + cell('LockMoveY', '1') + cell('LockDelete', '1')
             + cell('LockSelect', '1')) if locked else ''
+    # Visio's own structured-diagram machinery: a shape that says it is a
+    # Container becomes something other shapes are dropped INTO and carried
+    # with. That is what "seat a card in a slot" would mean here - as against
+    # a card merely parked on top of a slot, which is all a drawing can do
+    # otherwise. Containers have to be selectable, so this is never locked.
+    if container and z['cls'] == 'bay':
+        lock = (cell('DisplayMode', '2')
+                + '<Section N="User">'
+                + f'<Row N="msvStructureType">{cell("Value", "Container", chr(34) + "Container" + chr(34))}</Row>'
+                + f'<Row N="msvSDContainerResize">{cell("Value", "0")}</Row>'
+                + f'<Row N="msvSDContainerMargin">{cell("Value", "0")}</Row>'
+                + '</Section>')
     # A Shape Data value is a FORMULA, and a string one has to be quoted.
     # Round 8 wrote bare values and Visio read them as numbers: every string
     # showed as 0 in the Shape Data pane, while a speed of 100 came through
@@ -149,10 +162,14 @@ def shapename(path):
 
     Round 8 named each port after its path, and the ones with a path like
     ndc/module/port-1 - a port on a card seated in a bay - came out as
-    "Sheet.15" while plain names like mgmt survived. The full path stays in
-    Shape Data, which is where a machine should read it from anyway.
+    "Sheet.15" while plain names like mgmt survived.
+
+    Round 9 tried dots and they failed the same way, which should have been
+    obvious: a dot is Visio's OWN separator, as in Sheet.14. Underscores.
+    The full path stays in Shape Data, which is where a machine should read it
+    from anyway.
     """
-    return str(path).replace('/', '.')
+    return str(path).replace('/', '_')
 
 
 def rowname(path):
@@ -283,90 +300,61 @@ def page_xml(shapes, connects):
             + '</PageContents>')
 
 
-def build(faces, out, cable=True, tint=False, image=True, image_last=True,
-          group=True, points=False, locked=False):
-    """faces: [{'name','png','zones','vb'}] - one page each."""
-    pages, page_parts, rels, ctypes, media = [], [], [], [], []
-    for i, f in enumerate(faces, 1):
-        vb = f['vb']
-        w_in, h_in = vb[2] / MM, vb[3] / MM
-        # Z-ORDER, SETTLED BY THE d2 DIAGNOSTIC: Visio paints the LAST shape
-        # in front, the reverse of what rounds 1 to 3 assumed. So the faceplate
-        # goes in LAST. The ports sit behind it and stay invisible, and a
-        # connector still finds their connection points.
-        sid = 1
-        img_rid = 'rId1'
-        shapes = []
-        if image and not image_last:
-            shapes.append(image_shape(sid, img_rid, w_in, h_in))
-        sid += 1                      # keep ids stable across the variants
-        byid, connects, cable_shape = {}, '', ''
-        if points:
-            # One shape, ports as connection points. Nothing else on the page.
-            f['name'] = f.get('name', 'device')
-            page_parts.append((f'visio/pages/page{i}.xml', page_xml(
-                points_shape(1, img_rid, w_in, h_in, f['zones'], vb, f), '')))
-            media.append((f'visio/media/image{i}.png', f['png']))
-            pages.append(f'''<Page ID="{i - 1}" NameU="{esc(f['name'])}" Name="{esc(f['name'])}"
- ViewScale="-1" ViewCenterX="{n(w_in / 2)}" ViewCenterY="{n(h_in / 2)}"><PageSheet>
-{cell('PageWidth', n(w_in))}{cell('PageHeight', n(h_in))}
-{cell('ShdwOffsetX', '0.1181')}{cell('ShdwOffsetY', '-0.1181')}
-{cell('PageScale', '1')}{cell('DrawingScale', '1')}
-{cell('DrawingSizeType', '3')}{cell('DrawingScaleType', '0')}
-</PageSheet><Rel r:id="rId{i}"/></Page>''')
-            continue
-        for z in f['zones']:
-            byid[z.get('path') or z['id']] = (sid, z)
-            shapes.append(port_shape(sid, z, h_in, tint, vb, locked))
-            sid += 1
-        # A cable drawn for us between the first two real ports, so the very
-        # first thing we can check is what Visio saved for an attachment it
-        # did not have to guess at.
-        ports = [p for p in f['zones'] if p['cls'] == 'port']
-        if cable and len(ports) >= 2:
-            a, b = ports[0], ports[1]
-            ida, idb = byid[a.get('path') or a['id']][0], byid[b.get('path') or b['id']][0]
-            ca = ((a['x'] - vb[0] + a['w'] / 2) / MM, h_in - (a['y'] - vb[1] + a['h'] / 2) / MM)
-            cb = ((b['x'] - vb[0] + b['w'] / 2) / MM, h_in - (b['y'] - vb[1] + b['h'] / 2) / MM)
-            cable_shape = connector(sid, ca, cb, ida, idb)
-            # ToPart 100 is the FIRST connection point (100 + a zero-based
-            # index); FromPart 9 and 12 are the begin and end points.
-            connects = (f'<Connect FromSheet="{sid}" FromCell="BeginX" FromPart="9" '
-                        f'ToSheet="{ida}" ToCell="Connections.X1" ToPart="100"/>'
-                        f'<Connect FromSheet="{sid}" FromCell="EndX" FromPart="12" '
-                        f'ToSheet="{idb}" ToCell="Connections.X1" ToPart="100"/>')
-            sid += 1
+def one_group(item, rid, sid, tint=False, locked=True, container=False):
+    """A device or module as ONE group: its faceplate, and its ports behind it.
 
-        if image and image_last:
-            shapes.append(image_shape(sid, img_rid, w_in, h_in))
-            sid += 1
-        # ROUND 6. A device is ONE object. Until now the faceplate and its 40
-        # port shapes were unrelated shapes that happened to overlap, so
-        # dragging the device moved the picture and left every port behind -
-        # which is exactly what the modular test showed. A Group holds them
-        # together: the group moves as one, and the ports inside it still glue
-        # individually. The group's own space runs 0..Width, 0..Height, which
-        # is the space the children were already written in.
-        if group:
-            page_shapes = (f'<Shape ID="{sid}" NameU="{esc(f["name"])}" '
-                           f'Name="{esc(f["name"])}" Type="Group">'
-                           + cell('PinX', n(w_in / 2)) + cell('PinY', n(h_in / 2))
-                           + cell('Width', n(w_in)) + cell('Height', n(h_in))
-                           + cell('LocPinX', n(w_in / 2), 'Width*0.5')
-                           + cell('LocPinY', n(h_in / 2), 'Height*0.5')
-                           + cell('Angle', '0')
-                           + cell('SelectMode', '1')   # click selects the group
-                           + cell('DisplayMode', '2')  # children keep their own behaviour
-                           + f'<Shapes>{"".join(shapes)}</Shapes></Shape>')
-            sid += 1
-        else:
-            page_shapes = ''.join(shapes)
-        page_parts.append((f'visio/pages/page{i}.xml',
-                           page_xml(page_shapes + cable_shape, connects)))
-        media.append((f'visio/media/image{i}.png', f['png']))
-        pages.append(f'''<Page ID="{i - 1}" NameU="{esc(f['name'])}" Name="{esc(f['name'])}"
- ViewScale="-1" ViewCenterX="{n(w_in / 2)}" ViewCenterY="{n(h_in / 2)}"><PageSheet>
-{cell('PageWidth', n(w_in))}{cell('PageHeight', n(h_in))}
+    Returns (xml, next_sid). The group's own space runs 0..Width, 0..Height, so
+    the children are written in face coordinates whatever the group sits on the
+    page - which is what lets a chassis and the cards that go in it share a page.
+    """
+    vb = item['vb']
+    w_in, h_in = vb[2] / MM, vb[3] / MM
+    ox, oy = item.get('at', (0, 0))
+    first = sid
+    kids = []
+    for z in item['zones']:
+        kids.append(port_shape(sid, z, h_in, tint, vb, locked, container))
+        sid += 1
+    if item.get('png'):
+        kids.append(image_shape(sid, rid, w_in, h_in))   # LAST: Visio paints it in front
+        sid += 1
+    xml = (f'<Shape ID="{sid}" NameU="{esc(item["name"])}" Name="{esc(item["name"])}" '
+           f'Type="Group">'
+           + cell('PinX', n(ox + w_in / 2)) + cell('PinY', n(oy + h_in / 2))
+           + cell('Width', n(w_in)) + cell('Height', n(h_in))
+           + cell('LocPinX', n(w_in / 2), 'Width*0.5')
+           + cell('LocPinY', n(h_in / 2), 'Height*0.5')
+           + cell('Angle', '0') + cell('SelectMode', '1') + cell('DisplayMode', '2')
+           + f'<Shapes>{"".join(kids)}</Shapes></Shape>')
+    return xml, sid + 1
+
+
+def build(pages_in, out, tint=False, locked=True, container=False):
+    """pages_in: [{'title', 'w', 'h', 'items': [item, ...]}]
+
+    An item is {'name', 'png', 'zones', 'vb', 'at': (x_in, y_in)}. A page can
+    hold as many as it likes - a chassis and the cards that go in it, say.
+    """
+    enc_pages, page_parts, media, page_rels = [], [], [], []
+    for i, pg in enumerate(pages_in, 1):
+        shapes, sid, imgs = [], 1, []
+        for item in pg['items']:
+            rid = None
+            if item.get('png'):
+                imgs.append(item['png'])
+                rid = f'rId{len(imgs)}'
+            xml, sid = one_group(item, rid, sid, tint, locked, container)
+            shapes.append(xml)
+        page_parts.append((f'visio/pages/page{i}.xml', page_xml(''.join(shapes), '')))
+        for k, png in enumerate(imgs, 1):
+            media.append((f'visio/media/p{i}image{k}.png', png))
+        page_rels.append(''.join(
+            f'<Relationship Id="rId{k}" Type="http://schemas.openxmlformats.org/'
+            f'officeDocument/2006/relationships/image" Target="../media/p{i}image{k}.png"/>'
+            for k in range(1, len(imgs) + 1)))
+        enc_pages.append(f'''<Page ID="{i - 1}" NameU="{esc(pg["title"])}" Name="{esc(pg["title"])}"
+ ViewScale="-1" ViewCenterX="{n(pg["w"] / 2)}" ViewCenterY="{n(pg["h"] / 2)}"><PageSheet>
+{cell('PageWidth', n(pg['w']))}{cell('PageHeight', n(pg['h']))}
 {cell('ShdwOffsetX', '0.1181')}{cell('ShdwOffsetY', '-0.1181')}
 {cell('PageScale', '1')}{cell('DrawingScale', '1')}
 {cell('DrawingSizeType', '3')}{cell('DrawingScaleType', '0')}
@@ -382,10 +370,8 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True,
 </Relationships>''',
         'docProps/core.xml': f'''{XML}
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
- xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>S9510-28DC</dc:title>
+ xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Portrayal</dc:title>
 <dc:creator>portrayal.dev</dc:creator></cp:coreProperties>''',
-        # Documented as required whenever what we wrote affects where a
-        # connector or a connection point sits - which is all of it.
         'docProps/custom.xml': f'''{XML}
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
  xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
@@ -406,24 +392,22 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True,
 </Relationships>''',
         'visio/windows.xml': f'{XML}\n<Windows xmlns="{NS}" xmlns:r="{NSR}" ClientWidth="1000" ClientHeight="800"/>',
         'visio/pages/pages.xml': f'{XML}\n<Pages xmlns="{NS}" xmlns:r="{NSR}" xml:space="preserve">'
-                                 + ''.join(pages) + '</Pages>',
-        'visio/pages/_rels/pages.xml.rels': f'''{XML}
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'''
-        + ''.join(f'<Relationship Id="rId{i}" Type="http://schemas.microsoft.com/visio/2010/relationships/page"'
-                  f' Target="page{i}.xml"/>' for i in range(1, len(faces) + 1))
+                                 + ''.join(enc_pages) + '</Pages>',
+        'visio/pages/_rels/pages.xml.rels': f'{XML}\n'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + ''.join(f'<Relationship Id="rId{i}" Type="http://schemas.microsoft.com/visio/2010/'
+                  f'relationships/page" Target="page{i}.xml"/>'
+                  for i in range(1, len(pages_in) + 1))
         + '</Relationships>',
     }
     for i, (name, text) in enumerate(page_parts, 1):
         parts[name] = text
-        # each page owns its own image, by an explicit relationship
-        parts[f'visio/pages/_rels/page{i}.xml.rels'] = f'''{XML}
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
- Target="../media/image{i}.png"/></Relationships>'''
-
+        parts[f'visio/pages/_rels/page{i}.xml.rels'] = (
+            f'{XML}\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/'
+            f'relationships">{page_rels[i - 1]}</Relationships>')
     overrides = ''.join(
         f'<Override PartName="/visio/pages/page{i}.xml" ContentType="application/vnd.ms-visio.page+xml"/>'
-        for i in range(1, len(faces) + 1))
+        for i in range(1, len(pages_in) + 1))
     parts['[Content_Types].xml'] = f'''{XML}
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -437,9 +421,7 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True,
 <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>
 </Types>'''
-
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
-        # [Content_Types].xml first, as every OPC writer puts it
         z.writestr('[Content_Types].xml', parts.pop('[Content_Types].xml'))
         for name, text in parts.items():
             z.writestr(name, text)
