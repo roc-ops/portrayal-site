@@ -4,9 +4,21 @@ The UfiSpace S9510-28DC as an OmniGraffle stencil, built the way the draw.io
 export is: the compiled face as one image, with an invisible, named shape over
 every port and bay, so a line drawn to a port records *which* port.
 
-**Not yet opened in OmniGraffle.** It was built on a machine without it. What
-could be checked without it was: every file parses, every image a shape names
-exists, every line end names a shape that exists, and the port boxes land on
+**First test, 2026-09-11: structure worked, images did not.** The zipped
+stencil with a binary plist opened in OmniGraffle, and every port and bay came
+through by name in the sidebar and could be selected. But the faceplate was
+blank.
+
+The cause was the image registry. OmniGraffle resolves `ImageID: n` to the nth
+file named in the document's `ImageList`; a PDF merely sitting in the package
+is not enough. The first build copied the template tool's empty list. A known
+working stencil, davidfsmith/AWS-OmniGraffle-Stencils as of 2026, lists every
+file and keeps one empty `ImageLinkBack` entry per image, and the builder now
+does the same. Its self-check fails if any `ImageID` does not resolve through
+the list.
+
+Checked without OmniGraffle: every file parses, every image is listed and
+present, every line end names a shape that exists, and the port boxes land on
 the jacks when drawn over the rendered PDF.
 
 ## What is in `out/`
@@ -43,11 +55,11 @@ Each stencil has one sheet, `UfiSpace S9510-28DC`, with two items: the front
 |---|---|
 | 1 package stencil opens | |
 | 2 true size | |
-| 3 port names in sidebar | |
+| 3 port names in sidebar | yes, zipped binary variant, first build |
 | 4 key/value data survives the drag | |
 | 5 line snaps to an invisible port | |
 | 5b tinted needed? | |
-| 6 zipped, binary plist | |
+| 6 zipped, binary plist | opens; faceplate blank until the ImageList fix |
 | 6 zipped, text plist | |
 | 7 prebuilt line stays attached | |
 

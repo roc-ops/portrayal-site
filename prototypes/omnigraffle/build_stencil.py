@@ -125,7 +125,15 @@ def build(ports, tinted=False, cabling=False, zipped=False):
     sheet['BackgroundGraphic']['Bounds'] = rect(0, 0, w, y + GAP)
     sheet['GraphicsList'] = graphics
     data['Sheets'] = [sheet]
-    # next free image id either way the counter is read - last-used or next
+    # THE IMAGE REGISTRY. OmniGraffle resolves `ImageID: n` to the nth name in
+    # ImageList - the file merely being in the package is not enough. The first
+    # build copied the template tool's EMPTY list, and OmniGraffle opened the
+    # stencil with every port and name intact and no faceplate at all. A working
+    # stencil (davidfsmith/AWS-OmniGraffle-Stencils, 2026) lists every file,
+    # keeps one empty ImageLinkBack entry per image, and sets ImageCounter to the
+    # next free id.
+    data['ImageList'] = [f'image{image_id}.pdf' for _, image_id in faces]
+    data['ImageLinkBack'] = [{} for _ in faces]
     data['ImageCounter'] = len(faces) + 1
     data['FileType'] = 'zipped' if zipped else 'auto'
     return data
@@ -179,7 +187,10 @@ def check(data, where):
             walk(g.get('Graphics', []))
     for s in data['Sheets']:
         walk(s['GraphicsList'])
-    assert images <= {1, 2}, f'{where}: ImageID with no file: {images}'
+    listed = data.get('ImageList') or []
+    for i in images:
+        assert 1 <= i <= len(listed), f'{where}: ImageID {i} not in ImageList {listed}'
+    assert len(data.get('ImageLinkBack') or []) == len(listed), f'{where}: ImageLinkBack/ImageList mismatch'
     for e in ends:
         assert e in seen, f'{where}: line end names missing shape {e}'
     return len(seen)
