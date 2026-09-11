@@ -103,19 +103,21 @@ def port_shape(sid, z, face_h_in, tint=False):
         f'<Row N="{esc(nm)}"><Cell N="Label" V="{esc(lab)}"/>'
         f'<Cell N="Value" V="{esc(val)}"/><Cell N="Type" V="0"/></Row>'
         for nm, lab, val in props)
-    # ROUND 3. Transparency here is a PERCENTAGE, 0 to 100 - not a fraction.
-    # Round 2 asked for 1 meaning "all of it" and got 1%, i.e. a nearly solid
-    # white box over every port. 100 is invisible; the fill still hit-tests,
-    # which is the whole reason for filling it at all.
+    # ROUND 4. Transparency in the FILE is a fraction, 0 to 1, whatever the
+    # ShapeSheet documentation says about percentages - that is the number the
+    # user interface shows. Round 3 wrote 100 meaning 100% and got a solid
+    # white box over every port, which is what the screenshots showed. 1 is
+    # fully transparent, and the fill still hit-tests, which is the whole
+    # reason for filling it at all.
     if tint:
         skin = (cell('FillPattern', '1')
                 + cell('FillForegnd', '#0aa0ff' if z['cls'] == 'port' else '#f5a623')
-                + cell('FillForegndTrans', '50') + cell('FillBkgndTrans', '50')
+                + cell('FillForegndTrans', '0.5') + cell('FillBkgndTrans', '0.5')
                 + cell('LinePattern', '1') + cell('LineWeight', '0.005')
                 + cell('LineColor', '#0aa0ff' if z['cls'] == 'port' else '#f5a623'))
     else:
         skin = (cell('FillPattern', '1') + cell('FillForegnd', '#ffffff')
-                + cell('FillForegndTrans', '100') + cell('FillBkgndTrans', '100')
+                + cell('FillForegndTrans', '1') + cell('FillBkgndTrans', '1')
                 + cell('LinePattern', '0') + cell('LineWeight', '0'))
     return f'''<Shape ID="{sid}" NameU="{esc(path)}" Name="{esc(path)}" Type="Shape">
 {cell('PinX', n(x + w / 2))}{cell('PinY', n(pin_y))}
@@ -194,16 +196,16 @@ def page_xml(shapes, connects):
             + '</PageContents>')
 
 
-def build(faces, out, cable=True, tint=False, image=True, image_last=False):
+def build(faces, out, cable=True, tint=False, image=True, image_last=True):
     """faces: [{'name','png','zones','vb'}] - one page each."""
     pages, page_parts, rels, ctypes, media = [], [], [], [], []
     for i, f in enumerate(faces, 1):
         vb = f['vb']
         w_in, h_in = vb[2] / MM, vb[3] / MM
-        # Z-ORDER IS THE OPEN QUESTION. Visio is assumed to paint the first
-        # shape at the BACK, so the faceplate goes in first and the ports sit
-        # over it. If that is backwards, the image covers all 38 ports and
-        # steals every click - which is what image_last exists to find out.
+        # Z-ORDER, SETTLED BY THE d2 DIAGNOSTIC: Visio paints the LAST shape
+        # in front, the reverse of what rounds 1 to 3 assumed. So the faceplate
+        # goes in LAST. The ports sit behind it and stay invisible, and a
+        # connector still finds their connection points.
         sid = 1
         img_rid = 'rId1'
         shapes = []
@@ -336,13 +338,11 @@ def main():
     # shape is wrong rather than that it was never found. The invisible one is
     # what we would actually ship.
     VARIANTS = [
-        # what we would ship, and the same thing made visible
-        ('tinted',    dict(tint=True)),
-        ('invisible', dict(tint=False)),
-        # diagnostics for "some ports are selectable and some are not", where
-        # the ports that fail are geometrically identical to the ones that work
-        ('d1-noimage',    dict(tint=True, image=False)),      # ports alone
-        ('d2-imagelast',  dict(tint=True, image_last=True)),  # image in front?
+        # Round 4. The two that differ ONLY in z-order, to confirm that is what
+        # decided which ports were gluable, rather than leaving it inferred.
+        ('r4-imagelast',  dict(tint=False)),                    # faceplate in front
+        ('r4-imagefirst', dict(tint=False, image_last=False)),  # faceplate behind
+        ('r4-tinted',     dict(tint=True, image=False)),        # where the ports are
     ]
     for tag, kw in VARIANTS:
         out = os.path.join(HERE, 'out', f's9510-28dc.{tag}.vsdx')

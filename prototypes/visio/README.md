@@ -137,25 +137,31 @@ the back, so the faceplate goes in first and the ports sit over it.
 | `tinted` | the normal build, ports visible |
 | `invisible` | what we would ship |
 
-Result: _pending_
+**Both diagnostics answered, and one of round 3's own fixes was wrong.**
+
+**Z-order: Visio paints the LAST shape in front**, the reverse of what rounds 1
+to 3 assumed. `d2-imagelast` drew the faceplate normally with the connectors in
+the right places; the other files, with the faceplate first, are the ones where
+only some ports would glue. So the faceplate belongs LAST, with the ports behind
+it — they are meant to be invisible anyway, and a connector still finds their
+connection points through it.
+
+**Transparency is a FRACTION in the file, 0 to 1**, whatever the ShapeSheet
+documentation says about percentages — that is the number the user interface
+shows. Round 3 wrote `100` meaning 100% and produced a solid white box over
+every port, which is exactly what the `invisible` screenshot showed. Round 2's
+`1` had been right. Evidence beat the documentation here, and it was the
+tinted/invisible pair that made it visible at a glance.
+
+### Round 4 — both findings applied
+
+| file | what it is |
+|---|---|
+| `r4-imagelast` | the ship candidate: faceplate last, ports invisible behind it |
+| `r4-imagefirst` | identical but for z-order, to confirm that is what decides gluability |
+| `r4-tinted` | ports visible, no faceplate, as a map of where they are |
+
+Result: _pending_ — the question is whether the top SFP28 row, USB and 1PPS,
+which failed in rounds 2 and 3, now glue like the rest.
 
 ## Testing notes
-
-**Visio in Microsoft 365 (web) cannot validate this.** Microsoft documents that
-drawings containing third-party shapes cannot be edited there — view and comment
-only, with editing requiring Visio Plan 1 or 2 — and every shape we generate is
-a third-party shape. Shape Data is viewable but not editable. So a negative
-result on the web proves nothing about our XML. Lucidchart and Visio desktop are
-the real tests.
-
-## Open question: raster or vector
-
-The faceplate is a PNG because that is what a browser can render. A vector
-faceplate is possible and the route is native Visio geometry — the same geometry
-rows the port rectangles use, generated from the compiled SVG. Visio CANNOT
-embed an SVG: `ForeignData` accepts only bitmaps, EMF, ink or an opaque object,
-and no browser library writes EMF. Rectangles, polylines and cubic Beziers map
-one to one; arcs need flattening to Beziers; gradients, clipping and filters
-have no equivalent and would flatten. Fills are per SHAPE, not per path, so a
-vector faceplate is one sub-shape per distinct colour, grouped. Moderate work,
-and pointless until the ports are connectable.
