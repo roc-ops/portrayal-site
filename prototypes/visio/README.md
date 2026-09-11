@@ -59,15 +59,49 @@ that means Visio will open it, which is the whole point of the test.
 
 ## Test log
 
-### Round 1 — `out/s9510-28dc.vsdx`
+### Round 1 — `out/s9510-28dc.vsdx` (superseded)
 
-Untested. Questions, in order of what they would cost us:
+**Visio opened it without offering to repair it, and both faceplates drew.**
+That settled the two things worth knowing about the container: the part tree and
+relationships are right, and the `Foreign`/`ForeignData` image mechanism works.
 
-1. Does Visio open it at all, without offering to repair it?
-2. Does the faceplate draw?
-3. Are the ports invisible, and does the connector tool snap to them?
-4. Does the pre-drawn cable stay attached when the device is moved?
-5. Does a port's Shape Data show up, with the right values?
-6. Does Lucidchart's import preserve any of it?
+Two failures, both in the shape XML and both mine:
+
+- **None of the 43 port shapes could be selected or glued to**, in Visio or in
+  Lucidchart. They had a position and a size but no `Geometry` section, which is
+  what gives a Visio shape an outline to draw and to hit-test. Round 1 wrote 43
+  shapes with nothing in them.
+- **The cable rendered in the corner of the page, under the power supply**, and
+  was not attached. Its geometry was written in PAGE coordinates; a 1-D shape's
+  geometry is in its OWN space, running (0,0) to (Width,0), with Begin/End
+  placing and rotating it.
+
+Lucidchart is what ruled out the other explanation: it let the faceplate be
+moved freely and the ports still could not be selected, so this was our shapes
+being empty rather than a read-only viewer.
+
+### Round 2 — `out/s9510-28dc.{tinted,invisible}.vsdx`
+
+Both fixes above, plus one that follows from the first: an invisible shape needs
+a **transparent fill, not an absent one**. `FillPattern 0` leaves no surface to
+click; a fully transparent fill still hit-tests.
+
+Two files on purpose, so that "I cannot click it" is readable as a result:
+
+| file | port shapes |
+|---|---|
+| `tinted` | blue ports, amber bays, half transparent — you can see what to aim at |
+| `invisible` | transparent fill, no outline — what we would ship |
+
+Checked before sending: zip valid, every part well-formed, every relationship
+target present, every part content-typed, 39 geometry sections where round 1 had
+none, and the cable glued to `tod` and `usb` with begin/end across the middle of
+the faceplate rather than at the origin.
 
 Result: _pending_
+
+## Open question: raster or vector
+
+The faceplate is a PNG because that is what a browser can render. Visio's own
+shapes are vector, so a vector faceplate is possible in principle by translating
+the compiled SVG into Visio geometry. Being researched; not yet costed.

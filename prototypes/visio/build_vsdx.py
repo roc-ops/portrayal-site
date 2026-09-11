@@ -54,12 +54,35 @@ def png_size(path):
 
 
 # ── shapes ───────────────────────────────────────────────────────────────
+# A closed rectangle in the shape's OWN coordinate space, as every Visio
+# rectangle is written: corners as formulas of Width and Height, so the outline
+# follows the shape when it is resized. Round 1 omitted this entirely.
+RECT_GEOMETRY = """<Section N="Geometry" IX="0">
+<Cell N="NoFill" V="0"/><Cell N="NoLine" V="0"/>
+<Row T="MoveTo" IX="1"><Cell N="X" V="0" F="Width*0"/><Cell N="Y" V="0" F="Height*0"/></Row>
+<Row T="LineTo" IX="2"><Cell N="X" V="1" F="Width*1"/><Cell N="Y" V="0" F="Height*0"/></Row>
+<Row T="LineTo" IX="3"><Cell N="X" V="1" F="Width*1"/><Cell N="Y" V="1" F="Height*1"/></Row>
+<Row T="LineTo" IX="4"><Cell N="X" V="0" F="Width*0"/><Cell N="Y" V="1" F="Height*1"/></Row>
+<Row T="LineTo" IX="5"><Cell N="X" V="0" F="Width*0"/><Cell N="Y" V="0" F="Height*0"/></Row>
+</Section>"""
+
+
 def cell(name, v, f=None):
     return f'<Cell N="{name}" V="{esc(v)}"' + (f' F="{esc(f)}"/>' if f else '/>')
 
 
-def port_shape(sid, z, face_h_in):
-    """One port or bay: an invisible rectangle a connector can glue to.
+def port_shape(sid, z, face_h_in, tint=False):
+    """One port or bay: a rectangle a connector can glue to.
+
+    ROUND 2. Two fixes, both found by round 1 opening in Visio and Lucidchart
+    with 43 shapes that could not be clicked in either:
+
+    - A shape needs an explicit GEOMETRY section. Position and size alone give
+      Visio nothing to draw or hit-test, so round 1 produced 43 empty shapes.
+    - Invisible has to mean a TRANSPARENT FILL, not an absent one. A shape with
+      FillPattern 0 has no surface to click; one with a fully transparent fill
+      still hit-tests. That is how a stencil's invisible connection targets are
+      built, and it is what we do in the draw.io and OmniGraffle exports too.
 
     Named three ways on purpose, because which one survives a round trip
     through Visio is exactly what we do not know yet: the shape's own NameU,
@@ -77,11 +100,22 @@ def port_shape(sid, z, face_h_in):
         f'<Row N="{esc(nm)}"><Cell N="Label" V="{esc(lab)}"/>'
         f'<Cell N="Value" V="{esc(val)}"/><Cell N="Type" V="0"/></Row>'
         for nm, lab, val in props)
+    if tint:
+        skin = (cell('FillPattern', '1')
+                + cell('FillForegnd', '#0aa0ff' if z['cls'] == 'port' else '#f5a623')
+                + cell('FillForegndTrans', '0.5')
+                + cell('LinePattern', '1') + cell('LineWeight', '0.005')
+                + cell('LineColor', '#0aa0ff' if z['cls'] == 'port' else '#f5a623'))
+    else:
+        skin = (cell('FillPattern', '1') + cell('FillForegnd', '#ffffff')
+                + cell('FillForegndTrans', '1')      # 1 = fully transparent
+                + cell('LinePattern', '0') + cell('LineWeight', '0'))
     return f'''<Shape ID="{sid}" NameU="{esc(path)}" Name="{esc(path)}" Type="Shape">
 {cell('PinX', n(x + w / 2))}{cell('PinY', n(pin_y))}
 {cell('Width', n(w))}{cell('Height', n(h))}
 {cell('LocPinX', n(w / 2), 'Width*0.5')}{cell('LocPinY', n(h / 2), 'Height*0.5')}
-{cell('LineWeight', '0')}{cell('LinePattern', '0')}{cell('FillPattern', '0')}
+{cell('Angle', '0')}{skin}
+{RECT_GEOMETRY}
 <Section N="Connection"><Row N="{esc(path)}">
 {cell('X', n(w / 2), 'Width*0.5')}{cell('Y', n(h / 2), 'Height*0.5')}
 </Row></Section>
@@ -104,18 +138,29 @@ def image_shape(sid, rid, w_in, h_in):
 
 
 def connector(sid, a, b):
-    """A 1-D line, glued below by <Connect>. Geometry is a straight segment;
-    the glue is what makes it follow the ports when they move."""
+    """A cable between two ports.
+
+    ROUND 2. Round 1 drew this in PAGE coordinates inside the shape's own
+    geometry, so it collapsed into the corner of the drawing - which is exactly
+    where Lucidchart showed it, under the power supply. A 1-D shape in Visio is
+    a unit-length line in its OWN space: the line runs from (0,0) to (Width,0),
+    and Begin/End place and rotate it on the page.
+    """
+    import math
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    length = math.hypot(dx, dy) or 0.01
     return f'''<Shape ID="{sid}" NameU="Cable" Name="Cable" Type="Shape">
-{cell('PinX', '0')}{cell('PinY', '0')}{cell('Width', '1')}{cell('Height', '1')}
-{cell('LocPinX', '0')}{cell('LocPinY', '0')}
+{cell('PinX', n((a[0] + b[0]) / 2))}{cell('PinY', n((a[1] + b[1]) / 2))}
+{cell('Width', n(length))}{cell('Height', '0')}
+{cell('LocPinX', n(length / 2), 'Width*0.5')}{cell('LocPinY', '0', 'Height*0.5')}
+{cell('Angle', n(math.atan2(dy, dx)))}
 {cell('BeginX', n(a[0]))}{cell('BeginY', n(a[1]))}
 {cell('EndX', n(b[0]))}{cell('EndY', n(b[1]))}
-{cell('ObjType', '2')}{cell('LineWeight', '0.01')}
+{cell('LineWeight', '0.02')}{cell('LinePattern', '1')}{cell('LineColor', '#d0021b')}
 <Section N="Geometry" IX="0">
 <Cell N="NoFill" V="1"/>
-<Row T="MoveTo" IX="1">{cell('X', '0', 'BeginX')}{cell('Y', '0', 'BeginY')}</Row>
-<Row T="LineTo" IX="2">{cell('X', '1', 'EndX')}{cell('Y', '1', 'EndY')}</Row>
+<Row T="MoveTo" IX="1"><Cell N="X" V="0" F="Width*0"/><Cell N="Y" V="0" F="Height*0"/></Row>
+<Row T="LineTo" IX="2"><Cell N="X" V="{n(length)}" F="Width*1"/><Cell N="Y" V="0" F="Height*0"/></Row>
 </Section>
 </Shape>'''
 
@@ -128,7 +173,7 @@ def page_xml(shapes, connects):
             + '</PageContents>')
 
 
-def build(faces, out, cable=True):
+def build(faces, out, cable=True, tint=False):
     """faces: [{'name','png','zones','vb'}] - one page each."""
     pages, page_parts, rels, ctypes, media = [], [], [], [], []
     for i, f in enumerate(faces, 1):
@@ -141,7 +186,7 @@ def build(faces, out, cable=True):
         byid, connects = {}, ''
         for z in f['zones']:
             byid[z.get('path') or z['id']] = (sid, z)
-            shapes.append(port_shape(sid, z, h_in))
+            shapes.append(port_shape(sid, z, h_in, tint))
             sid += 1
         # A cable drawn for us between the first two real ports, so the very
         # first thing we can check is what Visio saved for an attachment it
@@ -246,10 +291,15 @@ def main():
             continue
         faces.append({'name': f'S9510-28DC {face}', 'png': open(png, 'rb').read(),
                       'zones': d[face], 'vb': vb})
-    out = os.path.join(HERE, 'out', 's9510-28dc.vsdx')
-    build(faces, out)
-    print('wrote', out, os.path.getsize(out), 'bytes',
-          '|', sum(len(f['zones']) for f in faces), 'zones over', len(faces), 'pages')
+    # Two files, because one of them has to be readable as a RESULT. The tinted
+    # one shows where every port shape is, so "I cannot click it" means the
+    # shape is wrong rather than that it was never found. The invisible one is
+    # what we would actually ship.
+    for tag, tint in (('tinted', True), ('invisible', False)):
+        out = os.path.join(HERE, 'out', f's9510-28dc.{tag}.vsdx')
+        build(faces, out, tint=tint)
+        print('wrote', os.path.basename(out), os.path.getsize(out), 'bytes')
+    print(sum(len(f['zones']) for f in faces), 'zones over', len(faces), 'pages')
 
 
 if __name__ == '__main__':
