@@ -161,6 +161,12 @@ def points_shape(sid, rid, w_in, h_in, zones, vb, item):
     point like any other, and per-port data lives on the device rather than on
     38 separate shapes - so it goes into User rows, one per port, named after
     the port and holding everything the model knows about it.
+
+    NOT the design that won. Tested as r7a and it was inert - not selectable,
+    no connection points, a bare picture - because these sections were emitted
+    AFTER ForeignData, where the schema puts them before it. Corrected here so
+    the shape form is right if the stencil ever wants it, but round 7 chose the
+    locked group instead, on evidence.
     """
     rows, users = [], []
     for z in zones:
@@ -190,10 +196,10 @@ def points_shape(sid, rid, w_in, h_in, zones, vb, item):
 {cell('ImgOffsetX', '0')}{cell('ImgOffsetY', '0')}
 {cell('ImgWidth', n(w_in), 'Width*1')}{cell('ImgHeight', n(h_in), 'Height*1')}
 {cell('LineWeight', '0')}{cell('LinePattern', '0')}{cell('FillPattern', '0')}
-<ForeignData ForeignType="Bitmap" CompressionType="PNG"><Rel r:id="{rid}"/></ForeignData>
 <Section N="Connection">{''.join(rows)}</Section>
 <Section N="User">{''.join(users)}</Section>
 <Section N="Property">{props}</Section>
+<ForeignData ForeignType="Bitmap" CompressionType="PNG"><Rel r:id="{rid}"/></ForeignData>
 </Shape>'''
 
 
@@ -424,6 +430,45 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True,
     return out
 
 
+def round8():
+    """The ship candidate: a locked group, and no cable of our own.
+
+    Round 7 settled the shape of a device: one Group, every port an invisible
+    LOCKED sub-shape. Locked against selection, movement and deletion, so the
+    device is the only thing to grab and a port cannot be dragged out of it -
+    and, tested, a connector still glues to a locked port perfectly well.
+
+    The pre-drawn cable is gone. It existed to test whether glue survives a
+    round trip and it answered that by failing usefully: its endpoints are
+    page-level formulas that do not account for the group's coordinate space,
+    so it detaches visually while Visio still believes it is attached. A cable
+    the user draws is written by Visio itself and behaves correctly. We ship
+    devices; Visio does cables better than we can hand-craft them.
+    """
+    d = json.load(open(os.path.join(HERE, 'out', 'mod', 'modular-zones.json')))
+    ports = json.load(open(PORTS))
+    jobs = {'s9510-28dc': [{'name': f's9510-28dc {face}', 'face': face,
+                            'ref': 'ufispace/s9510-28dc',
+                            'png': open(os.path.join(HERE, 'out', f'{face}.png'), 'rb').read(),
+                            'zones': ports[face], 'vb': ports['viewBox']}
+                           for face in ('front', 'rear')]}
+    for name in d['devices']:
+        faces = []
+        for face, f in d['devices'][name].items():
+            png = os.path.join(HERE, 'out', 'mod', f'{name}.{face}.png')
+            if os.path.exists(png) and f['zones']:
+                faces.append({'name': f'{name} {face}', 'face': face, 'ref': name,
+                              'png': open(png, 'rb').read(),
+                              'zones': f['zones'], 'vb': f['vb']})
+        if faces:
+            jobs[name] = faces
+    for name, faces in jobs.items():
+        out = os.path.join(HERE, 'out', f'{name}.r8.vsdx')
+        build(faces, out, locked=True, cable=False)
+        print(f'{name}: {sum(len(f["zones"]) for f in faces)} zones over {len(faces)} faces, '
+              f'{os.path.getsize(out)} bytes')
+
+
 def round7():
     """The two answers to "the device is hard to grab and its cables fall off".
 
@@ -514,5 +559,6 @@ def main():
 
 if __name__ == '__main__':
     import sys
-    (round7() if '--r7' in sys.argv else
+    (round8() if '--r8' in sys.argv else
+     round7() if '--r7' in sys.argv else
      modular() if '--modular' in sys.argv else main())

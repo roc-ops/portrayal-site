@@ -283,7 +283,33 @@ What A costs:
 B keeps per-port shapes and their Shape Data, at the cost of being a fight
 against Visio rather than with it.
 
-Result: _pending_
+**B won, and A was inert for a reason worth recording.**
+
+`r7b-locked`: everything works. The ports are there, the device is grabbable,
+and a connector drawn in Visio glues to a LOCKED port perfectly well - which was
+the open question about locking, and the answer is that locking a shape does not
+stop a connector attaching to it.
+
+`r7a-points`: nothing was selectable at all, no connection points, a bare
+picture. Not the format's fault - the `Connection`, `User` and `Property`
+sections were emitted AFTER `ForeignData`, where the schema puts them before it.
+Corrected in `points_shape` so the form is right if the stencil wants it later.
+
+**And our pre-drawn cable is being dropped.** It detaches visually when the
+group moves while Visio still believes it is attached: its endpoints are
+page-level formulas that do not account for the group's coordinate space. A
+cable the USER draws is written by Visio itself and behaves correctly. The cable
+existed only to test whether glue survives a round trip; that question is now
+answered by drawing one. We ship devices and let Visio do cables.
+
+### Round 8 — the ship candidate
+
+One `Group` per device face. Every port and bay an invisible sub-shape with a
+real geometry, a fully transparent fill so it still hit-tests, and locked
+against selection, movement and deletion. No cable of ours.
+
+Result: _pending_ - and with it the last untested promise, whether a port's
+path and media show in the Shape Data window.
 
 ### Still open
 
