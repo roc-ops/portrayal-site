@@ -182,6 +182,33 @@ be opaque.
 - The cable needs `OneD`, the `PAR(PNT(...))` glue formulas, the trigger cells
   and the document's `RecalcDocument` property.
 
+### Round 5 — modular devices
+
+The S9510 is a fixed switch: two PSU bays, five fan trays, everything else a
+port on the chassis itself. A chassis is the case it could not test.
+
+| device | what it exercises | zones |
+|---|---|---|
+| `mod/asr-9912` | bays at scale - 31 line card slots, 21RU, a 1333 mm page | 31 |
+| `mod/r740xd` | bays and ports mixed, and ports on a SEATED CARD | 44 |
+| `mod/dcp-2` | a shelf, both faces | 12 |
+
+**The extraction is right, including the nested case.** Comparing what the SVG
+holds against what came out: on the R740xd rear 19 zones are "missing" and on
+the DCP-2 rear 5 are - and every one of them sits INSIDE a zone that was kept.
+`eth0/jack` is not exported because `eth0` is; a jack inside a port is part of
+that port, not a second thing to plug into.
+
+What matters is that ports on a seated card DO come through:
+`ndc/module/port-1` to `port-4`, the four NIC ports on a card in a bay. That is
+the rule `readSvg` states outright - outermost wins WITHIN a class, not across
+classes - and it is the rule that keeps a C100G's 44 module-borne ports.
+
+Not yet tested: deeper nesting. This DCP-2 is the DEFAULT configuration, so the
+PPM bays inside a seated A22 - the case written up in
+`upstream-work/nested-bays.md`, path `slot-2/module/ppm-1` - are not in this
+file. One level of nesting works; two is unproven.
+
 ### Still open
 
 - Shape Data: not yet confirmed visible with the right values in Visio.

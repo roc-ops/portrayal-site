@@ -71,7 +71,7 @@ def cell(name, v, f=None):
     return f'<Cell N="{name}" V="{esc(v)}"' + (f' F="{esc(f)}"/>' if f else '/>')
 
 
-def port_shape(sid, z, face_h_in, tint=False):
+def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0)):
     """One port or bay: a rectangle a connector can glue to.
 
     ROUND 2. Two fixes, both found by round 1 opening in Visio and Lucidchart
@@ -91,7 +91,7 @@ def port_shape(sid, z, face_h_in, tint=False):
     edit by accident. A row carries either a name or an index, not both, so
     this row is keyed by index - it is the shape around it that is named.
     """
-    x, y = z['x'] / MM, z['y'] / MM
+    x, y = (z['x'] - vb[0]) / MM, (z['y'] - vb[1]) / MM
     w, h = max(z['w'], 0.4) / MM, max(z['h'], 0.4) / MM
     pin_y = face_h_in - y - h / 2          # flip: Visio counts y upward
     path = z.get('path') or z['id']
@@ -215,7 +215,7 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True):
         byid, connects = {}, ''
         for z in f['zones']:
             byid[z.get('path') or z['id']] = (sid, z)
-            shapes.append(port_shape(sid, z, h_in, tint))
+            shapes.append(port_shape(sid, z, h_in, tint, vb))
             sid += 1
         # A cable drawn for us between the first two real ports, so the very
         # first thing we can check is what Visio saved for an attachment it
@@ -224,8 +224,8 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True):
         if cable and len(ports) >= 2:
             a, b = ports[0], ports[1]
             ida, idb = byid[a.get('path') or a['id']][0], byid[b.get('path') or b['id']][0]
-            ca = ((a['x'] + a['w'] / 2) / MM, h_in - (a['y'] + a['h'] / 2) / MM)
-            cb = ((b['x'] + b['w'] / 2) / MM, h_in - (b['y'] + b['h'] / 2) / MM)
+            ca = ((a['x'] - vb[0] + a['w'] / 2) / MM, h_in - (a['y'] - vb[1] + a['h'] / 2) / MM)
+            cb = ((b['x'] - vb[0] + b['w'] / 2) / MM, h_in - (b['y'] - vb[1] + b['h'] / 2) / MM)
             shapes.append(connector(sid, ca, cb, ida, idb))
             # ToPart 100 is the FIRST connection point (100 + a zero-based
             # index); FromPart 9 and 12 are the begin and end points.
@@ -323,6 +323,34 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True):
     return out
 
 
+def modular():
+    """Build the modular test devices from browser-extracted geometry.
+
+    A chassis is the case the S9510 could not test: bays rather than ports, a
+    lot of them, and on the DCP-2 a bay INSIDE a seated module - the nested
+    case we wrote up for upstream, whose path is slot-2/module/ppm-1.
+    """
+    src = os.path.join(HERE, 'out', 'mod', 'modular-zones.json')
+    d = json.load(open(src))
+    for name, faces_in in d['devices'].items():
+        faces = []
+        for face, f in faces_in.items():
+            png = os.path.join(HERE, 'out', 'mod', f'{name}.{face}.png')
+            if not os.path.exists(png):
+                continue
+            faces.append({'name': f'{name} {face}', 'png': open(png, 'rb').read(),
+                          'zones': f['zones'], 'vb': f['vb']})
+        if not faces:
+            continue
+        nested = [z for f in faces for z in f['zones'] if '/module/' in (z.get('path') or '')]
+        out = os.path.join(HERE, 'out', 'mod', f'{name}.vsdx')
+        build(faces, out, tint=False)
+        build(faces, os.path.join(HERE, 'out', 'mod', f'{name}.tinted.vsdx'),
+              tint=True, image=False)
+        print(f'{name}: {sum(len(f["zones"]) for f in faces)} zones over {len(faces)} faces'
+              f', {len(nested)} nested, {os.path.getsize(out)} bytes')
+
+
 def main():
     d = json.load(open(PORTS))
     vb = d['viewBox']
@@ -352,4 +380,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    modular() if '--modular' in sys.argv else main()
