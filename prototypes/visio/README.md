@@ -209,6 +209,39 @@ PPM bays inside a seated A22 - the case written up in
 `upstream-work/nested-bays.md`, path `slot-2/module/ppm-1` - are not in this
 file. One level of nesting works; two is unproven.
 
+### Round 6 — a device is one object
+
+Until now the faceplate and its port shapes were unrelated shapes that happened
+to overlap. Dragging a device moved the picture and left all 40 ports behind,
+which is what the modular test showed: a box adrift outside the image. Each
+device is now a `Group` holding the faceplate and its ports, with `SelectMode`
+set so a click selects the group. The ports inside still glue individually.
+
+### Nested BAYS are dropped, and that is not a Visio problem
+
+The modular test found the PCI slots inside the R740xd's risers unselectable.
+That is `readSvg`'s rule working as written: outermost wins WITHIN a class, so
+`riser-1` (a bay) is kept and `riser-1/module/slot-1` (a bay inside it) is not.
+A port on a seated card survives because the classes differ - `ndc` is a bay and
+`ndc/module/port-1` is a port.
+
+So a riser is gluable and the three PCI slots in it are not. The same is true of
+the PPM slots inside a seated A22, and it is true of the draw.io and OmniGraffle
+exports as well - this is `site/drawio.js`, shared by all three. Whether nested
+bays should be their own targets is a decision about all three exports, not a
+Visio question.
+
+### Modules, and why the stencil matters
+
+The modular files carry no module shapes at all. In draw.io and OmniGraffle each
+module is a separate draggable library item; a `.vsdx` DRAWING has no library, so
+only the chassis faces were exported. What the faceplate shows is the DEFAULT
+configuration as compiled - the ASR 9912 draws its cards, the DCP-2 draws empty
+slots - and the bays are connection targets either way.
+
+Dragging a line card into a slot is a thing a STENCIL can express and a drawing
+cannot. That is the argument for `.vssx`, and it is the next thing to prototype.
+
 ### Still open
 
 - Shape Data: not yet confirmed visible with the right values in Visio.

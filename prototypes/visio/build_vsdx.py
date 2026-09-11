@@ -196,7 +196,8 @@ def page_xml(shapes, connects):
             + '</PageContents>')
 
 
-def build(faces, out, cable=True, tint=False, image=True, image_last=True):
+def build(faces, out, cable=True, tint=False, image=True, image_last=True,
+          group=True):
     """faces: [{'name','png','zones','vb'}] - one page each."""
     pages, page_parts, rels, ctypes, media = [], [], [], [], []
     for i, f in enumerate(faces, 1):
@@ -212,7 +213,7 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True):
         if image and not image_last:
             shapes.append(image_shape(sid, img_rid, w_in, h_in))
         sid += 1                      # keep ids stable across the variants
-        byid, connects = {}, ''
+        byid, connects, cable_shape = {}, '', ''
         for z in f['zones']:
             byid[z.get('path') or z['id']] = (sid, z)
             shapes.append(port_shape(sid, z, h_in, tint, vb))
@@ -226,7 +227,7 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True):
             ida, idb = byid[a.get('path') or a['id']][0], byid[b.get('path') or b['id']][0]
             ca = ((a['x'] - vb[0] + a['w'] / 2) / MM, h_in - (a['y'] - vb[1] + a['h'] / 2) / MM)
             cb = ((b['x'] - vb[0] + b['w'] / 2) / MM, h_in - (b['y'] - vb[1] + b['h'] / 2) / MM)
-            shapes.append(connector(sid, ca, cb, ida, idb))
+            cable_shape = connector(sid, ca, cb, ida, idb)
             # ToPart 100 is the FIRST connection point (100 + a zero-based
             # index); FromPart 9 and 12 are the begin and end points.
             connects = (f'<Connect FromSheet="{sid}" FromCell="BeginX" FromPart="9" '
@@ -237,7 +238,30 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True):
 
         if image and image_last:
             shapes.append(image_shape(sid, img_rid, w_in, h_in))
-        page_parts.append((f'visio/pages/page{i}.xml', page_xml(''.join(shapes), connects)))
+            sid += 1
+        # ROUND 6. A device is ONE object. Until now the faceplate and its 40
+        # port shapes were unrelated shapes that happened to overlap, so
+        # dragging the device moved the picture and left every port behind -
+        # which is exactly what the modular test showed. A Group holds them
+        # together: the group moves as one, and the ports inside it still glue
+        # individually. The group's own space runs 0..Width, 0..Height, which
+        # is the space the children were already written in.
+        if group:
+            page_shapes = (f'<Shape ID="{sid}" NameU="{esc(f["name"])}" '
+                           f'Name="{esc(f["name"])}" Type="Group">'
+                           + cell('PinX', n(w_in / 2)) + cell('PinY', n(h_in / 2))
+                           + cell('Width', n(w_in)) + cell('Height', n(h_in))
+                           + cell('LocPinX', n(w_in / 2), 'Width*0.5')
+                           + cell('LocPinY', n(h_in / 2), 'Height*0.5')
+                           + cell('Angle', '0')
+                           + cell('SelectMode', '1')   # click selects the group
+                           + cell('DisplayMode', '2')  # children keep their own behaviour
+                           + f'<Shapes>{"".join(shapes)}</Shapes></Shape>')
+            sid += 1
+        else:
+            page_shapes = ''.join(shapes)
+        page_parts.append((f'visio/pages/page{i}.xml',
+                           page_xml(page_shapes + cable_shape, connects)))
         media.append((f'visio/media/image{i}.png', f['png']))
         pages.append(f'''<Page ID="{i - 1}" NameU="{esc(f['name'])}" Name="{esc(f['name'])}"
  ViewScale="-1" ViewCenterX="{n(w_in / 2)}" ViewCenterY="{n(h_in / 2)}"><PageSheet>
