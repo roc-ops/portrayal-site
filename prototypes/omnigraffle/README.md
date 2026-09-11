@@ -17,9 +17,37 @@ file and keeps one empty `ImageLinkBack` entry per image, and the builder now
 does the same. Its self-check fails if any `ImageID` does not resolve through
 the list.
 
+**Second test, 2026-09-11: still blank.** With the registry filled, the tinted
+stencil drew its port boxes and no faceplate. The sheet thumbnail showed the
+faceplate, but that was the packed `preview.jpeg`, not OmniGraffle drawing the
+image; packages no longer carry one, so a thumbnail can no longer pass for a
+working canvas.
+
+A key-by-key diff against the working AWS stencil left three differences on
+the image itself. Theirs sets `StretchImage: true` and `ManualSizeImage: NO`,
+which say how the image fills its shape; ours set neither. Theirs sit at the
+top level; ours sit inside a group. Their plist is gzipped. All five main
+variants now carry the two sizing flags, and `out/diagnostics/` separates the
+rest.
+
 Checked without OmniGraffle: every file parses, every image is listed and
-present, every line end names a shape that exists, and the port boxes land on
-the jacks when drawn over the rendered PDF.
+present, every line end names a shape that exists, the port boxes land on the
+jacks when drawn over the rendered PDF, and Apple's own PDF renderer draws the
+faceplate PDF correctly.
+
+## Third test: the diagnostic ladder
+
+Open these in order and note which ones show the faceplate on the canvas.
+
+| file | what it changes | if it draws |
+|---|---|---|
+| `S9510-28DC tinted.gstencil` | adds the two sizing flags | fixed; the flags were the cause |
+| `diagnostics/1 AWS control.gstencil` | the AWS file itself, one image of ours, no group, no ports | our PDF is fine |
+| `diagnostics/2 ungrouped.gstencil` | ours, flags, gzipped, no group | the group was hiding it |
+| `diagnostics/3 grouped gzipped.gstencil` | ours, flags, gzipped, grouped | gzip was the difference |
+
+If only the control draws, the fault is in something we write that the control
+does not, and the next build copies more of the control.
 
 ## What is in `out/`
 

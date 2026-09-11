@@ -22,7 +22,7 @@ UNVERIFIED IN OMNIGRAFFLE - it is not installed where this was written. Several
 variants are written so one session on a Mac that has it answers the open
 questions at once; see README.md.
 """
-import copy, json, os, plistlib, shutil, subprocess, sys, zipfile
+import copy, gzip, json, os, plistlib, shutil, subprocess, sys, zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(os.path.dirname(HERE))
@@ -70,7 +70,7 @@ def zone_shape(gid, z, ox, oy, device, face, tinted):
     }
 
 
-def face_group(ids, face, zones, vb, image_id, ox, oy, device, label, tinted):
+def face_group(ids, face, zones, vb, image_id, ox, oy, device, label, tinted, grouped=True):
     """Front of the z-order FIRST: OmniGraffle paints the first graphic on top,
     the reverse of SVG. Ports, then bays, then the picture behind them all."""
     kids = []
@@ -82,8 +82,13 @@ def face_group(ids, face, zones, vb, image_id, ox, oy, device, label, tinted):
         'Class': 'ShapedGraphic', 'ID': next(ids), 'ImageID': image_id,
         'Name': f'{label} {face} face',
         'Bounds': rect(ox, oy, vb[2] * PT, vb[3] * PT),
+        # HOW THE IMAGE FILLS ITS SHAPE. A working stencil sets both, and the
+        # second build - image registered, these absent - still drew nothing.
+        'ManualSizeImage': 'NO', 'StretchImage': True,
         'Magnets': [], 'Style': no_draw(),
     })
+    if not grouped:
+        return kids
     return {'Class': 'Group', 'ID': next(ids), 'Name': f'{label} {face}',
             'Graphics': kids, 'Style': no_draw(),
             'UserInfo': {'portrayal-device': device, 'portrayal-face': face}}
@@ -96,7 +101,7 @@ def counter(start=1):
         n += 1
 
 
-def build(ports, tinted=False, cabling=False, zipped=False):
+def build(ports, tinted=False, cabling=False, zipped=False, grouped=True):
     """The data.plist for one variant. `cabling` adds one line between two port
     shapes, to prove a connection survives as a reference to a NAMED shape."""
     data = plistlib.load(open(os.path.join(TPL, 'data.plist'), 'rb'))
@@ -105,9 +110,10 @@ def build(ports, tinted=False, cabling=False, zipped=False):
     ids, y, groups = counter(1), 0.0, []
     faces = [('front', 1), ('rear', 2)]
     for face, image_id in faces:
-        groups.append(face_group(ids, face, ports[face], vb, image_id, 0.0, y, device, label, tinted))
+        groups.append(face_group(ids, face, ports[face], vb, image_id, 0.0, y, device, label,
+                                 tinted, grouped))
         y += vb[3] * PT + GAP
-    graphics = list(groups)
+    graphics = [x for g in groups for x in (g if isinstance(g, list) else [g])]
     if cabling:
         front = {g['Name']: g for g in groups[0]['Graphics']}
         a, b = front['port-2'], front['port-4']
@@ -152,14 +158,17 @@ def faces_to_pdf(ports, scratch):
     return out
 
 
-def write_package(path, data, assets, xml=True):
+def write_package(path, data, assets, xml=True, gz=False, images=(1, 2)):
+    """No preview.jpeg in a package: OmniGraffle shows it as the sheet thumbnail,
+    which made a blank canvas look like a working one in the second test."""
     if os.path.exists(path):
         shutil.rmtree(path)
     os.makedirs(path)
+    raw = plistlib.dumps(data, fmt=plistlib.FMT_XML if xml else plistlib.FMT_BINARY)
     with open(os.path.join(path, 'data.plist'), 'wb') as fp:
-        plistlib.dump(data, fp, fmt=plistlib.FMT_XML if xml else plistlib.FMT_BINARY)
-    for k, src in assets.items():
-        shutil.copy(src, os.path.join(path, 'preview.jpeg' if k == 'preview' else f'image{k}.pdf'))
+        fp.write(gzip.compress(raw) if gz else raw)
+    for i in images:
+        shutil.copy(assets[i], os.path.join(path, f'image{i}.pdf'))
 
 
 def write_zip(path, data, assets, xml):
@@ -169,6 +178,23 @@ def write_zip(path, data, assets, xml):
         z.writestr('data.plist', plistlib.dumps(data, fmt=plistlib.FMT_XML if xml else plistlib.FMT_BINARY))
         for k, src in assets.items():
             z.write(src, 'preview.jpeg' if k == 'preview' else f'image{k}.pdf')
+
+
+def build_aws_control(ports):
+    """THE CONTROL: davidfsmith/AWS-OmniGraffle-Stencils' own working document,
+    changed only where it must be - one image graphic, cloned from theirs, now
+    pointing at our front faceplate. Top level, no group, no port shapes. If
+    this does not draw, the fault is in our PDF, not in anything we wrote."""
+    d = plistlib.loads(gzip.decompress(open(os.path.join(TPL, 'aws-data.plist.gz'), 'rb').read()))
+    sheet = d['Sheets'][0]
+    g = copy.deepcopy(sheet['GraphicsList'][0])
+    vb = ports['viewBox']
+    g.update({'ID': 1, 'ImageID': 1, 'Bounds': rect(0, 0, vb[2] * PT, vb[3] * PT),
+              'Name': 'S9510-28DC front (AWS control)', 'Notes': 'S9510-28DC front (AWS control)'})
+    sheet['GraphicsList'] = [g]
+    sheet['CanvasSize'] = '{%d, %d}' % (vb[2] * PT + 2 * GAP, vb[3] * PT + 2 * GAP)
+    d['ImageList'], d['ImageLinkBack'], d['ImageCounter'] = ['image1.pdf'], [{}], 2
+    return d
 
 
 def check(data, where):
@@ -202,16 +228,22 @@ def main():
     scratch = os.path.join(OUT, '.build')
     os.makedirs(scratch, exist_ok=True)
     assets = faces_to_pdf(ports, scratch)
+    pkg = lambda **o: (lambda p, d: write_package(p, d, assets, **o))
     variants = [
-        # (file name, builder args, writer)
-        ('S9510-28DC.gstencil',             dict(),              lambda p, d: write_package(p, d, assets, xml=True)),
-        ('S9510-28DC tinted.gstencil',      dict(tinted=True),   lambda p, d: write_package(p, d, assets, xml=True)),
-        ('S9510-28DC zipped.gstencil',      dict(zipped=True),   lambda p, d: write_zip(p, d, assets, xml=False)),
-        ('S9510-28DC zipped-text.gstencil', dict(zipped=True),   lambda p, d: write_zip(p, d, assets, xml=True)),
-        ('S9510-28DC cabling test.graffle', dict(cabling=True),  lambda p, d: write_package(p, d, assets, xml=True)),
+        # (file name, how to build it, writer)
+        ('S9510-28DC.gstencil',             dict(),                  pkg(xml=True)),
+        ('S9510-28DC tinted.gstencil',      dict(tinted=True),       pkg(xml=True)),
+        ('S9510-28DC zipped.gstencil',      dict(zipped=True),       lambda p, d: write_zip(p, d, assets, xml=False)),
+        ('S9510-28DC zipped-text.gstencil', dict(zipped=True),       lambda p, d: write_zip(p, d, assets, xml=True)),
+        ('S9510-28DC cabling test.graffle', dict(cabling=True),      pkg(xml=True)),
+        # the diagnostic ladder: each changes one thing, so the one that draws names the fault
+        ('diagnostics/1 AWS control.gstencil', 'aws',                pkg(xml=True, gz=True, images=(1,))),
+        ('diagnostics/2 ungrouped.gstencil',   dict(grouped=False),  pkg(xml=True, gz=True)),
+        ('diagnostics/3 grouped gzipped.gstencil', dict(),           pkg(xml=True, gz=True)),
     ]
+    os.makedirs(os.path.join(OUT, 'diagnostics'), exist_ok=True)
     for name, kw, writer in variants:
-        data = build(ports, **kw)
+        data = build_aws_control(ports) if kw == 'aws' else build(ports, **kw)
         n = check(data, name)
         writer(os.path.join(OUT, name), data)
         print(f'  {name:36} {n:3} graphics')
