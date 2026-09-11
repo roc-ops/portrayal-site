@@ -161,7 +161,33 @@ tinted/invisible pair that made it visible at a glance.
 | `r4-imagefirst` | identical but for z-order, to confirm that is what decides gluability |
 | `r4-tinted` | ports visible, no faceplate, as a map of where they are |
 
-Result: _pending_ — the question is whether the top SFP28 row, USB and 1PPS,
-which failed in rounds 2 and 3, now glue like the rest.
+**It works.** Cables drawn by hand glue to USB, to the top SFP28 row and to
+1PPS — the three that failed in rounds 2 and 3 — and they stay attached when the
+device is moved, re-routing rather than detaching. Transparency renders correct
+in both faceplate variants, so the fraction was right.
+
+**Z-order was the whole problem.** Nothing was wrong with the port shapes from
+round 2 onwards; the faceplate was simply in front of them, and which ports
+survived depended on nothing more interesting than where the image happened to
+be opaque.
+
+### What is settled
+
+- The package opens in Visio and in Lucidchart with no repair.
+- The faceplate goes in as a PNG via `Foreign`/`ForeignData`, LAST in the file.
+- A port is an invisible sub-shape: a real `Geometry` section, a fill at full
+  transparency so it still hit-tests, `LinePattern` 0, one connection point.
+- A cable glues to the PORT, and the port's identity is on the shape around it:
+  `NameU`, Shape Data the user can read, and a User cell they cannot edit.
+- The cable needs `OneD`, the `PAR(PNT(...))` glue formulas, the trigger cells
+  and the document's `RecalcDocument` property.
+
+### Still open
+
+- Shape Data: not yet confirmed visible with the right values in Visio.
+- The stencil (`.vssx`). Everything above is a DRAWING. A stencil is the same
+  shapes in a different container, and its minimal part set is the one thing no
+  authoritative source describes.
+- Vector faceplates - see below.
 
 ## Testing notes
