@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Portrayal — draw.io export</title>
+<title>Portrayal — draw.io &amp; OmniGraffle export</title>
 <meta name="description" content="Modeled devices as a draw.io shape library, with every port a cell a cable can be drawn to by name.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="portrayal.dev">
@@ -88,6 +88,7 @@
       <div class="navmenu-items">
         <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
         <a href="drawio.html" aria-current="page">draw.io export<span class="hint">shape library and rack elevations</span></a>
+        <a href="drawio.html#omnigraffle">OmniGraffle export<span class="hint">stencils with named ports</span></a>
         <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
       </div>
     </details>
@@ -98,7 +99,7 @@
 
 <div class="wrap-tool">
 <div class="hdr">
-  <h1>draw.io export</h1>
+  <h1>draw.io &amp; OmniGraffle export</h1>
   <span id="pick"></span>
   <label title="Ignore the vendor and scope entirely and take every device in the library.">
     <input type="checkbox" id="allven"> all vendors<span id="allven-count"></span></label>
@@ -184,6 +185,41 @@
       <button id="dl-rack">Download .drawio</button>
     </div>
     <div class="stat" id="stat-diag"></div>
+  </div>
+
+  <div class="card" id="omnigraffle">
+    <h2>OmniGraffle stencil</h2>
+    <p>The same devices as an OmniGraffle stencil, each face true to size with an
+       invisible shape named after every port and bay. A line drawn to a port
+       attaches to that port by name, and each port carries its media and speed
+       as key/value data. Faces are drawn as images by your browser. Opens in
+       OmniGraffle 7.16 or later.</p>
+    <div class="scope-row"><label>Scope <select id="oscope"></select></label></div>
+    <div class="row">
+      <label title="Which side of the chassis to draw. Devices with no rear face are skipped.">Faces
+        <select id="ofaces">
+          <option value="front">front</option>
+          <option value="rear">rear</option>
+          <option value="both" selected>front + rear</option>
+        </select></label>
+      <label id="omods-label" title="The things that go in the chassis.">
+        <input type="checkbox" id="omods" checked> modules<span id="omods-count"></span></label>
+      <label title="A shape for each slot, not just each port, so a line can be drawn to the slot itself.">
+        <input type="checkbox" id="obays" checked> bays</label>
+      <label title="Tint the port shapes so you can see where they are. Off, they are invisible over the faceplate.">
+        <input type="checkbox" id="otint"> highlight them</label>
+      <label title="Pixels per millimetre for the face images. 8 is sharp at any normal zoom; 12 is for print.">Detail
+        <select id="ores">
+          <option value="4">4 px/mm</option>
+          <option value="8" selected>8 px/mm</option>
+          <option value="12">12 px/mm</option>
+        </select></label>
+      <button id="dl-og">Download .gstencil</button>
+    </div>
+    <div class="stat" id="stat-og"></div>
+    <p class="note">If a face opens blank, look at the window title. OmniGraffle
+       does not paint images in a document open <strong>read only</strong>, though
+       it still shows them in the sidebar.</p>
   </div>
 </div>
 

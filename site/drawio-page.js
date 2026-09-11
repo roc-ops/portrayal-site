@@ -2,6 +2,7 @@
 import { createDevicePicker } from '../vendor/devsel.js';
 import { jdist } from '../vendor/dist.js';
 import { entry, library, rackDiagram, loadFace, portsOf, RACK, SCALE } from './drawio.js';
+import { buildStencil, rasterize } from './omnigraffle.js';
 
 const $ = id => document.getElementById(id);
 const DIST = 'assets/dist/';
@@ -106,7 +107,7 @@ function fillScopes() {
   // Three menus, one per card: the two libraries and the rack diagram each
   // choose their own scope. Sharing one meant asking for a rack picture of the
   // thing you were looking at also changed what a library download contained.
-  for (const id of ['scope', 'rscope', 'dscope']) {
+  for (const id of ['scope', 'rscope', 'dscope', 'oscope']) {
     const sel = $(id);
     if (!sel) continue;
     const was = sel.value;
@@ -151,7 +152,8 @@ const vendorTag = key => {
 
 /** Load every device in scope, skipping any whose face is missing rather than
  *  failing the whole download - a library with a hole in it beats no library. */
-async function gather(scope, statusEl, {faces = ['front'], modules = false} = {}) {
+async function gather(scope, statusEl, {faces = ['front'], modules = false,
+                                         bays = $('bays')?.checked} = {}) {
   const want = inScope(scope);
   const out = [], missing = [];
   let n = 0, total = want.length * faces.length;
@@ -164,8 +166,9 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false} = {}
         const f = await loadFace(faceUrl(d, face));
         out.push({label: faces.length > 1 ? `${d.model || d.name} (${face})` : (d.model || d.name),
                   ru, face, kind: 'device', device: d.name,
+                  ref: `${nsOf(d.manufacturer)}/${d.name}`,
                   model: d.model || d.name, version: d.version ?? null, ...f,
-                  ports: portsOf(f.zones, {bays: $('bays')?.checked})});
+                  ports: portsOf(f.zones, {bays})});
       } catch {
         // A device with no rear face is not an error - a shelf may only have
         // one side worth drawing. Only note it if the FRONT is missing too.
@@ -181,8 +184,10 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false} = {}
       try {
         const f = await loadFace(`${DIST}${c.files.default}`);
         out.push({label: (c.attrs || {}).model || c.name, ru: 1, face: 'front',
-                  kind: 'module', cls: c.class, ...f,
-                  ports: portsOf(f.zones, {bays: $('bays')?.checked})});
+                  kind: 'module', cls: c.class,
+                  ref: `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`,
+                  version: c.version ?? null, ...f,
+                  ports: portsOf(f.zones, {bays})});
       } catch {
         missing.push(c.name);
       }
@@ -238,6 +243,45 @@ async function buildLibrary({rack}) {
     ].join('\n'));
     save(xml, `${vendorTag(scope)}${rack ? '-rack' : ''}-portrayal.xml`, 'application/xml');
     report(stat, loaded, missing, `, ${(xml.length / 1048576).toFixed(1)} MB`);
+  } catch (err) {
+    stat.textContent = `failed: ${err.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── OmniGraffle ──────────────────────────────────────────────────────────
+// The same scope, faces and modules as the shape library, drawn by the browser
+// into images and packed as a single-file stencil. See omnigraffle.js for why
+// each piece is the way it is; prototypes/omnigraffle has the tests behind it.
+async function buildOmniGraffle() {
+  const btn = $('dl-og'), stat = $('stat-og');
+  const scope = $('oscope').value;
+  btn.disabled = true;
+  try {
+    const faces = $('ofaces').value === 'both' ? ['front', 'rear'] : [$('ofaces').value];
+    const {loaded, missing} = await gather(scope, stat,
+      {faces, modules: $('omods').checked, bays: $('obays').checked});
+    if (!loaded.length) { stat.textContent = 'nothing to export'; return; }
+    const pxmm = +$('ores').value || 8;
+    const reduced = [];
+    let k = 0;
+    for (const f of loaded) {
+      stat.textContent = `drawing ${++k}/${loaded.length}…`;
+      const r = await rasterize(f.text, f.vb, pxmm);
+      f.png = r.png;
+      if (r.density < pxmm - 0.01) reduced.push(f.label);
+    }
+    const name = allVendors() ? 'all vendors'
+      : (scopeOf(scope)?.label || 'Portrayal').replace(/^all of /, '');
+    const sheets = [
+      {title: name, items: loaded.filter(f => f.kind === 'device')},
+      {title: `${name} — modules`, items: loaded.filter(f => f.kind === 'module')},
+    ].filter(sh => sh.items.length);
+    const bytes = buildStencil(sheets, {tinted: $('otint').checked});
+    save(bytes, `${vendorTag(scope)}-portrayal.gstencil`, 'application/octet-stream');
+    report(stat, loaded, missing, `, ${(bytes.length / 1048576).toFixed(1)} MB` +
+      (reduced.length ? `, ${reduced.length} drawn below ${pxmm} px/mm to fit a browser image` : ''));
   } catch (err) {
     stat.textContent = `failed: ${err.message}`;
   } finally {
@@ -402,7 +446,7 @@ function describe() {
   const all = $('allven');
   if (all) {
     $('allven-count').textContent = ` (${DEVICES.length})`;
-    for (const id of ['scope', 'rscope', 'dscope']) if ($(id)) $(id).disabled = all.checked;
+    for (const id of ['scope', 'rscope', 'dscope', 'oscope']) if ($(id)) $(id).disabled = all.checked;
   }
   const mods = modulesFor($('scope')?.value);
   const lbl = $('mods-count');
@@ -422,6 +466,10 @@ function describe() {
     .sort((a, b) => b[1] - a[1])
     .map(([w, n]) => `${n} ${plural(w, n)}`)
     .join(', ');
+  // the OmniGraffle card has its own scope, so its own count
+  const omods = modulesFor($('oscope')?.value);
+  if ($('omods-count')) $('omods-count').textContent = omods.length ? ` (${omods.length})` : '';
+  if ($('omods')) $('omods').disabled = !omods.length;
   const ml = $('mods-label');
   if (ml) ml.title = breakdown ? `The things that go in the chassis: ${breakdown}.`
                                : 'This vendor has no modelled modules.';
@@ -445,7 +493,7 @@ function describe() {
   DEV = DEVICES.some(d => d.name === want) ? want : DEVICES[0].name;
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
-  for (const id of ['scope', 'rscope', 'dscope']) $(id).addEventListener('change', describe);
+  for (const id of ['scope', 'rscope', 'dscope', 'oscope']) $(id).addEventListener('change', describe);
   for (const id of ['faces', 'mods']) $(id).addEventListener('change', showEstimate);
   $('allven').addEventListener('change', describe);
   fillScopes();
@@ -453,4 +501,5 @@ function describe() {
   $('dl-lib').onclick = () => buildLibrary({rack: false});
   $('dl-rack-lib').onclick = () => buildLibrary({rack: true});
   $('dl-rack').onclick = buildRackDiagram;
+  $('dl-og').onclick = buildOmniGraffle;
 })();
