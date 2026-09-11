@@ -76,7 +76,52 @@ function parseTransform(str) {
   return m;
 }
 
-export function readSvg(text) {
+// THE REAL OUTLINE, NOT THE RECTANGLES INSIDE IT. The walk in readSvg measures
+// rects and circles and nothing else, because a path has no box until something
+// lays it out. That was right for an SFP cage, which is one rect, and wrong for
+// every jack drawn as a housing: an RJ45 is mostly path with one small latch
+// rect in it, so on the S9510-28DC the TOD, BITS and console jacks came out as
+// 7.6 x 2.3 mm strips across the top of a 15.8 x 13.2 mm jack - 8% of it - and
+// a line could not be landed on them in draw.io or in OmniGraffle. The coax
+// timing inputs fared little better, at about 55%. A port whose art is ALL path
+// had no box at all and was dropped.
+//
+// The browser can measure a whole group, so where there is a browser it does,
+// with the same CTM arithmetic relief.js uses and all four corners so a rotated
+// card still gets its full box. Where there is no document - a test runner, a
+// worker - the walked box stands, which is what every export had before.
+function layoutZones(text, zones) {
+  if (typeof document === 'undefined' || !zones.length) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'position:absolute;left:-10000px;top:0;width:1000px;visibility:hidden';
+  div.innerHTML = text;
+  document.body.append(div);
+  try {
+    const svg = div.querySelector('svg');
+    const rootCtm = svg && svg.getScreenCTM();
+    if (!rootCtm) return;
+    const inv = rootCtm.inverse();
+    for (const z of zones) {
+      const el = svg.querySelector(`[id="${CSS.escape(z.id)}"]`);
+      if (!el || typeof el.getBBox !== 'function') continue;
+      let b;
+      try { b = el.getBBox(); } catch (e) { continue; }
+      if (!(b.width > 0 && b.height > 0)) continue;
+      const m = inv.multiply(el.getScreenCTM());
+      let x = Infinity, y = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const [px, py] of [[b.x, b.y], [b.x + b.width, b.y],
+                              [b.x + b.width, b.y + b.height], [b.x, b.y + b.height]]) {
+        const ax = m.a * px + m.c * py + m.e, ay = m.b * px + m.d * py + m.f;
+        x = Math.min(x, ax); y = Math.min(y, ay); x1 = Math.max(x1, ax); y1 = Math.max(y1, ay);
+      }
+      Object.assign(z, {x, y, x1, y1});
+    }
+  } finally { div.remove(); }
+}
+
+/** `layout: false` keeps the rect-and-circle walk alone - the old answer, kept
+ *  so the two can be compared, and used wherever there is no document. */
+export function readSvg(text, {layout = true} = {}) {
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   const root = doc.documentElement;
   if (root.querySelector('parsererror')) throw new Error('unparseable SVG');
@@ -146,6 +191,7 @@ export function readSvg(text) {
     }
     for (const c of el.children) walk(c, ctm, {port, bay});
   })(root, I, {port: null, bay: null});
+  if (layout) layoutZones(text, zones);
   const sized = zones
     .filter(z => Number.isFinite(z.x))
     .map(z => ({id: z.id, cls: z.cls, path: z.path, group: z.group,
