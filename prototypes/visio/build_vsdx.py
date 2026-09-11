@@ -84,9 +84,12 @@ def port_shape(sid, z, face_h_in, tint=False):
       still hit-tests. That is how a stencil's invisible connection targets are
       built, and it is what we do in the draw.io and OmniGraffle exports too.
 
-    Named three ways on purpose, because which one survives a round trip
-    through Visio is exactly what we do not know yet: the shape's own NameU,
-    a named connection point, and a Shape Data row the user can read.
+    Identity rides on the shape, not on the connection point: a Connect names
+    a connection point by INDEX, so the port's name has to come from the shape
+    it belongs to. Hence one shape per port, its path in NameU, and the same
+    path again as Shape Data the user can read and a User cell they cannot
+    edit by accident. A row carries either a name or an index, not both, so
+    this row is keyed by index - it is the shape around it that is named.
     """
     x, y = z['x'] / MM, z['y'] / MM
     w, h = max(z['w'], 0.4) / MM, max(z['h'], 0.4) / MM
@@ -100,15 +103,19 @@ def port_shape(sid, z, face_h_in, tint=False):
         f'<Row N="{esc(nm)}"><Cell N="Label" V="{esc(lab)}"/>'
         f'<Cell N="Value" V="{esc(val)}"/><Cell N="Type" V="0"/></Row>'
         for nm, lab, val in props)
+    # ROUND 3. Transparency here is a PERCENTAGE, 0 to 100 - not a fraction.
+    # Round 2 asked for 1 meaning "all of it" and got 1%, i.e. a nearly solid
+    # white box over every port. 100 is invisible; the fill still hit-tests,
+    # which is the whole reason for filling it at all.
     if tint:
         skin = (cell('FillPattern', '1')
                 + cell('FillForegnd', '#0aa0ff' if z['cls'] == 'port' else '#f5a623')
-                + cell('FillForegndTrans', '0.5')
+                + cell('FillForegndTrans', '50') + cell('FillBkgndTrans', '50')
                 + cell('LinePattern', '1') + cell('LineWeight', '0.005')
                 + cell('LineColor', '#0aa0ff' if z['cls'] == 'port' else '#f5a623'))
     else:
         skin = (cell('FillPattern', '1') + cell('FillForegnd', '#ffffff')
-                + cell('FillForegndTrans', '1')      # 1 = fully transparent
+                + cell('FillForegndTrans', '100') + cell('FillBkgndTrans', '100')
                 + cell('LinePattern', '0') + cell('LineWeight', '0'))
     return f'''<Shape ID="{sid}" NameU="{esc(path)}" Name="{esc(path)}" Type="Shape">
 {cell('PinX', n(x + w / 2))}{cell('PinY', n(pin_y))}
@@ -116,8 +123,9 @@ def port_shape(sid, z, face_h_in, tint=False):
 {cell('LocPinX', n(w / 2), 'Width*0.5')}{cell('LocPinY', n(h / 2), 'Height*0.5')}
 {cell('Angle', '0')}{skin}
 {RECT_GEOMETRY}
-<Section N="Connection"><Row N="{esc(path)}">
+<Section N="Connection"><Row IX="1">
 {cell('X', n(w / 2), 'Width*0.5')}{cell('Y', n(h / 2), 'Height*0.5')}
+{cell('DirX', '0')}{cell('DirY', '0')}{cell('Type', '0')}
 </Row></Section>
 <Section N="Property">{rows}</Section>
 <Section N="User"><Row N="PortrayalPath">{cell('Value', path)}</Row></Section>
@@ -137,26 +145,39 @@ def image_shape(sid, rid, w_in, h_in):
 </Shape>'''
 
 
-def connector(sid, a, b):
+def connector(sid, a, b, ida, idb):
     """A cable between two ports.
 
-    ROUND 2. Round 1 drew this in PAGE coordinates inside the shape's own
-    geometry, so it collapsed into the corner of the drawing - which is exactly
-    where Lucidchart showed it, under the power supply. A 1-D shape in Visio is
-    a unit-length line in its OWN space: the line runs from (0,0) to (Width,0),
-    and Begin/End place and rotate it on the page.
+    ROUND 3. Three things round 2 still lacked, all of which Visio needs before
+    it treats this as a connector that is really attached:
+
+    - `OneD`, the cell that makes a shape one-dimensional at all.
+    - Glue FORMULAS in the endpoint cells. The <Connect> elements alone are the
+      documented shorthand, but a file Visio wrote itself also carries
+      PAR(PNT(Sheet.n!Connections.X1, ...)) - the formula that makes an end
+      follow its port rather than merely start beside it.
+    - Trigger cells, which are what recalculate those ends when the port moves.
+
+    Round 2's own fix stands: the geometry is a unit line in the shape's OWN
+    space, from (0,0) to (Width,0), placed and rotated by Begin/End.
     """
     import math
     dx, dy = b[0] - a[0], b[1] - a[1]
     length = math.hypot(dx, dy) or 0.01
+    glue = lambda sheet, axis: (f'PAR(PNT(Sheet.{sheet}!Connections.X1,'
+                                f'Sheet.{sheet}!Connections.Y1))')
     return f'''<Shape ID="{sid}" NameU="Cable" Name="Cable" Type="Shape">
+{cell('OneD', '1')}
 {cell('PinX', n((a[0] + b[0]) / 2))}{cell('PinY', n((a[1] + b[1]) / 2))}
 {cell('Width', n(length))}{cell('Height', '0')}
 {cell('LocPinX', n(length / 2), 'Width*0.5')}{cell('LocPinY', '0', 'Height*0.5')}
 {cell('Angle', n(math.atan2(dy, dx)))}
-{cell('BeginX', n(a[0]))}{cell('BeginY', n(a[1]))}
-{cell('EndX', n(b[0]))}{cell('EndY', n(b[1]))}
+{cell('BeginX', n(a[0]), glue(ida, 'X'))}{cell('BeginY', n(a[1]), glue(ida, 'Y'))}
+{cell('EndX', n(b[0]), glue(idb, 'X'))}{cell('EndY', n(b[1]), glue(idb, 'Y'))}
+{cell('BegTrigger', n(ida), f'_XFTRIGGER(Sheet.{ida}!EventXFMod)')}
+{cell('EndTrigger', n(idb), f'_XFTRIGGER(Sheet.{idb}!EventXFMod)')}
 {cell('LineWeight', '0.02')}{cell('LinePattern', '1')}{cell('LineColor', '#d0021b')}
+{cell('FillPattern', '0')}
 <Section N="Geometry" IX="0">
 <Cell N="NoFill" V="1"/>
 <Row T="MoveTo" IX="1"><Cell N="X" V="0" F="Width*0"/><Cell N="Y" V="0" F="Height*0"/></Row>
@@ -173,16 +194,22 @@ def page_xml(shapes, connects):
             + '</PageContents>')
 
 
-def build(faces, out, cable=True, tint=False):
+def build(faces, out, cable=True, tint=False, image=True, image_last=False):
     """faces: [{'name','png','zones','vb'}] - one page each."""
     pages, page_parts, rels, ctypes, media = [], [], [], [], []
     for i, f in enumerate(faces, 1):
         vb = f['vb']
         w_in, h_in = vb[2] / MM, vb[3] / MM
+        # Z-ORDER IS THE OPEN QUESTION. Visio is assumed to paint the first
+        # shape at the BACK, so the faceplate goes in first and the ports sit
+        # over it. If that is backwards, the image covers all 38 ports and
+        # steals every click - which is what image_last exists to find out.
         sid = 1
         img_rid = 'rId1'
-        shapes = [image_shape(sid, img_rid, w_in, h_in)]
-        sid += 1
+        shapes = []
+        if image and not image_last:
+            shapes.append(image_shape(sid, img_rid, w_in, h_in))
+        sid += 1                      # keep ids stable across the variants
         byid, connects = {}, ''
         for z in f['zones']:
             byid[z.get('path') or z['id']] = (sid, z)
@@ -197,13 +224,17 @@ def build(faces, out, cable=True, tint=False):
             ida, idb = byid[a.get('path') or a['id']][0], byid[b.get('path') or b['id']][0]
             ca = ((a['x'] + a['w'] / 2) / MM, h_in - (a['y'] + a['h'] / 2) / MM)
             cb = ((b['x'] + b['w'] / 2) / MM, h_in - (b['y'] + b['h'] / 2) / MM)
-            shapes.append(connector(sid, ca, cb))
+            shapes.append(connector(sid, ca, cb, ida, idb))
+            # ToPart 100 is the FIRST connection point (100 + a zero-based
+            # index); FromPart 9 and 12 are the begin and end points.
             connects = (f'<Connect FromSheet="{sid}" FromCell="BeginX" FromPart="9" '
-                        f'ToSheet="{ida}" ToCell="PinX" ToPart="3"/>'
+                        f'ToSheet="{ida}" ToCell="Connections.X1" ToPart="100"/>'
                         f'<Connect FromSheet="{sid}" FromCell="EndX" FromPart="12" '
-                        f'ToSheet="{idb}" ToCell="PinX" ToPart="3"/>')
+                        f'ToSheet="{idb}" ToCell="Connections.X1" ToPart="100"/>')
             sid += 1
 
+        if image and image_last:
+            shapes.append(image_shape(sid, img_rid, w_in, h_in))
         page_parts.append((f'visio/pages/page{i}.xml', page_xml(''.join(shapes), connects)))
         media.append((f'visio/media/image{i}.png', f['png']))
         pages.append(f'''<Page ID="{i - 1}" NameU="{esc(f['name'])}" Name="{esc(f['name'])}"
@@ -220,11 +251,19 @@ def build(faces, out, cable=True, tint=False):
 <Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/document" Target="visio/document.xml"/>
 <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/core-properties" Target="docProps/core.xml"/>
 <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/>
 </Relationships>''',
         'docProps/core.xml': f'''{XML}
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
  xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>S9510-28DC</dc:title>
 <dc:creator>portrayal.dev</dc:creator></cp:coreProperties>''',
+        # Documented as required whenever what we wrote affects where a
+        # connector or a connection point sits - which is all of it.
+        'docProps/custom.xml': f'''{XML}
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"
+ xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+<property fmtid="{{D5CDD505-2E9C-101B-9397-08002B2CF9AE}}" pid="2" name="RecalcDocument">
+<vt:bool>true</vt:bool></property></Properties>''',
         'docProps/app.xml': f'''{XML}
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
 <Application>Portrayal</Application></Properties>''',
@@ -269,6 +308,7 @@ def build(faces, out, cable=True, tint=False):
 <Override PartName="/visio/windows.xml" ContentType="application/vnd.ms-visio.windows+xml"/>
 <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
 <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+<Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>
 </Types>'''
 
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -295,9 +335,18 @@ def main():
     # one shows where every port shape is, so "I cannot click it" means the
     # shape is wrong rather than that it was never found. The invisible one is
     # what we would actually ship.
-    for tag, tint in (('tinted', True), ('invisible', False)):
+    VARIANTS = [
+        # what we would ship, and the same thing made visible
+        ('tinted',    dict(tint=True)),
+        ('invisible', dict(tint=False)),
+        # diagnostics for "some ports are selectable and some are not", where
+        # the ports that fail are geometrically identical to the ones that work
+        ('d1-noimage',    dict(tint=True, image=False)),      # ports alone
+        ('d2-imagelast',  dict(tint=True, image_last=True)),  # image in front?
+    ]
+    for tag, kw in VARIANTS:
         out = os.path.join(HERE, 'out', f's9510-28dc.{tag}.vsdx')
-        build(faces, out, tint=tint)
+        build(faces, out, **kw)
         print('wrote', os.path.basename(out), os.path.getsize(out), 'bytes')
     print(sum(len(f['zones']) for f in faces), 'zones over', len(faces), 'pages')
 

@@ -98,10 +98,64 @@ target present, every part content-typed, 39 geometry sections where round 1 had
 none, and the cable glued to `tod` and `usb` with begin/end across the middle of
 the faceplate rather than at the origin.
 
+**Visio opened it and roughly half the ports worked.** Selectable and gluable:
+the management and console ports, TOD, BITS, the power supply bays, the fan
+bays, and the BOTTOM row of SFP28s. Not selectable: USB, 1PPS, and the TOP row
+of SFP28s — while the cable still drew to USB, so USB's shape is present and
+something is stopping it being hit.
+
+LEDs and the reset button are not selectable, which is correct: only ports and
+bays get a shape, because only they are things a cable or a module connects to.
+
+The failing ports are GEOMETRICALLY IDENTICAL to the working ones — the two
+SFP28 rows are the same size and pitch and differ only in y — and no zone
+overlaps any other on either face, checked exhaustively. So this is not shapes
+covering each other and not a size threshold.
+
+### Round 3 — the four bugs the research found, plus a z-order experiment
+
+Round 2 was wrong in four ways that the ShapeSheet documentation settles:
+
+| bug | what it should be |
+|---|---|
+| `FillForegndTrans` is a PERCENTAGE, 0-100 | round 2 asked for `1` meaning "all", and got 1% — a nearly solid box |
+| the cable had no `OneD` cell | `OneD=1` is what makes a shape one-dimensional at all |
+| glue was only `<Connect>` elements | real files also carry `PAR(PNT(...))` formulas and `BegTrigger`/`EndTrigger` |
+| no `RecalcDocument` property | documented as required whenever connector positions are involved |
+
+A connection point row is glued to by INDEX, so it is keyed `IX="1"`; the port's
+identity comes from the shape around it, whose `NameU` is the port's path.
+
+Two diagnostics ship alongside, to settle why identical shapes behave
+differently. The suspect is z-order: we assume Visio paints the FIRST shape at
+the back, so the faceplate goes in first and the ports sit over it.
+
+| file | what it isolates |
+|---|---|
+| `d1-noimage` | the ports alone, no faceplate. If all 38 work, the shapes are fine and the image is the problem |
+| `d2-imagelast` | the same ports with the faceplate emitted LAST. If FEWER work, first-is-back is confirmed and the image is not the cause |
+| `tinted` | the normal build, ports visible |
+| `invisible` | what we would ship |
+
 Result: _pending_
+
+## Testing notes
+
+**Visio in Microsoft 365 (web) cannot validate this.** Microsoft documents that
+drawings containing third-party shapes cannot be edited there — view and comment
+only, with editing requiring Visio Plan 1 or 2 — and every shape we generate is
+a third-party shape. Shape Data is viewable but not editable. So a negative
+result on the web proves nothing about our XML. Lucidchart and Visio desktop are
+the real tests.
 
 ## Open question: raster or vector
 
-The faceplate is a PNG because that is what a browser can render. Visio's own
-shapes are vector, so a vector faceplate is possible in principle by translating
-the compiled SVG into Visio geometry. Being researched; not yet costed.
+The faceplate is a PNG because that is what a browser can render. A vector
+faceplate is possible and the route is native Visio geometry — the same geometry
+rows the port rectangles use, generated from the compiled SVG. Visio CANNOT
+embed an SVG: `ForeignData` accepts only bitmaps, EMF, ink or an opaque object,
+and no browser library writes EMF. Rectangles, polylines and cubic Beziers map
+one to one; arcs need flattening to Beziers; gradients, clipping and filters
+have no equivalent and would flatten. Fills are per SHAPE, not per path, so a
+vector faceplate is one sub-shape per distinct colour, grouped. Moderate work,
+and pointless until the ports are connectable.
