@@ -102,14 +102,34 @@ OmniGraffle offered to upgrade the package stencils to its single-file format.
 That is the form a browser can hand over as one download, so it is the one to
 aim for.
 
-## Still to test, in an editable OmniGraffle
+## Fifth test, 2026-09-11: in an editable OmniGraffle
 
-| question | file |
+| question | result |
 |---|---|
-| the zipped single-file stencil draws its faceplate | `S9510-28DC zipped.gstencil` |
-| a prebuilt line stays attached to two ports when the device moves | `S9510-28DC cabling test.graffle` |
-| a line drawn by hand snaps to an invisible port | drag the front from `S9510-28DC.gstencil` |
-| a port's key/value data survives that drag | same |
+| the zipped single-file stencil draws its faceplate | yes |
+| a prebuilt line stays attached to two ports when the device moves | yes, but one end took the port's centre and the other its edge |
+| a line drawn by hand snaps to an invisible port | yes on Ethernet, USB and every SFP; not on TOD, BITS, console or the coax timing inputs |
+| a port's key/value data survives dragging the device onto a canvas | yes |
+
+Both misses had one cause each, and both are fixed in this build:
+
+- **The prebuilt line did not say which point on each port to use**, so
+  OmniGraffle chose, differently at each end. Both ends are now pinned to the
+  port's one magnet, its centre.
+- **The ports that would not take a line were too small to hit.** The shared
+  extractor in `site/drawio.js` measured only rectangles and circles, and those
+  jacks are drawn mostly with curves. TOD, BITS and console came out as strips
+  covering 8% of the jack, the coax inputs about 55%. It now measures each
+  port's real laid-out outline, and every port on this device covers its whole
+  jack. The draw.io export shares that extractor and had the same tiny targets,
+  so it is fixed too.
+
+## Sixth test
+
+1. Open `S9510-28DC cabling test.graffle`. Both ends of the red line should sit
+   at the centre of their ports.
+2. Drag the front from `S9510-28DC zipped.gstencil` onto a canvas, and draw
+   lines to TOD, BITS, console, GNSS ANT, 10MHZ and 1PPS.
 
 **If a file draws blank, check the window title first.** READ ONLY means
 OmniGraffle will not paint images there, whatever the file says.

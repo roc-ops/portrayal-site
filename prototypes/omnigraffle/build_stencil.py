@@ -122,7 +122,12 @@ def build(ports, tinted=False, cabling=False, zipped=False, grouped=True, ext='p
         graphics.insert(0, {
             'Class': 'LineGraphic', 'ID': next(ids), 'Name': 'port-2 to port-4',
             'Points': [f'{{{ax + aw / 2:.3f}, {ay + ah / 2:.3f}}}', f'{{{bx + bw / 2:.3f}, {by + bh / 2:.3f}}}'],
-            'Tail': {'ID': a['ID']}, 'Head': {'ID': b['ID']},
+            # PIN BOTH ENDS. Naming the shape alone left OmniGraffle to choose the
+            # point: in the first editable test one end took the port's centre
+            # and the other its edge. `Info` is the magnet an end is pinned to,
+            # 1-based as openanvil/omnigraffle-generator records it, and a port
+            # shape has exactly one - dead centre.
+            'Tail': {'ID': a['ID'], 'Info': 1}, 'Head': {'ID': b['ID'], 'Info': 1},
             'Style': {'stroke': {'Width': 2.0, 'Color': color((0.87, 0.2, 0.2, 1.0)), 'Legacy': False}},
         })
     w = vb[2] * PT + 2 * GAP
