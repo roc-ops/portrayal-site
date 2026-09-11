@@ -49,6 +49,37 @@ Open these in order and note which ones show the faceplate on the canvas.
 If only the control draws, the fault is in something we write that the control
 does not, and the next build copies more of the control.
 
+**Third test, 2026-09-11: all four blank on the canvas, including the control.**
+The control is the AWS document itself with one image re-pointed at our
+faceplate, so nothing structural we write is to blame. And OmniGraffle does
+decode the faceplate: the sidebar thumbnails show it in the control and both
+diagnostics, and those packages carry no preview image any more. It reads the
+image and draws it small, but not on the canvas.
+
+The PDFs themselves differ sharply, though both come from the same renderer,
+cairo 1.18.4 via rsvg-convert:
+
+| | AWS icon | our faceplate |
+|---|---|---|
+| page | 48 × 48 pt | 1247.24 × 123.31 pt |
+| embedded fonts | 0 | 13 |
+| soft masks | 0 | 12 |
+| gradient patterns | 0 | 23 |
+| embedded bitmaps | 0 | 2 |
+
+Those come from the faceplate's gradients, transparency and text. Apple's
+thumbnail renderer draws them; OmniGraffle's canvas plausibly does not.
+
+## Fourth test
+
+| file | what it is | if it draws on the canvas |
+|---|---|---|
+| `diagnostics/4 AWS original.gstencil` | an AWS stencil exactly as published | this OmniGraffle draws embedded PDFs; if it is blank too, the problem is not in any file |
+| `diagnostics/5 AWS control PNG.gstencil` | the control, with our faceplate as PNG | PDF was the problem; PNG works |
+| `diagnostics/6 device PNG.gstencil` | the whole device, ports and all, faceplate as PNG | this is what the real export would ship |
+
+The PNGs are 8 px/mm, a 3520 px wide front.
+
 ## What is in `out/`
 
 | file | form | what opening it answers |
