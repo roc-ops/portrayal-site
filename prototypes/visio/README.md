@@ -242,6 +242,49 @@ slots - and the bays are connection targets either way.
 Dragging a line card into a slot is a thing a STENCIL can express and a drawing
 cannot. That is the argument for `.vssx`, and it is the next thing to prototype.
 
+### Round 7 — the sub-shape design is the problem
+
+Round 6's grouping was tested and produced three complaints, all of which come
+from the same root: a device is 40 separately clickable things stacked on a
+picture.
+
+- **The device is hard to grab.** Every invisible port competes for the click,
+  so selecting the device means hunting for a gap between them.
+- **A port can be dragged out of its own device.** Clicking a riser and dragging
+  left a box adrift outside the faceplate.
+- **Cables stopped following the device.** They followed in round 4, ungrouped.
+  Moving the ports into a group changed their coordinate space, and the
+  page-level glue formulas now resolve somewhere else.
+
+Two answers, built side by side rather than argued about:
+
+| variant | what it is |
+|---|---|
+| `r7a-points` | the device is ONE shape; each port is a named CONNECTION POINT on it |
+| `r7b-locked` | the group kept, every port locked against select, move and delete |
+
+**A is the Visio-native answer** and the one the format research recommended
+outright. A connection point is Visio's own idea of "a place on a shape you
+attach to": it cannot be selected, cannot be dragged off, and moves with the
+shape because it is part of it rather than a neighbour of it. All three
+complaints disappear by construction.
+
+What A costs:
+
+- A bay stops being an AREA to drop a module onto and becomes a point like any
+  other. For cabling that is no loss; for "drag a line card into slot 3" it is.
+- Per-port data moves off 38 shapes and onto the device, as `User` rows named
+  after each port - `User.port_12` holding the path, class, group, media and
+  speed. Machine-readable, but no longer a per-port Shape Data pane.
+- A `Connect` names a connection point by INDEX, so recovering which port a
+  cable is on means mapping that index back to the row order. Within one shape
+  that is deterministic, and the row names are in the file.
+
+B keeps per-port shapes and their Shape Data, at the cost of being a fight
+against Visio rather than with it.
+
+Result: _pending_
+
 ### Still open
 
 - Shape Data: not yet confirmed visible with the right values in Visio.

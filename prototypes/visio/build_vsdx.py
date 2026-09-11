@@ -71,7 +71,7 @@ def cell(name, v, f=None):
     return f'<Cell N="{name}" V="{esc(v)}"' + (f' F="{esc(f)}"/>' if f else '/>')
 
 
-def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0)):
+def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False):
     """One port or bay: a rectangle a connector can glue to.
 
     ROUND 2. Two fixes, both found by round 1 opening in Visio and Lucidchart
@@ -99,6 +99,10 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0)):
     for k in ('cls', 'group', 'media', 'speed', 'model'):
         if z.get(k):
             props.append((k.capitalize(), k.capitalize(), z[k]))
+    # ROUND 7, VARIANT B: locked so a port cannot be dragged out of its own
+    # device and does not compete with it for the click.
+    lock = (cell('LockMoveX', '1') + cell('LockMoveY', '1') + cell('LockDelete', '1')
+            + cell('LockSelect', '1')) if locked else ''
     rows = ''.join(
         f'<Row N="{esc(nm)}"><Cell N="Label" V="{esc(lab)}"/>'
         f'<Cell N="Value" V="{esc(val)}"/><Cell N="Type" V="0"/></Row>'
@@ -123,7 +127,7 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0)):
 {cell('PinX', n(x + w / 2))}{cell('PinY', n(pin_y))}
 {cell('Width', n(w))}{cell('Height', n(h))}
 {cell('LocPinX', n(w / 2), 'Width*0.5')}{cell('LocPinY', n(h / 2), 'Height*0.5')}
-{cell('Angle', '0')}{skin}
+{cell('Angle', '0')}{skin}{lock}
 {RECT_GEOMETRY}
 <Section N="Connection"><Row IX="1">
 {cell('X', n(w / 2), 'Width*0.5')}{cell('Y', n(h / 2), 'Height*0.5')}
@@ -131,6 +135,65 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0)):
 </Row></Section>
 <Section N="Property">{rows}</Section>
 <Section N="User"><Row N="PortrayalPath">{cell('Value', path)}</Row></Section>
+</Shape>'''
+
+
+def rowname(path):
+    """Visio row names are identifiers: letters, digits and underscore."""
+    n = ''.join(c if c.isalnum() else '_' for c in str(path))
+    return ('p_' + n) if not n[:1].isalpha() else n
+
+
+def points_shape(sid, rid, w_in, h_in, zones, vb, item):
+    """ROUND 7, VARIANT A: the device as ONE shape, ports as CONNECTION POINTS.
+
+    The sub-shape design gave Visio 40 separately clickable things stacked on a
+    picture, and all three complaints follow from that: the device is hard to
+    grab because every port is in the way, a port can be dragged out of its own
+    device, and glue stopped following the device once the ports moved into a
+    group's coordinate space.
+
+    A connection point is Visio's own answer to "a place on a shape you attach
+    to". It cannot be selected, cannot be dragged off, and moves with the shape
+    because it is PART of the shape rather than a neighbour of it.
+
+    What it costs: a bay stops being an area you can drop onto and becomes a
+    point like any other, and per-port data lives on the device rather than on
+    38 separate shapes - so it goes into User rows, one per port, named after
+    the port and holding everything the model knows about it.
+    """
+    rows, users = [], []
+    for z in zones:
+        path = z.get('path') or z['id']
+        cx = (z['x'] - vb[0] + z['w'] / 2) / MM
+        cy = h_in - (z['y'] - vb[1] + z['h'] / 2) / MM      # Visio counts y up
+        nm = rowname(path)
+        rows.append(f'<Row N="{esc(nm)}">'
+                    + cell('X', n(cx), f'Width*{n(cx / w_in)}')
+                    + cell('Y', n(cy), f'Height*{n(cy / h_in)}')
+                    + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0')
+                    + '</Row>')
+        meta = '|'.join(str(z.get(k) or '') for k in ('cls', 'group', 'media', 'speed'))
+        users.append(f'<Row N="{esc(nm)}">' + cell('Value', path)
+                     + cell('Prompt', meta) + '</Row>')
+    props = ''.join(
+        f'<Row N="{esc(k)}"><Cell N="Label" V="{esc(k)}"/><Cell N="Value" V="{esc(v)}"/>'
+        f'<Cell N="Type" V="0"/></Row>'
+        for k, v in (('Device', item.get('ref') or item['name']),
+                     ('Face', item.get('face') or ''),
+                     ('Ports', str(len(zones)))) if v)
+    return f'''<Shape ID="{sid}" NameU="{esc(item["name"])}" Name="{esc(item["name"])}" Type="Foreign">
+{cell('PinX', n(w_in / 2))}{cell('PinY', n(h_in / 2))}
+{cell('Width', n(w_in))}{cell('Height', n(h_in))}
+{cell('LocPinX', n(w_in / 2), 'Width*0.5')}{cell('LocPinY', n(h_in / 2), 'Height*0.5')}
+{cell('Angle', '0')}
+{cell('ImgOffsetX', '0')}{cell('ImgOffsetY', '0')}
+{cell('ImgWidth', n(w_in), 'Width*1')}{cell('ImgHeight', n(h_in), 'Height*1')}
+{cell('LineWeight', '0')}{cell('LinePattern', '0')}{cell('FillPattern', '0')}
+<ForeignData ForeignType="Bitmap" CompressionType="PNG"><Rel r:id="{rid}"/></ForeignData>
+<Section N="Connection">{''.join(rows)}</Section>
+<Section N="User">{''.join(users)}</Section>
+<Section N="Property">{props}</Section>
 </Shape>'''
 
 
@@ -197,7 +260,7 @@ def page_xml(shapes, connects):
 
 
 def build(faces, out, cable=True, tint=False, image=True, image_last=True,
-          group=True):
+          group=True, points=False, locked=False):
     """faces: [{'name','png','zones','vb'}] - one page each."""
     pages, page_parts, rels, ctypes, media = [], [], [], [], []
     for i, f in enumerate(faces, 1):
@@ -214,9 +277,23 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True,
             shapes.append(image_shape(sid, img_rid, w_in, h_in))
         sid += 1                      # keep ids stable across the variants
         byid, connects, cable_shape = {}, '', ''
+        if points:
+            # One shape, ports as connection points. Nothing else on the page.
+            f['name'] = f.get('name', 'device')
+            page_parts.append((f'visio/pages/page{i}.xml', page_xml(
+                points_shape(1, img_rid, w_in, h_in, f['zones'], vb, f), '')))
+            media.append((f'visio/media/image{i}.png', f['png']))
+            pages.append(f'''<Page ID="{i - 1}" NameU="{esc(f['name'])}" Name="{esc(f['name'])}"
+ ViewScale="-1" ViewCenterX="{n(w_in / 2)}" ViewCenterY="{n(h_in / 2)}"><PageSheet>
+{cell('PageWidth', n(w_in))}{cell('PageHeight', n(h_in))}
+{cell('ShdwOffsetX', '0.1181')}{cell('ShdwOffsetY', '-0.1181')}
+{cell('PageScale', '1')}{cell('DrawingScale', '1')}
+{cell('DrawingSizeType', '3')}{cell('DrawingScaleType', '0')}
+</PageSheet><Rel r:id="rId{i}"/></Page>''')
+            continue
         for z in f['zones']:
             byid[z.get('path') or z['id']] = (sid, z)
-            shapes.append(port_shape(sid, z, h_in, tint, vb))
+            shapes.append(port_shape(sid, z, h_in, tint, vb, locked))
             sid += 1
         # A cable drawn for us between the first two real ports, so the very
         # first thing we can check is what Visio saved for an attachment it
@@ -347,6 +424,38 @@ def build(faces, out, cable=True, tint=False, image=True, image_last=True,
     return out
 
 
+def round7():
+    """The two answers to "the device is hard to grab and its cables fall off".
+
+    A: one shape, ports as connection points - Visio's own idea of an
+       attachment place, part of the shape rather than a neighbour of it.
+    B: the group kept, but every port locked so it cannot be selected, moved
+       or deleted, leaving the device the only thing there is to grab.
+
+    Built for the S9510, which is known to work, and for the R740xd, where all
+    three complaints were found.
+    """
+    d = json.load(open(os.path.join(HERE, 'out', 'mod', 'modular-zones.json')))
+    ports = json.load(open(PORTS))
+    jobs = {'s9510-28dc': [{'name': f's9510-28dc {face}', 'face': face,
+                            'ref': 'ufispace/s9510-28dc',
+                            'png': open(os.path.join(HERE, 'out', f'{face}.png'), 'rb').read(),
+                            'zones': ports[face], 'vb': ports['viewBox']}
+                           for face in ('front', 'rear')]}
+    for name in ('r740xd',):
+        jobs[name] = [{'name': f'{name} {face}', 'face': face, 'ref': name,
+                       'png': open(os.path.join(HERE, 'out', 'mod', f'{name}.{face}.png'), 'rb').read(),
+                       'zones': f['zones'], 'vb': f['vb']}
+                      for face, f in d['devices'][name].items()]
+    for name, faces in jobs.items():
+        for tag, kw in (('r7a-points', dict(points=True, cable=False)),
+                        ('r7b-locked', dict(locked=True))):
+            out = os.path.join(HERE, 'out', f'{name}.{tag}.vsdx')
+            build(faces, out, **kw)
+            print(f'{name} {tag}: {sum(len(f["zones"]) for f in faces)} zones, '
+                  f'{os.path.getsize(out)} bytes')
+
+
 def modular():
     """Build the modular test devices from browser-extracted geometry.
 
@@ -405,4 +514,5 @@ def main():
 
 if __name__ == '__main__':
     import sys
-    modular() if '--modular' in sys.argv else main()
+    (round7() if '--r7' in sys.argv else
+     modular() if '--modular' in sys.argv else main())
