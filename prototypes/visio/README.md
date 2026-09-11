@@ -308,8 +308,22 @@ One `Group` per device face. Every port and bay an invisible sub-shape with a
 real geometry, a fully transparent fill so it still hit-tests, and locked
 against selection, movement and deletion. No cable of ours.
 
-Result: _pending_ - and with it the last untested promise, whether a port's
-path and media show in the Shape Data window.
+**The 31 line card bays behave**, on a 1333 mm page. Shape Data did not: the
+field LABELS were all there and every value read `0` - except a speed of `100`,
+which is the clue. Visio reads a Shape Data value as a FORMULA, so a bare
+`mgmt` parses as a number and comes out zero while `100` survives by accident.
+
+Some ports also lost their names, showing as `Sheet.15`. Those were the ones
+with a path like `ndc/module/port-1` - a port on a card seated in a bay. **A
+Visio shape name cannot contain a slash.**
+
+### Round 9 — both fixed
+
+- A Shape Data string is written as a quoted formula, `F="&quot;mgmt&quot;"`.
+- A shape is named with dots, `ndc.module.port-1`, while `PortPath` keeps the
+  real `ndc/module/port-1`. The name is for Visio; the path is for us.
+
+Result: _pending_
 
 ### Still open
 

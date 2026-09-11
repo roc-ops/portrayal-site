@@ -103,9 +103,14 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False):
     # device and does not compete with it for the click.
     lock = (cell('LockMoveX', '1') + cell('LockMoveY', '1') + cell('LockDelete', '1')
             + cell('LockSelect', '1')) if locked else ''
+    # A Shape Data value is a FORMULA, and a string one has to be quoted.
+    # Round 8 wrote bare values and Visio read them as numbers: every string
+    # showed as 0 in the Shape Data pane, while a speed of 100 came through
+    # because it happened to be a number.
     rows = ''.join(
         f'<Row N="{esc(nm)}"><Cell N="Label" V="{esc(lab)}"/>'
-        f'<Cell N="Value" V="{esc(val)}"/><Cell N="Type" V="0"/></Row>'
+        f'<Cell N="Value" V="{esc(val)}" F="&quot;{esc(val)}&quot;"/>'
+        f'<Cell N="Type" V="0"/></Row>'
         for nm, lab, val in props)
     # ROUND 4. Transparency in the FILE is a fraction, 0 to 1, whatever the
     # ShapeSheet documentation says about percentages - that is the number the
@@ -123,7 +128,8 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False):
         skin = (cell('FillPattern', '1') + cell('FillForegnd', '#ffffff')
                 + cell('FillForegndTrans', '1') + cell('FillBkgndTrans', '1')
                 + cell('LinePattern', '0') + cell('LineWeight', '0'))
-    return f'''<Shape ID="{sid}" NameU="{esc(path)}" Name="{esc(path)}" Type="Shape">
+    nameu = shapename(path)
+    return f'''<Shape ID="{sid}" NameU="{esc(nameu)}" Name="{esc(nameu)}" Type="Shape">
 {cell('PinX', n(x + w / 2))}{cell('PinY', n(pin_y))}
 {cell('Width', n(w))}{cell('Height', n(h))}
 {cell('LocPinX', n(w / 2), 'Width*0.5')}{cell('LocPinY', n(h / 2), 'Height*0.5')}
@@ -136,6 +142,17 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False):
 <Section N="Property">{rows}</Section>
 <Section N="User"><Row N="PortrayalPath">{cell('Value', path)}</Row></Section>
 </Shape>'''
+
+
+def shapename(path):
+    """A Visio shape name cannot carry a slash.
+
+    Round 8 named each port after its path, and the ones with a path like
+    ndc/module/port-1 - a port on a card seated in a bay - came out as
+    "Sheet.15" while plain names like mgmt survived. The full path stays in
+    Shape Data, which is where a machine should read it from anyway.
+    """
+    return str(path).replace('/', '.')
 
 
 def rowname(path):
@@ -183,7 +200,8 @@ def points_shape(sid, rid, w_in, h_in, zones, vb, item):
         users.append(f'<Row N="{esc(nm)}">' + cell('Value', path)
                      + cell('Prompt', meta) + '</Row>')
     props = ''.join(
-        f'<Row N="{esc(k)}"><Cell N="Label" V="{esc(k)}"/><Cell N="Value" V="{esc(v)}"/>'
+        f'<Row N="{esc(k)}"><Cell N="Label" V="{esc(k)}"/>'
+        f'<Cell N="Value" V="{esc(v)}" F="&quot;{esc(v)}&quot;"/>'
         f'<Cell N="Type" V="0"/></Row>'
         for k, v in (('Device', item.get('ref') or item['name']),
                      ('Face', item.get('face') or ''),
