@@ -80,6 +80,40 @@ thumbnail renderer draws them; OmniGraffle's canvas plausibly does not.
 
 The PNGs are 8 px/mm, a 3520 px wide front.
 
+**Fourth test, 2026-09-11: everything draws.** Diagnostics 1, 2, 3, 4 and 6
+all paint the faceplate on the canvas: PDF and PNG, grouped and ungrouped,
+gzipped and the AWS original. Diagnostics 1 to 3 are the same files that drew
+blank in the third test.
+
+What changed was OmniGraffle, not the files. Every earlier window was titled
+READ ONLY with no licence banner; every window this time was editable, with a
+trial running. So the blank canvases were almost certainly OmniGraffle's
+read-only mode declining to paint embedded images, while still drawing them in
+the sidebar thumbnails.
+
+**That retracts the PDF explanation given for the third test.** Our faceplate
+PDF is far heavier than an AWS icon, but it draws: diagnostic 1 is exactly that
+PDF. So the real export can stay vector. The image registry and the two sizing
+flags stay too, because the working AWS stencil carries them, but neither is
+proven to have been necessary, since every file tested before them was opened
+read-only.
+
+OmniGraffle offered to upgrade the package stencils to its single-file format.
+That is the form a browser can hand over as one download, so it is the one to
+aim for.
+
+## Still to test, in an editable OmniGraffle
+
+| question | file |
+|---|---|
+| the zipped single-file stencil draws its faceplate | `S9510-28DC zipped.gstencil` |
+| a prebuilt line stays attached to two ports when the device moves | `S9510-28DC cabling test.graffle` |
+| a line drawn by hand snaps to an invisible port | drag the front from `S9510-28DC.gstencil` |
+| a port's key/value data survives that drag | same |
+
+**If a file draws blank, check the window title first.** READ ONLY means
+OmniGraffle will not paint images there, whatever the file says.
+
 ## What is in `out/`
 
 | file | form | what opening it answers |
