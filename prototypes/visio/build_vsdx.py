@@ -300,7 +300,8 @@ def page_xml(shapes, connects):
             + '</PageContents>')
 
 
-def one_group(item, rid, sid, tint=False, locked=True, container=False):
+def one_group(item, rid, sid, tint=False, locked=True, container=False,
+              anchor=False):
     """A device or module as ONE group: its faceplate, and its ports behind it.
 
     Returns (xml, next_sid). The group's own space runs 0..Width, 0..Height, so
@@ -318,6 +319,16 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False):
     if item.get('png'):
         kids.append(image_shape(sid, rid, w_in, h_in))   # LAST: Visio paints it in front
         sid += 1
+    # A connection point on the GROUP itself. Visio can glue one shape to
+    # another shape's connection point - not just a connector to a shape - and
+    # a shape glued that way moves when its target moves. If that holds, it is
+    # what "the card is in the slot" means in a file: the card's own point
+    # bound to the slot's, so the chassis carries it.
+    anchor_xml = ('<Section N="Connection"><Row IX="1">'
+                  + cell('X', n(w_in / 2), 'Width*0.5')
+                  + cell('Y', n(h_in / 2), 'Height*0.5')
+                  + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0')
+                  + '</Row></Section>') if anchor else ''
     xml = (f'<Shape ID="{sid}" NameU="{esc(item["name"])}" Name="{esc(item["name"])}" '
            f'Type="Group">'
            + cell('PinX', n(ox + w_in / 2)) + cell('PinY', n(oy + h_in / 2))
@@ -325,11 +336,12 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False):
            + cell('LocPinX', n(w_in / 2), 'Width*0.5')
            + cell('LocPinY', n(h_in / 2), 'Height*0.5')
            + cell('Angle', '0') + cell('SelectMode', '1') + cell('DisplayMode', '2')
+           + anchor_xml
            + f'<Shapes>{"".join(kids)}</Shapes></Shape>')
     return xml, sid + 1
 
 
-def build(pages_in, out, tint=False, locked=True, container=False):
+def build(pages_in, out, tint=False, locked=True, container=False, anchor=False):
     """pages_in: [{'title', 'w', 'h', 'items': [item, ...]}]
 
     An item is {'name', 'png', 'zones', 'vb', 'at': (x_in, y_in)}. A page can
@@ -343,7 +355,8 @@ def build(pages_in, out, tint=False, locked=True, container=False):
             if item.get('png'):
                 imgs.append(item['png'])
                 rid = f'rId{len(imgs)}'
-            xml, sid = one_group(item, rid, sid, tint, locked, container)
+            xml, sid = one_group(item, rid, sid, tint, locked, container,
+                                 anchor and item.get('anchor', True))
             shapes.append(xml)
         page_parts.append((f'visio/pages/page{i}.xml', page_xml(''.join(shapes), '')))
         for k, png in enumerate(imgs, 1):

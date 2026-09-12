@@ -68,7 +68,10 @@ def main():
     page = [{'title': 'DCP-2 and its cards', 'w': page_w, 'h': page_h, 'items': items}]
 
     for tag, kw in (('drag', dict(locked=True)),
-                    ('container', dict(locked=False, container=True))):
+                    ('container', dict(locked=False, container=True)),
+                    # Every card gets a connection point of its own, so it can
+                    # be glued to a slot rather than merely dropped on one.
+                    ('glue', dict(locked=True, anchor=True))):
         out = os.path.join(D, f'modules-{tag}.vsdx')
         bv.build(page, out, **kw)
         print(f'{tag}: {sum(len(i["zones"]) for i in items)} zones over {len(items)} objects, '
