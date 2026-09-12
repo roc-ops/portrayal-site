@@ -125,6 +125,17 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False,
         f'<Cell N="Value" V="{esc(val)}" F="&quot;{esc(val)}&quot;"/>'
         f'<Cell N="Type" V="0"/></Row>'
         for nm, lab, val in props)
+    # A BAY gets two more points, at its left and right edges on the centre
+    # line - rails, in the sense a rack has rails. A module is a 1-D shape and
+    # glues by its two ENDS, so a slot needs two places to hold it, not one.
+    # Type 0 is an inward point, which is what an end may attach to.
+    rails = (f'<Row IX="2">' + cell('X', '0', 'Width*0')
+             + cell('Y', n(h / 2), 'Height*0.5')
+             + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0') + '</Row>'
+             f'<Row IX="3">' + cell('X', n(w), 'Width*1')
+             + cell('Y', n(h / 2), 'Height*0.5')
+             + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0') + '</Row>'
+             ) if z['cls'] == 'bay' else ''
     # ROUND 4. Transparency in the FILE is a fraction, 0 to 1, whatever the
     # ShapeSheet documentation says about percentages - that is the number the
     # user interface shows. Round 3 wrote 100 meaning 100% and got a solid
@@ -151,7 +162,7 @@ def port_shape(sid, z, face_h_in, tint=False, vb=(0, 0, 0, 0), locked=False,
 <Section N="Connection"><Row IX="1">
 {cell('X', n(w / 2), 'Width*0.5')}{cell('Y', n(h / 2), 'Height*0.5')}
 {cell('DirX', '0')}{cell('DirY', '0')}{cell('Type', '0')}
-</Row></Section>
+</Row>{rails}</Section>
 <Section N="Property">{rows}</Section>
 <Section N="User"><Row N="PortrayalPath">{cell('Value', path)}</Row></Section>
 </Shape>'''
@@ -324,6 +335,22 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False,
     # a shape glued that way moves when its target moves. If that holds, it is
     # what "the card is in the slot" means in a file: the card's own point
     # bound to the slot's, so the chassis carries it.
+    if item.get('oned'):
+        # Visio's own rack equipment is a 1-D shape with the artwork inside it,
+        # glued at both ends to the rails. The ends are what attach; the
+        # picture just rides along. Same idea one level down: a card is a 1-D
+        # shape whose ends glue to the two points of a bay, so moving the
+        # chassis moves the card, and <Connects> records which bay holds it.
+        bx, by = ox, oy + h_in / 2
+        ex, ey = ox + w_in, oy + h_in / 2
+        oned_cells = (cell('OneD', '1')
+                      + cell('BeginX', n(bx)) + cell('BeginY', n(by))
+                      + cell('EndX', n(ex)) + cell('EndY', n(ey))
+                      + cell('LocPinX', n(w_in / 2), 'Width*0.5')
+                      + cell('LocPinY', n(h_in / 2), 'Height*0.5'))
+    else:
+        oned_cells = (cell('LocPinX', n(w_in / 2), 'Width*0.5')
+                      + cell('LocPinY', n(h_in / 2), 'Height*0.5'))
     anchor_xml = ('<Section N="Connection"><Row IX="1">'
                   + cell('X', n(w_in / 2), 'Width*0.5')
                   + cell('Y', n(h_in / 2), 'Height*0.5')
@@ -333,8 +360,7 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False,
            f'Type="Group">'
            + cell('PinX', n(ox + w_in / 2)) + cell('PinY', n(oy + h_in / 2))
            + cell('Width', n(w_in)) + cell('Height', n(h_in))
-           + cell('LocPinX', n(w_in / 2), 'Width*0.5')
-           + cell('LocPinY', n(h_in / 2), 'Height*0.5')
+           + oned_cells
            + cell('Angle', '0') + cell('SelectMode', '1') + cell('DisplayMode', '2')
            + anchor_xml
            + f'<Shapes>{"".join(kids)}</Shapes></Shape>')

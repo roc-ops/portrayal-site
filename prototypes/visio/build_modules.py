@@ -34,9 +34,9 @@ D = os.path.join(HERE, 'out')
 GAP = 0.3                                    # inches between things on the page
 
 
-def item(name, png_path, zones, vb, at):
+def item(name, png_path, zones, vb, at, oned=False):
     return {'name': name, 'png': open(png_path, 'rb').read() if png_path else None,
-            'zones': zones, 'vb': vb, 'at': at}
+            'zones': zones, 'vb': vb, 'at': at, 'oned': oned}
 
 
 def main():
@@ -59,11 +59,11 @@ def main():
         item('dcp-2 front', os.path.join(D, 'mod', 'dcp-2.front.png'),
              chassis['zones'], chassis['vb'], (GAP, y_chassis)),
         item('dcp-f-a22', os.path.join(C, 'smartoptics--dcp-f-a22--v1--default.png'),
-             a22['zones'], a22['vb'], (GAP, y_a22)),
+             a22['zones'], a22['vb'], (GAP, y_a22), oned=True),
         item('ppm-ad1-1510', os.path.join(C, 'smartoptics--ppm-ad1-1510--v1--default.png'),
-             ppm['zones'], ppm['vb'], (GAP, y_ppm)),
+             ppm['zones'], ppm['vb'], (GAP, y_ppm), oned=True),
         item('ppm-dummy', os.path.join(C, 'smartoptics--ppm-dummy--v1--default.png'),
-             dummy['zones'], dummy['vb'], (GAP + w(ppm) + GAP, y_ppm)),
+             dummy['zones'], dummy['vb'], (GAP + w(ppm) + GAP, y_ppm), oned=True),
     ]
     page = [{'title': 'DCP-2 and its cards', 'w': page_w, 'h': page_h, 'items': items}]
 
@@ -71,7 +71,9 @@ def main():
                     ('container', dict(locked=False, container=True)),
                     # Every card gets a connection point of its own, so it can
                     # be glued to a slot rather than merely dropped on one.
-                    ('glue', dict(locked=True, anchor=True))):
+                    # The rack mechanism, one level down: cards are 1-D shapes
+                    # and bays have rails. This is the one to test.
+                    ('rails', dict(locked=True))):
         out = os.path.join(D, f'modules-{tag}.vsdx')
         bv.build(page, out, **kw)
         print(f'{tag}: {sum(len(i["zones"]) for i in items)} zones over {len(items)} objects, '

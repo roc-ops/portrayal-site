@@ -355,6 +355,32 @@ click. That trade is the point of the test.
 One page holds the DCP-2 front, the A22, and both PPMs. The A22 carries its own
 two bays, so the nested case is really in there.
 
+**Both variants behaved identically: a card dropped on a slot is parked on it,
+and the chassis does not carry it.** The container declaration did nothing,
+and the research says it never could - containment operates on TOP-LEVEL page
+shapes, and our bays are sub-shapes inside the device group. On top of that,
+containers in Visio for the web need a Visio Plan 1 or 2 licence and do not
+exist at all on free Microsoft 365, so that experiment was dead twice over.
+
+### Round 12 — the rack mechanism, which is what everyone else uses
+
+**Visio's own Rack Diagram uses no containers and no lists.** Rack equipment
+shapes are 1-D SHAPES THAT LOOK 2-D, glued at both ends to connection points on
+the rack rails. Glue is what binds them, so moving the rack moves its contents.
+
+**And that is what the hardware vendors ship.** Cisco's stencil guide: "All
+modular chassis have Microsoft Visio glue points to allow you to snap modules
+into chassis". Juniper says the same; Panduit calls them snap points and nests
+three levels that way. No vendor found uses containers or lists, and none ships
+pre-populated chassis. Cisco also says Visio "does not verify that you are
+placing a module in an appropriate slot" - so nobody has slot-aware logic. The
+convention is glue points, and it is the same mechanism our cables already use.
+
+So: a bay carries two rail points, at its left and right edges on the centre
+line, and a module is a 1-D group whose ends glue to them. If it holds, the
+`<Connects>` rows record WHICH CARD IS IN WHICH BAY - machine-readable, which is
+more than "it looks right".
+
 Result: _pending_
 
 ### Still open
