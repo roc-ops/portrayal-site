@@ -381,7 +381,43 @@ line, and a module is a 1-D group whose ends glue to them. If it holds, the
 `<Connects>` rows record WHICH CARD IS IN WHICH BAY - machine-readable, which is
 more than "it looks right".
 
-Result: _pending_
+**The rails made the card a 1-D shape** - it grows the two endpoint handles -
+but dragging an end onto a bay point binds nothing, and the chassis does not
+carry the card.
+
+**And the pre-seated card landed in the wrong coordinate space.** Written glued
+to the chassis group's first rail pair, it drew near the BOTTOM of the page, at
+about 0.9 in - which is exactly where that rail sits in the CHASSIS GROUP'S OWN
+coordinates. So Visio evaluated `PAR(PNT(Sheet.4!Connections.X1,...))` and
+resolved it inside the group rather than on the page.
+
+That is not a placement bug to fix by shifting numbers: a formula that resolves
+in group space would be wrong when the chassis moves as well.
+
+**The thing that makes this worth one more step:** Visio ITSELF glues correctly
+into a group. A cable the user draws attaches to a port inside the device group
+and follows the device. So Visio writes a formula that reaches into a group
+properly, and we are guessing at its shape. The next move is to read one -
+draw a connector in Visio, save, unzip, and copy what it wrote - rather than
+guess a fifth time.
+
+### Where this stands
+
+Every mechanism Visio has for "this is in that" has now been tried:
+
+| mechanism | result |
+|---|---|
+| containers | inert, and cannot work - containment is top-level only, and the web app needs Plan 1/2 |
+| lists | same top-level constraint |
+| 2-D glue | connection-point to connection-point; drew a line, bound nothing |
+| 1-D rail glue | the rack mechanism, and what the vendors ship; the shape is right, our hand-written binding resolves in the wrong space |
+
+If reading a Visio-written glue formula does not settle it, the honest answer is
+that seating is not something a GENERATOR can express, and the export should
+ship each chassis AS CONFIGURED - cards already drawn into the faceplate, which
+the compiled face does anyway - with every port on every seated card still
+connectable by name. That loses rearranging cards inside Visio and loses
+nothing else.
 
 ### Still open
 
