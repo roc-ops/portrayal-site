@@ -335,6 +335,7 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False,
     # a shape glued that way moves when its target moves. If that holds, it is
     # what "the card is in the slot" means in a file: the card's own point
     # bound to the slot's, so the chassis carries it.
+    seat = item.get('seat')      # (chassis_shape_id, left_ix, right_ix)
     if item.get('oned'):
         # Visio's own rack equipment is a 1-D shape with the artwork inside it,
         # glued at both ends to the rails. The ends are what attach; the
@@ -343,19 +344,46 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False,
         # chassis moves the card, and <Connects> records which bay holds it.
         bx, by = ox, oy + h_in / 2
         ex, ey = ox + w_in, oy + h_in / 2
+        gb = ge = None
+        if seat:
+            cid, li, ri = seat
+            gb = f'PAR(PNT(Sheet.{cid}!Connections.X{li},Sheet.{cid}!Connections.Y{li}))'
+            ge = f'PAR(PNT(Sheet.{cid}!Connections.X{ri},Sheet.{cid}!Connections.Y{ri}))'
         oned_cells = (cell('OneD', '1')
-                      + cell('BeginX', n(bx)) + cell('BeginY', n(by))
-                      + cell('EndX', n(ex)) + cell('EndY', n(ey))
+                      + cell('BeginX', n(bx), gb) + cell('BeginY', n(by), gb)
+                      + cell('EndX', n(ex), ge) + cell('EndY', n(ey), ge)
+                      + (cell('BegTrigger', n(seat[0]), f'_XFTRIGGER(Sheet.{seat[0]}!EventXFMod)')
+                         + cell('EndTrigger', n(seat[0]), f'_XFTRIGGER(Sheet.{seat[0]}!EventXFMod)')
+                         if seat else '')
                       + cell('LocPinX', n(w_in / 2), 'Width*0.5')
                       + cell('LocPinY', n(h_in / 2), 'Height*0.5'))
     else:
         oned_cells = (cell('LocPinX', n(w_in / 2), 'Width*0.5')
                       + cell('LocPinY', n(h_in / 2), 'Height*0.5'))
-    anchor_xml = ('<Section N="Connection"><Row IX="1">'
-                  + cell('X', n(w_in / 2), 'Width*0.5')
-                  + cell('Y', n(h_in / 2), 'Height*0.5')
-                  + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0')
-                  + '</Row></Section>') if anchor else ''
+    rails, rail_ix = [], {}
+    if item.get('rails'):
+        for z in item['zones']:
+            if z['cls'] != 'bay':
+                continue
+            zx = (z['x'] - vb[0]) / MM
+            zy = h_in - (z['y'] - vb[1]) / MM - z['h'] / MM / 1        # top -> bottom
+            mid = zy + z['h'] / MM / 2
+            left, right = zx, zx + z['w'] / MM
+            ix = len(rails) + 1
+            rails.append('<Row IX="%d">' % ix + cell('X', n(left), f'Width*{n(left / w_in)}')
+                         + cell('Y', n(mid), f'Height*{n(mid / h_in)}')
+                         + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0') + '</Row>')
+            rails.append('<Row IX="%d">' % (ix + 1) + cell('X', n(right), f'Width*{n(right / w_in)}')
+                         + cell('Y', n(mid), f'Height*{n(mid / h_in)}')
+                         + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0') + '</Row>')
+            rail_ix[z.get('path') or z['id']] = (ix, ix + 1, left, right, mid)
+    item['rail_ix'] = rail_ix
+    anchor_xml = (f'<Section N="Connection">{"".join(rails)}</Section>' if rails else
+                  ('<Section N="Connection"><Row IX="1">'
+                   + cell('X', n(w_in / 2), 'Width*0.5')
+                   + cell('Y', n(h_in / 2), 'Height*0.5')
+                   + cell('DirX', '0') + cell('DirY', '0') + cell('Type', '0')
+                   + '</Row></Section>') if anchor else '')
     xml = (f'<Shape ID="{sid}" NameU="{esc(item["name"])}" Name="{esc(item["name"])}" '
            f'Type="Group">'
            + cell('PinX', n(ox + w_in / 2)) + cell('PinY', n(oy + h_in / 2))
@@ -375,7 +403,7 @@ def build(pages_in, out, tint=False, locked=True, container=False, anchor=False)
     """
     enc_pages, page_parts, media, page_rels = [], [], [], []
     for i, pg in enumerate(pages_in, 1):
-        shapes, sid, imgs = [], 1, []
+        shapes, sid, imgs, connects = [], 1, [], []
         for item in pg['items']:
             rid = None
             if item.get('png'):
@@ -384,7 +412,16 @@ def build(pages_in, out, tint=False, locked=True, container=False, anchor=False)
             xml, sid = one_group(item, rid, sid, tint, locked, container,
                                  anchor and item.get('anchor', True))
             shapes.append(xml)
-        page_parts.append((f'visio/pages/page{i}.xml', page_xml(''.join(shapes), '')))
+            item['shape_id'] = sid - 1
+            if item.get('seat'):
+                cid, li, ri = item['seat']
+                connects.append(
+                    f'<Connect FromSheet="{sid - 1}" FromCell="BeginX" FromPart="9" '
+                    f'ToSheet="{cid}" ToCell="Connections.X{li}" ToPart="{99 + li}"/>'
+                    f'<Connect FromSheet="{sid - 1}" FromCell="EndX" FromPart="12" '
+                    f'ToSheet="{cid}" ToCell="Connections.X{ri}" ToPart="{99 + ri}"/>')
+        page_parts.append((f'visio/pages/page{i}.xml',
+                           page_xml(''.join(shapes), ''.join(connects))))
         for k, png in enumerate(imgs, 1):
             media.append((f'visio/media/p{i}image{k}.png', png))
         page_rels.append(''.join(

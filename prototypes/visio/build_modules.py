@@ -67,6 +67,34 @@ def main():
     ]
     page = [{'title': 'DCP-2 and its cards', 'w': page_w, 'h': page_h, 'items': items}]
 
+    # SEATED: the same page, but with the A22 already glued into slot-1 the way
+    # Visio writes it itself - endpoint formulas plus the <Connect> rows. This
+    # takes the gesture out of the test: nothing to drag, just move the chassis
+    # and see whether the card comes. It also puts the rail points on the
+    # CHASSIS GROUP, a top-level shape, rather than on a bay sub-shape inside
+    # it, because a page-level card referencing a point inside a group is what
+    # broke the round 8 cable.
+    #
+    # The chassis group's id is deterministic: one per zone, one for the
+    # faceplate, then the group itself.
+    chassis_id = len(chassis['zones']) + 2
+    bays = [z for z in chassis['zones'] if z['cls'] == 'bay']
+    slot = bays[0]
+    sx = GAP + (slot['x'] - chassis['vb'][0]) / bv.MM
+    sy = y_chassis + h(chassis) - (slot['y'] - chassis['vb'][1]) / bv.MM - slot['h'] / bv.MM
+    seated_items = [
+        {**items[0], 'rails': True},
+        {**item('dcp-f-a22', os.path.join(C, 'smartoptics--dcp-f-a22--v1--default.png'),
+                a22['zones'], a22['vb'], (sx, sy), oned=True),
+         'seat': (chassis_id, 1, 2)},
+        items[2], items[3],
+    ]
+    seated = [{'title': 'A22 seated in slot-1', 'w': page_w, 'h': page_h,
+               'items': seated_items}]
+    bv.build(seated, os.path.join(D, 'modules-seated.vsdx'), locked=True)
+    print(f'seated: A22 glued to chassis shape {chassis_id} rails 1/2, '
+          f'slot at ({sx:.2f}, {sy:.2f}) in')
+
     for tag, kw in (('drag', dict(locked=True)),
                     ('container', dict(locked=False, container=True)),
                     # Every card gets a connection point of its own, so it can
