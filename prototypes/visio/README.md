@@ -401,6 +401,35 @@ properly, and we are guessing at its shape. The next move is to read one -
 draw a connector in Visio, save, unzip, and copy what it wrote - rather than
 guess a fifth time.
 
+### What the vendors actually ship — read from their own files
+
+We hold vendor Visio stencils in the intake, including **Smartoptics' own**, for
+the very devices this prototype has been testing with. Read directly (copied out
+of the live tree, never modified in place):
+
+**`DCP-F_v260105.vssx` - 63 masters, among them DCP-2, A22, PPM-1510.** Every
+one is a SINGLE `Type='Foreign'` shape - an image - carrying a handful of
+connection points. No groups. No 1-D shapes. No containers. No slot mechanism of
+any kind. The DCP-2 chassis has TWO connection points; the A22 has 11; the PPM
+has 7, and they are for cables.
+
+**`FHD Rack Mount Enclosures.vssx`** - enclosures and adapter panels, the
+nesting case - is starker still: grouped vector artwork, no 1-D, no containers,
+and ZERO connection points. You cannot even cable to a named port on it.
+
+**So seating is not a thing the vendors implement.** With the vendor's own
+stencil you drag the A22 image on top of the chassis image and line it up by
+eye. Cisco's guide already said Visio "does not verify that you are placing a
+module in an appropriate slot"; these files show the convention is weaker than
+that - there is usually nothing to verify.
+
+Two incidental findings from reading real Visio output, both of which matter for
+anything we parse or generate:
+
+- Real Visio files quote attributes with SINGLE quotes.
+- Connection rows are `<Row T='Connection' IX='0'>` - **zero-based**, not the
+  one-based numbering the reference implies - with `Type='2'`, inward+outward.
+
 ### Where this stands
 
 Every mechanism Visio has for "this is in that" has now been tried:
@@ -412,8 +441,9 @@ Every mechanism Visio has for "this is in that" has now been tried:
 | 2-D glue | connection-point to connection-point; drew a line, bound nothing |
 | 1-D rail glue | the rack mechanism, and what the vendors ship; the shape is right, our hand-written binding resolves in the wrong space |
 
-If reading a Visio-written glue formula does not settle it, the honest answer is
-that seating is not something a GENERATOR can express, and the export should
+The vendor files above settle it from the other direction: seating is not
+something the INDUSTRY expresses either. The honest answer is that the export
+should
 ship each chassis AS CONFIGURED - cards already drawn into the faceplate, which
 the compiled face does anyway - with every port on every seated card still
 connectable by name. That loses rearranging cards inside Visio and loses
