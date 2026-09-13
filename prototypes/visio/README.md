@@ -417,7 +417,15 @@ has 7, and they are for cables.
 nesting case - is starker still: grouped vector artwork, no 1-D, no containers,
 and ZERO connection points. You cannot even cable to a named port on it.
 
-**So seating is not a thing the vendors implement.** With the vendor's own
+**But not every vendor is Smartoptics.** Cisco DOES implement snapping, and a
+Visio MVP who inspected their stencil says how: "The module shape is 1
+one-dimensional shape, even though it looks like two-dimensional." Their guide
+gives the gesture literally - drag the module's left green endpoint onto a blue
+connection point on the chassis, then the right one onto another. Juniper ships
+the same design and NetZoom claims it too. So the mechanism is real and in use;
+Smartoptics and FHD simply do not bother with it.
+
+**So seating is not a thing SOME vendors implement.** With the vendor's own
 stencil you drag the A22 image on top of the chassis image and line it up by
 eye. Cisco's guide already said Visio "does not verify that you are placing a
 module in an appropriate slot"; these files show the convention is weaker than
@@ -441,13 +449,35 @@ Every mechanism Visio has for "this is in that" has now been tried:
 | 2-D glue | connection-point to connection-point; drew a line, bound nothing |
 | 1-D rail glue | the rack mechanism, and what the vendors ship; the shape is right, our hand-written binding resolves in the wrong space |
 
-The vendor files above settle it from the other direction: seating is not
-something the INDUSTRY expresses either. The honest answer is that the export
-should
+If seating cannot be made to work, the export should
 ship each chassis AS CONFIGURED - cards already drawn into the faceplate, which
 the compiled face does anyway - with every port on every seated card still
 connectable by name. That loses rearranging cards inside Visio and loses
 nothing else.
+
+### Round 14 — PAR was the wrong function
+
+`PAR()` does not convert between coordinate spaces. It assumes the point handed
+to it is ALREADY in the destination space - which is why every hand-written glue
+formula since round 8 resolved wherever the referenced shape's own local space
+happened to be. The right function is **`LOCTOPAR()`**, which takes the source
+and destination spaces explicitly, each via that shape's `EventXFMod` cell as a
+handle on its transform, and which Microsoft documents as working "even when the
+source and destination shapes are within groups".
+
+    BeginX  F=PNTX(LOCTOPAR(PNT(Sheet.4!Connections.X1,Sheet.4!Connections.Y1),
+                            Sheet.4!EventXFMod,EventXFMod))
+
+The chassis group also now carries `IsSnapTarget`, the "snap to member shapes"
+behaviour that lets a shape on the page glue to a point belonging to something
+inside a group.
+
+Known limits to watch if this works, all documented by the Visio team: 2-D glue
+breaks on resize, chains past ~10 shapes used to break, and interactive glue
+depends on a drag bitmap that is not generated above 25 sub-shapes - which our
+chassis groups exceed. 1-D endpoint glue, the Cisco mechanism, avoids all three.
+
+Result: _pending_
 
 ### Still open
 

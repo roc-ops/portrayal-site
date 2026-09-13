@@ -344,14 +344,24 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False,
         # chassis moves the card, and <Connects> records which bay holds it.
         bx, by = ox, oy + h_in / 2
         ex, ey = ox + w_in, oy + h_in / 2
-        gb = ge = None
+        gb = gbx = gby = ge = gex = gey = None
         if seat:
             cid, li, ri = seat
-            gb = f'PAR(PNT(Sheet.{cid}!Connections.X{li},Sheet.{cid}!Connections.Y{li}))'
-            ge = f'PAR(PNT(Sheet.{cid}!Connections.X{ri},Sheet.{cid}!Connections.Y{ri}))'
+            # PAR() was the wrong function, and it is why the seated card drew
+            # at the chassis GROUP's local coordinates instead of on the page.
+            # PAR does not convert between coordinate spaces at all - it assumes
+            # the point is already in the destination space. LOCTOPAR takes both
+            # spaces explicitly, via each shape's EventXFMod cell as the handle
+            # on its transform, and is documented to work "even when the source
+            # and destination shapes are within groups".
+            pt = lambda ix: (f'PNT(Sheet.{cid}!Connections.X{ix},'
+                             f'Sheet.{cid}!Connections.Y{ix})')
+            conv = lambda ix: f'LOCTOPAR({pt(ix)},Sheet.{cid}!EventXFMod,EventXFMod)'
+            gbx, gby = f'PNTX({conv(li)})', f'PNTY({conv(li)})'
+            gex, gey = f'PNTX({conv(ri)})', f'PNTY({conv(ri)})'
         oned_cells = (cell('OneD', '1')
-                      + cell('BeginX', n(bx), gb) + cell('BeginY', n(by), gb)
-                      + cell('EndX', n(ex), ge) + cell('EndY', n(ey), ge)
+                      + cell('BeginX', n(bx), gbx) + cell('BeginY', n(by), gby)
+                      + cell('EndX', n(ex), gex) + cell('EndY', n(ey), gey)
                       + (cell('BegTrigger', n(seat[0]), f'_XFTRIGGER(Sheet.{seat[0]}!EventXFMod)')
                          + cell('EndTrigger', n(seat[0]), f'_XFTRIGGER(Sheet.{seat[0]}!EventXFMod)')
                          if seat else '')
@@ -390,6 +400,9 @@ def one_group(item, rid, sid, tint=False, locked=True, container=False,
            + cell('Width', n(w_in)) + cell('Height', n(h_in))
            + oned_cells
            + cell('Angle', '0') + cell('SelectMode', '1') + cell('DisplayMode', '2')
+           # "Snap to member shapes" - what lets a shape on the page glue to a
+           # connection point belonging to something inside this group.
+           + cell('IsSnapTarget', '1')
            + anchor_xml
            + f'<Shapes>{"".join(kids)}</Shapes></Shape>')
     return xml, sid + 1
