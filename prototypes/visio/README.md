@@ -477,11 +477,43 @@ breaks on resize, chains past ~10 shapes used to break, and interactive glue
 depends on a drag bitmap that is not generated above 25 sub-shapes - which our
 chassis groups exceed. 1-D endpoint glue, the Cisco mechanism, avoids all three.
 
-Result: _pending_
+**Still wrong, and this is where the chase ends.** In Visio for the web the
+seated card again draws near the bottom of the page - about where the chassis
+group's rail sits in the GROUP's own coordinates. So the web renderer evaluated
+`LOCTOPAR` and still did not cross the group boundary. It did not fall back to
+the literal value we wrote either, which would have put the card in the slot.
+
+Desktop Visio may well behave differently: the formula now matches what
+Microsoft documents and what a Visio MVP describes. We cannot test that - the
+only Visio available here is the web app, where seating is unreachable three
+ways over:
+
+- containers need a Visio Plan 1 or 2 licence and do not exist on free M365;
+- dragging a 1-D card's endpoint onto a bay point binds nothing;
+- and a written-in glue formula does not resolve across a group.
+
+The drag limit is worth recording even for desktop: interactive 2-D glue needs a
+drag bitmap Visio will not generate above 25 sub-shapes, and our chassis groups
+are far past that. So even where seating works, seating BY HAND may not.
+
+## Conclusion: ship the drawing, seat on our side
+
+The drawing format is finished and every promise in it is tested in real Visio:
+the package opens with no repair, faceplates draw, every port and bay is an
+individually gluable target, cables stay attached when a device moves, modular
+chassis work including ports on cards seated in bays, and each port carries its
+path, class, group, media and speed as Shape Data.
+
+What is NOT in it is seating a card by dragging. The answer to that is to seat
+on OUR side, where the model already does it properly: it knows what a bay
+accepts, what is in it, and what that implies. A chassis exports AS CONFIGURED,
+with its cards drawn into the faceplate, and every port on every seated card
+remains gluable by name. That is more than either vendor stencil we hold offers,
+and more than Cisco's, which snaps cards but - in their own words - "does not
+verify that you are placing a module in an appropriate slot".
 
 ### Still open
 
-- Shape Data: not yet confirmed visible with the right values in Visio.
 - The stencil (`.vssx`). Everything above is a DRAWING. A stencil is the same
   shapes in a different container, and its minimal part set is the one thing no
   authoritative source describes.
