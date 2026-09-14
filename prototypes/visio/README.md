@@ -512,6 +512,34 @@ remains gluable by name. That is more than either vendor stencil we hold offers,
 and more than Cisco's, which snaps cards but - in their own words - "does not
 verify that you are placing a module in an appropriate slot".
 
+### The stencil — `out/portrayal.vssx`
+
+The container we actually wanted, and the part set is no longer a guess: the
+vendor stencils in the intake are the ground truth, and `build_vssx.py` mirrors
+what they contain.
+
+    [Content_Types].xml       document.xml is stencil.main+xml, not drawing
+    visio/masters/masters.xml one <Master> each - name, size, a Rel
+    visio/masters/masterN.xml <MasterContents> holding the shape
+    visio/pages/pages.xml     one page, SELF-CONTAINED - no page part behind it
+    visio/windows.xml         empty
+
+9 masters: the S9510 front and rear, the DCP-2 and R740xd both faces, and the
+A22 and both PPMs as their own draggable items. Each master is the shape the
+drawing already proved - a group holding the faceplate with an invisible locked
+sub-shape per port and bay, named, carrying its data.
+
+Checked before sending: 38 parts, every one well-formed and content-typed, no
+broken relationships, `stencil.main+xml` as the document type.
+
+Icons are left to Visio (`IconUpdate='0'`, no `<Icon>` element) rather than
+hand-encoding an .ico per master. If the stencil pane shows blank tiles, that is
+the thing to revisit.
+
+Note the modules here are ordinary 2-D groups, not the 1-D shapes Cisco uses for
+snapping. Seating was settled separately: we seat on our side. If a 1-D module
+master ever becomes worth testing, `one_group(..., oned=True)` already builds one.
+
 ### Still open
 
 - The stencil (`.vssx`). Everything above is a DRAWING. A stencil is the same
