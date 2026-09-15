@@ -17,7 +17,7 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
          setPulled as setReliefPulled, applyPulled, nodeTools } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
-import { applyOverrides, nestedBays } from '../vendor/swap.js';
+import { applyAllOverrides } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 
 export const RU = 44.45;            // EIA-310 rack unit
@@ -443,17 +443,21 @@ export function createRackScene(container, opts = {}) {
       try { text = await svgSource(faceUrl(entry, view), relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
-      // TWO PASSES, AND THE SECOND HAS TO LOOK AGAIN. Which nested bays exist,
-      // and where they are, is a property of the carrier CURRENTLY seated, so
-      // deriving them before the device pass reads them off the carrier that
-      // pass is about to replace. An override map that swaps a carrier AND
-      // something under it would seat the nested module at the old carrier's
-      // `at`, or miss a bay the new carrier brings with it.
-      let n = await applyOverrides(doc.documentElement, bays, ov, loadSkin);
-      const nested = nestedBays(doc.documentElement, byRef);
-      if (nested.length)
-        n += await applyOverrides(doc.documentElement, nested, ov, loadSkin);
-      if (n) putFace(entry, view, new XMLSerializer().serializeToString(doc));
+      // EVERY LEVEL, by following the bay frontier down - see swap.js's
+      // `applyAllOverrides` for why a fixed number of passes is the wrong
+      // shape. This used to be two passes here, which covered the two levels
+      // the library has today and would have skipped a third silently: the
+      // elevation would swap and this rack would not.
+      const {applied, dropped} = await applyAllOverrides(
+        doc.documentElement, bays, ov, loadSkin, byRef);
+      // The same divergence the walk exists to prevent, so it is said out loud
+      // rather than swallowed. Reaching this means the drawing nests deeper
+      // than the walk goes, which render.py cannot produce.
+      if (dropped.length)
+        console.warn(`[portrayal] ${entry.ref}.${view}: ${dropped.length} nested `
+                     + `bay override(s) never applied - the drawing nests deeper `
+                     + `than the walk goes, so 2D and 3D will disagree`, dropped);
+      if (applied) putFace(entry, view, new XMLSerializer().serializeToString(doc));
     }
   }
 
