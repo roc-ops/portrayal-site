@@ -1,0 +1,589 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.0mm" height="44.0mm" viewBox="0 0 438.0 44.0" data-device="port-extender" data-view="front" data-config="default" data-switching-capacity="2.0 Tbps" data-latency-overhead-ns="500" data-packet-buffer="32 MB" data-input="ac-or-dc" data-power-max-w="500" data-power-typical-w="350" data-psu-redundancy="1+1 hot-swappable" data-fan-redundancy="3+1" data-airflow="front-to-back or back-to-front" data-operating-temp-c="0 to 45" data-operating-humidity="5% to 90% non-condensing" data-mtbf-hours="150000" data-cpu="Intel x86, up to 8 cores" data-memory="8-32 GB ECC DDR4" data-storage="configurable M.2 SSD" data-bmc="integrated BMC plane, IPMI 2.0 compliant" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/qsfp28-cage@'] .state-link-100g { --led-color: #3b82f6; }
+    g[data-ref^='common/qsfp28-cage@'] .state-link-10g { --led-color: #22c55e; }
+    g[data-ref^='common/qsfp28-cage@'] .state-link-25g { --led-color: #f5f7fa; }
+    g[data-ref^='common/qsfp28-cage@'] .state-link-40g { --led-color: #f97316; }
+</style>
+  <metadata>{"config":"default","device":"MaiaEdge Port Extender","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/qsfp28-cage@3":"3.2.0","std/qsfp-ganged@1":"1.4.0","std/sfp-ganged@1":"1.1.0"},"source":{"attrs":{"environmental":{"mtbf-hours":150000,"operating-humidity":"5% to 90% non-condensing","operating-temp-c":"0 to 45"},"lifecycle":{"eol":"none-announced"},"performance":{"latency-overhead-ns":500,"packet-buffer":"32 MB","switching-capacity":"2.0 Tbps"},"platform":{"bmc":"integrated BMC plane, IPMI 2.0 compliant","cpu":"Intel x86, up to 8 cores","memory":"8-32 GB ECC DDR4","storage":"configurable M.2 SSD"},"power":{"input":"ac-or-dc","power-max-w":500,"power-typical-w":350,"psu-redundancy":"1+1 hot-swappable"},"thermal":{"airflow":"front-to-back or back-to-front","fan-redundancy":"3+1"}},"chassis":{"color":"#1b1e21","depth":520.0,"height":44.0,"ru":1,"width":438.0},"description":"MaiaEdge Port Extender - a 1RU switch sold to expand a Path Border Controller's physical port count. 48 SFP28 tenant ports in two rows and 8 QSFP28 fabric uplinks on the front; 1+1 supplies and a 3+1 fan tray behind. Its port roles are configured from the MaiaEdge portal rather than on the box, which is what distinguishes it from the third-party switches that can stand in for it.","format":1,"gaps":[{"note":"THE REAR'S INVENTORY IS KNOWN AND NOTHING PLACES IT, so the face draws the envelope and nothing else. The datasheet counts two hot-swappable supplies and a 3+1 fan tray, and lists the management interfaces as \"1 x Rear CPU/BMC Shared Ethernet (RJ45) - 1 x Serial Console (RJ45) - 1 x USB Type-A\"; the product documentation puts the management jack \"on the rear of the Port Extender (center of the device, at the top)\". That is an inventory and one coarse position, and drawing a rear from it would be inventing five or six coordinates to carry one. The front render shows no jacks at all, which is why all three management interfaces are taken to be back there.","reason":"needs-photo","scope":["rear"],"wanted":"a photograph of the rear, or a mechanical drawing of it.","what":"rear-face-unmodelled"},{"note":"EVERY POSITION ON THE FRONT FACE IS ESTIMATED. The only image held is a marketing render that is not orthographic - the lid is visible in it, so the face is foreshortened vertically and no vertical figure may be taken from it. What the render does settle is the ARRANGEMENT (see provenance `arrangement`), and the horizontal pitch it implies agrees with the standard part to 2%. The row heights, the row gap, the margins and the block gaps are all chosen.","reason":"needs-drawing","scope":["front"],"wanted":"a face-on photograph or a mechanical drawing. Either settles the whole face in one step.","what":"front-face-positions"},{"note":"A ROW OF SMALL ROUND FEATURES RUNS ABOVE AND BELOW THE TENANT PORTS, one per column in each row, and they are NOT DRAWN because nothing held can say whether they are lamps or fasteners. On an 800 px render an unlit indicator and a panel screw are the same dark dot. The uplink ports' lamps ARE drawn, and the difference is the evidence: those are clustered in fours per port and read clearly as the four-lane band the cage part carries. Guessing 48 indicators into existence, or 48 screws, would be drawing something nobody can check.","reason":"needs-photo","scope":["front"],"wanted":"a face-on photograph, or an LED table.","what":"tenant-port-lamps"},{"note":"The port numbers are PRINTED between the two rows - the render shows a legend per column - and they are not drawn, because the render cannot resolve their format. Whether a column is labelled with both numbers, or one above the other, or on alternating sides, is not readable at 800 px. The NUMBERING is modelled (see provenance `numbering`); the artwork that carries it is not.","reason":"needs-photo","scope":["front"],"wanted":"a face-on photograph square enough to read the legends.","what":"port-numerals"},{"note":"The faceplate carries the word MaiaEdge at its top left, and that is drawn. The stylised angular glyph beside it is not - the same decision the PBC-2000's face records, for the same reason: approximating a company's mark from a render is drawing something nobody can check, and a wrong logo is worse than an absent one.","reason":"needs-drawing","scope":["front"],"wanted":"the MaiaEdge mark as vector art.","what":"wordmark-logo-mark"},{"note":"These four faces draw the chassis envelope and nothing else. The envelope is not a guess - 44 x 438 x 520 is dimensioned on page 3 of the datasheet - but no source held shows what is on any of them.","reason":"needs-photo","scope":["top","bottom","left","right"],"wanted":"photographs of the lid, the underside and either flank.","what":"envelope-faces-undetailed"}],"groups":{"furniture":{"index-origin":1,"role":"furniture","term":"Part"},"ports":{"description":"A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.","index-origin":1,"mixed":"48 SFP28 tenant ports and 8 QSFP28 fabric uplinks, numbered 1-56 in one space. The media differ and the numbering does not, so each port carries its own media through the part it is placed from rather than from the group.","role":"traffic","term":"Port"}},"kind":"device","manufacturer":"MaiaEdge","maturity":"modelled","model":"Port Extender","name":"port-extender","profile":"networking","provenance":{"arrangement":"photo-measured (COUNT ONLY) from the product render. The SFP28 field is TWO ROWS of 24 columns, ganged in three blocks of eight; the QSFP28 field is two rows of four, in one block at the right-hand end, with visibly wider cages. Counted at 6x on the render, and the counts close against the datasheet exactly - 3 x 8 x 2 = 48 and 4 x 2 = 8. Nothing else comes from that image: see `positions`.","lint-l39":"EIGHT L39 WARNINGS ON THIS DEVICE ARE roc-ops/Portrayal#248, NOT A DEFECT HERE. The rule checks that a part sits centred in its own opening; common/qsfp28-cage@3's aperture deliberately does not, because the lamp band occupies the top 3.4 mm of the part and the hole sits under it. The cutouts here are the component's own declared aperture, offset (0.25, 4.2) into it, which is what `cutouts` provenance requires. Do not \"fix\" them by centring - that would punch the hole in the wrong place to quiet a rule that is itself wrong.","numbering":"derived, AND THE DOCUMENTATION CORROBORATES EVERY NUMBER IT NAMES. Ports run column-major, top then bottom, so column N carries ports 2N-1 and 2N - the arrangement std/sfp-ganged's other two-row users already draw. That puts column 21 at 41/42, column 24 at 47/48, and the four uplink columns at 49/50, 51/52, 53/54 and 55/56. prod.maiaedge.io/docs names ports 41, 42, 43, 44 and 48 among the tenant ports and 51, 52, 53, 54, 55 and 56 among the uplinks, and cables a PBC's two 100G interfaces to 51 and 52 - one uplink COLUMN. Every number it uses falls where this scheme puts it. The scheme is still derived rather than read off the metal.","pitch":"registry - 14.25 for the tenant ports (std/sfp-ganged@1, SFF-8433 port pitch) and 19.0 for the uplinks (common/qsfp28-cage@3's measured ganged pitch). The blocks then fill the face exactly: 4.0 margin + 3 x 114.0 + two 3.0 gaps + a 6.0 gap + 76.0 + 4.0 margin = 438.0. That the arithmetic closes on the datasheet width is a check, not a measurement - the margins and gaps were chosen to make it close.","port-ids":"EVERY PORT IS `port-N`, INCLUDING THE EIGHT UPLINKS, and that is not cosmetic. dcim_export treats a placement as an interface only when its id starts with `port-`; the first draft called the uplinks `uplink-49`..`uplink-56` and the NetBox and Nautobot exports came out with 48 interfaces instead of 56, silently. The uplink's ROLE is carried by the part it is placed from (common/qsfp28-cage@3, media qsfp28) and by `numbering` below, which is where a role belongs - the id carries the number the vendor addresses it by.","ports":"datasheet page 3 - \"Tenant Ports: 48 x SFP28 10GbE / 25GbE\" and \"Fabric Uplink Ports: 8 x QSFP28 100GbE\". 48 + 8 = 56, WHICH RECONCILES THE TWO PORT COUNTS IN CIRCULATION: the marketing copy says \"48 ports\" and the product documentation calls it \"a 56-port switch\", and both are right.","positions":"ESTIMATED, AND THE WORD IS EXACT. The only image of this face is a marketing render, and it is not orthographic - the lid is visible, so the face is foreshortened vertically. Its HORIZONTAL proportions are usable and were checked: the cage pitch reads 22.2 px against a faceplate scaled on the datasheet's 438 mm, which is 14.0 mm against std/sfp-ganged's measured 14.25 - 2% out, so the standard pitch is what is placed rather than the reading. NOTHING VERTICAL COMES FROM THE RENDER. The two rows are centred on the face and the row gap is chosen, not measured.","power":"datasheet page 3 - \"1+1 Redundant, Hot-Swappable PSUs (100-240VAC or 180-300VDC auto-ranging)\" and \"&lt; 500W Maximum (Typical &lt; 350W at 25C)\".","size":"datasheet - MaiaEdge-Port-Extender-Datasheet-v1.pdf page 3, \"Dimensions (H x W x D) 44 mm x 438 mm x 520 mm (1U EIA Rackmount)\". NOT the PBC-2000's envelope: that box is 41.27 x 437.90 x 291.08, so this one is taller and 229 mm deeper, and nothing may be borrowed between them.","thermal":"datasheet page 3 - \"3+1 Redundant Fans; Front-to-Back and Back-to-Front configurations available\". BOTH directions are offered, so no airflow is asserted: the same hole is an intake on one SKU and an exhaust on another.","uplink-lamps":"photo-measured (count only) - FOUR lamps per uplink port, above the top row and below the bottom, clearly clustered in fours at 9x on the render. That is what common/qsfp28-cage@3 draws, so the part is right here - unlike on the PBC-2000, where the same band had to be dropped because that chassis has none."},"version":"0.1.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"bottom-envelope","kind":"envelope","size":[438.0,520.0]}]},"size":{"h":520.0,"w":438.0}},"front":{"components":{"placements":[{"at":[-14.0,-1.4],"group":"furniture","id":"ear-left","optional":"ears","ref":"common/rack-ear@1","rel-pos":1,"skin":"left"},{"at":[438.0,-1.4],"group":"furniture","id":"ear-right","optional":"ears","ref":"common/rack-ear@1","rel-pos":2,"skin":"right"},{"at":[4.0,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-1","ref":"std/sfp-ganged@1","rel-pos":1,"rotate":180},{"at":[4.0,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-2","ref":"std/sfp-ganged@1","rel-pos":2},{"at":[18.25,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-3","ref":"std/sfp-ganged@1","rel-pos":3,"rotate":180},{"at":[18.25,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-4","ref":"std/sfp-ganged@1","rel-pos":4},{"at":[32.5,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-5","ref":"std/sfp-ganged@1","rel-pos":5,"rotate":180},{"at":[32.5,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-6","ref":"std/sfp-ganged@1","rel-pos":6},{"at":[46.75,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-7","ref":"std/sfp-ganged@1","rel-pos":7,"rotate":180},{"at":[46.75,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-8","ref":"std/sfp-ganged@1","rel-pos":8},{"at":[61.0,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-9","ref":"std/sfp-ganged@1","rel-pos":9,"rotate":180},{"at":[61.0,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-10","ref":"std/sfp-ganged@1","rel-pos":10},{"at":[75.25,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-11","ref":"std/sfp-ganged@1","rel-pos":11,"rotate":180},{"at":[75.25,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-12","ref":"std/sfp-ganged@1","rel-pos":12},{"at":[89.5,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-13","ref":"std/sfp-ganged@1","rel-pos":13,"rotate":180},{"at":[89.5,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-14","ref":"std/sfp-ganged@1","rel-pos":14},{"at":[103.75,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-15","ref":"std/sfp-ganged@1","rel-pos":15,"rotate":180},{"at":[103.75,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-16","ref":"std/sfp-ganged@1","rel-pos":16},{"at":[121.0,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-17","ref":"std/sfp-ganged@1","rel-pos":17,"rotate":180},{"at":[121.0,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-18","ref":"std/sfp-ganged@1","rel-pos":18},{"at":[135.25,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-19","ref":"std/sfp-ganged@1","rel-pos":19,"rotate":180},{"at":[135.25,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-20","ref":"std/sfp-ganged@1","rel-pos":20},{"at":[149.5,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-21","ref":"std/sfp-ganged@1","rel-pos":21,"rotate":180},{"at":[149.5,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-22","ref":"std/sfp-ganged@1","rel-pos":22},{"at":[163.75,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-23","ref":"std/sfp-ganged@1","rel-pos":23,"rotate":180},{"at":[163.75,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-24","ref":"std/sfp-ganged@1","rel-pos":24},{"at":[178.0,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-25","ref":"std/sfp-ganged@1","rel-pos":25,"rotate":180},{"at":[178.0,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-26","ref":"std/sfp-ganged@1","rel-pos":26},{"at":[192.25,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-27","ref":"std/sfp-ganged@1","rel-pos":27,"rotate":180},{"at":[192.25,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-28","ref":"std/sfp-ganged@1","rel-pos":28},{"at":[206.5,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-29","ref":"std/sfp-ganged@1","rel-pos":29,"rotate":180},{"at":[206.5,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-30","ref":"std/sfp-ganged@1","rel-pos":30},{"at":[220.75,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-31","ref":"std/sfp-ganged@1","rel-pos":31,"rotate":180},{"at":[220.75,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-32","ref":"std/sfp-ganged@1","rel-pos":32},{"at":[238.0,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-33","ref":"std/sfp-ganged@1","rel-pos":33,"rotate":180},{"at":[238.0,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-34","ref":"std/sfp-ganged@1","rel-pos":34},{"at":[252.25,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-35","ref":"std/sfp-ganged@1","rel-pos":35,"rotate":180},{"at":[252.25,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-36","ref":"std/sfp-ganged@1","rel-pos":36},{"at":[266.5,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-37","ref":"std/sfp-ganged@1","rel-pos":37,"rotate":180},{"at":[266.5,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-38","ref":"std/sfp-ganged@1","rel-pos":38},{"at":[280.75,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-39","ref":"std/sfp-ganged@1","rel-pos":39,"rotate":180},{"at":[280.75,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-40","ref":"std/sfp-ganged@1","rel-pos":40},{"at":[295.0,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-41","ref":"std/sfp-ganged@1","rel-pos":41,"rotate":180},{"at":[295.0,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-42","ref":"std/sfp-ganged@1","rel-pos":42},{"at":[309.25,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-43","ref":"std/sfp-ganged@1","rel-pos":43,"rotate":180},{"at":[309.25,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-44","ref":"std/sfp-ganged@1","rel-pos":44},{"at":[323.5,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-45","ref":"std/sfp-ganged@1","rel-pos":45,"rotate":180},{"at":[323.5,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-46","ref":"std/sfp-ganged@1","rel-pos":46},{"at":[337.75,8.6],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-47","ref":"std/sfp-ganged@1","rel-pos":47,"rotate":180},{"at":[337.75,25.0],"attrs":{"media":"sfp28","speed":"25g"},"group":"ports","id":"port-48","ref":"std/sfp-ganged@1","rel-pos":48},{"at":[358.0,6.55],"group":"ports","id":"port-49","ref":"common/qsfp28-cage@3","rel-pos":49},{"at":[358.0,22.95],"group":"ports","id":"port-50","ref":"common/qsfp28-cage@3","rel-pos":50,"rotate":180},{"at":[377.0,6.55],"group":"ports","id":"port-51","ref":"common/qsfp28-cage@3","rel-pos":51},{"at":[377.0,22.95],"group":"ports","id":"port-52","ref":"common/qsfp28-cage@3","rel-pos":52,"rotate":180},{"at":[396.0,6.55],"group":"ports","id":"port-53","ref":"common/qsfp28-cage@3","rel-pos":53},{"at":[396.0,22.95],"group":"ports","id":"port-54","ref":"common/qsfp28-cage@3","rel-pos":54,"rotate":180},{"at":[415.0,6.55],"group":"ports","id":"port-55","ref":"common/qsfp28-cage@3","rel-pos":55},{"at":[415.0,22.95],"group":"ports","id":"port-56","ref":"common/qsfp28-cage@3","rel-pos":56,"rotate":180}]},"panel":{"cutouts":[{"at":[4.0,8.6],"id":"port-1","shape":"rect","size":[14.25,10.4]},{"at":[4.0,25.0],"id":"port-2","shape":"rect","size":[14.25,10.4]},{"at":[18.25,8.6],"id":"port-3","shape":"rect","size":[14.25,10.4]},{"at":[18.25,25.0],"id":"port-4","shape":"rect","size":[14.25,10.4]},{"at":[32.5,8.6],"id":"port-5","shape":"rect","size":[14.25,10.4]},{"at":[32.5,25.0],"id":"port-6","shape":"rect","size":[14.25,10.4]},{"at":[46.75,8.6],"id":"port-7","shape":"rect","size":[14.25,10.4]},{"at":[46.75,25.0],"id":"port-8","shape":"rect","size":[14.25,10.4]},{"at":[61.0,8.6],"id":"port-9","shape":"rect","size":[14.25,10.4]},{"at":[61.0,25.0],"id":"port-10","shape":"rect","size":[14.25,10.4]},{"at":[75.25,8.6],"id":"port-11","shape":"rect","size":[14.25,10.4]},{"at":[75.25,25.0],"id":"port-12","shape":"rect","size":[14.25,10.4]},{"at":[89.5,8.6],"id":"port-13","shape":"rect","size":[14.25,10.4]},{"at":[89.5,25.0],"id":"port-14","shape":"rect","size":[14.25,10.4]},{"at":[103.75,8.6],"id":"port-15","shape":"rect","size":[14.25,10.4]},{"at":[103.75,25.0],"id":"port-16","shape":"rect","size":[14.25,10.4]},{"at":[121.0,8.6],"id":"port-17","shape":"rect","size":[14.25,10.4]},{"at":[121.0,25.0],"id":"port-18","shape":"rect","size":[14.25,10.4]},{"at":[135.25,8.6],"id":"port-19","shape":"rect","size":[14.25,10.4]},{"at":[135.25,25.0],"id":"port-20","shape":"rect","size":[14.25,10.4]},{"at":[149.5,8.6],"id":"port-21","shape":"rect","size":[14.25,10.4]},{"at":[149.5,25.0],"id":"port-22","shape":"rect","size":[14.25,10.4]},{"at":[163.75,8.6],"id":"port-23","shape":"rect","size":[14.25,10.4]},{"at":[163.75,25.0],"id":"port-24","shape":"rect","size":[14.25,10.4]},{"at":[178.0,8.6],"id":"port-25","shape":"rect","size":[14.25,10.4]},{"at":[178.0,25.0],"id":"port-26","shape":"rect","size":[14.25,10.4]},{"at":[192.25,8.6],"id":"port-27","shape":"rect","size":[14.25,10.4]},{"at":[192.25,25.0],"id":"port-28","shape":"rect","size":[14.25,10.4]},{"at":[206.5,8.6],"id":"port-29","shape":"rect","size":[14.25,10.4]},{"at":[206.5,25.0],"id":"port-30","shape":"rect","size":[14.25,10.4]},{"at":[220.75,8.6],"id":"port-31","shape":"rect","size":[14.25,10.4]},{"at":[220.75,25.0],"id":"port-32","shape":"rect","size":[14.25,10.4]},{"at":[238.0,8.6],"id":"port-33","shape":"rect","size":[14.25,10.4]},{"at":[238.0,25.0],"id":"port-34","shape":"rect","size":[14.25,10.4]},{"at":[252.25,8.6],"id":"port-35","shape":"rect","size":[14.25,10.4]},{"at":[252.25,25.0],"id":"port-36","shape":"rect","size":[14.25,10.4]},{"at":[266.5,8.6],"id":"port-37","shape":"rect","size":[14.25,10.4]},{"at":[266.5,25.0],"id":"port-38","shape":"rect","size":[14.25,10.4]},{"at":[280.75,8.6],"id":"port-39","shape":"rect","size":[14.25,10.4]},{"at":[280.75,25.0],"id":"port-40","shape":"rect","size":[14.25,10.4]},{"at":[295.0,8.6],"id":"port-41","shape":"rect","size":[14.25,10.4]},{"at":[295.0,25.0],"id":"port-42","shape":"rect","size":[14.25,10.4]},{"at":[309.25,8.6],"id":"port-43","shape":"rect","size":[14.25,10.4]},{"at":[309.25,25.0],"id":"port-44","shape":"rect","size":[14.25,10.4]},{"at":[323.5,8.6],"id":"port-45","shape":"rect","size":[14.25,10.4]},{"at":[323.5,25.0],"id":"port-46","shape":"rect","size":[14.25,10.4]},{"at":[337.75,8.6],"id":"port-47","shape":"rect","size":[14.25,10.4]},{"at":[337.75,25.0],"id":"port-48","shape":"rect","size":[14.25,10.4]},{"at":[358.25,10.75],"id":"port-49","shape":"rect","size":[18.5,9.58]},{"at":[358.25,23.67],"id":"port-50","shape":"rect","size":[18.5,9.58]},{"at":[377.25,10.75],"id":"port-51","shape":"rect","size":[18.5,9.58]},{"at":[377.25,23.67],"id":"port-52","shape":"rect","size":[18.5,9.58]},{"at":[396.25,10.75],"id":"port-53","shape":"rect","size":[18.5,9.58]},{"at":[396.25,23.67],"id":"port-54","shape":"rect","size":[18.5,9.58]},{"at":[415.25,10.75],"id":"port-55","shape":"rect","size":[18.5,9.58]},{"at":[415.25,23.67],"id":"port-56","shape":"rect","size":[18.5,9.58]}],"decor":[{"at":[0.0,0.0],"fill":"#25292e","id":"faceplate","kind":"bezel","size":[438.0,44.0]},{"at":[4.0,0.9],"id":"vent-top","pattern":"slots-h","pattern-offset":[4.0,0.9],"pattern-pitch":[7.54,2.2],"size":[430.0,2.2],"vent":25},{"at":[4.0,40.9],"id":"vent-bottom","pattern":"slots-h","pattern-offset":[4.0,40.9],"pattern-pitch":[7.54,2.2],"size":[430.0,2.2],"vent":25},{"at":[3.4,8.0],"fill":"#16181b","id":"block-1","kind":"port-shell","rx":1.2,"size":[115.2,29.0]},{"at":[120.4,8.0],"fill":"#16181b","id":"block-2","kind":"port-shell","rx":1.2,"size":[115.2,29.0]},{"at":[237.4,8.0],"fill":"#16181b","id":"block-3","kind":"port-shell","rx":1.2,"size":[115.2,29.0]},{"at":[357.4,5.9],"fill":"#16181b","id":"block-uplink","kind":"port-shell","rx":1.2,"size":[77.2,33.2]}]},"silkscreen":[{"anchor":"middle","at":[16.0,7.0],"fill":"#f2a71b","font-size":3.4,"for":"chassis","text":"MaiaEdge"}],"size":{"h":44.0,"w":438.0}},"left":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"left-envelope","kind":"envelope","size":[520.0,44.0]}]},"size":{"h":44.0,"w":520.0}},"rear":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"rear-envelope","kind":"envelope","size":[438.0,44.0]}]},"size":{"h":44.0,"w":438.0}},"right":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"right-envelope","kind":"envelope","size":[520.0,44.0]}]},"size":{"h":44.0,"w":520.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"top-envelope","kind":"envelope","size":[438.0,520.0]}]},"size":{"h":520.0,"w":438.0}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="Port Extender" x="0" y="0" width="438" height="44" rx="1.2" fill="#1b1e21" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-slots-h" width="14" height="8" patternUnits="userSpaceOnUse">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-h-o4-0_9-s0_538571-0_275" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="translate(4 0.9) scale(0.538571 0.275)">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-h-o4-40_9-s0_538571-0_275" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="translate(4 40.9) scale(0.538571 0.275)">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="faceplate" data-kind="bezel" x="0" y="0" width="438" height="44" rx="0.6" fill="#25292e" />
+    <rect id="vent-top" data-kind="vent-field" data-aperture="air" x="4" y="0.9" width="430" height="2.2" rx="0.6" fill="url(#portrayal-slots-h-o4-0_9-s0_538571-0_275)" data-vent="25" />
+    <rect id="vent-bottom" data-kind="vent-field" data-aperture="air" x="4" y="40.9" width="430" height="2.2" rx="0.6" fill="url(#portrayal-slots-h-o4-40_9-s0_538571-0_275)" data-vent="25" />
+    <rect id="block-1" data-kind="port-shell" x="3.4" y="8" width="115.2" height="29" rx="1.2" fill="#16181b" />
+    <rect id="block-2" data-kind="port-shell" x="120.4" y="8" width="115.2" height="29" rx="1.2" fill="#16181b" />
+    <rect id="block-3" data-kind="port-shell" x="237.4" y="8" width="115.2" height="29" rx="1.2" fill="#16181b" />
+    <rect id="block-uplink" data-kind="port-shell" x="357.4" y="5.9" width="77.2" height="33.2" rx="1.2" fill="#16181b" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="4" y="8.6" width="14.25" height="10.4" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" fill="#101214" />
+    <rect x="4" y="25" width="14.25" height="10.4" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" fill="#101214" />
+    <rect x="18.25" y="8.6" width="14.25" height="10.4" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" fill="#101214" />
+    <rect x="18.25" y="25" width="14.25" height="10.4" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" fill="#101214" />
+    <rect x="32.5" y="8.6" width="14.25" height="10.4" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" fill="#101214" />
+    <rect x="32.5" y="25" width="14.25" height="10.4" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" fill="#101214" />
+    <rect x="46.75" y="8.6" width="14.25" height="10.4" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" fill="#101214" />
+    <rect x="46.75" y="25" width="14.25" height="10.4" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" fill="#101214" />
+    <rect x="61" y="8.6" width="14.25" height="10.4" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" fill="#101214" />
+    <rect x="61" y="25" width="14.25" height="10.4" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" fill="#101214" />
+    <rect x="75.25" y="8.6" width="14.25" height="10.4" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" fill="#101214" />
+    <rect x="75.25" y="25" width="14.25" height="10.4" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" fill="#101214" />
+    <rect x="89.5" y="8.6" width="14.25" height="10.4" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" fill="#101214" />
+    <rect x="89.5" y="25" width="14.25" height="10.4" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" fill="#101214" />
+    <rect x="103.75" y="8.6" width="14.25" height="10.4" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" fill="#101214" />
+    <rect x="103.75" y="25" width="14.25" height="10.4" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" fill="#101214" />
+    <rect x="121" y="8.6" width="14.25" height="10.4" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" fill="#101214" />
+    <rect x="121" y="25" width="14.25" height="10.4" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" fill="#101214" />
+    <rect x="135.25" y="8.6" width="14.25" height="10.4" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" fill="#101214" />
+    <rect x="135.25" y="25" width="14.25" height="10.4" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" fill="#101214" />
+    <rect x="149.5" y="8.6" width="14.25" height="10.4" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" fill="#101214" />
+    <rect x="149.5" y="25" width="14.25" height="10.4" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" fill="#101214" />
+    <rect x="163.75" y="8.6" width="14.25" height="10.4" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" fill="#101214" />
+    <rect x="163.75" y="25" width="14.25" height="10.4" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" fill="#101214" />
+    <rect x="178" y="8.6" width="14.25" height="10.4" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" fill="#101214" />
+    <rect x="178" y="25" width="14.25" height="10.4" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" fill="#101214" />
+    <rect x="192.25" y="8.6" width="14.25" height="10.4" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" fill="#101214" />
+    <rect x="192.25" y="25" width="14.25" height="10.4" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" fill="#101214" />
+    <rect x="206.5" y="8.6" width="14.25" height="10.4" id="cutout--port-29" data-path="cutout:port-29" data-class="cutout" fill="#101214" />
+    <rect x="206.5" y="25" width="14.25" height="10.4" id="cutout--port-30" data-path="cutout:port-30" data-class="cutout" fill="#101214" />
+    <rect x="220.75" y="8.6" width="14.25" height="10.4" id="cutout--port-31" data-path="cutout:port-31" data-class="cutout" fill="#101214" />
+    <rect x="220.75" y="25" width="14.25" height="10.4" id="cutout--port-32" data-path="cutout:port-32" data-class="cutout" fill="#101214" />
+    <rect x="238" y="8.6" width="14.25" height="10.4" id="cutout--port-33" data-path="cutout:port-33" data-class="cutout" fill="#101214" />
+    <rect x="238" y="25" width="14.25" height="10.4" id="cutout--port-34" data-path="cutout:port-34" data-class="cutout" fill="#101214" />
+    <rect x="252.25" y="8.6" width="14.25" height="10.4" id="cutout--port-35" data-path="cutout:port-35" data-class="cutout" fill="#101214" />
+    <rect x="252.25" y="25" width="14.25" height="10.4" id="cutout--port-36" data-path="cutout:port-36" data-class="cutout" fill="#101214" />
+    <rect x="266.5" y="8.6" width="14.25" height="10.4" id="cutout--port-37" data-path="cutout:port-37" data-class="cutout" fill="#101214" />
+    <rect x="266.5" y="25" width="14.25" height="10.4" id="cutout--port-38" data-path="cutout:port-38" data-class="cutout" fill="#101214" />
+    <rect x="280.75" y="8.6" width="14.25" height="10.4" id="cutout--port-39" data-path="cutout:port-39" data-class="cutout" fill="#101214" />
+    <rect x="280.75" y="25" width="14.25" height="10.4" id="cutout--port-40" data-path="cutout:port-40" data-class="cutout" fill="#101214" />
+    <rect x="295" y="8.6" width="14.25" height="10.4" id="cutout--port-41" data-path="cutout:port-41" data-class="cutout" fill="#101214" />
+    <rect x="295" y="25" width="14.25" height="10.4" id="cutout--port-42" data-path="cutout:port-42" data-class="cutout" fill="#101214" />
+    <rect x="309.25" y="8.6" width="14.25" height="10.4" id="cutout--port-43" data-path="cutout:port-43" data-class="cutout" fill="#101214" />
+    <rect x="309.25" y="25" width="14.25" height="10.4" id="cutout--port-44" data-path="cutout:port-44" data-class="cutout" fill="#101214" />
+    <rect x="323.5" y="8.6" width="14.25" height="10.4" id="cutout--port-45" data-path="cutout:port-45" data-class="cutout" fill="#101214" />
+    <rect x="323.5" y="25" width="14.25" height="10.4" id="cutout--port-46" data-path="cutout:port-46" data-class="cutout" fill="#101214" />
+    <rect x="337.75" y="8.6" width="14.25" height="10.4" id="cutout--port-47" data-path="cutout:port-47" data-class="cutout" fill="#101214" />
+    <rect x="337.75" y="25" width="14.25" height="10.4" id="cutout--port-48" data-path="cutout:port-48" data-class="cutout" fill="#101214" />
+    <rect x="358.25" y="10.75" width="18.5" height="9.58" id="cutout--port-49" data-path="cutout:port-49" data-class="cutout" fill="#101214" />
+    <rect x="358.25" y="23.67" width="18.5" height="9.58" id="cutout--port-50" data-path="cutout:port-50" data-class="cutout" fill="#101214" />
+    <rect x="377.25" y="10.75" width="18.5" height="9.58" id="cutout--port-51" data-path="cutout:port-51" data-class="cutout" fill="#101214" />
+    <rect x="377.25" y="23.67" width="18.5" height="9.58" id="cutout--port-52" data-path="cutout:port-52" data-class="cutout" fill="#101214" />
+    <rect x="396.25" y="10.75" width="18.5" height="9.58" id="cutout--port-53" data-path="cutout:port-53" data-class="cutout" fill="#101214" />
+    <rect x="396.25" y="23.67" width="18.5" height="9.58" id="cutout--port-54" data-path="cutout:port-54" data-class="cutout" fill="#101214" />
+    <rect x="415.25" y="10.75" width="18.5" height="9.58" id="cutout--port-55" data-path="cutout:port-55" data-class="cutout" fill="#101214" />
+    <rect x="415.25" y="23.67" width="18.5" height="9.58" id="cutout--port-56" data-path="cutout:port-56" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="16" y="7" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#f2a71b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">MaiaEdge</text>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="1" transform="translate(4.0,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="2" transform="translate(4.0,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="3" transform="translate(18.25,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="4" transform="translate(18.25,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="5" transform="translate(32.5,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="6" transform="translate(32.5,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="7" transform="translate(46.75,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="8" transform="translate(46.75,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="9" transform="translate(61.0,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="10" transform="translate(61.0,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-10--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="11" transform="translate(75.25,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-11--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="12" transform="translate(75.25,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-12--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="13" transform="translate(89.5,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-13--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="14" transform="translate(89.5,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-14--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="15" transform="translate(103.75,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-15--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="16" transform="translate(103.75,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-16--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="17" transform="translate(121.0,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-17--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="18" transform="translate(121.0,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-18--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="19" transform="translate(135.25,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-19--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="20" transform="translate(135.25,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-20--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="21" transform="translate(149.5,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-21--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="22" transform="translate(149.5,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-22--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="23" transform="translate(163.75,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-23--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="24" transform="translate(163.75,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-24--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="25" transform="translate(178.0,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-25</title>
+    <rect id="port-25--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-25/opening" data-class="cutout" />
+    <rect id="port-25--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-25--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-25--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="26" transform="translate(178.0,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-26</title>
+    <rect id="port-26--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-26/opening" data-class="cutout" />
+    <rect id="port-26--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-26--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-26--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="27" transform="translate(192.25,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-27</title>
+    <rect id="port-27--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-27/opening" data-class="cutout" />
+    <rect id="port-27--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-27--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-27--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="28" transform="translate(192.25,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-28</title>
+    <rect id="port-28--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-28/opening" data-class="cutout" />
+    <rect id="port-28--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-28--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-28--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="29" transform="translate(206.5,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-29</title>
+    <rect id="port-29--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-29/opening" data-class="cutout" />
+    <rect id="port-29--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-29--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-29--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-30" data-path="port-30" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="30" transform="translate(206.5,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-30</title>
+    <rect id="port-30--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-30/opening" data-class="cutout" />
+    <rect id="port-30--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-30--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-30--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-31" data-path="port-31" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="31" transform="translate(220.75,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-31</title>
+    <rect id="port-31--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-31/opening" data-class="cutout" />
+    <rect id="port-31--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-31--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-31--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-32" data-path="port-32" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="32" transform="translate(220.75,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-32</title>
+    <rect id="port-32--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-32/opening" data-class="cutout" />
+    <rect id="port-32--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-32--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-32--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-33" data-path="port-33" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="33" transform="translate(238.0,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-33</title>
+    <rect id="port-33--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-33/opening" data-class="cutout" />
+    <rect id="port-33--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-33--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-33--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-34" data-path="port-34" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="34" transform="translate(238.0,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-34</title>
+    <rect id="port-34--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-34/opening" data-class="cutout" />
+    <rect id="port-34--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-34--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-34--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-35" data-path="port-35" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="35" transform="translate(252.25,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-35</title>
+    <rect id="port-35--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-35/opening" data-class="cutout" />
+    <rect id="port-35--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-35--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-35--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-36" data-path="port-36" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="36" transform="translate(252.25,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-36</title>
+    <rect id="port-36--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-36/opening" data-class="cutout" />
+    <rect id="port-36--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-36--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-36--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-37" data-path="port-37" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="37" transform="translate(266.5,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-37</title>
+    <rect id="port-37--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-37/opening" data-class="cutout" />
+    <rect id="port-37--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-37--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-37--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-38" data-path="port-38" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="38" transform="translate(266.5,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-38</title>
+    <rect id="port-38--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-38/opening" data-class="cutout" />
+    <rect id="port-38--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-38--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-38--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-39" data-path="port-39" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="39" transform="translate(280.75,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-39</title>
+    <rect id="port-39--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-39/opening" data-class="cutout" />
+    <rect id="port-39--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-39--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-39--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-40" data-path="port-40" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="40" transform="translate(280.75,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-40</title>
+    <rect id="port-40--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-40/opening" data-class="cutout" />
+    <rect id="port-40--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-40--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-40--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-41" data-path="port-41" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="41" transform="translate(295.0,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-41</title>
+    <rect id="port-41--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-41/opening" data-class="cutout" />
+    <rect id="port-41--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-41--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-41--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-42" data-path="port-42" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="42" transform="translate(295.0,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-42</title>
+    <rect id="port-42--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-42/opening" data-class="cutout" />
+    <rect id="port-42--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-42--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-42--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-43" data-path="port-43" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="43" transform="translate(309.25,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-43</title>
+    <rect id="port-43--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-43/opening" data-class="cutout" />
+    <rect id="port-43--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-43--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-43--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-44" data-path="port-44" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="44" transform="translate(309.25,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-44</title>
+    <rect id="port-44--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-44/opening" data-class="cutout" />
+    <rect id="port-44--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-44--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-44--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-45" data-path="port-45" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="45" transform="translate(323.5,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-45</title>
+    <rect id="port-45--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-45/opening" data-class="cutout" />
+    <rect id="port-45--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-45--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-45--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-46" data-path="port-46" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="46" transform="translate(323.5,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-46</title>
+    <rect id="port-46--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-46/opening" data-class="cutout" />
+    <rect id="port-46--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-46--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-46--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-47" data-path="port-47" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="47" transform="translate(337.75,8.6) rotate(180 7.125 5.2)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-47</title>
+    <rect id="port-47--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-47/opening" data-class="cutout" />
+    <rect id="port-47--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-47--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-47--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-48" data-path="port-48" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" data-group="ports" data-rel-pos="48" transform="translate(337.75,25.0)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-48</title>
+    <rect id="port-48--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-48/opening" data-class="cutout" />
+    <rect id="port-48--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-48--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-48--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+  </g>
+  <g id="port-49" data-path="port-49" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="49" transform="translate(358.0,6.55)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-49</title>
+    <rect id="port-49--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-49--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-49/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-49--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-49/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-49--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-49/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-49--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-49/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-49--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-49/cage" data-class="cage" />
+    <g id="port-49--aperture" data-path="port-49/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-49--aperture</title>
+      <rect id="port-49--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-49/aperture/opening" data-class="cutout" />
+      <rect id="port-49--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-49--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-49--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-50" data-path="port-50" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="50" transform="translate(358.0,22.95) rotate(180 9.5 7.25)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-50</title>
+    <rect id="port-50--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-50--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-50/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-50--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-50/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-50--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-50/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-50--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-50/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-50--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-50/cage" data-class="cage" />
+    <g id="port-50--aperture" data-path="port-50/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-50--aperture</title>
+      <rect id="port-50--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-50/aperture/opening" data-class="cutout" />
+      <rect id="port-50--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-50--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-50--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-51" data-path="port-51" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="51" transform="translate(377.0,6.55)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-51</title>
+    <rect id="port-51--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-51--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-51/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-51--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-51/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-51--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-51/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-51--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-51/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-51--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-51/cage" data-class="cage" />
+    <g id="port-51--aperture" data-path="port-51/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-51--aperture</title>
+      <rect id="port-51--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-51/aperture/opening" data-class="cutout" />
+      <rect id="port-51--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-51--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-51--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-52" data-path="port-52" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="52" transform="translate(377.0,22.95) rotate(180 9.5 7.25)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-52</title>
+    <rect id="port-52--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-52--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-52/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-52--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-52/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-52--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-52/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-52--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-52/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-52--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-52/cage" data-class="cage" />
+    <g id="port-52--aperture" data-path="port-52/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-52--aperture</title>
+      <rect id="port-52--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-52/aperture/opening" data-class="cutout" />
+      <rect id="port-52--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-52--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-52--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-53" data-path="port-53" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="53" transform="translate(396.0,6.55)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-53</title>
+    <rect id="port-53--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-53--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-53/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-53--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-53/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-53--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-53/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-53--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-53/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-53--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-53/cage" data-class="cage" />
+    <g id="port-53--aperture" data-path="port-53/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-53--aperture</title>
+      <rect id="port-53--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-53/aperture/opening" data-class="cutout" />
+      <rect id="port-53--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-53--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-53--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-54" data-path="port-54" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="54" transform="translate(396.0,22.95) rotate(180 9.5 7.25)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-54</title>
+    <rect id="port-54--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-54--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-54/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-54--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-54/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-54--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-54/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-54--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-54/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-54--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-54/cage" data-class="cage" />
+    <g id="port-54--aperture" data-path="port-54/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-54--aperture</title>
+      <rect id="port-54--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-54/aperture/opening" data-class="cutout" />
+      <rect id="port-54--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-54--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-54--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-55" data-path="port-55" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="55" transform="translate(415.0,6.55)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-55</title>
+    <rect id="port-55--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-55--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-55/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-55--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-55/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-55--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-55/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-55--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-55/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-55--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-55/cage" data-class="cage" />
+    <g id="port-55--aperture" data-path="port-55/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-55--aperture</title>
+      <rect id="port-55--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-55/aperture/opening" data-class="cutout" />
+      <rect id="port-55--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-55--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-55--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-56" data-path="port-56" data-class="port" data-ref="common/qsfp28-cage@3:3.2.0" data-depth="37.0" data-lanes="4" data-media="qsfp28" data-speed="100g" data-group="ports" data-rel-pos="56" transform="translate(415.0,22.95) rotate(180 9.5 7.25)" data-group-role="traffic" data-description="A tenant port's ROLE is set from the MaiaEdge portal rather than on the box - Customer, Internal Fabric (INNI), External Fabric (ENNI), MaiaConnect or Internet (DIA) - which is what the documentation says distinguishes this switch from the third-party ones that can stand in for it.">
+    <title>port-56</title>
+    <rect id="port-56--body" x="0" y="3.4" width="19" height="11.1" fill="#2b2f33" />
+    <circle id="port-56--led-1" cx="2.55" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-56/led-1" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-56--led-2" cx="4.95" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-56/led-2" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-56--led-3" cx="14.05" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-56/led-3" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <circle id="port-56--led-4" cx="16.45" cy="1.5" r="0.8" fill="var(--led-color, #3a3f44)" data-path="port-56/led-4" data-class="led" data-states="off link-100g link-40g link-25g link-10g fault" />
+    <rect id="port-56--cage" x="0.25" y="3.5" width="18.5" height="11" fill="#111316" stroke="#4a4f55" stroke-width="0.3" data-path="port-56/cage" data-class="cage" />
+    <g id="port-56--aperture" data-path="port-56/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.25,4.2)">
+      <title>port-56--aperture</title>
+      <rect id="port-56--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-56/aperture/opening" data-class="cutout" />
+      <rect id="port-56--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-56--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-56--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+</svg>
