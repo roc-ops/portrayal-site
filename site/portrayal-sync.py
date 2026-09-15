@@ -10,6 +10,10 @@ What this adds is `enrichment.json` - the facts the YAML schema has no field
 for, applied through the API afterwards. Both products support them; only the
 import format does not. See the README.
 
+`fibre-maps/` is reported and not applied: a cassette's front-to-rear join also
+has no field in the import format, but writing those links has not been proved
+against a live instance, so the script names them and leaves them to you.
+
     export DCIM_URL=https://netbox.example.com
     export DCIM_TOKEN=...
     python3 portrayal-sync.py --target netbox            # dry run
@@ -193,6 +197,33 @@ def sync(root, target, url, token, run, images=True):
     enrich = root / "enrichment.json"
     if enrich.is_file():
         apply_enrichment(dcim, json.loads(enrich.read_text()), target, run)
+
+    report_fibre_maps(root)
+
+
+def report_fibre_maps(root):
+    """Named, not applied - and the difference said out loud.
+
+    A cassette's front-to-rear join has no field in either library's import
+    format (netbox#20564 made the link a bidirectional M2M and the front-port
+    entry is `{name, type, positions}`), so the bundle ships it beside the type
+    as `fibre-maps/`. Creating those links means POSTing relations against a
+    live instance after the type exists, which is a write to a source of truth
+    that has not been proved against a real NetBox or Nautobot.
+
+    So this does not write them. It says they are here and how many, because a
+    script that quietly skips the only part of a cassette that makes it a
+    cassette leaves you believing the import was complete.
+    """
+    maps = sorted((root / "fibre-maps").glob("*/*.yaml"))
+    if not maps:
+        return
+    rows = 0
+    for p in maps:
+        rows += len((yaml.safe_load(p.read_text()) or {}).get("rows") or [])
+    print(f"\nfibre maps: {len(maps)} cassette(s), {rows} front-to-rear rows"
+          f"\n  NOT applied - see the README. The type is created with its front"
+          f"\n  and rear ports; the join between them is left to you.")
 
 
 def apply_enrichment(dcim, data, target, run):

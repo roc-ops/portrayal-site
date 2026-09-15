@@ -100,6 +100,14 @@
   network OS rather than the hardware &mdash; and a device that runs no NOS still gets a device
   type.
 </p>
+<p class="note">
+  Shown here is one device type. The bundle carries more than the page can show: module types,
+  rendered images, and <code>fibre-maps/</code> &mdash; which front port of a fibre cassette reaches
+  which fibre of its trunk. That last one has no home in either library's YAML
+  (<code>netbox#20564</code> made the front-to-rear link a bidirectional M2M, and the front-port
+  entry is <code>{name, type, positions}</code> with <code>additionalProperties: false</code>), so it
+  ships beside the type as a flat row list and travels with both targets.
+</p>
 <pre id="out">loading…</pre>
 </div>
 
@@ -202,8 +210,24 @@ async function buildBundle(btn) {
   const wanted = (FILES[target] || []).filter(keep);
   if (!wanted.length) { $('bnote').textContent = 'nothing matches that selection'; return; }
 
+  // THE FIBRE MAPS TRAVEL WITH BOTH TARGETS, and their paths keep their own
+  // first segment. `fibre-maps/FS.com/x.yaml` is a peer of `netbox/` and
+  // `nautobot/` rather than a kind inside one, so the manufacturer is at
+  // parts[1] here and at parts[2] in `keep` above - and the zip entry is the
+  // whole path, where every other entry drops its target prefix.
+  //
+  // A cassette's module type exports its front ports and its rear port and NOT
+  // the join between them: netbox#20564 made FrontPort->RearPort a
+  // bidirectional M2M, and the shared type schema's front-port entry is
+  // `{name, type, positions}` with `additionalProperties: false`. So a bundle
+  // without these is a bundle that says a cassette has twelve LC ports and an
+  // MTP-12 and cannot say which fibre reaches which - which is the entire
+  // content of a cassette.
+  const maps = (FILES['fibre-maps'] || []).filter(
+    rel => !(scope === 'vendor' && man && rel.split('/')[1] !== man));
+
   btn.disabled = true;
-  $('bnote').textContent = `fetching ${wanted.length} files…`;
+  $('bnote').textContent = `fetching ${wanted.length + maps.length} files…`;
   const enc = new TextEncoder();
   const entries = [];
   for (const rel of wanted) {
@@ -211,6 +235,11 @@ async function buildBundle(btn) {
     if (!res.ok) continue;
     entries.push({name: rel.split('/').slice(1).join('/'),
                   bytes: new Uint8Array(await res.arrayBuffer())});
+  }
+  for (const rel of maps) {
+    const res = await fetch('assets/exports/' + rel);
+    if (!res.ok) continue;
+    entries.push({name: rel, bytes: new Uint8Array(await res.arrayBuffer())});
   }
 
   // ── images, rendered rather than fetched ──────────────────────────────
@@ -274,7 +303,8 @@ async function buildBundle(btn) {
     snapshot: day, vendor: scope === 'vendor' ? man : null,
     contents: counts, files: entries.length,
   }, null, 1))});
-  entries.push({name: 'README.md', bytes: enc.encode(readme(target, nos, man, scope, day))});
+  entries.push({name: 'README.md',
+                bytes: enc.encode(readme(target, nos, man, scope, day, maps.length))});
 
   $('bnote').textContent = 'compressing…';
   const blob = await makeZip(entries, stamp);
@@ -287,7 +317,11 @@ async function buildBundle(btn) {
   btn.disabled = false;
 }
 
-const readme = (target, nos, man, scope, day) => `# Portrayal DCIM bundle
+// `nmaps` is passed rather than assumed: a cassette is an FS part today, so
+// most vendor bundles carry no fibre maps at all and a tree listing that names
+// a directory the zip does not have is the kind of small lie that costs someone
+// ten minutes.
+const readme = (target, nos, man, scope, day, nmaps) => `# Portrayal DCIM bundle
 
 Snapshot ${day}. Target: ${target}. Scope: ${scope === 'vendor' ? man : 'all vendors'}.
 Interface names: ${nos ? nos : 'none - NOS-neutral device types only'}.
@@ -298,8 +332,8 @@ Interface names: ${nos ? nos : 'none - NOS-neutral device types only'}.
     module-types/      line cards, supervisors, power supplies, fans
     elevation-images/  chassis faces, rendered from the compiled drawings
     module-images/     card faceplates, the same way
-    enrichment.json    the facts the YAML schema has no field for
-    portrayal-sync.py  loads all of the above
+${nmaps ? '    fibre-maps/        which front port reaches which rear fibre, per cassette\n' : ''}    enrichment.json    the facts the YAML schema has no field for
+    portrayal-sync.py  loads all of the above${nmaps ? ' except fibre-maps/' : ''}
 
 The YAML validates against ${target}'s devicetype-library schema, so you have
 three ways to use this and only one of them needs the script:
@@ -318,7 +352,30 @@ strictly valid and still contributable.
 That file is a measure of the gap. As the libraries gain these fields it gets
 smaller, and when it is empty the script is optional.
 
-## About the images
+${!nmaps ? '' : `## Why fibre-maps/ exists
+
+A fibre cassette has no interfaces in the DCIM sense - nothing terminates
+electrically - so its front ports, its rear port and the glass between them are
+the whole part. The type YAML carries the first two and cannot carry the third:
+netbox#20564 replaced the FrontPort->RearPort foreign key with a bidirectional
+M2M, and the front-port entry in the shared schema is
+\`{name, type, positions}\` with \`additionalProperties: false\`. There is
+nowhere left in the format to say which LC reaches which fibre of the MTP.
+
+So it ships beside the type instead, one flat row list per cassette - front
+port, front position, rear port, rear position, and a ratio where a leg splits.
+It is the same rows for both targets, because it is not either library's
+schema; there is no upstream schema for this artefact at all, and Portrayal
+defines one.
+
+\`portrayal-sync.py\` does NOT apply these. Creating the links means POSTing
+front-port-to-rear-port relations against a live instance after the type is in,
+and that is a write to a source of truth that has not been proved against a
+real NetBox or Nautobot yet. The rows are here, flat and machine-readable, so
+you can do it deliberately; the script saying nothing about them would be
+worse than the script not doing it.
+
+`}## About the images
 
 Neither library's YAML schema has a field for a module image, yet both repos
 carry a module-images/ tree - so these are named the way those trees are, by

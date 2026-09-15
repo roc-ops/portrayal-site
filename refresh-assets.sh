@@ -270,8 +270,18 @@ for dev in index:
         index[dev][t].sort()
 
 # Everything in the tree, so a bundle can be assembled without guessing.
+#
+# fibre-maps/ IS NOT A THIRD LIBRARY, and it is listed here anyway. It is the
+# front-to-rear join for a cassette, and it sits outside netbox/ and nautobot/
+# because netbox#20564 replaced the FrontPort->RearPort foreign key with a
+# bidirectional M2M: the front-port entry in the shared type schema is
+# `{name, type, positions}` with `additionalProperties: false`, so the mapping
+# now has nowhere to live in either library's YAML. Both targets consume the
+# same rows. Leaving it out of this index is what kept it unreachable from the
+# Exporter page for a release - the files were vendored and nothing could see
+# them.
 files = {}
-for target in ('netbox', 'nautobot'):
+for target in ('netbox', 'nautobot', 'fibre-maps'):
     base = os.path.join(root, target)
     if not os.path.isdir(base):
         continue
@@ -327,8 +337,14 @@ json.dump(index, open(os.path.join(root, 'index.json'), 'w'), indent=1, sort_key
 json.dump(files, open(os.path.join(root, 'files.json'), 'w'), indent=1)
 json.dump(enrichment, open(os.path.join(root, 'enrichment.json'), 'w'), indent=1, sort_keys=True)
 n = sum(len(v) for v in files.values())
-print("exports: %d files, %d devices, %d bay constraints, %d platform hints"
-      % (n, len(index), len(enrichment['module-bays']), len(enrichment['device-types'])))
+# The fibre maps are counted OUT LOUD rather than folded into the total. They
+# are the one set here that arrives from a tree this script does not otherwise
+# name, so the day upstream stops writing them the number goes to 0 in front of
+# whoever ran the refresh, instead of the total shrinking by five.
+print("exports: %d files, %d devices, %d bay constraints, %d platform hints, "
+      "%d fibre maps"
+      % (n, len(index), len(enrichment['module-bays']),
+         len(enrichment['device-types']), len(files.get('fibre-maps', []))))
 PYEOF
   rm -f "$EXPORTS/.paths"
 else
