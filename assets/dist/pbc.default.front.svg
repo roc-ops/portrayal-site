@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="437.9mm" height="41.27mm" viewBox="0 0 437.9 41.27" data-device="pbc" data-view="front" data-config="default" data-weight-kg="4.31" data-throughput="dual-100gbe" data-latency-overhead-us="2" data-input="ac-or-dc" data-airflow="front-to-back" data-operating-temp-c="0 to 50" data-storage-temp-c="-40 to 70" data-encryption="aes-256-gcm-ipsec" data-redundancy="1+1" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"default","device":"MaiaEdge PBC","device-version":"2.0.2","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/led-indicator@1":"1.2.0","common/qsfp-cage@2":"2.0.0","common/rj45-eth@1":"1.2.0","std/qsfp-ganged@1":"1.4.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0"},"source":{"attrs":{"environmental":{"operating-temp-c":"0 to 50","storage-temp-c":"-40 to 70"},"features":{"encryption":"aes-256-gcm-ipsec","redundancy":"1+1"},"lifecycle":{"eol":"none-announced"},"performance":{"latency-overhead-us":2,"throughput":"dual-100gbe"},"physical":{"weight-kg":4.31},"power":{"input":"ac-or-dc"},"thermal":{"airflow":"front-to-back"}},"chassis":{"color":"#1b1e21","depth":291.08,"height":41.27,"ru":1,"width":437.9},"description":"MaiaEdge Path Border Controller - a 1RU appliance that merges L2 switching and L3 routing to provision deterministic private Ethernet paths over any underlying transport, with line-rate AES-256-GCM IPsec. Two 100GbE QSFP28 ports on the front beside a console and two management jacks; two 550W supplies and a five-fan wall on the back, front-to-back.","format":1,"gaps":[{"note":"EVERY POSITION ON THE FRONT FACE IS ESTIMATED. The only sources held are a three-quarter marketing render and photographs of a unit racked in service, and neither is orthographic. panel_measure refuses the photograph outright, and hand-anchoring it gives width- and height-derived scales that disagree far beyond its 3% gate - the RJ45 jacks read 11.5 mm against their known 15.8 because the right of the frame is further from the lens. So the ORDER of the face is evidence and the coordinates are not. Tracked as roc-ops/Portrayal#247.","reason":"needs-drawing","scope":["front"],"wanted":"a face-on photograph of the front with nothing plugged in, or a mechanical drawing from MaiaEdge. Either settles the whole face in one step.","what":"front-face-positions"},{"note":"The recessed rectangle at the right end of the front face is drawn as decor because nobody can put a part number to it. The product render shows it smooth and uniform, which reads as a display; the photograph shows what could be a honeycomb-perforated left third, which would read as a vent beside something - but that surface is mostly reflection in every photograph held, and a first draft that drew the perforation was asserting a vent nobody has seen. IT IS NOW A BLANK GREY PLATE: the recess is certain, its surface is not, and a plain box is the only honest way to draw the difference. If it is an LCD it deserves a real component rather than paint.","reason":"needs-photo","scope":["front"],"wanted":"a face-on photograph of the right end of the front face, or a word from the vendor saying what the recess is.","what":"right-panel-identity"},{"note":"THREE DIFFERENT THINGS GLOW ON THIS FACE and two of them are modelled. The vendor's UI view draws a deliberate column of four round lamps immediately left of port 0, which the rack photograph could not show because the transceivers' pull tabs and their fibre cover that corner - those four are modelled, and WHAT EACH ONE MEANS is unknown, so they carry `for: chassis` rather than an invented identity. Each 100G port also carries ONE lamp (provenance `port-lamps`); its count is the maintainer's and NEITHER SOURCE SHOWS WHERE IT SITS, so it is drawn above the cage - the one place both sources rule out a four-lamp band - and that position is a guess. Separately the photograph shows red and green points scattered at irregular positions and heights across BOTH vent fields; those are internal board LEDs glowing through the louvres, not a panel array - they do not line up and they sit at several louvre heights - and they are deliberately not drawn. No document held carries an LED table for any of the three.","reason":"vendor-silent","scope":["front"],"wanted":"an LED table, or a photograph of the unit powered down so the louvres read clean.","what":"front-indicator-meanings"},{"note":"common/psu-550w@2 is placed, being the maintained major and the 73.5 mm CRPS 1U standard width. The rear photograph disagrees: on the scale the five fans validate to 0.2%, the two-supply block reads about 171 mm, or 85.5 mm each, which is far closer to the RETIRED common/psu-550w@1 at 84.0. An attempt to confirm the module seams programmatically failed, so the reading rests on an eyeball and is not asserted here. Either MaiaEdge fits a wider-than-CRPS module, or the eyeball is wrong.","reason":"sources-disagree","scope":["rear"],"wanted":"a face-on rear photograph, or the vendor's part number for the supply. The answer decides which of the library's two 550W majors this device should carry.","what":"psu-module-width"},{"note":"These four faces draw the chassis envelope and nothing else. The envelope itself is not a guess - 437.90 x 291.08 x 41.27 is dimensioned on page 3 of the datasheet - but no source held shows what is ON any of them: no vent field, no label, no screw pattern, no rail. The flat rect asserts the box and claims nothing about its surface, which is what lets the device carry a rack elevation and a 3D box without inventing detail.","reason":"needs-photo","scope":["top","bottom","left","right"],"wanted":"photographs of the lid, the underside and either flank out of the rack. The unit was shot in service with a device directly above it.","what":"envelope-faces-undetailed"},{"note":"The centre band carries the word MaiaEdge in the vendor's amber, sized and coloured to match the photograph. The LOGO MARK that sits immediately left of it - a stylised angular glyph - is not drawn. Approximating a company's mark from a perspective photograph would be drawing something nobody can check, and a wrong logo is worse than an absent one.","reason":"needs-drawing","scope":["front"],"wanted":"the MaiaEdge mark as vector art, or a face-on photograph square enough to trace it from.","what":"wordmark-logo-mark"},{"note":"The datasheet states the supply configuration and no chassis draw figure, so none is recorded. L27 stands, and the chassis total is a floor rather than a total.","reason":"vendor-silent","wanted":"a chassis draw or input figure from MaiaEdge.","what":"chassis-power-draw"}],"groups":{"fans":{"index-origin":1,"role":"service","term":"Fan"},"furniture":{"index-origin":1,"role":"furniture","term":"Part"},"mgmt":{"index-origin":1,"mixed":"the console and the two out-of-band management jacks, which share a bezel","role":"management","term":"Port"},"psus":{"index-origin":1,"role":"service","term":"PSU"},"qsfp28":{"attrs":{"media":"qsfp28","speed":"100g"},"index-origin":0,"role":"traffic","term":"Port"}},"kind":"device","manufacturer":"MaiaEdge","maturity":"modelled","model":"PBC","name":"pbc","profile":"networking","provenance":{"bezel":"ESTIMATED shape, from photographs. The front face is a formed bezel, not a flat plate: it slopes out to a raised band running the full width and slopes back, and two OCTAGONAL windows are cut through it to the faceplate behind, each edged with a raised bead in the vendor's amber. The right-hand end of the right window is the only window end unobstructed by cabling in any photograph held, and is what the chamfer was read from. `shape: octagon` was added to the format for this - decor and cutouts could draw a rectangle, a rounded rectangle, a D-sub shell and a stadium slot, and an octagon had no shape to be.","cutouts":"registry - each opening is the APERTURE the component declares, not the component's outline: common/qsfp-cage@2 is 19.5 x 10.18 of metal around an 18.5 x 9.58 hole offset (0.575, 0.6) into it, and a USB-A is 17.0 x 9.3 around a 12.0 x 4.5 hole at (2.5, 2.4). The first draft punched the outlines and test_cutout_derivation caught all three.","jacks":"L76 and docs/rj45-family-design.md settle which part each jack is: an Ethernet jack is common/rj45-eth@1 and a console or timing jack is std/rj45@2. CON is the console, so it is the std part; MGMT and CTRL are the two 1GB management ports the datasheet counts, so they are the Ethernet part. All three were std/rj45@2 in the first draft and the rule caught it. THE TWO ETHERNET JACKS ARE FITTED TAB UP and the console jack is not: the photograph reads MGMT's and CTRL's contacts along the bottom of the opening with the latch slot above, and CON's the other way about. Declared as rotate 180, because a jack fitted the other way up is the same jack turned over rather than a reflection of it, and its lamps really do change sides.","layout":"ESTIMATED, AND THE WORD IS EXACT. The ORDER and GROUPING of everything on the front face are read off photographs of a unit in service (see gaps `front-positions`); the POSITIONS are a plausible arrangement consistent with them and with each component's own size. No position here is a measurement. The one position that is better than that is the chassis status lamp: the photograph puts it unambiguously in the notch outside the right window's lower-right chamfer, and it is placed against that edge rather than against a coordinate.","louvres":"photo-measured (COUNT ONLY) - each window carries a grid of short horizontal slots, EIGHT ROWS DEEP AND FIVE COLUMNS ACROSS, counted on the rack photograph and confirmed by the maintainer against the hardware. One column of the left window, isolated and contrast-normalised, reads eight slots between the beads; the unobstructed band above the transceivers reads four ribs, so five columns. The PITCH IS NOT MEASURED: it is those counts divided into the window as modelled, and the window itself is estimated. What the count corrects is a shape, not a dimension - the marketing render draws the field as full-width louvres and the first draft copied it, so this face wore a texture the hardware does not have.","numbering":"MaiaEdge's own management UI (working/intake/maiaedge/pbc/renders/ui-port-view.png) numbers the two 100G ports 0 and 1, so the group is index-origin 0, and captions them 100G. It captions MGMT and CTRL 1G and CON not at all, and - independently of L76 - DRAWS CON AS A DIFFERENT JACK from the other two, which is the console-versus- Ethernet split the rule had already forced. A UI view is a schematic: it is taken here for what is on the face, in what order, and what the vendor calls it. No coordinate comes from it.","port-lamps":"field knowledge (the maintainer, 2026-09-15), corroborated NEGATIVELY by both sources held - ONE lamp per 100G port. The photograph shows the louvres running straight up to the cage flange with no lamp band above it, and the vendor's UI view draws each port with nothing above it either; neither shows where the one lamp sits, because the transceivers' pull tabs cover that corner. So the COUNT is the maintainer's and the POSITION is estimated. This is why the plain common/qsfp-cage@2 is fitted rather than common/qsfp28-cage@3, whose four lamps belong to the AS7726-32X's panel by its own provenance and are not a property of any cage.","ports":"datasheet page 3 - \"Dual 100GbE Ethernet (QSFP28)\", \"2x 1GB RJ45\" management, \"1x USB 2.0\", \"RJ45 115.2 kbps\" console. Confirmed on the hardware: the front photograph reads the three jacks' own silkscreen as CON, MGMT and CTRL, which is the console plus the two management ports the table counts.","power":"datasheet page 3 - \"Internal: AC, DC\" with \"Redundant Power Supply: Yes\". The 550W per-supply figure is photo-measured: both modules carry a blue 550W label. The datasheet states no chassis draw, so none is recorded and L27 stands.","rear":"photo-measured (count and pitch only) - two supply modules and five 40 mm fans, read off the rear photographs. The fan pitch is the one figure on this device that a photograph did settle: five fans span 203.9 mm on a scale anchored to the 437.90 mm chassis width, giving 40.8 mm each against common/fan-module-41's known 40.9 - 0.2% out, which is what a sound scale looks like. Every other rear figure is a position and is estimated.","size":"datasheet - MaiaEdge-PBC-PCE-Datasheet-v3.pdf page 3, \"Chassis (H x W x D) 1.625 x 17.24 x 11.46 in\" = 41.27 x 437.90 x 291.08 mm. THE ROW BELOW IT, \"Total (With Ears and Tabs) 1.625 x 19.02 x 12.13 in\", is NOT the chassis and is not modelled: 19.02 in is 483.11 mm, the rack face including the ears, and L43 exists because a device was once modelled wearing its flanges.","thermal":"datasheet page 3 - \"Internal fan-based forced-air cooling. Front-to-Back (F2B) - intake at front bezel / port side, exhaust at rear (fan/PSU side).\"","usb":"the bare std/usb-a@1 receptacle, not the bezelled common/usb-a@3. That part wraps the opening in a silver plate spanning the component so it can abut its neighbours' bezels, which is the S9510-28DC's face; here the photograph shows a narrow slot straight through the faceplate with no plate around it. THE TONGUE IS WHITE BECAUSE THE PORT IS USB 2.0: page 3 says \"1x USB 2.0\", and USB-IF colours the Type-A insulator by what the port is - white for 2.0, blue for 3.0. The part could only draw the blue one, so it grew a `usb2` skin and this device asks for it. The photograph agrees as far as it can: the slot shows a pale tongue against a dark opening, and nothing blue."},"version":"2.0.2","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"bottom-envelope","kind":"envelope","size":[437.9,291.08]}]},"size":{"h":291.08,"w":437.9}},"front":{"components":{"placements":[{"at":[-14.0,-1.1],"group":"furniture","id":"ear-left","optional":"ears","ref":"common/rack-ear@1","rel-pos":1,"skin":"left"},{"at":[437.9,-1.1],"group":"furniture","id":"ear-right","optional":"ears","ref":"common/rack-ear@1","rel-pos":2,"skin":"right"},{"at":[20.0,19.6],"group":"qsfp28","id":"port-1","ref":"common/qsfp-cage@2","rel-pos":1},{"at":[39.5,19.6],"group":"qsfp28","id":"port-2","ref":"common/qsfp-cage@2","rel-pos":2},{"at":[28.75,16.0],"for":"port-1","group":"furniture","id":"port-led-1","ref":"common/led-dot@1","rel-pos":8},{"at":[48.25,16.0],"for":"port-2","group":"furniture","id":"port-led-2","ref":"common/led-dot@1","rel-pos":9},{"at":[238.4,23.35],"group":"mgmt","id":"usb","ref":"std/usb-a@1","rel-pos":1,"rotate":90,"skin":"usb2"},{"at":[16.0,13.6],"for":"chassis","group":"furniture","id":"status-1","ref":"common/led-dot@1","rel-pos":4},{"at":[16.0,17.6],"for":"chassis","group":"furniture","id":"status-2","ref":"common/led-dot@1","rel-pos":5},{"at":[16.0,21.6],"for":"chassis","group":"furniture","id":"status-3","ref":"common/led-dot@1","rel-pos":6},{"at":[16.0,25.6],"for":"chassis","group":"furniture","id":"status-4","ref":"common/led-dot@1","rel-pos":7},{"at":[266.58,19.0],"group":"mgmt","id":"con","ref":"std/rj45@2","rel-pos":2},{"at":[302.32,19.0],"group":"mgmt","id":"mgmt","ref":"common/rj45-eth@1","rel-pos":3,"rotate":180},{"at":[338.05,19.0],"group":"mgmt","id":"ctrl","ref":"common/rj45-eth@1","rel-pos":4,"rotate":180},{"at":[359.2,30.2],"for":"chassis","group":"furniture","id":"sys-led","ref":"common/led-indicator@1","rel-pos":3}]},"panel":{"cutouts":[{"at":[20.575,20.2],"id":"port-1","shape":"rect","size":[18.5,9.58]},{"at":[40.075,20.2],"id":"port-2","shape":"rect","size":[18.5,9.58]},{"at":[28.75,16.0],"id":"port-led-1","shape":"circle","size":[2.0,2.0]},{"at":[48.25,16.0],"id":"port-led-2","shape":"circle","size":[2.0,2.0]},{"at":[242.15,19.6],"id":"usb","shape":"rect","size":[4.5,12.0]},{"at":[16.0,13.6],"id":"status-1","shape":"circle","size":[2.0,2.0]},{"at":[16.0,17.6],"id":"status-2","shape":"circle","size":[2.0,2.0]},{"at":[16.0,21.6],"id":"status-3","shape":"circle","size":[2.0,2.0]},{"at":[16.0,25.6],"id":"status-4","shape":"circle","size":[2.0,2.0]},{"at":[266.58,19.0],"id":"con","shape":"rect","size":[15.8,13.2]},{"at":[302.32,19.0],"id":"mgmt","shape":"rect","size":[15.8,13.2]},{"at":[338.05,19.0],"id":"ctrl","shape":"rect","size":[15.8,13.2]},{"at":[359.2,30.2],"id":"sys-led","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[0.0,0.0],"fill":"#191c1f","id":"slope-top","kind":"bezel","size":[437.9,5.4]},{"at":[0.0,5.4],"fill":"#25292e","id":"raised-band","kind":"bezel","size":[437.9,30.2]},{"at":[0.0,35.6],"fill":"#191c1f","id":"slope-bottom","kind":"bezel","size":[437.9,5.67]},{"at":[0.0,5.0],"fill":"#31363c","id":"crease-top","kind":"bezel","size":[437.9,0.5]},{"at":[8.0,6.0],"fill":"#111316","id":"window-left","kind":"recess","shape":"octagon","size":[132.0,29.0]},{"at":[16.5,8.5],"id":"vent-left","pattern":"slots-h","pattern-offset":[16.5,8.5],"pattern-pitch":[23.0,3.0],"size":[115.0,24.0],"vent":20},{"at":[232.0,6.0],"fill":"#111316","id":"window-right","kind":"recess","shape":"octagon","size":[132.0,29.0]},{"at":[240.5,8.5],"id":"vent-right","pattern":"slots-h","pattern-offset":[240.5,8.5],"pattern-pitch":[23.0,3.0],"size":[115.0,24.0],"vent":20},{"at":[8.0,6.0],"fill":"none","id":"bead-left","kind":"bezel","shape":"octagon","size":[132.0,29.0],"stroke":"#f5b21c","stroke-width":1.5},{"at":[232.0,6.0],"fill":"none","id":"bead-right","kind":"bezel","shape":"octagon","size":[132.0,29.0],"stroke":"#f5b21c","stroke-width":1.5},{"at":[380.0,8.0],"fill":"#42464b","id":"right-panel","kind":"recess","rx":2.0,"size":[36.0,25.0]}]},"silkscreen":[{"anchor":"middle","at":[196.0,24.0],"fill":"#f2a71b","font-size":9.0,"for":"chassis","text":"MaiaEdge"},{"at":[274.48,15.5],"for":"con","text":"CON"},{"at":[310.22,15.5],"for":"mgmt","text":"MGMT"},{"at":[345.95,15.5],"for":"ctrl","text":"CTRL"}],"size":{"h":41.27,"w":437.9}},"left":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"left-envelope","kind":"envelope","size":[291.08,41.27]}]},"size":{"h":41.27,"w":291.08}},"rear":{"components":{"placements":[{"at":[-14.0,-1.1],"group":"furniture","id":"ear-left-r","optional":"ears","ref":"common/rack-ear@1","rel-pos":1,"skin":"left"},{"at":[437.9,-1.1],"group":"furniture","id":"ear-right-r","optional":"ears","ref":"common/rack-ear@1","rel-pos":2,"skin":"right"},{"at":[20.0,0.6],"attrs":{"slot":"1"},"group":"psus","id":"psu-1","ref":"common/psu-550w@2","rel-pos":1},{"at":[93.5,0.6],"attrs":{"slot":"2"},"group":"psus","id":"psu-2","ref":"common/psu-550w@2","rel-pos":2},{"at":[200.0,0.6],"group":"fans","id":"fan-1","ref":"common/fan-module-41@1","rel-pos":1},{"at":[240.9,0.6],"group":"fans","id":"fan-2","ref":"common/fan-module-41@1","rel-pos":2},{"at":[281.8,0.6],"group":"fans","id":"fan-3","ref":"common/fan-module-41@1","rel-pos":3},{"at":[322.7,0.6],"group":"fans","id":"fan-4","ref":"common/fan-module-41@1","rel-pos":4},{"at":[363.6,0.6],"group":"fans","id":"fan-5","ref":"common/fan-module-41@1","rel-pos":5}]},"panel":{"decor":[{"at":[167.0,0.6],"fill":"#8a8d91","id":"blank-bracket","kind":"label-plate","size":[33.0,40.0]}]},"size":{"h":41.27,"w":437.9}},"right":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"right-envelope","kind":"envelope","size":[291.08,41.27]}]},"size":{"h":41.27,"w":291.08}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"fill":"#1b1e21","id":"top-envelope","kind":"envelope","size":[437.9,291.08]}]},"size":{"h":291.08,"w":437.9}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PBC" x="0" y="0" width="437.9" height="41.27" rx="1.2" fill="#1b1e21" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-slots-h" width="14" height="8" patternUnits="userSpaceOnUse">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-h-o16_5-8_5-s1_64286-0_375" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="translate(16.5 8.5) scale(1.64286 0.375)">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-h-o240_5-8_5-s1_64286-0_375" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="translate(240.5 8.5) scale(1.64286 0.375)">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="slope-top" data-kind="bezel" x="0" y="0" width="437.9" height="5.4" rx="0.6" fill="#191c1f" />
+    <rect id="raised-band" data-kind="bezel" x="0" y="5.4" width="437.9" height="30.2" rx="0.6" fill="#25292e" />
+    <rect id="slope-bottom" data-kind="bezel" x="0" y="35.6" width="437.9" height="5.67" rx="0.6" fill="#191c1f" />
+    <rect id="crease-top" data-kind="bezel" x="0" y="5" width="437.9" height="0.5" rx="0.6" fill="#31363c" />
+    <path id="window-left" data-kind="recess" d="M18.150 6.000 L129.850 6.000 L140.000 16.150 L140.000 24.850 L129.850 35.000 L18.150 35.000 L8.000 24.850 L8.000 16.150 Z" fill="#111316" />
+    <rect id="vent-left" data-kind="vent-field" data-aperture="air" x="16.5" y="8.5" width="115" height="24" rx="0.6" fill="url(#portrayal-slots-h-o16_5-8_5-s1_64286-0_375)" data-vent="20" />
+    <path id="window-right" data-kind="recess" d="M242.150 6.000 L353.850 6.000 L364.000 16.150 L364.000 24.850 L353.850 35.000 L242.150 35.000 L232.000 24.850 L232.000 16.150 Z" fill="#111316" />
+    <rect id="vent-right" data-kind="vent-field" data-aperture="air" x="240.5" y="8.5" width="115" height="24" rx="0.6" fill="url(#portrayal-slots-h-o240_5-8_5-s1_64286-0_375)" data-vent="20" />
+    <path id="bead-left" data-kind="outline" d="M18.150 6.000 L129.850 6.000 L140.000 16.150 L140.000 24.850 L129.850 35.000 L18.150 35.000 L8.000 24.850 L8.000 16.150 Z" fill="none" stroke="#f5b21c" stroke-width="1.5" />
+    <path id="bead-right" data-kind="outline" d="M242.150 6.000 L353.850 6.000 L364.000 16.150 L364.000 24.850 L353.850 35.000 L242.150 35.000 L232.000 24.850 L232.000 16.150 Z" fill="none" stroke="#f5b21c" stroke-width="1.5" />
+    <rect id="right-panel" data-kind="recess" x="380" y="8" width="36" height="25" rx="2" fill="#42464b" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="20.575" y="20.2" width="18.5" height="9.58" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" fill="#101214" />
+    <rect x="40.075" y="20.2" width="18.5" height="9.58" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" fill="#101214" />
+    <ellipse cx="29.75" cy="17" rx="1" ry="1" id="cutout--port-led-1" data-path="cutout:port-led-1" data-class="cutout" fill="#101214" />
+    <ellipse cx="49.25" cy="17" rx="1" ry="1" id="cutout--port-led-2" data-path="cutout:port-led-2" data-class="cutout" fill="#101214" />
+    <rect x="242.15" y="19.6" width="4.5" height="12" id="cutout--usb" data-path="cutout:usb" data-class="cutout" fill="#101214" />
+    <ellipse cx="17" cy="14.6" rx="1" ry="1" id="cutout--status-1" data-path="cutout:status-1" data-class="cutout" fill="#101214" />
+    <ellipse cx="17" cy="18.6" rx="1" ry="1" id="cutout--status-2" data-path="cutout:status-2" data-class="cutout" fill="#101214" />
+    <ellipse cx="17" cy="22.6" rx="1" ry="1" id="cutout--status-3" data-path="cutout:status-3" data-class="cutout" fill="#101214" />
+    <ellipse cx="17" cy="26.6" rx="1" ry="1" id="cutout--status-4" data-path="cutout:status-4" data-class="cutout" fill="#101214" />
+    <rect x="266.58" y="19" width="15.8" height="13.2" id="cutout--con" data-path="cutout:con" data-class="cutout" fill="#101214" />
+    <rect x="302.32" y="19" width="15.8" height="13.2" id="cutout--mgmt" data-path="cutout:mgmt" data-class="cutout" fill="#101214" />
+    <rect x="338.05" y="19" width="15.8" height="13.2" id="cutout--ctrl" data-path="cutout:ctrl" data-class="cutout" fill="#101214" />
+    <ellipse cx="361.2" cy="32.2" rx="2" ry="2" id="cutout--sys-led" data-path="cutout:sys-led" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="196" y="24" font-family="sans-serif" font-size="9" text-anchor="middle" fill="#f2a71b" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">MaiaEdge</text>
+    <text x="274.48" y="15.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="con">CON</text>
+    <text x="310.22" y="15.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt">MGMT</text>
+    <text x="345.95" y="15.5" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c7ccd1" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ctrl">CTRL</text>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="common/qsfp-cage@2:2.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" data-group="qsfp28" data-rel-pos="1" transform="translate(20.0,19.6)" data-group-role="traffic">
+    <title>port-1</title>
+    <rect id="port-1--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="port-1/cage" data-class="cage" />
+    <g id="port-1--aperture" data-path="port-1/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.575,0.6)">
+      <title>port-1--aperture</title>
+      <rect id="port-1--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-1/aperture/opening" data-class="cutout" />
+      <rect id="port-1--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-1--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-1--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="common/qsfp-cage@2:2.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" data-group="qsfp28" data-rel-pos="2" transform="translate(39.5,19.6)" data-group-role="traffic">
+    <title>port-2</title>
+    <rect id="port-2--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="port-2/cage" data-class="cage" />
+    <g id="port-2--aperture" data-path="port-2/aperture" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.575,0.6)">
+      <title>port-2--aperture</title>
+      <rect id="port-2--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-2/aperture/opening" data-class="cutout" />
+      <rect id="port-2--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+      <rect id="port-2--aperture--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="port-2--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    </g>
+  </g>
+  <g id="port-led-1" data-path="port-led-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="furniture" data-rel-pos="8" transform="translate(28.75,16.0)" data-group-role="furniture" data-for="port-1">
+    <title>port-led-1</title>
+    <circle id="port-led-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="port-led-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="port-led-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-led-2" data-path="port-led-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="furniture" data-rel-pos="9" transform="translate(48.25,16.0)" data-group-role="furniture" data-for="port-2">
+    <title>port-led-2</title>
+    <circle id="port-led-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="port-led-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="port-led-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-group="mgmt" data-rel-pos="1" transform="translate(238.4,23.35) rotate(90 6.0 2.25)" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+  </g>
+  <g id="status-1" data-path="status-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="furniture" data-rel-pos="4" transform="translate(16.0,13.6)" data-group-role="furniture" data-for="chassis">
+    <title>status-1</title>
+    <circle id="status-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="status-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="status-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="status-2" data-path="status-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="furniture" data-rel-pos="5" transform="translate(16.0,17.6)" data-group-role="furniture" data-for="chassis">
+    <title>status-2</title>
+    <circle id="status-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="status-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="status-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="status-3" data-path="status-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="furniture" data-rel-pos="6" transform="translate(16.0,21.6)" data-group-role="furniture" data-for="chassis">
+    <title>status-3</title>
+    <circle id="status-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="status-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="status-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="status-4" data-path="status-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="furniture" data-rel-pos="7" transform="translate(16.0,25.6)" data-group-role="furniture" data-for="chassis">
+    <title>status-4</title>
+    <circle id="status-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="status-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="status-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="con" data-path="con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-group="mgmt" data-rel-pos="2" transform="translate(266.58,19.0)" data-group-role="management">
+    <title>con</title>
+    <path id="con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="con--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="con/opening" data-class="cutout" />
+    <g id="con--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+  </g>
+  <g id="mgmt" data-path="mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-group="mgmt" data-rel-pos="3" transform="translate(302.32,19.0) rotate(180 7.9 6.6)" data-group-role="management">
+    <title>mgmt</title>
+    <g id="mgmt--jack" data-path="mgmt/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt--jack</title>
+      <path id="mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt/jack/opening" data-class="cutout" />
+      <g id="mgmt--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+    </g>
+    <path id="mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+  </g>
+  <g id="ctrl" data-path="ctrl" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-group="mgmt" data-rel-pos="4" transform="translate(338.05,19.0) rotate(180 7.9 6.6)" data-group-role="management">
+    <title>ctrl</title>
+    <g id="ctrl--jack" data-path="ctrl/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>ctrl--jack</title>
+      <path id="ctrl--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ctrl--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ctrl--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ctrl/jack/opening" data-class="cutout" />
+      <g id="ctrl--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+    </g>
+    <path id="ctrl--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="ctrl--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ctrl/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="ctrl--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ctrl/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+  </g>
+  <g id="sys-led" data-path="sys-led" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-group="furniture" data-rel-pos="3" transform="translate(359.2,30.2)" data-group-role="furniture" data-for="chassis">
+    <title>sys-led</title>
+    <circle id="sys-led--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="sys-led--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="sys-led/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+  </g>
+</svg>
