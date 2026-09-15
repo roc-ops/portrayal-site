@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108.97mm" height="35.05mm" viewBox="0 0 108.97 35.05">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fhd-1mtp12-sc-os2-a" data-path="fhd-1mtp12-sc-os2-a" data-class="cassette" data-ref="fs/fhd-1mtp12-sc-os2-a@1:1.0.0" data-body-depth="117.86" data-media="fiber" data-model="FHD-1MTP6SCDOS2A" data-vendor-sku="57058" transform="translate(0,0)">
+    <title>fhd-1mtp12-sc-os2-a</title>
+    <defs>
+      <linearGradient id="fhd-1mtp12-sc-os2-a--bez" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3c4248" />
+        <stop offset="1" stop-color="#23272c" />
+      </linearGradient>
+      <radialGradient id="fhd-1mtp12-sc-os2-a--knob" cx="0.35" cy="0.35" r="0.75">
+        <stop offset="0" stop-color="#4a5056" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </radialGradient>
+    </defs>
+    <rect id="fhd-1mtp12-sc-os2-a--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#fhd-1mtp12-sc-os2-a--bez)" stroke="#15181a" stroke-width="0.3" />
+    <circle id="fhd-1mtp12-sc-os2-a--thumb-knob-left" cx="7.9" cy="17.525" r="3.1" fill="url(#fhd-1mtp12-sc-os2-a--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <circle id="fhd-1mtp12-sc-os2-a--thumb-knob-right" cx="101.07" cy="17.525" r="3.1" fill="url(#fhd-1mtp12-sc-os2-a--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <g id="fhd-1mtp12-sc-os2-a--sc1" data-path="fhd-1mtp12-sc-os2-a/sc1" data-class="port" data-ref="common/sc-duplex-adapter@1:1.0.0" data-connector="sc" data-media="fiber" transform="translate(15.81,11.525)">
+      <title>fhd-1mtp12-sc-os2-a--sc1</title>
+      <rect id="fhd-1mtp12-sc-os2-a--sc1--bezel" x="0" y="0" width="9.4" height="12.0" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc1--flange" x="0.7" y="0.6" width="8.0" height="1.0" rx="0.15" fill="#2f6fed" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc1--port-upper" x="1.7" y="2.2" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc1--port-lower" x="1.7" y="6.6" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+    </g>
+    <g id="fhd-1mtp12-sc-os2-a--sc2" data-path="fhd-1mtp12-sc-os2-a/sc2" data-class="port" data-ref="common/sc-duplex-adapter@1:1.0.0" data-connector="sc" data-media="fiber" transform="translate(28.52,11.525)">
+      <title>fhd-1mtp12-sc-os2-a--sc2</title>
+      <rect id="fhd-1mtp12-sc-os2-a--sc2--bezel" x="0" y="0" width="9.4" height="12.0" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc2--flange" x="0.7" y="0.6" width="8.0" height="1.0" rx="0.15" fill="#2f6fed" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc2--port-upper" x="1.7" y="2.2" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc2--port-lower" x="1.7" y="6.6" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+    </g>
+    <g id="fhd-1mtp12-sc-os2-a--sc3" data-path="fhd-1mtp12-sc-os2-a/sc3" data-class="port" data-ref="common/sc-duplex-adapter@1:1.0.0" data-connector="sc" data-media="fiber" transform="translate(41.65,11.525)">
+      <title>fhd-1mtp12-sc-os2-a--sc3</title>
+      <rect id="fhd-1mtp12-sc-os2-a--sc3--bezel" x="0" y="0" width="9.4" height="12.0" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc3--flange" x="0.7" y="0.6" width="8.0" height="1.0" rx="0.15" fill="#2f6fed" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc3--port-upper" x="1.7" y="2.2" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc3--port-lower" x="1.7" y="6.6" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+    </g>
+    <g id="fhd-1mtp12-sc-os2-a--sc4" data-path="fhd-1mtp12-sc-os2-a/sc4" data-class="port" data-ref="common/sc-duplex-adapter@1:1.0.0" data-connector="sc" data-media="fiber" transform="translate(54.61,11.525)">
+      <title>fhd-1mtp12-sc-os2-a--sc4</title>
+      <rect id="fhd-1mtp12-sc-os2-a--sc4--bezel" x="0" y="0" width="9.4" height="12.0" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc4--flange" x="0.7" y="0.6" width="8.0" height="1.0" rx="0.15" fill="#2f6fed" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc4--port-upper" x="1.7" y="2.2" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc4--port-lower" x="1.7" y="6.6" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+    </g>
+    <g id="fhd-1mtp12-sc-os2-a--sc5" data-path="fhd-1mtp12-sc-os2-a/sc5" data-class="port" data-ref="common/sc-duplex-adapter@1:1.0.0" data-connector="sc" data-media="fiber" transform="translate(67.58,11.525)">
+      <title>fhd-1mtp12-sc-os2-a--sc5</title>
+      <rect id="fhd-1mtp12-sc-os2-a--sc5--bezel" x="0" y="0" width="9.4" height="12.0" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc5--flange" x="0.7" y="0.6" width="8.0" height="1.0" rx="0.15" fill="#2f6fed" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc5--port-upper" x="1.7" y="2.2" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc5--port-lower" x="1.7" y="6.6" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+    </g>
+    <g id="fhd-1mtp12-sc-os2-a--sc6" data-path="fhd-1mtp12-sc-os2-a/sc6" data-class="port" data-ref="common/sc-duplex-adapter@1:1.0.0" data-connector="sc" data-media="fiber" transform="translate(80.8,11.525)">
+      <title>fhd-1mtp12-sc-os2-a--sc6</title>
+      <rect id="fhd-1mtp12-sc-os2-a--sc6--bezel" x="0" y="0" width="9.4" height="12.0" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc6--flange" x="0.7" y="0.6" width="8.0" height="1.0" rx="0.15" fill="#2f6fed" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc6--port-upper" x="1.7" y="2.2" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+      <rect id="fhd-1mtp12-sc-os2-a--sc6--port-lower" x="1.7" y="6.6" width="6.0" height="4.0" rx="0.2" fill="#1c1f22" />
+    </g>
+  </g>
+</svg>

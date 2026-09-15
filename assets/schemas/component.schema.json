@@ -57,6 +57,88 @@
    "$ref": "#/$defs/segment",
    "description": "this component mates INTO a receptacle presenting this interface. Requires a `mate` connection-point, which is what aligns it to its host."
   },
+  "optical": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "THE GLASS. A connector states `positions` - how many fibre positions it presents, 2 for an LC duplex, 12 for an MPO-12 - and states nothing else. A module that CONTAINS fibre states `paths` between `<part-id>.<n>` endpoints, and `unused` for any position no path reaches. See docs/optical-paths-design.md: the reason to model strands rather than a port-to-port table is that a table cannot express a tap, a splice, a conversion or a mesh, which are two thirds of the FS FHD catalogue.",
+   "properties": {
+    "positions": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "fibre positions this CONNECTOR presents. Stated once here and inherited by every module that composes it; a module never restates it."
+    },
+    "media": {
+     "$ref": "#/$defs/segment",
+     "description": "fibre type every path uses unless it overrides: os2, om3, om4, om5"
+    },
+    "polarity": {
+     "$ref": "#/$defs/segment",
+     "description": "the vendor's polarity name (a, af, b, universal). CHECKED against the paths, never a substitute for them - it is the claim, the paths are the evidence."
+    },
+    "polish": {
+     "enum": ["upc", "apc"],
+     "description": "THE FERRULE END FACE, where the port-type enum spells a family two ways. `lc` and `sc` have both a `-upc` and an `-apc` form and cannot name a type without this; `fc` and `lsh` appear only as APC; `mpo`, `st`, `mdc` and `splice` have one form and want nothing here. L86 asks for it exactly where it changes the answer. It is a claim about the connector this module presents, not about the glass - `media` is the glass."
+    },
+    "rear-kind": {
+     "enum": ["splice"],
+     "description": "WHAT THE BACK OF THIS MODULE IS, when it is not a connector. A splice cassette's trunk fibres are fusion-spliced to its pigtails, so there is nothing on the rear face to draw and no adapter to compose - `splice` is a real rear-port type upstream, shipping in the devicetype-library's ADC PPP-SC-SM. Omitted on every module whose rear carries an adapter, which is all of them so far. L87 checks that a module claiming one has a rear face to claim it about."
+    },
+    "front-order": {
+     "type": "array",
+     "minItems": 1,
+     "items": {"$ref": "#/$defs/segment"},
+     "description": "THE VENDOR'S OWN SEQUENCE, because a silkscreen is a fact about the printing and placement cannot supply it. For one row, left to right by `at.x` is a safe reading - the position on the face IS the numbering, and every single-row module in this library is projected that way with nothing stated here. A face with more than one row of fibre parts is a different question: whether the vendor numbers row then row, or column then column, and which row comes first, is a fact about the silkscreen, not a fact `at.x` and `at.y` can be sorted into - guessing a rule from the one multi-row sample this library happens to hold is exactly how the 12.90-vs-13.2 pitch confusion started. Required only where geometry genuinely cannot answer (L88): list every fibre-bearing part id in the order the vendor numbers it, and the projection numbers front ports in that order instead of sorting on position. Say in `provenance.optical` where the order was read, the same way `polarity` and `polish` name their source."
+    },
+    "paths": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+       "from": {"$ref": "#/$defs/optical-endpoint"},
+       "to": {
+        "oneOf": [
+         {"$ref": "#/$defs/optical-endpoint"},
+         {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+           "type": "object",
+           "additionalProperties": false,
+           "required": ["at", "ratio"],
+           "properties": {
+            "at": {"$ref": "#/$defs/optical-endpoint"},
+            "ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 100}
+           }
+          }
+         }
+        ],
+        "description": "one endpoint, or a list of endpoints with ratios summing to 100 - which is what a tap or a coupler is"
+       },
+       "media": {"$ref": "#/$defs/segment"},
+       "band": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["centre-nm"],
+        "description": "this path carries only this band; absent means it carries whatever is left. An add/drop filter is two paths off one endpoint, one banded and one not.",
+        "properties": {
+         "centre-nm": {"type": "number", "exclusiveMinimum": 0},
+         "width-nm": {"type": "number", "exclusiveMinimum": 0}
+        }
+       }
+      }
+     }
+    },
+    "unused": {
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/optical-endpoint"},
+     "additionalProperties": {"type": "string", "minLength": 20},
+     "description": "positions no path reaches, and WHY - prose long enough that a bare marker will not validate, because the claim is about the hardware. L80 checks both ways: an unreached position with no entry is an error, and an entry for a position a path DOES reach is an error."
+    }
+   }
+  },
   "body": {
    "type": "object",
    "additionalProperties": false,
@@ -526,6 +608,16 @@
     "default"
    ]
   },
+  "faces": {
+   "type": "object",
+   "additionalProperties": false,
+   "minProperties": 1,
+   "description": "THIS PART SEEN FROM ANOTHER DIRECTION, each as its own component. A face is a drawing, and a drawing from another direction is a different drawing at a different size - so it is a different part, not a variant of this one. `plan` is the top view, which a device bay lands with its own `plan:` key; `rear` is the back of the part, which renders as a component preview rather than in any device view. The legacy top-level `plan:` means exactly `faces.plan` and stays legal; declaring both is an error (L82). `faces: {}` is rejected outright - it passes every check downstream (L82, L83, the index) while saying nothing, so the schema is the only place left to catch it.",
+   "properties": {
+    "plan": {"$ref": "#/$defs/face"},
+    "rear": {"$ref": "#/$defs/face"}
+   }
+  },
   "fields": {
    "type": "object",
    "description": "WHAT A FORM CAN CHANGE ON THIS PART WITHOUT IT BECOMING ANOTHER PART. A different shape is a different component; a different property - a supply's wattage, a DIMM's capacity and speed, a drive's capacity and interface - is a field on the same one. Each key names a `data-from` text node in every skin, which carries the default the drawing shows when nothing says otherwise; a placement's `attrs`, a configuration's `bay-attrs`, or the kit's setFields put a value there. The consumer building the form reads this from components.json.",
@@ -547,7 +639,7 @@
    "type": "object",
    "additionalProperties": false,
    "required": ["ref"],
-   "description": "THIS PART SEEN FROM ABOVE, as another component. A riser's face is its bracket plate; from above it is a thin PCB with connectors, which is a different drawing at a different size, so it is its own part - dell/riser-card-14g@1 for the full-height risers. A device bay that seats this part says where the plan lands in its top view (`plan:` on the bay).",
+   "description": "SUGAR FOR `faces.plan`, kept because 11 components and one device still use it - see `spec/tools/portrayal/faces.py` for why that count matters. THIS PART SEEN FROM ABOVE, as another component. A riser's face is its bracket plate; from above it is a thin PCB with connectors, which is a different drawing at a different size, so it is its own part - dell/riser-card-14g@1 for the full-height risers. A device bay that seats this part says where the plan lands in its top view (`plan:` on the bay). Do not declare this and `faces.plan` together - L82 reports it.",
    "properties": {
     "ref": {
      "type": "string",
@@ -640,6 +732,18 @@
   }
  },
  "$defs": {
+  "face": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": ["ref"],
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$",
+     "description": "the component that IS this part seen from that direction"
+    }
+   }
+  },
   "watts": {
    "type": "number",
    "exclusiveMinimum": 0,
@@ -738,6 +842,11 @@
   "segment": {
    "type": "string",
    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+  },
+  "optical-endpoint": {
+   "type": "string",
+   "pattern": "^(?:[a-z0-9-]+:)?[a-z0-9-]+\\.[1-9][0-9]*$",
+   "description": "`<part-id>.<n>`, or `<face>:<part-id>.<n>` - a composed part's id and a 1-based fibre position within it. The optional face prefix names a key of this component's `faces:`, so a module's paths can reach a part drawn on its rear: a cassette's rear MTP is a part of the rear face component, not of the cassette's own `parts:`. Unprefixed means this face."
   },
   "xy": {
    "type": "array",

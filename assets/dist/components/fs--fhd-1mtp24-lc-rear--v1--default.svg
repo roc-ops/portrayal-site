@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="99.0mm" height="31.0mm" viewBox="0 0 99.0 31.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fhd-1mtp24-lc-rear" data-path="fhd-1mtp24-lc-rear" data-class="cassette" data-ref="fs/fhd-1mtp24-lc-rear@1:1.0.0" data-depth="2.0" data-media="fiber" transform="translate(0,0)">
+    <title>fhd-1mtp24-lc-rear</title>
+    <rect id="fhd-1mtp24-lc-rear--bezel" x="0" y="0" width="99.0" height="31.0" rx="1.5" fill="#26292d" stroke="#15181a" stroke-width="0.3" />
+    <g id="fhd-1mtp24-lc-rear--mtp" data-path="fhd-1mtp24-lc-rear/mtp" data-class="port" data-ref="common/mpo24-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(42.6,10.8)">
+      <title>fhd-1mtp24-lc-rear--mtp</title>
+      <defs>
+        <linearGradient id="fhd-1mtp24-lc-rear--mtp--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-1mtp24-lc-rear--mtp--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-1mtp24-lc-rear--mtp--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <g id="fhd-1mtp24-lc-rear--mtp--bore" data-path="fhd-1mtp24-lc-rear/mtp/bore" data-class="port" data-ref="std/mpo@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(3.0,1.9)">
+        <title>fhd-1mtp24-lc-rear--mtp--bore</title>
+        <rect id="fhd-1mtp24-lc-rear--mtp--bore--opening" x="0" y="0" width="7.8" height="5.6" rx="0.4" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-1mtp24-lc-rear/mtp/bore/opening" data-class="cutout" />
+        <rect id="fhd-1mtp24-lc-rear--mtp--bore--bevel" x="0.55" y="0.5" width="6.7" height="4.6" rx="0.25" fill="#aab3bf" />
+      </g>
+    </g>
+  </g>
+</svg>

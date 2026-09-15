@@ -204,3 +204,95 @@ export async function applyOverrides(rootEl, bays, overrides, loadSkin) {
   }
   return applied;
 }
+
+// EVERY LEVEL, BY FOLLOWING THE FRONTIER. A device's own bays are known before
+// anything is applied; nested ones are not, because which nested bays exist -
+// and where they are - is a property of the carrier CURRENTLY seated. So the
+// only way to apply an override map to a face is to seat what you know, look
+// again, and repeat while looking still finds something new.
+//
+// It ran ONCE and buried every nested swap in 3D; then TWICE, which covered the
+// two levels the library actually has. Two is not the number - it is the depth
+// of today's deepest carrier. The moment a component that declares bays appears
+// in another's `accepts` list, a third level exists and the pass that stops at
+// two skips it silently: the 2D drawing swaps, the scene built from this text
+// does not, and nothing reports anything. That is the same 2D/3D divergence
+// twice already fixed one level at a time, and this is the shape that stops
+// fixing it one level at a time.
+//
+// Returns `{applied, dropped}`: how many bays were seated, and the ids of any
+// the override map named that the walk never reached. `dropped` is non-empty
+// only when `maxDepth` cut the walk short.
+//
+// `seen` is what makes the walk terminate on its own: a bay is applied at its
+// OWN level and never revisited, so each pass retires at least one level and the
+// loop ends when a pass finds nothing left rather than when a counter runs out.
+// (It used to say "at the level it first appears at", which was the bug the
+// levelling below fixes - a bay can appear in a frontier several levels before
+// it is its turn.) `maxDepth` is the belt - render.py bounds its own recursion
+// at MAX_BAY_DEPTH = 3 for the same reason - so a drawing with a cycle in it
+// cannot spin here.
+export async function applyAllOverrides(rootEl, deviceBays, overrides, loadSkin,
+                                        compByRef, maxDepth = 4) {
+  let n = await applyOverrides(rootEl, deviceBays, overrides, loadSkin);
+  const seen = new Set(deviceBays.map(b => b.id));
+  // ONLY THE BOUNDED EXIT CAN DROP ANYTHING, and saying so is cheaper than
+  // proving it again below. Leaving the loop because the frontier came back
+  // empty IS the proof that nothing is left; re-deriving it afterwards walks
+  // every bay in the drawing a second time to be told what the loop just
+  // established. `applyBayOverrides` runs per view per config, so that is one
+  // wasted walk per face on the path that always succeeds.
+  let truncated = true;
+  for (let depth = 0; depth < maxDepth; depth++) {
+    const found = nestedBays(rootEl, compByRef).filter(b => !seen.has(b.id));
+    // ONE LEVEL PER PASS, and this is not an optimisation. A COMPILED FACE
+    // ALREADY CARRIES ITS NESTING - render.py seats every configured `default:`
+    // at build time, and the dist holds 248 level-2 bay groups across 52 files
+    // before any override is applied - so `nestedBays` does not hand back one
+    // level at a time. It walks `[data-class="bay"]` and level-limits nothing,
+    // which means a single frontier can hold a carrier AND something seated
+    // inside it.
+    // Applied together, the deeper one's `at`/`rotate` were read off the carrier
+    // the shallower one is about to replace, and `seen` then guarantees they are
+    // never re-derived: the occupant lands where the OLD carrier's bay was.
+    // So a bay with an ancestor in the same frontier waits for the next pass,
+    // by which time the carrier above it has settled and it resolves against
+    // what is actually seated. The `+ '/'` is load-bearing - without it
+    // `slot-1/module/ppm-10` reads as a descendant of `slot-1/module/ppm-1`.
+    const frontier = found.filter(
+      b => !found.some(o => o !== b && b.id.startsWith(o.id + '/')));
+    if (!frontier.length) { truncated = false; break; }
+    for (const b of frontier) seen.add(b.id);
+    n += await applyOverrides(rootEl, frontier, overrides, loadSkin);
+  }
+  // WHAT WAS LOST, IF ANYTHING - because the two ways out of that loop mean
+  // opposite things and used to be indistinguishable. Running out of frontier is
+  // completion; running out of `maxDepth` is truncation, and an override the
+  // caller asked for was never applied. 2D would show the swap and 3D would not,
+  // which is the divergence this whole family of fixes has been about, and it
+  // would have gone unreported.
+  //
+  // NAMED BY THE MAP, not merely unreached. The walk continues while a frontier
+  // holds anything NEW, so `depth === maxDepth && frontier.length` is true of a
+  // deep drawing nobody swapped anything in - it would announce that overrides
+  // were dropped when none were. What was actually lost is the bays still
+  // unprocessed THAT THE OVERRIDE MAP NAMES.
+  //
+  // Reported rather than logged. swap.js has no console calls and runs in two
+  // places - the live page and a headless parse of a fetched face - so it says
+  // what happened and lets the caller decide how to say it. viewer3d has the
+  // `[portrayal] …` voice for that.
+  //
+  // IT NAMES WHAT IS VISIBLE, WHICH IS NOT NECESSARILY ALL THAT WAS LOST. A bay
+  // that would only have appeared once a deeper carrier was seated cannot be in
+  // the document to be counted, so a truncated walk can hide further work behind
+  // the work it already skipped. `dropped` is therefore a floor: non-empty means
+  // something was definitely lost, empty means nothing visible was.
+  const dropped = truncated
+    ? nestedBays(rootEl, compByRef)
+        .filter(b => !seen.has(b.id)
+                     && Object.prototype.hasOwnProperty.call(overrides, b.id))
+        .map(b => b.id)
+    : [];
+  return {applied: n, dropped};
+}

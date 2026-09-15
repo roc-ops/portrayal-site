@@ -28,7 +28,7 @@ import { configureRelief, createReliefScope, svgCanvas, canvasTex, rasterize, sv
          setNodeStates, nodeStates, setNodeFields, restyleText,
          setPulled as setReliefPulled, pulledPaths,
          buildFaceRelief, bodyBoxes } from './relief.js';
-import { applyOverrides, nestedBays } from './swap.js';
+import { applyAllOverrides } from './swap.js';
 import { jdist } from './dist.js';
 import { createLamps } from './lamps.js';
 
@@ -432,23 +432,25 @@ export function createViewer(container, opts = {}) {
       try { text = await svgSource(url, SCOPE); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
-      // TWO PASSES, AND THE SECOND HAS TO LOOK AGAIN. Which nested bays exist,
-      // and where they are, is a property of the carrier CURRENTLY seated - so
-      // deriving them before the device pass reads them off the carrier that
-      // pass is about to replace. 73 device bays in the library accept more than
-      // one bay-bearing carrier: the r740xd's four riser bays, every mx2008 FPC
-      // taking either an mpc*-3d-v2k or an mx2k-mpc6e-v2k, whose `mic0`/`mic1`
-      // differ in geometry. An override map that swaps a carrier AND something
-      // under it would have seated the nested module at the OLD carrier's `at`,
-      // or missed a bay the new carrier introduces.
-      // shell.js never had this: `bayFor` re-reads the live drawing each time.
-      let n = await applyOverrides(doc.documentElement, bays, OVERRIDES, loadSkin);
-      const nested = nestedBays(doc.documentElement, byRef);
-      if (nested.length)
-        n += await applyOverrides(doc.documentElement, nested, OVERRIDES, loadSkin);
-      if (!n) continue;
+      // EVERY LEVEL, not the two the library happens to have today - see
+      // `applyAllOverrides` for why a fixed number of passes is the wrong shape
+      // for this. shell.js never needed it: `bayFor` re-reads the live drawing
+      // on every lookup, so the gap here was always a 2D/3D divergence.
+      const {applied, dropped} = await applyAllOverrides(
+        doc.documentElement, bays, OVERRIDES, loadSkin, byRef);
+      // A DROPPED OVERRIDE IS THE ONE FAILURE THIS FILE MUST NOT SWALLOW. It
+      // means the drawing nests deeper than the walk was allowed to go, so the
+      // 2D face shows the swap and this scene does not - silently, and looking
+      // exactly like a viewer that simply did not update. render.py cannot build
+      // a face deeper than MAX_BAY_DEPTH, so reaching this at all says the
+      // drawing is not one it produced.
+      if (dropped.length)
+        console.warn(`[portrayal] ${DEV}.${cfg}.${view}: ${dropped.length} nested `
+                     + `bay override(s) never applied - the drawing nests deeper `
+                     + `than the walk goes, so 2D and 3D will disagree`, dropped);
+      if (!applied) continue;
       setSvgOverride(url, new XMLSerializer().serializeToString(doc), SCOPE);
-      total += n;
+      total += applied;
     }
     return total;
   }

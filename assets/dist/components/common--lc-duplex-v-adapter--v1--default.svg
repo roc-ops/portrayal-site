@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="9.28mm" height="13.75mm" viewBox="0 0 9.28 13.75">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="lc-duplex-v-adapter" data-path="lc-duplex-v-adapter" data-class="port" data-ref="common/lc-duplex-v-adapter@1:1.0.0" data-media="fiber" transform="translate(0,0)">
+    <title>lc-duplex-v-adapter</title>
+    <rect id="lc-duplex-v-adapter--bezel" x="0" y="0" width="9.28" height="13.75" rx="0.4" fill="#2a2e33" stroke="#15181a" stroke-width="0.2" />
+    <rect id="lc-duplex-v-adapter--port-tx" x="2.29" y="0.35" width="4.7" height="6.3" rx="0.2" fill="#1c1f22" />
+    <rect id="lc-duplex-v-adapter--port-rx" x="2.29" y="7.10" width="4.7" height="6.3" rx="0.2" fill="#1c1f22" />
+    <g id="lc-duplex-v-adapter--tx" data-path="lc-duplex-v-adapter/tx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(2.29,0.35)">
+      <title>lc-duplex-v-adapter--tx</title>
+      <path id="lc-duplex-v-adapter--tx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="lc-duplex-v-adapter/tx/bore" data-class="cutout" />
+      <rect id="lc-duplex-v-adapter--tx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+      <rect id="lc-duplex-v-adapter--tx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+      <rect id="lc-duplex-v-adapter--tx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+      <circle id="lc-duplex-v-adapter--tx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="lc-duplex-v-adapter--tx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+    <g id="lc-duplex-v-adapter--rx" data-path="lc-duplex-v-adapter/rx" data-class="port" data-ref="std/lc-bore@3:3.0.0" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(2.29,7.1)">
+      <title>lc-duplex-v-adapter--rx</title>
+      <path id="lc-duplex-v-adapter--rx--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.42 h 0.62 v 0.49     h -1.03 v 0.69 h -2.64 v -0.69     h -1.03 v -0.49 h 0.62 v -0.42 h -0.62 z" data-path="lc-duplex-v-adapter/rx/bore" data-class="cutout" />
+      <rect id="lc-duplex-v-adapter--rx--key-neck" x="0.62" y="4.70" width="3.46" height="0.42" fill="#15181b" data-z-top="3.6" />
+      <rect id="lc-duplex-v-adapter--rx--key-shoulder" x="0" y="5.12" width="4.7" height="0.49" fill="#15181b" data-z-top="2.9" />
+      <rect id="lc-duplex-v-adapter--rx--key-tongue" x="1.03" y="5.61" width="2.64" height="0.69" fill="#15181b" data-z-top="2.2" />
+      <circle id="lc-duplex-v-adapter--rx--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+      <circle id="lc-duplex-v-adapter--rx--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+    </g>
+  </g>
+</svg>
