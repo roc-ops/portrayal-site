@@ -252,6 +252,7 @@
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';
 import * as marks from './vendor/marks.js';
+import { swapsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 // The analysis of what a drawing says about its own lamps is not this page's -
 // the gaps register asks the same questions of the same drawings offline. What
 // stays here is the markup and the handlers that put it on screen.
@@ -264,6 +265,11 @@ const shell = createShell({
   mount: document.getElementById('shell'),
 });
 const state = shell.state;
+
+// An optic's latch colour and label, the same controls Explorer has. What they
+// set lands in the live drawing, which is what every export here reads.
+installOpticFields(shell);
+document.head.appendChild(Object.assign(document.createElement('style'), {textContent: OPTIC_CSS}));
 
 // The document. Everything on this page is a view of this object, and nothing
 // else is state: the panel, the stage, the exports and the URL are all built
@@ -343,6 +349,45 @@ function writeTarget() {
   doc.device = state.device || '';
   doc.config = state.cfg || '';
   doc.view = state.view || '';
+  // WHAT THE READER CHANGED IN THE DRAWING IS PART OF WHAT WAS MARKED UP. A
+  // mark on port-4's optic means nothing on a drawing with no optic in port-4,
+  // so the swaps - modules in bays and optics in ports - travel with the
+  // document, in the share link's `swaps` slot, which marks.js has carried
+  // since Portrayal #441 and which (its PR says) had no writer until this page.
+  // Held while a link's own swaps are still waiting to be applied, so the
+  // reload that moves the shell does not overwrite them with nothing.
+  if (!pendingSwaps) doc.swaps = swapsNow(shell);
+}
+// AN OPTIC CHANGES WHAT THE MARKS CAN MATCH, and seating one does not reload
+// the drawing - a bay swap reloads it, and 'load' re-applies the marks; an optic
+// is seated in place, so without this a mark on port-4's optic went on saying
+// it matched nothing after the optic was there. Re-applied only when the swaps
+// actually changed, since 'change' also fires for fields and selection.
+let lastSwaps = '';
+shell.on('change', () => {
+  if (pendingSwaps) return;
+  doc.swaps = swapsNow(shell);
+  const now = JSON.stringify(doc.swaps);
+  if (now !== lastSwaps) { lastSwaps = now; render(); }
+});
+
+// A LINK'S SWAPS WAIT FOR ITS DRAWING. Applying one moves the shell to the
+// link's device and configuration, and each move reloads the drawing - which
+// resets the configuration's bays and cages to what it built. So the swaps are
+// applied once the drawing the link names has finished loading, never before.
+let pendingSwaps = null, landing = null;
+const atTarget = w => (!w.device || state.device === w.device) &&
+                      (!w.config || state.cfg === w.config);
+async function applyPendingSwaps() {
+  const map = pendingSwaps;
+  pendingSwaps = null;
+  if (!map) return;
+  const {ignored} = await shell.applySwaps(map);
+  doc.swaps = swapsNow(shell);
+  lastSwaps = JSON.stringify(doc.swaps);
+  render();
+  const n = Object.keys(ignored || {}).length;
+  if (n) say('#expmsg', `${n} swap(s) in the link do not fit this drawing and were left out`, 'bad');
 }
 
 /** @returns true if the shell is reloading, in which case its 'load' re-enters. */
@@ -854,8 +899,29 @@ addEventListener('keydown', ev => {
   deselect();
 });
 
+// A SWAP RE-SELECTS WHAT WAS SWAPPED, and that is not a second click. After
+// seating a module or an optic in place, the shell calls select() on the same
+// bay or cage so the inspector redraws (shell.js swapBay/swapCage). With click
+// highlights on, a repeat selection means "no, not that one": it took the mark
+// off and cleared the inspector, so an optic vanished from under the controls
+// that were about to set its colour. The menus that start a swap are marked
+// here, and the one re-selection that ends it is let through untouched.
+let reseating = null, reseatTimer = null;
+shell.el.inspect.addEventListener('change', ev => {
+  if (!ev.target.matches?.('#optic, #occ')) return;
+  reseating = ev.target.dataset.cage || state.sel;
+  clearTimeout(reseatTimer);
+  // a swap that fails emits nothing, so the mark must not outlive it
+  reseatTimer = setTimeout(() => { reseating = null; }, 10000);
+}, true);
+
 shell.on('select', (path, target, fromTree) => {
   if (muting) return;
+  if (reseating) {
+    const ours = path === reseating;
+    reseating = null;
+    if (ours) return;
+  }
   if (!path) { lastSel = null; return; }
   if (!fromTree && dragged) return;
   const again = path === lastSel;
@@ -1197,6 +1263,7 @@ shell.on('load', () => {
   writeTarget();
   buildRules();
   render({fit: true});
+  if (landing && atTarget(landing.want)) { const done = landing.resolve; landing = null; done(); }
 });
 
 // The tree is rebuilt whole on a bay swap, which drops the dots with it. 'row'
@@ -1215,9 +1282,18 @@ await shell.ready;
 const fromHash = marks.decode(location.hash);
 if (fromHash) {
   doc = fromHash;
+  const want = {device: doc.device, config: doc.config};
+  pendingSwaps = Object.keys(doc.swaps || {}).length ? {...doc.swaps} : null;
   $('#legend').checked = doc.legend;
-  if (!await retarget(doc)) { writeTarget(); render({fit: true}); }
-  say('#expmsg', `restored ${doc.marks.length} mark(s) from the URL`, 'good');
+  const moving = await retarget(doc);
+  if (pendingSwaps && moving && !atTarget(want))
+    // bounded, so a link naming a configuration this device lacks still
+    // applies what it can rather than waiting forever for a load that is not coming
+    await new Promise(resolve => { landing = {want, resolve}; setTimeout(resolve, 8000); });
+  await applyPendingSwaps();
+  if (!moving) { writeTarget(); render({fit: true}); }
+  const n = Object.keys(doc.swaps || {}).length;
+  say('#expmsg', `restored ${doc.marks.length} mark(s)` + (n ? ` and ${n} swap(s)` : '') + ' from the URL', 'good');
 }
 </script>
 </body>
