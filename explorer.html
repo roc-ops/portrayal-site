@@ -63,6 +63,9 @@
      already a containing block for its own absolute children, so the readout
      anchors to this box with no help. */
   #stage-3d { background:var(--pt-surface); }
+  .optic-fields input[type=text] { flex:1; min-width:0; font:inherit; }
+  .optic-fields input[type=color] { width:2.2rem; height:1.3rem; padding:0; border:none;
+                                    background:none; cursor:pointer; }
   #hoverpath { position: absolute; left: 8px; top: 8px; max-width: 60%;
     padding: 2px 7px; border-radius: 3px; pointer-events: none; z-index: 5;
     font: 11px ui-monospace, monospace; color: var(--pt-ink);
@@ -167,6 +170,7 @@
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';
 import { statesOfEl } from './vendor/states.js';
+import { encodeSwaps, searchWith, swapOverrides as swapDelta } from './vendor/swap.js';
 
 const shell = createShell({
   title: 'Explorer',
@@ -490,7 +494,15 @@ async function ensureViewer() {
     // dist is passed explicitly. In demo2/ the viewer's default of '../dist/'
     // happened to resolve correctly because the page sat beside it; here the
     // page is at the site root and that default would point outside the site.
-    const v = createViewer(host3d, {dist: 'assets/dist/'});
+    // THE BACKGROUND IS THE READER'S (Portrayal cf387677). The shell owns the
+    // swatches and the 2D stage; the scene is told the colour it starts with
+    // and every change after, so the two stages never disagree.
+    const v = createViewer(host3d, {dist: 'assets/dist/', background: shell.stage()});
+    shell.on('stage', c => v.setBackground(c));
+    // WHAT IS WRITTEN ON A PART reaches the scene as well as the drawing - an
+    // optic's label, today. The shell's setFields says the host mirrors it.
+    shell.on('fields', ({all}) => v.setFields(all));
+    if (Object.keys(state.cfgFields || {}).length) v.setFields(state.cfgFields);
     // A HANDLE FOR MEASURING, not for using. `?debug=1` puts the viewer on
     // window so a console or a harness can ask it what it selected and where
     // the halo landed - which is how the ear-offset bug was pinned to a number
@@ -648,20 +660,114 @@ shell.on('mode', m => {
 // into one bay, where render.py also RECURSES INTO A CARRIER'S OWN BAYS, so
 // re-seating a modular line card would quietly lose its MPAs. Only what the user
 // actually changed is sent, and everything else keeps the compiled geometry.
-function builtOccupant(bayId) {
-  const cfg = state.meta?.configs?.find(c => c.name === state.cfg);
-  const declared = cfg?.bays || {};
-  if (Object.prototype.hasOwnProperty.call(declared, bayId)) return declared[bayId] || null;
-  for (const bays of Object.values(state.meta?.bays || {}))
-    for (const b of bays) if (b.id === bayId) return b.default || null;
-  return null;
-}
+//
+// OPTICS TOO, SINCE PORTRAYAL #441. A port that takes a pluggable is a CAGE, and
+// what is in it is `cfgOccupants`, beside `cfgBays`. This page used to carry its
+// own copy of the rule that read only the bays, so an optic chosen in the
+// inspector reached the drawing and never the 3D scene: the swap key did not
+// change and the load was not handed it. The rule is swap.js's now - the same
+// one the kit's own page uses, reading `configs[].occupants` the one way the
+// shell's state is built from - so the two cannot drift again.
+const flat = o => Object.values(o || {}).flat();
 function swapOverrides() {
-  const out = {};
-  for (const [id, ref] of Object.entries(state.cfgBays || {}))
-    if ((ref || null) !== builtOccupant(id)) out[id] = ref || null;
-  return out;
+  return swapDelta({
+    cfg: state.meta?.configs?.find(c => c.name === state.cfg),
+    bays: flat(state.meta?.bays), cages: flat(state.meta?.cages),
+    cfgBays: state.cfgBays, cfgOccupants: state.cfgOccupants,
+  });
 }
+
+// A SWAP SURVIVES A RELOAD, and a link to this page says what it shows.
+// The shell already READS `?device=&config=&view=&swap=` on load; nothing here
+// ever wrote them, so a module or an optic chosen here was gone on reload and
+// could not be shared. Rewritten in place (replaceState, so swapping does not
+// fill the back button); parameters this page does not own are kept.
+function writeLocation() {
+  if (!state.device || !state.meta) return;
+  const e = encodeURIComponent;
+  const search = searchWith(location.search, {
+    device: e(state.device), config: e(state.cfg || ''), view: e(state.view || ''),
+    swap: encodeSwaps(swapOverrides()),
+  });
+  if (search !== location.search) {
+    try { history.replaceState(history.state, '', `${location.pathname}${search}${location.hash}`); }
+    catch (err) { /* a sandboxed frame may refuse; nothing else depends on it */ }
+  }
+}
+shell.on('change', writeLocation);
+shell.on('load', writeLocation);
+
+// ── WHAT IS WRITTEN ON AN OPTIC ────────────────────────────────────────────
+// A seated optic declares FIELDS (components.json `fields`): the four generics
+// carry a latch colour and a module label. The shell can set them - setFields,
+// which writes the 2D drawing and asks the host to tell the scene - and offers
+// no control for them, so they go here, beneath the optic menu, for whatever
+// optic is in the selected cage. The optic itself is `<cage>-occupant`, a
+// top-level sibling of its port (swap.js occupantAttrs, render.py seat_at).
+//
+// `select` fires after the shell has drawn the inspector; `change` covers the
+// redraw after a swap. The rows are added once per drawn inspector.
+const HEX = /^#[0-9a-f]{6}$/i;
+function opticFields() {
+  const box = shell.el.inspect;
+  const pick = box?.querySelector('#optic');
+  if (!pick || box.querySelector('.optic-fields')) return;
+  const occ = `${pick.dataset.cage}-occupant`;
+  // A DIFFERENT OPTIC STARTS FROM ITS OWN DEFAULTS. An SFP's latch is blue and
+  // a QSFP's is white, so a colour picked for one must not ride onto the next.
+  pick.addEventListener('change', () => shell.setFields(occ, null));
+  const ref = pick.value;
+  const fields = ref ? shell.fieldsOf(ref) : {};
+  const keys = Object.keys(fields);
+  if (!keys.length) return;
+  const cur = state.cfgFields?.[occ] || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'optic-fields';
+  for (const k of keys) {
+    const f = fields[k] || {};
+    // A colour is declared as text holding a hex value, so the default says
+    // which control fits: a picker for a colour, a box for words.
+    const colour = HEX.test(String(f.default || ''));
+    const row = document.createElement('div');
+    row.className = 'row';
+    const name = document.createElement('span');
+    name.textContent = (f.label || k).toLowerCase();
+    const inp = document.createElement('input');
+    inp.type = colour ? 'color' : 'text';
+    inp.value = cur[k] ?? f.default ?? '';
+    if (!colour) inp.placeholder = 'none';
+    inp.onchange = () => shell.setFields(occ, {[k]: inp.value});
+    row.append(name, inp);
+    wrap.appendChild(row);
+  }
+  pick.closest('.row').after(wrap);
+}
+shell.on('select', () => queueMicrotask(opticFields));
+shell.on('change', () => queueMicrotask(opticFields));
+
+// THE LATCH COLOUR, PAINTED LIVE. A part's colour is a field too: its node
+// carries `data-fill-from="latch-color"`, and render.py's fill_from_attrs sets
+// the node's `fill` from it - AT BUILD TIME. At runtime the kit's setFields (2D)
+// and relief.js applyNodeFields (3D) write only text (`data-from`), so a colour
+// chosen here changed nothing. Until the kit paints it, the drawing's half is
+// done here by the build's own rule: a value sets `fill` on `data-fill-from`
+// and `stroke` on `data-stroke-from`, and an empty one restores what was drawn.
+// The scene's half needs the kit - see upstream-work/pluggable-fields.md.
+function paintFields() {
+  const svg = state.svg;
+  if (!svg) return;
+  for (const [path, vals] of Object.entries(state.cfgFields || {}))
+    for (const host of svg.querySelectorAll(`[data-path="${CSS.escape(path)}"]`))
+      for (const [k, v] of Object.entries(vals || {}))
+        for (const [attr, from] of [['fill', 'data-fill-from'], ['stroke', 'data-stroke-from']])
+          for (const node of host.querySelectorAll(`[${from}="${CSS.escape(k)}"]`)) {
+            const drawn = `data-drawn-${attr}`;
+            if (!node.hasAttribute(drawn)) node.setAttribute(drawn, node.getAttribute(attr) || '');
+            const val = v == null ? '' : String(v).trim();
+            node.setAttribute(attr, val || node.getAttribute(drawn));
+          }
+}
+for (const ev of ['fields', 'load', 'change']) shell.on(ev, paintFields);
 
 // THE SWAP STATE IS PART OF WHAT IS ON SCREEN, so it is part of the key.
 // A runtime swap changes no file on disk - the 3D scene is extracted from the
