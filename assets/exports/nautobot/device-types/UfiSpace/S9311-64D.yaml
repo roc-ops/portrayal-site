@@ -8,14 +8,22 @@ weight: 18.52
 weight_unit: kg
 airflow: front-to-rear
 description: UfiSpace S9311-64D 400G data center spine switch - 2RU white box, 64x QSFP-DD 400G in four
-  rows of sixteen (two 2-high stacked cage banks) plus 2x SFP+ 1/10G, an RJ45 out-of-band port, RJ45 and
-  micro-
+  rows of sixteen (two 2-high stacked cage banks) plus 2x SFP+ 1/10G, an RJ45 out-of-band port, RJ45 and...
 front_image: true
 rear_image: true
 console-ports:
   - name: Console
     type: rj-45
 interfaces:
+  - name: oob
+    type: 1000base-t
+    mgmt_only: true
+  - name: port-64
+    type: 10gbase-x-sfpp
+    mgmt_only: true
+  - name: port-65
+    type: 10gbase-x-sfpp
+    mgmt_only: true
   - name: port-0
     type: 400gbase-x-qsfpdd
   - name: port-1
@@ -144,10 +152,12 @@ interfaces:
     type: 400gbase-x-qsfpdd
   - name: port-63
     type: 400gbase-x-qsfpdd
-  - name: port-64
-    type: 10gbase-x-sfpp
-  - name: port-65
-    type: 10gbase-x-sfpp
+  - name: clk-10mhz
+    type: other
+    label: SMB
+  - name: clk-1pps
+    type: other
+    label: SMB
 module-bays:
   - name: Fan 0
     position: '0'
@@ -194,6 +204,6 @@ comments: "UfiSpace S9311-64D 400G data center spine switch - 2RU white box, 64x
   \ -48 to -60 V, 70 A\n- power.power-envelope: bare\n- power.power-max-w: 2097\n- power.power-typical-w:\
   \ 387.5\n- power.psu-redundancy: 1+1 hot-swappable\n- thermal.airflow: front-to-back or back-to-front,\
   \ selected by the fan and PSU build\n- thermal.fan-redundancy: 3+1 hot-swappable\n\nDrawing version\
-  \ 3.0.5. A major bump means a slot moved or an id was renamed, so anything cached from an earlier export\
+  \ 3.0.9. A major bump means a slot moved or an id was renamed, so anything cached from an earlier export\
   \ may no longer line up.\nModel maturity: modelled. Every dimension in the source records where it came\
   \ from."

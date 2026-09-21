@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="45.2mm" height="40.4mm" viewBox="0 0 45.2 40.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="csr310-fan-tray" data-path="csr310-fan-tray" data-class="fan" data-behaviour="fills" data-ref="edgecore/csr310-fan-tray@1:1.0.2" data-body-depth="300.0" data-wall="#3a3e43" data-airflow="side-to-side" data-model="FAN-1U-1x1J-S" data-part="F0TZZ5627001A" data-power-absent="not-published" transform="translate(0,0)">
+    <title>csr310-fan-tray</title>
+    <rect id="csr310-fan-tray--body" x="0" y="0" width="45.2" height="40.4" rx="0.7" fill="#33383d" stroke="#15181b" stroke-width="0.45" />
+    <rect x="1.0" y="1.0" width="43.2" height="38.4" rx="0.5" fill="none" stroke="#454b51" stroke-width="0.25" />
+    <rect id="csr310-fan-tray--handle" x="7.2" y="4.5" width="31.0" height="3.4" rx="1.7" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" data-path="csr310-fan-tray/handle" data-class="handle" data-z-out="7.0" data-z-color="#8a9099" />
+    <g id="csr310-fan-tray--airflow" fill="none" stroke="#e4e8eb" stroke-width="0.35">
+      <path d="M 3.6 33.3 H 15.6 L 15.6 32.1 L 19.3 35.0 L 15.6 37.9 L 15.6 36.7 H 3.6 Z" />
+    </g>
+    <g id="csr310-fan-tray--silkscreen">
+      <text x="9.2" y="35.8" font-family="sans-serif" font-size="1.9" fill="#e4e8eb" text-anchor="middle">AIRFLOW</text>
+    </g>
+    <g id="csr310-fan-tray--thumbscrew" data-path="csr310-fan-tray/thumbscrew" data-class="fastener" data-z-cyl="5.0" data-z-color="#6e747c" data-z-knurl="1">
+      <circle cx="31.9" cy="35.5" r="4.0" fill="#6e747c" stroke="#3a3e43" stroke-width="0.3" />
+      <g stroke="#3a3e43" stroke-width="0.28">
+        <path d="M 28.4 33.6 V 37.4 M 29.8 32.5 V 38.5 M 31.9 32.1 V 38.9 M 34.0 32.5 V 38.5 M 35.4 33.6 V 37.4" />
+      </g>
+    </g>
+  </g>
+</svg>

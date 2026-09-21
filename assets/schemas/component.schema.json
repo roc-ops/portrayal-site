@@ -12,6 +12,11 @@
   "size"
  ],
  "additionalProperties": false,
+ "dependentRequired": {
+  "interface-at": [
+   "interface"
+  ]
+ },
  "properties": {
   "format": {
    "const": 1
@@ -40,7 +45,7 @@
   },
   "class": {
    "$ref": "#/$defs/segment",
-   "description": "core/profile class identity, e.g. port, psu, fan, blank"
+   "description": "WHAT KIND OF PART THIS IS, from a closed vocabulary that lives in spec/schemas/power-roles.yaml - not repeated here as an enum, because the same list in two files drifts and only one of them would be the one lint reads. Every class sits in exactly one power role there, and L51 refuses a class that sits in none: that is how a class invented today gets its power question asked today rather than by a totalling tool falling over months later. The vocabulary is deliberately small and synonyms are merged rather than admitted - `cooling` became `fan`, `fastener` became `screw`, `panel` became `display` and `connector` became `inlet` in #173, because each pair was one kind of part split by who happened to model it."
   },
   "profile": {
    "$ref": "#/$defs/segment"
@@ -52,6 +57,10 @@
   "interface": {
    "$ref": "#/$defs/segment",
    "description": "this component IS a receptacle presenting this mating interface, e.g. sfp, qsfp, rj45, iec-c14. Occupants declare the same key via `mates`. Deliberately not an enum - a new interface is a new key, not a schema change."
+  },
+  "interface-at": {
+   "$ref": "#/$defs/segment",
+   "description": "WHICH connection point the `interface` is presented at; default `mate`. Allowed only beside `interface`. A plug mates INTO its receptacle at `mate` and presents its own interface to a boot at its REAR (`boot`), which is a different point: this names it. Paired with that point's `on:`, it is how a part seated on a plug lands on the plug's rear face rather than inside it."
   },
   "mates": {
    "$ref": "#/$defs/segment",
@@ -323,6 +332,11 @@
         "exclusiveMinimum": 0,
         "description": "complete U-shaped tube handle this many mm proud: legs at the node's long-axis ends, continuous 90-degree bends, crossbar; tube diameter = node's short axis"
        },
+       "dia": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "tube diameter for `uhandle`, when the node's short axis is not it. A handle's node has to be the WHOLE of its 2D art, because the face texture hides exactly the node that carries the relief attribute and the geometry takes over from there - so on a part that draws its handle as a wide loop, the node's short axis is the loop's height rather than the tube. Without this the choice was between a 22 mm tube and a flat handle left painted on the face underneath the real one"
+       },
        "lift": {
         "type": "number",
         "exclusiveMinimum": 0,
@@ -346,9 +360,13 @@
         "type": "string",
         "description": "side/body color (CSS)"
        },
+       "hole-color": {
+        "type": "string",
+        "description": "side colour of the WALLS OF HOLES in a `shape` outline, where they differ from `color`. A bezel with windows cut through it has two kinds of wall: its outer edge, in the bezel's own colour, and each window's edge - on the MaiaEdge PBC-2000 the amber bead you look past into the window. Only read beside `shape` with a `profile`; absent, the holes take `color`."
+       },
        "shape": {
         "type": "boolean",
-        "description": "extrude the node's own OUTLINE rather than its bounding box. `out` builds a box, which is right for a lamp or a boss and wrong for anything with a contour: the rear handle's face was its real art and its sides were the bbox, so a curved moulding read as three cardboard boxes stood on end. Opt-in rather than inferred, because the box is cheaper and is the right answer for most protrusions, and guessing would silently reshape every one in the library. Companion to `round` on a cavity, which shape-punches from the node's art the same way."
+        "description": "extrude the node's own OUTLINE rather than its bounding box. `out` builds a box, which is right for a lamp or a boss and wrong for anything with a contour: the rear handle's face was its real art and its sides were the bbox, so a curved moulding read as three cardboard boxes stood on end. Opt-in rather than inferred, because the box is cheaper and is the right answer for most protrusions, and guessing would silently reshape every one in the library. Companion to `round` on a cavity, which shape-punches from the node's art the same way. BESIDE `profile` / `profile-y` it cuts the sloped surface to the outline too, and drops its walls along the outline rather than the box: the MaiaEdge PBC-2000's centre pane is 15 proud with ends that ARE its windows' ends, and a box ran into the windows. Holes in the outline ARE cut - the same bezel is one sloped plate with two octagonal windows through it - and their walls take `hole-color`."
        },
        "profile": {
         "type": "array",
@@ -389,6 +407,16 @@
   "description": {
    "type": "string"
   },
+  "unplaced": {
+   "type": "string",
+   "minLength": 40,
+   "description": "WHY NOTHING SEATS THIS PART. A component nothing references is either work in progress or dead weight, and from the outside the two look identical. Saying which, here, is what lets L89 fail on the next one instead of on all of them. The sentence is for a reader who has just found the part and is deciding whether to use it, extend it or delete it: say what would seat it and what is missing, and name the issue if the work is tracked. Not a waiver and not a silence - a part that IS seated must not carry this."
+  },
+  "superseded-by": {
+   "type": "string",
+   "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$",
+   "description": "THIS PART IS RETIRED, in favour of the `ns/name@major` named here. That is a different question from `unplaced:`, which says why nothing seats a part and is also true of live parts - every `generic/` contract carries one, and it means the opposite of retirement: those are seated by configurations downstream of this library, on purpose, and are not going anywhere. `superseded-by` is the fact a reader cannot get from `unplaced:` prose, however it starts: a specific successor exists, this part should not gain new occupants, and a consumer offering parts to a user must not offer this one. Lint checks the ref names a component major that exists; it does not check that anything still references this major - that is L89's question, not this one's."
+  },
   "size": {
    "$ref": "#/$defs/wh",
    "description": "faceplate footprint in mm"
@@ -419,8 +447,12 @@
   },
   "attrs": {
    "type": "object",
-   "description": "default data-* attributes for instances. Free-form, except that the power figures below are typed: they are the terms of a sum, and a term that is a string is not a number no matter how it reads",
+   "description": "default data-* attributes for instances. Free-form, except that the power figures below are typed: they are the terms of a sum, and a term that is a string is not a number no matter how it reads, and `inlet` is a closed vocabulary",
    "properties": {
+    "inlet": {
+     "enum": ["c14", "c20", "dc-terminal", "other", "none"],
+     "description": "WHERE POWER ENTERS THIS MODULE, when no inlet part is composed. The strong form is a composed part - std/c14-inlet and its siblings carry a panel cutout, a standard and a size - and a module that draws one needs nothing here. Half the PSU catalogue draws none: a DC supply's entry is a screw-terminal block, the library has one DC terminal component against two IEC ones, so the studs were drawn as elements in the skin and the connector was named only in prose. The element's own name is a spelling convention (`terminal-block`, `terminals`, `dc-input`) and reading it would be the `port-` prefix defect again, so the module says it once, here, from a closed list. `none` is a CLAIM and not a blank: it says the CHASSIS carries the inlet, which is true of the MX960, whose four C20 receptacles sit on a strip above the supplies. `other` is for a real inlet upstream has no type for - an HVDC connector - and NOT for one nobody has identified: a supply whose guide says 'a C-type appliance inlet' is some IEC 60320 receptacle, so it stays unanswered and L95 counts it rather than claiming `other`, which would be a wrong answer dressed as a modest one. L95 asks every `class: psu` component for one of these or a part."
+    },
     "power-draw-typical-w": {
      "$ref": "#/$defs/watts",
      "description": "load this module IMPOSES in normal operation. Draw and supply are opposite signs of one unit and must never share a key: summing a chassis's `watts` over two PSUs and eight line cards yields a plausible number that is neither"
@@ -488,6 +520,35 @@
        "$ref": "#/$defs/state"
       },
       "minItems": 1
+     },
+     "characters": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "HOW MANY CHARACTER CELLS THIS DISPLAY HAS, across one row - every display in this library is one row, and Cisco's RSP matrix is \"one row of four characters\" in the guide's own words, so there is no `rows` key until a device needs one. A display is not a lamp: a lamp has a colour vocabulary and `states` says it, and a four-character LED matrix reading INIT, BOOT and IMEM has a MESSAGE vocabulary that no list of colours can express. `characters` is the capacity - what a reading has to fit in - and it is the one number that makes `messages` checkable, because a five-character message on a four-character display is a transcription error a reader cannot see and a rule can. A seven-segment cell is `characters: 1` and carries its glyph set in `states`, each naming the segments it lights; a whole-display readout carries its strings in `messages`. Both are `class: display`, and which vocabulary fits is the difference."
+     },
+     "messages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "WHAT THIS DISPLAY CAN READ, and what each reading means - the string equivalent of a lamp's `states`. Only for `class: display`, and only for a display showing whole readings rather than per-cell glyphs. Each entry is the text as the hardware prints it beside the vendor's own sentence about it, so a reader can answer \"it says PSEQ, what is wrong\" without leaving the manifest. TEXT CARRIES NO WHITESPACE, for the reason `data-states` does not: the compiled drawing publishes these on one attribute and a consumer splits them, so a reading with a space in it would arrive as two.",
+      "items": {
+       "type": "object",
+       "required": [
+        "text"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "text": {
+         "type": "string",
+         "minLength": 1,
+         "pattern": "^\\S+$",
+         "description": "the reading, exactly as the display prints it"
+        },
+        "meaning": {
+         "type": "string",
+         "description": "the vendor's own sentence about this reading, kept beside the text and never instead of it"
+        }
+       }
+      }
      },
      "description": {
       "type": "string",
@@ -587,9 +648,27 @@
        "left",
        "right"
       ]
+     },
+     "on": {
+      "$ref": "#/$defs/segment",
+      "description": "the `relief.features[]` node this point sits on. A part seated at this point stands off by that feature's `out` - ABSOLUTE from this part's own face, so a feature's `lift` does not add to it. Read on the point the `interface` is presented at (`interface-at`, default `mate`), where it sets how far a part seated there stands off, and on a `cable` point, where it sets the depth the cable leaves from (render.py writes it as `data-cp-on` for the viewer's cable points); lint L106 requires the node to exist and to carry an `out`."
      }
     }
-   }
+   },
+   "$comment": "A `cable` point must additionally declare `direction`, layered on as an allOf branch rather than a `properties.cable` entry: `properties` and `additionalProperties` are mutually exclusive per key in JSON Schema, so naming `cable` under `properties` here would stop `additionalProperties` (the type, the direction enum, additionalProperties:false, the xy shape of `at`) from applying to it at all, leaving only `required` in force. Do not \"simplify\" this back into a plain `properties.cable` entry - that is the broken form this replaced.",
+   "allOf": [
+    {
+     "properties": {
+      "cable": {
+       "required": [
+        "at",
+        "direction"
+       ],
+       "description": "Where a cable lands. `direction` is REQUIRED here and optional elsewhere: a cable point whose whole job is to say which way the cable leaves says nothing without it."
+      }
+     }
+    }
+   ]
   },
   "states": {
    "type": "array",
@@ -881,9 +960,10 @@
   },
   "provenance": {
    "type": "object",
+   "description": "WHERE EACH FIGURE CAME FROM, keyed by the figure it explains. THE KEY IS A FIELD NAME, NOT A HEADLINE FOR THE NOTE. That distinction is the whole difference between a block a rule can ask questions of and one it can only read: the library reached 579 distinct keys across 584 contracts, 495 of them used fewer than five times and some of them whole sentences, and the cost was that L52 had to be loosened to accept `any power-named key` after convicting eighteen contracts that had done the work, while nothing could ask about `size` at all. The core keys are `size` for the face dimensions (L92), `depth` for the third axis, `power` for a wattage (L52) and `relief` for a raised or recessed magnitude (L35, L36). An axis or a figure that needs its own note takes a key that STARTS with the core one - `size-width`, `power-output` - so it still answers the question the core key is asked. A finding that explains something no figure holds is welcome under a name of its own; it is an addition to the core keys, never a substitute for one.",
    "additionalProperties": {
     "type": "string",
-    "description": "field name -> source, e.g. 'datasheet \u00a7Physical', 'photo-measured', 'measured', 'estimated'"
+    "description": "the source, in the words this library uses: datasheet, drawing, measured, photo-measured, registry, borrowed (naming the part the figure came from), estimated, known-wrong"
    }
   },
   "confidence": {

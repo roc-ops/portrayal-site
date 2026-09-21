@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="39.7mm" height="53.3mm" viewBox="0 0 39.7 53.3">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dcs520-psu-ac" data-path="dcs520-psu-ac" data-class="psu" data-behaviour="fills" data-ref="edgecore/dcs520-psu-ac@1:1.0.0" data-wall="#3a3e43" data-inlet="other" data-input="ac" data-input-note="Anderson Saf-D-Grid; also rated for 240 VDC HVDC" data-power-output-w="2400" data-states="absent" transform="translate(0,0)">
+    <title>dcs520-psu-ac</title>
+    <defs>
+      <pattern id="dcs520-psu-ac--dcs520-psu-grid" width="3.20" height="3.20" patternUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="3.20" height="3.20" fill="#12151a" />
+        <rect x="0" y="0" width="0.55" height="3.20" fill="#c9ced4" />
+        <rect x="0" y="0" width="3.20" height="0.55" fill="#c9ced4" />
+      </pattern>
+    </defs>
+    <rect id="dcs520-psu-ac--body" x="0" y="0" width="39.7" height="53.3" rx="0.5" fill="#2f3439" stroke="#1b1e22" stroke-width="0.4" />
+    <rect x="0.6" y="0.6" width="38.5" height="52.1" rx="0.35" fill="none" stroke="#7d848b" stroke-width="0.35" />
+    <g id="dcs520-psu-ac--vent" data-path="dcs520-psu-ac/vent" data-class="vent" data-z-vent="14">
+      <rect id="dcs520-psu-ac--vent-back" x="2.20" y="2.10" width="31.60" height="23.40" rx="0.3" fill="#1d2126" />
+      <path d="M 8.0 6.5 h 12 v 9 h -12 z" fill="#c8901f" opacity="0.85" />
+      <path d="M 17.5 5.2 h 11 v 12 h -11 z" fill="#2f5fb5" opacity="0.85" />
+      <rect id="dcs520-psu-ac--vent-grid" x="2.20" y="2.10" width="31.60" height="23.40" fill="url(#dcs520-psu-ac--dcs520-psu-grid)" />
+      <rect x="2.20" y="2.10" width="31.60" height="23.40" rx="0.3" fill="none" stroke="#9aa0a6" stroke-width="0.3" />
+    </g>
+    <g id="dcs520-psu-ac--status" data-path="dcs520-psu-ac/status" data-class="led" data-states="off ok fault">
+      <circle cx="35.60" cy="4.60" r="2.05" fill="#1c1f22" stroke="#7d848b" stroke-width="0.3" />
+      <circle id="dcs520-psu-ac--status-lens" cx="35.60" cy="4.60" r="1.35" fill="var(--led-color, #5b6169)" />
+    </g>
+    <g id="dcs520-psu-ac--inlet-well" data-path="dcs520-psu-ac/inlet-well" data-class="bezel" data-depth="2.6" data-wall="#3a3e43">
+      <rect x="6.30" y="28.90" width="28.20" height="21.30" rx="0.8" fill="#15181b" stroke="#7d848b" stroke-width="0.3" />
+    </g>
+    <g id="dcs520-psu-ac--handle" data-path="dcs520-psu-ac/handle" data-class="handle" data-z-bar="3.1">
+      <path d="M 1.60 10.10 L 26.40 21.60" fill="none" stroke="#24272b" stroke-width="3.10" stroke-linecap="round" data-stroke-from="handle-finish" />
+      <path d="M 26.40 21.60 L 27.90 17.40" fill="none" stroke="#24272b" stroke-width="3.10" stroke-linecap="round" data-stroke-from="handle-finish" />
+    </g>
+    <g id="dcs520-psu-ac--latch" data-path="dcs520-psu-ac/latch" data-class="latch" data-z-out="1.2">
+      <rect x="0.40" y="41.20" width="3.10" height="8.60" rx="1.10" fill="#d5342c" stroke="#8a2420" stroke-width="0.25" data-fill-from="latch-finish" />
+    </g>
+    <g id="dcs520-psu-ac--inlet" data-path="dcs520-psu-ac/inlet" data-class="inlet" data-ref="std/saf-d-grid@1:1.1.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(7.0,29.6)">
+      <title>dcs520-psu-ac--inlet</title>
+      <rect id="dcs520-psu-ac--inlet--opening" x="0" y="0" width="26.8" height="19.9" rx="2.5" fill="#858a90" data-path="dcs520-psu-ac/inlet/opening" data-class="cutout" />
+      <path id="dcs520-psu-ac--inlet--inlet-face" d="M 5.72 1.30 L 21.08 1.30 A 1.00 1.00 0 0 1 22.01 1.92 L 25.37 10.02 A 1.00 1.00 0 0 1 25.45 10.40 L 25.45 17.60 A 1.00 1.00 0 0 1 24.45 18.60 L 2.35 18.60 A 1.00 1.00 0 0 1 1.35 17.60 L 1.35 10.40 A 1.00 1.00 0 0 1 1.43 10.02 L 4.79 1.92 A 1.00 1.00 0 0 1 5.72 1.30 Z" fill="#06070a" />
+      <path id="dcs520-psu-ac--inlet--contact-web" fill="#858a90" d="M 8.80 5.25 L 18.00 5.25 L 18.00 8.45 L 22.10 8.45 L 23.10 9.45 L 23.10 10.35 L 18.00 10.35 L 18.00 13.75 L 23.10 13.75 L 23.10 15.55 L 16.00 15.55 L 16.00 10.05 L 16.80 9.25 L 17.20 9.25 L 17.20 7.05 L 9.60 7.05 L 9.60 9.25 L 10.00 9.25 L 10.80 10.05 L 10.80 15.55 L 3.70 15.55 L 3.70 13.75 L 8.80 13.75 L 8.80 10.35 L 3.70 10.35 L 3.70 9.45 L 4.70 8.45 L 8.80 8.45 Z" data-z-top="14.0" data-z-color="#858a90" />
+      <g data-cp="mate" data-cp-at="13.4 9.95" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

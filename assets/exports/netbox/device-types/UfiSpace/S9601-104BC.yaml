@@ -8,13 +8,22 @@ weight: 14.73
 weight_unit: kg
 airflow: front-to-rear
 description: UfiSpace S9601-104BC 25G/100G/200G Disaggregated Open Aggregation Router - 2RU, 96x 1/10/25G
-  SFP28 + 4x 40/100G QSFP28 + 4x 40/100/200G QSFP56 + 2x 10G SFP+ management, full timing (GNSS/1PPS/10MHz/To
+  SFP28 + 4x 40/100G QSFP28 + 4x 40/100/200G QSFP56 + 2x 10G SFP+ management, full timing...
 front_image: true
 rear_image: true
 console-ports:
   - name: Console
     type: rj-45
 interfaces:
+  - name: mgmt
+    type: 1000base-t
+    mgmt_only: true
+  - name: mport-0
+    type: 10gbase-x-sfpp
+    mgmt_only: true
+  - name: mport-1
+    type: 10gbase-x-sfpp
+    mgmt_only: true
   - name: port-0
     type: 25gbase-x-sfp28
   - name: port-1
@@ -211,10 +220,30 @@ interfaces:
     type: 100gbase-x-qsfp28
   - name: port-97
     type: 100gbase-x-qsfp28
+  - name: port-98
+    type: 200gbase-x-qsfp56
+  - name: port-99
+    type: 200gbase-x-qsfp56
   - name: port-100
     type: 100gbase-x-qsfp28
   - name: port-101
     type: 100gbase-x-qsfp28
+  - name: port-102
+    type: 200gbase-x-qsfp56
+  - name: port-103
+    type: 200gbase-x-qsfp56
+  - name: clk-10mhz
+    type: other
+    label: SMB
+  - name: clk-1pps
+    type: other
+    label: SMB
+  - name: gnss-ant
+    type: other
+    label: SMA
+  - name: tod
+    type: other
+    label: TOD
 module-bays:
   - name: Fan 0
     position: '0'
@@ -284,6 +313,6 @@ comments: "UfiSpace S9601-104BC 25G/100G/200G Disaggregated Open Aggregation Rou
   - power.power-typical-w: 282.2\n- power.psu-ac-input: 100-240 VAC, 12 A max per supply\n- power.psu-dc-input:\
   \ -48 to -60 VDC, 37 A max per supply\n- power.psus: 2x 1300 W 1+1 redundant, hot-swappable (exhaust\
   \ airflow)\n- thermal.fans: 4x hot-swappable 3+1 redundant, exhaust airflow; system front-to-back\n\n\
-  Drawing version 2.0.4. A major bump means a slot moved or an id was renamed, so anything cached from\
+  Drawing version 2.0.8. A major bump means a slot moved or an id was renamed, so anything cached from\
   \ an earlier export may no longer line up.\nModel maturity: modelled. Every dimension in the source\
   \ records where it came from."

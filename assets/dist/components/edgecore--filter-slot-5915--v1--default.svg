@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="27.6mm" height="43.2mm" viewBox="0 0 27.6 43.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="filter-slot-5915" data-path="filter-slot-5915" data-class="filter" data-behaviour="fills" data-ref="edgecore/filter-slot-5915@1:1.0.0" data-wall="#2b2f33" data-airflow="side-to-side" data-model="AS5915 Air Filter Slot Cover" data-power-absent="not-applicable" transform="translate(0,0)">
+    <title>filter-slot-5915</title>
+    <rect id="filter-slot-5915--plate" x="0" y="0" width="27.6" height="43.2" rx="0.6" fill="#33383d" stroke="#14171a" stroke-width="0.4" data-path="filter-slot-5915/plate" data-class="filter" />
+    <rect x="0.9" y="0.9" width="25.8" height="41.4" rx="0.4" fill="none" stroke="#454b51" stroke-width="0.25" />
+    <g id="filter-slot-5915--bosses" fill="#22262a" stroke="#4a5057" stroke-width="0.35">
+      <circle cx="13.0" cy="6.9" r="1.65" />
+      <circle cx="13.0" cy="35.1" r="1.65" />
+    </g>
+    <g id="filter-slot-5915--screws" data-z-out="2.4" data-z-color="#c3c9cf">
+      <circle cx="20.9" cy="6.9" r="3.5" fill="#c3c9cf" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="20.9" cy="35.1" r="3.5" fill="#c3c9cf" stroke="#4a4f55" stroke-width="0.3" />
+      <g stroke="#4a4f55" stroke-width="0.8" stroke-linecap="round">
+        <line x1="18.2" y1="5.7" x2="23.6" y2="8.1" />
+        <line x1="18.2" y1="33.9" x2="23.6" y2="36.3" />
+      </g>
+    </g>
+  </g>
+</svg>

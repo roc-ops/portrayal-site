@@ -1,0 +1,418 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.1mm" height="405.0mm" viewBox="0 0 30.1 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dpce-r-40ge-sfp-v" data-path="dpce-r-40ge-sfp-v" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpce-r-40ge-sfp-v@2:2.0.0" data-model="DPCE-R-40GE-SFP" data-power-draw-max-w="333" data-sfp="40" data-states="ok fail absent" transform="translate(0,0)">
+    <title>dpce-r-40ge-sfp-v</title>
+    <rect id="dpce-r-40ge-sfp-v--face" x="0" y="0" width="30.1" height="405.0" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
+    <g id="dpce-r-40ge-sfp-v--ejector-top">
+      <rect x="9.0" y="2.5" width="12.0" height="14.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--ejector-bottom">
+      <rect x="9.0" y="388.5" width="12.0" height="14.0" rx="3.0" fill="#8a8f95" stroke="#6d7278" stroke-width="0.4" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--lamps">
+      <circle id="dpce-r-40ge-sfp-v--led-ok-fail" cx="8.0" cy="22.0" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--silkscreen">
+      <g id="dpce-r-40ge-sfp-v--t74-silkscreen">
+        <text x="11.0" y="22.7" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="start">OK/FAIL</text>
+      </g>
+      <g id="dpce-r-40ge-sfp-v--t75-silkscreen">
+        <text x="25.5" y="30.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle" transform="rotate(-90 25.5 30.0)">DPCE-R-40GE-SFP</text>
+      </g>
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-0" data-path="dpce-r-40ge-sfp-v/port-0-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,41.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-0</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-0/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-1" data-path="dpce-r-40ge-sfp-v/port-0-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,41.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-1</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-1/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-2" data-path="dpce-r-40ge-sfp-v/port-0-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,57.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-2</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-2/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-3" data-path="dpce-r-40ge-sfp-v/port-0-3" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,57.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-3</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-3/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-3--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-4" data-path="dpce-r-40ge-sfp-v/port-0-4" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,74.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-4</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-4/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-4--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-5" data-path="dpce-r-40ge-sfp-v/port-0-5" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,74.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-5</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-5/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-5--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-6" data-path="dpce-r-40ge-sfp-v/port-0-6" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,90.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-6</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-6/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-6--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-7" data-path="dpce-r-40ge-sfp-v/port-0-7" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,90.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-7</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-7/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-7--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-8" data-path="dpce-r-40ge-sfp-v/port-0-8" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,107.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-8</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-8/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-8--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-0-9" data-path="dpce-r-40ge-sfp-v/port-0-9" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,107.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-0-9</title>
+      <rect id="dpce-r-40ge-sfp-v--port-0-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-0-9/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-9--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-0-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-0-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-0" data-path="dpce-r-40ge-sfp-v/port-1-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,133.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-0</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-0/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-1" data-path="dpce-r-40ge-sfp-v/port-1-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,133.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-1</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-1/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-2" data-path="dpce-r-40ge-sfp-v/port-1-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,149.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-2</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-2/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-3" data-path="dpce-r-40ge-sfp-v/port-1-3" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,149.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-3</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-3/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-3--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-4" data-path="dpce-r-40ge-sfp-v/port-1-4" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,166.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-4</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-4/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-4--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-5" data-path="dpce-r-40ge-sfp-v/port-1-5" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,166.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-5</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-5/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-5--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-6" data-path="dpce-r-40ge-sfp-v/port-1-6" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,182.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-6</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-6/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-6--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-7" data-path="dpce-r-40ge-sfp-v/port-1-7" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,182.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-7</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-7/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-7--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-8" data-path="dpce-r-40ge-sfp-v/port-1-8" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,199.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-8</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-8/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-8--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-1-9" data-path="dpce-r-40ge-sfp-v/port-1-9" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,199.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-1-9</title>
+      <rect id="dpce-r-40ge-sfp-v--port-1-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-1-9/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-9--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-1-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-1-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-0" data-path="dpce-r-40ge-sfp-v/port-2-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,225.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-0</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-0/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-1" data-path="dpce-r-40ge-sfp-v/port-2-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,225.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-1</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-1/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-2" data-path="dpce-r-40ge-sfp-v/port-2-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,241.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-2</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-2/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-3" data-path="dpce-r-40ge-sfp-v/port-2-3" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,241.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-3</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-3/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-3--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-4" data-path="dpce-r-40ge-sfp-v/port-2-4" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,258.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-4</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-4/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-4--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-5" data-path="dpce-r-40ge-sfp-v/port-2-5" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,258.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-5</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-5/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-5--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-6" data-path="dpce-r-40ge-sfp-v/port-2-6" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,274.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-6</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-6/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-6--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-7" data-path="dpce-r-40ge-sfp-v/port-2-7" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,274.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-7</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-7/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-7--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-8" data-path="dpce-r-40ge-sfp-v/port-2-8" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,291.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-8</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-8/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-8--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-2-9" data-path="dpce-r-40ge-sfp-v/port-2-9" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,291.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-2-9</title>
+      <rect id="dpce-r-40ge-sfp-v--port-2-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-2-9/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-9--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-2-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-2-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-0" data-path="dpce-r-40ge-sfp-v/port-3-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,317.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-0</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-0/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-1" data-path="dpce-r-40ge-sfp-v/port-3-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,317.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-1</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-1/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-2" data-path="dpce-r-40ge-sfp-v/port-3-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,333.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-2</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-2/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-3" data-path="dpce-r-40ge-sfp-v/port-3-3" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,333.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-3</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-3/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-3--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-4" data-path="dpce-r-40ge-sfp-v/port-3-4" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,350.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-4</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-4/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-4--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-5" data-path="dpce-r-40ge-sfp-v/port-3-5" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,350.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-5</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-5/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-5--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-6" data-path="dpce-r-40ge-sfp-v/port-3-6" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,366.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-6</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-6/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-6--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-7" data-path="dpce-r-40ge-sfp-v/port-3-7" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,366.5) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-7</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-7/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-7--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-8" data-path="dpce-r-40ge-sfp-v/port-3-8" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(1.75,383.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-8</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-8/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-8--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="dpce-r-40ge-sfp-v--port-3-9" data-path="dpce-r-40ge-sfp-v/port-3-9" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(13.75,383.0) rotate(90 7.25 5.0)">
+      <title>dpce-r-40ge-sfp-v--port-3-9</title>
+      <rect id="dpce-r-40ge-sfp-v--port-3-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="dpce-r-40ge-sfp-v/port-3-9/opening" data-class="cutout" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-9--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="dpce-r-40ge-sfp-v--port-3-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="dpce-r-40ge-sfp-v--port-3-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

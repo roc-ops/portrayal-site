@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="53.7mm" height="40.6mm" viewBox="0 0 53.7 40.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ais800-psu-ac" data-path="ais800-psu-ac" data-class="psu" data-behaviour="fills" data-ref="edgecore/ais800-psu-ac@1:1.0.0" data-wall="#3a3e43" data-input="ac" data-model="PSU-AC-2400W" data-power-output-w="2400" data-states="absent" transform="translate(0,0)">
+    <title>ais800-psu-ac</title>
+    <defs>
+      <pattern id="ais800-psu-ac--ais800-psu-lattice" width="3.15" height="3.15" patternUnits="userSpaceOnUse">
+        <rect x="0.55" y="0.55" width="2.05" height="2.05" rx="0.25" fill="#15181b" />
+      </pattern>
+    </defs>
+    <rect id="ais800-psu-ac--body" x="0" y="0" width="53.7" height="40.6" rx="0.5" fill="#c2c7cd" stroke="#8d939a" stroke-width="0.4" />
+    <rect x="0.65" y="0.65" width="52.4" height="39.3" rx="0.35" fill="none" stroke="#d8dce0" stroke-width="0.22" />
+    <g id="ais800-psu-ac--vent-field" data-path="ais800-psu-ac/vent-field" data-class="vent" data-z-vent="24">
+      <rect x="2.20" y="3.00" width="20.50" height="36.00" rx="0.3" fill="#aeb4bb" />
+      <rect x="2.20" y="3.00" width="20.50" height="36.00" fill="url(#ais800-psu-ac--ais800-psu-lattice)" />
+      <rect x="2.20" y="3.00" width="20.50" height="36.00" rx="0.3" fill="none" stroke="#8d939a" stroke-width="0.25" />
+    </g>
+    <rect id="ais800-psu-ac--inlet-flange" x="26.26" y="3.20" width="24.00" height="31.00" rx="2.50" fill="#858a90" stroke="#6c7278" stroke-width="0.30" />
+    <g id="ais800-psu-ac--handle" data-path="ais800-psu-ac/handle" data-class="handle" data-z-uhandle="27.0">
+      <line x1="21.20" y1="4.60" x2="3.70" y2="37.40" stroke="#b8322c" stroke-width="3.80" stroke-linecap="round" data-stroke-from="handle-finish" />
+    </g>
+    <g id="ais800-psu-ac--latch" data-path="ais800-psu-ac/latch" data-class="latch" data-z-out="2.4">
+      <rect x="36.50" y="35.40" width="12.50" height="5.20" rx="0.8" fill="#e0857f" stroke="#9e5450" stroke-width="0.25" data-fill-from="latch-finish" />
+      <g stroke="#9e5450" stroke-width="0.22">
+        <line x1="41.20" y1="36.30" x2="41.20" y2="39.70" />
+        <line x1="42.60" y1="36.30" x2="42.60" y2="39.70" />
+        <line x1="44.00" y1="36.30" x2="44.00" y2="39.70" />
+        <line x1="45.40" y1="36.30" x2="45.40" y2="39.70" />
+        <line x1="46.80" y1="36.30" x2="46.80" y2="39.70" />
+      </g>
+    </g>
+    <g id="ais800-psu-ac--inlet" data-path="ais800-psu-ac/inlet" data-class="inlet" data-ref="std/saf-d-grid@1:1.1.0" data-depth="17.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(24.86,8.75) rotate(90 13.4 9.95)">
+      <title>ais800-psu-ac--inlet</title>
+      <rect id="ais800-psu-ac--inlet--opening" x="0" y="0" width="26.8" height="19.9" rx="2.5" fill="#858a90" data-path="ais800-psu-ac/inlet/opening" data-class="cutout" />
+      <path id="ais800-psu-ac--inlet--inlet-face" d="M 5.72 1.30 L 21.08 1.30 A 1.00 1.00 0 0 1 22.01 1.92 L 25.37 10.02 A 1.00 1.00 0 0 1 25.45 10.40 L 25.45 17.60 A 1.00 1.00 0 0 1 24.45 18.60 L 2.35 18.60 A 1.00 1.00 0 0 1 1.35 17.60 L 1.35 10.40 A 1.00 1.00 0 0 1 1.43 10.02 L 4.79 1.92 A 1.00 1.00 0 0 1 5.72 1.30 Z" fill="#06070a" />
+      <path id="ais800-psu-ac--inlet--contact-web" fill="#858a90" d="M 8.80 5.25 L 18.00 5.25 L 18.00 8.45 L 22.10 8.45 L 23.10 9.45 L 23.10 10.35 L 18.00 10.35 L 18.00 13.75 L 23.10 13.75 L 23.10 15.55 L 16.00 15.55 L 16.00 10.05 L 16.80 9.25 L 17.20 9.25 L 17.20 7.05 L 9.60 7.05 L 9.60 9.25 L 10.00 9.25 L 10.80 10.05 L 10.80 15.55 L 3.70 15.55 L 3.70 13.75 L 8.80 13.75 L 8.80 10.35 L 3.70 10.35 L 3.70 9.45 L 4.70 8.45 L 8.80 8.45 Z" data-z-top="14.0" data-z-color="#858a90" />
+      <g data-cp="mate" data-cp-at="13.4 9.95" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

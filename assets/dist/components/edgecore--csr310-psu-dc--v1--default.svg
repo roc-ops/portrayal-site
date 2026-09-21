@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.1mm" height="40.4mm" viewBox="0 0 54.1 40.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="csr310-psu-dc" data-path="csr310-psu-dc" data-class="psu" data-behaviour="fills" data-ref="edgecore/csr310-psu-dc@1:1.0.1" data-body-depth="300.0" data-wall="#3a3e43" data-inlet="dc-terminal" data-input="36 V - 72 V, 10 A" data-model="CRXT-T0T12BS" data-part="131700000434A" data-power-absent="not-published" transform="translate(0,0)">
+    <title>csr310-psu-dc</title>
+    <rect id="csr310-psu-dc--body" x="0" y="0" width="54.1" height="40.4" rx="0.7" fill="#3a3e43" stroke="#15181b" stroke-width="0.45" />
+    <rect x="1.0" y="1.0" width="52.1" height="38.4" rx="0.5" fill="none" stroke="#4e545b" stroke-width="0.25" />
+    <g id="csr310-psu-dc--warnings" fill="none" stroke="#e4e8eb" stroke-width="0.55" stroke-linejoin="round">
+      <path d="M 18.25 3.60 L 23.70 13.90 H 12.80 Z M 18.25 6.60 V 10.30 M 18.25 11.45 V 11.75" />
+      <path d="M 36.65 3.60 L 42.10 13.90 H 31.20 Z M 34.60 12.30 H 38.70              M 35.00 10.70 q 0.75 -0.90 0 -1.80 q -0.75 -0.90 0 -1.80              M 36.65 10.70 q 0.75 -0.90 0 -1.80 q -0.75 -0.90 0 -1.80              M 38.30 10.70 q 0.75 -0.90 0 -1.80 q -0.75 -0.90 0 -1.80" />
+    </g>
+    <rect id="csr310-psu-dc--inlet" x="7.0" y="19.7" width="30.5" height="14.4" rx="0.5" fill="#9aa1a8" stroke="#5b6167" stroke-width="0.3" data-path="csr310-psu-dc/inlet" data-class="inlet" data-z-out="9.5" data-z-color="#b7bdc3" />
+    <rect id="csr310-psu-dc--block-lip-top" x="7.5" y="20.2" width="29.5" height="2.7" rx="0.3" fill="#dde2e7" stroke="#8d949b" stroke-width="0.18" />
+    <rect id="csr310-psu-dc--block-lip-bottom" x="7.5" y="30.9" width="29.5" height="2.7" rx="0.3" fill="#dde2e7" stroke="#8d949b" stroke-width="0.18" />
+    <rect id="csr310-psu-dc--block-mid" x="7.5" y="23.0" width="29.5" height="7.8" fill="#b7bdc3" stroke="#8d949b" stroke-width="0.18" />
+    <g id="csr310-psu-dc--poles" fill="#eef1f4" stroke="#6e757c" stroke-width="0.2">
+      <rect x="10.4" y="23.3" width="7.0" height="7.2" rx="0.3" />
+      <rect x="19.0" y="23.3" width="7.0" height="7.2" rx="0.3" />
+      <rect x="27.8" y="23.3" width="7.0" height="7.2" rx="0.3" />
+    </g>
+    <g id="csr310-psu-dc--screws" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.22">
+      <circle cx="13.9" cy="26.9" r="2.0" />
+      <circle cx="22.5" cy="26.9" r="2.0" />
+      <circle cx="31.3" cy="26.9" r="2.0" />
+    </g>
+    <g id="csr310-psu-dc--slots" stroke="#5b6167" stroke-width="0.32" stroke-linecap="round">
+      <path d="M 12.5 26.9 H 15.3 M 13.9 25.5 V 28.3" />
+      <path d="M 21.1 26.9 H 23.9 M 22.5 25.5 V 28.3" />
+      <path d="M 29.9 26.9 H 32.7 M 31.3 25.5 V 28.3" />
+    </g>
+    <g id="csr310-psu-dc--pole-labels" fill="none" stroke="#e4e8eb" stroke-width="0.26">
+      <path d="M 13.9 35.1 V 36.0 M 12.9 36.0 H 14.9 M 13.2 36.6 H 14.6 M 13.5 37.2 H 14.3" />
+    </g>
+    <g id="csr310-psu-dc--silkscreen">
+      <text x="22.5" y="37.6" font-family="sans-serif" font-size="2.0" fill="#e4e8eb" text-anchor="middle">Input-</text>
+      <text x="31.3" y="37.6" font-family="sans-serif" font-size="2.0" fill="#e4e8eb" text-anchor="middle">Input+</text>
+    </g>
+    <rect id="csr310-psu-dc--handle" x="41.5" y="3.6" width="3.5" height="21.3" rx="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.3" data-path="csr310-psu-dc/handle" data-class="handle" data-z-out="8.0" data-z-color="#c3c9cf" />
+    <circle id="csr310-psu-dc--vent-hole" cx="46.1" cy="30.6" r="1.1" fill="#1a1d21" stroke="#5b6167" stroke-width="0.22" />
+    <rect id="csr310-psu-dc--latch" x="46.5" y="32.0" width="6.5" height="7.4" rx="0.8" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" data-path="csr310-psu-dc/latch" data-class="latch" data-z-out="4.0" data-z-color="#8a9099" />
+  </g>
+</svg>

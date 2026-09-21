@@ -1,0 +1,811 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="44.0mm" viewBox="0 0 440.0 44.0" data-device="ecs4120-28fv2-i" data-view="front" data-config="base" data-power-max-w="60" data-power-envelope="unstated" data-power-input-ac="100-240 VAC, 50/60 Hz, 1.2 A" data-power-input-dc="-48 to -60 VDC, 3.0 A" data-temperature-operating="-10 C to 65 C (14 F to 149 F)" data-temperature-storage="-40 C to 70 C (-40 F to 158 F)" data-humidity-operating="5% to 95% non-condensing" data-marketing-name="ECS4120-28Fv2-I" data-optics-sfp="1000BASE-SX/LX/EX/ZX and 1000BASE-T (ET4202-SX/LX/EX/ZX/RJ45)" data-optics-sfp-plus="10GBASE-SR/LR/ER/ZR and 10GBASE-T (ET5402-SR/LR/ER/ZR/RJ45)" data-mgmt-ports="1x RJ-45 console (115200 8N1), 1x RJ-45 out-of-band management" data-emc="EN 55032 Class A, EN IEC 61000-3-2 Class A, EN 61000-3-3, FCC Class A, VCCI Class A, CE Mark" data-immunity="EN 55035, IEC 61000-4-2/3/4/5/6/8/11" data-safety="UL/CUL (UL 62368-1, CAN/CSA C22.2 No. 62368-1), CB (IEC 62368-1/EN 62368-1), BSMI (CNS15998-1)" data-tec="TEC Certified ID 379400891" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"base","device":"Edgecore ECS4120-28Fv2-I","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/dc-terminal-plug-2@1":"1.0.0","common/ground-lug@1":"1.4.0","common/led-dot@1":"1.1.0","common/sfp-plus-cage@2":"2.0.0","std/c14-inlet@1":"1.3.0","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.0","std/sfp@1":"1.4.0"},"source":{"attrs":{"compliance":{"emc":"EN 55032 Class A, EN IEC 61000-3-2 Class A, EN 61000-3-3, FCC Class A, VCCI Class A, CE Mark","immunity":"EN 55035, IEC 61000-4-2/3/4/5/6/8/11","safety":"UL/CUL (UL 62368-1, CAN/CSA C22.2 No. 62368-1), CB (IEC 62368-1/EN 62368-1), BSMI (CNS15998-1)","tec":"TEC Certified ID 379400891"},"environmental":{"humidity-operating":"5% to 95% non-condensing","temperature-operating":"-10 C to 65 C (14 F to 149 F)","temperature-storage":"-40 C to 70 C (-40 F to 158 F)"},"features":{"marketing-name":"ECS4120-28Fv2-I","optics-sfp":"1000BASE-SX/LX/EX/ZX and 1000BASE-T (ET4202-SX/LX/EX/ZX/RJ45)","optics-sfp-plus":"10GBASE-SR/LR/ER/ZR and 10GBASE-T (ET5402-SR/LR/ER/ZR/RJ45)"},"lifecycle":{"eol":"none-announced"},"management":{"mgmt-ports":"1x RJ-45 console (115200 8N1), 1x RJ-45 out-of-band management"},"power":{"power-envelope":"unstated","power-input-ac":"100-240 VAC, 50/60 Hz, 1.2 A","power-input-dc":"-48 to -60 VDC, 3.0 A","power-max-w":60}},"chassis":{"color":"#5c6166","depth":220.0,"height":44.0,"ru":1,"weight-kg":2.82,"width":440.0},"configurations":{"base":{"default":true,"description":"The machine as the guide draws and specifies it, AC and DC inputs both fitted, every cage empty. No ordering table exists to name an orderable build.","kind":"base"}},"description":"1RU half-depth hardened L2 Gigabit fibre access switch, rated -10 to 65 C: 24 x 1G SFP in twelve two-high stacks, four RJ-45 combo ports sharing the last four, 4 x 10G SFP+, and an RS-232 console beside an out-of-band RJ-45. BOTH its power inputs are on the front - an IEC C14 inlet and a -48 to -60 V pluggable DC terminal - and the rear carries only two fixed fans.","format":1,"gaps":[{"reason":"sources-disagree","scope":["front"],"wanted":"THE AC RATING PRINTED UNDER THE INLET. The -I's own figure prints '100-240V~;50/60Hz;1.0A' and the guide's specification gives '28Fv2-I: 100-240 VAC, 50/60 Hz 1.2 A' (1.0 A is the non-I 28Fv2's). The silkscreen is modelled as the figure prints it and the attr as the specification states it; a photograph of a real unit's legend settles which is printed.","what":"ac-rating-silkscreen"},{"reason":"needs-photo","scope":["front"],"wanted":"WHETHER THE MGMT JACK HAS LAMPS. It is Ethernet, which this library draws lamped, but the figure draws it plain at 4.1 px/mm - where corner windows would be visible - and gives it no separate lamp. Drawn bare as seen; L76 stands.","what":"mgmt-port-lamps"},{"reason":"needs-drawing","scope":["rear"],"wanted":"A MEASURABLE REAR. The fan guards are read off a 489 px product photograph; nothing dimensions them and no figure draws this rear.","what":"rear-geometry"},{"reason":"vendor-silent","scope":["rear"],"wanted":"WHICH WAY THE FANS BLOW. Searched in the converted text and the PDF's own text layer: neither says anything about fans or airflow. Unstated rather than guessed.","what":"airflow-direction"},{"reason":"vendor-silent","scope":["front"],"wanted":"No datasheet and no ordering table exists for this model, so there are no part numbers to attach to an orderable configuration; the device offers its base configuration only.","what":"ordering-codes"}],"groups":{"furniture":{"description":"the rack brackets.","index-origin":1,"role":"furniture","term":"Item"},"grounding":{"index-origin":1,"role":"furniture","term":"Point"},"leds":{"index-origin":1,"role":"indicator","term":"LED"},"mgmt":{"index-origin":1,"mixed":"the out-of-band management RJ-45 beside the RS-232 console RJ-45 at the right-hand end.","role":"management","term":"Port"},"port-leds":{"index-origin":1,"role":"indicator","term":"LED"},"power":{"index-origin":1,"role":"service","term":"Inlet"},"rj45-combo":{"attrs":{"media":"rj45","speed":"1g"},"description":"combo ports - copper-21..24 share their port numbers with the SFP cages port-21..24 printed beside them, one or the other in use at a time.","index-origin":1,"role":"traffic","term":"Port"},"sfp":{"attrs":{"media":"sfp","speed":"1g"},"index-origin":1,"role":"traffic","term":"Port"},"sfp-plus":{"attrs":{"media":"sfp-plus","speed":"10g"},"index-origin":1,"role":"traffic","term":"Port"}},"kind":"device","manufacturer":"Edgecore","maturity":"modelled","model":"ECS4120-28Fv2-I","name":"ecs4120-28fv2-i","portfolio":{"family":"Access Switch","line":"Campus","series":"ECS4120"},"profile":"networking","provenance":{"chassis":{"confidence":"datasheet","note":"The guide's Hardware Specifications, '28Fv2/28Fv2-I: 44.0 x 22.0 x 4.4 cm' and '2.82 kg (6.22 lb)'. One document, stated once, shared with the non-I 28Fv2."},"figure-choice":{"confidence":"measured","note":"Gate 1. THE GUIDE DRAWS THIS VARIANT BY NAME: embedded image q-004, 1811 x 220, whose name bar reads ECS4120-28Fv2-I (its sibling q-002 reads ECS4120-28Fv2). The face is drawn front-on under a lid shown in perspective; it spans x 0-1806 and y 47-217 below the lid seam. 1807 px across 440 mm is 4.107 px/mm. THE BOX IS NOT SQUARE, SO THE FEATURES DECIDE. 171 px of face height would be 41.6 mm at that scale against the stated 44. Two standard features were read on both axes: the MGMT and Console bezels measure 15.83 mm across against the RJ-45 housing's 15.8, and the two ports of an SFP stack sit 64 px apart - 15.55 mm isotropically, 3.7% over the registry's 15.0 belly-to-belly pitch, where the box's own vertical scale would make it 16.5, 10% over. So the drawing is read isotropically at 4.107 px/mm and anchored on its bottom edge (y 217 = 44.0 mm); the top 2.7 mm under the lid seam is the chamfer the lid is drawn over. Vertical positions are the least certain numbers here, to about 1.5 mm. THE CAGES KEEP THE REGISTRY'S GEOMETRY and the lamps are placed to clear it. A two-high stack of std/sfp-ganged openings, 10.4 tall on the registry's 15.0 row pitch, spans 25.4 mm where the drawn frame spans 24.4 - the drawing is squashed vertically, as the box said. So the stacks run y 13.0-38.4 and the lamps sit 0.2 mm clear under them at 39.6, about 0.35 mm lower than drawn, rather than overlapping the cage they serve. ORTHOGRAPHIC: the twelve stacks' lamp pairs fit a straight line to 0.21 px on a 71.48 px (17.405 mm) pitch."},"lamps":{"confidence":"photo-measured","note":"One white oval lamp per port under every SFP and RJ-45 stack, a pair 5.97 mm apart, each over its own legend - so each is assigned to the port its legend names. The SFP+ ports' lamps are not under them: they sit in a 3 x 2 block to the left of MGMT with DIAG and PWR, legended '25 27 DIAG' above and '26 28 PWR' below. The guide's 'On/Blinking Green - Port has a valid link' is the only lamp semantics given, and its 'PWR and DIAG' are the -I's system lamps."},"left-end":{"confidence":"photo-measured","note":"BOTH INPUTS ARE ON THE FRONT, as the drawing and all three photographs show, though the guide's generic text says 'the AC input socket on the back of the switch' - that sentence covers the 28T and 52T it shares the page with. An IEC C14 inlet in a recess at x 4.1-36.0; a ground stud with its symbol at x 47; and a green two-pole pluggable DC terminal at [64.8, 17.5], 32.6 x 18.0 - which is common/dc-terminal-plug-2@1 from the ECS4530-54CSFP-DC-I to within 0.5 mm (32.1 x 17.6), so the part is reused rather than drawn again. Its poles are printed '+' left and '-' right with '(DC)-48~-60V;3.0A' between - the opposite order to the ECS4530-DC-I's, which is a faceplate fact and not the part's."},"ports-and-numbering":{"confidence":"photo-measured","note":"READ OFF THE FACEPLATE. Twelve two-high SFP stacks, each legended 'n (up) n+1 (down)' beneath its two lamps: the top cage is the odd port and the bottom the even, 1-24. Two two-high RJ-45 stacks legended 21/22 and 23/24, and four single SFP+ cages under a '10G' bracket legended 25-28. The guide's transceiver list is 1000BASE optics (ET4202-*) and 10GBASE optics (ET5402-*), which is the 1G/10G split. THE COMBO PAIRING IS THE FACEPLATE'S, NOT THE GUIDE'S. The same numbers 21-24 are printed under the eleventh and twelfth SFP stacks AND under the two RJ-45 stacks, which is how this vendor marks combo ports. Neither the converted text nor the PDF's own text layer contains 'combo', 'shared' or 'either' - two searches - so this rests on the legend alone and is recorded as such; the copper jacks are named copper-21..24 and their group says what they share."},"rear":{"confidence":"photo-measured","note":"THE WEAKEST NUMBERS HERE. No figure draws this model's rear; the only evidence is the 489 px rear product photograph at about 1.08 px/mm. It shows two fixed fans behind honeycomb guards centred at 109.8 and 236.1 mm, each about 51.7 x 26.9, from y 5.4 - to a millimetre and a half at best. No handles or seams: fixed fans, drawn as the panel's perforation. The guide contains no 'fan' at all, in its converted text or its PDF text layer."},"sources":{"confidence":"datasheet","note":"ONE DOCUMENT, AND NO DATASHEET WAS EVER PUBLISHED - the product page carries the quick start guide, safety notes and firmware only. ecs4120-28fv2-i-qsg is the ECS4120 Series guide, nine pages, trilingual (English, simplified and traditional Chinese) and covering four models (28T, 52T, 28Fv2, 28Fv2-I). Its 72 embedded images reduce to 19 unique ones of useful size once the three languages' repeats are removed by content hash, so no figure is counted as more than one piece of evidence. Three 489 px product photographs of this model are staged. ISSUE #343 SAID THE CHASSIS IS 'NOT STATED IN ANY STAGED DOCUMENT', AND IT IS STATED. The guide's Hardware Specifications table gives '28Fv2/28Fv2-I: 44.0 x 22.0 x 4.4 cm (17.32 x 8.66 x 1.73 in)', '2.82 kg (6.22 lb)', the -I's own operating range, its AC and DC input ratings and its 60 W maximum - enough for the whole attrs block below."},"vents":{"confidence":"photo-measured","note":"A row of 54 vertical slots across the top of the port field, x 103.7-370.6, 2.43 mm wide on a 4.99 mm pitch, running from the lid seam down to about 8.8 mm."}},"references":[{"sha256":"5e6be7749223fe5ea8b133614b15dc1598a6fde06f5792df041896e7f1c1adf9","title":"Edgecore ECS4120 Series 28-Port and 52-Port L2 Gigabit Ethernet Switches Quick Start Guide"}],"version":"1.0.0","views":{"bottom":{"components":{"placements":[{"at":[110.0,7.0],"group":"furniture","id":"bottom-label","ref":"common/compliance-sticker@1","rel-pos":3}]},"size":{"h":220.0,"w":440.0}},"front":{"components":{"placements":[{"at":[113.77,13.0],"group":"sfp","id":"port-1","ref":"std/sfp-ganged@1","rel-pos":1,"rotate":180},{"at":[113.77,28.0],"group":"sfp","id":"port-2","ref":"std/sfp-ganged@1","rel-pos":2},{"at":[131.18,13.0],"group":"sfp","id":"port-3","ref":"std/sfp-ganged@1","rel-pos":3,"rotate":180},{"at":[131.18,28.0],"group":"sfp","id":"port-4","ref":"std/sfp-ganged@1","rel-pos":4},{"at":[148.58,13.0],"group":"sfp","id":"port-5","ref":"std/sfp-ganged@1","rel-pos":5,"rotate":180},{"at":[148.58,28.0],"group":"sfp","id":"port-6","ref":"std/sfp-ganged@1","rel-pos":6},{"at":[165.99,13.0],"group":"sfp","id":"port-7","ref":"std/sfp-ganged@1","rel-pos":7,"rotate":180},{"at":[165.99,28.0],"group":"sfp","id":"port-8","ref":"std/sfp-ganged@1","rel-pos":8},{"at":[183.39,13.0],"group":"sfp","id":"port-9","ref":"std/sfp-ganged@1","rel-pos":9,"rotate":180},{"at":[183.39,28.0],"group":"sfp","id":"port-10","ref":"std/sfp-ganged@1","rel-pos":10},{"at":[200.8,13.0],"group":"sfp","id":"port-11","ref":"std/sfp-ganged@1","rel-pos":11,"rotate":180},{"at":[200.8,28.0],"group":"sfp","id":"port-12","ref":"std/sfp-ganged@1","rel-pos":12},{"at":[218.2,13.0],"group":"sfp","id":"port-13","ref":"std/sfp-ganged@1","rel-pos":13,"rotate":180},{"at":[218.2,28.0],"group":"sfp","id":"port-14","ref":"std/sfp-ganged@1","rel-pos":14},{"at":[235.61,13.0],"group":"sfp","id":"port-15","ref":"std/sfp-ganged@1","rel-pos":15,"rotate":180},{"at":[235.61,28.0],"group":"sfp","id":"port-16","ref":"std/sfp-ganged@1","rel-pos":16},{"at":[253.01,13.0],"group":"sfp","id":"port-17","ref":"std/sfp-ganged@1","rel-pos":17,"rotate":180},{"at":[253.01,28.0],"group":"sfp","id":"port-18","ref":"std/sfp-ganged@1","rel-pos":18},{"at":[270.42,13.0],"group":"sfp","id":"port-19","ref":"std/sfp-ganged@1","rel-pos":19,"rotate":180},{"at":[270.42,28.0],"group":"sfp","id":"port-20","ref":"std/sfp-ganged@1","rel-pos":20},{"at":[287.82,13.0],"group":"sfp","id":"port-21","ref":"std/sfp-ganged@1","rel-pos":21,"rotate":180},{"at":[287.82,28.0],"group":"sfp","id":"port-22","ref":"std/sfp-ganged@1","rel-pos":22},{"at":[305.23,13.0],"group":"sfp","id":"port-23","ref":"std/sfp-ganged@1","rel-pos":23,"rotate":180},{"at":[305.23,28.0],"group":"sfp","id":"port-24","ref":"std/sfp-ganged@1","rel-pos":24},{"at":[116.91,38.6],"for":"port-1","group":"port-leds","id":"led-port-1","ref":"common/led-dot@1","rel-pos":1},{"at":[122.88,38.6],"for":"port-2","group":"port-leds","id":"led-port-2","ref":"common/led-dot@1","rel-pos":2},{"at":[134.33,38.6],"for":"port-3","group":"port-leds","id":"led-port-3","ref":"common/led-dot@1","rel-pos":3},{"at":[140.28,38.6],"for":"port-4","group":"port-leds","id":"led-port-4","ref":"common/led-dot@1","rel-pos":4},{"at":[151.73,38.6],"for":"port-5","group":"port-leds","id":"led-port-5","ref":"common/led-dot@1","rel-pos":5},{"at":[157.69,38.6],"for":"port-6","group":"port-leds","id":"led-port-6","ref":"common/led-dot@1","rel-pos":6},{"at":[169.14,38.6],"for":"port-7","group":"port-leds","id":"led-port-7","ref":"common/led-dot@1","rel-pos":7},{"at":[175.09,38.6],"for":"port-8","group":"port-leds","id":"led-port-8","ref":"common/led-dot@1","rel-pos":8},{"at":[186.53,38.6],"for":"port-9","group":"port-leds","id":"led-port-9","ref":"common/led-dot@1","rel-pos":9},{"at":[192.49,38.6],"for":"port-10","group":"port-leds","id":"led-port-10","ref":"common/led-dot@1","rel-pos":10},{"at":[203.95,38.6],"for":"port-11","group":"port-leds","id":"led-port-11","ref":"common/led-dot@1","rel-pos":11},{"at":[209.91,38.6],"for":"port-12","group":"port-leds","id":"led-port-12","ref":"common/led-dot@1","rel-pos":12},{"at":[221.34,38.6],"for":"port-13","group":"port-leds","id":"led-port-13","ref":"common/led-dot@1","rel-pos":13},{"at":[227.3,38.6],"for":"port-14","group":"port-leds","id":"led-port-14","ref":"common/led-dot@1","rel-pos":14},{"at":[238.76,38.6],"for":"port-15","group":"port-leds","id":"led-port-15","ref":"common/led-dot@1","rel-pos":15},{"at":[244.72,38.6],"for":"port-16","group":"port-leds","id":"led-port-16","ref":"common/led-dot@1","rel-pos":16},{"at":[256.15,38.6],"for":"port-17","group":"port-leds","id":"led-port-17","ref":"common/led-dot@1","rel-pos":17},{"at":[262.12,38.6],"for":"port-18","group":"port-leds","id":"led-port-18","ref":"common/led-dot@1","rel-pos":18},{"at":[273.56,38.6],"for":"port-19","group":"port-leds","id":"led-port-19","ref":"common/led-dot@1","rel-pos":19},{"at":[279.53,38.6],"for":"port-20","group":"port-leds","id":"led-port-20","ref":"common/led-dot@1","rel-pos":20},{"at":[290.96,38.6],"for":"port-21","group":"port-leds","id":"led-port-21","ref":"common/led-dot@1","rel-pos":21},{"at":[296.93,38.6],"for":"port-22","group":"port-leds","id":"led-port-22","ref":"common/led-dot@1","rel-pos":22},{"at":[308.38,38.6],"for":"port-23","group":"port-leds","id":"led-port-23","ref":"common/led-dot@1","rel-pos":23},{"at":[314.34,38.6],"for":"port-24","group":"port-leds","id":"led-port-24","ref":"common/led-dot@1","rel-pos":24},{"at":[322.9,12.0],"group":"rj45-combo","id":"copper-21","ref":"std/rj45@2","rel-pos":21,"rotate":180},{"at":[322.9,25.2],"group":"rj45-combo","id":"copper-22","ref":"std/rj45@2","rel-pos":22},{"at":[342.35,12.0],"group":"rj45-combo","id":"copper-23","ref":"std/rj45@2","rel-pos":23,"rotate":180},{"at":[342.35,25.2],"group":"rj45-combo","id":"copper-24","ref":"std/rj45@2","rel-pos":24},{"at":[326.75,38.6],"for":"copper-21","group":"port-leds","id":"led-copper-21","ref":"common/led-dot@1","rel-pos":21},{"at":[332.85,38.6],"for":"copper-22","group":"port-leds","id":"led-copper-22","ref":"common/led-dot@1","rel-pos":22},{"at":[346.2,38.6],"for":"copper-23","group":"port-leds","id":"led-copper-23","ref":"common/led-dot@1","rel-pos":23},{"at":[352.3,38.6],"for":"copper-24","group":"port-leds","id":"led-copper-24","ref":"common/led-dot@1","rel-pos":24},{"at":[-14,0.25],"group":"furniture","id":"ear-left","optional":"ears","ref":"common/rack-ear@1","rel-pos":1,"skin":"left"},{"at":[440,0.25],"group":"furniture","id":"ear-right","optional":"ears","ref":"common/rack-ear@1","rel-pos":2,"skin":"right"},{"at":[362.1,28.3],"group":"sfp-plus","id":"port-25","ref":"common/sfp-plus-cage@2","rel-pos":25},{"at":[379.8,28.3],"group":"sfp-plus","id":"port-26","ref":"common/sfp-plus-cage@2","rel-pos":26},{"at":[397.5,28.3],"group":"sfp-plus","id":"port-27","ref":"common/sfp-plus-cage@2","rel-pos":27},{"at":[415.2,28.3],"group":"sfp-plus","id":"port-28","ref":"common/sfp-plus-cage@2","rel-pos":28},{"at":[381.28,11.96],"for":"port-25","group":"port-leds","id":"led-port-25","ref":"common/led-dot@1","rel-pos":40},{"at":[386.15,11.96],"for":"port-27","group":"port-leds","id":"led-port-27","ref":"common/led-dot@1","rel-pos":41},{"at":[391.02,11.96],"for":"chassis","group":"leds","id":"led-diag","ref":"common/led-dot@1","rel-pos":42},{"at":[381.28,16.83],"for":"port-26","group":"port-leds","id":"led-port-26","ref":"common/led-dot@1","rel-pos":43},{"at":[386.15,16.83],"for":"port-28","group":"port-leds","id":"led-port-28","ref":"common/led-dot@1","rel-pos":44},{"at":[391.02,16.83],"for":"chassis","group":"leds","id":"led-pwr","ref":"common/led-dot@1","rel-pos":45},{"at":[396.4,8.54],"attrs":{"media":"rj45","role":"mgmt","speed":"1g"},"group":"mgmt","id":"mgmt-eth","ref":"std/rj45@2","rel-pos":1},{"at":[414.9,8.54],"attrs":{"media":"rj45-serial","role":"console"},"group":"mgmt","id":"console","ref":"std/rj45@2","rel-pos":2},{"at":[6.09,17.57],"attrs":{"media":"c14","role":"power"},"group":"power","id":"power-ac","ref":"std/c14-inlet@1","rel-pos":1},{"at":[65.04,17.67],"attrs":{"media":"dc-terminal","role":"power"},"group":"power","id":"power-dc","ref":"common/dc-terminal-plug-2@1","rel-pos":2},{"at":[43.6,15.1],"group":"grounding","id":"ground","ref":"common/ground-lug@1","rel-pos":1}]},"panel":{"cutouts":[{"at":[113.77,13.0],"id":"port-1","shape":"rect","size":[14.25,10.4]},{"at":[116.91,38.6],"id":"led-port-1","shape":"circle","size":[2.0,2.0]},{"at":[113.77,28.0],"id":"port-2","shape":"rect","size":[14.25,10.4]},{"at":[122.88,38.6],"id":"led-port-2","shape":"circle","size":[2.0,2.0]},{"at":[131.18,13.0],"id":"port-3","shape":"rect","size":[14.25,10.4]},{"at":[134.33,38.6],"id":"led-port-3","shape":"circle","size":[2.0,2.0]},{"at":[131.18,28.0],"id":"port-4","shape":"rect","size":[14.25,10.4]},{"at":[140.28,38.6],"id":"led-port-4","shape":"circle","size":[2.0,2.0]},{"at":[148.58,13.0],"id":"port-5","shape":"rect","size":[14.25,10.4]},{"at":[151.73,38.6],"id":"led-port-5","shape":"circle","size":[2.0,2.0]},{"at":[148.58,28.0],"id":"port-6","shape":"rect","size":[14.25,10.4]},{"at":[157.69,38.6],"id":"led-port-6","shape":"circle","size":[2.0,2.0]},{"at":[165.99,13.0],"id":"port-7","shape":"rect","size":[14.25,10.4]},{"at":[169.14,38.6],"id":"led-port-7","shape":"circle","size":[2.0,2.0]},{"at":[165.99,28.0],"id":"port-8","shape":"rect","size":[14.25,10.4]},{"at":[175.09,38.6],"id":"led-port-8","shape":"circle","size":[2.0,2.0]},{"at":[183.39,13.0],"id":"port-9","shape":"rect","size":[14.25,10.4]},{"at":[186.53,38.6],"id":"led-port-9","shape":"circle","size":[2.0,2.0]},{"at":[183.39,28.0],"id":"port-10","shape":"rect","size":[14.25,10.4]},{"at":[192.49,38.6],"id":"led-port-10","shape":"circle","size":[2.0,2.0]},{"at":[200.8,13.0],"id":"port-11","shape":"rect","size":[14.25,10.4]},{"at":[203.95,38.6],"id":"led-port-11","shape":"circle","size":[2.0,2.0]},{"at":[200.8,28.0],"id":"port-12","shape":"rect","size":[14.25,10.4]},{"at":[209.91,38.6],"id":"led-port-12","shape":"circle","size":[2.0,2.0]},{"at":[218.2,13.0],"id":"port-13","shape":"rect","size":[14.25,10.4]},{"at":[221.34,38.6],"id":"led-port-13","shape":"circle","size":[2.0,2.0]},{"at":[218.2,28.0],"id":"port-14","shape":"rect","size":[14.25,10.4]},{"at":[227.3,38.6],"id":"led-port-14","shape":"circle","size":[2.0,2.0]},{"at":[235.61,13.0],"id":"port-15","shape":"rect","size":[14.25,10.4]},{"at":[238.76,38.6],"id":"led-port-15","shape":"circle","size":[2.0,2.0]},{"at":[235.61,28.0],"id":"port-16","shape":"rect","size":[14.25,10.4]},{"at":[244.72,38.6],"id":"led-port-16","shape":"circle","size":[2.0,2.0]},{"at":[253.01,13.0],"id":"port-17","shape":"rect","size":[14.25,10.4]},{"at":[256.15,38.6],"id":"led-port-17","shape":"circle","size":[2.0,2.0]},{"at":[253.01,28.0],"id":"port-18","shape":"rect","size":[14.25,10.4]},{"at":[262.12,38.6],"id":"led-port-18","shape":"circle","size":[2.0,2.0]},{"at":[270.42,13.0],"id":"port-19","shape":"rect","size":[14.25,10.4]},{"at":[273.56,38.6],"id":"led-port-19","shape":"circle","size":[2.0,2.0]},{"at":[270.42,28.0],"id":"port-20","shape":"rect","size":[14.25,10.4]},{"at":[279.53,38.6],"id":"led-port-20","shape":"circle","size":[2.0,2.0]},{"at":[287.82,13.0],"id":"port-21","shape":"rect","size":[14.25,10.4]},{"at":[290.96,38.6],"id":"led-port-21","shape":"circle","size":[2.0,2.0]},{"at":[287.82,28.0],"id":"port-22","shape":"rect","size":[14.25,10.4]},{"at":[296.93,38.6],"id":"led-port-22","shape":"circle","size":[2.0,2.0]},{"at":[305.23,13.0],"id":"port-23","shape":"rect","size":[14.25,10.4]},{"at":[308.38,38.6],"id":"led-port-23","shape":"circle","size":[2.0,2.0]},{"at":[305.23,28.0],"id":"port-24","shape":"rect","size":[14.25,10.4]},{"at":[314.34,38.6],"id":"led-port-24","shape":"circle","size":[2.0,2.0]},{"at":[322.9,12.0],"id":"copper-21","shape":"rect","size":[15.8,13.2]},{"at":[326.75,38.6],"id":"led-copper-21","shape":"circle","size":[2.0,2.0]},{"at":[322.9,25.2],"id":"copper-22","shape":"rect","size":[15.8,13.2]},{"at":[332.85,38.6],"id":"led-copper-22","shape":"circle","size":[2.0,2.0]},{"at":[342.35,12.0],"id":"copper-23","shape":"rect","size":[15.8,13.2]},{"at":[346.2,38.6],"id":"led-copper-23","shape":"circle","size":[2.0,2.0]},{"at":[342.35,25.2],"id":"copper-24","shape":"rect","size":[15.8,13.2]},{"at":[352.3,38.6],"id":"led-copper-24","shape":"circle","size":[2.0,2.0]},{"at":[362.85,28.3],"id":"port-25","shape":"rect","size":[14.5,10.0]},{"at":[380.55,28.3],"id":"port-26","shape":"rect","size":[14.5,10.0]},{"at":[398.25,28.3],"id":"port-27","shape":"rect","size":[14.5,10.0]},{"at":[415.95,28.3],"id":"port-28","shape":"rect","size":[14.5,10.0]},{"at":[381.28,11.96],"id":"led-port-25","shape":"circle","size":[2.0,2.0]},{"at":[386.15,11.96],"id":"led-port-27","shape":"circle","size":[2.0,2.0]},{"at":[391.02,11.96],"id":"led-diag","shape":"circle","size":[2.0,2.0]},{"at":[381.28,16.83],"id":"led-port-26","shape":"circle","size":[2.0,2.0]},{"at":[386.15,16.83],"id":"led-port-28","shape":"circle","size":[2.0,2.0]},{"at":[391.02,16.83],"id":"led-pwr","shape":"circle","size":[2.0,2.0]},{"at":[396.4,8.54],"id":"mgmt-eth","shape":"rect","size":[15.8,13.2]},{"at":[414.9,8.54],"id":"console","shape":"rect","size":[15.8,13.2]},{"at":[6.09,17.57],"id":"power-ac","shape":"rect","size":[28.0,20.0]},{"at":[65.04,17.67],"id":"power-dc","shape":"rect","size":[32.1,17.6]},{"at":[43.6,15.1],"id":"ground","shape":"rect","size":[7.0,14.0]}],"decor":[{"at":[103.73,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[108.72,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[113.71,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[118.7,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[123.69,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[128.68,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[133.67,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[138.66,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[143.65,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[148.64,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[153.63,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[158.62,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[163.61,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[168.6,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[173.59,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[178.58,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[183.57,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[188.56,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[193.55,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[198.54,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[203.53,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[208.52,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[213.51,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[218.5,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[223.49,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[228.48,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[233.47,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[238.46,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[243.45,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[248.44,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[253.43,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[258.42,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[263.41,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[268.4,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[273.39,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[278.38,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[283.37,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[288.36,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[293.35,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[298.34,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[303.33,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[308.32,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[313.31,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[318.3,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[323.29,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[328.28,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[333.27,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[338.26,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[343.25,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[348.24,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[353.23,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[358.22,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[363.21,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[368.2,2.7],"fill":"#1b1e21","size":[2.43,6.1]},{"at":[2.19,5.04],"fill":"#e4e7ea","rx":0.3,"size":[19.97,3.65]},{"at":[4.14,15.51],"fill":"#2a2d31","rx":0.6,"size":[31.9,24.11]},{"at":[113.44,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[113.44,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[130.85,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[130.85,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[148.25,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[148.25,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[165.66,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[165.66,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[183.06,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[183.06,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[200.47,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[200.47,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[217.87,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[217.87,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[235.28,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[235.28,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[252.68,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[252.68,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[270.09,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[270.09,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[287.49,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[287.49,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[304.9,12.7],"fill":"#d4d8db","rx":0.4,"size":[14.9,26.0]},{"at":[304.9,23.4],"fill":"#eef0f2","size":[14.9,4.6]},{"at":[322.1,11.9],"fill":"#d4d8db","rx":0.4,"size":[17.4,26.7]},{"at":[341.55,11.9],"fill":"#d4d8db","rx":0.4,"size":[17.4,26.7]},{"at":[362.55,25.1],"fill":"#e4e7ea","size":[31.17,0.3]},{"at":[399.56,25.1],"fill":"#e4e7ea","size":[31.17,0.3]}]},"silkscreen":[{"anchor":"middle","at":[117.91,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-1","text":"1\u25b2"},{"anchor":"middle","at":[123.87,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-2","text":"2\u25bc"},{"anchor":"middle","at":[135.32,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-3","text":"3\u25b2"},{"anchor":"middle","at":[141.28,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-4","text":"4\u25bc"},{"anchor":"middle","at":[152.72,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-5","text":"5\u25b2"},{"anchor":"middle","at":[158.68,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-6","text":"6\u25bc"},{"anchor":"middle","at":[170.13,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-7","text":"7\u25b2"},{"anchor":"middle","at":[176.09,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-8","text":"8\u25bc"},{"anchor":"middle","at":[187.53,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-9","text":"9\u25b2"},{"anchor":"middle","at":[193.49,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-10","text":"10\u25bc"},{"anchor":"middle","at":[204.94,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-11","text":"11\u25b2"},{"anchor":"middle","at":[210.9,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-12","text":"12\u25bc"},{"anchor":"middle","at":[222.34,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-13","text":"13\u25b2"},{"anchor":"middle","at":[228.3,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-14","text":"14\u25bc"},{"anchor":"middle","at":[239.75,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-15","text":"15\u25b2"},{"anchor":"middle","at":[245.71,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-16","text":"16\u25bc"},{"anchor":"middle","at":[257.15,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-17","text":"17\u25b2"},{"anchor":"middle","at":[263.11,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-18","text":"18\u25bc"},{"anchor":"middle","at":[274.56,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-19","text":"19\u25b2"},{"anchor":"middle","at":[280.52,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-20","text":"20\u25bc"},{"anchor":"middle","at":[291.96,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-21","text":"21\u25b2"},{"anchor":"middle","at":[297.92,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-22","text":"22\u25bc"},{"anchor":"middle","at":[309.37,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-23","text":"23\u25b2"},{"anchor":"middle","at":[315.33,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"port-24","text":"24\u25bc"},{"anchor":"middle","at":[327.75,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"copper-21","text":"21\u25b2"},{"anchor":"middle","at":[333.85,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"copper-22","text":"22\u25bc"},{"anchor":"middle","at":[347.2,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"copper-23","text":"23\u25b2"},{"anchor":"middle","at":[353.3,42.4],"fill":"#e4e7ea","font-size":1.2,"for":"copper-24","text":"24\u25bc"},{"anchor":"middle","at":[370.1,41.6],"fill":"#e4e7ea","font-size":1.4,"for":"port-25","text":"25"},{"anchor":"middle","at":[387.8,41.6],"fill":"#e4e7ea","font-size":1.4,"for":"port-26","text":"26"},{"anchor":"middle","at":[405.5,41.6],"fill":"#e4e7ea","font-size":1.4,"for":"port-27","text":"27"},{"anchor":"middle","at":[423.2,41.6],"fill":"#e4e7ea","font-size":1.4,"for":"port-28","text":"28"},{"anchor":"middle","at":[396.65,25.75],"fill":"#e4e7ea","font-size":1.3,"for":["port-25","port-26","port-27","port-28"],"text":"10G"},{"anchor":"middle","at":[382.28,10.2],"fill":"#e4e7ea","font-size":1.1,"for":"led-port-25","text":"25"},{"anchor":"middle","at":[387.15,10.2],"fill":"#e4e7ea","font-size":1.1,"for":"led-port-27","text":"27"},{"anchor":"middle","at":[392.02,10.2],"fill":"#e4e7ea","font-size":1.1,"for":"led-diag","text":"DIAG"},{"anchor":"middle","at":[382.28,21.55],"fill":"#e4e7ea","font-size":1.1,"for":"led-port-26","text":"26"},{"anchor":"middle","at":[387.15,21.55],"fill":"#e4e7ea","font-size":1.1,"for":"led-port-28","text":"28"},{"anchor":"middle","at":[392.02,21.55],"fill":"#e4e7ea","font-size":1.1,"for":"led-pwr","text":"PWR"},{"anchor":"middle","at":[404.3,23.5],"fill":"#e4e7ea","font-size":1.4,"for":"mgmt-eth","text":"MGMT"},{"anchor":"middle","at":[422.8,23.5],"fill":"#e4e7ea","font-size":1.4,"for":"console","text":"Console"},{"at":[47.1,34.75],"fill":"#e4e7ea","for":"ground","path":"M 0 -1.87 L 0 -0.34 M -1.7 -0.34 L 1.7 -0.34 M -1.054 0.408 L 1.054 0.408 M -0.476 1.156 L 0.476 1.156","stroke-width":0.28},{"anchor":"start","at":[2.2,11.6],"fill":"#e4e7ea","font-size":1.6,"for":"chassis","text":"ECS4120-28Fv2-I"},{"anchor":"middle","at":[20.09,41.0],"fill":"#e4e7ea","font-size":1.3,"for":"power-ac","text":"100-240V~;50/60Hz;1.0A"},{"anchor":"middle","at":[69.95,37.1],"fill":"#e4e7ea","font-size":1.8,"for":"power-dc","text":"+"},{"anchor":"middle","at":[93.5,37.1],"fill":"#e4e7ea","font-size":1.8,"for":"power-dc","text":"-"},{"anchor":"middle","at":[81.09,39.4],"fill":"#e4e7ea","font-size":1.3,"for":"power-dc","text":"\u2393-48~-60V;3.0A"}],"size":{"h":44.0,"w":440.0}},"left":{"panel":{"decor":[{"at":[0.0,2.5],"fill":"#3e4247","sink":1,"size":[220.0,1.4]}]},"size":{"h":44.0,"w":220.0}},"rear":{"panel":{"decor":[{"at":[97.8,6.9],"fill":"#8e949a","rx":12.0,"size":[24.0,24.0]},{"at":[83.95,5.4],"pattern":"vent","size":[51.7,26.9],"vent":40},{"at":[224.1,6.9],"fill":"#8e949a","rx":12.0,"size":[24.0,24.0]},{"at":[210.25,5.4],"pattern":"vent","size":[51.7,26.9],"vent":40}]},"size":{"h":44.0,"w":440.0}},"right":{"panel":{"decor":[{"at":[0.0,2.5],"fill":"#3e4247","sink":1,"size":[220.0,1.4]}]},"size":{"h":44.0,"w":220.0}},"top":{"panel":{"decor":[{"at":[2.0,20.0],"fill":"#3e4247","sink":1,"size":[436.0,1.2]}]},"size":{"h":220.0,"w":440.0}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ECS4120-28Fv2-I" x="0" y="0" width="440" height="44" rx="1.2" fill="#5c6166" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="103.73" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-1" data-kind="plate" x="108.72" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-2" data-kind="plate" x="113.71" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-3" data-kind="plate" x="118.7" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-4" data-kind="plate" x="123.69" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-5" data-kind="plate" x="128.68" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-6" data-kind="plate" x="133.67" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-7" data-kind="plate" x="138.66" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-8" data-kind="plate" x="143.65" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-9" data-kind="plate" x="148.64" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-10" data-kind="plate" x="153.63" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-11" data-kind="plate" x="158.62" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-12" data-kind="plate" x="163.61" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-13" data-kind="plate" x="168.6" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-14" data-kind="plate" x="173.59" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-15" data-kind="plate" x="178.58" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-16" data-kind="plate" x="183.57" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-17" data-kind="plate" x="188.56" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-18" data-kind="plate" x="193.55" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-19" data-kind="plate" x="198.54" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-20" data-kind="plate" x="203.53" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-21" data-kind="plate" x="208.52" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-22" data-kind="plate" x="213.51" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-23" data-kind="plate" x="218.5" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-24" data-kind="plate" x="223.49" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-25" data-kind="plate" x="228.48" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-26" data-kind="plate" x="233.47" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-27" data-kind="plate" x="238.46" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-28" data-kind="plate" x="243.45" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-29" data-kind="plate" x="248.44" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-30" data-kind="plate" x="253.43" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-31" data-kind="plate" x="258.42" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-32" data-kind="plate" x="263.41" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-33" data-kind="plate" x="268.4" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-34" data-kind="plate" x="273.39" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-35" data-kind="plate" x="278.38" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-36" data-kind="plate" x="283.37" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-37" data-kind="plate" x="288.36" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-38" data-kind="plate" x="293.35" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-39" data-kind="plate" x="298.34" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-40" data-kind="plate" x="303.33" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-41" data-kind="plate" x="308.32" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-42" data-kind="plate" x="313.31" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-43" data-kind="plate" x="318.3" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-44" data-kind="plate" x="323.29" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-45" data-kind="plate" x="328.28" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-46" data-kind="plate" x="333.27" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-47" data-kind="plate" x="338.26" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-48" data-kind="plate" x="343.25" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-49" data-kind="plate" x="348.24" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-50" data-kind="plate" x="353.23" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-51" data-kind="plate" x="358.22" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-52" data-kind="plate" x="363.21" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-53" data-kind="plate" x="368.2" y="2.7" width="2.43" height="6.1" rx="0.6" fill="#1b1e21" />
+    <rect id="plate-54" data-kind="plate" x="2.19" y="5.04" width="19.97" height="3.65" rx="0.3" fill="#e4e7ea" />
+    <rect id="plate-55" data-kind="plate" x="4.14" y="15.51" width="31.9" height="24.11" rx="0.6" fill="#2a2d31" />
+    <rect id="plate-56" data-kind="plate" x="113.44" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-57" data-kind="plate" x="113.44" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-58" data-kind="plate" x="130.85" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-59" data-kind="plate" x="130.85" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-60" data-kind="plate" x="148.25" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-61" data-kind="plate" x="148.25" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-62" data-kind="plate" x="165.66" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-63" data-kind="plate" x="165.66" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-64" data-kind="plate" x="183.06" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-65" data-kind="plate" x="183.06" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-66" data-kind="plate" x="200.47" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-67" data-kind="plate" x="200.47" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-68" data-kind="plate" x="217.87" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-69" data-kind="plate" x="217.87" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-70" data-kind="plate" x="235.28" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-71" data-kind="plate" x="235.28" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-72" data-kind="plate" x="252.68" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-73" data-kind="plate" x="252.68" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-74" data-kind="plate" x="270.09" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-75" data-kind="plate" x="270.09" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-76" data-kind="plate" x="287.49" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-77" data-kind="plate" x="287.49" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-78" data-kind="plate" x="304.9" y="12.7" width="14.9" height="26" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-79" data-kind="plate" x="304.9" y="23.4" width="14.9" height="4.6" rx="0.6" fill="#eef0f2" />
+    <rect id="plate-80" data-kind="plate" x="322.1" y="11.9" width="17.4" height="26.7" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-81" data-kind="plate" x="341.55" y="11.9" width="17.4" height="26.7" rx="0.4" fill="#d4d8db" />
+    <rect id="plate-82" data-kind="plate" x="362.55" y="25.1" width="31.17" height="0.3" rx="0.6" fill="#e4e7ea" />
+    <rect id="plate-83" data-kind="plate" x="399.56" y="25.1" width="31.17" height="0.3" rx="0.6" fill="#e4e7ea" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="113.77" y="13" width="14.25" height="10.4" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" fill="#101214" />
+    <ellipse cx="117.91" cy="39.6" rx="1" ry="1" id="cutout--led-port-1" data-path="cutout:led-port-1" data-class="cutout" fill="#101214" />
+    <rect x="113.77" y="28" width="14.25" height="10.4" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" fill="#101214" />
+    <ellipse cx="123.88" cy="39.6" rx="1" ry="1" id="cutout--led-port-2" data-path="cutout:led-port-2" data-class="cutout" fill="#101214" />
+    <rect x="131.18" y="13" width="14.25" height="10.4" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" fill="#101214" />
+    <ellipse cx="135.33" cy="39.6" rx="1" ry="1" id="cutout--led-port-3" data-path="cutout:led-port-3" data-class="cutout" fill="#101214" />
+    <rect x="131.18" y="28" width="14.25" height="10.4" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" fill="#101214" />
+    <ellipse cx="141.28" cy="39.6" rx="1" ry="1" id="cutout--led-port-4" data-path="cutout:led-port-4" data-class="cutout" fill="#101214" />
+    <rect x="148.58" y="13" width="14.25" height="10.4" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" fill="#101214" />
+    <ellipse cx="152.73" cy="39.6" rx="1" ry="1" id="cutout--led-port-5" data-path="cutout:led-port-5" data-class="cutout" fill="#101214" />
+    <rect x="148.58" y="28" width="14.25" height="10.4" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" fill="#101214" />
+    <ellipse cx="158.69" cy="39.6" rx="1" ry="1" id="cutout--led-port-6" data-path="cutout:led-port-6" data-class="cutout" fill="#101214" />
+    <rect x="165.99" y="13" width="14.25" height="10.4" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" fill="#101214" />
+    <ellipse cx="170.14" cy="39.6" rx="1" ry="1" id="cutout--led-port-7" data-path="cutout:led-port-7" data-class="cutout" fill="#101214" />
+    <rect x="165.99" y="28" width="14.25" height="10.4" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" fill="#101214" />
+    <ellipse cx="176.09" cy="39.6" rx="1" ry="1" id="cutout--led-port-8" data-path="cutout:led-port-8" data-class="cutout" fill="#101214" />
+    <rect x="183.39" y="13" width="14.25" height="10.4" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" fill="#101214" />
+    <ellipse cx="187.53" cy="39.6" rx="1" ry="1" id="cutout--led-port-9" data-path="cutout:led-port-9" data-class="cutout" fill="#101214" />
+    <rect x="183.39" y="28" width="14.25" height="10.4" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" fill="#101214" />
+    <ellipse cx="193.49" cy="39.6" rx="1" ry="1" id="cutout--led-port-10" data-path="cutout:led-port-10" data-class="cutout" fill="#101214" />
+    <rect x="200.8" y="13" width="14.25" height="10.4" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" fill="#101214" />
+    <ellipse cx="204.95" cy="39.6" rx="1" ry="1" id="cutout--led-port-11" data-path="cutout:led-port-11" data-class="cutout" fill="#101214" />
+    <rect x="200.8" y="28" width="14.25" height="10.4" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" fill="#101214" />
+    <ellipse cx="210.91" cy="39.6" rx="1" ry="1" id="cutout--led-port-12" data-path="cutout:led-port-12" data-class="cutout" fill="#101214" />
+    <rect x="218.2" y="13" width="14.25" height="10.4" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" fill="#101214" />
+    <ellipse cx="222.34" cy="39.6" rx="1" ry="1" id="cutout--led-port-13" data-path="cutout:led-port-13" data-class="cutout" fill="#101214" />
+    <rect x="218.2" y="28" width="14.25" height="10.4" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" fill="#101214" />
+    <ellipse cx="228.3" cy="39.6" rx="1" ry="1" id="cutout--led-port-14" data-path="cutout:led-port-14" data-class="cutout" fill="#101214" />
+    <rect x="235.61" y="13" width="14.25" height="10.4" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" fill="#101214" />
+    <ellipse cx="239.76" cy="39.6" rx="1" ry="1" id="cutout--led-port-15" data-path="cutout:led-port-15" data-class="cutout" fill="#101214" />
+    <rect x="235.61" y="28" width="14.25" height="10.4" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" fill="#101214" />
+    <ellipse cx="245.72" cy="39.6" rx="1" ry="1" id="cutout--led-port-16" data-path="cutout:led-port-16" data-class="cutout" fill="#101214" />
+    <rect x="253.01" y="13" width="14.25" height="10.4" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" fill="#101214" />
+    <ellipse cx="257.15" cy="39.6" rx="1" ry="1" id="cutout--led-port-17" data-path="cutout:led-port-17" data-class="cutout" fill="#101214" />
+    <rect x="253.01" y="28" width="14.25" height="10.4" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" fill="#101214" />
+    <ellipse cx="263.12" cy="39.6" rx="1" ry="1" id="cutout--led-port-18" data-path="cutout:led-port-18" data-class="cutout" fill="#101214" />
+    <rect x="270.42" y="13" width="14.25" height="10.4" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" fill="#101214" />
+    <ellipse cx="274.56" cy="39.6" rx="1" ry="1" id="cutout--led-port-19" data-path="cutout:led-port-19" data-class="cutout" fill="#101214" />
+    <rect x="270.42" y="28" width="14.25" height="10.4" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" fill="#101214" />
+    <ellipse cx="280.53" cy="39.6" rx="1" ry="1" id="cutout--led-port-20" data-path="cutout:led-port-20" data-class="cutout" fill="#101214" />
+    <rect x="287.82" y="13" width="14.25" height="10.4" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" fill="#101214" />
+    <ellipse cx="291.96" cy="39.6" rx="1" ry="1" id="cutout--led-port-21" data-path="cutout:led-port-21" data-class="cutout" fill="#101214" />
+    <rect x="287.82" y="28" width="14.25" height="10.4" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" fill="#101214" />
+    <ellipse cx="297.93" cy="39.6" rx="1" ry="1" id="cutout--led-port-22" data-path="cutout:led-port-22" data-class="cutout" fill="#101214" />
+    <rect x="305.23" y="13" width="14.25" height="10.4" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" fill="#101214" />
+    <ellipse cx="309.38" cy="39.6" rx="1" ry="1" id="cutout--led-port-23" data-path="cutout:led-port-23" data-class="cutout" fill="#101214" />
+    <rect x="305.23" y="28" width="14.25" height="10.4" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" fill="#101214" />
+    <ellipse cx="315.34" cy="39.6" rx="1" ry="1" id="cutout--led-port-24" data-path="cutout:led-port-24" data-class="cutout" fill="#101214" />
+    <rect x="322.9" y="12" width="15.8" height="13.2" id="cutout--copper-21" data-path="cutout:copper-21" data-class="cutout" fill="#101214" />
+    <ellipse cx="327.75" cy="39.6" rx="1" ry="1" id="cutout--led-copper-21" data-path="cutout:led-copper-21" data-class="cutout" fill="#101214" />
+    <rect x="322.9" y="25.2" width="15.8" height="13.2" id="cutout--copper-22" data-path="cutout:copper-22" data-class="cutout" fill="#101214" />
+    <ellipse cx="333.85" cy="39.6" rx="1" ry="1" id="cutout--led-copper-22" data-path="cutout:led-copper-22" data-class="cutout" fill="#101214" />
+    <rect x="342.35" y="12" width="15.8" height="13.2" id="cutout--copper-23" data-path="cutout:copper-23" data-class="cutout" fill="#101214" />
+    <ellipse cx="347.2" cy="39.6" rx="1" ry="1" id="cutout--led-copper-23" data-path="cutout:led-copper-23" data-class="cutout" fill="#101214" />
+    <rect x="342.35" y="25.2" width="15.8" height="13.2" id="cutout--copper-24" data-path="cutout:copper-24" data-class="cutout" fill="#101214" />
+    <ellipse cx="353.3" cy="39.6" rx="1" ry="1" id="cutout--led-copper-24" data-path="cutout:led-copper-24" data-class="cutout" fill="#101214" />
+    <rect x="362.85" y="28.3" width="14.5" height="10" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" fill="#101214" />
+    <rect x="380.55" y="28.3" width="14.5" height="10" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" fill="#101214" />
+    <rect x="398.25" y="28.3" width="14.5" height="10" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" fill="#101214" />
+    <rect x="415.95" y="28.3" width="14.5" height="10" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" fill="#101214" />
+    <ellipse cx="382.28" cy="12.96" rx="1" ry="1" id="cutout--led-port-25" data-path="cutout:led-port-25" data-class="cutout" fill="#101214" />
+    <ellipse cx="387.15" cy="12.96" rx="1" ry="1" id="cutout--led-port-27" data-path="cutout:led-port-27" data-class="cutout" fill="#101214" />
+    <ellipse cx="392.02" cy="12.96" rx="1" ry="1" id="cutout--led-diag" data-path="cutout:led-diag" data-class="cutout" fill="#101214" />
+    <ellipse cx="382.28" cy="17.83" rx="1" ry="1" id="cutout--led-port-26" data-path="cutout:led-port-26" data-class="cutout" fill="#101214" />
+    <ellipse cx="387.15" cy="17.83" rx="1" ry="1" id="cutout--led-port-28" data-path="cutout:led-port-28" data-class="cutout" fill="#101214" />
+    <ellipse cx="392.02" cy="17.83" rx="1" ry="1" id="cutout--led-pwr" data-path="cutout:led-pwr" data-class="cutout" fill="#101214" />
+    <rect x="396.4" y="8.54" width="15.8" height="13.2" id="cutout--mgmt-eth" data-path="cutout:mgmt-eth" data-class="cutout" fill="#101214" />
+    <rect x="414.9" y="8.54" width="15.8" height="13.2" id="cutout--console" data-path="cutout:console" data-class="cutout" fill="#101214" />
+    <rect x="6.09" y="17.57" width="28" height="20" id="cutout--power-ac" data-path="cutout:power-ac" data-class="cutout" fill="#101214" />
+    <rect x="65.04" y="17.67" width="32.1" height="17.6" id="cutout--power-dc" data-path="cutout:power-dc" data-class="cutout" fill="#101214" />
+    <rect x="43.6" y="15.1" width="7" height="14" id="cutout--ground" data-path="cutout:ground" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="117.91" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1▲</text>
+    <text x="123.87" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2▼</text>
+    <text x="135.32" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3▲</text>
+    <text x="141.28" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4▼</text>
+    <text x="152.72" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5▲</text>
+    <text x="158.68" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6▼</text>
+    <text x="170.13" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7▲</text>
+    <text x="176.09" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8▼</text>
+    <text x="187.53" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9▲</text>
+    <text x="193.49" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10▼</text>
+    <text x="204.94" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11▲</text>
+    <text x="210.9" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12▼</text>
+    <text x="222.34" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13▲</text>
+    <text x="228.3" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14▼</text>
+    <text x="239.75" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15▲</text>
+    <text x="245.71" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16▼</text>
+    <text x="257.15" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17▲</text>
+    <text x="263.11" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18▼</text>
+    <text x="274.56" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19▲</text>
+    <text x="280.52" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20▼</text>
+    <text x="291.96" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21▲</text>
+    <text x="297.92" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22▼</text>
+    <text x="309.37" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23▲</text>
+    <text x="315.33" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24▼</text>
+    <text x="327.75" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-21">21▲</text>
+    <text x="333.85" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-22">22▼</text>
+    <text x="347.2" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-23">23▲</text>
+    <text x="353.3" y="42.4" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e4e7ea" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-24">24▼</text>
+    <text x="370.1" y="41.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e4e7ea" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="387.8" y="41.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e4e7ea" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="405.5" y="41.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e4e7ea" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="423.2" y="41.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e4e7ea" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="396.65" y="25.75" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e4e7ea" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25 port-26 port-27 port-28">10G</text>
+    <text x="382.28" y="10.2" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#e4e7ea" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-port-25">25</text>
+    <text x="387.15" y="10.2" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#e4e7ea" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-port-27">27</text>
+    <text x="392.02" y="10.2" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#e4e7ea" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-diag">DIAG</text>
+    <text x="382.28" y="21.55" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#e4e7ea" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-port-26">26</text>
+    <text x="387.15" y="21.55" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#e4e7ea" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-port-28">28</text>
+    <text x="392.02" y="21.55" font-family="sans-serif" font-size="1.1" text-anchor="middle" fill="#e4e7ea" data-path="silk:38" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="404.3" y="23.5" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e4e7ea" data-path="silk:39" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-eth">MGMT</text>
+    <text x="422.8" y="23.5" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e4e7ea" data-path="silk:40" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">Console</text>
+    <path d="M 0 -1.87 L 0 -0.34 M -1.7 -0.34 L 1.7 -0.34 M -1.054 0.408 L 1.054 0.408 M -0.476 1.156 L 0.476 1.156" fill="none" stroke="#e4e7ea" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(47.1 34.75)" data-path="silk:41" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground" />
+    <text x="2.2" y="11.6" font-family="sans-serif" font-size="1.6" text-anchor="start" fill="#e4e7ea" data-path="silk:42" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ECS4120-28Fv2-I</text>
+    <text x="20.09" y="41" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e4e7ea" data-path="silk:43" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="power-ac">100-240V~;50/60Hz;1.0A</text>
+    <text x="69.95" y="37.1" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e4e7ea" data-path="silk:44" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="power-dc">+</text>
+    <text x="93.5" y="37.1" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#e4e7ea" data-path="silk:45" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="power-dc">-</text>
+    <text x="81.09" y="39.4" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#e4e7ea" data-path="silk:46" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="power-dc">⎓-48~-60V;3.0A</text>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="1" transform="translate(113.77,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="2" transform="translate(113.77,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="3" transform="translate(131.18,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="4" transform="translate(131.18,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="5" transform="translate(148.58,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="6" transform="translate(148.58,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="7" transform="translate(165.99,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="8" transform="translate(165.99,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="9" transform="translate(183.39,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="10" transform="translate(183.39,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-10--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="11" transform="translate(200.8,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-11--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="12" transform="translate(200.8,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-12--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="13" transform="translate(218.2,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-13--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="14" transform="translate(218.2,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-14--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="15" transform="translate(235.61,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-15--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="16" transform="translate(235.61,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-16--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="17" transform="translate(253.01,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-17--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="18" transform="translate(253.01,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-18--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="19" transform="translate(270.42,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-19--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="20" transform="translate(270.42,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-20--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="21" transform="translate(287.82,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-21--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="22" transform="translate(287.82,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-22--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="23" transform="translate(305.23,13.0) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-23--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" data-rel-pos="24" transform="translate(305.23,28.0)" data-group="sfp" data-group-role="traffic">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-24--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-1" data-path="led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(116.91,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-1">
+    <title>led-port-1</title>
+    <circle id="led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-2" data-path="led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(122.88,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-2">
+    <title>led-port-2</title>
+    <circle id="led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-3" data-path="led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(134.33,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-3">
+    <title>led-port-3</title>
+    <circle id="led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-4" data-path="led-port-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(140.28,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-4">
+    <title>led-port-4</title>
+    <circle id="led-port-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-5" data-path="led-port-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="5" transform="translate(151.73,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-5">
+    <title>led-port-5</title>
+    <circle id="led-port-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-5/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-6" data-path="led-port-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="6" transform="translate(157.69,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-6">
+    <title>led-port-6</title>
+    <circle id="led-port-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-6/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-7" data-path="led-port-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="7" transform="translate(169.14,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-7">
+    <title>led-port-7</title>
+    <circle id="led-port-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-7/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-8" data-path="led-port-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="8" transform="translate(175.09,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-8">
+    <title>led-port-8</title>
+    <circle id="led-port-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-8/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-9" data-path="led-port-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="9" transform="translate(186.53,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-9">
+    <title>led-port-9</title>
+    <circle id="led-port-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-9/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-10" data-path="led-port-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="10" transform="translate(192.49,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-10">
+    <title>led-port-10</title>
+    <circle id="led-port-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-10/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-11" data-path="led-port-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="11" transform="translate(203.95,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-11">
+    <title>led-port-11</title>
+    <circle id="led-port-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-11/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-12" data-path="led-port-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="12" transform="translate(209.91,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-12">
+    <title>led-port-12</title>
+    <circle id="led-port-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-12/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-13" data-path="led-port-13" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="13" transform="translate(221.34,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-13">
+    <title>led-port-13</title>
+    <circle id="led-port-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-13/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-14" data-path="led-port-14" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="14" transform="translate(227.3,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-14">
+    <title>led-port-14</title>
+    <circle id="led-port-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-14/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-15" data-path="led-port-15" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="15" transform="translate(238.76,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-15">
+    <title>led-port-15</title>
+    <circle id="led-port-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-15/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-16" data-path="led-port-16" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="16" transform="translate(244.72,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-16">
+    <title>led-port-16</title>
+    <circle id="led-port-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-16/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-17" data-path="led-port-17" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="17" transform="translate(256.15,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-17">
+    <title>led-port-17</title>
+    <circle id="led-port-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-17/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-18" data-path="led-port-18" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="18" transform="translate(262.12,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-18">
+    <title>led-port-18</title>
+    <circle id="led-port-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-18/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-19" data-path="led-port-19" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="19" transform="translate(273.56,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-19">
+    <title>led-port-19</title>
+    <circle id="led-port-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-19/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-20" data-path="led-port-20" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="20" transform="translate(279.53,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-20">
+    <title>led-port-20</title>
+    <circle id="led-port-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-20/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-21" data-path="led-port-21" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="21" transform="translate(290.96,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-21">
+    <title>led-port-21</title>
+    <circle id="led-port-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-21/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-22" data-path="led-port-22" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="22" transform="translate(296.93,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-22">
+    <title>led-port-22</title>
+    <circle id="led-port-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-22/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-23" data-path="led-port-23" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="23" transform="translate(308.38,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-23">
+    <title>led-port-23</title>
+    <circle id="led-port-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-23/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-24" data-path="led-port-24" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="24" transform="translate(314.34,38.6)" data-group="port-leds" data-group-role="indicator" data-for="port-24">
+    <title>led-port-24</title>
+    <circle id="led-port-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-24/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="copper-21" data-path="copper-21" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-speed="1g" data-rel-pos="21" transform="translate(322.9,12.0) rotate(180 7.9 6.6)" data-group="rj45-combo" data-group-role="traffic" data-description="combo ports - copper-21..24 share their port numbers with the SFP cages port-21..24 printed beside them, one or the other in use at a time.">
+    <title>copper-21</title>
+    <path id="copper-21--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-21--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-21--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-21/opening" data-class="cutout" />
+    <g id="copper-21--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-22" data-path="copper-22" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-speed="1g" data-rel-pos="22" transform="translate(322.9,25.2)" data-group="rj45-combo" data-group-role="traffic" data-description="combo ports - copper-21..24 share their port numbers with the SFP cages port-21..24 printed beside them, one or the other in use at a time.">
+    <title>copper-22</title>
+    <path id="copper-22--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-22--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-22--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-22/opening" data-class="cutout" />
+    <g id="copper-22--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-23" data-path="copper-23" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-speed="1g" data-rel-pos="23" transform="translate(342.35,12.0) rotate(180 7.9 6.6)" data-group="rj45-combo" data-group-role="traffic" data-description="combo ports - copper-21..24 share their port numbers with the SFP cages port-21..24 printed beside them, one or the other in use at a time.">
+    <title>copper-23</title>
+    <path id="copper-23--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-23--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-23--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-23/opening" data-class="cutout" />
+    <g id="copper-23--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-24" data-path="copper-24" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-speed="1g" data-rel-pos="24" transform="translate(342.35,25.2)" data-group="rj45-combo" data-group-role="traffic" data-description="combo ports - copper-21..24 share their port numbers with the SFP cages port-21..24 printed beside them, one or the other in use at a time.">
+    <title>copper-24</title>
+    <path id="copper-24--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-24--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-24--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-24/opening" data-class="cutout" />
+    <g id="copper-24--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="led-copper-21" data-path="led-copper-21" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="21" transform="translate(326.75,38.6)" data-group="port-leds" data-group-role="indicator" data-for="copper-21">
+    <title>led-copper-21</title>
+    <circle id="led-copper-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-copper-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-copper-21/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-copper-22" data-path="led-copper-22" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="22" transform="translate(332.85,38.6)" data-group="port-leds" data-group-role="indicator" data-for="copper-22">
+    <title>led-copper-22</title>
+    <circle id="led-copper-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-copper-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-copper-22/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-copper-23" data-path="led-copper-23" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="23" transform="translate(346.2,38.6)" data-group="port-leds" data-group-role="indicator" data-for="copper-23">
+    <title>led-copper-23</title>
+    <circle id="led-copper-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-copper-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-copper-23/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-copper-24" data-path="led-copper-24" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="24" transform="translate(352.3,38.6)" data-group="port-leds" data-group-role="indicator" data-for="copper-24">
+    <title>led-copper-24</title>
+    <circle id="led-copper-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-copper-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-copper-24/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-depth="41.0" data-media="sfp-plus" data-speed="10g" data-rel-pos="25" transform="translate(362.1,28.3)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-25</title>
+    <rect id="port-25--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+    <g id="port-25--cage" data-path="port-25/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+      <title>port-25--cage</title>
+      <rect id="port-25--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="port-25/cage/opening" data-class="cutout" />
+      <rect id="port-25--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="port-25--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="port-25--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="port-25--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g data-cp="net" data-cp-at="8 5" data-cp-dir="front" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-depth="41.0" data-media="sfp-plus" data-speed="10g" data-rel-pos="26" transform="translate(379.8,28.3)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-26</title>
+    <rect id="port-26--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+    <g id="port-26--cage" data-path="port-26/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+      <title>port-26--cage</title>
+      <rect id="port-26--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="port-26/cage/opening" data-class="cutout" />
+      <rect id="port-26--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="port-26--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="port-26--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="port-26--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g data-cp="net" data-cp-at="8 5" data-cp-dir="front" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-depth="41.0" data-media="sfp-plus" data-speed="10g" data-rel-pos="27" transform="translate(397.5,28.3)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-27</title>
+    <rect id="port-27--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+    <g id="port-27--cage" data-path="port-27/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+      <title>port-27--cage</title>
+      <rect id="port-27--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="port-27/cage/opening" data-class="cutout" />
+      <rect id="port-27--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="port-27--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="port-27--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="port-27--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g data-cp="net" data-cp-at="8 5" data-cp-dir="front" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="common/sfp-plus-cage@2:2.0.0" data-depth="41.0" data-media="sfp-plus" data-speed="10g" data-rel-pos="28" transform="translate(415.2,28.3)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-28</title>
+    <rect id="port-28--body" x="0" y="0" width="16" height="10" rx="0.5" fill="#2b2f33" />
+    <g id="port-28--cage" data-path="port-28/cage" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" transform="translate(0.75,0.0)">
+      <title>port-28--cage</title>
+      <rect id="port-28--cage--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="port-28/cage/opening" data-class="cutout" />
+      <rect id="port-28--cage--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="port-28--cage--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="port-28--cage--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="port-28--cage--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g data-cp="net" data-cp-at="8 5" data-cp-dir="front" />
+  </g>
+  <g id="led-port-25" data-path="led-port-25" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="40" transform="translate(381.28,11.96)" data-group="port-leds" data-group-role="indicator" data-for="port-25">
+    <title>led-port-25</title>
+    <circle id="led-port-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-25/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-27" data-path="led-port-27" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="41" transform="translate(386.15,11.96)" data-group="port-leds" data-group-role="indicator" data-for="port-27">
+    <title>led-port-27</title>
+    <circle id="led-port-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-27/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-diag" data-path="led-diag" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="42" transform="translate(391.02,11.96)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>led-diag</title>
+    <circle id="led-diag--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-diag--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-diag/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-26" data-path="led-port-26" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="43" transform="translate(381.28,16.83)" data-group="port-leds" data-group-role="indicator" data-for="port-26">
+    <title>led-port-26</title>
+    <circle id="led-port-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-26/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-port-28" data-path="led-port-28" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="44" transform="translate(386.15,16.83)" data-group="port-leds" data-group-role="indicator" data-for="port-28">
+    <title>led-port-28</title>
+    <circle id="led-port-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-port-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-port-28/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="45" transform="translate(391.02,16.83)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>led-pwr</title>
+    <circle id="led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="mgmt-eth" data-path="mgmt-eth" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="1" transform="translate(396.4,8.54)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-eth</title>
+    <path id="mgmt-eth--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="mgmt-eth--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="mgmt-eth--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt-eth/opening" data-class="cutout" />
+    <g id="mgmt-eth--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="2" transform="translate(414.9,8.54)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="power-ac" data-path="power-ac" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="c14" data-role="power" data-rel-pos="1" transform="translate(6.09,17.57)" data-group="power" data-group-role="service">
+    <title>power-ac</title>
+    <rect id="power-ac--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="power-ac/opening" data-class="cutout" />
+    <path id="power-ac--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="power-ac--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    <rect id="power-ac--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    <rect id="power-ac--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="power-dc" data-path="power-dc" data-class="inlet" data-behaviour="mounts" data-ref="common/dc-terminal-plug-2@1:1.0.0" data-body-depth="15.0" data-media="dc-terminal" data-role="power" data-rel-pos="2" transform="translate(65.04,17.67)" data-group="power" data-group-role="service">
+    <title>power-dc</title>
+    <rect id="power-dc--body" x="0" y="0" width="32.1" height="17.6" rx="0.5" fill="#5fbf55" stroke="#2f7a2a" stroke-width="0.3" data-path="power-dc/body" data-class="connector" />
+    <circle cx="5.3" cy="4.9" r="2.4" fill="#1b1e21" />
+    <path d="M 4.1 4.9 H 6.5 M 5.3 3.7 V 6.1" stroke="#6b7076" stroke-width="0.5" />
+    <circle cx="26.0" cy="4.9" r="2.4" fill="#1b1e21" />
+    <path d="M 24.8 4.9 H 27.2 M 26.0 3.7 V 6.1" stroke="#6b7076" stroke-width="0.5" />
+    <rect x="10.50" y="4.00" width="10.00" height="1.60" fill="#1f2a1f" />
+    <g id="power-dc--plug" data-path="power-dc/plug" data-class="connector">
+      <rect x="10.10" y="5.30" width="10.60" height="11.00" rx="0.4" fill="#4aa541" stroke="#2f7a2a" stroke-width="0.3" />
+      <rect x="11.30" y="7.30" width="3.60" height="7.60" rx="0.3" fill="#1f3a1f" />
+      <rect x="15.90" y="7.30" width="3.60" height="7.60" rx="0.3" fill="#1f3a1f" />
+    </g>
+    <circle cx="8.4" cy="11.9" r="1.4" fill="#d6a84a" stroke="#8a6a2a" stroke-width="0.2" />
+    <circle cx="23.3" cy="11.9" r="1.4" fill="#d6a84a" stroke="#8a6a2a" stroke-width="0.2" />
+  </g>
+  <g id="ground" data-path="ground" data-class="ground" data-behaviour="mounts" data-ref="common/ground-lug@1:1.4.0" data-rel-pos="1" transform="translate(43.6,15.1)" data-group="grounding" data-group-role="furniture">
+    <title>ground</title>
+    <g id="ground--symbol" data-path="ground/symbol" data-class="silkscreen">
+      <circle id="ground--symbol-ring" cx="3.5" cy="3.2" r="2.7" fill="none" stroke="#c7ccd1" stroke-width="0.3" />
+      <g stroke="#c7ccd1" stroke-width="0.32" fill="none">
+        <line x1="3.5" y1="1.5" x2="3.5" y2="3.0" />
+        <line x1="2.0" y1="3.0" x2="5.0" y2="3.0" />
+        <line x1="2.5" y1="3.9" x2="4.5" y2="3.9" />
+        <line x1="3.0" y1="4.8" x2="4.0" y2="4.8" />
+      </g>
+    </g>
+    <circle id="ground--stud" cx="3.5" cy="9.8" r="2.8" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" data-path="ground/stud" data-class="stud" data-z-cyl="3.2" data-z-color="#8a9099" />
+    <circle id="ground--washer" cx="3.5" cy="9.8" r="2.66" fill="#7d848c" stroke="#565c63" stroke-width="0.45" stroke-dasharray="0.55 0.4" data-z-cyl="0.5" data-z-lift="3.2" data-z-color="#6e747c" />
+    <g id="ground--screw-cap" data-z-cyl="1.0" data-z-lift="3.7" data-z-color="#8a9099">
+      <circle cx="3.5" cy="9.8" r="2.53" fill="#8a9099" stroke="#4a4f55" stroke-width="0.25" />
+      <line x1="1.8" y1="9.8" x2="5.2" y2="9.8" stroke="#4a4f55" stroke-width="0.45" />
+      <line x1="3.5" y1="8.1" x2="3.5" y2="11.5" stroke="#4a4f55" stroke-width="0.45" />
+    </g>
+  </g>
+</svg>

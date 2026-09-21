@@ -33,8 +33,14 @@
     .portrayal-dim { opacity: 0.25; }
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='juniper/mx240-craft@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='juniper/mx240-craft@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='juniper/mx240-craft@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='juniper/mx240-craft@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='juniper/mx240-craft@'] .state-yellow { --led-color: #f5a623; }
 </style>
-  <metadata>{"config":"dc","device":"Juniper MX240","device-version":"1.1.5","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/rj45-eth@1":"1.2.0","juniper/dpc-r-4xge-xfp@1":"1.0.0","juniper/dpce-r-40ge-sfp@1":"1.0.0","juniper/mx240-craft@1":"1.0.0","juniper/re-s-1300@1":"1.1.0","juniper/scb-mx@1":"1.0.0","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.0","std/usb-a@1":"1.3.0","std/xfp@1":"1.0.0"},"source":{"attrs":{"compliance":{"seismic":"Designed to meet Telcordia Technologies Zone 4 earthquake requirements (environmental table wording, transcribed)"},"environmental":{"altitude":"no performance degradation to 3048 m","humidity":"5-90 percent noncondensing","operating-temp":"0 C to 40 C","storage-temp":"-40 C to 70 C in shipping container"},"lifecycle":{"eol":"announced","eol-announcement":"https://support.juniper.net/support/eol/product/m_series/"},"performance":{"throughput":"3 Tbps-class (datasheet family table)"},"physical":{"depth-total":"705 mm including cable management (Table 88)","weight":"23.6 kg chassis with midplane, fan tray and air filter; 58.1 kg maximum configuration (Table 88)"},"power":{"base-system-w":40,"cooling-system-w":"85 W high-capacity (70 W normal); dedicated PSU tap, excluded from the output-power budget per the guide note","psu-system-output":"AC normal-capacity 2054 W low-line / 1590 W high-line; DC normal-capacity 1600 W (Table 95, SYSTEM output for the required PSU set - no per-module nameplate is published)"},"thermal":{"max-thermal-output":"AC 7161 BTU/h (2100 W); DC 5074 BTU/h (1488 W) (environmental table; provisioning ceiling)"}},"chassis":{"color":"#43474c","depth":622.0,"height":221.2,"ru":5,"width":443.0},"configurations":{"ac":{"bays":{"pem0":"juniper/mx240-psu-ac@1","pem1":"juniper/mx240-psu-ac@1","pem2":"juniper/mx240-psu-ac@1","pem3":"juniper/mx240-psu-ac@1"},"description":"AC-powered chassis - normal-capacity AC supplies (high-line uses PEM0/PEM2; the four-bay low-line form is drawn).","kind":"orderable"},"base":{"bays":{"dpc1":"juniper/mx-dpc-blank@1","dpc2":"juniper/mx-dpc-blank@1","scb1-dpc0":"juniper/mx-dpc-blank@1"},"default":true,"description":"Chassis only - what you spec before deciding what goes in it. The 4 slot bays are EMPTY; cooling, craft, psus are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.","kind":"base","source":"derived - built from the group roles rather than from a vendor bundle: every bay whose group is `service` or `management` keeps its seat, every `traffic` bay takes a blank. This vendor publishes no base configuration for this chassis, so the library defines one. Where a vendor DOES publish one, follow it instead and say so here."},"dc":{"description":"DC-powered chassis as photographed - four normal-capacity DC PEMs, two SCB-MX with RE-S-1300, DPC 40xGE in slot 2 and DPC-R-4XGE in slot 1.","kind":"orderable"}},"description":"Juniper MX240 Universal Routing Platform - a 5RU, 3 Tbps-class modular edge router with horizontal cards. Four slots under the craft interface: DPC/MPC slots 2 and 1, the shared SCB1/DPC0 slot, and SCB0; the Routing Engines seat inside the SCBs. Up to four power supplies (AC or DC) across the rear top, with the fan tray and air filter installing vertically at the rear sides.","format":1,"gaps":[{"reason":"needs-photo","scope":["slots"],"wanted":"orthographic imagery for the current MPC/SCBE2-SCBE3/RE-S-X6 generation - the intake holds their figures and power tables but no straight-on photography, so the EOL FRUs the reference photograph carries are what is modelled. The power tables for the newer FRUs are already transcribed in the guide extraction for when they are built.","what":"current-generation-frus"},{"reason":"needs-photo","scope":["psus"],"wanted":"faces for the high-capacity AC/DC supplies (figures 15/17 are isometric line art only).","what":"high-capacity-psus"},{"reason":"vendor-silent","scope":["craft","slots"],"wanted":"vendor dimensions for the craft panel and cards - no physical dimension for either exists in the intake, so faces are sized to the photographed apertures.","what":"craft-and-card-dimensions"},{"reason":"vendor-silent","scope":["slots"],"wanted":"transceiver lists per DPC/MPC (external compatibility tool).","what":"supported-optics"}],"groups":{"cooling":{"index-origin":0,"role":"service","term":"Tray"},"craft":{"index-origin":0,"role":"management","term":"Panel"},"grounding":{"description":"the protective-earthing stud pair under the rear earth symbol","index-origin":0,"role":"furniture","term":"Point"},"psus":{"attrs":{"redundancy":"n+n","redundancy-note":"high-line 1+1; low-line 2+2"},"index-origin":0,"role":"service","term":"PEM"},"scbs":{"description":"dedicated Switch Control Board slots - they accept an SCB and nothing else, unlike the shared slots that take either an SCB or a DPC","index-origin":0,"role":"service","term":"Slot"},"slots":{"description":"The card cage - DPC/MPC slots 2 and 1, the shared SCB1/DPC0 slot, and SCB0, numbered on the craft tabs and left flange. SCBs carry the Routing Engines in their own bays","index-origin":0,"role":"traffic","term":"Slot"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX240","name":"mx240","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"provenance":{"chassis":"datasheet-table - guide chassis description and Table 88: 8.71 x 17.45 x 24.5 in (221.2 x 443 x 622 mm) to the chassis rear (703 total with cable management), 23.6 kg bare / 58.1 kg maximum. Ears are NOT MODELLED by project convention","color":"photo - dark charcoal chassis bands, grey craft panel with the light-blue accent strip, silver card faces (the 40xGE DPC is charcoal), bright aluminium rear","esd-front":"guide Figure 1 callout - ESD point at the front top-left; placed at 8.0, 17.0 off the photograph, approximate (the socket is small and dark against the dark band)","front-rows":"photo - top vent band 0-32.8, craft interface 32.8-75.3, card cage 84.6-206.4 as four 30.45 mm slots (top to bottom: DPC2, DPC1, SCB1/DPC0, SCB0 - the craft tabs and left-flange legends number them 2, 1, 1/0, 0), bottom band to 221.2. Card apertures span x 11.5-432.4 between the flanges","lifecycle":"announced - the third-party EOL trackers (IT-Planet, Park Place) list MX240 EOL 2020-06-30 / EOS 2026-06-30 for the older base bundles while later revisions continued shipping; Juniper's per-SKU M/MX milestones page is authoritative and the milestones are per-SKU, searched 2026-08-27","other-faces":"near-blank by evidence - the guide side art (Figure 1) shows the right side's round-hole exhaust field; sides carry an estimated vent-field band (right) and rail band (left), top and bottom rail edges only. Axis conventions per viewer3d.js: LEFT view x = 0 is the REAR, RIGHT view x = 0 is the FRONT, top/bottom y = 0 at the FRONT","populated-with":"photo - the reference unit carries DPC 40xGE (DPCE-R-40GE- SFP) in slot 2, DPC-R-4XGE in slot 1, and SCB-MX with RE-S-1300 in both SCB slots; those exact FRUs are modelled and seated as the defaults, EOL though they are, because they are what the only orthographic photograph shows. Current-generation cards (MPCs, SCBE2/3, RE-S-X6) are in the intake's figures and power tables but have no orthographic imagery - see gaps","power":"guide power tables - base system 40 W, cooling 70/85 W (normal/high capacity, from a dedicated PSU tap excluded from the output budget), SCB-MX 185 W at 55 C, DPCE-R-40GE-SFP 335 W, DPC-R-4XGE-XFP 310 W (Table 93; ambient unqualified for DPC rows). No chassis-level draw is published - the vendor instructs computing a budget per configuration (Table 94 worked example), so no power-typical/max is carried on the device and the module figures are what sums","rear":"photo - four PEM bays across the top (x 11.0 on a 101.9 mm pitch, rows 8.9-88.6), PEM 0-3 legends on the plate below each bay, the protective-earthing studs at the top right (two, vertically at 426.7, y 22.2/35.4 - pitch read off the photo, approximate), the rear ESD socket at 356.4, 173.6, and the vertical air-filter (left) and fan-tray (right) door strips with their two-line legends on the plate. The large caution-text plate between them is not transcribed","scale":"photo - BOTH DAM photographs pass the orthographic gate (front 0.1%, rear 0.7%) and are cropped exactly to the 443 x 221.2 body, so every position is a direct measurement at 3.386 px/mm. This is the first device in the set whose photos carry geometry on both axes; the guide figures were used for identification and vocabularies only","sources":"MX240 Universal Routing Platform Hardware Guide (163 captioned figures), HPE datasheet a00150825enw, and the Juniper image-library photographs mx240-front-high and mx240-rear-high. No mechanical drawing was available"},"version":"1.1.5","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"lower edge of the side rail; mirrored from the top estimate"},{"at":[437.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"lower edge of the side rail; same estimate"}]},"size":{"h":622.0,"w":443.0}},"front":{"components":{"bays":[{"accepts":["juniper/mx240-craft@1"],"at":[11.5,32.8],"default":"juniper/mx240-craft@1","group":"craft","id":"craft","rel-pos":0,"size":{"h":42.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,84.6],"default":"juniper/dpce-r-40ge-sfp@1","group":"slots","id":"dpc2","rel-pos":3,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,115.05],"default":"juniper/dpc-r-4xge-xfp@1","group":"slots","id":"dpc1","rel-pos":2,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,145.5],"default":"juniper/scb-mx@1","group":"slots","id":"scb1-dpc0","rel-pos":1,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1"],"at":[11.5,175.95],"default":"juniper/scb-mx@1","group":"scbs","id":"scb0","rel-pos":0,"size":{"h":29.5,"w":420.9}}],"placements":[{"at":[5.0,14.0],"for":"chassis","group":"grounding","id":"esd-front-jack","ref":"common/esd-jack@1","rel-pos":0}]},"panel":{"cutouts":[{"at":[6.0,15.0],"id":"esd-front","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[25.1,3.0],"pattern":"vent","size":[231.8,23.6],"vent":40}]},"silkscreen":[{"at":[8.0,24.4],"fill":"#c7ccd1","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"},{"anchor":"middle","at":[5.6,99.4],"fill":"#e8eaec","font-size":2.6,"for":"dpc2","text":"2"},{"anchor":"middle","at":[5.6,129.9],"fill":"#e8eaec","font-size":2.6,"for":"dpc1","text":"1"},{"anchor":"middle","at":[5.6,160.3],"fill":"#e8eaec","font-size":2.2,"for":"scb1-dpc0","text":"1/0"},{"anchor":"middle","at":[5.6,190.8],"fill":"#e8eaec","font-size":2.6,"for":"scb0","text":"0"}],"size":{"h":221.2,"w":443.0}},"left":{"panel":{"decor":[{"at":[0.0,100.0],"confidence":"estimated","fill":"#3a3d42","size":[622.0,20.0],"source":"mounting-rail band along the side; no side drawing exists, estimated"}]},"size":{"h":221.2,"w":622.0}},"rear":{"components":{"bays":[{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[11.0,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem0","rel-pos":0,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[112.9,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem1","rel-pos":1,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[214.8,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem2","rel-pos":2,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[316.7,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem3","rel-pos":3,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-air-filter@1"],"at":[25.1,100.0],"default":"juniper/mx240-air-filter@1","group":"cooling","id":"air-filter","rel-pos":0,"size":{"h":110.0,"w":12.0}},{"accepts":["juniper/mx240-fan-tray@1"],"at":[398.7,100.0],"default":"juniper/mx240-fan-tray@1","group":"cooling","id":"fan-tray","rel-pos":1,"size":{"h":110.0,"w":12.0}}],"placements":[{"at":[353.4,170.6],"for":"chassis","group":"grounding","id":"esd-rear-jack","ref":"common/esd-jack@1","rel-pos":0},{"at":[423.2,18.7],"for":"chassis","group":"grounding","id":"ground-stud-0","ref":"juniper/mx-ground-stud@1","rel-pos":0},{"at":[423.2,31.9],"for":"chassis","group":"grounding","id":"ground-stud-1","ref":"juniper/mx-ground-stud@1","rel-pos":1}]},"panel":{"cutouts":[{"at":[423.2,18.7],"id":"ground-stud-0","shape":"circle","size":[7.0,7.0]},{"at":[423.2,31.9],"id":"ground-stud-1","shape":"circle","size":[7.0,7.0]},{"at":[354.4,171.6],"id":"esd-rear","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[7.0,95.0],"fill":"#b3b7bb","rx":1.2,"size":[429.0,120.0]}]},"silkscreen":[{"anchor":"middle","at":[60.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem0","text":"PEM 0"},{"anchor":"middle","at":[163.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem1","text":"PEM 1"},{"anchor":"middle","at":[266.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem2","text":"PEM 2"},{"anchor":"middle","at":[369.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem3","text":"PEM 3"},{"anchor":"middle","at":[54.6,140.0],"fill":"#3a3e43","font-size":3.0,"for":"air-filter","text":"AIR"},{"anchor":"middle","at":[54.6,145.0],"fill":"#3a3e43","font-size":3.0,"for":"air-filter","text":"FILTER"},{"anchor":"middle","at":[373.5,140.0],"fill":"#3a3e43","font-size":3.0,"for":"fan-tray","text":"FAN"},{"anchor":"middle","at":[373.5,145.0],"fill":"#3a3e43","font-size":3.0,"for":"fan-tray","text":"TRAY"},{"at":[431.7,47.2],"fill":"#43474c","for":"chassis","path":"M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7"},{"at":[349.0,178.6],"fill":"#43474c","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"}],"size":{"h":221.2,"w":443.0}},"right":{"panel":{"decor":[{"at":[180.0,30.0],"confidence":"estimated","pattern":"holes","size":[400.0,160.0],"source":"guide Figure 1 draws the right side as a round-hole air-exhaust field over most of the panel; extent estimated off that isometric art"}]},"size":{"h":221.2,"w":622.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"side rail edge seen from above; width estimated"},{"at":[437.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"side rail edge seen from above; width estimated"}]},"size":{"h":622.0,"w":443.0}}}},"view":"front"}</metadata>
+  <metadata>{"config":"dc","device":"Juniper MX240","device-version":"1.1.15","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/esd-jack@1":"1.0.0","common/rj45-eth@1":"1.2.0","juniper/dpc-r-4xge-xfp@1":"1.0.0","juniper/dpce-r-40ge-sfp@1":"1.2.0","juniper/mx240-craft@1":"1.1.0","juniper/re-s-1300@1":"1.1.0","juniper/scb-mx@1":"1.0.0","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.0","std/usb-a@1":"1.3.0","std/xfp@1":"1.0.0"},"source":{"attrs":{"compliance":{"seismic":"Designed to meet Telcordia Technologies Zone 4 earthquake requirements (environmental table wording, transcribed)"},"environmental":{"altitude":"no performance degradation to 3048 m","humidity":"5-90 percent noncondensing","operating-temp":"0 C to 40 C","storage-temp":"-40 C to 70 C in shipping container"},"lifecycle":{"eol":"announced","eol-announcement":"https://support.juniper.net/support/eol/product/m_series/"},"performance":{"throughput":"3 Tbps-class (datasheet family table)"},"physical":{"depth-total":"705 mm including cable management (Table 88)","weight":"23.6 kg chassis with midplane, fan tray and air filter; 58.1 kg maximum configuration (Table 88)"},"power":{"base-system-w":40,"cooling-system-w":"85 W high-capacity (70 W normal); dedicated PSU tap, excluded from the output-power budget per the guide note","psu-system-output":"AC normal-capacity 2054 W low-line / 1590 W high-line; DC normal-capacity 1600 W (Table 95, SYSTEM output for the required PSU set - no per-module nameplate is published)"},"thermal":{"max-thermal-output":"AC 7161 BTU/h (2100 W); DC 5074 BTU/h (1488 W) (environmental table; provisioning ceiling)"}},"chassis":{"color":"#43474c","depth":622.0,"height":221.2,"ru":5,"width":443.0},"configurations":{"ac":{"bays":{"pem0":"juniper/mx240-psu-ac@1","pem1":"juniper/mx240-psu-ac@1","pem2":"juniper/mx240-psu-ac@1","pem3":"juniper/mx240-psu-ac@1"},"description":"AC-powered chassis - normal-capacity AC supplies (high-line uses PEM0/PEM2; the four-bay low-line form is drawn).","kind":"orderable"},"base":{"bays":{"dpc1":"juniper/mx-dpc-blank@1","dpc2":"juniper/mx-dpc-blank@1","scb1-dpc0":"juniper/mx-dpc-blank@1"},"default":true,"description":"Chassis only - what you spec before deciding what goes in it. The 4 slot bays are EMPTY; cooling, craft, psus are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with.","kind":"base","source":"derived - built from the group roles rather than from a vendor bundle: every bay whose group is `service` or `management` keeps its seat, every `traffic` bay takes a blank. This vendor publishes no base configuration for this chassis, so the library defines one. Where a vendor DOES publish one, follow it instead and say so here."},"dc":{"description":"DC-powered chassis as photographed - four normal-capacity DC PEMs, two SCB-MX with RE-S-1300, DPC 40xGE in slot 2 and DPC-R-4XGE in slot 1.","kind":"orderable"}},"datasheet":{"sha256":"dd37a225da8ea1f064fed5a274919357a68f1dea89e6db6c67a7e3f818b3d883","title":"HPE MX 204/240/480/960 Series Universal Routing Platforms data sheet (a00150825enw)"},"description":"Juniper MX240 Universal Routing Platform - a 5RU, 3 Tbps-class modular edge router with horizontal cards. Four slots under the craft interface: DPC/MPC slots 2 and 1, the shared SCB1/DPC0 slot, and SCB0; the Routing Engines seat inside the SCBs. Up to four power supplies (AC or DC) across the rear top, with the fan tray and air filter installing vertically at the rear sides.","format":1,"gaps":[{"reason":"needs-photo","scope":["slots"],"wanted":"orthographic imagery for the current MPC/SCBE2-SCBE3/RE-S-X6 generation - the intake holds their figures and power tables but no straight-on photography, so the EOL FRUs the reference photograph carries are what is modelled. The power tables for the newer FRUs are already transcribed in the guide extraction for when they are built.","what":"current-generation-frus"},{"reason":"needs-photo","scope":["psus"],"wanted":"faces for the high-capacity AC/DC supplies (figures 15/17 are isometric line art only).","what":"high-capacity-psus"},{"reason":"vendor-silent","scope":["craft","slots"],"wanted":"vendor dimensions for the craft panel and cards - no physical dimension for either exists in the intake, so faces are sized to the photographed apertures.","what":"craft-and-card-dimensions"},{"reason":"vendor-silent","scope":["slots"],"wanted":"transceiver lists per DPC/MPC (external compatibility tool).","what":"supported-optics"}],"groups":{"cooling":{"index-origin":0,"role":"service","term":"Tray"},"craft":{"index-origin":0,"role":"management","term":"Panel"},"grounding":{"description":"the protective-earthing stud pair under the rear earth symbol","index-origin":0,"role":"furniture","term":"Point"},"psus":{"attrs":{"redundancy":"n+n","redundancy-note":"high-line 1+1; low-line 2+2"},"index-origin":0,"role":"service","term":"PEM"},"scbs":{"description":"dedicated Switch Control Board slots - they accept an SCB and nothing else, unlike the shared slots that take either an SCB or a DPC","index-origin":0,"role":"service","term":"Slot"},"slots":{"description":"The card cage - DPC/MPC slots 2 and 1, the shared SCB1/DPC0 slot, and SCB0, numbered on the craft tabs and left flange. SCBs carry the Routing Engines in their own bays","index-origin":0,"role":"traffic","term":"Slot"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX240","name":"mx240","portfolio":{"family":"Universal Routing Platform","line":"MX Series"},"profile":"networking","provenance":{"chassis":{"confidence":"datasheet","note":"datasheet-table - guide chassis description and Table 88: 8.71 x 17.45 x 24.5 in (221.2 x 443 x 622 mm) to the chassis rear (703 total with cable management), 23.6 kg bare / 58.1 kg maximum. Ears are NOT MODELLED by project convention"},"color":{"note":"photo - dark charcoal chassis bands, grey craft panel with the light-blue accent strip, silver card faces (the 40xGE DPC is charcoal), bright aluminium rear"},"esd-front":{"note":"guide Figure 1 callout - ESD point at the front top-left; placed at 8.0, 17.0 off the photograph, approximate (the socket is small and dark against the dark band)"},"front-rows":{"note":"photo - top vent band 0-32.8, craft interface 32.8-75.3, card cage 84.6-206.4 as four 30.45 mm slots (top to bottom: DPC2, DPC1, SCB1/DPC0, SCB0 - the craft tabs and left-flange legends number them 2, 1, 1/0, 0), bottom band to 221.2. Card apertures span x 11.5-432.4 between the flanges"},"lifecycle":{"note":"announced - the third-party EOL trackers (IT-Planet, Park Place) list MX240 EOL 2020-06-30 / EOS 2026-06-30 for the older base bundles while later revisions continued shipping; Juniper's per-SKU M/MX milestones page is authoritative and the milestones are per-SKU, searched 2026-08-27"},"other-faces":{"note":"near-blank by evidence - the guide side art (Figure 1) shows the right side's round-hole exhaust field; sides carry an estimated vent-field band (right) and rail band (left), top and bottom rail edges only. Axis conventions per viewer3d.js: LEFT view x = 0 is the REAR, RIGHT view x = 0 is the FRONT, top/bottom y = 0 at the FRONT"},"populated-with":{"note":"photo - the reference unit carries DPC 40xGE (DPCE-R-40GE- SFP) in slot 2, DPC-R-4XGE in slot 1, and SCB-MX with RE-S-1300 in both SCB slots; those exact FRUs are modelled and seated as the defaults, EOL though they are, because they are what the only orthographic photograph shows. Current-generation cards (MPCs, SCBE2/3, RE-S-X6) are in the intake's figures and power tables but have no orthographic imagery - see gaps"},"power":{"note":"guide power tables - base system 40 W, cooling 70/85 W (normal/high capacity, from a dedicated PSU tap excluded from the output budget), SCB-MX 185 W at 55 C, DPCE-R-40GE-SFP 335 W, DPC-R-4XGE-XFP 310 W (Table 93; ambient unqualified for DPC rows). No chassis-level draw is published - the vendor instructs computing a budget per configuration (Table 94 worked example), so no power-typical/max is carried on the device and the module figures are what sums"},"rear":{"note":"photo - four PEM bays across the top (x 11.0 on a 101.9 mm pitch, rows 8.9-88.6), PEM 0-3 legends on the plate below each bay, the protective-earthing studs at the top right (two, vertically at 426.7, y 22.2/35.4 - pitch read off the photo, approximate), the rear ESD socket at 356.4, 173.6, and the vertical air-filter (left) and fan-tray (right) door strips with their two-line legends on the plate. The large caution-text plate between them is not transcribed"},"scale":{"note":"photo - BOTH DAM photographs pass the orthographic gate (front 0.1%, rear 0.7%) and are cropped exactly to the 443 x 221.2 body, so every position is a direct measurement at 3.386 px/mm. This is the first device in the set whose photos carry geometry on both axes; the guide figures were used for identification and vocabularies only"},"sources":{"note":"MX240 Universal Routing Platform Hardware Guide (163 captioned figures), HPE datasheet a00150825enw, and the Juniper image-library photographs mx240-front-high and mx240-rear-high. No mechanical drawing was available"}},"references":[{"sha256":"517b52fb43e9ab37736ac1d9271176216ec5aa94630fb49f0b895d460b727ddc","title":"Juniper MX240 Universal Routing Platform Hardware Guide"}],"version":"1.1.15","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"lower edge of the side rail; mirrored from the top estimate"},{"at":[437.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"lower edge of the side rail; same estimate"}]},"size":{"h":622.0,"w":443.0}},"front":{"components":{"bays":[{"accepts":["juniper/mx240-craft@1"],"at":[11.5,32.8],"default":"juniper/mx240-craft@1","group":"craft","id":"craft","rel-pos":0,"size":{"h":42.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,84.6],"default":"juniper/dpce-r-40ge-sfp@1","group":"slots","id":"dpc2","rel-pos":3,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,115.05],"default":"juniper/dpc-r-4xge-xfp@1","group":"slots","id":"dpc1","rel-pos":2,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1","juniper/dpc-r-4xge-xfp@1","juniper/dpce-20ge-2xge@1","juniper/dpce-2xge-xfp@1","juniper/dpce-40ge-tx@1","juniper/dpce-q-20ge-sfp@1","juniper/dpce-r-40ge-sfp@1","juniper/mpc-3d-16xge-sfpp@1","juniper/mpc10e-10c-mrate@1","juniper/mpc10e-15c-mrate@1","juniper/mpc1e-3d@1","juniper/mpc2e-3d@1","juniper/mpc3e-3d@1","juniper/mpc4e-3d-2cge-8xge@1","juniper/mpc4e-3d-32xge-sfpp@1","juniper/mpc5e-100g10g@1","juniper/mpc5e-40g10g@1","juniper/mpc7e-10g@1","juniper/mpc7e-mrate@1","juniper/ms-dpc@1","juniper/ms-mpc@1","juniper/mx-dpc-blank@1"],"at":[11.5,145.5],"default":"juniper/scb-mx@1","group":"slots","id":"scb1-dpc0","rel-pos":1,"size":{"h":29.5,"w":420.9}},{"accepts":["juniper/scb-mx@1"],"at":[11.5,175.95],"default":"juniper/scb-mx@1","group":"scbs","id":"scb0","rel-pos":0,"size":{"h":29.5,"w":420.9}}],"placements":[{"at":[5.0,14.0],"for":"chassis","group":"grounding","id":"esd-front-jack","ref":"common/esd-jack@1","rel-pos":0}]},"panel":{"cutouts":[{"at":[6.0,15.0],"id":"esd-front","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[25.1,3.0],"pattern":"vent","size":[231.8,23.6],"vent":40}]},"silkscreen":[{"at":[8.0,24.4],"fill":"#c7ccd1","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"},{"anchor":"middle","at":[5.6,99.4],"fill":"#e8eaec","font-size":2.6,"for":"dpc2","text":"2"},{"anchor":"middle","at":[5.6,129.9],"fill":"#e8eaec","font-size":2.6,"for":"dpc1","text":"1"},{"anchor":"middle","at":[5.6,160.3],"fill":"#e8eaec","font-size":2.2,"for":"scb1-dpc0","text":"1/0"},{"anchor":"middle","at":[5.6,190.8],"fill":"#e8eaec","font-size":2.6,"for":"scb0","text":"0"}],"size":{"h":221.2,"w":443.0}},"left":{"panel":{"decor":[{"at":[0.0,100.0],"confidence":"estimated","fill":"#3a3d42","size":[622.0,20.0],"source":"mounting-rail band along the side; no side drawing exists, estimated"}]},"size":{"h":221.2,"w":622.0}},"rear":{"components":{"bays":[{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[11.0,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem0","rel-pos":0,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[112.9,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem1","rel-pos":1,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[214.8,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem2","rel-pos":2,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-psu-dc@1","juniper/mx240-psu-ac@1"],"at":[316.7,8.9],"default":"juniper/mx240-psu-dc@1","group":"psus","id":"pem3","rel-pos":3,"size":{"h":79.7,"w":101.5}},{"accepts":["juniper/mx240-air-filter@1"],"at":[25.1,100.0],"default":"juniper/mx240-air-filter@1","group":"cooling","id":"air-filter","rel-pos":0,"size":{"h":110.0,"w":12.0}},{"accepts":["juniper/mx240-fan-tray@1"],"at":[398.7,100.0],"default":"juniper/mx240-fan-tray@1","group":"cooling","id":"fan-tray","rel-pos":1,"size":{"h":110.0,"w":12.0}}],"placements":[{"at":[353.4,170.6],"for":"chassis","group":"grounding","id":"esd-rear-jack","ref":"common/esd-jack@1","rel-pos":0},{"at":[423.2,18.7],"for":"chassis","group":"grounding","id":"ground-stud-0","ref":"juniper/mx-ground-stud@1","rel-pos":0},{"at":[423.2,31.9],"for":"chassis","group":"grounding","id":"ground-stud-1","ref":"juniper/mx-ground-stud@1","rel-pos":1}]},"panel":{"cutouts":[{"at":[423.2,18.7],"id":"ground-stud-0","shape":"circle","size":[7.0,7.0]},{"at":[423.2,31.9],"id":"ground-stud-1","shape":"circle","size":[7.0,7.0]},{"at":[354.4,171.6],"id":"esd-rear","shape":"circle","size":[4.0,4.0]}],"decor":[{"at":[7.0,95.0],"fill":"#b3b7bb","rx":1.2,"size":[429.0,120.0]}]},"silkscreen":[{"anchor":"middle","at":[60.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem0","text":"PEM 0"},{"anchor":"middle","at":[163.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem1","text":"PEM 1"},{"anchor":"middle","at":[266.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem2","text":"PEM 2"},{"anchor":"middle","at":[369.0,119.0],"fill":"#3a3e43","font-size":3.0,"for":"pem3","text":"PEM 3"},{"anchor":"middle","at":[54.6,140.0],"fill":"#3a3e43","font-size":3.0,"for":"air-filter","text":"AIR"},{"anchor":"middle","at":[54.6,145.0],"fill":"#3a3e43","font-size":3.0,"for":"air-filter","text":"FILTER"},{"anchor":"middle","at":[373.5,140.0],"fill":"#3a3e43","font-size":3.0,"for":"fan-tray","text":"FAN"},{"anchor":"middle","at":[373.5,145.0],"fill":"#3a3e43","font-size":3.0,"for":"fan-tray","text":"TRAY"},{"at":[431.7,47.2],"fill":"#43474c","for":"chassis","path":"M 0 -4.2 A 4.2 4.2 0 1 0 0.01 -4.2 Z M -2.4 -1.1 H 2.4 M -1.6 0.5 H 1.6 M -0.7 2.1 H 0.7"},{"at":[349.0,178.6],"fill":"#43474c","for":"chassis","path":"M -1.4 1.2 L 0 -1.2 L 1.4 1.2 Z M -2.1 2.2 L -0.9 2.2 M 0.9 2.2 L 2.1 2.2"}],"size":{"h":221.2,"w":443.0}},"right":{"panel":{"decor":[{"at":[180.0,30.0],"confidence":"estimated","pattern":"holes","size":[400.0,160.0],"source":"guide Figure 1 draws the right side as a round-hole air-exhaust field over most of the panel; extent estimated off that isometric art"}]},"size":{"h":221.2,"w":622.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"side rail edge seen from above; width estimated"},{"at":[437.0,0.0],"confidence":"estimated","fill":"#3a3d42","size":[6.0,622.0],"source":"side rail edge seen from above; width estimated"}]},"size":{"h":622.0,"w":443.0}}}},"view":"front"}</metadata>
   <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX240" x="0" y="0" width="443" height="221.2" rx="1.2" fill="#43474c" stroke="#22262a" stroke-width="0.5" />
   <defs>
     <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
@@ -61,7 +67,7 @@
   <g id="craft" data-path="craft" data-class="bay" data-group="craft" data-group-role="management" data-rel-pos="0">
     <title>craft</title>
     <rect id="craft--opening" x="11.5" y="32.8" width="420.9" height="42.5" fill="#101214" />
-    <g id="craft--module" data-path="craft/module" data-class="display" data-behaviour="fills" data-ref="juniper/mx240-craft@1:1.0.0" data-model="MX240 Craft Interface" data-power-absent="not-published" data-states="ok absent" transform="translate(221.95,54.05) translate(-210.45,-21.25)">
+    <g id="craft--module" data-path="craft/module" data-class="display" data-behaviour="fills" data-ref="juniper/mx240-craft@1:1.1.0" data-model="MX240 Craft Interface" data-power-absent="not-published" data-states="absent" transform="translate(221.95,54.05) translate(-210.45,-21.25)">
       <title>craft--module</title>
       <rect id="craft--module--face" x="0" y="0" width="420.9" height="42.5" rx="0.6" fill="#8b8f94" stroke="#6d7278" stroke-width="0.4" />
       <rect x="0" y="40.7" width="420.9" height="1.8" fill="#b7dcec" />
@@ -79,15 +85,15 @@
           <text x="404.0" y="30.0" font-family="Arial" font-size="3.0" fill="#f0f1f2" text-anchor="middle">junos</text>
         </g>
       </g>
-      <circle id="craft--module--led-re0-master" cx="95.9" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-re0-online" cx="95.9" cy="12.1" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-re0-offline" cx="95.9" cy="16.7" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-re0-master" cx="95.9" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-re0-master" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re0-online" cx="95.9" cy="12.1" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-re0-online" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re0-offline" cx="95.9" cy="16.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-re0-offline" data-class="led" data-states="red off" />
       <g id="craft--module--t5-silkscreen">
         <text x="95.9" y="21.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">RE0</text>
       </g>
-      <circle id="craft--module--led-re1-master" cx="128.1" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-re1-online" cx="128.1" cy="12.1" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-re1-offline" cx="128.1" cy="16.7" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-re1-master" cx="128.1" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-re1-master" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re1-online" cx="128.1" cy="12.1" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-re1-online" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-re1-offline" cx="128.1" cy="16.7" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-re1-offline" data-class="led" data-states="red off" />
       <g id="craft--module--t6-silkscreen">
         <text x="128.1" y="21.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">RE1</text>
       </g>
@@ -100,36 +106,36 @@
       <g id="craft--module--t9-silkscreen">
         <text x="112.0" y="17.3" font-family="Arial" font-size="1.7" fill="#3a3e43" text-anchor="middle">OFFLINE</text>
       </g>
-      <circle id="craft--module--led-fan-ok" cx="176.4" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-fan-fail" cx="176.4" cy="12.1" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-fan-ok" cx="176.4" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-fan-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-fan-fail" cx="176.4" cy="12.1" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-fan-fail" data-class="led" data-states="red off" />
       <g id="craft--module--t10-silkscreen">
         <text x="176.4" y="18.3" font-family="Arial" font-size="1.7" fill="#3a3e43" text-anchor="middle">FAN</text>
       </g>
-      <circle id="craft--module--led-pem0-ok" cx="229.8" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-pem0-fail" cx="229.8" cy="12.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-pem0-ok" cx="229.8" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem0-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem0-fail" cx="229.8" cy="12.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem0-fail" data-class="led" data-states="red off" />
       <g id="craft--module--t11-silkscreen">
         <text x="229.8" y="18.3" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">0</text>
       </g>
-      <circle id="craft--module--led-pem1-ok" cx="236.4" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-pem1-fail" cx="236.4" cy="12.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-pem1-ok" cx="236.4" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem1-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem1-fail" cx="236.4" cy="12.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem1-fail" data-class="led" data-states="red off" />
       <g id="craft--module--t12-silkscreen">
         <text x="236.4" y="18.3" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">1</text>
       </g>
-      <circle id="craft--module--led-pem2-ok" cx="243.3" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-pem2-fail" cx="243.3" cy="12.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-pem2-ok" cx="243.3" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem2-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem2-fail" cx="243.3" cy="12.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem2-fail" data-class="led" data-states="red off" />
       <g id="craft--module--t13-silkscreen">
         <text x="243.3" y="18.3" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">2</text>
       </g>
-      <circle id="craft--module--led-pem3-ok" cx="250.1" cy="7.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
-      <circle id="craft--module--led-pem3-fail" cx="250.1" cy="12.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-pem3-ok" cx="250.1" cy="7.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem3-ok" data-class="led" data-states="green off" />
+      <circle id="craft--module--led-pem3-fail" cx="250.1" cy="12.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-pem3-fail" data-class="led" data-states="red off" />
       <g id="craft--module--t14-silkscreen">
         <text x="250.1" y="18.3" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">3</text>
       </g>
       <g id="craft--module--t15-silkscreen">
         <text x="222.0" y="18.3" font-family="Arial" font-size="1.7" fill="#3a3e43" text-anchor="end">PEM</text>
       </g>
-      <path id="craft--module--led-alarm-minor" d="M 294.0 8.2 l 3.4 6.2 l -6.8 0 Z" fill="#e8e26a" stroke="#b8b23e" stroke-width="0.4" />
-      <circle id="craft--module--led-alarm-major" cx="319.2" cy="11.5" r="3.4" fill="#e88a97" stroke="#c05a68" stroke-width="0.4" />
+      <path id="craft--module--led-alarm-minor" d="M 294.0 8.2 l 3.4 6.2 l -6.8 0 Z" fill="var(--led-color, #e8e26a)" stroke="#b8b23e" stroke-width="0.4" data-path="craft/module/led-alarm-minor" data-class="led" data-states="yellow off" />
+      <circle id="craft--module--led-alarm-major" cx="319.2" cy="11.5" r="3.4" fill="var(--led-color, #e88a97)" stroke="#c05a68" stroke-width="0.4" data-path="craft/module/led-alarm-major" data-class="led" data-states="red off" />
       <circle id="craft--module--btn-aco" cx="336.5" cy="11.5" r="4.2" fill="#d7dadd" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="craft--module--t16-silkscreen">
         <text x="336.5" y="12.3" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">ACO/LT</text>
@@ -169,11 +175,11 @@
       <g id="craft--module--t25-silkscreen">
         <text x="82.3" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">OK</text>
       </g>
-      <circle id="craft--module--led-slot-0-ok" cx="87.8" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-0-ok" cx="87.8" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-0-ok" data-class="led" data-states="green blinking off" />
       <g id="craft--module--t26-silkscreen">
         <text x="98.8" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">FAIL</text>
       </g>
-      <circle id="craft--module--led-slot-0-fail" cx="105.3" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-0-fail" cx="105.3" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-0-fail" data-class="led" data-states="red off" />
       <ellipse cx="97.3" cy="31.2" rx="6.4" ry="4.2" fill="#9fc8e8" stroke="#6d9cc0" stroke-width="0.4" />
       <g id="craft--module--t27-silkscreen">
         <text x="97.3" y="32.4" font-family="Arial" font-size="2.2" fill="#26313a" text-anchor="middle">0</text>
@@ -181,11 +187,11 @@
       <g id="craft--module--t28-silkscreen">
         <text x="111.1" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">OK</text>
       </g>
-      <circle id="craft--module--led-slot-1-0-ok" cx="116.6" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-1-0-ok" cx="116.6" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-1-0-ok" data-class="led" data-states="green blinking off" />
       <g id="craft--module--t29-silkscreen">
         <text x="127.6" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">FAIL</text>
       </g>
-      <circle id="craft--module--led-slot-1-0-fail" cx="134.1" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-1-0-fail" cx="134.1" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-1-0-fail" data-class="led" data-states="red off" />
       <ellipse cx="126.1" cy="31.2" rx="6.4" ry="4.2" fill="#9fc8e8" stroke="#6d9cc0" stroke-width="0.4" />
       <g id="craft--module--t30-silkscreen">
         <text x="126.1" y="32.4" font-family="Arial" font-size="2.2" fill="#26313a" text-anchor="middle">1/0</text>
@@ -193,11 +199,11 @@
       <g id="craft--module--t31-silkscreen">
         <text x="145.6" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">OK</text>
       </g>
-      <circle id="craft--module--led-slot-1-ok" cx="151.1" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-1-ok" cx="151.1" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-1-ok" data-class="led" data-states="green blinking off" />
       <g id="craft--module--t32-silkscreen">
         <text x="162.1" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">FAIL</text>
       </g>
-      <circle id="craft--module--led-slot-1-fail" cx="168.6" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-1-fail" cx="168.6" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-1-fail" data-class="led" data-states="red off" />
       <ellipse cx="160.6" cy="31.2" rx="6.4" ry="4.2" fill="#9fc8e8" stroke="#6d9cc0" stroke-width="0.4" />
       <g id="craft--module--t33-silkscreen">
         <text x="160.6" y="32.4" font-family="Arial" font-size="2.2" fill="#26313a" text-anchor="middle">1</text>
@@ -205,11 +211,11 @@
       <g id="craft--module--t34-silkscreen">
         <text x="176.2" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">OK</text>
       </g>
-      <circle id="craft--module--led-slot-2-ok" cx="181.7" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-2-ok" cx="181.7" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-2-ok" data-class="led" data-states="green blinking off" />
       <g id="craft--module--t35-silkscreen">
         <text x="192.7" y="26.1" font-family="Arial" font-size="1.6" fill="#3a3e43" text-anchor="middle">FAIL</text>
       </g>
-      <circle id="craft--module--led-slot-2-fail" cx="199.2" cy="25.5" r="0.9" fill="#0f1113" stroke="#3a3e43" stroke-width="0.25" />
+      <circle id="craft--module--led-slot-2-fail" cx="199.2" cy="25.5" r="0.9" fill="var(--led-color, #0f1113)" stroke="#3a3e43" stroke-width="0.25" data-path="craft/module/led-slot-2-fail" data-class="led" data-states="red off" />
       <ellipse cx="191.2" cy="31.2" rx="6.4" ry="4.2" fill="#9fc8e8" stroke="#6d9cc0" stroke-width="0.4" />
       <g id="craft--module--t36-silkscreen">
         <text x="191.2" y="32.4" font-family="Arial" font-size="2.2" fill="#26313a" text-anchor="middle">2</text>
@@ -223,7 +229,7 @@
   <g id="dpc2" data-path="dpc2" data-class="bay" data-group="slots" data-group-role="traffic" data-rel-pos="3">
     <title>dpc2</title>
     <rect id="dpc2--opening" x="11.5" y="84.6" width="420.9" height="29.5" fill="#101214" />
-    <g id="dpc2--module" data-path="dpc2/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpce-r-40ge-sfp@1:1.0.0" data-lifecycle-note="EOL per PSN-TSB16810; modelled because it is the card the reference photograph carries" data-model="DPCE-R-40GE-SFP" data-power-draw-max-w="335" data-states="ok fail absent" transform="translate(221.95,99.35) translate(-210.45,-14.75)">
+    <g id="dpc2--module" data-path="dpc2/module" data-class="line-card" data-behaviour="fills" data-ref="juniper/dpce-r-40ge-sfp@1:1.2.0" data-lifecycle-note="EOL per PSN-TSB16810; modelled because it is the card the reference photograph carries" data-model="DPCE-R-40GE-SFP" data-power-draw-max-w="335" data-sfp="40" data-states="absent" transform="translate(221.95,99.35) translate(-210.45,-14.75)">
       <title>dpc2--module</title>
       <rect id="dpc2--module--face" x="0" y="0" width="420.9" height="29.5" rx="0.6" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="dpc2--module--lever-left" data-path="dpc2/module/lever-left" data-class="latch">
@@ -330,6 +336,7 @@
         <rect id="dpc2--module--port-0-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-2" data-path="dpc2/module/port-0-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(91.05,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-0-2</title>
@@ -337,6 +344,7 @@
         <rect id="dpc2--module--port-0-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-4" data-path="dpc2/module/port-0-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(105.3,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-0-4</title>
@@ -344,6 +352,7 @@
         <rect id="dpc2--module--port-0-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-6" data-path="dpc2/module/port-0-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(119.55,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-0-6</title>
@@ -351,6 +360,7 @@
         <rect id="dpc2--module--port-0-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-8" data-path="dpc2/module/port-0-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(133.8,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-0-8</title>
@@ -358,6 +368,7 @@
         <rect id="dpc2--module--port-0-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-1" data-path="dpc2/module/port-0-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(76.8,16.5)">
         <title>dpc2--module--port-0-1</title>
@@ -365,6 +376,7 @@
         <rect id="dpc2--module--port-0-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-3" data-path="dpc2/module/port-0-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(91.05,16.5)">
         <title>dpc2--module--port-0-3</title>
@@ -372,6 +384,7 @@
         <rect id="dpc2--module--port-0-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-5" data-path="dpc2/module/port-0-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(105.3,16.5)">
         <title>dpc2--module--port-0-5</title>
@@ -379,6 +392,7 @@
         <rect id="dpc2--module--port-0-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-7" data-path="dpc2/module/port-0-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(119.55,16.5)">
         <title>dpc2--module--port-0-7</title>
@@ -386,6 +400,7 @@
         <rect id="dpc2--module--port-0-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-0-9" data-path="dpc2/module/port-0-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(133.8,16.5)">
         <title>dpc2--module--port-0-9</title>
@@ -393,6 +408,7 @@
         <rect id="dpc2--module--port-0-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-0-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-0-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-0" data-path="dpc2/module/port-1-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(151.2,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-1-0</title>
@@ -400,6 +416,7 @@
         <rect id="dpc2--module--port-1-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-2" data-path="dpc2/module/port-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(165.45,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-1-2</title>
@@ -407,6 +424,7 @@
         <rect id="dpc2--module--port-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-4" data-path="dpc2/module/port-1-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(179.7,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-1-4</title>
@@ -414,6 +432,7 @@
         <rect id="dpc2--module--port-1-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-6" data-path="dpc2/module/port-1-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(193.95,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-1-6</title>
@@ -421,6 +440,7 @@
         <rect id="dpc2--module--port-1-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-8" data-path="dpc2/module/port-1-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(208.2,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-1-8</title>
@@ -428,6 +448,7 @@
         <rect id="dpc2--module--port-1-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-1" data-path="dpc2/module/port-1-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(151.2,16.5)">
         <title>dpc2--module--port-1-1</title>
@@ -435,6 +456,7 @@
         <rect id="dpc2--module--port-1-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-3" data-path="dpc2/module/port-1-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(165.45,16.5)">
         <title>dpc2--module--port-1-3</title>
@@ -442,6 +464,7 @@
         <rect id="dpc2--module--port-1-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-5" data-path="dpc2/module/port-1-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(179.7,16.5)">
         <title>dpc2--module--port-1-5</title>
@@ -449,6 +472,7 @@
         <rect id="dpc2--module--port-1-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-7" data-path="dpc2/module/port-1-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(193.95,16.5)">
         <title>dpc2--module--port-1-7</title>
@@ -456,6 +480,7 @@
         <rect id="dpc2--module--port-1-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-1-9" data-path="dpc2/module/port-1-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(208.2,16.5)">
         <title>dpc2--module--port-1-9</title>
@@ -463,6 +488,7 @@
         <rect id="dpc2--module--port-1-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-1-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-1-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-0" data-path="dpc2/module/port-2-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(249.6,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-2-0</title>
@@ -470,6 +496,7 @@
         <rect id="dpc2--module--port-2-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-2" data-path="dpc2/module/port-2-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(263.85,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-2-2</title>
@@ -477,6 +504,7 @@
         <rect id="dpc2--module--port-2-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-4" data-path="dpc2/module/port-2-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(278.1,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-2-4</title>
@@ -484,6 +512,7 @@
         <rect id="dpc2--module--port-2-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-6" data-path="dpc2/module/port-2-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(292.35,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-2-6</title>
@@ -491,6 +520,7 @@
         <rect id="dpc2--module--port-2-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-8" data-path="dpc2/module/port-2-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(306.6,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-2-8</title>
@@ -498,6 +528,7 @@
         <rect id="dpc2--module--port-2-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-1" data-path="dpc2/module/port-2-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(249.6,16.5)">
         <title>dpc2--module--port-2-1</title>
@@ -505,6 +536,7 @@
         <rect id="dpc2--module--port-2-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-3" data-path="dpc2/module/port-2-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(263.85,16.5)">
         <title>dpc2--module--port-2-3</title>
@@ -512,6 +544,7 @@
         <rect id="dpc2--module--port-2-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-5" data-path="dpc2/module/port-2-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(278.1,16.5)">
         <title>dpc2--module--port-2-5</title>
@@ -519,6 +552,7 @@
         <rect id="dpc2--module--port-2-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-7" data-path="dpc2/module/port-2-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(292.35,16.5)">
         <title>dpc2--module--port-2-7</title>
@@ -526,6 +560,7 @@
         <rect id="dpc2--module--port-2-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-2-9" data-path="dpc2/module/port-2-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(306.6,16.5)">
         <title>dpc2--module--port-2-9</title>
@@ -533,6 +568,7 @@
         <rect id="dpc2--module--port-2-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-2-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-2-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-0" data-path="dpc2/module/port-3-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(323.7,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-3-0</title>
@@ -540,6 +576,7 @@
         <rect id="dpc2--module--port-3-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-0--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-2" data-path="dpc2/module/port-3-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(337.95,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-3-2</title>
@@ -547,6 +584,7 @@
         <rect id="dpc2--module--port-3-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-2--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-4" data-path="dpc2/module/port-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(352.2,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-3-4</title>
@@ -554,6 +592,7 @@
         <rect id="dpc2--module--port-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-6" data-path="dpc2/module/port-3-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(366.45,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-3-6</title>
@@ -561,6 +600,7 @@
         <rect id="dpc2--module--port-3-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-6--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-8" data-path="dpc2/module/port-3-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(380.7,4.5) rotate(180 7.125 5.2)">
         <title>dpc2--module--port-3-8</title>
@@ -568,6 +608,7 @@
         <rect id="dpc2--module--port-3-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-1" data-path="dpc2/module/port-3-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(323.7,16.5)">
         <title>dpc2--module--port-3-1</title>
@@ -575,6 +616,7 @@
         <rect id="dpc2--module--port-3-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-1--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-3" data-path="dpc2/module/port-3-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(337.95,16.5)">
         <title>dpc2--module--port-3-3</title>
@@ -582,6 +624,7 @@
         <rect id="dpc2--module--port-3-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-5" data-path="dpc2/module/port-3-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(352.2,16.5)">
         <title>dpc2--module--port-3-5</title>
@@ -589,6 +632,7 @@
         <rect id="dpc2--module--port-3-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-5--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-7" data-path="dpc2/module/port-3-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(366.45,16.5)">
         <title>dpc2--module--port-3-7</title>
@@ -596,6 +640,7 @@
         <rect id="dpc2--module--port-3-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
       <g id="dpc2--module--port-3-9" data-path="dpc2/module/port-3-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(380.7,16.5)">
         <title>dpc2--module--port-3-9</title>
@@ -603,6 +648,7 @@
         <rect id="dpc2--module--port-3-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
         <rect id="dpc2--module--port-3-9--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc2--module--port-3-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
       </g>
     </g>
   </g>
@@ -665,6 +711,7 @@
         <rect id="dpc1--module--port-0--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
         <rect id="dpc1--module--port-0--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc1--module--port-0--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
       </g>
       <g id="dpc1--module--port-1" data-path="dpc1/module/port-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(156.35,9.05)">
         <title>dpc1--module--port-1</title>
@@ -672,6 +719,7 @@
         <rect id="dpc1--module--port-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
         <rect id="dpc1--module--port-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc1--module--port-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
       </g>
       <g id="dpc1--module--port-2" data-path="dpc1/module/port-2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(207.65,9.05)">
         <title>dpc1--module--port-2</title>
@@ -679,6 +727,7 @@
         <rect id="dpc1--module--port-2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
         <rect id="dpc1--module--port-2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc1--module--port-2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
       </g>
       <g id="dpc1--module--port-3" data-path="dpc1/module/port-3" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" transform="translate(261.05,9.05)">
         <title>dpc1--module--port-3</title>
@@ -686,6 +735,7 @@
         <rect id="dpc1--module--port-3--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
         <rect id="dpc1--module--port-3--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
         <rect id="dpc1--module--port-3--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
       </g>
     </g>
   </g>
@@ -753,6 +803,7 @@
             <title>scb1-dpc0--module--re--module--usb</title>
             <rect id="scb1-dpc0--module--re--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="scb1-dpc0/module/re/module/usb/opening" data-class="cutout" />
             <rect id="scb1-dpc0--module--re--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+            <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
           </g>
           <g id="scb1-dpc0--module--re--module--aux" data-path="scb1-dpc0/module/re/module/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary console" data-media="rj45" transform="translate(180,7.15)">
             <title>scb1-dpc0--module--re--module--aux</title>
@@ -769,6 +820,7 @@
               <rect x="10.22" y="2.6" width="0.46" height="2.3" />
               <rect x="11.24" y="2.6" width="0.46" height="2.3" />
             </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
           </g>
           <g id="scb1-dpc0--module--re--module--console" data-path="scb1-dpc0/module/re/module/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(197.4,7.15)">
             <title>scb1-dpc0--module--re--module--console</title>
@@ -785,6 +837,7 @@
               <rect x="10.22" y="2.6" width="0.46" height="2.3" />
               <rect x="11.24" y="2.6" width="0.46" height="2.3" />
             </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
           </g>
           <g id="scb1-dpc0--module--re--module--ethernet" data-path="scb1-dpc0/module/re/module/ethernet" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="fxp0 out-of-band management" data-media="rj45" transform="translate(214.9,7.15)">
             <title>scb1-dpc0--module--re--module--ethernet</title>
@@ -803,10 +856,12 @@
                 <rect x="10.22" y="2.6" width="0.46" height="2.3" />
                 <rect x="11.24" y="2.6" width="0.46" height="2.3" />
               </g>
+              <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
             </g>
             <path id="scb1-dpc0--module--re--module--ethernet--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
             <rect id="scb1-dpc0--module--re--module--ethernet--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb1-dpc0/module/re/module/ethernet/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
             <rect id="scb1-dpc0--module--re--module--ethernet--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb1-dpc0/module/re/module/ethernet/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+            <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
           </g>
         </g>
       </g>
@@ -905,6 +960,7 @@
             <title>scb0--module--re--module--usb</title>
             <rect id="scb0--module--re--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="scb0/module/re/module/usb/opening" data-class="cutout" />
             <rect id="scb0--module--re--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+            <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
           </g>
           <g id="scb0--module--re--module--aux" data-path="scb0/module/re/module/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="auxiliary console" data-media="rj45" transform="translate(180,7.15)">
             <title>scb0--module--re--module--aux</title>
@@ -921,6 +977,7 @@
               <rect x="10.22" y="2.6" width="0.46" height="2.3" />
               <rect x="11.24" y="2.6" width="0.46" height="2.3" />
             </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
           </g>
           <g id="scb0--module--re--module--console" data-path="scb0/module/re/module/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(197.4,7.15)">
             <title>scb0--module--re--module--console</title>
@@ -937,6 +994,7 @@
               <rect x="10.22" y="2.6" width="0.46" height="2.3" />
               <rect x="11.24" y="2.6" width="0.46" height="2.3" />
             </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
           </g>
           <g id="scb0--module--re--module--ethernet" data-path="scb0/module/re/module/ethernet" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="fxp0 out-of-band management" data-media="rj45" transform="translate(214.9,7.15)">
             <title>scb0--module--re--module--ethernet</title>
@@ -955,10 +1013,12 @@
                 <rect x="10.22" y="2.6" width="0.46" height="2.3" />
                 <rect x="11.24" y="2.6" width="0.46" height="2.3" />
               </g>
+              <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
             </g>
             <path id="scb0--module--re--module--ethernet--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
             <rect id="scb0--module--re--module--ethernet--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb0/module/re/module/ethernet/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
             <rect id="scb0--module--re--module--ethernet--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="scb0/module/re/module/ethernet/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+            <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
           </g>
         </g>
       </g>
@@ -993,7 +1053,7 @@
       </g>
     </g>
   </g>
-  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-group="grounding" data-rel-pos="0" data-states="ok" transform="translate(5.0,14.0)" data-group-role="furniture" data-description="the protective-earthing stud pair under the rear earth symbol" data-for="chassis">
+  <g id="esd-front-jack" data-path="esd-front-jack" data-class="ground" data-behaviour="mounts" data-ref="common/esd-jack@1:1.0.0" data-media="esd" data-rel-pos="0" transform="translate(5.0,14.0)" data-group="grounding" data-group-role="furniture" data-description="the protective-earthing stud pair under the rear earth symbol" data-for="chassis">
     <title>esd-front-jack</title>
     <circle id="esd-front-jack--bezel" cx="3" cy="3" r="2.9" fill="#6e737a" stroke="#4a4e54" stroke-width="0.3" />
     <circle id="esd-front-jack--bore" cx="3" cy="3" r="2.0" fill="#15181b" stroke="#3a3d42" stroke-width="0.25" />

@@ -10,13 +10,13 @@
   "front": [
    {
     "accepts": [
-     "juniper/jnp10k-re1@1"
+     "juniper/jnp10k-re1@2"
     ],
     "at": [
      2.5,
      14.0
     ],
-    "default": "juniper/jnp10k-re1@1",
+    "default": "juniper/jnp10k-re1@2",
     "group": "res",
     "id": "cb0",
     "rel-pos": 0,
@@ -28,13 +28,13 @@
    },
    {
     "accepts": [
-     "juniper/jnp10k-re1@1"
+     "juniper/jnp10k-re1@2"
     ],
     "at": [
      2.5,
      52.1
     ],
-    "default": "juniper/jnp10k-re1@1",
+    "default": "juniper/jnp10k-re1@2",
     "group": "res",
     "id": "cb1",
     "rel-pos": 1,
@@ -589,14 +589,20 @@
   "right": [],
   "top": []
  },
+ "cages": {
+  "bottom": [],
+  "front": [],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
  "capability": {
   "blocked": [],
   "flags": [],
   "level": 4,
   "name": "addressable",
-  "unknown": [
-   "specified"
-  ]
+  "unknown": []
  },
  "chassis": {
   "d": 889.0,
@@ -627,6 +633,7 @@
    "description": "Chassis only - what you spec before deciding what goes in it. The 16 slot bays are EMPTY; cooling, psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with. The line-card slots are drawn EMPTY rather than blanked, which is not the intent: no MX10000-series line-card blank is modelled, and none is named in the staged guides - they document power-supply cover panels only. Every other chassis in the library seats a blank here.",
    "kind": "base",
    "name": "base",
+   "occupants": {},
    "part-numbers": {},
    "views": {}
   }
@@ -634,6 +641,16 @@
  "default": "base",
  "device": "mx10016",
  "gaps": [
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "kind": "declared",
+   "scope": [
+    "res"
+   ],
+   "wanted": "a photograph of a real RCB's model label. The board in this chassis's own photographs carries four SFP cages numbered 0-3 and no BITS, ToD, RESET or Online/Offline hardware, which matches neither Juniper faceplate figure - not Figure 46 (JNP10K-RE1 family, two reserved XGE cages) nor Figure 45 (JNP10K-RE3 family). juniper/jnp10k-re1@2 follows the figure it is named for; the detail is in provenance/which-board-the-photographs-show on that contract. The label does not resolve at the scale of any photograph held here.",
+   "what": "rcb-which-board"
+  },
   {
    "because": "needs-photo",
    "blocks": [],
@@ -678,8 +695,8 @@
     "specified"
    ],
    "kind": "derived",
-   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
-   "what": "profile-undeclared"
+   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in a missing `attrs.power` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
   },
   {
    "because": "CAP",
@@ -702,14 +719,33 @@
  ],
  "model": "MX10016",
  "provenance": {
-  "chassis": "datasheet-table - 36.6 x 17.4 x 35 in (930 x 442 x 889 mm), 21U; flange extends the rack face to 19 in. Ears NOT MODELLED by convention",
-  "color": "photo - dark grey chassis, silver card faces, light-blue levers (as the family)",
-  "front": "photo - the front photograph proportioned per-axis against the 442 mm body: badge strip 0-14, RCB slots at y 14.0 and 52.1 (1.5 in slot height as the family), service band to y 110.2, then four four-slot banks on a 48.4 mm pitch with 7 mm dividers; positions approximate to ~3 mm on this tall face",
-  "other-faces": "near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as the siblings",
-  "power": "datasheet-table - JNP10K-PWR-AC2 5.5 kW each as the family guides; the AC/AC3/DC variants are gaps",
-  "rear": "drawing - g050702 (isometric, fractions only): one full-height column of ten JNP10K-PWR supplies at the left, two full-height fan trays right. Base configuration ships five supplies; all ten bays are drawn",
-  "slot-numbering": "guide - FPC 0-15; drawn top-down to match the family convention (no legible slot print in any source - see gaps)",
-  "sources": "MX10016 Hardware Guide, the MX10008/MX10016 5G datasheet, the front studio photograph and the rear line drawing g050702"
+  "chassis": {
+   "confidence": "datasheet",
+   "note": "datasheet-table - 36.6 x 17.4 x 35 in (930 x 442 x 889 mm), 21U; flange extends the rack face to 19 in. Ears NOT MODELLED by convention"
+  },
+  "color": {
+   "note": "photo - dark grey chassis, silver card faces, light-blue levers (as the family)"
+  },
+  "front": {
+   "note": "photo - the front photograph proportioned per-axis against the 442 mm body: badge strip 0-14, RCB slots at y 14.0 and 52.1 (1.5 in slot height as the family), service band to y 110.2, then four four-slot banks on a 48.4 mm pitch with 7 mm dividers; positions approximate to ~3 mm on this tall face"
+  },
+  "other-faces": {
+   "note": "near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as the siblings"
+  },
+  "power": {
+   "confidence": "datasheet",
+   "note": "datasheet-table - JNP10K-PWR-AC2 5.5 kW each as the family guides; the AC/AC3/DC variants are gaps"
+  },
+  "rear": {
+   "confidence": "drawing",
+   "note": "drawing - g050702 (isometric, fractions only): one full-height column of ten JNP10K-PWR supplies at the left, two full-height fan trays right. Base configuration ships five supplies; all ten bays are drawn"
+  },
+  "slot-numbering": {
+   "note": "guide - FPC 0-15; drawn top-down to match the family convention (no legible slot print in any source - see gaps)"
+  },
+  "sources": {
+   "note": "MX10016 Hardware Guide, the MX10008/MX10016 5G datasheet, the front studio photograph and the rear line drawing g050702"
+  }
  },
  "views": [
   "front",

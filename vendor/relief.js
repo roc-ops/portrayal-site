@@ -51,6 +51,207 @@ export function cavitySeatsOn(c, o, eps = 0.01) {
     && c.x + c.w <= o.x + o.w + eps && c.y + c.h <= o.y + o.h + eps;
 }
 
+// A DEPTH THAT VARIES ACROSS A NODE, INSIDE THE NODE'S OWN OUTLINE. `profile`
+// and `profile-y` built their height field over the bounding box, so a sloped
+// moulding could only be a rectangle; the MaiaEdge PBC-2000's centre pane has
+// ends that ARE its windows' ends - chamfer, vertical, chamfer - and a box
+// either ran into the windows or stopped short of the chamfer corners.
+//
+// The region is ear-clipped ONCE, and each triangle is then cut by the grid
+// cells it crosses (Sutherland-Hodgman - triangle and cell are both convex, so
+// the cut is exact) and every vertex stood at depthAt(x, y). Grid lines sit on
+// the profiles' knots, so a knee is still a knee. Clipping the concave outline
+// by the cells first was tried and was wrong: it left edges along the cell
+// boundaries that enclosed part of a window next to its corner. The skirt
+// drops every outline point from the surface to `lift`, so the walls follow the
+// outline too. Coordinates are node-local mm.
+//
+// HOLES ARE CUT, because the bezel turned out to be the whole face: one sloped
+// plate with the two octagonal windows through it. Each hole is bridged into
+// its shell by a zero-width cut straight up from its topmost point - the
+// keyhole earcut uses - so the region is one simple polygon again. The walls of
+// holes come back apart from the outer wall (`holeSkirt`), because on the
+// hardware they are a different colour: a window's edge is the amber bead. A
+// hole that cannot be bridged (nothing of the shell above it) is not cut, and
+// gets no wall either.
+//
+// `regions` is [{shell, holes: [ring...]}], rings as [[x, y]...].
+export function shapedHeightField(regions, xs, ys, depthAt, lift = 0) {
+  const clip = (poly, keep, cut) => {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const ia = keep(a), ib = keep(b);
+      if (ia) out.push(a);
+      if (ia !== ib) out.push(cut(a, b));
+    }
+    return out;
+  };
+  const atX = (x) => (a, b) => [x, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0])];
+  const atY = (y) => (a, b) => [a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]), y];
+  const signed = r => {
+    let s = 0;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++)
+      s += (r[j][0] - r[i][0]) * (r[j][1] + r[i][1]);
+    return s / 2;
+  };
+  const tidy = poly => {
+    const out = [];
+    for (const p of poly) {
+      const q = out[out.length - 1];
+      if (!q || Math.abs(q[0] - p[0]) > 1e-9 || Math.abs(q[1] - p[1]) > 1e-9) out.push(p);
+    }
+    while (out.length > 1 && Math.abs(out[0][0] - out[out.length - 1][0]) < 1e-9
+           && Math.abs(out[0][1] - out[out.length - 1][1]) < 1e-9) out.pop();
+    return out;
+  };
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const earclip = (poly) => {
+    // counter-clockwise in a y-down frame is clockwise on paper; normalise so
+    // every convex corner has a positive cross product
+    const P = signed(poly) < 0 ? poly.slice().reverse() : poly.slice();
+    const idx = P.map((_, i) => i), tris = [];
+    let guard = 0;
+    while (idx.length > 3 && guard++ < 10000) {
+      let found = false;
+      for (let k = 0; k < idx.length; k++) {
+        const i0 = idx[(k + idx.length - 1) % idx.length], i1 = idx[k], i2 = idx[(k + 1) % idx.length];
+        const [a, b, c] = [P[i0], P[i1], P[i2]];
+        const cr = cross(a, b, c);
+        if (cr < -1e-12) continue;                    // reflex corner
+        if (Math.abs(cr) <= 1e-12) { idx.splice(k, 1); found = true; break; }  // collinear: drop it
+        let blocked = false;
+        for (const j of idx) {
+          if (j === i0 || j === i1 || j === i2) continue;
+          const p = P[j];
+          if (cross(a, b, p) > 1e-12 && cross(b, c, p) > 1e-12 && cross(c, a, p) > 1e-12) { blocked = true; break; }
+        }
+        if (blocked) continue;
+        tris.push([a, b, c]);
+        idx.splice(k, 1);
+        found = true;
+        break;
+      }
+      if (!found) break;
+    }
+    if (idx.length === 3) tris.push(idx.map(i => P[i]));
+    return tris;
+  };
+
+  const orient = (r, ccw) => (signed(r) < 0) === ccw ? r.slice() : r.slice().reverse();
+  const bridge = (shell, holes, cut) => {
+    let outer = orient(tidy(shell), true);
+    const hs = holes.map((h, n) => ({h: orient(tidy(h), false), n}))
+      .sort((a, b) => Math.min(...a.h.map(p => p[1])) - Math.min(...b.h.map(p => p[1])));
+    for (const {h, n} of hs) {
+      let hi = 0;
+      for (let k = 1; k < h.length; k++) if (h[k][1] < h[hi][1]) hi = k;
+      const [hx, hy] = h[hi];
+      let best = -1, by = -Infinity;
+      for (let k = 0; k < outer.length; k++) {
+        const a = outer[k], b = outer[(k + 1) % outer.length];
+        const lo = Math.min(a[0], b[0]), up = Math.max(a[0], b[0]);
+        if (!(hx >= lo && hx < up)) continue;
+        const y = a[1] + (b[1] - a[1]) * (hx - a[0]) / (b[0] - a[0]);
+        if (y < hy && y > by) { by = y; best = k; }
+      }
+      if (best < 0) continue;            // no edge above it: not inside this shell
+      cut.add(n);
+      const p = [hx, by];
+      const loop = h.slice(hi).concat(h.slice(0, hi), [h[hi]]);
+      outer = outer.slice(0, best + 1).concat([p], loop, [p], outer.slice(best + 1));
+    }
+    return outer;
+  };
+
+  // Douglas-Peucker: the outline arrives sampled every 0.25 mm, and the ear
+  // clipper below is quadratic in it. Walls keep every sample; only the
+  // triangulation works from the simplified ring.
+  const simplify = (r, eps = 0.02) => {
+    if (r.length < 4) return r.slice();
+    const keep = new Array(r.length).fill(false);
+    const seg = (p, a, b) => {
+      const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+      return L < 1e-12 ? Math.hypot(p[0] - a[0], p[1] - a[1])
+                       : Math.abs(dy * p[0] - dx * p[1] + b[0] * a[1] - b[1] * a[0]) / L;
+    };
+    const stack = [[0, r.length - 1]];
+    keep[0] = keep[r.length - 1] = true;
+    // split the closed ring at its far point so the open run has two ends
+    let far = 0, fd = -1;
+    for (let k = 1; k < r.length; k++) {
+      const d = Math.hypot(r[k][0] - r[0][0], r[k][1] - r[0][1]);
+      if (d > fd) { fd = d; far = k; }
+    }
+    keep[far] = true;
+    stack.length = 0; stack.push([0, far], [far, r.length - 1]);
+    while (stack.length) {
+      const [i0, i1] = stack.pop();
+      let bi = -1, bd = eps;
+      for (let k = i0 + 1; k < i1; k++) {
+        const d = seg(r[k], r[i0], r[i1]);
+        if (d > bd) { bd = d; bi = k; }
+      }
+      if (bi >= 0) { keep[bi] = true; stack.push([i0, bi], [bi, i1]); }
+    }
+    return r.filter((_, k) => keep[k]);
+  };
+  const cutTriangle = (tri, x0, x1, y0, y1) => {
+    let p = tri;
+    p = clip(p, q => q[0] >= x0, atX(x0));
+    if (p.length) p = clip(p, q => q[0] <= x1, atX(x1));
+    if (p.length) p = clip(p, q => q[1] >= y0, atY(y0));
+    if (p.length) p = clip(p, q => q[1] <= y1, atY(y1));
+    return tidy(p);
+  };
+
+  const pos = [], idx = [], cutHoles = [];
+  const put = (x, y) => { pos.push(x, y, depthAt(x, y)); return pos.length / 3 - 1; };
+  for (const {shell: rawShell, holes = []} of regions) {
+    const cut = new Set();
+    // TRIANGULATE THE WHOLE REGION FIRST, THEN CUT EACH TRIANGLE BY THE GRID.
+    // Clipping a concave outline against a cell leaves edges running along the
+    // cell boundary, and next to a window's corner those enclosed part of the
+    // window. A triangle is convex, so cutting it by a cell is exact; the grid
+    // is still what puts a vertex on every profile knot.
+    const shell = simplify(rawShell);
+    const region = holes.length ? bridge(shell, holes.map(h => simplify(h)), cut) : shell;
+    cutHoles.push(...holes.filter((_, n) => cut.has(n)));
+    for (const tri of earclip(tidy(region))) {
+      const bx0 = Math.min(tri[0][0], tri[1][0], tri[2][0]), bx1 = Math.max(tri[0][0], tri[1][0], tri[2][0]);
+      const by0 = Math.min(tri[0][1], tri[1][1], tri[2][1]), by1 = Math.max(tri[0][1], tri[1][1], tri[2][1]);
+      for (let j = 0; j + 1 < ys.length; j++) {
+        if (ys[j + 1] <= by0 || ys[j] >= by1) continue;
+        for (let i = 0; i + 1 < xs.length; i++) {
+          if (xs[i + 1] <= bx0 || xs[i] >= bx1) continue;
+          const p = cutTriangle(tri, xs[i], xs[i + 1], ys[j], ys[j + 1]);
+          if (p.length < 3 || Math.abs(signed(p)) < 1e-9) continue;
+          for (let k = 1; k + 1 < p.length; k++) {      // convex: a fan will do
+            if (Math.abs(cross(p[0], p[k], p[k + 1])) < 1e-9) continue;
+            idx.push(put(...p[0]), put(...p[k]), put(...p[k + 1]));
+          }
+        }
+      }
+    }
+  }
+  const wall = rings => {
+    const spos = [], sidx = [];
+    for (const ring of rings) {
+      const base = spos.length / 6;
+      for (const [x, y] of ring) spos.push(x, y, depthAt(x, y), x, y, lift);
+      for (let k = 0; k < ring.length; k++) {
+        const a = 2 * (base + k), b = a + 1;
+        const c = 2 * (base + (k + 1) % ring.length), d = c + 1;
+        sidx.push(a, b, c, b, d, c);
+      }
+    }
+    return {pos: spos, idx: sidx};
+  };
+  return {top: {pos, idx},
+          skirt: wall(regions.map(r => r.shell)),
+          holeSkirt: wall(cutHoles)};
+}
+
 export function bodyBoxes(body, faceW, faceH) {
   const color = body.color || '#3a3f44';
   if (body.boxes && body.boxes.length) {
@@ -61,6 +262,291 @@ export function bodyBoxes(body, faceW, faceH) {
   const fp = body.footprint || {at: [0, 0], size: [faceW, faceH]};
   return [{id: 'body', x: fp.at[0], y: fp.at[1], w: fp.size[0], h: fp.size[1],
            z0: 0, z1: body.depth, color}];
+}
+
+// WHERE A CABLE LANDS, in the chassis frame. Exported as two halves on
+// purpose: the SUM is pure and is tested under bare node, the QUERY needs a
+// document and is exercised by a hand-built fake tree plus (for the real
+// compiled output) the Task 4 tests. jsdom is not a dependency here.
+//
+// `ancestors` runs OUTERMOST-LAST: index 0 is the marker's own parent, and
+// each later entry is one step further out, ending at whatever sits just
+// inside the svg - the same walk `nodeTools.liftOf` does, spelled out on
+// plain objects so it can be checked without a document. Every entry
+// contributes its own `lift` to the sum, and `z` is that sum - unless the
+// marker carries `rear`, the absolute far face of the feature it sits on,
+// which then IS `z` (see below).
+//
+// NO `out` TERM, DELIBERATELY, AND THE REASON IS THE SEMANTICS AND NOT A
+// SURVEY. `lift` and `out` are read differently by this module and always
+// have been: a lift is RELATIVE and is summed up the ancestor chain, while
+// `data-z-out` is an ABSOLUTE distance from the panel (the rule
+// _inset_feature's docstring in render.py is built on, and the one whose
+// violation produced the dcp-f-a22 white spikes). An absolute figure cannot
+// be summed into a relative walk and cannot be added to one: an ancestor's
+// `out` already counts from the panel, so folding it in here would place the
+// point at panel + lift + out, a distance nothing measures.
+//
+// An earlier version of this function did read an outermost ancestor's `out`,
+// and an earlier version of THIS COMMENT defended dropping it by claiming
+// that no ancestor of a `cable` marker in any real drawing carries
+// data-z-out. That claim was laundered from a single drawing. Swept over
+// every built drawing in library/dist, 9 of the 23,629 connection-point
+// markers sit under an ancestor that DOES carry one - all nine in
+// dcp-2.ila-node.front.svg, under `slot-1--module--body-square` at
+// data-z-out "44.0". The argument above does not depend on how many there
+// are, which is the point: it would hold at zero and it holds at nine.
+//
+// THAT DIFFERENT MECHANISM NOW EXISTS, AND IT REPLACES RATHER THAN SUMS
+// (pluggables D). Plugs and boots declare relief, and a boot is 15.1 or 26.4
+// long: the ancestor walk put a boot's cable at the boot's FRONT face, where
+// it meets the plug, when the cable leaves from its REAR. The seated chain
+// generic/sfp-lc-simplex@1 -> generic/lc-plug@1 -> common/lc-boot@1 makes the
+// arithmetic concrete: the boot's group carries data-z-lift 22.5 (the optic's
+// 10.0 plus the plug body's 12.5), the lift walk gave z 22.5, and the boot's
+// body is built from 22.5 to its data-z-out of 37.6 - 15.1 short. So a point
+// can now name the relief feature it sits on (the contract's `on:`, which
+// render.py emits on the marker as `data-cp-on`, the feature node's compiled
+// id), and `rear` is that node's data-z-out. `rear` is ABSOLUTE, the same
+// number relief.js builds the feature's far face at, so when it is present
+// it IS `z` - it is never added to the lift, which is what the paragraphs
+// above forbid. `lift` still comes back as the part's own face. A point with
+// no `on:`, or whose feature is missing or unreadable, keeps z = lift.
+//
+// A LIFT THAT DOES NOT PARSE IS ZERO; A POINT THAT DOES NOT PARSE IS NULL,
+// and the asymmetry is deliberate. A junk lift has a safe reading - the
+// feature is not displaced - and a NaN there would silently delete the cable
+// from 3D, which is the worse failure. A junk or absent `at` has no safe
+// reading: coercing it to [0, 0] lands the cable at the part's ORIGIN, a
+// position that looks entirely plausible on a drawing and is wrong by however
+// large the part is. So it comes back `null`, which the first consumer to do
+// arithmetic on it fails on immediately, at the point of use, with the
+// marker in hand.
+export function resolveCablePoint(marker, ancestors = []) {
+  const num = v => (Number.isFinite(+v) ? +v : 0);
+  const lift = ancestors.reduce((z, a) => z + num(a && a.lift), 0);
+  const raw = marker.at || [];
+  const ok = raw.length === 2 && raw.every(v => v !== '' && v !== null && Number.isFinite(+v));
+  const rear = marker.rear;
+  const onFace = rear === undefined || rear === null || rear === '' || !Number.isFinite(+rear);
+  return {
+    name: marker.name,
+    at: ok ? [+raw[0], +raw[1]] : null,
+    dir: marker.dir ?? null,
+    lift, z: onFace ? lift : +rear,
+  };
+}
+
+// Every `cable` marker in a drawing, resolved to one point per CONNECTOR.
+// This is the function a cabling library consumes; page code should not walk
+// data-cp itself.
+//
+// WHAT IS AND IS NOT RESOLVED, stated plainly because the spec's phrase
+// "resolved chassis-frame position and direction" promises more than this
+// returns. `z` IS resolved, in millimetres off the panel: the summed ancestor
+// lift, or - for a point `on:` a relief feature - that feature's data-z-out. `at` IS NOT: it is the marker's OWN-FRAME point, exactly as the
+// part's contract declared it, with none of the group transforms between the
+// part and the svg applied. `dir` is the declared direction, unrotated.
+//
+// So the owning ELEMENT comes back as `el`, and finishing the job is the
+// consumer's: `el.getScreenCTM()` against the svg's (nodeTools' `inv` above is
+// the same idiom) maps `at` into face millimetres, and a mirrored or rotated
+// placement is handled by that matrix rather than by re-deriving it here. No
+// matrix API is invented for this - there is no consumer yet to design one
+// against, and a wrong guess at the shape would be harder to remove than the
+// absence is to fill.
+//
+// A connector can carry more than one `cable` marker at once - a boot mated
+// onto a plug both declare one, because each is the same physical connection
+// point from its own contract's point of view - and the outermost survives:
+// the boot's marker when a boot is seated, the plug's when it is not.
+//
+// A cable lands on the OUTERMOST point of a connector. Stated structurally:
+// a marker is SHADOWED when another marker sits strictly deeper on the same
+// chain. Two DIFFERENT relations record "same chain", and grouping has to
+// walk both:
+//
+//   - PATH ANCESTRY, the original rule: a part composed through a
+//     contract's `parts:` (render.py builds the child's path as
+//     `<parent>/<part id>`) or a module seated in a bay (`<bay>/module`)
+//     gets a `data-path` that nests under its container's, one owner path a
+//     prefix of the other, on a "/" boundary so "sfp-1" is never read as a
+//     parent of "sfp-10".
+//   - SEAT CHAINS, added here. A `mate-to` occupant is a TOP-LEVEL SIBLING
+//     of its host in the compiled drawing - render.py appends it to the
+//     view root, not under the host's group - so a boot seated on a plug
+//     seated on a cage gets THREE UNRELATED top-level paths ("cage",
+//     "cage-plug", "cage-plug-boot"), no one a prefix of another. PATH
+//     ANCESTRY CANNOT SEE THIS RELATIONSHIP: it is not encoded in the path,
+//     by construction, so no amount of cleverness in a prefix test finds
+//     it. What DOES record it is `data-for`, which render.py sets on every
+//     seated placement's group - REGARDLESS OF HOW THE SEAT WAS AUTHORED.
+//     That last clause was once wishful: only the `occupants:` expansion
+//     wrote `for: host`, so a HAND-WRITTEN `mate-to` (which the spec offers
+//     in the same breath) carried no `data-for`, this grouping never fired
+//     for it, and a plug with a boot on it came back as two points for one
+//     connector. render.py now DEFAULTS `for` to the `mate-to` target at
+//     resolution time, so both authorings record a host.
+//
+//     A DEFAULT, THOUGH, NOT AN OVERRIDE: `for:` is older than seating and
+//     means "what this part belongs to", so an author who writes one on a
+//     `mate-to` placement keeps it, and that value is what this function
+//     walks. It need not be the host - it can name any part, in any view.
+//     So do not read a seat's `data-for` as "my host"; read it as "what this
+//     part says it belongs to", which for the common case IS the host.
+//     Walking `data-for` to a root groups a
+//     whole chain of seats the same
+//     way path-prefix already groups a composed or bayed one - do not
+//     "simplify" this back to path-prefix alone; that is exactly the
+//     regression this function exists to prevent, and it has a live test
+//     (spec/tests/js/cable-points.mjs's connector K) that fails the moment
+//     it happens.
+//
+// Composed parts carry no `data-for` at all, so path-prefix stays as the
+// fallback - it is still the only signal for that shape, and dropping it
+// would un-group every `parts:`-composed and bay-nested case this module
+// already passed.
+//
+// An earlier version of this function used a union-find over a "same
+// connector" relation that was not transitive: "a/b" and "a/b/c" belong
+// together, "a/b/c" and "a/b/d" do not, but union-find merges all three
+// through the shared middle "a/b" - a connector that carries its own marker
+// AND two marked descendants fused all three into one point. Nothing in the
+// library can build that shape yet; spec B2's plugs and boots can, and this
+// function has no other consumer.
+const shadowed = (p, all) => all.some(q => q !== p && q.startsWith(p + '/'));
+
+// Resolve one `data-for` value to the local owner it names, or null.
+// `data-for` can carry more than one space-separated token (render.py's
+// `data_for` - a silkscreen mark can annotate several things at once) and a
+// cross-view token comes out leading with "/" (`/rear/psu-0`). BOTH SHAPES
+// REACH A SEAT. This comment used to say a `mate-to` occupant's `data-for`
+// "is never either of those - it is always exactly the bare local id of its
+// host", and that stopped being true when render.py made its `mate-to`
+// default yield to an author's explicit `for:`: a seated placement carrying
+// its own `for:` regroups its cable chain by THAT value, which may be
+// multi-token, may be cross-view, and may name something that is not its
+// host at all. Intended and tested, not a loophole - so the loop below is
+// load-bearing rather than defensive, and must not be "simplified" to a
+// single lookup on the whole attribute. Tokens are tried in order; a
+// leading-slash one names another view and is skipped, and a token this
+// drawing has no marked owner for (a typo, or a genuinely cross-view
+// target) is skipped too, not thrown on. See cable-points.mjs's connector O,
+// which plants an owner under a literal "/rear/x" so the skip is
+// observable.
+function seatOwner(el, byPath) {
+  const raw = (el.dataset && el.dataset.for) || '';
+  for (const tok of raw.split(/\s+/).filter(Boolean)) {
+    if (tok[0] === '/') continue;
+    const found = byPath.get(tok);
+    if (found) return found;
+  }
+  return null;
+}
+
+// The chain from `owner` up to its connector's root, walking `data-for` one
+// hop at a time. `seen` stops it cold on a cycle - a `data-for` that names
+// an owner already in the chain - rather than spinning forever; an
+// unresolved `data-for` (`seatOwner` returns null) ends the chain exactly
+// like a root that carries no `data-for` at all.
+function seatChain(owner, byPath) {
+  const chain = [];
+  const seen = new Set();
+  let cur = owner;
+  while (cur) {
+    if (seen.has(cur)) {
+      // SAID OUT LOUD, LIKE THE UNREADABLE POINT BELOW. Terminating was never
+      // in doubt - `seen` did that from the start - but terminating QUIETLY
+      // is not the same thing: a 2-cycle makes each side shadow the other, so
+      // BOTH connectors vanish from the returned list with nothing said. That
+      // is the identical failure mode an unreadable `data-cp-at` gets a
+      // warning for a few lines down, and it deserves the identical treatment.
+      // Only a hand-edited or truncated drawing can produce it - render.py
+      // refuses a `mate-to` cycle outright - which is exactly the case worth
+      // naming out loud rather than diagnosing from an absence.
+      console.warn(`cablePoints: data-for cycle - the seat chain from ` +
+                   `${owner.dataset.path || '(no data-path)'} revisits ` +
+                   `${cur.dataset.path || '(no data-path)'}; the walk stops ` +
+                   `there and connectors on this chain may be dropped`);
+      break;
+    }
+    chain.push(cur);
+    seen.add(cur);
+    cur = seatOwner(cur, byPath);
+  }
+  return chain;
+}
+
+export function cablePoints(svg) {
+  const entries = [...svg.querySelectorAll('[data-cp="cable"]')].map(mk => {
+    // The whole attribute, not its first two tokens: "1 2 3" is as malformed
+    // as "banana", and silently keeping the 1 and the 2 is the same class of
+    // plausible-looking wrong answer as defaulting to the origin.
+    const coords = (mk.dataset.cpAt || '').trim().split(/\s+/);
+    const marker = {name: mk.dataset.cp, at: coords.length === 2 ? coords : null,
+                    dir: mk.dataset.cpDir ?? null};
+    const ancestors = [];
+    for (let n = mk.parentElement; n && n !== svg; n = n.parentElement) {
+      ancestors.push({lift: n.dataset.zLift});
+    }
+    const owner = mk.closest('[data-path]');
+    // THE FEATURE A POINT SITS ON is a skin node inside the same instance
+    // group as the marker (render.py's `data-cp-on`), so the lookup is scoped
+    // to the marker's own parent - never the whole drawing, where a projection
+    // or another view could carry the same id.
+    const on = mk.dataset.cpOn;
+    if (on) {
+      const host = mk.parentElement;
+      const feat = host && host.querySelector
+        ? host.querySelector(`[id="${on.replace(/"/g, '\\"')}"]`) : null;
+      if (feat && feat.dataset.zOut !== undefined) marker.rear = feat.dataset.zOut;
+      else console.warn(`cablePoints: ${owner ? owner.dataset.path : '(no data-path)'} ` +
+                        `declares its cable point on ${JSON.stringify(on)}, which ` +
+                        `carries no data-z-out here; z falls back to the part's face`);
+    }
+    const pt = {...resolveCablePoint(marker, ancestors),
+                path: owner ? owner.dataset.path : '', el: mk};
+    // SAID OUT LOUD, ONCE, WHERE THE OWNER IS STILL KNOWN. `at: null` is
+    // enough to stop a cable landing at the origin, but on its own it
+    // surfaces as a TypeError in someone else's library with no idea which
+    // part produced it. The compiled drawing is machine-written, so this
+    // fires only on a hand-edited or truncated one - which is precisely the
+    // case worth naming.
+    if (!pt.at)
+      console.warn(`cablePoints: ${pt.path || '(no data-path)'} declares an ` +
+                   `unreadable data-cp-at ${JSON.stringify(mk.dataset.cpAt)}; ` +
+                   `its point is null rather than [0, 0]`);
+    return {pt, owner};
+  });
+
+  // Only an owner that itself carries a `cable` marker can compete for a
+  // connector's point, so that is the only lookup a seat chain ever needs -
+  // an intermediate host with a `data-path` but no marker of its own has
+  // nothing here to shadow or be shadowed by.
+  const byPath = new Map();
+  for (const {owner} of entries) if (owner) byPath.set(owner.dataset.path, owner);
+  const chains = entries.map(({owner}) => owner ? seatChain(owner, byPath) : []);
+
+  // O(n^2) in the number of cable markers on one drawing, same as the
+  // shadow checks above - fine at real-world scale (a handful of connectors
+  // per drawing), not worth optimising.
+  const paths = entries.map(({pt}) => pt.path);
+  // THE TWO RULES ARE INDEPENDENT AND ANDED: a marker survives only if
+  // NEITHER shadows it. That is safe only because the two relations never
+  // overlap on one chain - a `data-for` never points at a PATH-DESCENDANT of
+  // its own owner (composed nesting and occupant `data-for` are disjoint in
+  // everything render.py emits today). If that ever stopped being true - a
+  // host whose `data-for` named its own composed child, say "a" pointing at
+  // "a/b" - path-prefix would shadow "a" and the chain rule would shadow
+  // "a/b" independently, and the connector would vanish with NEITHER rule
+  // aware the other fired. No runtime check for it here: the invariant holds
+  // today and a check would be dead code, but a fix that lets the two rules
+  // interact would need one.
+  return entries
+    .filter(({pt, owner}) =>
+      !shadowed(pt.path, paths) &&
+      !(owner && chains.some(ch => ch.slice(1).includes(owner))))
+    .map(({pt}) => pt);
 }
 
 export function configureRelief(deps, scope) {
@@ -638,6 +1124,14 @@ export async function extractRelief(url, scope) {
         kind: f.dataset.zTop ? 'top' : 'sink',
         val: +(f.dataset.zTop || f.dataset.zSink),
         color: f.dataset.zColor || '#0a0c0e',
+        // A ROUND FEATURE IN A CAVITY USED TO BUILD AS A BOX. The cavity itself has
+        // had `round` since the screw heads needed it, but the `top`/`sink` features
+        // standing in one never did, so every circular recess in the library came out
+        // square: an LC ferrule, a reset pinhole and - the one that surfaced it - the
+        // six stud bores of the AIS800-64D's DC supply. Nothing depended on the square
+        // reading; a `<circle>` is taken at its word, and `data-round` is there for a
+        // node whose art is round but whose tag is not.
+        round: f.dataset.round === '1' || f.tagName === 'circle',
       }));
       return {...rect, owner: ownerOf(el), d: +el.dataset.depth, wall: el.dataset.wall || '#a7adb4',
               wallsInside: el.dataset.walls === 'inside',
@@ -665,10 +1159,12 @@ export async function extractRelief(url, scope) {
             cyl: el.dataset.zCyl && +el.dataset.zCyl,
             bar: el.dataset.zBar && +el.dataset.zBar,
             uhandle: el.dataset.zUhandle && +el.dataset.zUhandle,
+            dia: el.dataset.zDia && +el.dataset.zDia,
             lift: liftOf(el),
             knurl: !!el.dataset.zKnurl,
             thread: el.dataset.zThread && +el.dataset.zThread,
             color: el.dataset.zColor || null,
+            holeColor: el.dataset.zHoleColor || null,
             rings: el.dataset.zShape ? ringsOf(el) : null,
             profile: el.dataset.zProfile
               ? el.dataset.zProfile.split(',').map(p => p.split(':').map(Number)) : null,
@@ -773,6 +1269,31 @@ export async function extractRelief(url, scope) {
   const cleanText = svg.outerHTML;
   div.remove();
   return {cavities, outs, domes, vents, frus, subBodies, flatLifted, cleanText};
+}
+
+// The commonest opaque colour in a raster, which is what a part is MADE of - as
+// against the one pixel at its centre, which is whatever happens to be printed
+// there. Buckets to 5 bits per channel so anti-aliased edges fall in with the
+// body they belong to, then returns the first EXACT colour seen in the winning
+// bucket, so the answer is a colour actually present in the art rather than a
+// rounded one. Subsamples on a grid: this runs once per raised node at build.
+function dominantColor(cv) {
+  const {width: W, height: H} = cv;
+  if (!W || !H) return 'rgb(128,128,128)';
+  const d = cv.getContext('2d').getImageData(0, 0, W, H).data;
+  const step = Math.max(1, Math.floor(Math.min(W, H) / 48));
+  const count = new Map(), exact = new Map();
+  for (let y = 0; y < H; y += step)
+    for (let x = 0; x < W; x += step) {
+      const i = (y * W + x) * 4;
+      if (d[i + 3] < 128) continue;                       // transparent
+      const k = (d[i] >> 3) << 10 | (d[i + 1] >> 3) << 5 | (d[i + 2] >> 3);
+      count.set(k, (count.get(k) || 0) + 1);
+      if (!exact.has(k)) exact.set(k, `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`);
+    }
+  let best = null, bestN = 0;
+  for (const [k, n] of count) if (n > bestN) { bestN = n; best = k; }
+  return best === null ? 'rgb(128,128,128)' : exact.get(best);
 }
 
 export async function rasterize(svgText, wmm, hmm, pxmm = PXMM, flipX = false, flipY = false) {
@@ -996,12 +1517,28 @@ export async function buildFaceRelief(F, ctx) {
           const mats = sideMats(ft.color);
           mats[4] = new THREE.MeshBasicMaterial({map: canvasTex(ft.faceCv)});
           ft.mat = mats[4];
-          const m = new THREE.Mesh(new THREE.BoxGeometry(ft.w, ft.h, hgt), mats);
+          let m;
+          if (ft.round) {
+            // CylinderGeometry's materials are [side, +Y cap, -Y cap] and it stands
+            // along Y, so the art goes on cap 1 and the whole thing lies down. Same
+            // rotation the round cavity wall above takes, for the same reason.
+            const cyl = new THREE.CylinderGeometry(ft.w / 2, ft.w / 2, hgt, 24);
+            m = new THREE.Mesh(cyl, [mats[0], mats[4], mats[5]]);
+            m.rotation.x = Math.PI / 2;
+          } else {
+            m = new THREE.Mesh(new THREE.BoxGeometry(ft.w, ft.h, hgt), mats);
+          }
           m.position.set(LX(ft.x, ft.w), LY(ft.y, ft.h), c.lift - (d - hgt / 2));
           addTo(m);
         } else {   // sink: a deeper pocket beyond the floor
-          const m = new THREE.Mesh(new THREE.BoxGeometry(ft.w, ft.h, ft.val),
-            new THREE.MeshLambertMaterial({color: ft.color, side: THREE.DoubleSide}));
+          const mat = new THREE.MeshLambertMaterial({color: ft.color, side: THREE.DoubleSide});
+          let m;
+          if (ft.round) {
+            m = new THREE.Mesh(new THREE.CylinderGeometry(ft.w / 2, ft.w / 2, ft.val, 24), mat);
+            m.rotation.x = Math.PI / 2;
+          } else {
+            m = new THREE.Mesh(new THREE.BoxGeometry(ft.w, ft.h, ft.val), mat);
+          }
           m.position.set(LX(ft.x, ft.w), LY(ft.y, ft.h), -(d + ft.val / 2));
           addTo(m);
         }
@@ -1089,14 +1626,17 @@ export async function buildFaceRelief(F, ctx) {
                          Math.round((f.x - o.x) * PX), Math.round((f.y - o.y) * PX));
         return cvs;
       };
-      // the side colour samples the node's centre and must read the UNPUNCHED
-      // raster, so it goes first. It is guarded by `if (!o.color)` and so never
-      // re-runs on a restyle, which is what lets one helper serve both paths.
-      if (!o.color) {
-        const px = ocv.getContext('2d').getImageData(
-          Math.floor(ocv.width / 2), Math.floor(ocv.height / 2), 1, 1).data;
-        o.color = `rgb(${px[0]},${px[1]},${px[2]})`;
-      }
+      // THE SIDE COLOUR IS THE ART'S DOMINANT COLOUR, NOT ITS CENTRE PIXEL.
+      // It used to be the one pixel at the middle of the node's box, which is fine
+      // until something small sits exactly there - and on a fan tray something does.
+      // The AIS800-64D's handle carries its release button at dead centre, a fixed
+      // #5a2320 with no `fill-from`, so every tray took the BUTTON's colour for its
+      // whole handle: the 2D art went blue in the back-to-front build and the 3D
+      // tube stayed red, in both builds, because the pixel being read never changed.
+      // The commonest opaque colour in the node's own art is what the part is made
+      // of; a button, a legend or a screw head is by definition a minority of it.
+      // Still read from the UNPUNCHED raster, so this goes before `compose`.
+      if (!o.color) o.color = dominantColor(ocv);
       await compose(ocv);
       const faceTex = new THREE.MeshBasicMaterial(
         {map: canvasTex(ocv), transparent: true, alphaTest: 0.1, alphaToCoverage: true});
@@ -1106,7 +1646,13 @@ export async function buildFaceRelief(F, ctx) {
       if (o.uhandle !== undefined && o.uhandle !== '') {
         const far = +o.uhandle;
         const horizontal = o.w >= o.h;
-        const dia = Math.min(o.w, o.h), r = dia / 2, Rb = dia;
+        // THE NODE IS THE WHOLE HANDLE'S ART AND THE TUBE IS USUALLY THINNER THAN IT.
+        // This node has to be the entire 2D handle, because the face texture hides exactly
+        // the node carrying the relief attribute - put the attribute on an inner bar and the
+        // flat art around it stays painted on the face UNDER the geometry, which is what a
+        // reviewer saw on the AIS800-64D's trays. So where the drawn loop is taller than its
+        // tube, the contract says the diameter.
+        const dia = (o.dia && +o.dia) || Math.min(o.w, o.h), r = dia / 2, Rb = dia;
         const zBar = far - r, legH = Math.max(0.5, zBar - Rb);
         const uLen = Math.max(o.w, o.h);
         const u0 = horizontal ? o.x : o.y;
@@ -1222,45 +1768,84 @@ export async function buildFaceRelief(F, ctx) {
           return [...set].sort((a, b) => a - b);
         };
         const xs = knots(px, o.w), ys = knots(py, o.h);
-        const nx = xs.length, ny = ys.length;
-        const pos = [], uvs = [], idx = [];
-        for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
-          pos.push(LX(o.x + xs[i], 0), LY(o.y + ys[j], 0), depthAt(xs[i], ys[j]));
-          uvs.push(xs[i] / o.w, 1 - ys[j] / o.h);
+        if (o.rings && o.rings.length) {
+          // `shape: true` beside a profile: the same surface, cut to the
+          // node's outline, with its walls along the outline rather than the
+          // box - see shapedHeightField
+          const local = r => r.map(([x, y]) => [x - o.x, y - o.y]);
+          const regions = o.rings.map(r => ({shell: local(r.shell), holes: r.holes.map(local)}));
+          const g = shapedHeightField(regions, xs, ys, depthAt, o.lift);
+          const toWorld = (P) => {
+            const out = [];
+            for (let i = 0; i < P.length; i += 3)
+              out.push(LX(o.x + P[i], 0), LY(o.y + P[i + 1], 0), P[i + 2]);
+            return out;
+          };
+          const front = new THREE.BufferGeometry();
+          front.setAttribute('position', new THREE.Float32BufferAttribute(toWorld(g.top.pos), 3));
+          const uvs = [];
+          for (let i = 0; i < g.top.pos.length; i += 3)
+            uvs.push(g.top.pos[i] / o.w, 1 - g.top.pos[i + 1] / o.h);
+          front.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+          front.setIndex(g.top.idx);
+          front.computeVertexNormals();
+          faceTex.side = THREE.DoubleSide;
+          addTo(new THREE.Mesh(front, faceTex));
+          const skirt = new THREE.BufferGeometry();
+          skirt.setAttribute('position', new THREE.Float32BufferAttribute(toWorld(g.skirt.pos), 3));
+          skirt.setIndex(g.skirt.idx);
+          skirt.computeVertexNormals();
+          addTo(new THREE.Mesh(skirt, new THREE.MeshLambertMaterial({color: o.color, side: THREE.DoubleSide})));
+          if (g.holeSkirt.idx.length) {
+            // a window's edge is its own colour - the PBC-2000's amber bead
+            const hs = new THREE.BufferGeometry();
+            hs.setAttribute('position', new THREE.Float32BufferAttribute(toWorld(g.holeSkirt.pos), 3));
+            hs.setIndex(g.holeSkirt.idx);
+            hs.computeVertexNormals();
+            addTo(new THREE.Mesh(hs, new THREE.MeshLambertMaterial(
+              {color: o.holeColor || o.color, side: THREE.DoubleSide})));
+          }
+        } else {
+          const nx = xs.length, ny = ys.length;
+          const pos = [], uvs = [], idx = [];
+          for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+            pos.push(LX(o.x + xs[i], 0), LY(o.y + ys[j], 0), depthAt(xs[i], ys[j]));
+            uvs.push(xs[i] / o.w, 1 - ys[j] / o.h);
+          }
+          for (let j = 0; j + 1 < ny; j++) for (let i = 0; i + 1 < nx; i++) {
+            const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+            idx.push(a, c, b, b, c, d);
+          }
+          const front = new THREE.BufferGeometry();
+          front.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+          front.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+          front.setIndex(idx);
+          front.computeVertexNormals();
+          faceTex.side = THREE.DoubleSide;   // a mirrored face reverses the winding
+          addTo(new THREE.Mesh(front, faceTex));
+          // skirts: the perimeter dropped to the face, so the ends and the rails
+          // are the slopes the profiles give them and not open edges
+          const sp = [], si = [];
+          const ring = [];
+          for (let i = 0; i < nx; i++) ring.push([xs[i], ys[0]]);
+          for (let j = 1; j < ny; j++) ring.push([xs[nx - 1], ys[j]]);
+          for (let i = nx - 2; i >= 0; i--) ring.push([xs[i], ys[ny - 1]]);
+          for (let j = ny - 2; j > 0; j--) ring.push([xs[0], ys[j]]);
+          for (let k = 0; k < ring.length; k++) {
+            const [x, y] = ring[k];
+            sp.push(LX(o.x + x, 0), LY(o.y + y, 0), depthAt(x, y),
+                    LX(o.x + x, 0), LY(o.y + y, 0), o.lift);
+          }
+          for (let k = 0; k < ring.length; k++) {
+            const a = 2 * k, b = a + 1, c = 2 * ((k + 1) % ring.length), d = c + 1;
+            si.push(a, b, c, b, d, c);
+          }
+          const skirt = new THREE.BufferGeometry();
+          skirt.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
+          skirt.setIndex(si);
+          skirt.computeVertexNormals();
+          addTo(new THREE.Mesh(skirt, new THREE.MeshLambertMaterial({color: o.color, side: THREE.DoubleSide})));
         }
-        for (let j = 0; j + 1 < ny; j++) for (let i = 0; i + 1 < nx; i++) {
-          const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
-          idx.push(a, c, b, b, c, d);
-        }
-        const front = new THREE.BufferGeometry();
-        front.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-        front.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-        front.setIndex(idx);
-        front.computeVertexNormals();
-        faceTex.side = THREE.DoubleSide;   // a mirrored face reverses the winding
-        addTo(new THREE.Mesh(front, faceTex));
-        // skirts: the perimeter dropped to the face, so the ends and the rails
-        // are the slopes the profiles give them and not open edges
-        const sp = [], si = [];
-        const ring = [];
-        for (let i = 0; i < nx; i++) ring.push([xs[i], ys[0]]);
-        for (let j = 1; j < ny; j++) ring.push([xs[nx - 1], ys[j]]);
-        for (let i = nx - 2; i >= 0; i--) ring.push([xs[i], ys[ny - 1]]);
-        for (let j = ny - 2; j > 0; j--) ring.push([xs[0], ys[j]]);
-        for (let k = 0; k < ring.length; k++) {
-          const [x, y] = ring[k];
-          sp.push(LX(o.x + x, 0), LY(o.y + y, 0), depthAt(x, y),
-                  LX(o.x + x, 0), LY(o.y + y, 0), o.lift);
-        }
-        for (let k = 0; k < ring.length; k++) {
-          const a = 2 * k, b = a + 1, c = 2 * ((k + 1) % ring.length), d = c + 1;
-          si.push(a, b, c, b, d, c);
-        }
-        const skirt = new THREE.BufferGeometry();
-        skirt.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
-        skirt.setIndex(si);
-        skirt.computeVertexNormals();
-        addTo(new THREE.Mesh(skirt, new THREE.MeshLambertMaterial({color: o.color, side: THREE.DoubleSide})));
       } else if (o.rings && o.rings.length) {
         // THE SHAPE, NOT THE BOX. `shape: true` on the feature. The face art was
         // always the node's own; it was the SIDES that followed the bounding box,

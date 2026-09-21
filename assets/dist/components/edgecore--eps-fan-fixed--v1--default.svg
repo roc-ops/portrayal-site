@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.5mm" height="15.9mm" viewBox="0 0 25.5 15.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="eps-fan-fixed" data-path="eps-fan-fixed" data-class="fan" data-behaviour="fills" data-ref="edgecore/eps-fan-fixed@1:1.0.0" data-wall="#3a3e43" data-rotors="1" data-states="absent" transform="translate(0,0)">
+    <title>eps-fan-fixed</title>
+    <rect id="eps-fan-fixed--body" x="0" y="0" width="25.5" height="15.9" rx="0.4" fill="#2b2f34" stroke="#1b1e22" stroke-width="0.3" />
+    <g id="eps-fan-fixed--guard" data-path="eps-fan-fixed/guard" data-class="vent" data-z-vent="10">
+      <rect id="eps-fan-fixed--guard-well" x="0.60" y="0.55" width="24.30" height="14.80" rx="0.4" fill="#1a1d20" />
+      <circle id="eps-fan-fixed--rotor-disc" cx="12.75" cy="7.95" r="7.05" fill="#3f454b" stroke="#7d848b" stroke-width="0.35" />
+      <g stroke="#9aa1a8" stroke-width="0.45" fill="none">
+        <circle cx="12.75" cy="7.95" r="5.10" />
+        <circle cx="12.75" cy="7.95" r="2.55" />
+        <line x1="12.75" y1="0.90" x2="12.75" y2="5.40" />
+        <line x1="12.75" y1="15.00" x2="12.75" y2="10.50" />
+        <line x1="5.70" y1="7.95" x2="10.20" y2="7.95" />
+        <line x1="19.80" y1="7.95" x2="15.30" y2="7.95" />
+        <line x1="7.76" y1="2.96" x2="10.94" y2="6.14" />
+        <line x1="17.74" y1="12.94" x2="14.56" y2="9.76" />
+        <line x1="17.74" y1="2.96" x2="14.56" y2="6.14" />
+        <line x1="7.76" y1="12.94" x2="10.94" y2="9.76" />
+      </g>
+      <circle id="eps-fan-fixed--rotor-hub" cx="12.75" cy="7.95" r="1.70" fill="#5a6167" stroke="#7d848b" stroke-width="0.25" />
+    </g>
+  </g>
+</svg>

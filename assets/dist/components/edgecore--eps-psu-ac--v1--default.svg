@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50.4mm" height="38.7mm" viewBox="0 0 50.4 38.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="eps-psu-ac" data-path="eps-psu-ac" data-class="psu" data-behaviour="fills" data-ref="edgecore/eps-psu-ac@1:1.0.0" data-wall="#3a3e43" data-inlet="c14" data-input="ac" data-states="absent" transform="translate(0,0)">
+    <title>eps-psu-ac</title>
+    <defs>
+      <pattern id="eps-psu-ac--eps-psu-mesh" width="2.60" height="2.60" patternUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="2.60" height="2.60" fill="#14171a" />
+        <rect x="0.55" y="0.55" width="1.50" height="1.50" rx="0.25" fill="#7d848b" />
+      </pattern>
+    </defs>
+    <rect id="eps-psu-ac--body" x="0" y="0" width="50.4" height="38.7" rx="0.4" fill="#8d9298" stroke="#5d6267" stroke-width="0.35" />
+    <rect x="0.55" y="0.55" width="49.3" height="37.6" rx="0.3" fill="none" stroke="#b6bbc0" stroke-width="0.22" />
+    <g id="eps-psu-ac--vent" data-path="eps-psu-ac/vent" data-class="vent" data-z-vent="12">
+      <rect id="eps-psu-ac--vent-back" x="5.6" y="6.4" width="14.6" height="26.0" rx="0.3" fill="#14171a" />
+      <rect id="eps-psu-ac--vent-grid" x="5.6" y="6.4" width="14.6" height="26.0" fill="url(#eps-psu-ac--eps-psu-mesh)" />
+      <rect x="5.6" y="6.4" width="14.6" height="26.0" rx="0.3" fill="none" stroke="#5d6267" stroke-width="0.25" />
+    </g>
+    <g id="eps-psu-ac--status" data-path="eps-psu-ac/status" data-class="led" data-states="off ok fault">
+      <circle cx="14.65" cy="4.50" r="1.45" fill="#1c1f22" stroke="#5d6267" stroke-width="0.25" />
+      <circle id="eps-psu-ac--status-lens" cx="14.65" cy="4.50" r="0.95" fill="var(--led-color, #5b6169)" />
+    </g>
+    <g id="eps-psu-ac--inlet-well" data-path="eps-psu-ac/inlet-well" data-class="bezel" data-depth="2.2" data-wall="#3a3e43">
+      <rect x="31.40" y="6.19" width="17.4" height="26.32" rx="0.6" fill="#15181b" stroke="#5d6267" stroke-width="0.3" />
+    </g>
+    <g id="eps-psu-ac--handle" data-path="eps-psu-ac/handle" data-class="handle" data-z-uhandle="18" data-z-dia="2.6">
+      <path d="M 21.2 31.8 V 9.80 Q 21.2 7.2 23.80 7.2 H 27.20 Q 29.799999999999997 7.2 29.799999999999997 9.80 V 31.8" fill="none" stroke="#c0453f" stroke-width="2.60" stroke-linecap="round" data-stroke-from="handle-finish" />
+    </g>
+    <g id="eps-psu-ac--latch" data-path="eps-psu-ac/latch" data-class="latch" data-z-out="1.0">
+      <rect x="0.80" y="7.74" width="2.90" height="13.16" rx="1.00" fill="#c0453f" stroke="#8a2420" stroke-width="0.25" data-fill-from="latch-finish" />
+    </g>
+    <g id="eps-psu-ac--inlet" data-path="eps-psu-ac/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(30.1,5.35) rotate(270 14.0 10.0)">
+      <title>eps-psu-ac--inlet</title>
+      <rect id="eps-psu-ac--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="eps-psu-ac/inlet/opening" data-class="cutout" />
+      <path id="eps-psu-ac--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="eps-psu-ac--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="eps-psu-ac--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="eps-psu-ac--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

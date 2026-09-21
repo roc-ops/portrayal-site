@@ -34,10 +34,16 @@
     [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
     .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
 
+    g[data-ref^='juniper/jnp10k-re1@'] .state-booting { --led-color: #f59e0b; }
+    g[data-ref^='juniper/jnp10k-re1@'] .state-fault { --led-color: #ef4444; }
+    g[data-ref^='juniper/jnp10k-re1@'] .state-link { --led-color: #22c55e; }
+    g[data-ref^='juniper/jnp10k-re1@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='juniper/jnp10k-re1@'] .state-present { --led-color: #22c55e; }
+    g[data-ref^='juniper/jnp10k-re1@'] .state-primary { --led-color: #22c55e; }
     #led-psus.state-fault, #led-psus .state-fault, #led-fans.state-fault, #led-fans .state-fault, #led-sibs.state-fault, #led-sibs .state-fault, #led-lcs.state-fault, #led-lcs .state-fault, #led-cbs.state-fault, #led-cbs .state-fault { --led-color: #ef4444; }
     #led-psus.state-ok, #led-psus .state-ok, #led-fans.state-ok, #led-fans .state-ok, #led-sibs.state-ok, #led-sibs .state-ok, #led-lcs.state-ok, #led-lcs .state-ok, #led-cbs.state-ok, #led-cbs .state-ok { --led-color: #22c55e; }
 </style>
-  <metadata>{"config":"base","device":"Juniper MX10008","device-version":"1.0.10","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/jnp10k-lc-blank@1":"1.0.0","juniper/jnp10k-re1@1":"1.1.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.0","std/smb@1":"1.0.0","std/usb-a@1":"1.3.0"},"source":{"attrs":{"physical":{"weight-base-kg":133,"weight-empty-kg":65.86}},"chassis":{"color":"#565b61","depth":813.0,"height":574.0,"ru":13,"width":442.0},"configurations":{"base":{"bays":{"fpc0":"juniper/jnp10k-lc-blank@1","fpc1":"juniper/jnp10k-lc-blank@1","fpc2":"juniper/jnp10k-lc-blank@1","fpc3":"juniper/jnp10k-lc-blank@1","fpc4":"juniper/jnp10k-lc-blank@1","fpc5":"juniper/jnp10k-lc-blank@1","fpc6":"juniper/jnp10k-lc-blank@1","fpc7":"juniper/jnp10k-lc-blank@1"},"default":true,"description":"Chassis only - what you spec before deciding what goes in it. The 8 slot bays are EMPTY; cooling, psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with. The line-card slots are drawn EMPTY rather than blanked, which is not the intent: no MX10000-series line-card blank is modelled, and none is named in the staged guides - they document power-supply cover panels only. Every other chassis in the library seats a blank here.","kind":"base","source":"vendor - Juniper publishes this as an orderable bundle. the hardware guide's 'MX10008 Components and Configurations' section lists the components of each configuration, and the line-card covers in this base are its own: it ships sixteen of them on the MX10016 in EVERY configuration, over the note that \"Line cards and the cable management system are not part of the base or redundant configurations. You must order them separately.\" NOT YET FULLY FAITHFUL: the vendor bundle also ships ONE routing engine rather than two, and covers rather than modules in one SFB slot and one power slot. This library seats all of them, because JNP10K-PWR-BLNK and the SF blank are not modelled yet. The line-card half - the part that was drawing holes - is now right."}},"description":"Juniper MX10008 - the 13RU, eight-slot MX10000 chassis. Two JNP10K-RE1 Routing and Control Boards stack under the badge strip beside the status lamp panel; eight full-width line-card slots (FPC 0-7) fill the front in two banks of four. The rear is a six-high PSU stack beside two tall fan trays covering the Switch Interface Boards.","format":1,"gaps":[{"reason":"needs-photo","wanted":"a photograph of the rear - only the isometric line drawing g050553 exists, so PSU stack and fan tray geometry are fractional readings and finish is inferred.","what":"rear-photo"},{"reason":"needs-photo","scope":["psus"],"wanted":"the JNP10K-PWR-AC3 (four-feed) and DC faces; only AC2 is modelled.","what":"psu-variants"},{"reason":"needs-photo","scope":["fpcs"],"wanted":"LC4800/LC4802 faceplates - named with dimensions and power in the guides but with no usable face art in the extraction.","what":"line-card-catalogue"},{"reason":"vendor-silent","scope":["cooling"],"wanted":"per-tray power draw - not in the extraction's text layer.","what":"fan-tray-power"}],"groups":{"cooling":{"description":"two tall fan trays; SIBs sit behind them","index-origin":0,"role":"service","term":"Tray"},"fpcs":{"description":"line-card slots FPC 0-7, numbered top-down","index-origin":0,"role":"traffic","term":"Slot"},"psus":{"attrs":{"redundancy":"n+1","redundancy-note":"n+1 - three power supplies for minimum operation; additional supplies provide n+1 redundancy (2n source redundancy on the feeds)"},"description":"six power supply slots, one stack at the rear left","index-origin":0,"role":"service","term":"PSU"},"res":{"attrs":{"redundancy":"1+1","redundancy-note":"1+1 - mx10008 hardware guide, \"MX10008 Component Redundancy\": one RCB in the base configuration, two in the redundant one; with two fitted one is primary and the other backup, and the backup takes over if the primary or any part of it fails. The RCB consolidates the Routing Engine function with the control plane function in a single unit, so this one form covers both"},"description":"Routing and Control Board slots CB0 and CB1","index-origin":0,"role":"service","term":"Slot"},"status-leds":{"description":"the chassis status lamp panel beside the RCBs","index-origin":0,"role":"indicator","term":"LED"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX10008","name":"mx10008","portfolio":{"family":"MX10000 Universal Routing Platform","line":"MX Series"},"provenance":{"chassis":"datasheet-table - 22.6 x 17.4 x 32 in (574 x 442 x 813 mm chassis only), 13U; flange extends the rack face to 19 in. Ears NOT MODELLED by convention","color":"photo - dark grey chassis, silver card faces, light-blue levers and accent line (as MX10004)","front":"photo - the front photograph at ~2.99 px/mm across the 442 mm body: badge strip 0-21, RCB slots at y 22.0 and 60.1 (1.5 in slot height as MX10004), service band to y 117, line-card banks at y 117.0 + i*48.4 and y 317.6 + i*48.4 with the thin divider between them; positions approximate to ~2 mm","other-faces":"near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as the siblings","power":"datasheet-table - JNP10K-PWR-AC2 5.5 kW each as the MX10004; the guide also lists the AC3 unit (gap)","rear":"drawing - g050553 (isometric, fractions only): one six-high stack of JNP10K-PWR supplies at the left, two tall fan trays right. The MX10008 rear has no usable photograph in the intake - see gaps","slot-numbering":"guide - FPC 0-7 top-down (the CLI terminology table maps FPC n, n 0-7, to the slots); the photograph's slot labels are not legible, so top-down follows the family convention","sources":"MX10008 Hardware Guide, the MX10008/MX10016 5G datasheet, the front studio photograph and the rear line drawing g050553"},"version":"1.0.10","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"},{"at":[436.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"}]},"size":{"h":813.0,"w":442.0}},"front":{"components":{"bays":[{"accepts":["juniper/jnp10k-re1@1"],"at":[2.5,22.0],"default":"juniper/jnp10k-re1@1","group":"res","id":"cb0","rel-pos":0,"size":{"h":38.1,"w":389.0}},{"accepts":["juniper/jnp10k-re1@1"],"at":[2.5,60.1],"default":"juniper/jnp10k-re1@1","group":"res","id":"cb1","rel-pos":1,"size":{"h":38.1,"w":389.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,117.0],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc0","rel-pos":0,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,165.4],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc1","rel-pos":1,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,213.8],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc2","rel-pos":2,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,262.2],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc3","rel-pos":3,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,317.6],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc4","rel-pos":4,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,366.0],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc5","rel-pos":5,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,414.4],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc6","rel-pos":6,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,462.8],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc7","rel-pos":7,"size":{"h":48.0,"w":437.0}}],"placements":[{"at":[402.0,46.0],"for":"chassis","group":"status-leds","id":"led-psus","ref":"common/led-dot@1","rel-pos":0,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,52.0],"for":"chassis","group":"status-leds","id":"led-fans","ref":"common/led-dot@1","rel-pos":1,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,58.0],"for":"chassis","group":"status-leds","id":"led-sibs","ref":"common/led-dot@1","rel-pos":2,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,64.0],"for":"chassis","group":"status-leds","id":"led-lcs","ref":"common/led-dot@1","rel-pos":3,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,70.0],"for":"chassis","group":"status-leds","id":"led-cbs","ref":"common/led-dot@1","rel-pos":4,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]}]},"panel":{"cutouts":[{"at":[402.0,46.0],"id":"led-psus","shape":"circle","size":[2.0,2.0]},{"at":[402.0,52.0],"id":"led-fans","shape":"circle","size":[2.0,2.0]},{"at":[402.0,58.0],"id":"led-sibs","shape":"circle","size":[2.0,2.0]},{"at":[402.0,64.0],"id":"led-lcs","shape":"circle","size":[2.0,2.0]},{"at":[402.0,70.0],"id":"led-cbs","shape":"circle","size":[2.0,2.0]}],"decor":[{"at":[0.0,0.0],"fill":"#44484d","size":[442.0,21.0]},{"at":[0.0,19.4],"fill":"#7bc7e0","size":[442.0,1.6]},{"at":[392.5,22.0],"fill":"#4a4f55","size":[47.0,76.2]},{"at":[0.0,98.2],"fill":"#50555b","size":[442.0,18.8]},{"at":[0.0,310.6],"fill":"#50555b","size":[442.0,7.0]},{"at":[0.0,511.2],"fill":"#50555b","size":[442.0,62.8]}]},"silkscreen":[{"anchor":"start","at":[14.0,14.0],"fill":"#f0f1f2","font-size":6.0,"for":"chassis","text":"JUNIPER"},{"anchor":"start","at":[62.0,14.0],"fill":"#c7ccd1","font-size":5.0,"for":"chassis","text":"MX10008"},{"anchor":"end","at":[388.0,11.0],"fill":"#c7ccd1","font-size":1.8,"for":"chassis","text":"RUNNING JUNOS"},{"anchor":"start","at":[406,47.34],"fill":"#e8eaec","font-size":1.1,"for":"led-psus","text":"POWER SUPPLIES"},{"anchor":"start","at":[406,53.34],"fill":"#e8eaec","font-size":1.1,"for":"led-fans","text":"FANS"},{"anchor":"start","at":[406,59.34],"fill":"#e8eaec","font-size":1.1,"for":"led-sibs","text":"SIBS"},{"anchor":"start","at":[406,65.34],"fill":"#e8eaec","font-size":1.1,"for":"led-lcs","text":"LINE CARDS"},{"anchor":"start","at":[406,71.34],"fill":"#e8eaec","font-size":1.1,"for":"led-cbs","text":"CONTROL BOARDS"}],"size":{"h":574.0,"w":442.0}},"left":{"panel":{"decor":[{"at":[0.0,270.0],"confidence":"estimated","fill":"#4a4f55","size":[813.0,30.0],"source":"rail band and side handle; estimated"}]},"size":{"h":574.0,"w":813.0}},"rear":{"components":{"bays":[{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,6.0],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu0","rel-pos":0,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,100.5],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu1","rel-pos":1,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,195.0],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu2","rel-pos":2,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,289.5],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu3","rel-pos":3,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,384.0],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu4","rel-pos":4,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,478.5],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu5","rel-pos":5,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10008-fan@1","juniper/jnp10008-fan2@1","juniper/jnp10008-fan3@1"],"at":[89.0,7.0],"default":"juniper/jnp10008-fan@1","group":"cooling","id":"fan0","rel-pos":0,"size":{"h":560.0,"w":176.0}},{"accepts":["juniper/jnp10008-fan@1","juniper/jnp10008-fan2@1","juniper/jnp10008-fan3@1"],"at":[266.0,7.0],"default":"juniper/jnp10008-fan@1","group":"cooling","id":"fan1","rel-pos":1,"size":{"h":560.0,"w":176.0}}]},"size":{"h":574.0,"w":442.0}},"right":{"panel":{"decor":[{"at":[0.0,270.0],"confidence":"estimated","fill":"#4a4f55","size":[813.0,30.0],"source":"rail band and side handle; estimated"}]},"size":{"h":574.0,"w":813.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"},{"at":[436.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"}]},"size":{"h":813.0,"w":442.0}}}},"view":"front"}</metadata>
+  <metadata>{"config":"base","device":"Juniper MX10008","device-version":"2.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-dot@1":"1.1.0","common/reset-button@1":"1.1.0","common/rj45-eth@1":"1.2.0","juniper/jnp10k-lc-blank@1":"1.0.0","juniper/jnp10k-re1@2":"2.0.0","std/rj45@2":"2.1.0","std/sfp@1":"1.4.0","std/smb@1":"1.0.0","std/usb-a@1":"1.3.0"},"source":{"attrs":{"physical":{"weight-base-kg":133,"weight-empty-kg":65.86}},"chassis":{"color":"#565b61","depth":813.0,"height":574.0,"ru":13,"width":442.0},"configurations":{"base":{"bays":{"fpc0":"juniper/jnp10k-lc-blank@1","fpc1":"juniper/jnp10k-lc-blank@1","fpc2":"juniper/jnp10k-lc-blank@1","fpc3":"juniper/jnp10k-lc-blank@1","fpc4":"juniper/jnp10k-lc-blank@1","fpc5":"juniper/jnp10k-lc-blank@1","fpc6":"juniper/jnp10k-lc-blank@1","fpc7":"juniper/jnp10k-lc-blank@1"},"default":true,"description":"Chassis only - what you spec before deciding what goes in it. The 8 slot bays are EMPTY; cooling, psus, res are populated. Enough to power on and reach the box, which is the question most people ask first and the one `default` used to answer with whatever the drawing happened to be populated with. The line-card slots are drawn EMPTY rather than blanked, which is not the intent: no MX10000-series line-card blank is modelled, and none is named in the staged guides - they document power-supply cover panels only. Every other chassis in the library seats a blank here.","kind":"base","source":"vendor - Juniper publishes this as an orderable bundle. the hardware guide's 'MX10008 Components and Configurations' section lists the components of each configuration, and the line-card covers in this base are its own: it ships sixteen of them on the MX10016 in EVERY configuration, over the note that \"Line cards and the cable management system are not part of the base or redundant configurations. You must order them separately.\" NOT YET FULLY FAITHFUL: the vendor bundle also ships ONE routing engine rather than two, and covers rather than modules in one SFB slot and one power slot. This library seats all of them, because JNP10K-PWR-BLNK and the SF blank are not modelled yet. The line-card half - the part that was drawing holes - is now right."}},"datasheet":{"sha256":"ab3515c71b3176e48185c8a6b686f03f90d8345cf7d067640490e4ef8e22564b","title":"Juniper MX10000 Modular 5G Universal Routing Platforms datasheet (MX10008/MX10016)"},"description":"Juniper MX10008 - the 13RU, eight-slot MX10000 chassis. Two JNP10K-RE1 Routing and Control Boards stack under the badge strip beside the status lamp panel; eight full-width line-card slots (FPC 0-7) fill the front in two banks of four. The rear is a six-high PSU stack beside two tall fan trays covering the Switch Interface Boards.","format":1,"gaps":[{"reason":"needs-photo","scope":["res"],"wanted":"a photograph of a real RCB's model label. The board in this chassis's own photographs carries four SFP cages numbered 0-3 and no BITS, ToD, RESET or Online/Offline hardware, which matches neither Juniper faceplate figure - not Figure 46 (JNP10K-RE1 family, two reserved XGE cages) nor Figure 45 (JNP10K-RE3 family). juniper/jnp10k-re1@2 follows the figure it is named for; the detail is in provenance/which-board-the-photographs-show on that contract. The label does not resolve at the scale of any photograph held here.","what":"rcb-which-board"},{"reason":"needs-photo","wanted":"a photograph of the rear - only the isometric line drawing g050553 exists, so PSU stack and fan tray geometry are fractional readings and finish is inferred.","what":"rear-photo"},{"reason":"needs-photo","scope":["psus"],"wanted":"the JNP10K-PWR-AC3 (four-feed) and DC faces; only AC2 is modelled.","what":"psu-variants"},{"reason":"needs-photo","scope":["fpcs"],"wanted":"LC4800/LC4802 faceplates - named with dimensions and power in the guides but with no usable face art in the extraction.","what":"line-card-catalogue"},{"reason":"vendor-silent","scope":["cooling"],"wanted":"per-tray power draw - not in the extraction's text layer.","what":"fan-tray-power"}],"groups":{"cooling":{"description":"two tall fan trays; SIBs sit behind them","index-origin":0,"role":"service","term":"Tray"},"fpcs":{"description":"line-card slots FPC 0-7, numbered top-down","index-origin":0,"role":"traffic","term":"Slot"},"psus":{"attrs":{"redundancy":"n+1","redundancy-note":"n+1 - three power supplies for minimum operation; additional supplies provide n+1 redundancy (2n source redundancy on the feeds)"},"description":"six power supply slots, one stack at the rear left","index-origin":0,"role":"service","term":"PSU"},"res":{"attrs":{"redundancy":"1+1","redundancy-note":"1+1 - mx10008 hardware guide, \"MX10008 Component Redundancy\": one RCB in the base configuration, two in the redundant one; with two fitted one is primary and the other backup, and the backup takes over if the primary or any part of it fails. The RCB consolidates the Routing Engine function with the control plane function in a single unit, so this one form covers both"},"description":"Routing and Control Board slots CB0 and CB1","index-origin":0,"role":"service","term":"Slot"},"status-leds":{"description":"the chassis status lamp panel beside the RCBs","index-origin":0,"role":"indicator","term":"LED"}},"kind":"device","manufacturer":"Juniper","maturity":"modelled","model":"MX10008","name":"mx10008","portfolio":{"family":"MX10000 Universal Routing Platform","line":"MX Series"},"profile":"networking","provenance":{"chassis":{"confidence":"datasheet","note":"datasheet-table - 22.6 x 17.4 x 32 in (574 x 442 x 813 mm chassis only), 13U; flange extends the rack face to 19 in. Ears NOT MODELLED by convention"},"color":{"note":"photo - dark grey chassis, silver card faces, light-blue levers and accent line (as MX10004)"},"front":{"note":"photo - the front photograph at ~2.99 px/mm across the 442 mm body: badge strip 0-21, RCB slots at y 22.0 and 60.1 (1.5 in slot height as MX10004), service band to y 117, line-card banks at y 117.0 + i*48.4 and y 317.6 + i*48.4 with the thin divider between them; positions approximate to ~2 mm"},"other-faces":{"note":"near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as the siblings"},"power":{"confidence":"datasheet","note":"datasheet-table - JNP10K-PWR-AC2 5.5 kW each as the MX10004; the guide also lists the AC3 unit (gap)"},"rear":{"confidence":"drawing","note":"drawing - g050553 (isometric, fractions only): one six-high stack of JNP10K-PWR supplies at the left, two tall fan trays right. The MX10008 rear has no usable photograph in the intake - see gaps"},"slot-numbering":{"note":"guide - FPC 0-7 top-down (the CLI terminology table maps FPC n, n 0-7, to the slots); the photograph's slot labels are not legible, so top-down follows the family convention"},"sources":{"note":"MX10008 Hardware Guide, the MX10008/MX10016 5G datasheet, the front studio photograph and the rear line drawing g050553"}},"references":[{"sha256":"a7b68beb8f0e21bf6f7e4b279ac62a0c8adccfcfc9925dff72ffe07b2c152d2d","title":"Juniper MX10008 Universal Routing Platform Hardware Guide (2026-08-25)"}],"version":"2.0.0","views":{"bottom":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"},{"at":[436.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"}]},"size":{"h":813.0,"w":442.0}},"front":{"components":{"bays":[{"accepts":["juniper/jnp10k-re1@2"],"at":[2.5,22.0],"default":"juniper/jnp10k-re1@2","group":"res","id":"cb0","rel-pos":0,"size":{"h":38.1,"w":389.0}},{"accepts":["juniper/jnp10k-re1@2"],"at":[2.5,60.1],"default":"juniper/jnp10k-re1@2","group":"res","id":"cb1","rel-pos":1,"size":{"h":38.1,"w":389.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,117.0],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc0","rel-pos":0,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,165.4],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc1","rel-pos":1,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,213.8],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc2","rel-pos":2,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,262.2],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc3","rel-pos":3,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,317.6],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc4","rel-pos":4,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,366.0],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc5","rel-pos":5,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,414.4],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc6","rel-pos":6,"size":{"h":48.0,"w":437.0}},{"accepts":["juniper/jnp10k-lc2101@1","juniper/jnp10k-lc9600@1","juniper/jnp10k-lc480@1","juniper/jnp10k-lc-blank@1"],"at":[2.5,462.8],"default":"juniper/jnp10k-lc2101@1","group":"fpcs","id":"fpc7","rel-pos":7,"size":{"h":48.0,"w":437.0}}],"placements":[{"at":[402.0,46.0],"for":"chassis","group":"status-leds","id":"led-psus","ref":"common/led-dot@1","rel-pos":0,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,52.0],"for":"chassis","group":"status-leds","id":"led-fans","ref":"common/led-dot@1","rel-pos":1,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,58.0],"for":"chassis","group":"status-leds","id":"led-sibs","ref":"common/led-dot@1","rel-pos":2,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,64.0],"for":"chassis","group":"status-leds","id":"led-lcs","ref":"common/led-dot@1","rel-pos":3,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]},{"at":[402.0,70.0],"for":"chassis","group":"status-leds","id":"led-cbs","ref":"common/led-dot@1","rel-pos":4,"states":["off",{"color":"#22c55e","name":"ok"},{"color":"#ef4444","name":"fault"}]}]},"panel":{"cutouts":[{"at":[402.0,46.0],"id":"led-psus","shape":"circle","size":[2.0,2.0]},{"at":[402.0,52.0],"id":"led-fans","shape":"circle","size":[2.0,2.0]},{"at":[402.0,58.0],"id":"led-sibs","shape":"circle","size":[2.0,2.0]},{"at":[402.0,64.0],"id":"led-lcs","shape":"circle","size":[2.0,2.0]},{"at":[402.0,70.0],"id":"led-cbs","shape":"circle","size":[2.0,2.0]}],"decor":[{"at":[0.0,0.0],"fill":"#44484d","size":[442.0,21.0]},{"at":[0.0,19.4],"fill":"#7bc7e0","size":[442.0,1.6]},{"at":[392.5,22.0],"fill":"#4a4f55","size":[47.0,76.2]},{"at":[0.0,98.2],"fill":"#50555b","size":[442.0,18.8]},{"at":[0.0,310.6],"fill":"#50555b","size":[442.0,7.0]},{"at":[0.0,511.2],"fill":"#50555b","size":[442.0,62.8]}]},"silkscreen":[{"anchor":"start","at":[14.0,14.0],"fill":"#f0f1f2","font-size":6.0,"for":"chassis","text":"JUNIPER"},{"anchor":"start","at":[62.0,14.0],"fill":"#c7ccd1","font-size":5.0,"for":"chassis","text":"MX10008"},{"anchor":"end","at":[388.0,11.0],"fill":"#c7ccd1","font-size":1.8,"for":"chassis","text":"RUNNING JUNOS"},{"anchor":"start","at":[406,47.34],"fill":"#e8eaec","font-size":1.1,"for":"led-psus","text":"POWER SUPPLIES"},{"anchor":"start","at":[406,53.34],"fill":"#e8eaec","font-size":1.1,"for":"led-fans","text":"FANS"},{"anchor":"start","at":[406,59.34],"fill":"#e8eaec","font-size":1.1,"for":"led-sibs","text":"SIBS"},{"anchor":"start","at":[406,65.34],"fill":"#e8eaec","font-size":1.1,"for":"led-lcs","text":"LINE CARDS"},{"anchor":"start","at":[406,71.34],"fill":"#e8eaec","font-size":1.1,"for":"led-cbs","text":"CONTROL BOARDS"}],"size":{"h":574.0,"w":442.0}},"left":{"panel":{"decor":[{"at":[0.0,270.0],"confidence":"estimated","fill":"#4a4f55","size":[813.0,30.0],"source":"rail band and side handle; estimated"}]},"size":{"h":574.0,"w":813.0}},"rear":{"components":{"bays":[{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,6.0],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu0","rel-pos":0,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,100.5],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu1","rel-pos":1,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,195.0],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu2","rel-pos":2,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,289.5],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu3","rel-pos":3,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,384.0],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu4","rel-pos":4,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10k-pwr-ac2@1"],"at":[3.0,478.5],"default":"juniper/jnp10k-pwr-ac2@1","group":"psus","id":"psu5","rel-pos":5,"size":{"h":93.5,"w":84.0}},{"accepts":["juniper/jnp10008-fan@1","juniper/jnp10008-fan2@1","juniper/jnp10008-fan3@1"],"at":[89.0,7.0],"default":"juniper/jnp10008-fan@1","group":"cooling","id":"fan0","rel-pos":0,"size":{"h":560.0,"w":176.0}},{"accepts":["juniper/jnp10008-fan@1","juniper/jnp10008-fan2@1","juniper/jnp10008-fan3@1"],"at":[266.0,7.0],"default":"juniper/jnp10008-fan@1","group":"cooling","id":"fan1","rel-pos":1,"size":{"h":560.0,"w":176.0}}]},"size":{"h":574.0,"w":442.0}},"right":{"panel":{"decor":[{"at":[0.0,270.0],"confidence":"estimated","fill":"#4a4f55","size":[813.0,30.0],"source":"rail band and side handle; estimated"}]},"size":{"h":574.0,"w":813.0}},"top":{"panel":{"decor":[{"at":[0.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"},{"at":[436.0,0.0],"confidence":"estimated","fill":"#4a4f55","size":[6.0,813.0],"source":"side edge; estimated"}]},"size":{"h":813.0,"w":442.0}}}},"view":"front"}</metadata>
   <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="MX10008" x="0" y="0" width="442" height="574" rx="1.2" fill="#565b61" stroke="#22262a" stroke-width="0.5" />
   <g id="--decor" data-class="decor">
     <rect id="plate-0" data-kind="plate" x="0" y="0" width="442" height="21" rx="0.6" fill="#44484d" />
@@ -64,27 +70,27 @@
     <text x="406" y="65.34" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-lcs">LINE CARDS</text>
     <text x="406" y="71.34" font-family="sans-serif" font-size="1.1" text-anchor="start" fill="#e8eaec" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-cbs">CONTROL BOARDS</text>
   </g>
-  <g id="led-psus" data-path="led-psus" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="0" transform="translate(402.0,46.0)" data-group-role="indicator" data-states="off ok fault" data-description="the chassis status lamp panel beside the RCBs" data-for="chassis">
+  <g id="led-psus" data-path="led-psus" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="0" transform="translate(402.0,46.0)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
     <title>led-psus</title>
     <circle id="led-psus--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
     <circle id="led-psus--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-psus/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
   </g>
-  <g id="led-fans" data-path="led-fans" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="1" transform="translate(402.0,52.0)" data-group-role="indicator" data-states="off ok fault" data-description="the chassis status lamp panel beside the RCBs" data-for="chassis">
+  <g id="led-fans" data-path="led-fans" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(402.0,52.0)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
     <title>led-fans</title>
     <circle id="led-fans--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
     <circle id="led-fans--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-fans/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
   </g>
-  <g id="led-sibs" data-path="led-sibs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="2" transform="translate(402.0,58.0)" data-group-role="indicator" data-states="off ok fault" data-description="the chassis status lamp panel beside the RCBs" data-for="chassis">
+  <g id="led-sibs" data-path="led-sibs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(402.0,58.0)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
     <title>led-sibs</title>
     <circle id="led-sibs--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
     <circle id="led-sibs--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sibs/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
   </g>
-  <g id="led-lcs" data-path="led-lcs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="3" transform="translate(402.0,64.0)" data-group-role="indicator" data-states="off ok fault" data-description="the chassis status lamp panel beside the RCBs" data-for="chassis">
+  <g id="led-lcs" data-path="led-lcs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="3" transform="translate(402.0,64.0)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
     <title>led-lcs</title>
     <circle id="led-lcs--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
     <circle id="led-lcs--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-lcs/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
   </g>
-  <g id="led-cbs" data-path="led-cbs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-group="status-leds" data-rel-pos="4" transform="translate(402.0,70.0)" data-group-role="indicator" data-states="off ok fault" data-description="the chassis status lamp panel beside the RCBs" data-for="chassis">
+  <g id="led-cbs" data-path="led-cbs" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="4" transform="translate(402.0,70.0)" data-group="status-leds" data-group-role="indicator" data-description="the chassis status lamp panel beside the RCBs" data-states="off ok fault" data-for="chassis">
     <title>led-cbs</title>
     <circle id="led-cbs--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
     <circle id="led-cbs--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-cbs/lamp" data-class="led" data-states="off ok fault" data-z-dome="0.3" />
@@ -92,7 +98,7 @@
   <g id="cb0" data-path="cb0" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="0">
     <title>cb0</title>
     <rect id="cb0--opening" x="2.5" y="22" width="389" height="38.1" fill="#101214" />
-    <g id="cb0--module" data-path="cb0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp10k-re1@1:1.1.0" data-model="JNP10K-RE1" data-power-draw-max-w="175" data-states="ok fail absent" transform="translate(197,41.05) translate(-194.5,-19.05)">
+    <g id="cb0--module" data-path="cb0/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp10k-re1@2:2.0.0" data-model="JNP10K-RE1" data-power-draw-max-w="175" data-sfp="3" data-states="ok fail absent" transform="translate(197,41.05) translate(-194.5,-19.05)">
       <title>cb0--module</title>
       <rect id="cb0--module--face" x="0" y="0" width="389.0" height="38.1" rx="0.6" fill="#c3c7cb" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="cb0--module--vents">
@@ -3745,7 +3751,6 @@
         <polygon points="383.40,34.62 382.75,35.00 382.10,34.62 382.10,33.88 382.75,33.50 383.40,33.88" fill="#b0b4b8" />
         <polygon points="385.40,34.62 384.75,35.00 384.10,34.62 384.10,33.88 384.75,33.50 385.40,33.88" fill="#b0b4b8" />
       </g>
-      <rect x="16.0" y="3.0" width="290.0" height="32.1" rx="0.8" fill="#c3c7cb" />
       <g id="cb0--module--lever-left">
         <rect x="2.0" y="4.0" width="9.0" height="30.0" rx="3.78" fill="#a9d3e6" stroke="#6fa8c0" stroke-width="0.5" />
         <rect x="4.699999999999999" y="14.5" width="3.6" height="9" rx="1.8" fill="#8fc0d6" />
@@ -3755,79 +3760,98 @@
         <rect x="380.7" y="14.5" width="3.6" height="9" rx="1.8" fill="#8fc0d6" />
       </g>
       <g id="cb0--module--lamps">
-        <circle id="cb0--module--led-mst" cx="19.5" cy="8.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
-        <circle id="cb0--module--led-pwr" cx="19.5" cy="15.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
-        <circle id="cb0--module--led-sts" cx="19.5" cy="22.0" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
-        <circle id="cb0--module--led-off" cx="19.5" cy="29.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
-      </g>
-      <g id="cb0--module--ssd-door">
-        <rect x="171.0" y="6.5" width="83.0" height="25.0" rx="1.2" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
-        <circle cx="166.0" cy="19.0" r="2.0" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.35" />
-        <circle cx="259.0" cy="19.0" r="2.0" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle id="cb0--module--led-pwr" cx="30.8" cy="15.8" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-pwr" data-class="led" data-states="off ok fault" />
+        <circle id="cb0--module--led-sts" cx="30.8" cy="21.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-sts" data-class="led" data-states="off ok booting fault" />
+        <circle id="cb0--module--led-master" cx="30.8" cy="27.3" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-master" data-class="led" data-states="off primary" />
+        <circle id="cb0--module--led-link-mgmt" cx="85.0" cy="8.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-link-mgmt" data-class="led" data-states="off link" />
+        <circle id="cb0--module--led-disk1" cx="117.8" cy="21.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-disk1" data-class="led" data-states="off present" />
+        <circle id="cb0--module--led-disk2" cx="117.9" cy="27.0" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-disk2" data-class="led" data-states="off present" />
+        <circle id="cb0--module--led-bits-1" cx="198.4" cy="21.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-bits-1" data-class="led" data-states="off fault" />
+        <circle id="cb0--module--led-bits-0" cx="198.4" cy="27.1" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-bits-0" data-class="led" data-states="off fault" />
+        <circle id="cb0--module--led-link-xge-0" cx="288.4" cy="7.0" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-link-xge-0" data-class="led" data-states="off link" />
+        <circle id="cb0--module--led-link-xge-1" cx="311.3" cy="7.0" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb0/module/led-link-xge-1" data-class="led" data-states="off link" />
       </g>
       <g id="cb0--module--silkscreen">
         <g id="cb0--module--t1-silkscreen">
-          <text x="23.0" y="8.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">MST</text>
+          <text x="28.6" y="16.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">PWR</text>
         </g>
         <g id="cb0--module--t2-silkscreen">
-          <text x="23.0" y="15.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">PWR</text>
+          <text x="28.6" y="21.9" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">STS</text>
         </g>
         <g id="cb0--module--t3-silkscreen">
-          <text x="23.0" y="22.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">STS</text>
+          <text x="28.6" y="27.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">MASTER</text>
         </g>
         <g id="cb0--module--t4-silkscreen">
-          <text x="23.0" y="29.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">OFF</text>
+          <text x="45.7" y="12.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
         </g>
         <g id="cb0--module--t5-silkscreen">
-          <text x="31.0" y="33.9" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">CON</text>
+          <text x="87.4" y="8.9" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">LINK</text>
         </g>
         <g id="cb0--module--t6-silkscreen">
-          <text x="53.0" y="5.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">PPS</text>
+          <text x="76.8" y="34.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">MGMT</text>
         </g>
         <g id="cb0--module--t7-silkscreen">
-          <text x="76.0" y="5.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">10MHZ</text>
+          <text x="106.4" y="34.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB</text>
         </g>
         <g id="cb0--module--t8-silkscreen">
-          <text x="47.0" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">IN</text>
+          <text x="117.8" y="18.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">DISK1</text>
         </g>
         <g id="cb0--module--t9-silkscreen">
-          <text x="59.5" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">OUT</text>
+          <text x="117.9" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">DISK2</text>
         </g>
         <g id="cb0--module--t10-silkscreen">
-          <text x="70.0" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">IN</text>
+          <text x="129.2" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">OFF</text>
         </g>
         <g id="cb0--module--t11-silkscreen">
-          <text x="82.5" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">OUT</text>
+          <text x="191.1" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">RESET</text>
         </g>
         <g id="cb0--module--t12-silkscreen">
-          <text x="92.0" y="33.9" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">MGMT</text>
+          <text x="198.4" y="18.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-1</text>
         </g>
         <g id="cb0--module--t13-silkscreen">
-          <text x="121.5" y="30.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">SFP</text>
+          <text x="198.4" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-0</text>
         </g>
         <g id="cb0--module--t14-silkscreen">
-          <text x="141.0" y="30.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB</text>
+          <text x="212.7" y="6.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-1</text>
         </g>
         <g id="cb0--module--t15-silkscreen">
-          <text x="266.0" y="20.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="start">SSD</text>
+          <text x="212.7" y="37.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-0</text>
         </g>
         <g id="cb0--module--t16-silkscreen">
-          <text x="305.0" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">0</text>
+          <text x="239.6" y="12.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">ToD</text>
         </g>
         <g id="cb0--module--t17-silkscreen">
-          <text x="319.25" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">1</text>
+          <text x="255.1" y="12.6" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">1PPS</text>
         </g>
         <g id="cb0--module--t18-silkscreen">
-          <text x="333.5" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">2</text>
+          <text x="265.2" y="12.6" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">10MHz</text>
         </g>
         <g id="cb0--module--t19-silkscreen">
-          <text x="347.75" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">3</text>
+          <text x="250.4" y="18.0" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="end">IN</text>
         </g>
         <g id="cb0--module--t20-silkscreen">
-          <text x="374.0" y="35.5" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">JNP10K-RE1</text>
+          <text x="250.4" y="26.9" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="end">OUT</text>
+        </g>
+        <g id="cb0--module--t21-silkscreen">
+          <text x="269.9" y="18.0" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="start">IN</text>
+        </g>
+        <g id="cb0--module--t22-silkscreen">
+          <text x="269.9" y="26.9" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="start">OUT</text>
+        </g>
+        <g id="cb0--module--t23-silkscreen">
+          <text x="299.9" y="7.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">LINK</text>
+        </g>
+        <g id="cb0--module--t24-silkscreen">
+          <text x="290.6" y="32.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">XGE-0</text>
+        </g>
+        <g id="cb0--module--t25-silkscreen">
+          <text x="310.1" y="32.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">XGE-1</text>
+        </g>
+        <g id="cb0--module--t26-silkscreen">
+          <text x="374.0" y="3.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">JNP10K-RE1</text>
         </g>
       </g>
-      <g id="cb0--module--con" data-path="cb0/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(23.1,12.4)">
+      <g id="cb0--module--con" data-path="cb0/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(37.8,14.8)">
         <title>cb0--module--con</title>
         <path id="cb0--module--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
         <path id="cb0--module--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
@@ -3842,44 +3866,9 @@
           <rect x="10.22" y="2.6" width="0.46" height="2.3" />
           <rect x="11.24" y="2.6" width="0.46" height="2.3" />
         </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
       </g>
-      <g id="cb0--module--pps-in" data-path="cb0/module/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS in" data-media="coax-smb" transform="translate(44.6,8.0)">
-        <title>cb0--module--pps-in</title>
-        <circle id="cb0--module--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/pps-in/opening" data-class="cutout" />
-        <g id="cb0--module--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb0--module--pps-out" data-path="cb0/module/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS out" data-media="coax-smb" transform="translate(57.1,8.0)">
-        <title>cb0--module--pps-out</title>
-        <circle id="cb0--module--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/pps-out/opening" data-class="cutout" />
-        <g id="cb0--module--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb0--module--mhz-in" data-path="cb0/module/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(67.6,8.0)">
-        <title>cb0--module--mhz-in</title>
-        <circle id="cb0--module--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/mhz-in/opening" data-class="cutout" />
-        <g id="cb0--module--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb0--module--mhz-out" data-path="cb0/module/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(80.1,8.0)">
-        <title>cb0--module--mhz-out</title>
-        <circle id="cb0--module--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/mhz-out/opening" data-class="cutout" />
-        <g id="cb0--module--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb0--module--mgmt" data-path="cb0/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(84.1,12.4)">
+      <g id="cb0--module--mgmt" data-path="cb0/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(59.6,14.8)">
         <title>cb0--module--mgmt</title>
         <g id="cb0--module--mgmt--jack" data-path="cb0/module/mgmt/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
           <title>cb0--module--mgmt--jack</title>
@@ -3896,62 +3885,153 @@
             <rect x="10.22" y="2.6" width="0.46" height="2.3" />
             <rect x="11.24" y="2.6" width="0.46" height="2.3" />
           </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
         </g>
         <path id="cb0--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
         <rect id="cb0--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cb0/module/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
         <rect id="cb0--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cb0/module/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
       </g>
-      <g id="cb0--module--sfp-mgmt" data-path="cb0/module/sfp-mgmt" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="management SFP" data-media="sfp" transform="translate(114.25,15.0)">
-        <title>cb0--module--sfp-mgmt</title>
-        <rect id="cb0--module--sfp-mgmt--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/sfp-mgmt/opening" data-class="cutout" />
-        <rect id="cb0--module--sfp-mgmt--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb0--module--sfp-mgmt--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb0--module--sfp-mgmt--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb0--module--sfp-mgmt--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb0--module--mgmt-sfp" data-path="cb0/module/mgmt-sfp" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="management SFP" data-media="sfp" transform="translate(78.85,16.4)">
+        <title>cb0--module--mgmt-sfp</title>
+        <rect id="cb0--module--mgmt-sfp--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/mgmt-sfp/opening" data-class="cutout" />
+        <rect id="cb0--module--mgmt-sfp--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--mgmt-sfp--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--mgmt-sfp--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--mgmt-sfp--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
       </g>
-      <g id="cb0--module--usb" data-path="cb0/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(138.75,15.75) rotate(90 6.0 2.25)">
+      <g id="cb0--module--usb" data-path="cb0/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(100.4,19.15) rotate(90 6.0 2.25)">
         <title>cb0--module--usb</title>
         <rect id="cb0--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="cb0/module/usb/opening" data-class="cutout" />
         <rect id="cb0--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
       </g>
-      <g id="cb0--module--port-0" data-path="cb0/module/port-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(297.75,9.0)">
-        <title>cb0--module--port-0</title>
-        <rect id="cb0--module--port-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/port-0/opening" data-class="cutout" />
-        <rect id="cb0--module--port-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb0--module--port-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb0--module--port-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb0--module--port-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb0--module--offline" data-path="cb0/module/offline" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="online/offline" transform="translate(127.2,32.0)">
+        <title>cb0--module--offline</title>
+        <circle id="cb0--module--offline--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="cb0--module--offline--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="cb0/module/offline/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
       </g>
-      <g id="cb0--module--port-1" data-path="cb0/module/port-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(312.0,9.0)">
-        <title>cb0--module--port-1</title>
-        <rect id="cb0--module--port-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/port-1/opening" data-class="cutout" />
-        <rect id="cb0--module--port-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb0--module--port-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb0--module--port-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb0--module--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb0--module--reset" data-path="cb0/module/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" transform="translate(189.1,32.0)">
+        <title>cb0--module--reset</title>
+        <circle id="cb0--module--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="cb0--module--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="cb0/module/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
       </g>
-      <g id="cb0--module--port-2" data-path="cb0/module/port-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(326.25,9.0)">
-        <title>cb0--module--port-2</title>
-        <rect id="cb0--module--port-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/port-2/opening" data-class="cutout" />
-        <rect id="cb0--module--port-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb0--module--port-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb0--module--port-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb0--module--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb0--module--bits-1" data-path="cb0/module/bits-1" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS1 timing" data-media="rj45" transform="translate(204.8,7.9)">
+        <title>cb0--module--bits-1</title>
+        <path id="cb0--module--bits-1--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--bits-1--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--bits-1--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb0/module/bits-1/opening" data-class="cutout" />
+        <g id="cb0--module--bits-1--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
       </g>
-      <g id="cb0--module--port-3" data-path="cb0/module/port-3" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(340.5,9.0)">
-        <title>cb0--module--port-3</title>
-        <rect id="cb0--module--port-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/port-3/opening" data-class="cutout" />
-        <rect id="cb0--module--port-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb0--module--port-3--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb0--module--port-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb0--module--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb0--module--bits-0" data-path="cb0/module/bits-0" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS0 timing" data-media="rj45" transform="translate(204.8,21.4)">
+        <title>cb0--module--bits-0</title>
+        <path id="cb0--module--bits-0--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--bits-0--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--bits-0--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb0/module/bits-0/opening" data-class="cutout" />
+        <g id="cb0--module--bits-0--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--tod" data-path="cb0/module/tod" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="time of day" data-media="rj45" transform="translate(231.7,14.8)">
+        <title>cb0--module--tod</title>
+        <path id="cb0--module--tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--tod--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb0--module--tod--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb0/module/tod/opening" data-class="cutout" />
+        <g id="cb0--module--tod--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--pps-in" data-path="cb0/module/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS in" data-media="coax-smb" transform="translate(252.7,15.2)">
+        <title>cb0--module--pps-in</title>
+        <circle id="cb0--module--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/pps-in/opening" data-class="cutout" />
+        <g id="cb0--module--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--mhz-in" data-path="cb0/module/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(262.8,15.2)">
+        <title>cb0--module--mhz-in</title>
+        <circle id="cb0--module--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/mhz-in/opening" data-class="cutout" />
+        <g id="cb0--module--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--pps-out" data-path="cb0/module/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS out" data-media="coax-smb" transform="translate(252.7,24.1)">
+        <title>cb0--module--pps-out</title>
+        <circle id="cb0--module--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/pps-out/opening" data-class="cutout" />
+        <g id="cb0--module--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--mhz-out" data-path="cb0/module/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(262.8,24.1)">
+        <title>cb0--module--mhz-out</title>
+        <circle id="cb0--module--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb0/module/mhz-out/opening" data-class="cutout" />
+        <g id="cb0--module--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--xge-0" data-path="cb0/module/xge-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved - Juniper marks these not used" data-media="sfp-plus" transform="translate(283.35,16.4)">
+        <title>cb0--module--xge-0</title>
+        <rect id="cb0--module--xge-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/xge-0/opening" data-class="cutout" />
+        <rect id="cb0--module--xge-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--xge-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--xge-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--xge-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="cb0--module--xge-1" data-path="cb0/module/xge-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved - Juniper marks these not used" data-media="sfp-plus" transform="translate(302.85,16.4)">
+        <title>cb0--module--xge-1</title>
+        <rect id="cb0--module--xge-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb0/module/xge-1/opening" data-class="cutout" />
+        <rect id="cb0--module--xge-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb0--module--xge-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb0--module--xge-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb0--module--xge-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
       </g>
     </g>
   </g>
   <g id="cb1" data-path="cb1" data-class="bay" data-group="res" data-group-role="service" data-rel-pos="1">
     <title>cb1</title>
     <rect id="cb1--opening" x="2.5" y="60.1" width="389" height="38.1" fill="#101214" />
-    <g id="cb1--module" data-path="cb1/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp10k-re1@1:1.1.0" data-model="JNP10K-RE1" data-power-draw-max-w="175" data-states="ok fail absent" transform="translate(197,79.15) translate(-194.5,-19.05)">
+    <g id="cb1--module" data-path="cb1/module" data-class="supervisor" data-behaviour="fills" data-ref="juniper/jnp10k-re1@2:2.0.0" data-model="JNP10K-RE1" data-power-draw-max-w="175" data-sfp="3" data-states="ok fail absent" transform="translate(197,79.15) translate(-194.5,-19.05)">
       <title>cb1--module</title>
       <rect id="cb1--module--face" x="0" y="0" width="389.0" height="38.1" rx="0.6" fill="#c3c7cb" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="cb1--module--vents">
@@ -7604,7 +7684,6 @@
         <polygon points="383.40,34.62 382.75,35.00 382.10,34.62 382.10,33.88 382.75,33.50 383.40,33.88" fill="#b0b4b8" />
         <polygon points="385.40,34.62 384.75,35.00 384.10,34.62 384.10,33.88 384.75,33.50 385.40,33.88" fill="#b0b4b8" />
       </g>
-      <rect x="16.0" y="3.0" width="290.0" height="32.1" rx="0.8" fill="#c3c7cb" />
       <g id="cb1--module--lever-left">
         <rect x="2.0" y="4.0" width="9.0" height="30.0" rx="3.78" fill="#a9d3e6" stroke="#6fa8c0" stroke-width="0.5" />
         <rect x="4.699999999999999" y="14.5" width="3.6" height="9" rx="1.8" fill="#8fc0d6" />
@@ -7614,79 +7693,98 @@
         <rect x="380.7" y="14.5" width="3.6" height="9" rx="1.8" fill="#8fc0d6" />
       </g>
       <g id="cb1--module--lamps">
-        <circle id="cb1--module--led-mst" cx="19.5" cy="8.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
-        <circle id="cb1--module--led-pwr" cx="19.5" cy="15.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
-        <circle id="cb1--module--led-sts" cx="19.5" cy="22.0" r="0.8" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" />
-        <circle id="cb1--module--led-off" cx="19.5" cy="29.0" r="0.8" fill="#0f1113" stroke="#33373c" stroke-width="0.25" />
-      </g>
-      <g id="cb1--module--ssd-door">
-        <rect x="171.0" y="6.5" width="83.0" height="25.0" rx="1.2" fill="#565b61" stroke="#44484d" stroke-width="0.5" />
-        <circle cx="166.0" cy="19.0" r="2.0" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.35" />
-        <circle cx="259.0" cy="19.0" r="2.0" fill="#aeb3b9" stroke="#7d8288" stroke-width="0.35" />
+        <circle id="cb1--module--led-pwr" cx="30.8" cy="15.8" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-pwr" data-class="led" data-states="off ok fault" />
+        <circle id="cb1--module--led-sts" cx="30.8" cy="21.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-sts" data-class="led" data-states="off ok booting fault" />
+        <circle id="cb1--module--led-master" cx="30.8" cy="27.3" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-master" data-class="led" data-states="off primary" />
+        <circle id="cb1--module--led-link-mgmt" cx="85.0" cy="8.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-link-mgmt" data-class="led" data-states="off link" />
+        <circle id="cb1--module--led-disk1" cx="117.8" cy="21.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-disk1" data-class="led" data-states="off present" />
+        <circle id="cb1--module--led-disk2" cx="117.9" cy="27.0" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-disk2" data-class="led" data-states="off present" />
+        <circle id="cb1--module--led-bits-1" cx="198.4" cy="21.5" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-bits-1" data-class="led" data-states="off fault" />
+        <circle id="cb1--module--led-bits-0" cx="198.4" cy="27.1" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-bits-0" data-class="led" data-states="off fault" />
+        <circle id="cb1--module--led-link-xge-0" cx="288.4" cy="7.0" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-link-xge-0" data-class="led" data-states="off link" />
+        <circle id="cb1--module--led-link-xge-1" cx="311.3" cy="7.0" r="1.3" fill="var(--led-color, #3a3f44)" stroke="#33373c" stroke-width="0.25" data-path="cb1/module/led-link-xge-1" data-class="led" data-states="off link" />
       </g>
       <g id="cb1--module--silkscreen">
         <g id="cb1--module--t1-silkscreen">
-          <text x="23.0" y="8.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">MST</text>
+          <text x="28.6" y="16.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">PWR</text>
         </g>
         <g id="cb1--module--t2-silkscreen">
-          <text x="23.0" y="15.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">PWR</text>
+          <text x="28.6" y="21.9" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">STS</text>
         </g>
         <g id="cb1--module--t3-silkscreen">
-          <text x="23.0" y="22.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">STS</text>
+          <text x="28.6" y="27.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">MASTER</text>
         </g>
         <g id="cb1--module--t4-silkscreen">
-          <text x="23.0" y="29.7" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">OFF</text>
+          <text x="45.7" y="12.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">CONSOLE</text>
         </g>
         <g id="cb1--module--t5-silkscreen">
-          <text x="31.0" y="33.9" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">CON</text>
+          <text x="87.4" y="8.9" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="start">LINK</text>
         </g>
         <g id="cb1--module--t6-silkscreen">
-          <text x="53.0" y="5.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">PPS</text>
+          <text x="76.8" y="34.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">MGMT</text>
         </g>
         <g id="cb1--module--t7-silkscreen">
-          <text x="76.0" y="5.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">10MHZ</text>
+          <text x="106.4" y="34.4" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB</text>
         </g>
         <g id="cb1--module--t8-silkscreen">
-          <text x="47.0" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">IN</text>
+          <text x="117.8" y="18.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">DISK1</text>
         </g>
         <g id="cb1--module--t9-silkscreen">
-          <text x="59.5" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">OUT</text>
+          <text x="117.9" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">DISK2</text>
         </g>
         <g id="cb1--module--t10-silkscreen">
-          <text x="70.0" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">IN</text>
+          <text x="129.2" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">OFF</text>
         </g>
         <g id="cb1--module--t11-silkscreen">
-          <text x="82.5" y="25.6" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="middle">OUT</text>
+          <text x="191.1" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">RESET</text>
         </g>
         <g id="cb1--module--t12-silkscreen">
-          <text x="92.0" y="33.9" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">MGMT</text>
+          <text x="198.4" y="18.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-1</text>
         </g>
         <g id="cb1--module--t13-silkscreen">
-          <text x="121.5" y="30.0" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">SFP</text>
+          <text x="198.4" y="31.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-0</text>
         </g>
         <g id="cb1--module--t14-silkscreen">
-          <text x="141.0" y="30.5" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">USB</text>
+          <text x="212.7" y="6.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-1</text>
         </g>
         <g id="cb1--module--t15-silkscreen">
-          <text x="266.0" y="20.0" font-family="Arial" font-size="1.5" fill="#3a3e43" text-anchor="start">SSD</text>
+          <text x="212.7" y="37.0" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">BITS-0</text>
         </g>
         <g id="cb1--module--t16-silkscreen">
-          <text x="305.0" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">0</text>
+          <text x="239.6" y="12.2" font-family="Arial" font-size="1.2" fill="#3a3e43" text-anchor="middle">ToD</text>
         </g>
         <g id="cb1--module--t17-silkscreen">
-          <text x="319.25" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">1</text>
+          <text x="255.1" y="12.6" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">1PPS</text>
         </g>
         <g id="cb1--module--t18-silkscreen">
-          <text x="333.5" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">2</text>
+          <text x="265.2" y="12.6" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">10MHz</text>
         </g>
         <g id="cb1--module--t19-silkscreen">
-          <text x="347.75" y="7.0" font-family="Arial" font-size="1.3" fill="#3a3e43" text-anchor="middle">3</text>
+          <text x="250.4" y="18.0" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="end">IN</text>
         </g>
         <g id="cb1--module--t20-silkscreen">
-          <text x="374.0" y="35.5" font-family="Arial" font-size="1.4" fill="#3a3e43" text-anchor="end">JNP10K-RE1</text>
+          <text x="250.4" y="26.9" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="end">OUT</text>
+        </g>
+        <g id="cb1--module--t21-silkscreen">
+          <text x="269.9" y="18.0" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="start">IN</text>
+        </g>
+        <g id="cb1--module--t22-silkscreen">
+          <text x="269.9" y="26.9" font-family="Arial" font-size="1.0" fill="#3a3e43" text-anchor="start">OUT</text>
+        </g>
+        <g id="cb1--module--t23-silkscreen">
+          <text x="299.9" y="7.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">LINK</text>
+        </g>
+        <g id="cb1--module--t24-silkscreen">
+          <text x="290.6" y="32.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">XGE-0</text>
+        </g>
+        <g id="cb1--module--t25-silkscreen">
+          <text x="310.1" y="32.4" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="middle">XGE-1</text>
+        </g>
+        <g id="cb1--module--t26-silkscreen">
+          <text x="374.0" y="3.2" font-family="Arial" font-size="1.1" fill="#3a3e43" text-anchor="end">JNP10K-RE1</text>
         </g>
       </g>
-      <g id="cb1--module--con" data-path="cb1/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(23.1,12.4)">
+      <g id="cb1--module--con" data-path="cb1/module/con" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="serial console" data-media="rj45" transform="translate(37.8,14.8)">
         <title>cb1--module--con</title>
         <path id="cb1--module--con--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
         <path id="cb1--module--con--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
@@ -7701,44 +7799,9 @@
           <rect x="10.22" y="2.6" width="0.46" height="2.3" />
           <rect x="11.24" y="2.6" width="0.46" height="2.3" />
         </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
       </g>
-      <g id="cb1--module--pps-in" data-path="cb1/module/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS in" data-media="coax-smb" transform="translate(44.6,8.0)">
-        <title>cb1--module--pps-in</title>
-        <circle id="cb1--module--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/pps-in/opening" data-class="cutout" />
-        <g id="cb1--module--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb1--module--pps-out" data-path="cb1/module/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="PPS out" data-media="coax-smb" transform="translate(57.1,8.0)">
-        <title>cb1--module--pps-out</title>
-        <circle id="cb1--module--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/pps-out/opening" data-class="cutout" />
-        <g id="cb1--module--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb1--module--mhz-in" data-path="cb1/module/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(67.6,8.0)">
-        <title>cb1--module--mhz-in</title>
-        <circle id="cb1--module--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/mhz-in/opening" data-class="cutout" />
-        <g id="cb1--module--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb1--module--mhz-out" data-path="cb1/module/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(80.1,8.0)">
-        <title>cb1--module--mhz-out</title>
-        <circle id="cb1--module--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/mhz-out/opening" data-class="cutout" />
-        <g id="cb1--module--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
-          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
-          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
-          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
-        </g>
-      </g>
-      <g id="cb1--module--mgmt" data-path="cb1/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(84.1,12.4)">
+      <g id="cb1--module--mgmt" data-path="cb1/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="out-of-band management" data-media="rj45" transform="translate(59.6,14.8)">
         <title>cb1--module--mgmt</title>
         <g id="cb1--module--mgmt--jack" data-path="cb1/module/mgmt/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
           <title>cb1--module--mgmt--jack</title>
@@ -7755,62 +7818,153 @@
             <rect x="10.22" y="2.6" width="0.46" height="2.3" />
             <rect x="11.24" y="2.6" width="0.46" height="2.3" />
           </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
         </g>
         <path id="cb1--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
         <rect id="cb1--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cb1/module/mgmt/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
         <rect id="cb1--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cb1/module/mgmt/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
       </g>
-      <g id="cb1--module--sfp-mgmt" data-path="cb1/module/sfp-mgmt" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="management SFP" data-media="sfp" transform="translate(114.25,15.0)">
-        <title>cb1--module--sfp-mgmt</title>
-        <rect id="cb1--module--sfp-mgmt--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/sfp-mgmt/opening" data-class="cutout" />
-        <rect id="cb1--module--sfp-mgmt--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb1--module--sfp-mgmt--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb1--module--sfp-mgmt--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb1--module--sfp-mgmt--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb1--module--mgmt-sfp" data-path="cb1/module/mgmt-sfp" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="management SFP" data-media="sfp" transform="translate(78.85,16.4)">
+        <title>cb1--module--mgmt-sfp</title>
+        <rect id="cb1--module--mgmt-sfp--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/mgmt-sfp/opening" data-class="cutout" />
+        <rect id="cb1--module--mgmt-sfp--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb1--module--mgmt-sfp--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb1--module--mgmt-sfp--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb1--module--mgmt-sfp--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
       </g>
-      <g id="cb1--module--usb" data-path="cb1/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(138.75,15.75) rotate(90 6.0 2.25)">
+      <g id="cb1--module--usb" data-path="cb1/module/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-function="USB service port" data-media="usb-a" transform="translate(100.4,19.15) rotate(90 6.0 2.25)">
         <title>cb1--module--usb</title>
         <rect id="cb1--module--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="cb1/module/usb/opening" data-class="cutout" />
         <rect id="cb1--module--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+        <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
       </g>
-      <g id="cb1--module--port-0" data-path="cb1/module/port-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(297.75,9.0)">
-        <title>cb1--module--port-0</title>
-        <rect id="cb1--module--port-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/port-0/opening" data-class="cutout" />
-        <rect id="cb1--module--port-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb1--module--port-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb1--module--port-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb1--module--port-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb1--module--offline" data-path="cb1/module/offline" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="online/offline" transform="translate(127.2,32.0)">
+        <title>cb1--module--offline</title>
+        <circle id="cb1--module--offline--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="cb1--module--offline--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="cb1/module/offline/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
       </g>
-      <g id="cb1--module--port-1" data-path="cb1/module/port-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(312.0,9.0)">
-        <title>cb1--module--port-1</title>
-        <rect id="cb1--module--port-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/port-1/opening" data-class="cutout" />
-        <rect id="cb1--module--port-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb1--module--port-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb1--module--port-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb1--module--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb1--module--reset" data-path="cb1/module/reset" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="reset" transform="translate(189.1,32.0)">
+        <title>cb1--module--reset</title>
+        <circle id="cb1--module--reset--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="cb1--module--reset--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="cb1/module/reset/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
       </g>
-      <g id="cb1--module--port-2" data-path="cb1/module/port-2" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(326.25,9.0)">
-        <title>cb1--module--port-2</title>
-        <rect id="cb1--module--port-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/port-2/opening" data-class="cutout" />
-        <rect id="cb1--module--port-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb1--module--port-2--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb1--module--port-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb1--module--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb1--module--bits-1" data-path="cb1/module/bits-1" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS1 timing" data-media="rj45" transform="translate(204.8,7.9)">
+        <title>cb1--module--bits-1</title>
+        <path id="cb1--module--bits-1--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb1--module--bits-1--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb1--module--bits-1--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb1/module/bits-1/opening" data-class="cutout" />
+        <g id="cb1--module--bits-1--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
       </g>
-      <g id="cb1--module--port-3" data-path="cb1/module/port-3" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" transform="translate(340.5,9.0)">
-        <title>cb1--module--port-3</title>
-        <rect id="cb1--module--port-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/port-3/opening" data-class="cutout" />
-        <rect id="cb1--module--port-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
-        <rect id="cb1--module--port-3--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
-        <rect id="cb1--module--port-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
-        <path id="cb1--module--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g id="cb1--module--bits-0" data-path="cb1/module/bits-0" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS0 timing" data-media="rj45" transform="translate(204.8,21.4)">
+        <title>cb1--module--bits-0</title>
+        <path id="cb1--module--bits-0--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb1--module--bits-0--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb1--module--bits-0--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb1/module/bits-0/opening" data-class="cutout" />
+        <g id="cb1--module--bits-0--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--tod" data-path="cb1/module/tod" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="time of day" data-media="rj45" transform="translate(231.7,14.8)">
+        <title>cb1--module--tod</title>
+        <path id="cb1--module--tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb1--module--tod--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cb1--module--tod--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cb1/module/tod/opening" data-class="cutout" />
+        <g id="cb1--module--tod--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--pps-in" data-path="cb1/module/pps-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS in" data-media="coax-smb" transform="translate(252.7,15.2)">
+        <title>cb1--module--pps-in</title>
+        <circle id="cb1--module--pps-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/pps-in/opening" data-class="cutout" />
+        <g id="cb1--module--pps-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--mhz-in" data-path="cb1/module/mhz-in" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz in" data-media="coax-smb" transform="translate(262.8,15.2)">
+        <title>cb1--module--mhz-in</title>
+        <circle id="cb1--module--mhz-in--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/mhz-in/opening" data-class="cutout" />
+        <g id="cb1--module--mhz-in--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--pps-out" data-path="cb1/module/pps-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="1PPS out" data-media="coax-smb" transform="translate(252.7,24.1)">
+        <title>cb1--module--pps-out</title>
+        <circle id="cb1--module--pps-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/pps-out/opening" data-class="cutout" />
+        <g id="cb1--module--pps-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--mhz-out" data-path="cb1/module/mhz-out" data-class="port" data-ref="std/smb@1:1.0.0" data-function="10MHz out" data-media="coax-smb" transform="translate(262.8,24.1)">
+        <title>cb1--module--mhz-out</title>
+        <circle id="cb1--module--mhz-out--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="cb1/module/mhz-out/opening" data-class="cutout" />
+        <g id="cb1--module--mhz-out--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--xge-0" data-path="cb1/module/xge-0" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved - Juniper marks these not used" data-media="sfp-plus" transform="translate(283.35,16.4)">
+        <title>cb1--module--xge-0</title>
+        <rect id="cb1--module--xge-0--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/xge-0/opening" data-class="cutout" />
+        <rect id="cb1--module--xge-0--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb1--module--xge-0--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb1--module--xge-0--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb1--module--xge-0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="cb1--module--xge-1" data-path="cb1/module/xge-1" data-class="port" data-ref="std/sfp@1:1.4.0" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="reserved - Juniper marks these not used" data-media="sfp-plus" transform="translate(302.85,16.4)">
+        <title>cb1--module--xge-1</title>
+        <rect id="cb1--module--xge-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="cb1/module/xge-1/opening" data-class="cutout" />
+        <rect id="cb1--module--xge-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="cb1--module--xge-1--cage-lip" x="1.0" y="1.2" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="cb1--module--xge-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="cb1--module--xge-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
       </g>
     </g>
   </g>
   <g id="fpc0" data-path="fpc0" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="0">
     <title>fpc0</title>
     <rect id="fpc0--opening" x="2.5" y="117" width="437" height="48" fill="#101214" />
-    <g id="fpc0--module" data-path="fpc0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,141) translate(-218.5,-24)">
+    <g id="fpc0--module" data-path="fpc0/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,141) translate(-218.5,-24)">
       <title>fpc0--module</title>
       <rect id="fpc0--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc0--module--pull-left">
@@ -7827,7 +7981,7 @@
   <g id="fpc1" data-path="fpc1" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="1">
     <title>fpc1</title>
     <rect id="fpc1--opening" x="2.5" y="165.4" width="437" height="48" fill="#101214" />
-    <g id="fpc1--module" data-path="fpc1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,189.4) translate(-218.5,-24)">
+    <g id="fpc1--module" data-path="fpc1/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,189.4) translate(-218.5,-24)">
       <title>fpc1--module</title>
       <rect id="fpc1--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc1--module--pull-left">
@@ -7844,7 +7998,7 @@
   <g id="fpc2" data-path="fpc2" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="2">
     <title>fpc2</title>
     <rect id="fpc2--opening" x="2.5" y="213.8" width="437" height="48" fill="#101214" />
-    <g id="fpc2--module" data-path="fpc2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,237.8) translate(-218.5,-24)">
+    <g id="fpc2--module" data-path="fpc2/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,237.8) translate(-218.5,-24)">
       <title>fpc2--module</title>
       <rect id="fpc2--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc2--module--pull-left">
@@ -7861,7 +8015,7 @@
   <g id="fpc3" data-path="fpc3" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="3">
     <title>fpc3</title>
     <rect id="fpc3--opening" x="2.5" y="262.2" width="437" height="48" fill="#101214" />
-    <g id="fpc3--module" data-path="fpc3/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,286.2) translate(-218.5,-24)">
+    <g id="fpc3--module" data-path="fpc3/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,286.2) translate(-218.5,-24)">
       <title>fpc3--module</title>
       <rect id="fpc3--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc3--module--pull-left">
@@ -7878,7 +8032,7 @@
   <g id="fpc4" data-path="fpc4" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="4">
     <title>fpc4</title>
     <rect id="fpc4--opening" x="2.5" y="317.6" width="437" height="48" fill="#101214" />
-    <g id="fpc4--module" data-path="fpc4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,341.6) translate(-218.5,-24)">
+    <g id="fpc4--module" data-path="fpc4/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,341.6) translate(-218.5,-24)">
       <title>fpc4--module</title>
       <rect id="fpc4--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc4--module--pull-left">
@@ -7895,7 +8049,7 @@
   <g id="fpc5" data-path="fpc5" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="5">
     <title>fpc5</title>
     <rect id="fpc5--opening" x="2.5" y="366" width="437" height="48" fill="#101214" />
-    <g id="fpc5--module" data-path="fpc5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,390) translate(-218.5,-24)">
+    <g id="fpc5--module" data-path="fpc5/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,390) translate(-218.5,-24)">
       <title>fpc5--module</title>
       <rect id="fpc5--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc5--module--pull-left">
@@ -7912,7 +8066,7 @@
   <g id="fpc6" data-path="fpc6" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="6">
     <title>fpc6</title>
     <rect id="fpc6--opening" x="2.5" y="414.4" width="437" height="48" fill="#101214" />
-    <g id="fpc6--module" data-path="fpc6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,438.4) translate(-218.5,-24)">
+    <g id="fpc6--module" data-path="fpc6/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,438.4) translate(-218.5,-24)">
       <title>fpc6--module</title>
       <rect id="fpc6--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc6--module--pull-left">
@@ -7929,7 +8083,7 @@
   <g id="fpc7" data-path="fpc7" data-class="bay" data-group="fpcs" data-group-role="traffic" data-rel-pos="7">
     <title>fpc7</title>
     <rect id="fpc7--opening" x="2.5" y="462.8" width="437" height="48" fill="#101214" />
-    <g id="fpc7--module" data-path="fpc7/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="ok absent" transform="translate(221,486.8) translate(-218.5,-24)">
+    <g id="fpc7--module" data-path="fpc7/module" data-class="blank" data-behaviour="fills" data-ref="juniper/jnp10k-lc-blank@1:1.0.0" data-model="JNP10K-LC-BLNK" data-states="absent" transform="translate(221,486.8) translate(-218.5,-24)">
       <title>fpc7--module</title>
       <rect id="fpc7--module--face" x="0" y="0" width="437.0" height="48.0" rx="0.8" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.4" />
       <g id="fpc7--module--pull-left">

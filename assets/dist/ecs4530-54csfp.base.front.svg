@@ -1,0 +1,860 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="440.0mm" height="44.0mm" viewBox="0 0 440.0 44.0" data-device="ecs4530-54csfp" data-view="front" data-config="base" data-switching-capacity="256 Gbps" data-forwarding-rate="190.48 Mpps" data-mac-table="16K" data-jumbo-frames="10 KB" data-port-modes-qsfp="20G uplink - the datasheet says '20G QSFP+ Uplink' and nothing about the optics or modes behind it" data-port-modes-sfp-plus="1G / 10G; 10GBASE-SR/LR/ZR/ER, 1000BASE-SX/LX/LHX/ZX, 10G DAC/AOC" data-power-max-w="75.4" data-power-envelope="unstated" data-power-input-ac="100-240 VAC, 50-60 Hz" data-temperature-operating="0 C to 50 C" data-temperature-storage="-40 C to 70 C" data-humidity-operating="10% to 90% non-condensing" data-humidity-storage="10% to 90% non-condensing" data-flash="2 GB" data-dram="2 GB" data-marketing-name="ECS4530-54CSFP" data-optics-sfp="1G CSFP (two bidirectional fibre ports per module); 1000BASE-SX/LX/LHX/ZX; DDM" data-port-summary="24 CSFP cages (48 x 1G BiDi fibre), 4 x RJ-45 combo, 4 x 10G SFP+, 2 x 20G QSFP+" data-mgmt-ports="1x RJ-45 console, 1x RJ-45 GE out-of-band management" data-emc="FCC Class A, CE" data-rohs="RoHS; WEEE" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"base","device":"Edgecore ECS4530-54CSFP","device-version":"2.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/ground-lug@1":"1.4.0","common/led-arrow-sm@1":"1.1.0","common/led-rect-sm@1":"1.0.0","common/rj45-eth@1":"1.2.0","std/c14-inlet@1":"1.3.0","std/qsfp-ganged@1":"1.4.0","std/rj45@2":"2.1.0","std/sfp-ganged@1":"1.1.0"},"source":{"attrs":{"compliance":{"emc":"FCC Class A, CE","rohs":"RoHS; WEEE"},"environmental":{"humidity-operating":"10% to 90% non-condensing","humidity-storage":"10% to 90% non-condensing","temperature-operating":"0 C to 50 C","temperature-storage":"-40 C to 70 C"},"features":{"marketing-name":"ECS4530-54CSFP","optics-sfp":"1G CSFP (two bidirectional fibre ports per module); 1000BASE-SX/LX/LHX/ZX; DDM","port-summary":"24 CSFP cages (48 x 1G BiDi fibre), 4 x RJ-45 combo, 4 x 10G SFP+, 2 x 20G QSFP+"},"lifecycle":{"eol":"none-announced"},"management":{"mgmt-ports":"1x RJ-45 console, 1x RJ-45 GE out-of-band management"},"performance":{"forwarding-rate":"190.48 Mpps","jumbo-frames":"10 KB","mac-table":"16K","port-modes-qsfp":"20G uplink - the datasheet says '20G QSFP+ Uplink' and nothing about the optics or modes behind it","port-modes-sfp-plus":"1G / 10G; 10GBASE-SR/LR/ZR/ER, 1000BASE-SX/LX/LHX/ZX, 10G DAC/AOC","switching-capacity":"256 Gbps"},"platform":{"dram":"2 GB","flash":"2 GB"},"power":{"power-envelope":"unstated","power-input-ac":"100-240 VAC, 50-60 Hz","power-max-w":75.4}},"chassis":{"color":"#26292c","depth":220.0,"height":44.0,"ru":1,"weight-kg":3.0,"width":440.0},"configurations":{"base":{"default":true,"description":"The AC machine as the datasheet's base column describes it, every cage empty. No ordering table exists to name an orderable build.","kind":"base"}},"datasheet":{"sha256":"c1cb306520292e0a4cff5b850fca7c802db3608e89901b42c11be8fbfc2e439b","title":"Edgecore ECS4530 Series L2+/L3 Lite Gigabit Ethernet CSFP Switch data sheet"},"description":"1RU half-depth L2+/L3-lite Gigabit fibre access switch: 24 CSFP cages in 12 two-high stacks, each cage carrying two bidirectional fibre ports (48 in all), four RJ-45 combo ports sharing four of them, 4 x 10G SFP+ and 2 x 20G QSFP+ uplinks, and an RS-232 console over an out-of-band RJ-45. Its AC inlet is on the FRONT, at the left end; the rear carries only three fixed fans.","format":1,"gaps":[{"reason":"needs-photo","scope":["front"],"wanted":"WHETHER THE BOTTOM RJ-45s HAVE LAMPS. The combo jacks 45 and 47 and the MGMT jack are Ethernet, which this library draws lamped, but the elevation shows lit windows only on the top jacks and nothing in the corners of the bottom ones at 2.27 px/mm. They are drawn bare, as seen, and L76 stands. A close photograph of one stack settles it.","what":"bottom-rj45-lamps"},{"reason":"vendor-silent","scope":["rear"],"wanted":"WHICH WAY THE FANS BLOW. The datasheet's Cooling line is empty for both variants and the rear shows fixed fans with no arrows. Unstated rather than guessed.","what":"airflow-direction"},{"reason":"vendor-silent","scope":["front"],"wanted":"THE DATASHEET CARRIES NO ORDERING TABLE, so there are no part numbers to attach to an orderable configuration; the device offers its base configuration only.","what":"ordering-codes"}],"groups":{"csfp":{"attrs":{"media":"sfp","speed":"1g"},"index-origin":1,"role":"traffic","term":"Port"},"furniture":{"description":"the rack ears.","index-origin":1,"role":"furniture","term":"Item"},"grounding":{"index-origin":1,"role":"furniture","term":"Point"},"leds":{"index-origin":1,"role":"indicator","term":"LED"},"mgmt":{"index-origin":1,"mixed":"the RS-232 console RJ-45 stacked over the GE out-of-band management RJ-45 at the right-hand end.","role":"management","term":"Port"},"port-leds":{"index-origin":1,"role":"indicator","term":"LED"},"power":{"index-origin":1,"role":"service","term":"Inlet"},"qsfp-plus":{"attrs":{"media":"qsfp","speed":"20g"},"index-origin":1,"role":"traffic","term":"Port"},"rj45-combo":{"attrs":{"media":"rj45","speed":"1g"},"index-origin":1,"role":"traffic","term":"Port"},"sfp-plus":{"attrs":{"media":"sfp-plus","speed":"10g"},"index-origin":1,"role":"traffic","term":"Port"}},"kind":"device","manufacturer":"Edgecore","maturity":"modelled","model":"ECS4530-54CSFP","name":"ecs4530-54csfp","portfolio":{"family":"Aggregation Switch","line":"Campus","series":"ECS4530"},"profile":"networking","provenance":{"cage-frames":{"confidence":"photo-measured","note":"Every stack sits in a bright cage frame, measured at 4x on the first: x 98.4-113.3, y 10.6-36.5, 14.9 wide about the 14.25 openings; repeated on the stack lattice and drawn 19.7 wide about the QSFP+ stack."},"chassis":{"confidence":"datasheet","note":"DATASHEET, 'Dimension (W x D x H) cm 44 x 22 x 4.4' in both columns, 'Rack Space 19\"' and 'Weight 3 kg'. The only size source, stated once per variant and identical."},"copper-speed-spelling":{"confidence":"measured","note":"THE COPPER PORTS SAY speed 1g, NOT 1000base-t. The first draft spelled the four combo jacks' speed 1000base-t, which the DCIM exporter does not type - it knows (rj45, 1g) - so all four fell out of the NetBox and Nautobot exports without a word; the export listed 30 interfaces where it should list 34. 1g is the library's spelling for a copper traffic port. The MGMT jack is exported only through an overlay, by the exporter's own rule for role: mgmt, whatever its speed says."},"csfp-is-an-sfp-cage":{"confidence":"registry","note":"THE CAGES ARE SFP CAGES; CSFP IS WHAT GOES IN THEM. The Compact SFP is a module form that fits the standard SFP cage, which is the whole of its point - so the cages are std/sfp-ganged@1 (two-high stacks, the registry's 15.0 row pitch, measured here at 14.96) with media sfp and a csfp attr, the same decision the AMX3200 made for CFP2-DCO."},"figure-choice":{"confidence":"measured","note":"Gate 1. The base's front elevation is cropped flush - ink fills all 1000 px - and reads -1.96% on aspect against 440/44, so its box was not trusted until features said so. THEY DO, THREE WAYS. At 2.273 px/mm (440 mm across the image) the QSFP+ opening measures 18.48 mm against the ganged-QSFP 18.50, the RJ-45 cavities 12.3 against the jack's 11.91 cavity, and - most tellingly - the two rows of every SFP stack sit 14.96 mm apart against the registry's measured 15.0 belly-to-belly SFP row pitch. So x scales at 2.273 and y uses the same scale, with the elevation's 102 rows holding about 0.9 mm of margin. THE REAR IS WORSE: +5.26% on aspect. Only its x positions are used."},"left-end":{"confidence":"photo-measured","note":"THE POWER INLET IS ON THE FRONT. An IEC C14 inlet at the left end with its rating printed below it ('~100-240 V; 50/60Hz; 3 A'), a ground stud with its symbol beside it, the Edge-core wordmark and the model name above, and the legend '(dot) SFP LED indicator' explaining the dots beside some port numbers. A honeycomb vent row runs along the top of the port field."},"numbering":{"confidence":"photo-measured","note":"READ OFF THE ELEVATION, and each CSFP cage carries TWO numbers. Under the bottom cage of the first stack the legend reads '1' and '3'; above its top cage '2' and '4': a CSFP module presents two bidirectional fibre ports, so 24 cages give the datasheet's 48 ports - 'by inserting a CSFP transceiver that supports two BIDI fiber ports, each port can connect to two CPE/IAD devices, so the total number of physical ports is 48'. Stack k carries 4k+1 and 4k+3 in its bottom cage and 4k+2 and 4k+4 in its top. EACH CAGE DECLARES THE TWO INTERFACES IT PRESENTS - csfp-1-3 carries `interfaces: [port-1, port-3]` (roc-ops/Portrayal#443) - so the DCIM export lists port-1..port-48 and the cages themselves are not interfaces. The switch's silicon has both ports whether or not a module is seated, which is why they belong to the cage and not to the optic. With the SFP+ as port-49..52 and the QSFP+ as port-53/54, the export is port-1..port-54 - the 54 in the model number. THE COMBO JACKS ARE copper-45..copper-48. They were port-45..48 first, which is exactly the ids the twelfth stack's CSFP interfaces need; both connectors are real and a DCIM must cable each, so the copper jacks take their own names and each carries `combo-with` its fibre interface. L105 holds interface ids apart from placement ids. Ports 45-48 are COMBO: the twelfth stack's cages and the four RJ-45s beside it are bracketed together on the faceplate, and the datasheet lists '4 RJ-45/2 CSFP' combo ports, 'Either RJ-45 or CSFP port can be chosen at a time'."},"port-lamps":{"confidence":"photo-measured","note":"EACH STACK'S BELLY STRIP CARRIES FOUR TRIANGLE LAMPS, down-up-down-up, which is one per logical port and says whose it is: a down-arrow points at the bottom cage and an up-arrow at the top, and each sits on the same side as that port's printed number - 1 left and 3 right below, 2 left and 4 right above. So the lamps are assigned, not guessed, by the two things the faceplate itself says about them. The SFP+ stacks carry one arrow per port the same way, and the QSFP+ stack a down-arrow, four small windows and an up-arrow; the four windows are drawn and not given to a port."},"rear":{"confidence":"photo-measured","note":"THREE FIXED FANS behind honeycomb guards punched in the rear panel, rotors showing through, centred at 121.6, 239.5 and 351.1 mm on x. The rear elevation is +5.26% off aspect, so its vertical positions are read on its OWN vertical scale (95 rows for 44 mm, 2.159 px/mm) rather than the front's: the guards run y 2.3-32.4, high on the panel rather than centred on it, which is what the elevation plainly draws. A first draft centred them on the chassis height by assumption, and the matched-scale comparison showed it wrong. They are not trays - nothing in the datasheet calls them hot-swappable, and the rear shows no handles or seams - so they are drawn as the panel's own perforation, not as modules."},"rj45s":{"confidence":"photo-measured","note":"THE TOP COMBO JACKS SHOW LIT LAMPS AND THE BOTTOM ONES SHOW NONE. The elevation draws two green windows in the upper corners of the jacks for 46 and 48, at 307.5, 318.5, 326.9 and 338.3 mm, and nothing at all in the corners of 45, 47, the console or MGMT. The top jacks are the lamped part; the rest are drawn bare because that is what the metal shows, which leaves three Ethernet jacks on a bare part and L76 standing - see the gap."},"sources":{"confidence":"datasheet","note":"ONE DOCUMENT, and it covers two machines. ecs4530-54csfp-datasheet (the ECS4530 Series data sheet) is a two-column comparison of the ECS4530-54CSFP and the ECS4530-54CSFP-DC-I; the staged -I datasheet is byte-identical. There is no quick start guide. Page 3 carries four elevations 1000 px wide - both variants' fronts and both rears - and three product photographs of each variant are staged at 489 px, too small to measure (1.1 px/mm) but enough to say which rear belongs to which front: the base's fans read at 28%, 54% and 79% of the width in its own rear photograph, which is the rear whose fans are at 121.6, 239.5 and 351.1 mm, and not the -I rear, whose fans sit elsewhere. Issue #341 warned 'expect to reach Gate 1 and find nothing measurable'. That turned out pessimistic: the page-3 elevations measure, and the next note says how well."}},"version":"2.0.0","views":{"bottom":{"components":{"placements":[{"at":[110.0,7.0],"group":"furniture","id":"bottom-label","ref":"common/compliance-sticker@1","rel-pos":3}]},"size":{"h":220.0,"w":440.0}},"front":{"components":{"placements":[{"at":[-14,0.25],"group":"furniture","id":"ear-left","optional":"ears","ref":"common/rack-ear@1","rel-pos":1,"skin":"left"},{"at":[440,0.25],"group":"furniture","id":"ear-right","optional":"ears","ref":"common/rack-ear@1","rel-pos":2,"skin":"right"},{"at":[99.12,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-2-4","interfaces":["port-2","port-4"],"ref":"std/sfp-ganged@1","rel-pos":2,"rotate":180},{"at":[99.12,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-1-3","interfaces":["port-1","port-3"],"ref":"std/sfp-ganged@1","rel-pos":1},{"at":[100.62,22.1],"for":"csfp-1-3","group":"port-leds","id":"led-port-1","ref":"common/led-arrow-sm@1","rel-pos":1,"skin":"down"},{"at":[103.62,22.1],"for":"csfp-2-4","group":"port-leds","id":"led-port-2","ref":"common/led-arrow-sm@1","rel-pos":2,"skin":"up"},{"at":[106.62,22.1],"for":"csfp-1-3","group":"port-leds","id":"led-port-3","ref":"common/led-arrow-sm@1","rel-pos":3,"skin":"down"},{"at":[109.62,22.1],"for":"csfp-2-4","group":"port-leds","id":"led-port-4","ref":"common/led-arrow-sm@1","rel-pos":4,"skin":"up"},{"at":[116.36,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-6-8","interfaces":["port-6","port-8"],"ref":"std/sfp-ganged@1","rel-pos":4,"rotate":180},{"at":[116.36,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-5-7","interfaces":["port-5","port-7"],"ref":"std/sfp-ganged@1","rel-pos":3},{"at":[117.86,22.1],"for":"csfp-5-7","group":"port-leds","id":"led-port-5","ref":"common/led-arrow-sm@1","rel-pos":5,"skin":"down"},{"at":[120.86,22.1],"for":"csfp-6-8","group":"port-leds","id":"led-port-6","ref":"common/led-arrow-sm@1","rel-pos":6,"skin":"up"},{"at":[123.86,22.1],"for":"csfp-5-7","group":"port-leds","id":"led-port-7","ref":"common/led-arrow-sm@1","rel-pos":7,"skin":"down"},{"at":[126.86,22.1],"for":"csfp-6-8","group":"port-leds","id":"led-port-8","ref":"common/led-arrow-sm@1","rel-pos":8,"skin":"up"},{"at":[133.6,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-10-12","interfaces":["port-10","port-12"],"ref":"std/sfp-ganged@1","rel-pos":6,"rotate":180},{"at":[133.6,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-9-11","interfaces":["port-9","port-11"],"ref":"std/sfp-ganged@1","rel-pos":5},{"at":[135.1,22.1],"for":"csfp-9-11","group":"port-leds","id":"led-port-9","ref":"common/led-arrow-sm@1","rel-pos":9,"skin":"down"},{"at":[138.1,22.1],"for":"csfp-10-12","group":"port-leds","id":"led-port-10","ref":"common/led-arrow-sm@1","rel-pos":10,"skin":"up"},{"at":[141.1,22.1],"for":"csfp-9-11","group":"port-leds","id":"led-port-11","ref":"common/led-arrow-sm@1","rel-pos":11,"skin":"down"},{"at":[144.1,22.1],"for":"csfp-10-12","group":"port-leds","id":"led-port-12","ref":"common/led-arrow-sm@1","rel-pos":12,"skin":"up"},{"at":[150.84,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-14-16","interfaces":["port-14","port-16"],"ref":"std/sfp-ganged@1","rel-pos":8,"rotate":180},{"at":[150.84,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-13-15","interfaces":["port-13","port-15"],"ref":"std/sfp-ganged@1","rel-pos":7},{"at":[152.34,22.1],"for":"csfp-13-15","group":"port-leds","id":"led-port-13","ref":"common/led-arrow-sm@1","rel-pos":13,"skin":"down"},{"at":[155.34,22.1],"for":"csfp-14-16","group":"port-leds","id":"led-port-14","ref":"common/led-arrow-sm@1","rel-pos":14,"skin":"up"},{"at":[158.34,22.1],"for":"csfp-13-15","group":"port-leds","id":"led-port-15","ref":"common/led-arrow-sm@1","rel-pos":15,"skin":"down"},{"at":[161.34,22.1],"for":"csfp-14-16","group":"port-leds","id":"led-port-16","ref":"common/led-arrow-sm@1","rel-pos":16,"skin":"up"},{"at":[168.08,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-18-20","interfaces":["port-18","port-20"],"ref":"std/sfp-ganged@1","rel-pos":10,"rotate":180},{"at":[168.08,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-17-19","interfaces":["port-17","port-19"],"ref":"std/sfp-ganged@1","rel-pos":9},{"at":[169.58,22.1],"for":"csfp-17-19","group":"port-leds","id":"led-port-17","ref":"common/led-arrow-sm@1","rel-pos":17,"skin":"down"},{"at":[172.58,22.1],"for":"csfp-18-20","group":"port-leds","id":"led-port-18","ref":"common/led-arrow-sm@1","rel-pos":18,"skin":"up"},{"at":[175.58,22.1],"for":"csfp-17-19","group":"port-leds","id":"led-port-19","ref":"common/led-arrow-sm@1","rel-pos":19,"skin":"down"},{"at":[178.58,22.1],"for":"csfp-18-20","group":"port-leds","id":"led-port-20","ref":"common/led-arrow-sm@1","rel-pos":20,"skin":"up"},{"at":[185.32,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-22-24","interfaces":["port-22","port-24"],"ref":"std/sfp-ganged@1","rel-pos":12,"rotate":180},{"at":[185.32,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-21-23","interfaces":["port-21","port-23"],"ref":"std/sfp-ganged@1","rel-pos":11},{"at":[186.82,22.1],"for":"csfp-21-23","group":"port-leds","id":"led-port-21","ref":"common/led-arrow-sm@1","rel-pos":21,"skin":"down"},{"at":[189.82,22.1],"for":"csfp-22-24","group":"port-leds","id":"led-port-22","ref":"common/led-arrow-sm@1","rel-pos":22,"skin":"up"},{"at":[192.82,22.1],"for":"csfp-21-23","group":"port-leds","id":"led-port-23","ref":"common/led-arrow-sm@1","rel-pos":23,"skin":"down"},{"at":[195.82,22.1],"for":"csfp-22-24","group":"port-leds","id":"led-port-24","ref":"common/led-arrow-sm@1","rel-pos":24,"skin":"up"},{"at":[202.56,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-26-28","interfaces":["port-26","port-28"],"ref":"std/sfp-ganged@1","rel-pos":14,"rotate":180},{"at":[202.56,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-25-27","interfaces":["port-25","port-27"],"ref":"std/sfp-ganged@1","rel-pos":13},{"at":[204.06,22.1],"for":"csfp-25-27","group":"port-leds","id":"led-port-25","ref":"common/led-arrow-sm@1","rel-pos":25,"skin":"down"},{"at":[207.06,22.1],"for":"csfp-26-28","group":"port-leds","id":"led-port-26","ref":"common/led-arrow-sm@1","rel-pos":26,"skin":"up"},{"at":[210.06,22.1],"for":"csfp-25-27","group":"port-leds","id":"led-port-27","ref":"common/led-arrow-sm@1","rel-pos":27,"skin":"down"},{"at":[213.06,22.1],"for":"csfp-26-28","group":"port-leds","id":"led-port-28","ref":"common/led-arrow-sm@1","rel-pos":28,"skin":"up"},{"at":[219.81,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-30-32","interfaces":["port-30","port-32"],"ref":"std/sfp-ganged@1","rel-pos":16,"rotate":180},{"at":[219.81,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-29-31","interfaces":["port-29","port-31"],"ref":"std/sfp-ganged@1","rel-pos":15},{"at":[221.31,22.1],"for":"csfp-29-31","group":"port-leds","id":"led-port-29","ref":"common/led-arrow-sm@1","rel-pos":29,"skin":"down"},{"at":[224.31,22.1],"for":"csfp-30-32","group":"port-leds","id":"led-port-30","ref":"common/led-arrow-sm@1","rel-pos":30,"skin":"up"},{"at":[227.31,22.1],"for":"csfp-29-31","group":"port-leds","id":"led-port-31","ref":"common/led-arrow-sm@1","rel-pos":31,"skin":"down"},{"at":[230.31,22.1],"for":"csfp-30-32","group":"port-leds","id":"led-port-32","ref":"common/led-arrow-sm@1","rel-pos":32,"skin":"up"},{"at":[237.04,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-34-36","interfaces":["port-34","port-36"],"ref":"std/sfp-ganged@1","rel-pos":18,"rotate":180},{"at":[237.04,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-33-35","interfaces":["port-33","port-35"],"ref":"std/sfp-ganged@1","rel-pos":17},{"at":[238.54,22.1],"for":"csfp-33-35","group":"port-leds","id":"led-port-33","ref":"common/led-arrow-sm@1","rel-pos":33,"skin":"down"},{"at":[241.54,22.1],"for":"csfp-34-36","group":"port-leds","id":"led-port-34","ref":"common/led-arrow-sm@1","rel-pos":34,"skin":"up"},{"at":[244.54,22.1],"for":"csfp-33-35","group":"port-leds","id":"led-port-35","ref":"common/led-arrow-sm@1","rel-pos":35,"skin":"down"},{"at":[247.54,22.1],"for":"csfp-34-36","group":"port-leds","id":"led-port-36","ref":"common/led-arrow-sm@1","rel-pos":36,"skin":"up"},{"at":[254.28,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-38-40","interfaces":["port-38","port-40"],"ref":"std/sfp-ganged@1","rel-pos":20,"rotate":180},{"at":[254.28,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-37-39","interfaces":["port-37","port-39"],"ref":"std/sfp-ganged@1","rel-pos":19},{"at":[255.78,22.1],"for":"csfp-37-39","group":"port-leds","id":"led-port-37","ref":"common/led-arrow-sm@1","rel-pos":37,"skin":"down"},{"at":[258.78,22.1],"for":"csfp-38-40","group":"port-leds","id":"led-port-38","ref":"common/led-arrow-sm@1","rel-pos":38,"skin":"up"},{"at":[261.78,22.1],"for":"csfp-37-39","group":"port-leds","id":"led-port-39","ref":"common/led-arrow-sm@1","rel-pos":39,"skin":"down"},{"at":[264.78,22.1],"for":"csfp-38-40","group":"port-leds","id":"led-port-40","ref":"common/led-arrow-sm@1","rel-pos":40,"skin":"up"},{"at":[271.52,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-42-44","interfaces":["port-42","port-44"],"ref":"std/sfp-ganged@1","rel-pos":22,"rotate":180},{"at":[271.52,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-41-43","interfaces":["port-41","port-43"],"ref":"std/sfp-ganged@1","rel-pos":21},{"at":[273.02,22.1],"for":"csfp-41-43","group":"port-leds","id":"led-port-41","ref":"common/led-arrow-sm@1","rel-pos":41,"skin":"down"},{"at":[276.02,22.1],"for":"csfp-42-44","group":"port-leds","id":"led-port-42","ref":"common/led-arrow-sm@1","rel-pos":42,"skin":"up"},{"at":[279.02,22.1],"for":"csfp-41-43","group":"port-leds","id":"led-port-43","ref":"common/led-arrow-sm@1","rel-pos":43,"skin":"down"},{"at":[282.02,22.1],"for":"csfp-42-44","group":"port-leds","id":"led-port-44","ref":"common/led-arrow-sm@1","rel-pos":44,"skin":"up"},{"at":[288.76,10.42],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-46-48","interfaces":["port-46","port-48"],"ref":"std/sfp-ganged@1","rel-pos":24,"rotate":180},{"at":[288.76,25.38],"attrs":{"csfp":true,"media":"sfp"},"group":"csfp","id":"csfp-45-47","interfaces":["port-45","port-47"],"ref":"std/sfp-ganged@1","rel-pos":23},{"at":[290.26,22.1],"for":"csfp-45-47","group":"port-leds","id":"led-port-45","ref":"common/led-arrow-sm@1","rel-pos":45,"skin":"down"},{"at":[293.26,22.1],"for":"csfp-46-48","group":"port-leds","id":"led-port-46","ref":"common/led-arrow-sm@1","rel-pos":46,"skin":"up"},{"at":[296.26,22.1],"for":"csfp-45-47","group":"port-leds","id":"led-port-47","ref":"common/led-arrow-sm@1","rel-pos":47,"skin":"down"},{"at":[299.26,22.1],"for":"csfp-46-48","group":"port-leds","id":"led-port-48","ref":"common/led-arrow-sm@1","rel-pos":48,"skin":"up"},{"at":[306.66,9.02],"attrs":{"combo-with":"port-46","media":"rj45","speed":"1g"},"group":"rj45-combo","id":"copper-46","ref":"common/rj45-eth@1","rel-pos":46,"rotate":180},{"at":[306.66,23.98],"attrs":{"combo-with":"port-45","media":"rj45","speed":"1g"},"group":"rj45-combo","id":"copper-45","ref":"std/rj45@2","rel-pos":45},{"at":[326.02,9.02],"attrs":{"combo-with":"port-48","media":"rj45","speed":"1g"},"group":"rj45-combo","id":"copper-48","ref":"common/rj45-eth@1","rel-pos":48,"rotate":180},{"at":[326.02,23.98],"attrs":{"combo-with":"port-47","media":"rj45","speed":"1g"},"group":"rj45-combo","id":"copper-47","ref":"std/rj45@2","rel-pos":47},{"at":[345.06,10.42],"attrs":{"media":"sfp-plus","speed":"10g"},"group":"sfp-plus","id":"port-50","ref":"std/sfp-ganged@1","rel-pos":50,"rotate":180},{"at":[345.06,25.38],"attrs":{"media":"sfp-plus","speed":"10g"},"group":"sfp-plus","id":"port-49","ref":"std/sfp-ganged@1","rel-pos":49},{"at":[346.56,22.1],"for":"port-49","group":"port-leds","id":"led-port-49","ref":"common/led-arrow-sm@1","rel-pos":49,"skin":"down"},{"at":[355.56,22.1],"for":"port-50","group":"port-leds","id":"led-port-50","ref":"common/led-arrow-sm@1","rel-pos":50,"skin":"up"},{"at":[362.65,10.42],"attrs":{"media":"sfp-plus","speed":"10g"},"group":"sfp-plus","id":"port-52","ref":"std/sfp-ganged@1","rel-pos":52,"rotate":180},{"at":[362.65,25.38],"attrs":{"media":"sfp-plus","speed":"10g"},"group":"sfp-plus","id":"port-51","ref":"std/sfp-ganged@1","rel-pos":51},{"at":[364.15,22.1],"for":"port-51","group":"port-leds","id":"led-port-51","ref":"common/led-arrow-sm@1","rel-pos":51,"skin":"down"},{"at":[373.15,22.1],"for":"port-52","group":"port-leds","id":"led-port-52","ref":"common/led-arrow-sm@1","rel-pos":52,"skin":"up"},{"at":[380.54,10.83],"attrs":{"media":"qsfp","speed":"20g"},"group":"qsfp-plus","id":"port-54","ref":"std/qsfp-ganged@1","rel-pos":54,"rotate":180},{"at":[380.54,25.79],"attrs":{"media":"qsfp","speed":"20g"},"group":"qsfp-plus","id":"port-53","ref":"std/qsfp-ganged@1","rel-pos":53},{"at":[381.67,22.1],"for":"port-53","group":"port-leds","id":"led-port-53","ref":"common/led-arrow-sm@1","rel-pos":53,"skin":"down"},{"at":[395.67,22.1],"for":"port-54","group":"port-leds","id":"led-port-54","ref":"common/led-arrow-sm@1","rel-pos":54,"skin":"up"},{"at":[403.45,9.02],"attrs":{"media":"rj45-serial","role":"console"},"group":"mgmt","id":"console","ref":"std/rj45@2","rel-pos":1,"rotate":180},{"at":[403.45,23.98],"attrs":{"media":"rj45","role":"mgmt","speed":"1g"},"group":"mgmt","id":"mgmt-eth","ref":"std/rj45@2","rel-pos":2},{"at":[426.2,15.0],"for":"chassis","group":"leds","id":"led-pwr","ref":"common/led-rect-sm@1","rel-pos":1},{"at":[426.2,19.9],"for":"chassis","group":"leds","id":"led-sys","ref":"common/led-rect-sm@1","rel-pos":2},{"at":[6.24,14.64],"attrs":{"media":"c14","role":"power"},"group":"power","id":"power-in","ref":"std/c14-inlet@1","rel-pos":1},{"at":[44.9,13.7],"group":"grounding","id":"ground","ref":"common/ground-lug@1","rel-pos":1}]},"panel":{"cutouts":[{"at":[99.12,10.42],"id":"csfp-2-4","shape":"rect","size":[14.25,10.4]},{"at":[99.12,25.38],"id":"csfp-1-3","shape":"rect","size":[14.25,10.4]},{"at":[100.62,22.1],"id":"led-port-1","shape":"rect","size":[2.25,2.0]},{"at":[103.62,22.1],"id":"led-port-2","shape":"rect","size":[2.25,2.0]},{"at":[106.62,22.1],"id":"led-port-3","shape":"rect","size":[2.25,2.0]},{"at":[109.62,22.1],"id":"led-port-4","shape":"rect","size":[2.25,2.0]},{"at":[116.36,10.42],"id":"csfp-6-8","shape":"rect","size":[14.25,10.4]},{"at":[116.36,25.38],"id":"csfp-5-7","shape":"rect","size":[14.25,10.4]},{"at":[117.86,22.1],"id":"led-port-5","shape":"rect","size":[2.25,2.0]},{"at":[120.86,22.1],"id":"led-port-6","shape":"rect","size":[2.25,2.0]},{"at":[123.86,22.1],"id":"led-port-7","shape":"rect","size":[2.25,2.0]},{"at":[126.86,22.1],"id":"led-port-8","shape":"rect","size":[2.25,2.0]},{"at":[133.6,10.42],"id":"csfp-10-12","shape":"rect","size":[14.25,10.4]},{"at":[133.6,25.38],"id":"csfp-9-11","shape":"rect","size":[14.25,10.4]},{"at":[135.1,22.1],"id":"led-port-9","shape":"rect","size":[2.25,2.0]},{"at":[138.1,22.1],"id":"led-port-10","shape":"rect","size":[2.25,2.0]},{"at":[141.1,22.1],"id":"led-port-11","shape":"rect","size":[2.25,2.0]},{"at":[144.1,22.1],"id":"led-port-12","shape":"rect","size":[2.25,2.0]},{"at":[150.84,10.42],"id":"csfp-14-16","shape":"rect","size":[14.25,10.4]},{"at":[150.84,25.38],"id":"csfp-13-15","shape":"rect","size":[14.25,10.4]},{"at":[152.34,22.1],"id":"led-port-13","shape":"rect","size":[2.25,2.0]},{"at":[155.34,22.1],"id":"led-port-14","shape":"rect","size":[2.25,2.0]},{"at":[158.34,22.1],"id":"led-port-15","shape":"rect","size":[2.25,2.0]},{"at":[161.34,22.1],"id":"led-port-16","shape":"rect","size":[2.25,2.0]},{"at":[168.08,10.42],"id":"csfp-18-20","shape":"rect","size":[14.25,10.4]},{"at":[168.08,25.38],"id":"csfp-17-19","shape":"rect","size":[14.25,10.4]},{"at":[169.58,22.1],"id":"led-port-17","shape":"rect","size":[2.25,2.0]},{"at":[172.58,22.1],"id":"led-port-18","shape":"rect","size":[2.25,2.0]},{"at":[175.58,22.1],"id":"led-port-19","shape":"rect","size":[2.25,2.0]},{"at":[178.58,22.1],"id":"led-port-20","shape":"rect","size":[2.25,2.0]},{"at":[185.32,10.42],"id":"csfp-22-24","shape":"rect","size":[14.25,10.4]},{"at":[185.32,25.38],"id":"csfp-21-23","shape":"rect","size":[14.25,10.4]},{"at":[186.82,22.1],"id":"led-port-21","shape":"rect","size":[2.25,2.0]},{"at":[189.82,22.1],"id":"led-port-22","shape":"rect","size":[2.25,2.0]},{"at":[192.82,22.1],"id":"led-port-23","shape":"rect","size":[2.25,2.0]},{"at":[195.82,22.1],"id":"led-port-24","shape":"rect","size":[2.25,2.0]},{"at":[202.56,10.42],"id":"csfp-26-28","shape":"rect","size":[14.25,10.4]},{"at":[202.56,25.38],"id":"csfp-25-27","shape":"rect","size":[14.25,10.4]},{"at":[204.06,22.1],"id":"led-port-25","shape":"rect","size":[2.25,2.0]},{"at":[207.06,22.1],"id":"led-port-26","shape":"rect","size":[2.25,2.0]},{"at":[210.06,22.1],"id":"led-port-27","shape":"rect","size":[2.25,2.0]},{"at":[213.06,22.1],"id":"led-port-28","shape":"rect","size":[2.25,2.0]},{"at":[219.81,10.42],"id":"csfp-30-32","shape":"rect","size":[14.25,10.4]},{"at":[219.81,25.38],"id":"csfp-29-31","shape":"rect","size":[14.25,10.4]},{"at":[221.31,22.1],"id":"led-port-29","shape":"rect","size":[2.25,2.0]},{"at":[224.31,22.1],"id":"led-port-30","shape":"rect","size":[2.25,2.0]},{"at":[227.31,22.1],"id":"led-port-31","shape":"rect","size":[2.25,2.0]},{"at":[230.31,22.1],"id":"led-port-32","shape":"rect","size":[2.25,2.0]},{"at":[237.04,10.42],"id":"csfp-34-36","shape":"rect","size":[14.25,10.4]},{"at":[237.04,25.38],"id":"csfp-33-35","shape":"rect","size":[14.25,10.4]},{"at":[238.54,22.1],"id":"led-port-33","shape":"rect","size":[2.25,2.0]},{"at":[241.54,22.1],"id":"led-port-34","shape":"rect","size":[2.25,2.0]},{"at":[244.54,22.1],"id":"led-port-35","shape":"rect","size":[2.25,2.0]},{"at":[247.54,22.1],"id":"led-port-36","shape":"rect","size":[2.25,2.0]},{"at":[254.28,10.42],"id":"csfp-38-40","shape":"rect","size":[14.25,10.4]},{"at":[254.28,25.38],"id":"csfp-37-39","shape":"rect","size":[14.25,10.4]},{"at":[255.78,22.1],"id":"led-port-37","shape":"rect","size":[2.25,2.0]},{"at":[258.78,22.1],"id":"led-port-38","shape":"rect","size":[2.25,2.0]},{"at":[261.78,22.1],"id":"led-port-39","shape":"rect","size":[2.25,2.0]},{"at":[264.78,22.1],"id":"led-port-40","shape":"rect","size":[2.25,2.0]},{"at":[271.52,10.42],"id":"csfp-42-44","shape":"rect","size":[14.25,10.4]},{"at":[271.52,25.38],"id":"csfp-41-43","shape":"rect","size":[14.25,10.4]},{"at":[273.02,22.1],"id":"led-port-41","shape":"rect","size":[2.25,2.0]},{"at":[276.02,22.1],"id":"led-port-42","shape":"rect","size":[2.25,2.0]},{"at":[279.02,22.1],"id":"led-port-43","shape":"rect","size":[2.25,2.0]},{"at":[282.02,22.1],"id":"led-port-44","shape":"rect","size":[2.25,2.0]},{"at":[288.76,10.42],"id":"csfp-46-48","shape":"rect","size":[14.25,10.4]},{"at":[288.76,25.38],"id":"csfp-45-47","shape":"rect","size":[14.25,10.4]},{"at":[290.26,22.1],"id":"led-port-45","shape":"rect","size":[2.25,2.0]},{"at":[293.26,22.1],"id":"led-port-46","shape":"rect","size":[2.25,2.0]},{"at":[296.26,22.1],"id":"led-port-47","shape":"rect","size":[2.25,2.0]},{"at":[299.26,22.1],"id":"led-port-48","shape":"rect","size":[2.25,2.0]},{"at":[306.66,9.02],"id":"copper-46","shape":"rect","size":[15.8,13.2]},{"at":[306.66,23.98],"id":"copper-45","shape":"rect","size":[15.8,13.2]},{"at":[326.02,9.02],"id":"copper-48","shape":"rect","size":[15.8,13.2]},{"at":[326.02,23.98],"id":"copper-47","shape":"rect","size":[15.8,13.2]},{"at":[345.06,10.42],"id":"port-50","shape":"rect","size":[14.25,10.4]},{"at":[345.06,25.38],"id":"port-49","shape":"rect","size":[14.25,10.4]},{"at":[346.56,22.1],"id":"led-port-49","shape":"rect","size":[2.25,2.0]},{"at":[355.56,22.1],"id":"led-port-50","shape":"rect","size":[2.25,2.0]},{"at":[362.65,10.42],"id":"port-52","shape":"rect","size":[14.25,10.4]},{"at":[362.65,25.38],"id":"port-51","shape":"rect","size":[14.25,10.4]},{"at":[364.15,22.1],"id":"led-port-51","shape":"rect","size":[2.25,2.0]},{"at":[373.15,22.1],"id":"led-port-52","shape":"rect","size":[2.25,2.0]},{"at":[380.54,10.83],"id":"port-54","shape":"rect","size":[18.5,9.58]},{"at":[380.54,25.79],"id":"port-53","shape":"rect","size":[18.5,9.58]},{"at":[381.67,22.1],"id":"led-port-53","shape":"rect","size":[2.25,2.0]},{"at":[395.67,22.1],"id":"led-port-54","shape":"rect","size":[2.25,2.0]},{"at":[403.45,9.02],"id":"console","shape":"rect","size":[15.8,13.2]},{"at":[403.45,23.98],"id":"mgmt-eth","shape":"rect","size":[15.8,13.2]},{"at":[426.2,15.0],"id":"led-pwr","shape":"rect","size":[2.8,1.6]},{"at":[426.2,19.9],"id":"led-sys","shape":"rect","size":[2.8,1.6]},{"at":[6.24,14.64],"id":"power-in","shape":"rect","size":[28.0,20.0]},{"at":[44.9,13.7],"id":"ground","shape":"rect","size":[7.0,14.0]}],"decor":[{"at":[98.8,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[116.04,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[133.28,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[150.52,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[167.76,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[185.0,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[202.24,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[219.48,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[236.72,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[253.96,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[271.2,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[288.44,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[344.73,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[362.33,10.0],"fill":"#aeb3b8","rx":0.4,"size":[14.9,26.5]},{"at":[379.94,10.4],"fill":"#aeb3b8","rx":0.4,"size":[19.7,26.0]},{"at":[7.48,3.08],"fill":"#d8dcdf","rx":0.3,"size":[21.12,5.72]},{"at":[94.6,1.0],"pattern":"vent","size":[330.0,5.5],"vent":22},{"at":[98.85,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[116.09,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[133.33,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[150.57,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[167.81,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[185.05,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[202.29,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[219.53,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[236.77,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[254.01,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[271.25,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[288.49,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[344.78,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[362.38,20.82],"fill":"#d9dcdf","size":[14.8,4.56]},{"at":[380.29,20.82],"fill":"#d9dcdf","size":[19.0,4.56]},{"at":[385.89,22.5],"fill":"#3a3e43","size":[1.2,1.0]},{"at":[388.09,22.5],"fill":"#3a3e43","size":[1.2,1.0]},{"at":[390.29,22.5],"fill":"#3a3e43","size":[1.2,1.0]},{"at":[392.49,22.5],"fill":"#3a3e43","size":[1.2,1.0]}]},"silkscreen":[{"anchor":"middle","at":[101.75,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-2-4","text":"\u25cf2"},{"anchor":"middle","at":[110.75,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-2-4","text":"4"},{"anchor":"middle","at":[101.75,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-1-3","text":"1"},{"anchor":"middle","at":[110.75,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-1-3","text":"\u25cf3"},{"anchor":"middle","at":[118.99,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-6-8","text":"\u25cf6"},{"anchor":"middle","at":[127.99,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-6-8","text":"8"},{"anchor":"middle","at":[118.99,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-5-7","text":"5"},{"anchor":"middle","at":[127.99,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-5-7","text":"\u25cf7"},{"anchor":"middle","at":[136.23,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-10-12","text":"\u25cf10"},{"anchor":"middle","at":[145.23,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-10-12","text":"12"},{"anchor":"middle","at":[136.23,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-9-11","text":"9"},{"anchor":"middle","at":[145.23,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-9-11","text":"\u25cf11"},{"anchor":"middle","at":[153.47,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-14-16","text":"\u25cf14"},{"anchor":"middle","at":[162.47,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-14-16","text":"16"},{"anchor":"middle","at":[153.47,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-13-15","text":"13"},{"anchor":"middle","at":[162.47,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-13-15","text":"\u25cf15"},{"anchor":"middle","at":[170.71,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-18-20","text":"\u25cf18"},{"anchor":"middle","at":[179.71,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-18-20","text":"20"},{"anchor":"middle","at":[170.71,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-17-19","text":"17"},{"anchor":"middle","at":[179.71,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-17-19","text":"\u25cf19"},{"anchor":"middle","at":[187.95,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-22-24","text":"\u25cf22"},{"anchor":"middle","at":[196.95,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-22-24","text":"24"},{"anchor":"middle","at":[187.95,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-21-23","text":"21"},{"anchor":"middle","at":[196.95,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-21-23","text":"\u25cf23"},{"anchor":"middle","at":[205.19,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-26-28","text":"\u25cf26"},{"anchor":"middle","at":[214.19,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-26-28","text":"28"},{"anchor":"middle","at":[205.19,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-25-27","text":"25"},{"anchor":"middle","at":[214.19,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-25-27","text":"\u25cf27"},{"anchor":"middle","at":[222.43,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-30-32","text":"\u25cf30"},{"anchor":"middle","at":[231.43,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-30-32","text":"32"},{"anchor":"middle","at":[222.43,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-29-31","text":"29"},{"anchor":"middle","at":[231.43,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-29-31","text":"\u25cf31"},{"anchor":"middle","at":[239.67,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-34-36","text":"\u25cf34"},{"anchor":"middle","at":[248.67,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-34-36","text":"36"},{"anchor":"middle","at":[239.67,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-33-35","text":"33"},{"anchor":"middle","at":[248.67,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-33-35","text":"\u25cf35"},{"anchor":"middle","at":[256.91,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-38-40","text":"\u25cf38"},{"anchor":"middle","at":[265.91,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-38-40","text":"40"},{"anchor":"middle","at":[256.91,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-37-39","text":"37"},{"anchor":"middle","at":[265.91,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-37-39","text":"\u25cf39"},{"anchor":"middle","at":[274.15,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-42-44","text":"\u25cf42"},{"anchor":"middle","at":[283.15,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-42-44","text":"44"},{"anchor":"middle","at":[274.15,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-41-43","text":"41"},{"anchor":"middle","at":[283.15,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-41-43","text":"\u25cf43"},{"anchor":"middle","at":[291.39,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-46-48","text":"\u25cf46"},{"anchor":"middle","at":[300.39,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-46-48","text":"48"},{"anchor":"middle","at":[291.39,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-45-47","text":"45"},{"anchor":"middle","at":[300.39,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"csfp-45-47","text":"\u25cf47"},{"anchor":"middle","at":[314.56,7.8],"fill":"#d8dcdf","font-size":1.3,"for":"copper-46","text":"\u25bc 46 \u25b2"},{"anchor":"middle","at":[314.56,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"copper-45","text":"45"},{"anchor":"middle","at":[333.92,7.8],"fill":"#d8dcdf","font-size":1.3,"for":"copper-48","text":"\u25bc 48 \u25b2"},{"anchor":"middle","at":[333.92,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"copper-47","text":"47"},{"anchor":"middle","at":[352.18,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"port-50","text":"50"},{"anchor":"middle","at":[352.18,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"port-49","text":"49"},{"anchor":"middle","at":[369.78,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"port-52","text":"52"},{"anchor":"middle","at":[369.78,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"port-51","text":"51"},{"anchor":"middle","at":[389.79,9.6],"fill":"#d8dcdf","font-size":1.3,"for":"port-54","text":"54"},{"anchor":"middle","at":[389.79,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"port-53","text":"53"},{"anchor":"middle","at":[411.35,7.8],"fill":"#d8dcdf","font-size":1.3,"for":"console","text":"Console"},{"anchor":"middle","at":[411.35,39.2],"fill":"#d8dcdf","font-size":1.3,"for":"mgmt-eth","text":"MGMT"},{"anchor":"start","at":[429.6,16.23],"fill":"#d8dcdf","font-size":1.4,"for":"led-pwr","text":"PWR"},{"anchor":"start","at":[429.6,21.13],"fill":"#d8dcdf","font-size":1.4,"for":"led-sys","text":"SYS"},{"at":[48.4,31.9],"fill":"#d8dcdf","for":"ground","path":"M 0 -1.87 L 0 -0.34 M -1.7 -0.34 L 1.7 -0.34 M -1.054 0.408 L 1.054 0.408 M -0.476 1.156 L 0.476 1.156","stroke-width":0.28},{"anchor":"start","at":[7.5,12.4],"fill":"#d8dcdf","font-size":2.0,"for":"chassis","text":"ECS4530-54CSFP"},{"anchor":"middle","at":[20.24,37.9],"fill":"#d8dcdf","font-size":1.3,"for":"power-in","text":"~100-240 V; 50/60Hz; 3 A"},{"anchor":"start","at":[72.1,38.9],"fill":"#d8dcdf","font-size":1.4,"for":"chassis","text":"\u25cf SFP LED indicator"}],"size":{"h":44.0,"w":440.0}},"left":{"panel":{"decor":[{"at":[0.0,2.5],"fill":"#1b1e21","sink":1,"size":[220.0,1.4]}]},"size":{"h":44.0,"w":220.0}},"rear":{"panel":{"decor":[{"at":[109.1,4.85],"fill":"#8e949a","rx":12.5,"size":[25.0,25.0]},{"at":[101.8,2.3],"pattern":"vent","size":[39.6,30.1],"vent":40},{"at":[227.0,4.85],"fill":"#8e949a","rx":12.5,"size":[25.0,25.0]},{"at":[219.7,2.3],"pattern":"vent","size":[39.6,30.1],"vent":40},{"at":[338.6,4.85],"fill":"#8e949a","rx":12.5,"size":[25.0,25.0]},{"at":[331.3,2.3],"pattern":"vent","size":[39.6,30.1],"vent":40}]},"size":{"h":44.0,"w":440.0}},"right":{"panel":{"decor":[{"at":[0.0,2.5],"fill":"#1b1e21","sink":1,"size":[220.0,1.4]}]},"size":{"h":44.0,"w":220.0}},"top":{"panel":{"decor":[{"at":[2.0,20.0],"fill":"#1b1e21","sink":1,"size":[436.0,1.2]}]},"size":{"h":220.0,"w":440.0}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ECS4530-54CSFP" x="0" y="0" width="440" height="44" rx="1.2" fill="#26292c" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="98.8" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-1" data-kind="plate" x="116.04" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-2" data-kind="plate" x="133.28" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-3" data-kind="plate" x="150.52" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-4" data-kind="plate" x="167.76" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-5" data-kind="plate" x="185" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-6" data-kind="plate" x="202.24" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-7" data-kind="plate" x="219.48" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-8" data-kind="plate" x="236.72" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-9" data-kind="plate" x="253.96" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-10" data-kind="plate" x="271.2" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-11" data-kind="plate" x="288.44" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-12" data-kind="plate" x="344.73" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-13" data-kind="plate" x="362.33" y="10" width="14.9" height="26.5" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-14" data-kind="plate" x="379.94" y="10.4" width="19.7" height="26" rx="0.4" fill="#aeb3b8" />
+    <rect id="plate-15" data-kind="plate" x="7.48" y="3.08" width="21.12" height="5.72" rx="0.3" fill="#d8dcdf" />
+    <rect id="vent-field-0" data-kind="vent-field" data-aperture="air" x="94.6" y="1" width="330" height="5.5" rx="0.6" fill="url(#portrayal-vent)" data-vent="22" />
+    <rect id="plate-16" data-kind="plate" x="98.85" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-17" data-kind="plate" x="116.09" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-18" data-kind="plate" x="133.33" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-19" data-kind="plate" x="150.57" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-20" data-kind="plate" x="167.81" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-21" data-kind="plate" x="185.05" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-22" data-kind="plate" x="202.29" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-23" data-kind="plate" x="219.53" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-24" data-kind="plate" x="236.77" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-25" data-kind="plate" x="254.01" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-26" data-kind="plate" x="271.25" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-27" data-kind="plate" x="288.49" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-28" data-kind="plate" x="344.78" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-29" data-kind="plate" x="362.38" y="20.82" width="14.8" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-30" data-kind="plate" x="380.29" y="20.82" width="19" height="4.56" rx="0.6" fill="#d9dcdf" />
+    <rect id="plate-31" data-kind="plate" x="385.89" y="22.5" width="1.2" height="1" rx="0.6" fill="#3a3e43" />
+    <rect id="plate-32" data-kind="plate" x="388.09" y="22.5" width="1.2" height="1" rx="0.6" fill="#3a3e43" />
+    <rect id="plate-33" data-kind="plate" x="390.29" y="22.5" width="1.2" height="1" rx="0.6" fill="#3a3e43" />
+    <rect id="plate-34" data-kind="plate" x="392.49" y="22.5" width="1.2" height="1" rx="0.6" fill="#3a3e43" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="99.12" y="10.42" width="14.25" height="10.4" id="cutout--csfp-2-4" data-path="cutout:csfp-2-4" data-class="cutout" fill="#101214" />
+    <rect x="99.12" y="25.38" width="14.25" height="10.4" id="cutout--csfp-1-3" data-path="cutout:csfp-1-3" data-class="cutout" fill="#101214" />
+    <rect x="100.62" y="22.1" width="2.25" height="2" id="cutout--led-port-1" data-path="cutout:led-port-1" data-class="cutout" fill="#101214" />
+    <rect x="103.62" y="22.1" width="2.25" height="2" id="cutout--led-port-2" data-path="cutout:led-port-2" data-class="cutout" fill="#101214" />
+    <rect x="106.62" y="22.1" width="2.25" height="2" id="cutout--led-port-3" data-path="cutout:led-port-3" data-class="cutout" fill="#101214" />
+    <rect x="109.62" y="22.1" width="2.25" height="2" id="cutout--led-port-4" data-path="cutout:led-port-4" data-class="cutout" fill="#101214" />
+    <rect x="116.36" y="10.42" width="14.25" height="10.4" id="cutout--csfp-6-8" data-path="cutout:csfp-6-8" data-class="cutout" fill="#101214" />
+    <rect x="116.36" y="25.38" width="14.25" height="10.4" id="cutout--csfp-5-7" data-path="cutout:csfp-5-7" data-class="cutout" fill="#101214" />
+    <rect x="117.86" y="22.1" width="2.25" height="2" id="cutout--led-port-5" data-path="cutout:led-port-5" data-class="cutout" fill="#101214" />
+    <rect x="120.86" y="22.1" width="2.25" height="2" id="cutout--led-port-6" data-path="cutout:led-port-6" data-class="cutout" fill="#101214" />
+    <rect x="123.86" y="22.1" width="2.25" height="2" id="cutout--led-port-7" data-path="cutout:led-port-7" data-class="cutout" fill="#101214" />
+    <rect x="126.86" y="22.1" width="2.25" height="2" id="cutout--led-port-8" data-path="cutout:led-port-8" data-class="cutout" fill="#101214" />
+    <rect x="133.6" y="10.42" width="14.25" height="10.4" id="cutout--csfp-10-12" data-path="cutout:csfp-10-12" data-class="cutout" fill="#101214" />
+    <rect x="133.6" y="25.38" width="14.25" height="10.4" id="cutout--csfp-9-11" data-path="cutout:csfp-9-11" data-class="cutout" fill="#101214" />
+    <rect x="135.1" y="22.1" width="2.25" height="2" id="cutout--led-port-9" data-path="cutout:led-port-9" data-class="cutout" fill="#101214" />
+    <rect x="138.1" y="22.1" width="2.25" height="2" id="cutout--led-port-10" data-path="cutout:led-port-10" data-class="cutout" fill="#101214" />
+    <rect x="141.1" y="22.1" width="2.25" height="2" id="cutout--led-port-11" data-path="cutout:led-port-11" data-class="cutout" fill="#101214" />
+    <rect x="144.1" y="22.1" width="2.25" height="2" id="cutout--led-port-12" data-path="cutout:led-port-12" data-class="cutout" fill="#101214" />
+    <rect x="150.84" y="10.42" width="14.25" height="10.4" id="cutout--csfp-14-16" data-path="cutout:csfp-14-16" data-class="cutout" fill="#101214" />
+    <rect x="150.84" y="25.38" width="14.25" height="10.4" id="cutout--csfp-13-15" data-path="cutout:csfp-13-15" data-class="cutout" fill="#101214" />
+    <rect x="152.34" y="22.1" width="2.25" height="2" id="cutout--led-port-13" data-path="cutout:led-port-13" data-class="cutout" fill="#101214" />
+    <rect x="155.34" y="22.1" width="2.25" height="2" id="cutout--led-port-14" data-path="cutout:led-port-14" data-class="cutout" fill="#101214" />
+    <rect x="158.34" y="22.1" width="2.25" height="2" id="cutout--led-port-15" data-path="cutout:led-port-15" data-class="cutout" fill="#101214" />
+    <rect x="161.34" y="22.1" width="2.25" height="2" id="cutout--led-port-16" data-path="cutout:led-port-16" data-class="cutout" fill="#101214" />
+    <rect x="168.08" y="10.42" width="14.25" height="10.4" id="cutout--csfp-18-20" data-path="cutout:csfp-18-20" data-class="cutout" fill="#101214" />
+    <rect x="168.08" y="25.38" width="14.25" height="10.4" id="cutout--csfp-17-19" data-path="cutout:csfp-17-19" data-class="cutout" fill="#101214" />
+    <rect x="169.58" y="22.1" width="2.25" height="2" id="cutout--led-port-17" data-path="cutout:led-port-17" data-class="cutout" fill="#101214" />
+    <rect x="172.58" y="22.1" width="2.25" height="2" id="cutout--led-port-18" data-path="cutout:led-port-18" data-class="cutout" fill="#101214" />
+    <rect x="175.58" y="22.1" width="2.25" height="2" id="cutout--led-port-19" data-path="cutout:led-port-19" data-class="cutout" fill="#101214" />
+    <rect x="178.58" y="22.1" width="2.25" height="2" id="cutout--led-port-20" data-path="cutout:led-port-20" data-class="cutout" fill="#101214" />
+    <rect x="185.32" y="10.42" width="14.25" height="10.4" id="cutout--csfp-22-24" data-path="cutout:csfp-22-24" data-class="cutout" fill="#101214" />
+    <rect x="185.32" y="25.38" width="14.25" height="10.4" id="cutout--csfp-21-23" data-path="cutout:csfp-21-23" data-class="cutout" fill="#101214" />
+    <rect x="186.82" y="22.1" width="2.25" height="2" id="cutout--led-port-21" data-path="cutout:led-port-21" data-class="cutout" fill="#101214" />
+    <rect x="189.82" y="22.1" width="2.25" height="2" id="cutout--led-port-22" data-path="cutout:led-port-22" data-class="cutout" fill="#101214" />
+    <rect x="192.82" y="22.1" width="2.25" height="2" id="cutout--led-port-23" data-path="cutout:led-port-23" data-class="cutout" fill="#101214" />
+    <rect x="195.82" y="22.1" width="2.25" height="2" id="cutout--led-port-24" data-path="cutout:led-port-24" data-class="cutout" fill="#101214" />
+    <rect x="202.56" y="10.42" width="14.25" height="10.4" id="cutout--csfp-26-28" data-path="cutout:csfp-26-28" data-class="cutout" fill="#101214" />
+    <rect x="202.56" y="25.38" width="14.25" height="10.4" id="cutout--csfp-25-27" data-path="cutout:csfp-25-27" data-class="cutout" fill="#101214" />
+    <rect x="204.06" y="22.1" width="2.25" height="2" id="cutout--led-port-25" data-path="cutout:led-port-25" data-class="cutout" fill="#101214" />
+    <rect x="207.06" y="22.1" width="2.25" height="2" id="cutout--led-port-26" data-path="cutout:led-port-26" data-class="cutout" fill="#101214" />
+    <rect x="210.06" y="22.1" width="2.25" height="2" id="cutout--led-port-27" data-path="cutout:led-port-27" data-class="cutout" fill="#101214" />
+    <rect x="213.06" y="22.1" width="2.25" height="2" id="cutout--led-port-28" data-path="cutout:led-port-28" data-class="cutout" fill="#101214" />
+    <rect x="219.81" y="10.42" width="14.25" height="10.4" id="cutout--csfp-30-32" data-path="cutout:csfp-30-32" data-class="cutout" fill="#101214" />
+    <rect x="219.81" y="25.38" width="14.25" height="10.4" id="cutout--csfp-29-31" data-path="cutout:csfp-29-31" data-class="cutout" fill="#101214" />
+    <rect x="221.31" y="22.1" width="2.25" height="2" id="cutout--led-port-29" data-path="cutout:led-port-29" data-class="cutout" fill="#101214" />
+    <rect x="224.31" y="22.1" width="2.25" height="2" id="cutout--led-port-30" data-path="cutout:led-port-30" data-class="cutout" fill="#101214" />
+    <rect x="227.31" y="22.1" width="2.25" height="2" id="cutout--led-port-31" data-path="cutout:led-port-31" data-class="cutout" fill="#101214" />
+    <rect x="230.31" y="22.1" width="2.25" height="2" id="cutout--led-port-32" data-path="cutout:led-port-32" data-class="cutout" fill="#101214" />
+    <rect x="237.04" y="10.42" width="14.25" height="10.4" id="cutout--csfp-34-36" data-path="cutout:csfp-34-36" data-class="cutout" fill="#101214" />
+    <rect x="237.04" y="25.38" width="14.25" height="10.4" id="cutout--csfp-33-35" data-path="cutout:csfp-33-35" data-class="cutout" fill="#101214" />
+    <rect x="238.54" y="22.1" width="2.25" height="2" id="cutout--led-port-33" data-path="cutout:led-port-33" data-class="cutout" fill="#101214" />
+    <rect x="241.54" y="22.1" width="2.25" height="2" id="cutout--led-port-34" data-path="cutout:led-port-34" data-class="cutout" fill="#101214" />
+    <rect x="244.54" y="22.1" width="2.25" height="2" id="cutout--led-port-35" data-path="cutout:led-port-35" data-class="cutout" fill="#101214" />
+    <rect x="247.54" y="22.1" width="2.25" height="2" id="cutout--led-port-36" data-path="cutout:led-port-36" data-class="cutout" fill="#101214" />
+    <rect x="254.28" y="10.42" width="14.25" height="10.4" id="cutout--csfp-38-40" data-path="cutout:csfp-38-40" data-class="cutout" fill="#101214" />
+    <rect x="254.28" y="25.38" width="14.25" height="10.4" id="cutout--csfp-37-39" data-path="cutout:csfp-37-39" data-class="cutout" fill="#101214" />
+    <rect x="255.78" y="22.1" width="2.25" height="2" id="cutout--led-port-37" data-path="cutout:led-port-37" data-class="cutout" fill="#101214" />
+    <rect x="258.78" y="22.1" width="2.25" height="2" id="cutout--led-port-38" data-path="cutout:led-port-38" data-class="cutout" fill="#101214" />
+    <rect x="261.78" y="22.1" width="2.25" height="2" id="cutout--led-port-39" data-path="cutout:led-port-39" data-class="cutout" fill="#101214" />
+    <rect x="264.78" y="22.1" width="2.25" height="2" id="cutout--led-port-40" data-path="cutout:led-port-40" data-class="cutout" fill="#101214" />
+    <rect x="271.52" y="10.42" width="14.25" height="10.4" id="cutout--csfp-42-44" data-path="cutout:csfp-42-44" data-class="cutout" fill="#101214" />
+    <rect x="271.52" y="25.38" width="14.25" height="10.4" id="cutout--csfp-41-43" data-path="cutout:csfp-41-43" data-class="cutout" fill="#101214" />
+    <rect x="273.02" y="22.1" width="2.25" height="2" id="cutout--led-port-41" data-path="cutout:led-port-41" data-class="cutout" fill="#101214" />
+    <rect x="276.02" y="22.1" width="2.25" height="2" id="cutout--led-port-42" data-path="cutout:led-port-42" data-class="cutout" fill="#101214" />
+    <rect x="279.02" y="22.1" width="2.25" height="2" id="cutout--led-port-43" data-path="cutout:led-port-43" data-class="cutout" fill="#101214" />
+    <rect x="282.02" y="22.1" width="2.25" height="2" id="cutout--led-port-44" data-path="cutout:led-port-44" data-class="cutout" fill="#101214" />
+    <rect x="288.76" y="10.42" width="14.25" height="10.4" id="cutout--csfp-46-48" data-path="cutout:csfp-46-48" data-class="cutout" fill="#101214" />
+    <rect x="288.76" y="25.38" width="14.25" height="10.4" id="cutout--csfp-45-47" data-path="cutout:csfp-45-47" data-class="cutout" fill="#101214" />
+    <rect x="290.26" y="22.1" width="2.25" height="2" id="cutout--led-port-45" data-path="cutout:led-port-45" data-class="cutout" fill="#101214" />
+    <rect x="293.26" y="22.1" width="2.25" height="2" id="cutout--led-port-46" data-path="cutout:led-port-46" data-class="cutout" fill="#101214" />
+    <rect x="296.26" y="22.1" width="2.25" height="2" id="cutout--led-port-47" data-path="cutout:led-port-47" data-class="cutout" fill="#101214" />
+    <rect x="299.26" y="22.1" width="2.25" height="2" id="cutout--led-port-48" data-path="cutout:led-port-48" data-class="cutout" fill="#101214" />
+    <rect x="306.66" y="9.02" width="15.8" height="13.2" id="cutout--copper-46" data-path="cutout:copper-46" data-class="cutout" fill="#101214" />
+    <rect x="306.66" y="23.98" width="15.8" height="13.2" id="cutout--copper-45" data-path="cutout:copper-45" data-class="cutout" fill="#101214" />
+    <rect x="326.02" y="9.02" width="15.8" height="13.2" id="cutout--copper-48" data-path="cutout:copper-48" data-class="cutout" fill="#101214" />
+    <rect x="326.02" y="23.98" width="15.8" height="13.2" id="cutout--copper-47" data-path="cutout:copper-47" data-class="cutout" fill="#101214" />
+    <rect x="345.06" y="10.42" width="14.25" height="10.4" id="cutout--port-50" data-path="cutout:port-50" data-class="cutout" fill="#101214" />
+    <rect x="345.06" y="25.38" width="14.25" height="10.4" id="cutout--port-49" data-path="cutout:port-49" data-class="cutout" fill="#101214" />
+    <rect x="346.56" y="22.1" width="2.25" height="2" id="cutout--led-port-49" data-path="cutout:led-port-49" data-class="cutout" fill="#101214" />
+    <rect x="355.56" y="22.1" width="2.25" height="2" id="cutout--led-port-50" data-path="cutout:led-port-50" data-class="cutout" fill="#101214" />
+    <rect x="362.65" y="10.42" width="14.25" height="10.4" id="cutout--port-52" data-path="cutout:port-52" data-class="cutout" fill="#101214" />
+    <rect x="362.65" y="25.38" width="14.25" height="10.4" id="cutout--port-51" data-path="cutout:port-51" data-class="cutout" fill="#101214" />
+    <rect x="364.15" y="22.1" width="2.25" height="2" id="cutout--led-port-51" data-path="cutout:led-port-51" data-class="cutout" fill="#101214" />
+    <rect x="373.15" y="22.1" width="2.25" height="2" id="cutout--led-port-52" data-path="cutout:led-port-52" data-class="cutout" fill="#101214" />
+    <rect x="380.54" y="10.83" width="18.5" height="9.58" id="cutout--port-54" data-path="cutout:port-54" data-class="cutout" fill="#101214" />
+    <rect x="380.54" y="25.79" width="18.5" height="9.58" id="cutout--port-53" data-path="cutout:port-53" data-class="cutout" fill="#101214" />
+    <rect x="381.67" y="22.1" width="2.25" height="2" id="cutout--led-port-53" data-path="cutout:led-port-53" data-class="cutout" fill="#101214" />
+    <rect x="395.67" y="22.1" width="2.25" height="2" id="cutout--led-port-54" data-path="cutout:led-port-54" data-class="cutout" fill="#101214" />
+    <rect x="403.45" y="9.02" width="15.8" height="13.2" id="cutout--console" data-path="cutout:console" data-class="cutout" fill="#101214" />
+    <rect x="403.45" y="23.98" width="15.8" height="13.2" id="cutout--mgmt-eth" data-path="cutout:mgmt-eth" data-class="cutout" fill="#101214" />
+    <rect x="426.2" y="15" width="2.8" height="1.6" id="cutout--led-pwr" data-path="cutout:led-pwr" data-class="cutout" fill="#101214" />
+    <rect x="426.2" y="19.9" width="2.8" height="1.6" id="cutout--led-sys" data-path="cutout:led-sys" data-class="cutout" fill="#101214" />
+    <rect x="6.24" y="14.64" width="28" height="20" id="cutout--power-in" data-path="cutout:power-in" data-class="cutout" fill="#101214" />
+    <rect x="44.9" y="13.7" width="7" height="14" id="cutout--ground" data-path="cutout:ground" data-class="cutout" fill="#101214" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="101.75" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-2-4">●2</text>
+    <text x="110.75" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-2-4">4</text>
+    <text x="101.75" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-1-3">1</text>
+    <text x="110.75" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-1-3">●3</text>
+    <text x="118.99" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-6-8">●6</text>
+    <text x="127.99" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-6-8">8</text>
+    <text x="118.99" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-5-7">5</text>
+    <text x="127.99" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-5-7">●7</text>
+    <text x="136.23" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-10-12">●10</text>
+    <text x="145.23" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-10-12">12</text>
+    <text x="136.23" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-9-11">9</text>
+    <text x="145.23" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-9-11">●11</text>
+    <text x="153.47" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-14-16">●14</text>
+    <text x="162.47" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-14-16">16</text>
+    <text x="153.47" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-13-15">13</text>
+    <text x="162.47" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-13-15">●15</text>
+    <text x="170.71" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-18-20">●18</text>
+    <text x="179.71" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-18-20">20</text>
+    <text x="170.71" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-17-19">17</text>
+    <text x="179.71" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-17-19">●19</text>
+    <text x="187.95" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-22-24">●22</text>
+    <text x="196.95" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-22-24">24</text>
+    <text x="187.95" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-21-23">21</text>
+    <text x="196.95" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-21-23">●23</text>
+    <text x="205.19" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-26-28">●26</text>
+    <text x="214.19" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-26-28">28</text>
+    <text x="205.19" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-25-27">25</text>
+    <text x="214.19" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-25-27">●27</text>
+    <text x="222.43" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-30-32">●30</text>
+    <text x="231.43" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-30-32">32</text>
+    <text x="222.43" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-29-31">29</text>
+    <text x="231.43" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-29-31">●31</text>
+    <text x="239.67" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-34-36">●34</text>
+    <text x="248.67" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:33" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-34-36">36</text>
+    <text x="239.67" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:34" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-33-35">33</text>
+    <text x="248.67" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:35" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-33-35">●35</text>
+    <text x="256.91" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:36" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-38-40">●38</text>
+    <text x="265.91" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:37" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-38-40">40</text>
+    <text x="256.91" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:38" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-37-39">37</text>
+    <text x="265.91" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:39" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-37-39">●39</text>
+    <text x="274.15" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:40" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-42-44">●42</text>
+    <text x="283.15" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:41" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-42-44">44</text>
+    <text x="274.15" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:42" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-41-43">41</text>
+    <text x="283.15" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:43" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-41-43">●43</text>
+    <text x="291.39" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:44" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-46-48">●46</text>
+    <text x="300.39" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:45" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-46-48">48</text>
+    <text x="291.39" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:46" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-45-47">45</text>
+    <text x="300.39" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:47" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="csfp-45-47">●47</text>
+    <text x="314.56" y="7.8" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:48" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-46">▼ 46 ▲</text>
+    <text x="314.56" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:49" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-45">45</text>
+    <text x="333.92" y="7.8" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:50" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-48">▼ 48 ▲</text>
+    <text x="333.92" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:51" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="copper-47">47</text>
+    <text x="352.18" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:52" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-50">50</text>
+    <text x="352.18" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:53" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-49">49</text>
+    <text x="369.78" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:54" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-52">52</text>
+    <text x="369.78" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:55" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-51">51</text>
+    <text x="389.79" y="9.6" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:56" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-54">54</text>
+    <text x="389.79" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:57" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-53">53</text>
+    <text x="411.35" y="7.8" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:58" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">Console</text>
+    <text x="411.35" y="39.2" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:59" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-eth">MGMT</text>
+    <text x="429.6" y="16.23" font-family="sans-serif" font-size="1.4" text-anchor="start" fill="#d8dcdf" data-path="silk:60" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="429.6" y="21.13" font-family="sans-serif" font-size="1.4" text-anchor="start" fill="#d8dcdf" data-path="silk:61" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-sys">SYS</text>
+    <path d="M 0 -1.87 L 0 -0.34 M -1.7 -0.34 L 1.7 -0.34 M -1.054 0.408 L 1.054 0.408 M -0.476 1.156 L 0.476 1.156" fill="none" stroke="#d8dcdf" stroke-width="0.28" stroke-linecap="round" stroke-linejoin="round" transform="translate(48.4 31.9)" data-path="silk:62" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground" />
+    <text x="7.5" y="12.4" font-family="sans-serif" font-size="2" text-anchor="start" fill="#d8dcdf" data-path="silk:63" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">ECS4530-54CSFP</text>
+    <text x="20.24" y="37.9" font-family="sans-serif" font-size="1.3" text-anchor="middle" fill="#d8dcdf" data-path="silk:64" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="power-in">~100-240 V; 50/60Hz; 3 A</text>
+    <text x="72.1" y="38.9" font-family="sans-serif" font-size="1.4" text-anchor="start" fill="#d8dcdf" data-path="silk:65" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">● SFP LED indicator</text>
+  </g>
+  <g id="csfp-2-4" data-path="csfp-2-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="2" transform="translate(99.12,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-2-4</title>
+    <rect id="csfp-2-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-2-4/opening" data-class="cutout" />
+    <rect id="csfp-2-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-2-4--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-2-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-1-3" data-path="csfp-1-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="1" transform="translate(99.12,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-1-3</title>
+    <rect id="csfp-1-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-1-3/opening" data-class="cutout" />
+    <rect id="csfp-1-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-1-3--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-1-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-1" data-path="led-port-1" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="1" transform="translate(100.62,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-1-3">
+    <title>led-port-1</title>
+    <path id="led-port-1--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-1/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-2" data-path="led-port-2" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="2" transform="translate(103.62,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-2-4">
+    <title>led-port-2</title>
+    <path id="led-port-2--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-2/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-3" data-path="led-port-3" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="3" transform="translate(106.62,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-1-3">
+    <title>led-port-3</title>
+    <path id="led-port-3--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-3/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-4" data-path="led-port-4" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="4" transform="translate(109.62,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-2-4">
+    <title>led-port-4</title>
+    <path id="led-port-4--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-4/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-6-8" data-path="csfp-6-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="4" transform="translate(116.36,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-6-8</title>
+    <rect id="csfp-6-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-6-8/opening" data-class="cutout" />
+    <rect id="csfp-6-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-6-8--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-6-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-5-7" data-path="csfp-5-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="3" transform="translate(116.36,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-5-7</title>
+    <rect id="csfp-5-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-5-7/opening" data-class="cutout" />
+    <rect id="csfp-5-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-5-7--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-5-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-5" data-path="led-port-5" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="5" transform="translate(117.86,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-5-7">
+    <title>led-port-5</title>
+    <path id="led-port-5--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-5/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-6" data-path="led-port-6" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="6" transform="translate(120.86,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-6-8">
+    <title>led-port-6</title>
+    <path id="led-port-6--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-6/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-7" data-path="led-port-7" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="7" transform="translate(123.86,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-5-7">
+    <title>led-port-7</title>
+    <path id="led-port-7--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-7/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-8" data-path="led-port-8" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="8" transform="translate(126.86,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-6-8">
+    <title>led-port-8</title>
+    <path id="led-port-8--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-8/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-10-12" data-path="csfp-10-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="6" transform="translate(133.6,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-10-12</title>
+    <rect id="csfp-10-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-10-12/opening" data-class="cutout" />
+    <rect id="csfp-10-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-10-12--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-10-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-9-11" data-path="csfp-9-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="5" transform="translate(133.6,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-9-11</title>
+    <rect id="csfp-9-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-9-11/opening" data-class="cutout" />
+    <rect id="csfp-9-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-9-11--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-9-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-9" data-path="led-port-9" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="9" transform="translate(135.1,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-9-11">
+    <title>led-port-9</title>
+    <path id="led-port-9--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-9/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-10" data-path="led-port-10" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="10" transform="translate(138.1,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-10-12">
+    <title>led-port-10</title>
+    <path id="led-port-10--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-10/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-11" data-path="led-port-11" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="11" transform="translate(141.1,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-9-11">
+    <title>led-port-11</title>
+    <path id="led-port-11--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-11/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-12" data-path="led-port-12" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="12" transform="translate(144.1,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-10-12">
+    <title>led-port-12</title>
+    <path id="led-port-12--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-12/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-14-16" data-path="csfp-14-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="8" transform="translate(150.84,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-14-16</title>
+    <rect id="csfp-14-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-14-16/opening" data-class="cutout" />
+    <rect id="csfp-14-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-14-16--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-14-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-13-15" data-path="csfp-13-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="7" transform="translate(150.84,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-13-15</title>
+    <rect id="csfp-13-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-13-15/opening" data-class="cutout" />
+    <rect id="csfp-13-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-13-15--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-13-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-13" data-path="led-port-13" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="13" transform="translate(152.34,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-13-15">
+    <title>led-port-13</title>
+    <path id="led-port-13--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-13/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-14" data-path="led-port-14" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="14" transform="translate(155.34,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-14-16">
+    <title>led-port-14</title>
+    <path id="led-port-14--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-14/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-15" data-path="led-port-15" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="15" transform="translate(158.34,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-13-15">
+    <title>led-port-15</title>
+    <path id="led-port-15--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-15/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-16" data-path="led-port-16" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="16" transform="translate(161.34,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-14-16">
+    <title>led-port-16</title>
+    <path id="led-port-16--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-16/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-18-20" data-path="csfp-18-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="10" transform="translate(168.08,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-18-20</title>
+    <rect id="csfp-18-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-18-20/opening" data-class="cutout" />
+    <rect id="csfp-18-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-18-20--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-18-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-17-19" data-path="csfp-17-19" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="9" transform="translate(168.08,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-17-19</title>
+    <rect id="csfp-17-19--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-17-19/opening" data-class="cutout" />
+    <rect id="csfp-17-19--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-17-19--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-17-19--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-17" data-path="led-port-17" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="17" transform="translate(169.58,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-17-19">
+    <title>led-port-17</title>
+    <path id="led-port-17--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-17/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-18" data-path="led-port-18" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="18" transform="translate(172.58,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-18-20">
+    <title>led-port-18</title>
+    <path id="led-port-18--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-18/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-19" data-path="led-port-19" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="19" transform="translate(175.58,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-17-19">
+    <title>led-port-19</title>
+    <path id="led-port-19--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-19/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-20" data-path="led-port-20" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="20" transform="translate(178.58,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-18-20">
+    <title>led-port-20</title>
+    <path id="led-port-20--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-20/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-22-24" data-path="csfp-22-24" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="12" transform="translate(185.32,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-22-24</title>
+    <rect id="csfp-22-24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-22-24/opening" data-class="cutout" />
+    <rect id="csfp-22-24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-22-24--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-22-24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-21-23" data-path="csfp-21-23" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="11" transform="translate(185.32,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-21-23</title>
+    <rect id="csfp-21-23--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-21-23/opening" data-class="cutout" />
+    <rect id="csfp-21-23--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-21-23--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-21-23--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-21" data-path="led-port-21" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="21" transform="translate(186.82,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-21-23">
+    <title>led-port-21</title>
+    <path id="led-port-21--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-21/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-22" data-path="led-port-22" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="22" transform="translate(189.82,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-22-24">
+    <title>led-port-22</title>
+    <path id="led-port-22--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-22/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-23" data-path="led-port-23" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="23" transform="translate(192.82,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-21-23">
+    <title>led-port-23</title>
+    <path id="led-port-23--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-23/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-24" data-path="led-port-24" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="24" transform="translate(195.82,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-22-24">
+    <title>led-port-24</title>
+    <path id="led-port-24--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-24/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-26-28" data-path="csfp-26-28" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="14" transform="translate(202.56,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-26-28</title>
+    <rect id="csfp-26-28--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-26-28/opening" data-class="cutout" />
+    <rect id="csfp-26-28--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-26-28--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-26-28--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-25-27" data-path="csfp-25-27" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="13" transform="translate(202.56,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-25-27</title>
+    <rect id="csfp-25-27--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-25-27/opening" data-class="cutout" />
+    <rect id="csfp-25-27--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-25-27--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-25-27--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-25" data-path="led-port-25" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="25" transform="translate(204.06,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-25-27">
+    <title>led-port-25</title>
+    <path id="led-port-25--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-25/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-26" data-path="led-port-26" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="26" transform="translate(207.06,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-26-28">
+    <title>led-port-26</title>
+    <path id="led-port-26--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-26/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-27" data-path="led-port-27" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="27" transform="translate(210.06,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-25-27">
+    <title>led-port-27</title>
+    <path id="led-port-27--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-27/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-28" data-path="led-port-28" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="28" transform="translate(213.06,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-26-28">
+    <title>led-port-28</title>
+    <path id="led-port-28--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-28/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-30-32" data-path="csfp-30-32" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="16" transform="translate(219.81,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-30-32</title>
+    <rect id="csfp-30-32--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-30-32/opening" data-class="cutout" />
+    <rect id="csfp-30-32--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-30-32--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-30-32--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-29-31" data-path="csfp-29-31" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="15" transform="translate(219.81,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-29-31</title>
+    <rect id="csfp-29-31--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-29-31/opening" data-class="cutout" />
+    <rect id="csfp-29-31--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-29-31--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-29-31--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-29" data-path="led-port-29" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="29" transform="translate(221.31,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-29-31">
+    <title>led-port-29</title>
+    <path id="led-port-29--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-29/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-30" data-path="led-port-30" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="30" transform="translate(224.31,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-30-32">
+    <title>led-port-30</title>
+    <path id="led-port-30--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-30/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-31" data-path="led-port-31" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="31" transform="translate(227.31,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-29-31">
+    <title>led-port-31</title>
+    <path id="led-port-31--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-31/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-32" data-path="led-port-32" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="32" transform="translate(230.31,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-30-32">
+    <title>led-port-32</title>
+    <path id="led-port-32--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-32/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-34-36" data-path="csfp-34-36" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="18" transform="translate(237.04,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-34-36</title>
+    <rect id="csfp-34-36--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-34-36/opening" data-class="cutout" />
+    <rect id="csfp-34-36--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-34-36--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-34-36--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-33-35" data-path="csfp-33-35" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="17" transform="translate(237.04,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-33-35</title>
+    <rect id="csfp-33-35--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-33-35/opening" data-class="cutout" />
+    <rect id="csfp-33-35--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-33-35--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-33-35--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-33" data-path="led-port-33" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="33" transform="translate(238.54,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-33-35">
+    <title>led-port-33</title>
+    <path id="led-port-33--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-33/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-34" data-path="led-port-34" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="34" transform="translate(241.54,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-34-36">
+    <title>led-port-34</title>
+    <path id="led-port-34--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-34/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-35" data-path="led-port-35" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="35" transform="translate(244.54,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-33-35">
+    <title>led-port-35</title>
+    <path id="led-port-35--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-35/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-36" data-path="led-port-36" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="36" transform="translate(247.54,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-34-36">
+    <title>led-port-36</title>
+    <path id="led-port-36--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-36/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-38-40" data-path="csfp-38-40" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="20" transform="translate(254.28,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-38-40</title>
+    <rect id="csfp-38-40--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-38-40/opening" data-class="cutout" />
+    <rect id="csfp-38-40--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-38-40--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-38-40--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-37-39" data-path="csfp-37-39" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="19" transform="translate(254.28,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-37-39</title>
+    <rect id="csfp-37-39--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-37-39/opening" data-class="cutout" />
+    <rect id="csfp-37-39--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-37-39--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-37-39--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-37" data-path="led-port-37" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="37" transform="translate(255.78,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-37-39">
+    <title>led-port-37</title>
+    <path id="led-port-37--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-37/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-38" data-path="led-port-38" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="38" transform="translate(258.78,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-38-40">
+    <title>led-port-38</title>
+    <path id="led-port-38--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-38/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-39" data-path="led-port-39" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="39" transform="translate(261.78,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-37-39">
+    <title>led-port-39</title>
+    <path id="led-port-39--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-39/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-40" data-path="led-port-40" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="40" transform="translate(264.78,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-38-40">
+    <title>led-port-40</title>
+    <path id="led-port-40--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-40/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-42-44" data-path="csfp-42-44" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="22" transform="translate(271.52,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-42-44</title>
+    <rect id="csfp-42-44--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-42-44/opening" data-class="cutout" />
+    <rect id="csfp-42-44--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-42-44--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-42-44--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-41-43" data-path="csfp-41-43" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="21" transform="translate(271.52,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-41-43</title>
+    <rect id="csfp-41-43--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-41-43/opening" data-class="cutout" />
+    <rect id="csfp-41-43--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-41-43--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-41-43--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-41" data-path="led-port-41" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="41" transform="translate(273.02,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-41-43">
+    <title>led-port-41</title>
+    <path id="led-port-41--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-41/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-42" data-path="led-port-42" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="42" transform="translate(276.02,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-42-44">
+    <title>led-port-42</title>
+    <path id="led-port-42--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-42/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-43" data-path="led-port-43" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="43" transform="translate(279.02,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-41-43">
+    <title>led-port-43</title>
+    <path id="led-port-43--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-43/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-44" data-path="led-port-44" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="44" transform="translate(282.02,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-42-44">
+    <title>led-port-44</title>
+    <path id="led-port-44--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-44/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="csfp-46-48" data-path="csfp-46-48" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="24" transform="translate(288.76,10.42) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-46-48</title>
+    <rect id="csfp-46-48--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-46-48/opening" data-class="cutout" />
+    <rect id="csfp-46-48--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-46-48--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-46-48--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="csfp-45-47" data-path="csfp-45-47" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-csfp="True" data-media="sfp" data-speed="1g" data-rel-pos="23" transform="translate(288.76,25.38)" data-group="csfp" data-group-role="traffic">
+    <title>csfp-45-47</title>
+    <rect id="csfp-45-47--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="csfp-45-47/opening" data-class="cutout" />
+    <rect id="csfp-45-47--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="csfp-45-47--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="csfp-45-47--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-45" data-path="led-port-45" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="45" transform="translate(290.26,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-45-47">
+    <title>led-port-45</title>
+    <path id="led-port-45--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-45/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-46" data-path="led-port-46" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="46" transform="translate(293.26,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-46-48">
+    <title>led-port-46</title>
+    <path id="led-port-46--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-46/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-47" data-path="led-port-47" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="47" transform="translate(296.26,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-45-47">
+    <title>led-port-47</title>
+    <path id="led-port-47--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-47/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-48" data-path="led-port-48" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="48" transform="translate(299.26,22.1)" data-group="port-leds" data-group-role="indicator" data-for="csfp-46-48">
+    <title>led-port-48</title>
+    <path id="led-port-48--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-48/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="copper-46" data-path="copper-46" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-combo-with="port-46" data-media="rj45" data-speed="1g" data-rel-pos="46" transform="translate(306.66,9.02) rotate(180 7.9 6.6)" data-group="rj45-combo" data-group-role="traffic">
+    <title>copper-46</title>
+    <g id="copper-46--jack" data-path="copper-46/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>copper-46--jack</title>
+      <path id="copper-46--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-46--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-46--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-46/jack/opening" data-class="cutout" />
+      <g id="copper-46--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="copper-46--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="copper-46--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-46/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="copper-46--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-46/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-45" data-path="copper-45" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-combo-with="port-45" data-media="rj45" data-speed="1g" data-rel-pos="45" transform="translate(306.66,23.98)" data-group="rj45-combo" data-group-role="traffic">
+    <title>copper-45</title>
+    <path id="copper-45--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-45--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-45--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-45/opening" data-class="cutout" />
+    <g id="copper-45--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-48" data-path="copper-48" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-combo-with="port-48" data-media="rj45" data-speed="1g" data-rel-pos="48" transform="translate(326.02,9.02) rotate(180 7.9 6.6)" data-group="rj45-combo" data-group-role="traffic">
+    <title>copper-48</title>
+    <g id="copper-48--jack" data-path="copper-48/jack" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>copper-48--jack</title>
+      <path id="copper-48--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-48--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="copper-48--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-48/jack/opening" data-class="cutout" />
+      <g id="copper-48--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="copper-48--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="copper-48--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-48/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="copper-48--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="copper-48/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="copper-47" data-path="copper-47" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-combo-with="port-47" data-media="rj45" data-speed="1g" data-rel-pos="47" transform="translate(326.02,23.98)" data-group="rj45-combo" data-group-role="traffic">
+    <title>copper-47</title>
+    <path id="copper-47--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-47--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="copper-47--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="copper-47/opening" data-class="cutout" />
+    <g id="copper-47--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="port-50" data-path="port-50" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="50" transform="translate(345.06,10.42) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-50</title>
+    <rect id="port-50--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-50/opening" data-class="cutout" />
+    <rect id="port-50--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-50--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-50--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-49" data-path="port-49" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="49" transform="translate(345.06,25.38)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-49</title>
+    <rect id="port-49--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-49/opening" data-class="cutout" />
+    <rect id="port-49--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-49--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-49--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-49" data-path="led-port-49" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="49" transform="translate(346.56,22.1)" data-group="port-leds" data-group-role="indicator" data-for="port-49">
+    <title>led-port-49</title>
+    <path id="led-port-49--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-49/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-50" data-path="led-port-50" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="50" transform="translate(355.56,22.1)" data-group="port-leds" data-group-role="indicator" data-for="port-50">
+    <title>led-port-50</title>
+    <path id="led-port-50--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-50/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="port-52" data-path="port-52" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="52" transform="translate(362.65,10.42) rotate(180 7.125 5.2)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-52</title>
+    <rect id="port-52--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-52/opening" data-class="cutout" />
+    <rect id="port-52--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-52--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-52--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="port-51" data-path="port-51" data-class="port" data-ref="std/sfp-ganged@1:1.1.0" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" data-rel-pos="51" transform="translate(362.65,25.38)" data-group="sfp-plus" data-group-role="traffic">
+    <title>port-51</title>
+    <rect id="port-51--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="port-51/opening" data-class="cutout" />
+    <rect id="port-51--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+    <rect id="port-51--cage-lip" x="1.1" y="1.3" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="port-51--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+  </g>
+  <g id="led-port-51" data-path="led-port-51" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="51" transform="translate(364.15,22.1)" data-group="port-leds" data-group-role="indicator" data-for="port-51">
+    <title>led-port-51</title>
+    <path id="led-port-51--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-51/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-52" data-path="led-port-52" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="52" transform="translate(373.15,22.1)" data-group="port-leds" data-group-role="indicator" data-for="port-52">
+    <title>led-port-52</title>
+    <path id="led-port-52--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-52/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="port-54" data-path="port-54" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="20g" data-rel-pos="54" transform="translate(380.54,10.83) rotate(180 9.25 4.79)" data-group="qsfp-plus" data-group-role="traffic">
+    <title>port-54</title>
+    <rect id="port-54--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-54/opening" data-class="cutout" />
+    <rect id="port-54--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-54--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-54--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="port-53" data-path="port-53" data-class="port" data-ref="std/qsfp-ganged@1:1.4.0" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" data-speed="20g" data-rel-pos="53" transform="translate(380.54,25.79)" data-group="qsfp-plus" data-group-role="traffic">
+    <title>port-53</title>
+    <rect id="port-53--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="port-53/opening" data-class="cutout" />
+    <rect id="port-53--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+    <rect id="port-53--cage-lip" x="0.9" y="1.4" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+    <rect id="port-53--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+    <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+  </g>
+  <g id="led-port-53" data-path="led-port-53" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="53" transform="translate(381.67,22.1)" data-group="port-leds" data-group-role="indicator" data-for="port-53">
+    <title>led-port-53</title>
+    <path id="led-port-53--lamp" d="M 0.188 0.188 L 2.062 0.188 L 1.125 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-53/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="led-port-54" data-path="led-port-54" data-class="led" data-ref="common/led-arrow-sm@1:1.1.0" data-rel-pos="54" transform="translate(395.67,22.1)" data-group="port-leds" data-group-role="indicator" data-for="port-54">
+    <title>led-port-54</title>
+    <path id="led-port-54--lamp" d="M 1.125 0.188 L 2.062 1.812 L 0.188 1.812 Z" fill="var(--led-color, #3c4147)" stroke="#5b6167" stroke-width="0.138" data-path="led-port-54/lamp" data-class="led" data-states="off on" data-z-dome="0.16" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(403.45,9.02) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-eth" data-path="mgmt-eth" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="2" transform="translate(403.45,23.98)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-eth</title>
+    <path id="mgmt-eth--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="mgmt-eth--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <path id="mgmt-eth--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="mgmt-eth/opening" data-class="cutout" />
+    <g id="mgmt-eth--pins" fill="#a8873c">
+      <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+      <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+      <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+      <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+      <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+      <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+      <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+      <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="1" transform="translate(426.2,15.0)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>led-pwr</title>
+    <rect id="led-pwr--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-pwr--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-sys" data-path="led-sys" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="2" transform="translate(426.2,19.9)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>led-sys</title>
+    <rect id="led-sys--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-sys--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-sys/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="power-in" data-path="power-in" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="c14" data-role="power" data-rel-pos="1" transform="translate(6.24,14.64)" data-group="power" data-group-role="service">
+    <title>power-in</title>
+    <rect id="power-in--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="power-in/opening" data-class="cutout" />
+    <path id="power-in--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+    <rect id="power-in--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    <rect id="power-in--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    <rect id="power-in--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+    <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+  </g>
+  <g id="ground" data-path="ground" data-class="ground" data-behaviour="mounts" data-ref="common/ground-lug@1:1.4.0" data-rel-pos="1" transform="translate(44.9,13.7)" data-group="grounding" data-group-role="furniture">
+    <title>ground</title>
+    <g id="ground--symbol" data-path="ground/symbol" data-class="silkscreen">
+      <circle id="ground--symbol-ring" cx="3.5" cy="3.2" r="2.7" fill="none" stroke="#c7ccd1" stroke-width="0.3" />
+      <g stroke="#c7ccd1" stroke-width="0.32" fill="none">
+        <line x1="3.5" y1="1.5" x2="3.5" y2="3.0" />
+        <line x1="2.0" y1="3.0" x2="5.0" y2="3.0" />
+        <line x1="2.5" y1="3.9" x2="4.5" y2="3.9" />
+        <line x1="3.0" y1="4.8" x2="4.0" y2="4.8" />
+      </g>
+    </g>
+    <circle id="ground--stud" cx="3.5" cy="9.8" r="2.8" fill="#8a9099" stroke="#4a4f55" stroke-width="0.3" data-path="ground/stud" data-class="stud" data-z-cyl="3.2" data-z-color="#8a9099" />
+    <circle id="ground--washer" cx="3.5" cy="9.8" r="2.66" fill="#7d848c" stroke="#565c63" stroke-width="0.45" stroke-dasharray="0.55 0.4" data-z-cyl="0.5" data-z-lift="3.2" data-z-color="#6e747c" />
+    <g id="ground--screw-cap" data-z-cyl="1.0" data-z-lift="3.7" data-z-color="#8a9099">
+      <circle cx="3.5" cy="9.8" r="2.53" fill="#8a9099" stroke="#4a4f55" stroke-width="0.25" />
+      <line x1="1.8" y1="9.8" x2="5.2" y2="9.8" stroke="#4a4f55" stroke-width="0.45" />
+      <line x1="3.5" y1="8.1" x2="3.5" y2="11.5" stroke="#4a4f55" stroke-width="0.45" />
+    </g>
+  </g>
+</svg>

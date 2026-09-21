@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="73.5mm" height="40.0mm" viewBox="0 0 73.5 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="amx-3200-48v-psu" data-path="amx-3200-48v-psu" data-class="psu" data-behaviour="fills" data-ref="edgecore/amx-3200-48v-psu@1:1.0.0" data-wall="#15181b" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-40 to -72 VDC" data-model="AMX-3200-48V-PSU" data-power-output-w="1200" data-states="absent" transform="translate(0,0)">
+    <title>amx-3200-48v-psu</title>
+    <rect id="amx-3200-48v-psu--body" x="0" y="0" width="73.5" height="40" rx="0.4" fill="#c9cdd1" stroke="#6b7076" stroke-width="0.35" />
+    <g id="amx-3200-48v-psu--inlet" data-path="amx-3200-48v-psu/inlet" data-class="connector">
+      <rect x="11.00" y="2.30" width="17.90" height="34.50" rx="0.8" fill="#2f63c4" stroke="#1d3f80" stroke-width="0.3" />
+      <rect x="13.2" y="7.6" width="13.5" height="24.0" rx="0.6" fill="#3f78d8" />
+      <g fill="#d9b24a">
+        <circle cx="21.6" cy="12.7" r="1.3" />
+        <circle cx="18.0" cy="19.1" r="1.3" />
+        <circle cx="22.1" cy="26.4" r="1.3" />
+      </g>
+    </g>
+    <circle id="amx-3200-48v-psu--status" cx="6.40" cy="29.90" r="1.4" fill="#4a4f55" stroke="#2a2d31" stroke-width="0.2" data-path="amx-3200-48v-psu/status" data-class="led" />
+    <g id="amx-3200-48v-psu--fan" data-path="amx-3200-48v-psu/fan" data-class="vent">
+      <circle cx="51.0" cy="18.2" r="17.9" fill="#1a1d20" />
+      <circle cx="51.0" cy="18.2" r="12.0" fill="#e2e5e8" />
+      <circle cx="51.0" cy="18.2" r="15.2" fill="none" stroke="#c9cdd1" stroke-width="1.4" />
+      <path d="M 51.0 0.3 V 36.1 M 33.1 18.2 H 68.9" stroke="#c9cdd1" stroke-width="1.6" />
+      <circle cx="51.0" cy="18.2" r="4.5" fill="#c9cdd1" />
+      <circle cx="35.8" cy="3.6" r="1.4" fill="#aeb3b8" />
+      <circle cx="68.0" cy="3.6" r="1.4" fill="#aeb3b8" />
+    </g>
+    <g id="amx-3200-48v-psu--handle" data-path="amx-3200-48v-psu/handle" data-class="handle" data-z-uhandle="27" data-z-dia="4.0">
+      <path d="M 31.3 30.5 V 36.7 A 2.5 2.5 0 0 0 33.8 39.2 H 68.8 A 2.5 2.5 0 0 0 71.3 36.7 V 30.5 H 68.8 V 36.4 H 33.8 V 30.5 Z" fill="#1c1f23" />
+    </g>
+    <g id="amx-3200-48v-psu--latch" data-path="amx-3200-48v-psu/latch" data-class="latch" data-z-out="1.5">
+      <rect x="0.0" y="8.2" width="7.0" height="18.8" rx="1.0" fill="#2f63c4" stroke="#2a2d31" stroke-width="0.25" data-fill-from="latch-finish" />
+    </g>
+  </g>
+</svg>

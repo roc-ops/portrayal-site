@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="377.0mm" height="41.27mm" viewBox="0 0 377.0 41.27">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="pbc-2000-bezel" data-path="pbc-2000-bezel" data-class="bezel" data-behaviour="mounts" data-ref="maiaedge/pbc-2000-bezel@1:1.0.0" transform="translate(0,0)">
+    <title>pbc-2000-bezel</title>
+    <defs>
+      <linearGradient id="pbc-2000-bezel--pbc-bezel-slope" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#15181b" />
+        <stop offset="0.391" stop-color="#262a2f" />
+        <stop offset="0.602" stop-color="#262a2f" />
+        <stop offset="1" stop-color="#121417" />
+      </linearGradient>
+    </defs>
+    <g id="pbc-2000-bezel--bezel" data-z-out="11.25" data-z-profile-y="0:0,16.15:11.25,24.85:11.25,41.27:0" data-z-color="#1d2024" data-z-hole-color="#f5b21c" data-z-shape="1">
+      <path id="pbc-2000-bezel--bezel-plate" fill-rule="evenodd" fill="url(#pbc-2000-bezel--pbc-bezel-slope)" d="M0 0 L377.0 0 L377.0 41.27 L0 41.27 Z M18.15 6.00 L129.85 6.00 L140.00 16.15 L140.00 24.85 L129.85 35.00 L18.15 35.00 L8.00 24.85 L8.00 16.15 Z M242.15 6.00 L353.85 6.00 L364.00 16.15 L364.00 24.85 L353.85 35.00 L242.15 35.00 L232.00 24.85 L232.00 16.15 Z" />
+      <path id="pbc-2000-bezel--bead-left" d="M18.15 6.00 L129.85 6.00 L140.00 16.15 L140.00 24.85 L129.85 35.00 L18.15 35.00 L8.00 24.85 L8.00 16.15 Z" fill="none" stroke="#f5b21c" stroke-width="1.5" />
+      <path id="pbc-2000-bezel--bead-right" d="M242.15 6.00 L353.85 6.00 L364.00 16.15 L364.00 24.85 L353.85 35.00 L242.15 35.00 L232.00 24.85 L232.00 16.15 Z" fill="none" stroke="#f5b21c" stroke-width="1.5" />
+      <g id="pbc-2000-bezel--wordmark-silkscreen">
+        <text id="pbc-2000-bezel--wordmark" x="196" y="24" font-family="sans-serif" font-size="9" text-anchor="middle" fill="#f2a71b">MaiaEdge</text>
+      </g>
+    </g>
+    <g id="pbc-2000-bezel--status" data-path="pbc-2000-bezel/status" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(359.2,30.2)" data-z-lift="6.2">
+      <title>pbc-2000-bezel--status</title>
+      <circle id="pbc-2000-bezel--status--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="pbc-2000-bezel--status--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="pbc-2000-bezel/status/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.1mm" height="25.1mm" viewBox="0 0 25.1 25.1">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="eps112-fan-fixed" data-path="eps112-fan-fixed" data-class="fan" data-behaviour="fills" data-ref="edgecore/eps112-fan-fixed@1:1.0.0" data-wall="#3a3e43" data-rotors="1" data-states="absent" transform="translate(0,0)">
+    <title>eps112-fan-fixed</title>
+    <rect id="eps112-fan-fixed--body" x="0" y="0" width="25.1" height="25.1" fill="#464646" />
+    <g id="eps112-fan-fixed--guard" data-path="eps112-fan-fixed/guard" data-class="vent" data-z-vent="10">
+      <circle id="eps112-fan-fixed--guard-well" cx="12.55" cy="12.55" r="12.30" fill="#16181b" />
+      <g id="eps112-fan-fixed--blade-edges" fill="#c9ced3">
+        <path d="M 20.95 12.55 L 24.50 12.55 A 11.95 11.95 0 0 1 24.15 15.44 L 20.70 14.58 A 8.40 8.40 0 0 0 20.95 12.55 Z" />
+        <path d="M 17.79 19.12 L 20.00 21.89 A 11.95 11.95 0 0 1 17.52 23.42 L 16.04 20.19 A 8.40 8.40 0 0 0 17.79 19.12 Z" />
+        <path d="M 10.68 20.74 L 9.89 24.20 A 11.95 11.95 0 0 1 7.15 23.21 L 8.76 20.04 A 8.40 8.40 0 0 0 10.68 20.74 Z" />
+        <path d="M 4.98 16.19 L 1.78 17.73 A 11.95 11.95 0 0 1 0.85 14.98 L 4.32 14.26 A 8.40 8.40 0 0 0 4.98 16.19 Z" />
+        <path d="M 4.98 8.91 L 1.78 7.37 A 11.95 11.95 0 0 1 3.36 4.91 L 6.09 7.18 A 8.40 8.40 0 0 0 4.98 8.91 Z" />
+        <path d="M 10.68 4.36 L 9.89 0.90 A 11.95 11.95 0 0 1 12.79 0.60 L 12.72 4.15 A 8.40 8.40 0 0 0 10.68 4.36 Z" />
+        <path d="M 17.79 5.98 L 20.00 3.21 A 11.95 11.95 0 0 1 22.04 5.29 L 19.22 7.44 A 8.40 8.40 0 0 0 17.79 5.98 Z" />
+      </g>
+      <circle id="eps112-fan-fixed--rotor-disc" cx="12.55" cy="12.55" r="8.40" fill="#dfe3e6" stroke="#8d9298" stroke-width="0.3" />
+      <g id="eps112-fan-fixed--spider" stroke="#5a6167" stroke-width="0.60" fill="none">
+        <circle cx="12.55" cy="12.55" r="11.90" />
+        <circle cx="12.55" cy="12.55" r="4.60" />
+        <line x1="4.10" y1="4.10" x2="21.00" y2="21.00" />
+        <line x1="21.00" y1="4.10" x2="4.10" y2="21.00" />
+      </g>
+      <circle id="eps112-fan-fixed--rotor-hub" cx="12.55" cy="12.55" r="2.30" fill="#9aa1a8" stroke="#6e757c" stroke-width="0.22" />
+    </g>
+  </g>
+</svg>

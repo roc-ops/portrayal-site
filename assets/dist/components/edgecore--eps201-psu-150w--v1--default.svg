@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="51.3mm" height="39.5mm" viewBox="0 0 51.3 39.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="eps201-psu-150w" data-path="eps201-psu-150w" data-class="psu" data-behaviour="fills" data-ref="edgecore/eps201-psu-150w@1:1.0.0" data-wall="#3a3e43" data-inlet="c14" data-input="ac" data-power-output-w="150" data-states="absent" transform="translate(0,0)">
+    <title>eps201-psu-150w</title>
+    <defs>
+      <pattern id="eps201-psu-150w--eps201-psu-mesh" width="2.20" height="2.20" patternUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="2.20" height="2.20" fill="#14171a" />
+        <rect x="0.45" y="0.45" width="1.30" height="1.30" rx="0.22" fill="#7d848b" />
+      </pattern>
+    </defs>
+    <rect id="eps201-psu-150w--body" x="0" y="0" width="51.3" height="39.5" rx="0.4" fill="#8d9298" stroke="#5d6267" stroke-width="0.35" />
+    <rect x="0.55" y="0.55" width="50.2" height="38.4" rx="0.3" fill="none" stroke="#b6bbc0" stroke-width="0.22" />
+    <g id="eps201-psu-150w--vent" data-path="eps201-psu-150w/vent" data-class="vent" data-z-vent="12">
+      <rect id="eps201-psu-150w--vent-back" x="4.20" y="7.50" width="6.40" height="27.00" rx="0.3" fill="#14171a" />
+      <rect x="4.20" y="7.50" width="6.40" height="27.00" fill="url(#eps201-psu-150w--eps201-psu-mesh)" />
+      <rect x="4.20" y="7.50" width="6.40" height="27.00" rx="0.3" fill="none" stroke="#5d6267" stroke-width="0.25" />
+    </g>
+    <g id="eps201-psu-150w--slot" data-path="eps201-psu-150w/slot" data-class="handle" data-depth="2.0" data-wall="#3a3e43">
+      <rect x="12.00" y="8.40" width="33.00" height="4.20" rx="2.10" fill="#16181b" stroke="#5d6267" stroke-width="0.28" />
+    </g>
+    <circle id="eps201-psu-150w--face-screw" cx="14.60" cy="4.60" r="1.70" fill="#d7dbdf" stroke="#6e757c" stroke-width="0.22" />
+    <g id="eps201-psu-150w--inlet-well" data-path="eps201-psu-150w/inlet-well" data-class="bezel" data-depth="2.2" data-wall="#3a3e43">
+      <rect x="19.50" y="15.00" width="29.00" height="22.50" rx="0.6" fill="#6f747a" stroke="#5d6267" stroke-width="0.3" />
+    </g>
+    <g id="eps201-psu-150w--retainer" fill="none" stroke="#2b2f34" stroke-width="0.65" stroke-linecap="round">
+      <path d="M 46.6 19.5 V 33.0" />
+      <path d="M 46.6 19.5 H 42.6" />
+      <path d="M 46.6 33.0 H 42.6" />
+    </g>
+    <g id="eps201-psu-150w--latch" data-path="eps201-psu-150w/latch" data-class="latch" data-z-out="0.9">
+      <rect x="0.60" y="12.00" width="2.60" height="15.00" rx="1.10" fill="#ef3927" stroke="#2b2f34" stroke-width="0.25" data-fill-from="latch-finish" />
+    </g>
+    <g id="eps201-psu-150w--inlet" data-path="eps201-psu-150w/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(20.0,16.2)">
+      <title>eps201-psu-150w--inlet</title>
+      <rect id="eps201-psu-150w--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="eps201-psu-150w/inlet/opening" data-class="cutout" />
+      <path id="eps201-psu-150w--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="eps201-psu-150w--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="eps201-psu-150w--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="eps201-psu-150w--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

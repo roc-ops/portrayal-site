@@ -8,6 +8,8 @@
   "kind",
   "name",
   "version",
+  "maturity",
+  "profile",
   "manufacturer",
   "model",
   "chassis",
@@ -26,7 +28,8 @@
   },
   "version": {
    "type": "string",
-   "pattern": "^\\d+\\.\\d+\\.\\d+$"
+   "pattern": "^\\d+\\.\\d+\\.\\d+$",
+   "description": "Semver, and the bump rules are tied to `library/devices.lock.json` rather than left to judgement: the lock records a fingerprint per device split into `shape`, `names`, `surface` and `gaps`, and `devicelock` reads the change and says which bump it needs. Surface alone is a patch; ids added with nothing moved or removed is a minor; anything else about shape or names is a major, because a moved slot invalidates a cached coordinate exactly as a renamed id invalidates a held reference. spec/DESIGN.md section 9 carries the argument and CONTRIBUTING step 5 the order to run it in - the check must see the lock BEFORE you regenerate it, or the bump it would have asked for is lost. L53 is what fails when content moved and the version did not."
   },
   "maturity": {
    "enum": [
@@ -34,7 +37,7 @@
     "modelled",
     "verified"
    ],
-   "description": "how far this device has been taken, and the standard lint holds it to. draft: no requirement. modelled: must carry a provenance block citing a datasheet or hardware guide. verified: additionally no dimension may be estimated. Defaults to draft when absent."
+   "description": "how far this device has been taken, and the standard lint holds it to. draft: no requirement. modelled: must carry a provenance block citing a datasheet or hardware guide. verified: additionally no dimension may be estimated. REQUIRED, because absent used to mean `draft` and twelve finished devices were reading as drafts on that default - the Edgecore AS7726-32X, all five Smartoptics DCPs, the FS enclosure. A default that silently mislabels the work is worse than a field somebody has to fill in."
   },
   "manufacturer": {
    "type": "string"
@@ -52,52 +55,80 @@
    "type": "string"
   },
   "profile": {
-   "$ref": "#/$defs/segment"
+   "$ref": "#/$defs/segment",
+   "description": "WHAT KIND OF DEVICE THIS IS, from the classes in spec/schemas/profiles.yaml - the file that says what a device of each class has to STATE before the `specified` capability flag is true. REQUIRED, because a device without one is not judged leniently, it is not judged at all: `capability._specified` returns `cannot evaluate`, and 67 of 89 devices were in that position while the flag read as a fact about the other 22. The classes are deliberately few and each carries the argument for its own minimum set - `optical` owes no cpu or memory, `server` owes no switching performance."
   },
   "datasheet": {
    "type": "object",
    "additionalProperties": false,
+   "description": "THE VENDOR DATASHEET this device was modelled from. A guide, manual or quick-start goes in `references:` instead - the distinction is what the document IS, not which came first. The `archive` field was removed in #274: it was in this schema from the start, no entry ever used it, no tool ever read it and no document ever said what it was for, which makes it a field nobody knows the rule for.",
    "properties": {
     "title": {
-     "type": "string"
-    },
+       "type": "string",
+       "description": "the document as it names itself on its own first page, not as its file is named. A reader has to be able to search for it."
+      },
     "url": {
-     "type": "string"
-    },
+       "type": "string",
+       "description": "where the document was obtained, when that is known. Absent on 43 of 96 entries and that is not a defect: a document read from a vendor portal behind a login, or received directly, has no citable address, and inventing one would be worse than omitting it."
+      },
     "sha256": {
-     "type": "string"
-    },
-    "archive": {
-     "type": "string"
-    }
+       "type": "string",
+       "description": "SHA-256 of the file AS HELD IN THE WORKING CORPUS. THE RULE IS: present exactly when the document is staged locally, absent when it was read but is not held - which is what makes a hash checkable rather than decorative. Every hash in the library satisfies it: all 37 resolve to a file under working/. A hash for a document nobody holds is a claim nobody can test, so do not add one from a vendor page. #274."
+      }
    }
   },
   "references": {
    "type": "array",
-   "description": "additional source documents (guides, HIGs) registered like the datasheet",
+   "description": "additional source documents - hardware guides, installation guides, quick-start guides, user manuals - registered exactly like the datasheet. A device may register these and no datasheet: seven ASR 9000s were modelled from two Cisco guides and no datasheet at all, and that is the honest record rather than a gap.",
    "items": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
      "title": {
-      "type": "string"
+      "type": "string",
+      "description": "the document as it names itself on its own first page, not as its file is named. A reader has to be able to search for it."
      },
      "url": {
-      "type": "string"
+      "type": "string",
+      "description": "where the document was obtained, when that is known. Absent on 43 of 96 entries and that is not a defect: a document read from a vendor portal behind a login, or received directly, has no citable address, and inventing one would be worse than omitting it."
      },
      "sha256": {
-      "type": "string"
-     },
-     "archive": {
-      "type": "string"
+      "type": "string",
+      "description": "SHA-256 of the file AS HELD IN THE WORKING CORPUS. THE RULE IS: present exactly when the document is staged locally, absent when it was read but is not held - which is what makes a hash checkable rather than decorative. Every hash in the library satisfies it: all 37 resolve to a file under working/. A hash for a document nobody holds is a claim nobody can test, so do not add one from a vendor page. #274."
      }
+    }
+   }
+  },
+  "lint": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "WHAT THIS DEVICE HAS DECIDED ABOUT A RULE, as opposed to what it has not got round to. The difference matters and nothing could express it: `library/lint-baseline.json` records what is merely already true, and this records what a person has argued. The Casa C40G is the case it was written for - it keeps a rear vent field that L44 reports as 100% buried, and its provenance already says why at length, in prose no tool reads: the field is invisible in 2D because the PEMs or the AC panel cover it, and it is what punches the rear panel in 3D, which is exactly what you see when a PEM is pulled. That is a decision, and it belongs somewhere a count can see it.",
+   "properties": {
+    "waive": {
+     "type": "object",
+     "description": "rule code -> why this device will not satisfy it. The reason is REQUIRED and is checked for length, because a waiver whose reason is `n/a` is the thing that turns a rule off for everyone who copies the device. Waived warnings are still counted and still listed in the run's summary - they are separated, never hidden.",
+     "propertyNames": {"pattern": "^L[0-9]+$"},
+     "additionalProperties": {"type": "string", "minLength": 40}
     }
    }
   },
   "provenance": {
    "type": "object",
+   "description": "WHERE EACH FIGURE ON THIS DEVICE CAME FROM, keyed by the figure. Each entry is an object, not a sentence: `note` carries the prose and `confidence` carries the word, so a rule can ask what only a reader could answer before. The rule that needed it is L15's - `maturity: verified` means no dimension may be estimated, and it was implemented as `str(value).startswith(\"estimated\")` against a corpus where 42 entries opened with the word and 80 more said it somewhere in the middle of a 566-character paragraph. `confidence` is OPTIONAL and 744 of 1688 entries do not carry one: they were migrated with the prose intact and no word invented for them, because reading 744 paragraphs and deciding measured-or-estimated by eye is how an estimate becomes a measurement. L93 counts them, and the count is meant to fall. `source` is not here yet - it wants ids on the `datasheet`/`references` entries, which is roc-ops/Portrayal#274.",
    "additionalProperties": {
-    "type": "string"
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["note"],
+    "properties": {
+     "confidence": {
+      "$ref": "#/$defs/confidence",
+      "description": "the library's word for how this figure is known, filled only where it is actually known. Absent means nobody has said - NOT that the figure is weak."
+     },
+     "note": {
+      "type": "string",
+      "description": "the prose: what was read, out of which document, at what scale, and what was rejected on the way. It is the reasoning, and it is the reason this block is long."
+     }
+    }
    }
   },
   "attrs": {
@@ -265,13 +296,16 @@
    "additionalProperties": false,
    "properties": {
     "width": {
-     "type": "number"
+     "type": "number",
+     "description": "millimetres, across the rack face"
     },
     "height": {
-     "type": "number"
+     "type": "number",
+     "description": "millimetres, the rack dimension - 1RU is 44.45"
     },
     "depth": {
-     "type": "number"
+     "type": "number",
+     "description": "millimetres, front face to rear face"
     },
     "ru": {
      "type": "number"
@@ -280,6 +314,7 @@
      "type": "number"
     },
     "airflow": {
+     "description": "WHERE AIRFLOW LIVES. The chassis is the home; a configuration states `airflow` only when it DIFFERS from this, which render.py has always assumed - it reads the configuration first and falls back here. Airflow genuinely varies by build in 7 of the 48 devices that state it; in the rest it is one fact about the box, and repeating it per configuration gave one fact two homes. The enums differ on purpose: `side` and `passive` are chassis answers a configuration cannot give, because a fanless enclosure and a side-breathing modular chassis offer no airflow option to choose between. L91 checks the division.",
      "enum": [
       "front-to-back",
       "back-to-front",
@@ -292,7 +327,8 @@
      "description": "housing color (faceplate fill); default dark"
     },
     "edge": {
-     "type": "string"
+     "type": "string",
+     "description": "faceplate EDGE COLOUR - the stroke render.py draws around the housing rect, defaulting to #22262a. A colour and not a dimension, which is why devicelock hashes it under `surface`: recolouring an edge moves nothing, and this entry carrying no description at all is why it read as geometry for as long as it did (#271)."
     },
     "silk": {
      "type": "string",
@@ -318,6 +354,7 @@
       "description": "the configuration a viewer opens with. Where a `base` exists it is the default and nothing else may claim it: opening on an illustration is how `default` came to mean 'whatever the drawing happens to be populated with', which is what four of the library's devices did."
      },
      "airflow": {
+      "description": "ONLY WHEN THIS BUILD DIFFERS FROM THE CHASSIS. A front-to-back and a back-to-front SKU of one switch are two configurations of one chassis, and that is what this is for; a chassis whose airflow does not depend on the build states it once under `chassis.airflow` instead. Restating the chassis value here is what L91 reports. Narrower than the chassis enum on purpose: `side` and `passive` are not options a buyer picks between.",
       "enum": [
        "front-to-back",
        "back-to-front"
@@ -406,7 +443,7 @@
      },
      "component-attrs": {
       "type": "object",
-      "description": "component name -> extra data-* attrs (FRU model/part-number per config)",
+      "description": "component name OR placement/bay id -> extra data-* attrs for this configuration. A component name reaches every instance of that part and is how a configuration says which FRU model or part number is fitted; a PLACEMENT OR BAY ID reaches exactly one, and is how it says something true of that instance alone. The two compose, the instance winning. Keying by the component alone could not express the ASR 9001-S, which is the same metal as the 9001 with two of its four SFP+ ports disabled until a licence is applied: both draw six `std/sfp-ganged`, so `{sfp-ganged: ...}` marks all six when two are meant. This is the OCCUPANCY/PROPERTY split in docs/what-a-configuration-cannot-say.md: `bays` and `only-in` say what is THERE, and this says what is TRUE of it. L94 checks the key resolves, because a key that matches nothing is silently ignored.",
       "additionalProperties": {
        "type": "object",
        "additionalProperties": {
@@ -1025,6 +1062,15 @@
           "group": {
            "$ref": "#/$defs/segment"
           },
+          "interfaces": {
+           "type": "array",
+           "items": {
+            "$ref": "#/$defs/segment"
+           },
+           "minItems": 2,
+           "uniqueItems": true,
+           "description": "THE INTERFACES THIS PLACEMENT PRESENTS, when it is more than one and is not itself an interface. A Compact SFP (CSFP) module fits a standard SFP cage and carries two independent BiDi fibre connections, each its own switch interface; the switch's silicon has both whether or not a module is seated, and devices here ship unpopulated, so the two belong to the HOST CAGE and are declared on it: `interfaces: [port-1, port-3]`. The DCIM export then emits one interface per id, typed from the cage, and none for the placement. Not breakout: breakout is a MODE a port is configured into and stays a description on one interface, where these are always present and a DCIM must list each. Ids must be unique in the view and not name a placement or bay, and only a port presents interfaces. Lint L105. roc-ops/Portrayal#443"
+          },
           "rel-pos": {
            "type": "integer"
           },
@@ -1071,10 +1117,7 @@
            "description": "the vendor's own sentence about this indicator, kept beside the tokens - 'Blue = 100G, Green = 40G'. Prose, never a state list"
           },
           "provenance": {
-           "type": "object",
-           "additionalProperties": {
-            "type": "string"
-           }
+           "$ref": "#/$defs/provenance"
           },
           "mate-to": {
            "$ref": "#/$defs/segment",
@@ -1303,6 +1346,14 @@
   }
  },
  "$defs": {
+  "provenance": {
+   "description": "field name -> where the figure came from. The same shape as component.schema.json's `$defs.provenance`, and deliberately so: a provenance note means one thing whether it is written on a device, a cutout or a placement.",
+   "type": "object",
+   "additionalProperties": {
+    "type": "string",
+    "description": "field name -> source, e.g. 'datasheet \u00a7Physical', 'photo-measured', 'measured', 'estimated'"
+   }
+  },
   "state": {
    "description": "one state a lamp can be in. The name is a token because `state-<name>` is a CSS class; the sentence explaining it belongs in `description` alongside THE BEHAVIOR BLOCK IS THE SAME SHAPE AS component.schema.json's and is kept that way deliberately: a state means one thing whether it is declared on a part or overridden on a placement. When `rate` and `sequence` were added they went into the component schema only, and a device that stated a blink frequency on a placement was rejected by a rule nobody had thought about - two definitions of one concept, drifting.",
    "oneOf": [

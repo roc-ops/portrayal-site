@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="74.69mm" height="40.2mm" viewBox="0 0 74.69 40.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/pwr-1p6kw-ac@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/pwr-1p6kw-ac@'] .state-amber-blink { --led-color: #f5a623; }
+    g[data-ref^='cisco/pwr-1p6kw-ac@'] .state-amber-blink { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/pwr-1p6kw-ac@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/pwr-1p6kw-ac@'] .state-green-blink { --led-color: #39b54a; }
+    g[data-ref^='cisco/pwr-1p6kw-ac@'] .state-green-blink { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="pwr-1p6kw-ac" data-path="pwr-1p6kw-ac" data-class="psu" data-behaviour="fills" data-ref="cisco/pwr-1p6kw-ac@1:1.0.0" data-wall="#4a4f55" data-eol="none-announced" data-fans="1" data-inlet="c14" data-input="ac" data-model="PWR-1.6KW-AC" data-power-output-w="1600" data-role="power-module" transform="translate(0,0)">
+    <title>pwr-1p6kw-ac</title>
+    <rect id="pwr-1p6kw-ac--plate" x="0" y="0" width="74.69" height="40.2" rx="1.0" fill="#1b1e21" stroke="#0d0f11" stroke-width="0.3" />
+    <g id="pwr-1p6kw-ac--fan">
+      <rect x="1.25" y="1.48" width="40.23" height="38.27" rx="1.2" fill="#101315" />
+      <circle cx="21.37" cy="20.62" r="2.4" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="4.8" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="7.2" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="9.6" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="12.0" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="14.4" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="16.8" fill="none" stroke="#565b60" stroke-width="0.45" />
+      <circle cx="21.37" cy="20.62" r="9.2" fill="#3c4045" />
+    </g>
+    <g id="pwr-1p6kw-ac--screw-l">
+      <circle cx="5.01" cy="4.66" r="3.35" fill="#2f3337" stroke="#15181b" stroke-width="0.25" />
+      <path d="M 2.9099999999999997 4.66 H 7.109999999999999 M 5.01 2.56 V 6.76" stroke="#8d949c" stroke-width="0.7" fill="none" />
+    </g>
+    <g id="pwr-1p6kw-ac--screw-r">
+      <circle cx="37.98" cy="4.66" r="3.35" fill="#2f3337" stroke="#15181b" stroke-width="0.25" />
+      <path d="M 35.879999999999995 4.66 H 40.08 M 37.98 2.56 V 6.76" stroke="#8d949c" stroke-width="0.7" fill="none" />
+    </g>
+    <rect id="pwr-1p6kw-ac--inlet-block" x="42.48" y="1.02" width="23.90" height="31.95" rx="0.8" fill="#26292d" />
+    <rect id="pwr-1p6kw-ac--tab" x="66.79" y="1.02" width="6.01" height="5.61" rx="0.6" fill="#a8adb2" />
+    <g id="pwr-1p6kw-ac--handle" data-z-uhandle="8.0">
+      <path d="M 0.31 10.13 H 4.4 V 36.0 H 38.0 V 10.13 H 42.41 V 40.16 H 0.31 Z" fill="#a8adb2" stroke="#7d8287" stroke-width="0.3" />
+    </g>
+    <rect id="pwr-1p6kw-ac--latch" x="69.09" y="13.09" width="3.60" height="15.97" rx="1.2" fill="#e9ecef" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <circle id="pwr-1p6kw-ac--status" cx="68.60" cy="34.20" r="1.5" fill="var(--led-color, #4f5459)" stroke="#8d949c" stroke-width="0.3" data-path="pwr-1p6kw-ac/status" data-class="led" data-states="green green-blink amber amber-blink off" data-description="the module's STATUS lamp, one per module, at the bottom right of the inlet block." data-z-dome="0.3" />
+    <g id="pwr-1p6kw-ac--inlet" data-path="pwr-1p6kw-ac/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(40.43,7.0) rotate(90 14.0 10.0)">
+      <title>pwr-1p6kw-ac--inlet</title>
+      <rect id="pwr-1p6kw-ac--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="pwr-1p6kw-ac/inlet/opening" data-class="cutout" />
+      <path id="pwr-1p6kw-ac--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="pwr-1p6kw-ac--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="pwr-1p6kw-ac--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="pwr-1p6kw-ac--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

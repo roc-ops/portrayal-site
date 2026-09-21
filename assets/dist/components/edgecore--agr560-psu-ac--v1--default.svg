@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="73.5mm" height="40.0mm" viewBox="0 0 73.5 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="agr560-psu-ac" data-path="agr560-psu-ac" data-class="psu" data-behaviour="fills" data-ref="edgecore/agr560-psu-ac@1:1.0.0" data-wall="#3a3e43" data-efficiency="80 PLUS Titanium" data-inlet="c14" data-input="ac" data-model="PS-2202-8L" data-power-output-w="2000" data-states="absent" transform="translate(0,0)">
+    <title>agr560-psu-ac</title>
+    <rect id="agr560-psu-ac--body" x="0" y="0" width="73.5" height="40" rx="0.5" fill="#8e9295" stroke="#6c7073" stroke-width="0.4" />
+    <rect x="0.65" y="0.65" width="72.2" height="38.7" rx="0.35" fill="none" stroke="#a9adb0" stroke-width="0.22" />
+    <g id="agr560-psu-ac--guard" data-path="agr560-psu-ac/guard" data-class="rotor" data-depth="2.4" data-wall="#3a3e43">
+      <rect id="agr560-psu-ac--guard-well" x="1.00" y="1.20" width="41.90" height="37.10" rx="0.6" fill="#15181b" />
+      <rect id="agr560-psu-ac--guard-plate" x="2.40" y="1.60" width="39.10" height="36.30" rx="1.20" fill="#1b1f22" stroke="#d4d8dc" stroke-width="1.00" />
+      <circle id="agr560-psu-ac--rotor-disc" cx="21.95" cy="19.75" r="17.10" fill="#202428" stroke="#3a3e43" stroke-width="0.3" />
+      <g stroke="#d4d8dc" stroke-width="0.95" stroke-linecap="round" fill="none">
+        <circle cx="21.95" cy="19.75" r="15.40" />
+        <line x1="21.95" y1="4.35" x2="21.95" y2="10.55" />
+        <line x1="21.95" y1="35.15" x2="21.95" y2="28.95" />
+        <line x1="6.55" y1="19.75" x2="12.75" y2="19.75" />
+        <line x1="37.35" y1="19.75" x2="31.15" y2="19.75" />
+        <line x1="11.06" y1="8.86" x2="15.44" y2="13.24" />
+        <line x1="32.84" y1="30.64" x2="28.46" y2="26.26" />
+        <line x1="32.84" y1="8.86" x2="28.46" y2="13.24" />
+        <line x1="11.06" y1="30.64" x2="15.44" y2="26.26" />
+      </g>
+      <circle id="agr560-psu-ac--rotor-hub" cx="21.95" cy="19.75" r="9.40" fill="#b9c2c2" stroke="#8d969a" stroke-width="0.3" />
+    </g>
+    <g id="agr560-psu-ac--silkscreen">
+      <text x="21.95" y="17.60" font-family="sans-serif" font-size="2.9" font-weight="bold" text-anchor="middle" fill="#e8eef0">2000W</text>
+      <text x="21.95" y="21.60" font-family="sans-serif" font-size="3.1" font-weight="bold" text-anchor="middle" fill="#00a7b5">LITEON</text>
+      <text x="21.95" y="24.60" font-family="sans-serif" font-size="1.7" text-anchor="middle" fill="#7f8a8c">TITANIUM 80%</text>
+    </g>
+    <g id="agr560-psu-ac--inlet-flange" data-path="agr560-psu-ac/inlet-flange" data-class="bezel">
+      <rect x="43.70" y="1.20" width="22.60" height="37.10" rx="1.20" fill="#353636" stroke="#6c7073" stroke-width="0.30" />
+    </g>
+    <g id="agr560-psu-ac--handle" data-path="agr560-psu-ac/handle" data-class="handle" data-z-uhandle="27" data-z-dia="6.6">
+      <path d="M 6.60 22.00 V 33.60 Q 6.60 37.50 10.50 37.50 H 33.40 Q 37.30 37.50 37.30 33.60 V 22.00" fill="none" stroke="#2a2c2f" stroke-width="3.20" stroke-linecap="round" data-stroke-from="handle-finish" />
+      <rect x="11.00" y="30.40" width="21.90" height="6.60" rx="1.20" fill="#2a2c2f" stroke="#111214" stroke-width="0.22" data-fill-from="handle-finish" />
+    </g>
+    <g id="agr560-psu-ac--latch" data-path="agr560-psu-ac/latch" data-class="latch" data-z-out="1.2">
+      <rect x="69.60" y="10.50" width="3.40" height="18.50" rx="1.20" fill="#3d3d3f" stroke="#2a2a2c" stroke-width="0.25" data-fill-from="latch-finish" />
+    </g>
+    <g id="agr560-psu-ac--inlet" data-path="agr560-psu-ac/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(44.8,6.0) rotate(270 14.0 10.0)">
+      <title>agr560-psu-ac--inlet</title>
+      <rect id="agr560-psu-ac--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="agr560-psu-ac/inlet/opening" data-class="cutout" />
+      <path id="agr560-psu-ac--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="agr560-psu-ac--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="agr560-psu-ac--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="agr560-psu-ac--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+    <g id="agr560-psu-ac--screw-1" data-path="agr560-psu-ac/screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" transform="translate(3.4,2.0)">
+      <title>agr560-psu-ac--screw-1</title>
+      <circle id="agr560-psu-ac--screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+      <rect id="agr560-psu-ac--screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+      <rect id="agr560-psu-ac--screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    </g>
+    <g id="agr560-psu-ac--screw-2" data-path="agr560-psu-ac/screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" transform="translate(37.6,2.0)">
+      <title>agr560-psu-ac--screw-2</title>
+      <circle id="agr560-psu-ac--screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+      <rect id="agr560-psu-ac--screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+      <rect id="agr560-psu-ac--screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    </g>
+  </g>
+</svg>

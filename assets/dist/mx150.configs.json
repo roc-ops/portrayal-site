@@ -21,14 +21,139 @@
   "right": [],
   "top": []
  },
+ "cages": {
+  "bottom": [],
+  "front": [
+   {
+    "accepts": [
+     "generic/sfp-lc-simplex@1",
+     "generic/sfp-lc@1"
+    ],
+    "at": [
+     273.05,
+     23.3
+    ],
+    "group": "ge",
+    "group-states": false,
+    "id": "port-10",
+    "interface": "sfp",
+    "lift": 0.0,
+    "mate": [
+     280.175,
+     28.5
+    ],
+    "media": "sfp",
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "ge",
+     "data-group-role": "traffic"
+    },
+    "rel-pos": 10,
+    "rotate": null
+   },
+   {
+    "accepts": [
+     "generic/sfp-lc-simplex@1",
+     "generic/sfp-lc@1"
+    ],
+    "at": [
+     287.3,
+     23.3
+    ],
+    "group": "ge",
+    "group-states": false,
+    "id": "port-11",
+    "interface": "sfp",
+    "lift": 0.0,
+    "mate": [
+     294.425,
+     28.5
+    ],
+    "media": "sfp",
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-group": "ge",
+     "data-group-role": "traffic"
+    },
+    "rel-pos": 11,
+    "rotate": null
+   },
+   {
+    "accepts": [
+     "generic/sfp-lc-simplex@1",
+     "generic/sfp-lc@1"
+    ],
+    "at": [
+     316.05,
+     23.3
+    ],
+    "group": "xe",
+    "group-states": false,
+    "id": "xe-0",
+    "interface": "sfp",
+    "lift": 0.0,
+    "mate": [
+     323.175,
+     28.5
+    ],
+    "media": "sfp-plus",
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "The two SFP+ uplinks, silkscreened 0 and 1",
+     "data-group": "xe",
+     "data-group-role": "traffic",
+     "data-media": "sfp-plus",
+     "data-speed": "10g"
+    },
+    "rel-pos": 0,
+    "rotate": null
+   },
+   {
+    "accepts": [
+     "generic/sfp-lc-simplex@1",
+     "generic/sfp-lc@1"
+    ],
+    "at": [
+     330.3,
+     23.3
+    ],
+    "group": "xe",
+    "group-states": false,
+    "id": "xe-1",
+    "interface": "sfp",
+    "lift": 0.0,
+    "mate": [
+     337.425,
+     28.5
+    ],
+    "media": "sfp-plus",
+    "mirror": false,
+    "occupant": null,
+    "occupant-attrs": {
+     "data-description": "The two SFP+ uplinks, silkscreened 0 and 1",
+     "data-group": "xe",
+     "data-group-role": "traffic",
+     "data-media": "sfp-plus",
+     "data-speed": "10g"
+    },
+    "rel-pos": 1,
+    "rotate": null
+   }
+  ],
+  "left": [],
+  "rear": [],
+  "right": [],
+  "top": []
+ },
  "capability": {
   "blocked": [],
   "flags": [],
   "level": 4,
   "name": "addressable",
-  "unknown": [
-   "specified"
-  ]
+  "unknown": []
  },
  "chassis": {
   "d": 305.0,
@@ -42,6 +167,7 @@
    "description": "",
    "kind": null,
    "name": "default",
+   "occupants": {},
    "part-numbers": {},
    "views": {}
   }
@@ -102,8 +228,8 @@
     "specified"
    ],
    "kind": "derived",
-   "wanted": "a top-level `profile:` naming the device class, so that `specified` has something to judge the attrs against - see spec/schemas/profiles.yaml for the classes that exist, which unlocks `specified` and with it the About panel, and comparison against other devices",
-   "what": "profile-undeclared"
+   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in a missing `attrs.environmental` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
   },
   {
    "because": "CAP",
@@ -126,17 +252,40 @@
  ],
  "model": "MX150",
  "provenance": {
-  "chassis": "datasheet-table - guide Table 1: 1.72 x 17.36 x 12 in (43.7 x 441 x 305 mm), 4.3 kg. Ears NOT MODELLED by convention",
-  "color": "photo - medium grey face (#6d7175), aluminium rear",
-  "front": "photo - recessed JUNIPER/junos panel to x 45.2, hex vent fields above the ports, the 2x4 RJ45 block at column centres 167.7-214.8 (15.7 mm measured pitch, upper jacks rotate 180 to keep both release tabs reachable), RJ45 8/9 at 232.6/250.3, SFP 10/11 at 280.3/294.5, SFP+ uplinks 0/1 at 323.3/337.5, mini-USB CON at 352.8, vertical USB at 365.0, MGMT at 381.4, and the SYS/ALM/MST/PH + SPD/DX/EN lamp matrix with the white beacon at the right end. LINK/ST lamp pairs sit above each SFP port; ports 8/9 carry their lamps inside the jack",
-  "leds": "guide chassis-status table: SYS green steady = Junos loaded, blinking = booting; MST green steady = functioning; ALM red/amber = alarm (unlit = none); PH unused (off). Port and MGMT lamp tables exist in the guide; the per-port LINK/ST pairs are drawn with generic states",
-  "lifecycle": "announced - the MX150 is EOL (image-library page redirects to the EOL notice; the intake's datasheet hunt recorded no standalone sheet). Per-SKU dates on the Juniper milestones page",
-  "other-faces": "near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as on the siblings",
-  "port-numbering": "photo - access ports print 0-11 (column pairs 01/23/45/67 under the RJ block, then 8, 9, 10, 11); the two SFP+ uplinks print 0 and 1 - a second numbering space (xe-0/1/x in the CLI), carried as printed",
-  "power": "guide specifications: maximum power consumption 140 W. The vendor does not qualify an ambient - filed as max, and that reading is recorded here",
-  "rear": "photo - earthing plate with two studs at the left (21.0/34.0, y 6.5, approximate), ESD socket below, two fixed fan rotors at x 65/122 (r ~17), the AC INPUT 100-240V 50-60Hz 3A MAX legend, power rocker at 390 and C14 inlet at 408. The supply is BUILT IN - no PSU bay exists on this platform",
-  "scale": "photo - both photographs are straight-on but carry extra shadow/bezel rows, so x is anchored to the 441 mm width (front 3.245 px/mm, rear 3.184) and y positions are per-face fractions anchored to the 43.7 mm height - approximate to about a millimetre",
-  "sources": "MX150 Hardware Guide, the MX-family datasheet (no standalone MX150 datasheet exists - recorded in the intake), and the image-library photographs mx150-front-high and mx150-rear-high. No mechanical drawing was available"
+  "chassis": {
+   "confidence": "datasheet",
+   "note": "datasheet-table - guide Table 1: 1.72 x 17.36 x 12 in (43.7 x 441 x 305 mm), 4.3 kg. Ears NOT MODELLED by convention"
+  },
+  "color": {
+   "note": "photo - medium grey face (#6d7175), aluminium rear"
+  },
+  "front": {
+   "note": "photo - recessed JUNIPER/junos panel to x 45.2, hex vent fields above the ports, the 2x4 RJ45 block at column centres 167.7-214.8 (15.7 mm measured pitch, upper jacks rotate 180 to keep both release tabs reachable), RJ45 8/9 at 232.6/250.3, SFP 10/11 at 280.3/294.5, SFP+ uplinks 0/1 at 323.3/337.5, mini-USB CON at 352.8, vertical USB at 365.0, MGMT at 381.4, and the SYS/ALM/MST/PH + SPD/DX/EN lamp matrix with the white beacon at the right end. LINK/ST lamp pairs sit above each SFP port; ports 8/9 carry their lamps inside the jack"
+  },
+  "leds": {
+   "note": "guide chassis-status table: SYS green steady = Junos loaded, blinking = booting; MST green steady = functioning; ALM red/amber = alarm (unlit = none); PH unused (off). Port and MGMT lamp tables exist in the guide; the per-port LINK/ST pairs are drawn with generic states"
+  },
+  "lifecycle": {
+   "note": "announced - the MX150 is EOL (image-library page redirects to the EOL notice; the intake's datasheet hunt recorded no standalone sheet). Per-SKU dates on the Juniper milestones page"
+  },
+  "other-faces": {
+   "note": "near-blank by evidence - rail bands estimated; axis conventions per viewer3d.js as on the siblings"
+  },
+  "port-numbering": {
+   "note": "photo - access ports print 0-11 (column pairs 01/23/45/67 under the RJ block, then 8, 9, 10, 11); the two SFP+ uplinks print 0 and 1 - a second numbering space (xe-0/1/x in the CLI), carried as printed"
+  },
+  "power": {
+   "note": "guide specifications: maximum power consumption 140 W. The vendor does not qualify an ambient - filed as max, and that reading is recorded here"
+  },
+  "rear": {
+   "note": "photo - earthing plate with two studs at the left (21.0/34.0, y 6.5, approximate), ESD socket below, two fixed fan rotors at x 65/122 (r ~17), the AC INPUT 100-240V 50-60Hz 3A MAX legend, power rocker at 390 and C14 inlet at 408. The supply is BUILT IN - no PSU bay exists on this platform"
+  },
+  "scale": {
+   "note": "photo - both photographs are straight-on but carry extra shadow/bezel rows, so x is anchored to the 441 mm width (front 3.245 px/mm, rear 3.184) and y positions are per-face fractions anchored to the 43.7 mm height - approximate to about a millimetre"
+  },
+  "sources": {
+   "note": "MX150 Hardware Guide, the MX-family datasheet (no standalone MX150 datasheet exists - recorded in the intake), and the image-library photographs mx150-front-high and mx150-rear-high. No mechanical drawing was available"
+  }
  },
  "views": [
   "front",
