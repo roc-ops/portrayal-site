@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="58.8mm" height="40.0mm" viewBox="0 0 58.8 40.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="port-extender-fan" data-path="port-extender-fan" data-class="fan" data-behaviour="fills" data-ref="maiaedge/port-extender-fan@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>port-extender-fan</title>
+    <defs>
+      <pattern id="port-extender-fan--pe-fan-mesh" width="3.2" height="2.77" patternUnits="userSpaceOnUse">
+        <rect width="3.2" height="2.77" fill="#2e3236" />
+        <circle cx="0.8" cy="0.69" r="0.62" fill="#0d0f11" />
+        <circle cx="2.4" cy="2.08" r="0.62" fill="#0d0f11" />
+      </pattern>
+    </defs>
+    <rect id="port-extender-fan--body" x="0" y="0" width="58.8" height="40" rx="0.8" fill="#1b1d20" stroke="#0f1113" stroke-width="0.4" />
+    <g id="port-extender-fan--grille" data-path="port-extender-fan/grille" data-class="rotor" data-z-vent="20">
+      <rect id="port-extender-fan--grille-holes" x="6.0" y="2.6" width="46.8" height="26.0" rx="0.6" fill="url(#port-extender-fan--pe-fan-mesh)" />
+    </g>
+    <path id="port-extender-fan--handle" d="M6.5 36.2 C6.5 30.2 12.0 29.8 17.0 29.8 L41.8 29.8 C46.8 29.8 52.3 30.2 52.3 36.2" fill="none" stroke="#3d8fd6" stroke-width="2.6" stroke-linecap="round" data-path="port-extender-fan/handle" data-class="handle" data-z-out="3.0" data-z-color="#3d8fd6" />
+    <path id="port-extender-fan--airflow-tab" d="M50.4 31.6 L56.4 31.6 L56.4 38.2 L50.4 38.2 L52.6 34.9 Z" fill="#e0342c" />
+  </g>
+</svg>

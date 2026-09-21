@@ -1516,7 +1516,7 @@
    "because": "needs-hardware",
    "blocks": [],
    "kind": "declared",
-   "note": "The guide states that \"line cards must be installed upside down in slots 10 through 19 of the bottom card cage, whereas in slots 0 though 9 of the top card cage, the line cards are installed right side up\". This is a real property of the chassis and the model cannot currently express it. The bays for 10 to 19 are geometrically identical to 0 to 9 and carry no rotation, because the card is inverted about its own long axis rather than rotated in the plane of the panel - a `rotate: 180` would spin the faceplate end for end, which is a different thing and would put the ejectors at the wrong ends. So a card rendered in slot 15 will show its ports and its part number the same way up as one in slot 5, and on real hardware it would not. Anyone reading port positions off the lower cage should know that.",
+   "note": "The guide states that line cards are installed upside down in slots 10 through 19 of the bottom card cage but right side up in slots 0 through 9 of the top card cage. This is a real property of the chassis and the model cannot currently express it. The bays for 10 to 19 are geometrically identical to 0 to 9 and carry no rotation, because the card is inverted about its own long axis rather than rotated in the plane of the panel - a `rotate: 180` would spin the faceplate end for end, which is a different thing and would put the ejectors at the wrong ends. So a card rendered in slot 15 will show its ports and its part number the same way up as one in slot 5, and on real hardware it would not. Anyone reading port positions off the lower cage should know that.",
    "scope": [
     "slots"
    ],
@@ -1613,7 +1613,7 @@
   },
   "airflow": {
    "confidence": "datasheet",
-   "note": "datasheet - \"Cisco ASR 9922 Router: Front-to-rear cooling path. The inlet is at the front of the middle cage, and the exhaust is at the upper and lower rear\", b-asr9k-overview-reference-guide.pdf p3737. Unique in the family for exhausting at BOTH ends"
+   "note": "datasheet - ASR 9922 cooling runs front-to-rear, drawing in at the front of the middle cage and exhausting at the upper and lower rear, b-asr9k-overview-reference-guide.pdf p3737. Unique in the family for exhausting at BOTH ends"
   },
   "bay-opening-is-the-hole-not-the-reserved-space": {
    "note": "`size` on these bays is what the slot RESERVES - where a card is placed and what L33 and L34 check it against - and it is the card's own envelope, per the arbitration that a bay and its occupant carry the same size. The renderer also painted that rectangle dark, so the visible opening was drawn over sheet metal at each end of every slot. `opening` now carries the hole separately: 358.17 and 355.75 mm, THREE cages, and they are not the same height. The upper and lower line-card cages measure y 367.83 to 726.00 and 1422.99 to 1781.15; the RP and fabric cage between them is y 898.83 to 1254.58, very slightly shorter, which is why it carries its own figure rather than the line cards'. NOTHING ABOUT PLACEMENT OR CHECKING MOVES. Only what is painted dark changes, and the opening is centred on the bay because a hole and the space reserved around it share a centre. Where only one axis is measured the other keeps the bay's own figure rather than being inferred from the occupant, which is the mistake this field exists to undo."
@@ -1639,11 +1639,11 @@
   },
   "card-orientation": {
    "confidence": "datasheet",
-   "note": "datasheet - \"Cisco ASR 9922 Router: All RP, FCs, and LCs are front-facing and mounted vertically, with ejector levers and captive screws at the top and bottom of each card\" (Chassis Slots, p17). So every bay places its component unrotated"
+   "note": "datasheet - on the ASR 9922 every RP, FC and LC faces the front and stands vertically, with ejector levers and captive screws at the card's top and bottom (Chassis Slots, p17). So every bay places its component unrotated"
   },
   "cards-upside-down": {
    "confidence": "datasheet",
-   "note": "datasheet - a real fact about this chassis that no drawing shows and nothing in the model can express yet. The guide states: \"For the Cisco ASR 9922 Router, line cards must be installed upside down in slots 10 through 19 of the bottom card cage, whereas in slots 0 though 9 of the top card cage, the line cards are installed right side up\" (p26). The bays for slots 10 to 19 are geometrically identical to 0 to 9 and carry no rotation, because the card is inverted in its own plane rather than rotated in the panel's - see gaps"
+   "note": "datasheet - a real fact about this chassis that no drawing shows and nothing in the model can express yet. The guide states: on the ASR 9922, line cards go in upside down in slots 10 through 19 of the bottom card cage and right side up in slots 0 through 9 of the top card cage (p26). The bays for slots 10 to 19 are geometrically identical to 0 to 9 and carry no rotation, because the card is inverted in its own plane rather than rotated in the panel's - see gaps"
   },
   "chassis": {
    "confidence": "datasheet",
@@ -1662,7 +1662,7 @@
    "note": "datasheet - Table 14, p131. The 9922 is in the narrower short-term group, 23 to 122 degF (-5 to 50 degC)"
   },
   "faces-verified-independently": {
-   "note": "THIS CHASSIS WAS HELD BACK UNTIL ITS FACES WERE SETTLED, because Cisco's ASR 9910 masters are named front and rear the wrong way round and an unverified face is not a face. Three independent checks now agree that asr-9922-front IS the front. FIRST, the guide states it: \"Cisco ASR 9922 Router: All RP, FCs, and LCs are front-facing and mounted vertically, with ejector levers and captive screws at the top and bottom of each card\" (Chassis Slots, p17). SECOND, this master carries the CABLE MANAGEMENT TRAY with its diagonal cable slots, which is front-face furniture on every chassis in this family. THIRD, its band order reproduces Figure 24 exactly - power shelves, line card cage, a fan pair, the RP/FC cage, a second fan pair, the lower line card cage. The concern that first held it back, that the master named `-rear` shows power modules where Figure 24 puts them on the front, is explained by the power system being at the TOP and reachable from both faces"
+   "note": "THIS CHASSIS WAS HELD BACK UNTIL ITS FACES WERE SETTLED, because Cisco's ASR 9910 masters are named front and rear the wrong way round and an unverified face is not a face. Three independent checks now agree that asr-9922-front IS the front. FIRST, the guide states it: on the ASR 9922 every RP, FC and LC faces the front and stands vertically, with ejector levers and captive screws at the card's top and bottom (Chassis Slots, p17). SECOND, this master carries the CABLE MANAGEMENT TRAY with its diagonal cable slots, which is front-face furniture on every chassis in this family. THIRD, its band order reproduces Figure 24 exactly - power shelves, line card cage, a fan pair, the RP/FC cage, a second fan pair, the lower line card cage. The concern that first held it back, that the master named `-rear` shows power modules where Figure 24 puts them on the front, is explained by the power system being at the TOP and reachable from both faces"
   },
   "fan-band-pitch": {
    "confidence": "drawing",
