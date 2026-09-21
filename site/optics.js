@@ -88,7 +88,8 @@ export function installOpticFields(shell) {
   // colour chosen here changed nothing. Until the kit paints it, the drawing's
   // half is done here by the build's own rule: a value sets `fill` on
   // `data-fill-from` and `stroke` on `data-stroke-from`, and an empty one
-  // restores what was drawn. 3D waits on the kit - upstream-work/pluggable-fields.md.
+  // restores what was drawn. 3D waits on the kit: roc-ops/Portrayal#481. When
+  // that lands, this function should go - the kit will do it in both places.
   function paintFields() {
     const svg = state.svg;
     if (!svg) return;
