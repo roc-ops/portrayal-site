@@ -17,7 +17,8 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
          setPulled as setReliefPulled, applyPulled, nodeTools } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
-import { applyAllOverrides } from '../vendor/swap.js';
+import { applyAllOverrides, applyOccupantOverrides, viewsToRewrite,
+         refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 
 export const RU = 44.45;            // EIA-310 rack unit
@@ -420,7 +421,7 @@ export function createRackScene(container, opts = {}) {
   // and everything else built from that text.
   async function overrideFaces(entry) {
     const ov = entry.overrides;
-    if (!ov || !Object.keys(ov).length || !entry.bays) return;
+    if (!ov || !Object.keys(ov).length) return;
     const byRef = ref => (entry.componentIndex || []).find(
       c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
     const loadSkin = async ref => {
@@ -430,24 +431,23 @@ export function createRackScene(container, opts = {}) {
       return {comp: c, text: await svgSource(
         `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`, relief)};
     };
-    // A NESTED KEY NAMES NO DEVICE BAY, so the per-view guard below - which
-    // asks whether this view holds any bay the map mentions - skips every view
-    // for a map that carries only nested keys. A host swapping just the module
-    // inside a seated carrier would watch nothing happen.
-    const nestedOverride = Object.keys(ov).some(k => k.includes('/module/'));
-    for (const [view, bays] of Object.entries(entry.bays)) {
-      if (!bays.length) continue;
-      if (!nestedOverride
-          && !bays.some(b => Object.prototype.hasOwnProperty.call(ov, b.id))) continue;
+    // WHICH VIEWS THIS MAP TOUCHES, bays and cages together - swap.js's
+    // `viewsToRewrite`, the rule the kit's own viewer uses. It carries the
+    // nested-key case this file used to decide for itself (a `/module/` path
+    // names no device bay, so it rewrites every view that has bays) and adds
+    // the one this file never knew: a view whose only change is an optic.
+    const views = viewsToRewrite({bays: entry.bays, cages: entry.cages}, ov);
+    for (const view of views) {
+      const bays = entry.bays?.[view] || [];
+      const cages = entry.cages?.[view] || [];
       let text;
       try { text = await svgSource(faceUrl(entry, view), relief); } catch { continue; }
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
-      // EVERY LEVEL, by following the bay frontier down - see swap.js's
+      // EVERY LEVEL of bays, by following the bay frontier down - see swap.js's
       // `applyAllOverrides` for why a fixed number of passes is the wrong
       // shape. This used to be two passes here, which covered the two levels
-      // the library has today and would have skipped a third silently: the
-      // elevation would swap and this rack would not.
+      // the library has today and would have skipped a third silently.
       const {applied, dropped} = await applyAllOverrides(
         doc.documentElement, bays, ov, loadSkin, byRef);
       // The same divergence the walk exists to prevent, so it is said out loud
@@ -457,7 +457,25 @@ export function createRackScene(container, opts = {}) {
         console.warn(`[portrayal] ${entry.ref}.${view}: ${dropped.length} nested `
                      + `bay override(s) never applied - the drawing nests deeper `
                      + `than the walk goes, so 2D and 3D will disagree`, dropped);
-      if (applied) putFace(entry, view, new XMLSerializer().serializeToString(doc));
+      // THEN THE OPTICS. Once one is in the face text it STANDS PROUD with no
+      // further work here: its nodes carry `data-z-out`, and buildFaceRelief
+      // extrudes them forward of the faceplate like any other relief.
+      // A refused cage is one the build does something to that the kit does
+      // not (lifted, mirrored, or in a group carrying states), so it is left
+      // empty rather than guessed at; a failed one is a skin that did not
+      // load, so the cage keeps what the build seated. Both are said, as the
+      // kit's viewer says them.
+      const {applied: seated, refused, failed} = cages.length
+        ? await applyOccupantOverrides(doc.documentElement, cages, ov, loadSkin)
+        : {applied: 0, refused: [], failed: []};
+      if (refused.length)
+        console.warn(`[portrayal] ${entry.ref}.${view}: ${refused.length} cage `
+                     + `override(s) refused, so the cage is left empty`,
+                     refused.map(id => `${id} (${refusalReason(cages.find(c => c.id === id))})`));
+      if (failed.length)
+        console.warn(`[portrayal] ${entry.ref}.${view}: ${failed.length} cage `
+                     + `override(s) not applied - the optic's skin did not load`, failed);
+      if (applied || seated) putFace(entry, view, new XMLSerializer().serializeToString(doc));
     }
   }
 
@@ -706,7 +724,9 @@ export function createRackScene(container, opts = {}) {
       // The configs index is also where the name of the default configuration
       // lives, so an entry without a cfg needs it even when the caller supplied
       // chassis and bays.
-      if (((e.chassis && e.bays) && e.cfg) || configs.has(e.ref)) continue;
+      // Cages as well since Portrayal #441: a caller that supplies chassis and
+      // bays but not cages still needs the index, or its optics go nowhere.
+      if (((e.chassis && e.bays && e.cages) && e.cfg) || configs.has(e.ref)) continue;
       configs.set(e.ref, jdist(`${DIST}${e.ref}.configs.json`).catch(() => null));
     }
     if (STACK.some(e => !e.componentIndex) && !COMPONENTS) {
@@ -726,6 +746,9 @@ export function createRackScene(container, opts = {}) {
         cfg: e.cfg || cfg?.default,
         chassis: e.chassis || cfg?.chassis || {},
         bays: e.bays || cfg?.bays || {},
+        // A PORT THAT TAKES AN OPTIC is a cage (Portrayal #441), listed per view
+        // beside the bays, and an override map names both in one namespace.
+        cages: e.cages || cfg?.cages || {},
         componentIndex: e.componentIndex || COMPONENTS || []});
     }
   }
