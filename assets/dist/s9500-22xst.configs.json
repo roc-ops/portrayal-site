@@ -708,7 +708,7 @@
      "data-speed": "100g"
     },
     "rel-pos": 21,
-    "rotate": null
+    "rotate": 180
    }
   ],
   "left": [],
@@ -874,7 +874,7 @@
   },
   "cage-mirroring": {
    "confidence": "photo-measured",
-   "note": "photo-measured, and it says the stacked optical rows are NOT belly-to-belly. Rotating a std/sfp-ganged moves its drawn cavity 1.13 mm across the 10.4 mm opening, so the apparent pitch between the two rows' dark cavities is 15.0 mm if the rows share an orientation and 12.7 or 17.3 mm if they mirror. The front photograph rendered to the same 8 px/mm as the model gives 15.4 mm; the first draft, with the lower row turned 180, rendered 12.65. Both SFP+ and SFP28 rows are therefore drawn unmirrored, which is also what the sibling S9510-28DC carries for its stacked SFP28 rows. The QSFP28 pair cannot be tested this way - std/qsfp28's cavity is symmetric, so rotation is invisible - and is left unrotated rather than asserting a mirroring the two testable blocks both contradict."
+   "note": "photo-measured, and it says the stacked optical rows are NOT belly-to-belly. Rotating a std/sfp-ganged moves its drawn cavity 1.13 mm across the 10.4 mm opening, so the apparent pitch between the two rows' dark cavities is 15.0 mm if the rows share an orientation and 12.7 or 17.3 mm if they mirror. The front photograph rendered to the same 8 px/mm as the model gives 15.4 mm; the first draft, with the lower row turned 180, rendered 12.65. Both SFP+ and SFP28 rows are therefore drawn unmirrored, and declared so in stack-exceptions. The QSFP28 pair cannot be tested this way - std/qsfp28's cavity is symmetric, so the test is blind to it - and with no reading of its own it follows the library's stack convention (docs/pluggables-3d-design.md, S3: upper rotate 0 over lower 180, both bails outward), the lower cage rotate 180. That is the rule, not an observation, and the unmirrored SFP rows beside it are a reason to photograph it."
   },
   "chassis": {
    "confidence": "datasheet",
@@ -922,6 +922,10 @@
   },
   "sources": {
    "note": "UfiSpace S9500-22XST datasheet for dimensions, weight, port inventory, platform, timing, power, environment, compliance and the FRU ordering lines; S9500-22XST Hardware Installation Guide (s9500-22xst-hig) for the Port Overview elevation, the Component Physical Information table, the Figure 5 overview drawing, the LED tables, grounding and rack mounting; three vendor product renders (photos/s9500-22xst-1-angle, -2-front, -3-rear) for colour, counts, construction, and for two measurements the drawings could not settle. FIGURE QUALITY WAS GATED FIRST AND ONE FIGURE FAILED. The HIG Port Overview (Figure 9, page 12 of the PDF at 600 dpi) measures 3766 x 380 px across the 440 x 43.5 mm face: aspect 9.90 against a true 10.115, 2.1 percent out, so it is NOT orthographic and its absolute vertical scale is not used. Its horizontal scale is trusted, and was validated rather than assumed - at 8.559 px/mm the SFP+ ganged shell measures 59.52 mm, which is 4 x 14.25 (the SFF-8433 port pitch) plus a 1.26 mm flange each side, and the PSU latch-to-latch pitch comes out at 58.77 mm against the 58.7 mm the sibling S9510-28DC carries for the same PSU form factor. The Figure 5 top-view drawing on page 10 DOES pass: 2182 x 1488 px against 440 x 302 mm is aspect 1.466 versus a true 1.457, 0.6 percent, so the top face is measured rather than proportioned."
+  },
+  "stack-orientation": {
+   "confidence": "estimated",
+   "note": "The library's stack convention (docs/pluggables-3d-design.md, S1-S4): a row pair is the upper cage upright (rotate 0) over the lower turned 180, so both cage lips face the band between the two cages and both bails face outward. Decided by the rule, not an observation, so a photograph of the stack overturns it: the 1 QSFP pair (port-20/port-21). Declared in stack-exceptions with the reading that keeps them otherwise: the 8 SFP pairs (port-4/port-5 to port-18/port-19). The QSFP28 pair has no reading of its own - the cavity-pitch test is blind to std/qsfp28's symmetric cavity - so it takes the rule, and the unmirrored SFP rows beside it are a reason to photograph it."
   },
   "system-lamps": {
    "confidence": "drawing",

@@ -184,7 +184,7 @@
      "generic/qsfp-lc@1"
     ],
     "at": [
-     177.4,
+     177.475,
      26.2
     ],
     "group": "qsfpdd-400g",
@@ -206,7 +206,7 @@
      "data-speed": "400g"
     },
     "rel-pos": 0,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -214,7 +214,7 @@
      "generic/qsfp-lc@1"
     ],
     "at": [
-     204.5,
+     204.575,
      26.2
     ],
     "group": "qsfpdd-400g",
@@ -236,14 +236,14 @@
      "data-speed": "400g"
     },
     "rel-pos": 1,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
      "generic/qsfp-lc@1"
     ],
     "at": [
-     229.8,
+     229.725,
      8.8
     ],
     "group": "qsfp28",
@@ -265,14 +265,14 @@
      "data-speed": "100g"
     },
     "rel-pos": 2,
-    "rotate": 180
+    "rotate": null
    },
    {
     "accepts": [
      "generic/qsfp-lc@1"
     ],
     "at": [
-     229.8,
+     229.875,
      26.2
     ],
     "group": "qsfp28",
@@ -294,7 +294,7 @@
      "data-speed": "100g"
     },
     "rel-pos": 3,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -354,7 +354,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 5,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -414,7 +414,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 7,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -474,7 +474,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 9,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -534,7 +534,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 11,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -594,7 +594,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 13,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -654,7 +654,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 15,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -714,7 +714,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 17,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -774,7 +774,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 19,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -834,7 +834,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 21,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -894,7 +894,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 23,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -954,7 +954,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 25,
-    "rotate": null
+    "rotate": 180
    },
    {
     "accepts": [
@@ -1014,7 +1014,7 @@
      "data-speed": "25g"
     },
     "rel-pos": 27,
-    "rotate": null
+    "rotate": 180
    }
   ],
   "left": [],
@@ -1163,11 +1163,15 @@
    "note": "CORRECTED TWICE, and the second correction reverses part of the first, so both are kept. This device listed `PSU-401-DISB-1` / `PSU-401-AISB` and `FAN-402825-HD` here - FRU part numbers in a field whose schema is \"orderable SKUs for this CONFIGURATION: model -> {part, power-cord}\", meaning the CHASSIS. They were a duplicate too: ufispace/psu-401-dc, psu-401-ac and fan-402825 each carry their own in `attrs.model`, which is where a FRU part number belongs. IT WAS NOT HARMLESS. A DCIM exporter reading the first key as the chassis model filed this router as a device type called FAN-402825-HD in both target libraries, and the S9510-28DC appeared in neither under its own name - see roc-ops/Portrayal#21. A field carrying the wrong KIND of value is worse than an empty one, because every consumer has to guess which kind it got. THE FIRST FIX SAID NO CHASSIS SKU EXISTS AND THAT WAS WRONG. It is a true statement about the HARDWARE INSTALLATION GUIDE - R1.9 names the product `S9510-28DC` in its title, its overview and its dimensions table and prints no orderable number anywhere - and a false one about the world. Two exist and the maintainer supplied them: `S9510-28DC-BN0B` for DC and `S9510-28DC-BR1B` for AC. Searching one document and concluding the fact does not exist is the same error the gaps register records against the XFP bezel opening, made again here. THE TWO DC CONFIGURATIONS SHARE A SKU because they are one chassis differently populated - `dc-populated` fitted optics into the first four SFP28 cages before it was removed (the library ships its models bare by policy, docs/pluggables-design.md decision 2), and populating it was never a different thing to order. AC is, and carries its own. That is exactly the distinction #21 collapses on, and the fold has happened: the single DC entry and the AC entry ARE the two device types this chassis has, one SKU each. The one-SKU point stands - populating a chassis was never a different thing to order, which is why removing `dc-populated` cost no device type. SOURCE IS THE OWNER, NOT A DOCUMENT WE HOLD, and that is recorded rather than dressed up: no UfiSpace PDF held contains either string. If a UfiSpace ordering guide ever lands, it should confirm these two and may add the regional variants the Edgecore SKUs show for the same class of box. than merely coping."
   },
   "qsfpdd-port-numbers": {
-   "note": "PAID, by fixing the component rather than the labels. Ports 0-3 keep their numbers at baselines 38.1 and 8.8, where the datasheet front figure puts them: the digit is printed on a coloured band just outside each aperture. The band is faceplate paint - vendor-confirmed - so it is now four rects in panel.decor and common/qsfp-cage@2 is 10.18 tall (0.6 flange + the 9.58 std/qsfp-ganged opening) instead of 13.0. Silkscreen paints over decor and under components, so the numbers now read. The cages for ports 0, 1 and 3 did not move. Port-2 is rotate: 180, so its at: is the box top and shortening the box does not free the digit; its at: was recomputed from the new height and lands at 8.8, which puts its aperture 0.08mm lower than the v1 model had it - 0.4 px at the figure's 4.5 px/mm, and the figure is not self-consistent to better than that: it draws the port-2 digit sitting on the aperture edge rather than clear of it. The band is still NARROWER than the aperture (17.1 against 18.5); it is no longer drawn overlapping it"
+   "note": "PAID, by fixing the component rather than the labels. Ports 0-3 keep their numbers at baselines 38.1 and 8.8, where the datasheet front figure puts them: the digit is printed on a coloured band just outside each aperture. The band is faceplate paint - vendor-confirmed - so it is now four rects in panel.decor and common/qsfp-cage@2 (and @3) is 10.18 tall (0.6 flange + the 9.58 std/qsfp-ganged opening) instead of 13.0. Silkscreen paints over decor and under components, so the numbers now read. The cages for ports 0, 1 and 3 did not move. Port-2 was then rotate: 180, so its at: is the box top and shortening the box does not free the digit; its at: was recomputed from the new height and lands at 8.8, which puts its aperture 0.08mm lower than the v1 model had it - 0.4 px at the figure's 4.5 px/mm, and the figure is not self-consistent to better than that: it draws the port-2 digit sitting on the aperture edge rather than clear of it. The band is still NARROWER than the aperture (17.1 against 18.5); it is no longer drawn overlapping it"
   },
   "sfp-pitch": {
    "confidence": "drawing",
    "note": "drawing-inferred (~14.45mm ganged - std/sfp cutouts shoulder to shoulder; verify against physical unit)"
+  },
+  "stack-orientation": {
+   "confidence": "estimated",
+   "note": "The library's stack convention (docs/pluggables-3d-design.md, S1-S4): a row pair is the upper cage upright (rotate 0) over the lower turned 180, so both cage lips face the band between the two cages and both bails face outward. Decided by the port lamps, which point up over down: the 12 SFP pairs (port-4/port-5 to port-26/port-27). Decided by the rule, not an observation, so a photograph of the stack overturns it: the 1 QSFP pair (port-2/port-3). 1 of these were drawn with the upper cage turned before the std cage art moved its lip to the bottom of the opening; turning them keeps the lips in the middle band where they were drawn and seats every optic bail-outward. common/qsfp-cage@3 draws its bezel flange on the belly side, at the bottom of the upright cage, with the opening centred across it. Every opening stays where it was measured; the boxes move by 0.075 across. The single QSFP-DD cages port-0 and port-1 in the lower row are rotate 180 because this device's figure puts their flange above the opening and the printed band below it - the reading the part's own size note was measured from."
   },
   "timing-labels": {
    "confidence": "drawing",
