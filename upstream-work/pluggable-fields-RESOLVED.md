@@ -41,8 +41,22 @@ the previous choice instead of the skin's own.
 The controls themselves stay here. They are a page's business, not the kit's —
 the kit's own page still offers no control for a field.
 
+## And this repository fills the slot
+
+Annotate built its document with `swaps` and no `fields`, so nothing here filled
+slot 8 and a reader who coloured a latch and shared the link lost the colour.
+Annotate carries it now; Explorer's own link is still to do.
+
+**Annotate** sets `doc.fields` wherever it sets `doc.swaps`, holds them while a
+link's own wait on its drawing, and applies a link's fields AFTER its swaps —
+`port-4-occupant` is not in the drawing until the optic is. Nothing had ever
+applied `doc.fields` on load, so the reverse direction was missing outright. A
+field naming a part the drawing has not got is dropped rather than left in
+`cfgFields` painting nothing and riding out in the next link, which is what an
+ignored swap already does to itself.
+
 ## Still ours to pick up
 
-Annotate builds its document with `swaps` and no `fields`, so nothing on this
-site fills slot 8 yet. A reader who colours a latch and shares the link loses
-the colour.
+Nothing replays `cfgFields` into a reloaded face, so a view round-trip shows the
+optic without what is written on it. That is `fields-not-replayed.md`, and it is
+a fix of its own rather than part of the share link.
