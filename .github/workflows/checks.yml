@@ -1,0 +1,50 @@
+# What this repository already knew how to check, run without being asked.
+#
+# Both of these existed before this workflow: check-contract.py has been the
+# last step of refresh-assets.sh since it was written, and the marks harness
+# has had its 25 checks for as long - behind a button, on a page, which meant
+# they ran when somebody remembered. The sync in this branch is the argument
+# for running them here instead: it passed both of the guards that existed and
+# still shipped a site where every page 404s on its first import.
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A second push supersedes the first: these checks say whether the tip of a
+# branch is sound, and a queue of runs against commits nobody will look at
+# again is just latency on the answer to that.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # depth 1 deliberately: assets/dist is ~286 MB of committed build output
+      # and none of these checks reads a second commit.
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 1}
+
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
+      # THE FILES, which needs nothing installed. Run first and on its own step
+      # so a contract break is legible as one, rather than as whichever page
+      # happened to fall over because of it.
+      - name: the contract with Portrayal
+        run: python3 check-contract.py
+
+      - name: install a browser
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright
+          python3 -m playwright install --with-deps chromium
+
+      # THE PAGES, opened. check-browser.py starts its own serve.py on a free
+      # port, so there is nothing to start or stop around it here.
+      - name: the pages, and the marks harness
+        run: python3 check-browser.py
