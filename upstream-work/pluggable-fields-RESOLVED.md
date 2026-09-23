@@ -45,7 +45,7 @@ the kit's own page still offers no control for a field.
 
 Annotate built its document with `swaps` and no `fields`, so nothing here filled
 slot 8 and a reader who coloured a latch and shared the link lost the colour.
-Annotate carries it now; Explorer's own link is still to do.
+Both pages carry it now.
 
 **Annotate** sets `doc.fields` wherever it sets `doc.swaps`, holds them while a
 link's own wait on its drawing, and applies a link's fields AFTER its swaps —
@@ -54,6 +54,22 @@ applied `doc.fields` on load, so the reverse direction was missing outright. A
 field naming a part the drawing has not got is dropped rather than left in
 `cfgFields` painting nothing and riding out in the next link, which is what an
 ignored swap already does to itself.
+
+**Explorer**'s link is query parameters, not the m1 document, and the kit reads
+only `swap=`, so it needed a string of its own:
+
+    ?…&swap=port-7~generic%2Fqsfp-lc%401
+     &fields=port-7-occupant:label~LR4-A,port-7-occupant:latch-color~%23c22f2f
+
+`encodeFields`/`decodeFields` in `site/optics.js`, by `encodeSwaps`'s rules one
+separator further: every token is encodeURIComponent'd, so `:` and `,` cannot
+appear inside one, and paths and keys are sorted so one state is one string. It
+never throws and drops rubbish entry by entry. Read before `writeLocation`
+exists, applied after `shell.ready`.
+
+A field for a part the current FACE has not got is kept there, where Annotate
+drops it: `cfgFields` spans the views, which is reseat()'s rule, and a document
+is applied once against one named drawing.
 
 ## Still ours to pick up
 

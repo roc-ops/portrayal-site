@@ -9,6 +9,8 @@
 //                              cages together, by swap.js's own rule
 //   fieldsNow(shell)           what the reader WROTE ON those parts, for the
 //                              share link's `fields` slot
+//   encodeFields/decodeFields  the same map as ONE QUERY PARAMETER, for a page
+//                              whose link is `?device=&config=&view=&swap=`
 //   installOpticFields(shell)  controls for an optic's FIELDS - its latch colour
 //                              and label - beneath the optic menu
 
@@ -44,6 +46,66 @@ export function fieldsNow(shell) {
   const out = {};
   for (const [path, vals] of Object.entries(shell.state.cfgFields || {}))
     out[path] = {...vals};
+  return out;
+}
+
+/* A FIELD MAP AS ONE QUERY PARAMETER, the shape `?swap=` already uses one
+ * level down. Annotate carries its fields in the m1 document, which has a slot
+ * for them; Explorer's link is query parameters and the kit reads only `swap=`,
+ * so this page needs the string.
+ *
+ *     fields=port-4-occupant:latch-color~%23c22f2f,port-4-occupant:label~LR4-A
+ *
+ * encodeSwaps's rules, one separator further: every token is
+ * encodeURIComponent'd, which leaves only `A-Za-z0-9-_.!*'()` and `%XX` (and
+ * `~` is escaped after, as it does), so `:` between a path and a key and `,`
+ * between entries cannot appear inside one. Paths and keys are sorted, so one
+ * state is one string.
+ *
+ * AN EMPTY VALUE IS NULL COMING BACK, which is decodeSwaps's rule and costs
+ * nothing here: fields.js paints `null` and `''` identically - its own
+ * docstring says "both are empty" - so the only thing the collapse could lose
+ * is a distinction nothing downstream draws.
+ */
+const encTok = s => encodeURIComponent(s).replace(/~/g, '%7E');
+const sorted = o => Object.keys(o || {}).sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+
+export function encodeFields(map) {
+  if (!map || typeof map !== 'object') return '';
+  const out = [];
+  for (const path of sorted(map)) {
+    const vals = map[path];
+    if (!vals || typeof vals !== 'object') continue;
+    for (const key of sorted(vals)) {
+      const v = vals[key];
+      out.push(`${encTok(path)}:${encTok(key)}~${v == null ? '' : encTok(String(v))}`);
+    }
+  }
+  return out.join(',');
+}
+
+/** NEVER THROWS, and one bad entry does not take the rest with it - a link is
+ *  typed, pasted and truncated by people, and the worst a `fields=` may do is
+ *  be ignored. decodeSwaps's rule, applied to both halves of the key. */
+export function decodeFields(s) {
+  const out = {};
+  if (typeof s !== 'string' || !s) return out;
+  for (const part of s.split(',')) {
+    const t = part.indexOf('~');
+    if (t <= 0 || part.indexOf('~', t + 1) >= 0) continue;
+    const c = part.indexOf(':');
+    // exactly one of each, in order: a token cannot contain either, so anything
+    // else is not this shape - decodeSwaps drops a second `~` the same way
+    if (c <= 0 || c > t || part.indexOf(':', c + 1) >= 0) continue;
+    let path, key, val;
+    try {
+      path = decodeURIComponent(part.slice(0, c));
+      key = decodeURIComponent(part.slice(c + 1, t));
+      val = decodeURIComponent(part.slice(t + 1));
+    } catch (e) { continue; }
+    if (!path || !key || path === '__proto__' || key === '__proto__') continue;
+    (out[path] || (out[path] = {}))[key] = val || null;
+  }
   return out;
 }
 
