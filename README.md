@@ -54,6 +54,24 @@ schemas are at v0 and the drawings change, so after a `./build.sh` over there:
 ./refresh-assets.sh
 ```
 
+That ends by running `check-contract.py`, which asserts what this site reads
+from Portrayal — including that every module a vendored module imports was
+vendored too. `fields.js` is why that check exists: it arrived as a new module
+the hand-written copy list did not name, and nothing would have said so until
+every page 404'd on its first import.
+
+Then the half that needs a browser:
+
+```sh
+python3 check-browser.py
+```
+
+It opens all twelve pages and presses Run on the marks harness, and fails on a
+404 or an uncaught exception — not on console noise, so it says nothing about a
+machine with no GPU. It needs Playwright (`pip install playwright && playwright
+install chromium`), which is why it is not part of `refresh-assets.sh`: the
+refresh should run anywhere a build does.
+
 Then click through the showcase and check it still behaves.
 
 ## The showcase
