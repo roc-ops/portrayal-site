@@ -1,0 +1,76 @@
+#!/bin/sh
+# The checks, before the push rather than after it.
+#
+# This exists because GitHub Actions does not run for this repository: the
+# workflow in .github/workflows/ is correct and has never executed, so nothing
+# was gating a branch except somebody remembering. Until Actions runs, this is
+# the gate. When it does, this stays useful and merely stops being the only one.
+#
+# Install it once, for this clone and every worktree of it:
+#
+#     git config core.hooksPath hooks
+#
+# Committed rather than copied into .git/hooks, because a hook nobody can see in
+# a diff is a hook that drifts. `git push --no-verify` skips it, which is the
+# right escape hatch for a work-in-progress branch - and the wrong one for main.
+set -e
+
+CONTRACT="check-contract.py"
+BROWSER="check-browser.py"
+
+# WHAT A PUSH HAS TO EARN. The contract check reads files and takes under a
+# second, so it runs always. The browser pass opens twelve pages and presses Run
+# on the marks harness: two minutes, which is worth paying when the push can
+# break a page and is worth skipping when it plainly cannot. A pre-push hook
+# that costs two minutes on a README fix is a hook that gets --no-verify'd into
+# retirement, and then neither check runs.
+touches_the_site() {
+  # Anything the pages load, are, or are served by. assets/ is in the list
+  # because a drawing that goes away is a page that fetches a 404.
+  grep -qE '^(vendor/|site/|assets/|brand/|[^/]+\.html$|check-browser\.py$|serve\.py$)'
+}
+
+z=0000000000000000000000000000000000000000
+changed=""
+full=0
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [ "$local_sha" = "$z" ] && continue            # deleting a ref pushes nothing
+  if [ "$remote_sha" = "$z" ]; then
+    # A BRANCH THE REMOTE HAS NOT SEEN. There is no "since" to diff from, so
+    # ask what it adds over the default branch; if that is unknown too - a
+    # fresh clone with no origin/main - check everything rather than guess.
+    base=$(git merge-base origin/main "$local_sha" 2>/dev/null) || base=""
+    if [ -n "$base" ]; then
+      changed="$changed
+$(git diff --name-only "$base" "$local_sha")"
+    else
+      full=1
+    fi
+  else
+    changed="$changed
+$(git diff --name-only "$remote_sha" "$local_sha")"
+  fi
+done
+
+# Nothing on stdin and nothing resolved: `git push` with no new commits.
+[ -z "$(printf %s "$changed" | tr -d '[:space:]')" ] && [ "$full" = 0 ] && exit 0
+
+echo "pre-push: $CONTRACT"
+python3 "$CONTRACT"
+
+if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
+  if python3 -c "import playwright" 2>/dev/null; then
+    echo "pre-push: $BROWSER (about two minutes; --no-verify skips it)"
+    python3 "$BROWSER"
+  else
+    # NOT FATAL BY DEFAULT, and loud. A hook that refuses to push because an
+    # optional dependency is missing teaches one lesson - how to bypass it.
+    echo "pre-push: skipping $BROWSER - no playwright here" >&2
+    echo "          pip install playwright && playwright install chromium" >&2
+    if [ -n "${PORTRAYAL_HOOK_STRICT:-}" ]; then
+      echo "pre-push: PORTRAYAL_HOOK_STRICT is set, so that is a failure" >&2
+      exit 1
+    fi
+  fi
+fi

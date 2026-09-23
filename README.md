@@ -72,6 +72,24 @@ machine with no GPU. It needs Playwright (`pip install playwright && playwright
 install chromium`), which is why it is not part of `refresh-assets.sh`: the
 refresh should run anywhere a build does.
 
+## Running both without being asked
+
+```sh
+git config core.hooksPath hooks
+```
+
+`hooks/pre-push` then runs the contract check on every push — under a second —
+and the browser pass when the push touches anything a page loads: `vendor/`,
+`site/`, `assets/`, `brand/`, a top-level `.html`, or the server itself. A
+README fix does not pay the two minutes, which is the difference between a hook
+people keep and one they retire with `--no-verify`. Missing Playwright is a
+loud skip rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
+
+`.github/workflows/checks.yml` runs the same two on every pull request — when
+Actions runs at all. It has never executed for this repository: GitHub has
+registered no workflows and no runs, which is an account setting rather than
+anything in the file. The hook is the gate until that is sorted.
+
 Then click through the showcase and check it still behaves.
 
 ## The showcase
