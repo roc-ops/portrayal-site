@@ -252,7 +252,7 @@
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';
 import * as marks from './vendor/marks.js';
-import { swapsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
+import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 // The analysis of what a drawing says about its own lamps is not this page's -
 // the gaps register asks the same questions of the same drawings offline. What
 // stays here is the markup and the handlers that put it on screen.
@@ -357,37 +357,66 @@ function writeTarget() {
   // Held while a link's own swaps are still waiting to be applied, so the
   // reload that moves the shell does not overwrite them with nothing.
   if (!pendingSwaps) doc.swaps = swapsNow(shell);
+  // AND WHAT THE READER WROTE ON THEM, by the same argument one step in. A
+  // swap says an optic is in port-4; the fields say its latch is red and what
+  // is printed on it. Seating the optic and losing the writing restores half a
+  // picture, so they travel together, in slot 8 beside the swaps. Held on the
+  // same terms - a link's own fields are applied after its swaps, and until
+  // then the live drawing has nothing to say about them.
+  if (!pendingFields) doc.fields = fieldsNow(shell);
 }
 // AN OPTIC CHANGES WHAT THE MARKS CAN MATCH, and seating one does not reload
 // the drawing - a bay swap reloads it, and 'load' re-applies the marks; an optic
 // is seated in place, so without this a mark on port-4's optic went on saying
-// it matched nothing after the optic was there. Re-applied only when the swaps
-// actually changed, since 'change' also fires for fields and selection.
-let lastSwaps = '';
+// it matched nothing after the optic was there. Re-applied only when what is
+// seated or written actually changed, since 'change' also fires for selection.
+// The fields are in the comparison rather than outside it because the share URL
+// is built from the document: leave them out and picking a latch colour leaves
+// the box on screen holding the link it had before the colour.
+let lastSeated = '';
 shell.on('change', () => {
-  if (pendingSwaps) return;
+  if (pendingSwaps || pendingFields) return;
   doc.swaps = swapsNow(shell);
-  const now = JSON.stringify(doc.swaps);
-  if (now !== lastSwaps) { lastSwaps = now; render(); }
+  doc.fields = fieldsNow(shell);
+  const now = JSON.stringify([doc.swaps, doc.fields]);
+  if (now !== lastSeated) { lastSeated = now; render(); }
 });
 
 // A LINK'S SWAPS WAIT FOR ITS DRAWING. Applying one moves the shell to the
 // link's device and configuration, and each move reloads the drawing - which
 // resets the configuration's bays and cages to what it built. So the swaps are
 // applied once the drawing the link names has finished loading, never before.
-let pendingSwaps = null, landing = null;
+let pendingSwaps = null, pendingFields = null, landing = null;
 const atTarget = w => (!w.device || state.device === w.device) &&
                       (!w.config || state.cfg === w.config);
 async function applyPendingSwaps() {
-  const map = pendingSwaps;
-  pendingSwaps = null;
-  if (!map) return;
-  const {ignored} = await shell.applySwaps(map);
+  const map = pendingSwaps, fields = pendingFields;
+  pendingSwaps = pendingFields = null;
+  if (!map && !fields) return;
+  const {ignored} = map ? await shell.applySwaps(map) : {};
+  // THE FIELDS GO ON AFTER THE SWAPS, because the part a field is written on is
+  // usually the part a swap just seated: `port-4-occupant` is not in the drawing
+  // until the optic is. Written only where the drawing has the part - setFields
+  // records a path whether or not anything answers to it, so a field left over
+  // from a swap this drawing could not take would otherwise sit in cfgFields
+  // painting nothing and ride out again in the next share link. Dropping it
+  // here is what an ignored swap already does to itself: the document is
+  // re-read from the drawing on the next two lines.
+  const svg = state.svg;
+  let lost = 0;
+  for (const [path, vals] of Object.entries(fields || {})) {
+    if (svg?.querySelector(`[data-path="${CSS.escape(path)}"]`)) shell.setFields(path, vals);
+    else lost++;
+  }
   doc.swaps = swapsNow(shell);
-  lastSwaps = JSON.stringify(doc.swaps);
+  doc.fields = fieldsNow(shell);
+  lastSeated = JSON.stringify([doc.swaps, doc.fields]);
   render();
-  const n = Object.keys(ignored || {}).length;
-  if (n) say('#expmsg', `${n} swap(s) in the link do not fit this drawing and were left out`, 'bad');
+  // RETURNED RATHER THAN SAID. This used to say it here, into the same box the
+  // caller writes "restored ..." into one statement later - so the warning was
+  // painted and overwritten in the same frame and no one ever read it. The
+  // caller owns that box; it gets the counts and puts them in the one message.
+  return {swaps: Object.keys(ignored || {}).length, fields: lost};
 }
 
 /** @returns true if the shell is reloading, in which case its 'load' re-enters. */
@@ -1284,16 +1313,24 @@ if (fromHash) {
   doc = fromHash;
   const want = {device: doc.device, config: doc.config};
   pendingSwaps = Object.keys(doc.swaps || {}).length ? {...doc.swaps} : null;
+  pendingFields = Object.keys(doc.fields || {}).length ? {...doc.fields} : null;
   $('#legend').checked = doc.legend;
   const moving = await retarget(doc);
-  if (pendingSwaps && moving && !atTarget(want))
+  if ((pendingSwaps || pendingFields) && moving && !atTarget(want))
     // bounded, so a link naming a configuration this device lacks still
     // applies what it can rather than waiting forever for a load that is not coming
     await new Promise(resolve => { landing = {want, resolve}; setTimeout(resolve, 8000); });
-  await applyPendingSwaps();
+  const left = await applyPendingSwaps() || {};
   if (!moving) { writeTarget(); render({fit: true}); }
   const n = Object.keys(doc.swaps || {}).length;
-  say('#expmsg', `restored ${doc.marks.length} mark(s)` + (n ? ` and ${n} swap(s)` : '') + ' from the URL', 'good');
+  const f = Object.keys(doc.fields || {}).length;
+  const got = [`${doc.marks.length} mark(s)`, n && `${n} swap(s)`,
+               f && `${f} written part(s)`].filter(Boolean).join(', ');
+  const out = [left.swaps && `${left.swaps} swap(s)`,
+               left.fields && `${left.fields} written part(s)`].filter(Boolean).join(' and ');
+  say('#expmsg', `restored ${got} from the URL` +
+                 (out ? `; ${out} do not fit this drawing and were left out` : ''),
+      out ? 'bad' : 'good');
 }
 </script>
 </body>

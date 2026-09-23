@@ -7,6 +7,8 @@
 //
 //   swapsNow(shell)            what the reader changed from the build, bays and
 //                              cages together, by swap.js's own rule
+//   fieldsNow(shell)           what the reader WROTE ON those parts, for the
+//                              share link's `fields` slot
 //   installOpticFields(shell)  controls for an optic's FIELDS - its latch colour
 //                              and label - beneath the optic menu
 
@@ -24,6 +26,25 @@ export function swapsNow(shell) {
     bays: flat(state.meta?.bays), cages: flat(state.meta?.cages),
     cfgBays: state.cfgBays, cfgOccupants: state.cfgOccupants,
   });
+}
+
+/**
+ * WHAT THE READER WROTE ON THE PARTS, in the shape marks.js slot 8 takes and
+ * `shell.setFields(path, vals)` replays: `{path: {key: value}}`, which is the
+ * shell's own `state.cfgFields`. Copied rather than handed over, so a document
+ * holding it does not alias live state and change under whoever is reading it.
+ *
+ * NO PRUNING HERE, deliberately. cfgFields gains a path only when a value is
+ * written on it and setFields DELETES the path outright when it is cleared (or
+ * when the optic below it changes), so an untouched drawing already answers
+ * `{}`; and marks.js's own fieldsOf drops a path left with no keys. A second
+ * rule here could only disagree with those two.
+ */
+export function fieldsNow(shell) {
+  const out = {};
+  for (const [path, vals] of Object.entries(shell.state.cfgFields || {}))
+    out[path] = {...vals};
+  return out;
 }
 
 const HEX = /^#[0-9a-f]{6}$/i;
