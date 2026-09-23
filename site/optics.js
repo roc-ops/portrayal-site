@@ -8,8 +8,7 @@
 //   swapsNow(shell)            what the reader changed from the build, bays and
 //                              cages together, by swap.js's own rule
 //   installOpticFields(shell)  controls for an optic's FIELDS - its latch colour
-//                              and label - beneath the optic menu, and the live
-//                              paint of the colour in the drawing
+//                              and label - beneath the optic menu
 
 import { swapOverrides as swapDelta } from '../vendor/swap.js';
 
@@ -32,11 +31,13 @@ const HEX = /^#[0-9a-f]{6}$/i;
 /**
  * WHAT IS WRITTEN ON AN OPTIC. A seated optic declares fields (components.json
  * `fields`): the four generics carry a latch colour and a module label. The
- * shell can set them - setFields writes the 2D drawing and emits `fields` for a
- * host to tell a 3D scene - and offers no control for them, so they go here,
- * beneath the optic menu, for whatever optic is in the selected cage. The optic
- * itself is `<cage>-occupant`, a top-level sibling of its port (swap.js
- * occupantAttrs, render.py seat_at).
+ * shell can set them - setFields paints the 2D drawing by the build's own rule,
+ * text and colour alike, and emits `fields` for a host to tell a 3D scene - and
+ * offers no control for them, so they go here, beneath the optic menu, for
+ * whatever optic is in the selected cage. The optic itself is
+ * `<cage>-occupant` - swap.js occupantNames, whose PATH is that string for a
+ * cage on a device face and for one on a seated card alike, even where the
+ * drawing's id for the latter is namespaced into its carrier.
  *
  * `select` fires after the shell has drawn the inspector; `change` covers the
  * redraw after a swap. The rows are added once per drawn inspector.
@@ -81,30 +82,14 @@ export function installOpticFields(shell) {
   shell.on('select', () => queueMicrotask(opticFields));
   shell.on('change', () => queueMicrotask(opticFields));
 
-  // THE COLOUR, PAINTED LIVE. A part's colour is a field too: its node carries
-  // `data-fill-from="latch-color"`, and render.py's fill_from_attrs sets the
-  // node's `fill` from it - AT BUILD TIME. At runtime the kit's setFields (2D)
-  // and relief.js applyNodeFields (3D) write only text (`data-from`), so a
-  // colour chosen here changed nothing. Until the kit paints it, the drawing's
-  // half is done here by the build's own rule: a value sets `fill` on
-  // `data-fill-from` and `stroke` on `data-stroke-from`, and an empty one
-  // restores what was drawn. 3D waits on the kit: roc-ops/Portrayal#481. When
-  // that lands, this function should go - the kit will do it in both places.
-  function paintFields() {
-    const svg = state.svg;
-    if (!svg) return;
-    for (const [path, vals] of Object.entries(state.cfgFields || {}))
-      for (const host of svg.querySelectorAll(`[data-path="${CSS.escape(path)}"]`))
-        for (const [k, v] of Object.entries(vals || {}))
-          for (const [attr, from] of [['fill', 'data-fill-from'], ['stroke', 'data-stroke-from']])
-            for (const node of host.querySelectorAll(`[${from}="${CSS.escape(k)}"]`)) {
-              const drawn = `data-drawn-${attr}`;
-              if (!node.hasAttribute(drawn)) node.setAttribute(drawn, node.getAttribute(attr) || '');
-              const val = v == null ? '' : String(v).trim();
-              node.setAttribute(attr, val || node.getAttribute(drawn));
-            }
-  }
-  for (const ev of ['fields', 'load', 'change']) shell.on(ev, paintFields);
+  // THE COLOUR USED TO BE PAINTED HERE. It is not any more: kit/fields.js does
+  // it, called from shell.js setFields for the 2D drawing and relief.js for the
+  // documents the 3D scene rasterises, so one rule serves both -
+  // roc-ops/Portrayal#481 and #482, and upstream-work/pluggable-fields-RESOLVED.md.
+  // The stand-in that lived here was the build's rule written a second time, and
+  // keeping it past the fix would have been worse than never having had it: it
+  // stashed what the KIT had just painted as "what was drawn", so clearing a
+  // colour restored the previous choice rather than the skin's own.
 }
 
 /** The controls' styles, for a page to drop into its own sheet. */

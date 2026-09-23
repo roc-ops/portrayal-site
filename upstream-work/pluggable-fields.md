@@ -3,6 +3,9 @@
 Filed upstream as roc-ops/Portrayal#481 (runtime paint), #482 (the generics'
 latch outline) and #483 (the share link has no slot for fields).
 
+**FIXED** — all three, in roc-ops/Portrayal#487. See
+`pluggable-fields-RESOLVED.md`.
+
 Against `kit/shell.js`, `kit/relief.js`, `spec/tools/portrayal/render.py` and
 `library/components/generic/*` at `bca3059f`. No patch attached: the fix lives in
 the kit and in four contracts, and both are upstream's.

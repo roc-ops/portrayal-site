@@ -96,11 +96,19 @@ fi
 # nothing here names gif.js, but marks.toGif does `await import('./gif.js')`,
 # so a page that never mentions it still falls over without it.
 #
+# fields.js arrives the same way, except the import is a STATIC one: shell.js
+# and relief.js both `import { paintFields, unpaintFields } from './fields.js'`
+# at the top of the file, so leaving it out does not degrade a feature - it
+# stops the module graph loading at all and every page that mounts the shell or
+# the 3D relief comes up blank. It is the rule for writing a field onto a part
+# at runtime, shared between the 2D drawing and the 3D scene so the two cannot
+# disagree about what colour a label goes.
+#
 # These modules are Portrayal's to own - they are how you talk to a drawing.
 # The pages built on them are this repository's, and the demo pages that used to
 # sit beside them upstream are gone: this site owns those now.
 for m in viewer3d.js relief.js lamps.js share.js swap.js dist.js shell.js devsel.js \
-         states.js marks.js gif.js; do
+         states.js marks.js gif.js fields.js; do
   cp "$KIT/$m" "$HERE/vendor/$m"
 done
 
@@ -412,7 +420,7 @@ PYEOF
 # each page actually imports, because an empty file is also a file.
 missing=0
 for m in viewer3d.js relief.js lamps.js share.js swap.js dist.js shell.js devsel.js \
-         states.js marks.js gif.js; do
+         states.js marks.js gif.js fields.js; do
   f="$HERE/vendor/$m"
   if [ ! -s "$f" ] || ! grep -q '^export' "$f"; then
     echo "  MISSING or empty: vendor/$m" >&2

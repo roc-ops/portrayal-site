@@ -10,6 +10,8 @@
 // rather than threaded through every signature, so the function bodies are the
 // same code that has been running in the device viewer.
 
+import { paintFields, unpaintFields } from './fields.js';
+
 let THREE, renderer, PXMM, FRU_PATHS;
 
 // A BODY THAT IS NOT ONE BOX. A module's `body` is a box the size of its face
@@ -679,13 +681,15 @@ export function setNodeStates(map, scope) {
 }
 export function clearNodeStates(scope) { _sc(scope).states.clear(); }
 
-// WHAT A VIEWER HAS WRITTEN ON A PART. A field is a `data-from` text node the
-// part declares (`fields` in its contract, carried in components.json): a
-// supply's wattage, a drive's capacity. The value replaces the node's text and
-// lands on the part's group as `data-<key>`, in the parsed document and in
-// every texture redrawn from it - the same route a lamp state takes. Keyed by
-// the part's data-path; a map of key -> value per part; an empty value hides
-// the node, as render.py's fill does.
+// WHAT A VIEWER HAS WRITTEN ON A PART. A field is a node the part declares
+// (`fields` in its contract, carried in components.json) and its skin is wired
+// to: a `data-from` node's text, a `data-fill-from` node's fill, a
+// `data-stroke-from` node's stroke - a supply's wattage, an optic's latch
+// colour. The value lands in the parsed document and on the part's group as
+// `data-<key>`, and in every texture redrawn from it - the same route a lamp
+// state takes. Keyed by the part's data-path; a map of key -> value per part.
+// The rule itself is fields.js's, shared with the 2D drawing so the two cannot
+// drift: an empty value hides a text node and puts a colour back as drawn.
 export function setNodeFields(map, scope) {
   const st = _sc(scope).fields || (_sc(scope).fields = new Map());
   st.clear();
@@ -693,22 +697,24 @@ export function setNodeFields(map, scope) {
     if (vals && Object.keys(vals).length) st.set(path, {...vals});
 }
 export function nodeFields(scope) { return new Map(_sc(scope).fields || []); }
+// COLOURS ARE PUT BACK FIRST, over the whole document, for the reason
+// applyNodeStates clears first: the registry is the whole truth, and a part
+// taken OUT of it arrives as a path that is no longer there. A repaint that
+// only visited registered paths would paint a latch red and never paint it grey
+// again - and the LOD records repaint from their own last output, so the red
+// would be permanent. The drawn colour is stashed on the node, so this needs no
+// memory of its own. Outer parts before inner ones, so an optic seated in a
+// module keeps its own value for a key the module also sets.
 export function applyNodeFields(root, scope) {
   if (!root) return root;
+  unpaintFields(root);
   const st = _sc(scope).fields;
   if (!st || !st.size) return root;
-  for (const [path, vals] of st)
+  for (const [path, vals] of [...st].sort(([a], [b]) => a.length - b.length))
     // the part on the face that holds it, and its projections on the others
     for (const el of root.querySelectorAll(
         `[data-path="${CSS.escape(path)}"],[data-projection][data-of="${CSS.escape(path)}"]`))
-      for (const [k, v] of Object.entries(vals)) {
-        const val = v == null ? '' : String(v);
-        el.setAttribute(`data-${k}`, val);
-        for (const t of el.querySelectorAll(`[data-from="${CSS.escape(k)}"]`)) {
-          t.textContent = val;
-          if (val) t.removeAttribute('display'); else t.setAttribute('display', 'none');
-        }
-      }
+      paintFields(el, vals);
   return root;
 }
 export function nodeStates(scope) { return new Map(_sc(scope).states); }
@@ -879,6 +885,58 @@ export function crop(cv, r, pxmm = PXMM) {
   return c;
 }
 
+// WHAT A REMOVABLE PART'S BODY IS BUILT AS, from its path and behaviour - the
+// decision extractRelief makes for every `fills` / `occupies` instance:
+//   {fru}           its own ejectable group, keyed `fru`: a module in a chassis
+//                   bay (`front-6/module` -> `front-6`), an optic on a device
+//                   cage (`port-4-occupant`) - one or two segments, as ever;
+//   {fru, nested}   an optic seated on a CARD (`front-6/module/xg0-occupant`,
+//                   #484): a FRU of its own, keyed by its full path, whose group
+//                   sits inside the card's (or, for a tier chained on another
+//                   optic, inside that optic's) - so it is pulled on its own and
+//                   still leaves with the card;
+//   {sub}           a module in a module's bay: not a FRU, it comes out with
+//                   its carrier `sub`, and is built only from `body.boxes`.
+// Deeper than two segments used to mean {sub} for everything, and a generic
+// optic declares no boxes, so a card's optic had no body and no pull at all.
+export function bodyRole(path, behaviour) {
+  const segs = String(path || '').split('/');
+  if (!segs[0]) return null;
+  if (segs.length <= 2) return {fru: segs[0]};
+  if (behaviour === 'occupies') return {fru: segs.join('/'), nested: true};
+  return {sub: segs[0]};
+}
+
+// WHICH FRU A PATH RIDES WITH: the longest `/`-boundary prefix of `path`
+// that is a FRU key (`fruKeys` has(), a Set or an object's key test). A
+// card's optic is a FRU inside the card's (bodyRole), so the first segment
+// alone - the card's bay - would leave a marker on the optic behind when
+// only the optic is pulled. null when nothing on the path is a FRU.
+export function fruFor(path, has) {
+  const segs = String(path || '').split('/');
+  for (let n = segs.length; n > 0; n--) {
+    const k = segs.slice(0, n).join('/');
+    if (k && has(k)) return k;
+  }
+  return null;
+}
+
+// THE BODY OF A SEATED OPTIC THAT DECLARES NONE: an `occupies` part with no
+// `body:` block is one box, its own face outline (`w` x `h`, the element's drawn
+// box on the face) run back from the face to the module's own depth - the
+// `data-depth` its skin root carries, the contract's size.d (47.5 on the SFP
+// generics). It stands inside the cage's recess, which keeps its own depth,
+// and it is built into the optic's FRU group so it comes out with the optic.
+// Anything else - a module, a part with a `body:` block, an optic with no
+// depth - gets null and is built as it always was.
+//   {behaviour, body, depth, w, h} -> {w, h, depth} | null
+export function opticBody({behaviour, body, depth, w, h} = {}) {
+  if (behaviour !== 'occupies' || body) return null;
+  const d = +depth, bw = +w, bh = +h;
+  if (!(d > 0) || !(bw > 0) || !(bh > 0)) return null;
+  return {w: bw, h: bh, depth: d};
+}
+
 // THE MEASURING TOOLS FOR ONE PARSED FACE, shared between the build and the
 // lamp animator. Both need the same answers - where a node sits in face mm,
 // how far off the face it starts, which part owns it, and how to render it
@@ -932,9 +990,14 @@ export function nodeTools(svg) {
   // one behind a bolted-on cover would punch a hole in the chassis. But TAGGING
   // every mesh with the part that produced it costs nothing and is what lets a
   // cover be hidden without being ejected.
+  // An optic on a card (bodyRole `nested`) is a FRU of its own, so what it
+  // draws is owned by it and not by the card's bay.
   const ownerOf = el => {
     const a = el.closest('[data-path]');
     if (!a) return null;
+    const o = el.closest('[data-behaviour="occupies"][data-ref]');
+    const own = o && bodyRole(o.dataset.path, 'occupies');
+    if (own && own.nested) return own.fru;
     return a.dataset.path.split('/')[0] || null;
   };
   // A NODE RENDERED ALONE LOSES THE SCOPE ITS RULES WERE WRITTEN IN, and that is
@@ -979,7 +1042,10 @@ export function nodeTools(svg) {
   };
   // The `<!--art-->` marker separates the shared stylesheet from the node's
   // own art, so lamps.js can lay an unlit copy of the art under the live one.
-  const nodeSvg = (el, rect) => {
+  // `hide` is a selector for descendants that are drawn by something else: a
+  // card's own art leaves out the optics seated on it, which are FRUs of their
+  // own (bodyRole) and cut their own plane.
+  const nodeSvg = (el, rect, hide = null) => {
     const m = inv.multiply(el.getScreenCTM());
     const clone = el.cloneNode(true);
     clone.removeAttribute('transform');   // the CTM below already includes it
@@ -988,6 +1054,7 @@ export function nodeTools(svg) {
     for (const r of clone.querySelectorAll(
         '[data-z-out],[data-z-cyl],[data-z-bar],[data-z-uhandle],[data-z-dome][data-z-lift]'))
       r.style.display = 'none';
+    if (hide) for (const r of clone.querySelectorAll(hide)) r.style.display = 'none';
     const live = scopeWrap(el,
         `<g transform="matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e - rect.x} ${m.f - rect.y})">` +
         clone.outerHTML + `</g>`);
@@ -1135,6 +1202,18 @@ export async function extractRelief(url, scope) {
       }));
       return {...rect, owner: ownerOf(el), d: +el.dataset.depth, wall: el.dataset.wall || '#a7adb4',
               wallsInside: el.dataset.walls === 'inside',
+              // A HOLE A BAY IS SEEN THROUGH (render.py's `rear:`) is a passage
+              // to the front of the chassis. Whatever the bay holds stands in it
+              // as its own body, back painted, and leaves with it when pulled;
+              // with nothing there the passage is open to the front. So no
+              // floor and no back are built - a painted floor would stay behind
+              // a pulled cassette, and close the slot when it was empty.
+              seeThrough: !!el.dataset.rearOf || !!el.querySelector(':scope > [data-projection]'),
+              // AN OPEN BAY'S MOUTH (render.py `data-see-through`): the passage
+              // behind it is the rear hole's, so this builds no floor and no
+              // back - only a short collar of wall where the passage, which the
+              // depth clamp stops just short of the face, would leave a gap.
+              hollow: el.dataset.seeThrough === '1',
               lift: liftOf(el),
               round: !!el.dataset.round, cavSvg: nodeSvg(cavNode || el, rect),
               grpRect, grpSvg: nodeSvg(el, grpRect), features};
@@ -1220,14 +1299,30 @@ export async function extractRelief(url, scope) {
   // it hides on its own path. Collected beside the FRUs and built into the
   // owner's ejection group.
   const subBodies = [];
+  // A CARD'S OPTICS ARE NOT THE CARD'S ART: each is a FRU of its own
+  // (bodyRole), so the card's plane is cut without them.
+  const OWN_FRU = '[data-behaviour="occupies"][data-ref]';
+  // THE BODY NODE'S SIDE COLOUR FIRST: on the SFP skins it stands 10 mm out
+  // of the cage as a relief feature whose sides are its `data-z-color`
+  // (#6e747c, the `outs` colour above), and the box behind the face is the
+  // same shell - in its fill (#9aa0a8) a pulled optic read as two parts. Then
+  // the fill, as computed, for a body node that states no side colour.
+  const bodyFill = el => {
+    const n = el.id && el.querySelector(`[id="${CSS.escape(el.id)}--body"]`);
+    if (!n) return null;
+    if (n.dataset.zColor) return n.dataset.zColor;
+    const f = getComputedStyle(n).fill;
+    return f && f !== 'none' && !f.startsWith('url(') ? f : null;
+  };
   for (const el of q(BODY_SELECTOR)) {
     if (!el.dataset.ref) continue;
     const full = el.dataset.path || '';
-    const path = full.split('/')[0];
-    if (!path) continue;
+    const role = bodyRole(full, el.dataset.behaviour);
+    if (!role) continue;
+    const path = role.fru || role.sub;
     // a module in a chassis bay is `bay/module`; one in a module's bay is
     // `bay/module/slot/module` - the third segment is what makes it nested
-    if (full.split('/').length > 2) {
+    if (role.sub) {
       // the body index lives with the builder; every nested module is
       // recorded here and the builder keeps the ones that declare boxes
       const m = inv.multiply(el.getScreenCTM());
@@ -1250,11 +1345,25 @@ export async function extractRelief(url, scope) {
     // module would stand on the card below it. Read off the bay, which is the
     // module's parent.
     const shelf = !!(el.parentElement && el.parentElement.dataset && el.parentElement.dataset.shelf);
-    frus.push({path, ref: el.dataset.ref.split(':')[0],
-               cls: el.dataset.class, lift: liftOf(el), shelf,
+    // an OPEN-BACKED bay leaves no box behind a pulled module either - its
+    // passage is the rear hole's, and a box would close it (see `hollow`)
+    const openBack = !!(el.parentElement && el.parentElement.dataset && el.parentElement.dataset.openBack);
+    // a nested FRU's group goes inside its host's: the optic it is chained
+    // on, else the card's bay
+    const within = role.nested ? [el.dataset.for, full.split('/')[0]] : null;
+    const hide = el.querySelector(OWN_FRU) ? OWN_FRU : null;
+    frus.push({path, ref: el.dataset.ref.split(':')[0], within,
+               // an optic's own depth, for opticBody (on anything else
+               // `data-depth` is a cavity's and is not read here)
+               behaviour: el.dataset.behaviour || null,
+               depth: el.dataset.behaviour === 'occupies' ? +el.dataset.depth || null : null,
+               // and its colour: its skin's own `<name>--body` node's side
+               // colour, else its fill (bodyFill)
+               bodyColor: el.dataset.behaviour === 'occupies' ? bodyFill(el) : null,
+               cls: el.dataset.class, lift: liftOf(el), shelf, openBack,
                bodyDepth: +el.dataset.bodyDepth || null, ...frect,
                // its own art, so the plane can be cut to the module's SHAPE
-               svgText: nodeSvg(el, frect),
+               svgText: nodeSvg(el, frect, hide),
                // THE MODULE'S OWN FRAME, not its drawn box. A riser's slot
                // brackets hang 13.4 mm outboard of its plate, so the bbox
                // starts 13.4 left of the contract's origin - and a body box
@@ -1294,6 +1403,19 @@ function dominantColor(cv) {
   let best = null, bestN = 0;
   for (const [k, n] of count) if (n > bestN) { bestN = n; best = k; }
   return best === null ? 'rgb(128,128,128)' : exact.get(best);
+}
+
+// THE REPAINT HALF OF A DERIVED SIDE COLOUR (#481), on its own so it can be
+// checked without WebGL: when the art chose the colour (no `data-z-color`), every
+// material it went into takes the dominant colour of the repainted art. It runs
+// on EVERY restyle of the node, not only a field change - a lamp state or a pull
+// that changes the node's art moves its sides with it, which is the same reading
+// the build makes. Returns the colour set, or null when nothing was derived.
+export function recolourBody(derived, mats, cv) {
+  if (!derived || !mats || !mats.length) return null;
+  const c = dominantColor(cv);
+  for (const m of mats) m.color.set(c);
+  return c;
 }
 
 export async function rasterize(svgText, wmm, hmm, pxmm = PXMM, flipX = false, flipY = false) {
@@ -1404,9 +1526,12 @@ export async function buildFaceRelief(F, ctx) {
       () => new THREE.MeshLambertMaterial({color: c}));
     // each FRU gets a subgroup so its art and relief travel together when ejected
     const fruGroups = {};
+    // a card's optic rides in the card's group (bodyRole `nested`): pulled on
+    // its own, and gone with the card - every other FRU hangs off the face
+    const hostOf = f => (f.within || []).map(p => p && fruGroups[p]).find(Boolean) || grp;
     for (const f of frus) {
       const fg = new THREE.Group();
-      grp.add(fg);
+      hostOf(f).add(fg);
       fruGroups[f.path] = fg;
       FRU_GROUPS[f.path] = fg;
       const bd = BODY_META[f.ref];
@@ -1428,8 +1553,13 @@ export async function buildFaceRelief(F, ctx) {
       return (curOwner && fruGroups[curOwner] ? fruGroups[curOwner] : grp).add(obj);
     };
     for (const c of cavities) {
-      curOwner = c.owner;
-      const d = Math.min(c.d, INTO - 2);
+      // AN OPEN BAY'S MOUTH IS THE CHASSIS'S. It has no data-path of its own, so
+      // ownerOf() answers with the bay's path, and a FRU group is keyed by that
+      // same path - the collar went out with the cassette and a tree pull hid it.
+      curOwner = c.hollow ? null : c.owner;
+      // an open bay's mouth is a short collar, not a pocket: walls deep enough
+      // to meet the rear passage, which stops INTO - 2 short of the face
+      const d = c.hollow ? Math.min(c.d, 6) : Math.min(c.d, INTO - 2);
       // floor + feature art comes from the cavity group rendered standalone, so
       // raised bezel plates (drawn over the cavity on the face) never leak in
       const gcv = await rasterize(c.grpSvg, c.grpRect.w, c.grpRect.h, PX);
@@ -1455,7 +1585,7 @@ export async function buildFaceRelief(F, ctx) {
                        Math.round(c.x * PX), Math.round(c.y * PX));
         pctx.globalCompositeOperation = 'source-over';
         facePunch[F.view].push({kind: 'shape', svg: c.cavSvg,
-                                x: c.x, y: c.y, w: c.w, h: c.h});
+                                x: c.x, y: c.y, w: c.w, h: c.h, mouth: !!c.hollow});
       }
       // walls are double-sided: the interior is the recess, and the exterior is
       // the cage/housing body seen through neighboring vent holes. The back face
@@ -1491,6 +1621,7 @@ export async function buildFaceRelief(F, ctx) {
                       {owner: c.owner, x: c.x, y: c.y, d, lift: c.lift});
       walls.position.set(LX(c.x, c.w), LY(c.y, c.h), zc);
       addTo(walls);
+      if (c.seeThrough || c.hollow) continue;
       // textured floor: the aperture art, pushed to the back of the recess
       const floor = new THREE.Mesh(new THREE.PlaneGeometry(c.w, c.h),
         new THREE.MeshBasicMaterial({map: canvasTex(floorCv), transparent: true, alphaTest: 0.1, alphaToCoverage: true}));
@@ -1636,12 +1767,34 @@ export async function buildFaceRelief(F, ctx) {
       // The commonest opaque colour in the node's own art is what the part is made
       // of; a button, a legend or a screw head is by definition a minority of it.
       // Still read from the UNPUNCHED raster, so this goes before `compose`.
-      if (!o.color) o.color = dominantColor(ocv);
+      //
+      // AND IT IS READ AGAIN ON EVERY REPAINT, when the art is what chose it. A
+      // field can recolour the node after the build - an optic's latch set red
+      // from a host page - and a repaint that only redrew the face texture left
+      // every side of the part, and the whole of a `bar` bail that has no face
+      // texture at all, the grey it was built in (#481). So each material this
+      // node's colour went into is collected in `bodyMats`, and a repaint sets
+      // them from the repainted art. A `data-z-color` is a statement rather than
+      // a reading and is never overridden; the thread and knurl textures, which
+      // bake the colour into a canvas of their own, are not re-cut.
+      const derived = !o.color;
+      if (derived) o.color = dominantColor(ocv);
+      const bodyMats = [];
+      const bodyMat = (extra = {}) => {
+        const m = new THREE.MeshLambertMaterial({color: o.color, ...extra});
+        bodyMats.push(m);
+        return m;
+      };
       await compose(ocv);
       const faceTex = new THREE.MeshBasicMaterial(
         {map: canvasTex(ocv), transparent: true, alphaTest: 0.1, alphaToCoverage: true});
       reg(o.svgText,
-          async text => remap(faceTex, await compose(await rasterize(text, o.w, o.h, PX))),
+          async text => {
+            const cvs = await rasterize(text, o.w, o.h, PX);
+            // unpunched, as at build: `compose` below erases the seated cavities
+            recolourBody(derived, bodyMats, cvs);
+            remap(faceTex, await compose(cvs));
+          },
           {mat: faceTex, w: o.w, h: o.h, path: o.owner});
       if (o.uhandle !== undefined && o.uhandle !== '') {
         const far = +o.uhandle;
@@ -1658,7 +1811,7 @@ export async function buildFaceRelief(F, ctx) {
         const u0 = horizontal ? o.x : o.y;
         const a = u0 + r, b = u0 + uLen - r;          // leg centerlines (svg coords)
         const cc = horizontal ? o.y + o.h / 2 : o.x + o.w / 2;  // cross-axis center
-        const mat = new THREE.MeshLambertMaterial({color: o.color});
+        const mat = bodyMat();
         const P = (u, z) => horizontal
           ? [u - fw / 2, (F.flipLY ? -1 : 1) * (fh / 2 - cc), z]
           : [cc - fw / 2, (F.flipLY ? -1 : 1) * (fh / 2 - u), z];
@@ -1690,8 +1843,7 @@ export async function buildFaceRelief(F, ctx) {
       } else if (o.bar !== undefined && o.bar !== '') {
         // round tube along the node's long axis, lift..lift+bar off the face
         const len = Math.max(o.w, o.h), r = o.bar / 2;
-        const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 16),
-          new THREE.MeshLambertMaterial({color: o.color}));
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 16), bodyMat());
         if (o.w >= o.h) m.rotation.z = Math.PI / 2;   // horizontal bar
         m.position.set(LX(o.x, o.w), LY(o.y, o.h), o.lift + r);
         addTo(m);
@@ -1732,7 +1884,7 @@ export async function buildFaceRelief(F, ctx) {
           ktex.magFilter = THREE.NearestFilter;
           side = new THREE.MeshLambertMaterial({map: ktex});
         } else {
-          side = new THREE.MeshLambertMaterial({color: o.color});
+          side = bodyMat();
         }
         const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, o.cyl, 24),
           [side, faceTex, side]);
@@ -1795,15 +1947,16 @@ export async function buildFaceRelief(F, ctx) {
           skirt.setAttribute('position', new THREE.Float32BufferAttribute(toWorld(g.skirt.pos), 3));
           skirt.setIndex(g.skirt.idx);
           skirt.computeVertexNormals();
-          addTo(new THREE.Mesh(skirt, new THREE.MeshLambertMaterial({color: o.color, side: THREE.DoubleSide})));
+          addTo(new THREE.Mesh(skirt, bodyMat({side: THREE.DoubleSide})));
           if (g.holeSkirt.idx.length) {
             // a window's edge is its own colour - the PBC-2000's amber bead
             const hs = new THREE.BufferGeometry();
             hs.setAttribute('position', new THREE.Float32BufferAttribute(toWorld(g.holeSkirt.pos), 3));
             hs.setIndex(g.holeSkirt.idx);
             hs.computeVertexNormals();
-            addTo(new THREE.Mesh(hs, new THREE.MeshLambertMaterial(
-              {color: o.holeColor || o.color, side: THREE.DoubleSide})));
+            addTo(new THREE.Mesh(hs, o.holeColor
+              ? new THREE.MeshLambertMaterial({color: o.holeColor, side: THREE.DoubleSide})
+              : bodyMat({side: THREE.DoubleSide})));
           }
         } else {
           const nx = xs.length, ny = ys.length;
@@ -1844,7 +1997,7 @@ export async function buildFaceRelief(F, ctx) {
           skirt.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3));
           skirt.setIndex(si);
           skirt.computeVertexNormals();
-          addTo(new THREE.Mesh(skirt, new THREE.MeshLambertMaterial({color: o.color, side: THREE.DoubleSide})));
+          addTo(new THREE.Mesh(skirt, bodyMat({side: THREE.DoubleSide})));
         }
       } else if (o.rings && o.rings.length) {
         // THE SHAPE, NOT THE BOX. `shape: true` on the feature. The face art was
@@ -1875,13 +2028,14 @@ export async function buildFaceRelief(F, ctx) {
         }
         uv.needsUpdate = true;
         const m = new THREE.Mesh(
-          geo, [faceTex, new THREE.MeshLambertMaterial({color: o.color})]);
+          geo, [faceTex, bodyMat()]);
         m.position.set(0, 0, o.lift);
         addTo(m);
       } else {
         // box: lift..out (lift defaults to 0 = sits on the face)
         const depth = o.out - o.lift;
         const mats = sideMats(o.color);
+        bodyMats.push(...mats.filter((_, i) => i !== 4));
         mats[4] = faceTex;
         const m = new THREE.Mesh(new THREE.BoxGeometry(o.w, o.h, depth), mats);
         m.position.set(LX(o.x, o.w), LY(o.y, o.h), o.lift + depth / 2);
@@ -1889,9 +2043,31 @@ export async function buildFaceRelief(F, ctx) {
       }
     }
     curOwner = null;
+    // DEEPEST FIRST: a card's optic cuts its plane off the face before the
+    // card punches its own shape out (the card's art leaves the optic out, but
+    // its punch would still clear the optic's pixels). The sort is stable, so
+    // every FRU of one depth - all of them, on a face with no card optic -
+    // keeps the order it always had.
+    const segsOf = f => f.path.split('/').length;
+    frus.sort((a, b) => segsOf(b) - segsOf(a));   // the groups above are already made
     for (const f of frus) {   // move the FRU's face art into its group; leave a bay
       const fg = fruGroups[f.path];
-      const faceCrop = crop(f.lift ? artCv : cv, f, PX);
+      // AN OPEN-BACKED BAY'S MOUTH HAS ALREADY BEEN PUNCHED OUT OF `cv`, and it
+      // is the size of the whole slot - so cropping `cv` gave the module an
+      // empty plane: adapters floating in front of an open passage and no
+      // faceplate. Cut from the pristine art instead, and re-open only the
+      // module's own cavities (the mouth is the bay's hole, not the module's).
+      const faceCrop = crop(f.lift || f.openBack ? artCv : cv, f, PX);
+      if (f.openBack && !f.lift) {
+        const x0 = faceCrop.getContext('2d');
+        for (const p of facePunch[F.view]) {
+          if (p.mouth || !(p.x < f.x + f.w && p.x + p.w > f.x && p.y < f.y + f.h && p.y + p.h > f.y)) continue;
+          x0.globalCompositeOperation = 'destination-out';
+          x0.drawImage(await rasterize(p.svg, p.w, p.h, PX),
+                       Math.round((p.x - f.x) * PX), Math.round((p.y - f.y) * PX));
+          x0.globalCompositeOperation = 'source-over';
+        }
+      }
       // A MODULE IS ITS SHAPE, NOT ITS BOX. The R740xd's riser 2 is two
       // full-height slots over one low-profile slot - an L - and its box
       // takes in the top-left corner of a power supply; riser 1's brackets
@@ -1901,6 +2077,11 @@ export async function buildFaceRelief(F, ctx) {
       // masked by the module's own art, exactly as a cavity's punch is: what
       // the module paints comes with it, and what it does not stays.
       const mask = await rasterize(f.svgText, f.w, f.h, PX);
+      // a seated optic with no `body:` gets one (opticBody, built below)
+      const ob = opticBody({behaviour: f.behaviour, body: FRU_META[f.path].body,
+                            depth: f.depth, w: f.w, h: f.h});
+      const opticMat = ob
+        ? new THREE.MeshLambertMaterial({color: f.bodyColor || dominantColor(mask)}) : null;
       const mctx = faceCrop.getContext('2d');
       mctx.globalCompositeOperation = 'destination-in';
       mctx.drawImage(mask, 0, 0, faceCrop.width, faceCrop.height);
@@ -1922,7 +2103,10 @@ export async function buildFaceRelief(F, ctx) {
       // or a drive in the tray lies inside its well's own punch, and replaying
       // that punch would cut the whole plane away. Only a module at the face
       // has cavities of its own to re-open.
-      const punchesHere = f.lift ? [] : facePunch[F.view].filter(p =>
+      // AN OPEN BAY'S MOUTH IS NOT THE MODULE'S. It is the bay's own hole, the
+      // size of the whole slot, and replaying it here cut the entire faceplate
+      // out of every module seated in an open-backed bay.
+      const punchesHere = f.lift ? [] : facePunch[F.view].filter(p => !p.mouth &&
         p.x < f.x + f.w && p.x + p.w > f.x && p.y < f.y + f.h && p.y + p.h > f.y);
       reg(f.svgText, async text => {
         const c2 = await rasterize(text, f.w, f.h, PX);
@@ -1934,6 +2118,7 @@ export async function buildFaceRelief(F, ctx) {
           x2.globalCompositeOperation = 'source-over';
         }
         remap(plane.material, c2);
+        if (opticMat && !f.bodyColor) recolourBody(true, [opticMat], c2);
       });
       // CLEAR, never fill: an opaque patch on the chassis face would occlude
       // everything behind it (the module's own cavities, pins, bay interior)
@@ -1944,6 +2129,15 @@ export async function buildFaceRelief(F, ctx) {
       pctx.globalCompositeOperation = 'source-over';
       facePunch[F.view].push({kind: 'shape', svg: f.svgText, x: f.x, y: f.y, w: f.w, h: f.h});
       const meta = FRU_META[f.path];
+      // A SEATED OPTIC WITH NO `body:` (opticBody): one box behind its face, in
+      // its body node's side colour (bodyFill); an optic whose skin names no body node is
+      // coloured as a derived relief side is, the dominant colour of its art.
+      if (ob) {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(ob.w, ob.h, ob.depth), opticMat);
+        m.position.set(LX(f.x, f.w), LY(f.y, f.h), zf - ob.depth / 2 - 0.05);
+        m.userData.portrayalPath = f.path;
+        fg.add(m);
+      }
       if (meta.body && meta.body.boxes) {
         // THE BODY IN PIECES, each a plain box in the FRU's group so the
         // riser's PCB and connectors come out with its plate. Side art is
@@ -1961,12 +2155,48 @@ export async function buildFaceRelief(F, ctx) {
         mesh.position.set(LX(f.x + fp.at[0], fp.size[0]),
                           LY(f.y + fp.at[1], fp.size[1]), zf - d / 2 - 0.05);
         fg.add(mesh);
+        // A MODULE'S BACK IS A FACE, NOT A PICTURE. `body.sides.rear` is a
+        // compiled drawing - for a cassette it IS the module's rear face, the
+        // same one the chassis projects through an open back - so it carries
+        // relief: a flanged MTP stands off it, its opening recesses into it.
+        // Painted flat as a side texture, the back of a pulled cassette read as
+        // a photograph glued to a box. This runs the ordinary face pass over
+        // that drawing and hangs the result on the back of the body, inside the
+        // FRU group, so it comes out with the module. Turned a half turn, like
+        // the chassis's own rear face: the art is drawn as seen from behind.
+        // NOT FOR A LIFTED MODULE, whose face is not the panel and whose body
+        // box is placed off it, and NOT FOR A BACK'S OWN BACK: `ctx.back` stops
+        // the recursion at one level, so a rear drawing that itself seats a
+        // module cannot walk backwards for ever.
+        const backSrc = meta.body.sides && meta.body.sides.rear;
+        if (backSrc && ctx.dist && !f.lift && !ctx.back) {
+          const key = `back:${f.path}`;
+          const back = {view: key, fw: () => fp.size[0], fh: () => fp.size[1],
+                        deep: () => d, pos: () => [0, 0, 0], rot: [0, Math.PI, 0]};
+          const before = meshes.length;
+          await buildFaceRelief(back, {...ctx, src: ctx.dist + backSrc, deep: d,
+                                       back: true});
+          if (meshes.length > before) {
+            const bg = meshes.pop();
+            bg.position.set(LX(f.x + fp.at[0], fp.size[0]),
+                            LY(f.y + fp.at[1], fp.size[1]), zf - d - 0.05);
+            fg.add(bg);
+          }
+          // and the box's own back takes the face's punched texture, so the
+          // recesses the pass just built are not covered by a flat copy of
+          // the same art
+          if (faceCv[key] && Array.isArray(mesh.material))
+            mesh.material[5] = new THREE.MeshBasicMaterial(
+              {map: canvasTex(faceCv[key]), transparent: true, alphaTest: 0.1,
+               alphaToCoverage: true});
+        }
       }
       // empty bay: interior surfaces only, so it never occludes the module's
       // own cavities (the C14 inlet pins live inside this volume)
       // the bay is as deep as the thing that goes in it, not 60 mm
       const bd = meta.body ? meta.body.depth : (meta.bodyDepth || 60);
       if (f.shelf) continue;   // a shelf, not a hole: nothing is left behind
+      if (f.openBack) continue;   // a passage: the rear hole's walls are its sides
       // a body in pieces is a riser, and behind an unseated riser is the
       // chassis interior, not a hole: nothing is left behind here either
       if (meta.body && meta.body.boxes) continue;
@@ -1979,7 +2209,8 @@ export async function buildFaceRelief(F, ctx) {
       // pulled with the tray, and four dark boxes were left hanging where it
       // had been, hiding the board.
       bay.userData.portrayalPath = f.path;
-      grp.add(bay);
+      // an optic's cage is on its card, so the hole behind it leaves with the card
+      (f.within ? fruGroups[f.path].parent : grp).add(bay);
     }
     for (const s of subBodies) {
       const body = BODY_META[s.ref];
