@@ -10,6 +10,11 @@ have actually cost time here are not in any file on its own:
     A page that loads is the assertion that cannot be fooled by a list.
   - The marks harness has 25 checks and, until now, ran only when somebody
     remembered to open the page and press Run.
+  - A page asks for a file that is gitignored. It is there in the tree of
+    everyone who has run refresh-assets.sh and in nobody else's, so it works
+    for every person who could notice and fails for every person who cannot.
+    The front page's hero raster was exactly this. WHICH MEANS: run this on a
+    clean checkout to catch that class - CI does, a pre-push hook cannot.
 
 THE GATE IS DELIBERATELY NARROW: a same-origin response of 400 or worse, and an
 uncaught exception. Both mean something that should be here is not, or did not

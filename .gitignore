@@ -9,8 +9,21 @@ __pycache__/
 # compiled SVGs, and regenerated whole on every refresh. They were 74% of the
 # pack while being 28% of the bytes, because PNG does not delta-compress the way
 # SVG does. Portrayal gitignores *.png for the same reason. The DCIM bundle
-# renders its own in the browser, so nothing depends on these being committed.
+# renders its own in the browser, so nothing depends on these being committed -
+# with ONE exception, below.
 assets/exports/**/*.png
+
+# THE HERO'S LEFT-HAND SIDE. site/hero-reveal.js puts the raster we ship to a
+# DCIM beside the compiled SVG of the same drawing, and the whole front page is
+# that comparison. The rule above excluded it, so the front page was missing
+# half of itself in every fresh checkout - and on the deployed site, if the
+# deploy is a checkout - while working for anyone who had just run the exporter
+# and had it sitting untracked in their tree. Found by check-browser.py running
+# on a clean clone, which is the only place the difference shows.
+#
+# 296 KB against the 283 MB the rule is there to keep out. One file, named
+# exactly, so the rule still holds for the other 1605.
+!assets/exports/netbox/elevation-images/UfiSpace/ufispace-s9600-72xc.front.png
 
 # Reference photographs for compare.html. Vendor material - copyrighted product
 # shots, licensed CAD renders - which is why Portrayal gitignores **/reference/
