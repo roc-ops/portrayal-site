@@ -167,8 +167,9 @@
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';
 import { statesOfEl } from './vendor/states.js';
-import { encodeSwaps, searchWith } from './vendor/swap.js';
-import { swapsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
+import { encodeSwaps, searchWith, rawParam } from './vendor/swap.js';
+import { swapsNow, fieldsNow, encodeFields, decodeFields,
+         installOpticFields, OPTIC_CSS } from './site/optics.js';
 
 const shell = createShell({
   title: 'Explorer',
@@ -669,6 +670,16 @@ shell.on('mode', m => {
 // site/optics.js, which Annotate shares.
 const swapOverrides = () => swapsNow(shell);
 
+// READ BEFORE ANYTHING CAN REWRITE IT, which here means before writeLocation is
+// even defined, let alone wired: the first `load` it answers fires once the
+// shell has the drawing, and by then the parameter would be gone. Read raw,
+// like `swap=` beside it - the string carries its own escaping.
+let pendingFields = null;
+{
+  const fromUrl = decodeFields(rawParam(location.search, 'fields'));
+  if (Object.keys(fromUrl).length) pendingFields = fromUrl;
+}
+
 // A SWAP SURVIVES A RELOAD, and a link to this page says what it shows.
 // The shell already READS `?device=&config=&view=&swap=` on load; nothing here
 // ever wrote them, so a module or an optic chosen here was gone on reload and
@@ -680,6 +691,14 @@ function writeLocation() {
   const search = searchWith(location.search, {
     device: e(state.device), config: e(state.cfg || ''), view: e(state.view || ''),
     swap: encodeSwaps(swapOverrides()),
+    // AND WHAT IS WRITTEN ON WHAT WAS SWAPPED IN. A link that seats an optic
+    // and drops its latch colour shows the reader a different part from the one
+    // the writer was looking at. The kit reads `swap=` itself and knows nothing
+    // of this one, so the page writes it and the page applies it, below.
+    // Held until a link's own are applied, or the load that announces itself
+    // before they land would rewrite them to nothing - the trap shell.js warns
+    // about for `swap=` in the same breath.
+    fields: encodeFields(pendingFields || fieldsNow(shell)),
   });
   if (search !== location.search) {
     try { history.replaceState(history.state, '', `${location.pathname}${search}${location.hash}`); }
@@ -688,6 +707,26 @@ function writeLocation() {
 }
 shell.on('change', writeLocation);
 shell.on('load', writeLocation);
+
+/** A LINK'S FIELDS WAIT FOR ITS PARTS. `shell.ready` resolves after the shell
+ *  has loaded the device the URL named AND applied its `swap=`, which is when
+ *  a cage's `-occupant` exists to be written on.
+ *
+ *  Every entry is applied, including one naming a part this FACE has not got:
+ *  cfgFields spans the views the way cfgBays does, so the optic on the front
+ *  is still seated while the rear is showing. reseat()'s own rule - "keys this
+ *  face does not have are skipped and kept, because the face that has them may
+ *  be the next one shown". Whether the drawing still SHOWS one when that face
+ *  comes back is a separate matter, and a separate fix: nothing replays
+ *  cfgFields into a reloaded face yet (upstream-work/fields-not-replayed.md).
+ *  The link is right either way; the drawing catches up when that lands. */
+function applyPendingFields() {
+  const map = pendingFields;
+  pendingFields = null;
+  if (!map) return;
+  for (const [path, vals] of Object.entries(map)) shell.setFields(path, vals);
+  writeLocation();
+}
 
 // An optic's latch colour and label: controls beneath the optic menu. Shared
 // with Annotate - site/optics.js. The painting is the kit's own since #487;
@@ -826,6 +865,7 @@ shell.on('load', () => { sync3d().catch(err => {
 addEventListener('resize', () => { if (mode === '3d' && viewer) viewer.resize(); });
 
 await shell.ready;
+applyPendingFields();
 </script>
 <script>
 // Close the export menu on Escape or on a click outside it. <details> handles
