@@ -85,10 +85,12 @@ README fix does not pay the two minutes, which is the difference between a hook
 people keep and one they retire with `--no-verify`. Missing Playwright is a
 loud skip rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
 
-`.github/workflows/checks.yml` runs the same two on every pull request — when
-Actions runs at all. It has never executed for this repository: GitHub has
-registered no workflows and no runs, which is an account setting rather than
-anything in the file. The hook is the gate until that is sorted.
+`.github/workflows/checks.yml` runs the same two on every pull request. The
+hook and the workflow are not redundant: the workflow checks a CLEAN CHECKOUT,
+which is the only place a page that depends on an untracked file shows up as
+broken. The hook runs against your tree, where that file is sitting there
+working. The front page's hero was missing from every fresh clone for exactly
+that reason, and only the workflow saw it.
 
 Then click through the showcase and check it still behaves.
 

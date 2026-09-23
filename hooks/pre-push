@@ -1,10 +1,12 @@
 #!/bin/sh
 # The checks, before the push rather than after it.
 #
-# This exists because GitHub Actions does not run for this repository: the
-# workflow in .github/workflows/ is correct and has never executed, so nothing
-# was gating a branch except somebody remembering. Until Actions runs, this is
-# the gate. When it does, this stays useful and merely stops being the only one.
+# Not a replacement for .github/workflows/checks.yml, and not made redundant by
+# it either. This runs against YOUR TREE, so it is fast and it catches what you
+# are about to push; the workflow runs against a clean checkout, which is the
+# only place a page that depends on an untracked file looks broken. The front
+# page's hero was missing from every fresh clone and present for everyone who
+# had run the exporter - this hook could not have seen that, and did not.
 #
 # Install it once, for this clone and every worktree of it:
 #
