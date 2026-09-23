@@ -148,6 +148,23 @@ for mod, names in WANT.items():
               or re.search(rf"export\s*\{{[^}}]*\b{n}\b", text) is not None,
               f"vendor/{mod} exports {n}")
 
+# ── the graph the modules themselves need ────────────────────────────────
+# A vendored module that imports a module nobody vendored is a site that does
+# not boot, and NOTHING above would say so: the checks are what the PAGES
+# import, and a page importing shell.js is happy whether or not shell.js can
+# resolve its own imports. refresh-assets.sh copies a hand-written list, so the
+# day upstream splits a module out - fields.js, the shared colour rule, was
+# exactly this - the refresh passes, the contract passes, and every page 404s
+# on the first import. Walked here instead of listed, because a list is the
+# thing that was already wrong.
+IMPORT = re.compile(r"""^\s*(?:import|export)\b[^'"]*from\s*['"]\./([\w.-]+\.js)['"]""",
+                    re.M)
+for src in sorted(VENDOR.glob("*.js")):
+    for dep in sorted(set(IMPORT.findall(src.read_text()))):
+        check((VENDOR / dep).exists(),
+              f"vendor/{src.name} can resolve ./{dep}",
+              "add it to the module list in refresh-assets.sh")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
