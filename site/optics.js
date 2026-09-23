@@ -173,6 +173,24 @@ export function installOpticFields(shell) {
   // keeping it past the fix would have been worse than never having had it: it
   // stashed what the KIT had just painted as "what was drawn", so clearing a
   // colour restored the previous choice rather than the skin's own.
+
+  // WHAT IS WRITTEN SURVIVES A RELOAD, which the kit does not yet make true.
+  // A fresh face is the build: shell.js reseat() says so and seats every swap
+  // again from `state.touched` before it emits `load`. The FIELDS are not in
+  // that build either and nothing replays them, so front, rear, front comes
+  // back with the optic in the cage and its latch the default grey - the state
+  // still holds the colour and a link still carries it, and only the drawing
+  // has stopped agreeing with both. Filed as
+  // upstream-work/fields-not-replayed.md.
+  //
+  // Replayed through the kit's own setFields, not painted here: that is the
+  // call the controls above make, so colour and text come back by the one rule
+  // - the whole point of #481 having moved that rule into the kit. This goes
+  // when reseat() replays them itself.
+  shell.on('load', () => {
+    for (const [path, vals] of Object.entries(shell.state.cfgFields || {}))
+      shell.setFields(path, vals);
+  });
 }
 
 /** The controls' styles, for a page to drop into its own sheet. */
