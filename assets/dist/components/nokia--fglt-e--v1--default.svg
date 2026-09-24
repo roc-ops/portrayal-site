@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fglt-e@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/fglt-e@'] .state-init { --led-color: #39b54a; }
+    g[data-ref^='nokia/fglt-e@'] .state-init { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fglt-e@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/fglt-e@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/fglt-e@'] .state-yellow { --led-color: #f2c200; }</style>
+  <g id="fglt-e" data-path="fglt-e" data-class="line-card" data-behaviour="fills" data-ref="nokia/fglt-e@1:1.4.0" data-body-depth="225.0" data-wall="#8d9298" data-gpon="32" data-model="FGLT-E" data-part-number="3FE 76835 AA / 3FE 76835 AE" data-power-draw-max-w="85" data-power-draw-typical-w="80" data-weight-kg="2.76" transform="translate(0,0)">
+    <title>fglt-e</title>
+    <rect id="fglt-e--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <rect id="fglt-e--well" x="5.2" y="33.5" width="18.8" height="333.553" fill="#2a2e33" stroke="#7d848c" stroke-width="0.2" data-path="fglt-e/well" data-class="mechanical" data-depth="22.1" data-wall="#8d9298" />
+    <g id="fglt-e--teeth">
+      <rect id="fglt-e--face-1" x="5.2" y="37.613" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-1" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-1" x="5.2" y="52.264" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-1" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-2" x="5.2" y="58.203" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-2" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-2" x="5.2" y="72.854" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-2" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-3" x="5.2" y="78.793" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-3" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-3" x="5.2" y="93.444" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-3" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-4" x="5.2" y="99.383" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-4" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-4" x="5.2" y="114.034" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-4" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-5" x="5.2" y="119.973" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-5" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-5" x="5.2" y="134.624" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-5" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-6" x="5.2" y="140.563" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-6" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-6" x="5.2" y="155.214" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-6" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-7" x="5.2" y="161.153" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-7" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-7" x="5.2" y="175.804" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-7" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-8" x="5.2" y="181.743" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-8" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-8" x="5.2" y="196.394" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-8" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-9" x="5.2" y="202.333" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-9" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-9" x="5.2" y="216.984" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-9" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-10" x="5.2" y="222.923" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-10" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-10" x="5.2" y="237.574" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-10" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-11" x="5.2" y="243.513" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-11" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-11" x="5.2" y="258.164" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-11" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-12" x="5.2" y="264.103" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-12" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-12" x="5.2" y="278.754" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-12" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-13" x="5.2" y="284.693" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-13" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-13" x="5.2" y="299.344" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-13" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-14" x="5.2" y="305.283" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-14" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-14" x="5.2" y="319.934" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-14" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-15" x="5.2" y="325.873" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-15" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-15" x="5.2" y="340.524" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-15" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+      <rect id="fglt-e--face-16" x="5.2" y="346.463" width="18.8" height="14.652" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fglt-e/face-16" data-class="mechanical" data-z-out="-13.2962" data-z-lift="-22.1" data-z-profile-y="0:-22.1,14.652:-13.2962" data-facet-deg="31" data-facet-facing="up" />
+      <rect id="fglt-e--return-16" x="5.2" y="361.114" width="18.8" height="5.938" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" data-path="fglt-e/return-16" data-class="mechanical" data-z-out="-13.2966" data-z-lift="-22.1" data-z-profile-y="0:-13.2966,5.938:-22.1" data-facet-deg="56" data-facet-facing="down" />
+    </g>
+    <g id="fglt-e--model-label" data-path="fglt-e/model-label" data-class="label">
+      <rect x="6.7" y="11.5" width="15.1" height="10.9" rx="0.5" fill="#f4f4f1" stroke="#8f9398" stroke-width="0.2" />
+      <rect x="8.7" y="16.1" width="11.1" height="0.9" fill="#b3b6ba" />
+      <rect x="8.7" y="18.1" width="11.1" height="0.9" fill="#b3b6ba" />
+      <rect x="8.7" y="20.1" width="11.1" height="0.9" fill="#b3b6ba" />
+    </g>
+    <rect id="fglt-e--blank-label" x="7.3" y="382.6" width="14.5" height="10.6" rx="0.4" fill="none" stroke="#6d7278" stroke-width="0.3" data-path="fglt-e/blank-label" data-class="label" />
+    <rect id="fglt-e--logo-zone" x="7.5" y="23.6" width="15.5" height="8.7" fill="none" data-path="fglt-e/logo-zone" data-class="label" />
+    <g id="fglt-e--led-bezels">
+      <circle cx="8.8" cy="379.1" r="1.7" fill="#aeb2b7" stroke="#6d7278" stroke-width="0.2" />
+      <circle cx="13.7" cy="379.1" r="1.7" fill="#aeb2b7" stroke="#6d7278" stroke-width="0.2" />
+    </g>
+    <g id="fglt-e--hazard-esd">
+      <polygon points="6.1,365 9.6,372 2.6,372" fill="none" stroke="#1d2023" stroke-width="0.3" stroke-linejoin="round" />
+      <path d="M 4.9 370.8 L 5.9 368.2 L 7.4 370.4" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="4.1" y1="369.4" x2="8.1" y2="368" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="fglt-e--hazard-hot">
+      <polygon points="18,365 21.8,372 14.2,372" fill="#f2c200" stroke="#1d2023" stroke-width="0.3" stroke-linejoin="round" />
+      <path d="M 17.1 368.32 q 0.4 0.45 0 0.9 q -0.4 0.45 0 0.9" fill="none" stroke="#1d2023" stroke-width="0.18" />
+      <path d="M 18 368.32 q 0.4 0.45 0 0.9 q -0.4 0.45 0 0.9" fill="none" stroke="#1d2023" stroke-width="0.18" />
+      <path d="M 18.9 368.32 q 0.4 0.45 0 0.9 q -0.4 0.45 0 0.9" fill="none" stroke="#1d2023" stroke-width="0.18" />
+    </g>
+    <g id="fglt-e--screw-top">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#b9bdc2" stroke="#6d7278" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.893" fill="#dfe1e4" stroke="#6d7278" stroke-width="0.2" />
+      <path d="M 16.857 5.25 H 20.532 M 18.7 3.407 V 7.093" stroke="#3c4146" stroke-width="0.35" />
+    </g>
+    <g id="fglt-e--screw-bottom">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#b9bdc2" stroke="#6d7278" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.894" fill="#dfe1e4" stroke="#6d7278" stroke-width="0.2" />
+      <path d="M 16.869 399.75 H 20.531 M 18.7 397.906 V 401.581" stroke="#3c4146" stroke-width="0.35" />
+    </g>
+    <g id="fglt-e--silkscreen">
+      <text x="14.25" y="14.8" font-family="Arial" font-size="2.2" font-weight="bold" fill="#1d2023" text-anchor="middle">FGLT-E</text>
+      <text x="2.9" y="38.5" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 38.5)">1</text>
+      <text x="2.9" y="59.09" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 59.09)">2</text>
+      <text x="2.9" y="79.68" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 79.68)">3</text>
+      <text x="2.9" y="100.27" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 100.27)">4</text>
+      <text x="2.9" y="120.86" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 120.86)">5</text>
+      <text x="2.9" y="141.45" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 141.45)">6</text>
+      <text x="2.9" y="162.04" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 162.04)">7</text>
+      <text x="2.9" y="182.63" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 182.63)">8</text>
+      <text x="2.9" y="203.22" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 203.22)">9</text>
+      <text x="2.9" y="223.81" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 223.81)">10</text>
+      <text x="2.9" y="244.4" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 244.4)">11</text>
+      <text x="2.9" y="264.99" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 264.99)">12</text>
+      <text x="2.9" y="285.58" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 285.58)">13</text>
+      <text x="2.9" y="306.17" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 306.17)">14</text>
+      <text x="2.9" y="326.76" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 326.76)">15</text>
+      <text x="2.9" y="347.35" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.9 347.35)">16</text>
+      <text x="8.8" y="376.7" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle">ALM</text>
+      <text x="13.7" y="376.7" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle">PWR</text>
+    </g>
+    <g id="fglt-e--ejector-top" data-z-out="4.2">
+      <rect x="0.6" y="0" width="4.4" height="30" rx="0.8" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="fglt-e--ejector-bottom" data-z-out="4.2">
+      <rect x="0.3" y="372.5" width="4.7" height="32.5" rx="0.8" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="fglt-e--cage-1" data-path="fglt-e/cage-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,41.264) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-1" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-1</title>
+      <rect id="fglt-e--cage-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-1/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-2" data-path="fglt-e/cage-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,61.854) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-2" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-2</title>
+      <rect id="fglt-e--cage-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-2/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-3" data-path="fglt-e/cage-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,82.444) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-3" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-3</title>
+      <rect id="fglt-e--cage-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-3/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-4" data-path="fglt-e/cage-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,103.034) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-4" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-4</title>
+      <rect id="fglt-e--cage-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-4/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-5" data-path="fglt-e/cage-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,123.624) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-5" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-5</title>
+      <rect id="fglt-e--cage-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-5/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-6" data-path="fglt-e/cage-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,144.214) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-6" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-6</title>
+      <rect id="fglt-e--cage-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-6/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-7" data-path="fglt-e/cage-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,164.804) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-7" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-7</title>
+      <rect id="fglt-e--cage-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-7/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-8" data-path="fglt-e/cage-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,185.394) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-8" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-8</title>
+      <rect id="fglt-e--cage-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-8/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-9" data-path="fglt-e/cage-9" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,205.984) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-9" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-9</title>
+      <rect id="fglt-e--cage-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-9/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-9--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-10" data-path="fglt-e/cage-10" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,226.574) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-10" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-10</title>
+      <rect id="fglt-e--cage-10--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-10/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-10--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-10--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-10--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-11" data-path="fglt-e/cage-11" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,247.164) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-11" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-11</title>
+      <rect id="fglt-e--cage-11--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-11/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-11--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-11--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-11--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-12" data-path="fglt-e/cage-12" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,267.754) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-12" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-12</title>
+      <rect id="fglt-e--cage-12--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-12/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-12--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-12--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-12--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-13" data-path="fglt-e/cage-13" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,288.344) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-13" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-13</title>
+      <rect id="fglt-e--cage-13--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-13/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-13--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-13--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-13--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-14" data-path="fglt-e/cage-14" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,308.934) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-14" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-14</title>
+      <rect id="fglt-e--cage-14--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-14/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-14--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-14--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-14--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-15" data-path="fglt-e/cage-15" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,329.524) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-15" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-15</title>
+      <rect id="fglt-e--cage-15--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-15/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-15--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-15--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-15--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--cage-16" data-path="fglt-e/cage-16" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(4.35,350.114) scale(1,0.857167) rotate(90 7.25 5.0)" data-tilt-on="fglt-e--face-16" data-tilt="31" data-tilt-facing="up" data-group="pon-cages" data-group-role="traffic" data-description="the sixteen dual-GPON cages, two PON interfaces each - cage N carries ports 2N-1 and 2N (GPON, 2.488 Gbps down)">
+      <title>fglt-e--cage-16</title>
+      <rect id="fglt-e--cage-16--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fglt-e/cage-16/opening" data-class="cutout" />
+      <rect id="fglt-e--cage-16--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fglt-e--cage-16--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fglt-e--cage-16--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fglt-e--cage-16--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fglt-e--led-1" data-path="fglt-e/led-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,33)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-1</title>
+      <circle id="fglt-e--led-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-1/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-2" data-path="fglt-e/led-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,41.6)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-2</title>
+      <circle id="fglt-e--led-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-2/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-3" data-path="fglt-e/led-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,53.59)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-3</title>
+      <circle id="fglt-e--led-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-3/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-4" data-path="fglt-e/led-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,62.19)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-4</title>
+      <circle id="fglt-e--led-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-4/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-5" data-path="fglt-e/led-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,74.18)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-5</title>
+      <circle id="fglt-e--led-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-5/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-6" data-path="fglt-e/led-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,82.78)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-6</title>
+      <circle id="fglt-e--led-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-6/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-7" data-path="fglt-e/led-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,94.77)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-7</title>
+      <circle id="fglt-e--led-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-7/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-8" data-path="fglt-e/led-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,103.37)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-8</title>
+      <circle id="fglt-e--led-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-8/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-9" data-path="fglt-e/led-9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,115.36)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-9</title>
+      <circle id="fglt-e--led-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-9/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-10" data-path="fglt-e/led-10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,123.96)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-10</title>
+      <circle id="fglt-e--led-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-10/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-11" data-path="fglt-e/led-11" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,135.95)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-11</title>
+      <circle id="fglt-e--led-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-11/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-12" data-path="fglt-e/led-12" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,144.55)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-12</title>
+      <circle id="fglt-e--led-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-12/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-13" data-path="fglt-e/led-13" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,156.54)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-13</title>
+      <circle id="fglt-e--led-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-13/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-14" data-path="fglt-e/led-14" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,165.14)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-14</title>
+      <circle id="fglt-e--led-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-14/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-15" data-path="fglt-e/led-15" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,177.13)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-15</title>
+      <circle id="fglt-e--led-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-15/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-16" data-path="fglt-e/led-16" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,185.73)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-16</title>
+      <circle id="fglt-e--led-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-16/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-17" data-path="fglt-e/led-17" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,197.72)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-17</title>
+      <circle id="fglt-e--led-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-17/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-18" data-path="fglt-e/led-18" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,206.32)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-18</title>
+      <circle id="fglt-e--led-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-18/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-19" data-path="fglt-e/led-19" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,218.31)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-19</title>
+      <circle id="fglt-e--led-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-19/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-20" data-path="fglt-e/led-20" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,226.91)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-20</title>
+      <circle id="fglt-e--led-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-20/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-21" data-path="fglt-e/led-21" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,238.9)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-21</title>
+      <circle id="fglt-e--led-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-21/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-22" data-path="fglt-e/led-22" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,247.5)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-22</title>
+      <circle id="fglt-e--led-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-22/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-23" data-path="fglt-e/led-23" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,259.49)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-23</title>
+      <circle id="fglt-e--led-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-23/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-24" data-path="fglt-e/led-24" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,268.09)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-24</title>
+      <circle id="fglt-e--led-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-24/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-25" data-path="fglt-e/led-25" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,280.08)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-25</title>
+      <circle id="fglt-e--led-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-25/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-26" data-path="fglt-e/led-26" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,288.68)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-26</title>
+      <circle id="fglt-e--led-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-26/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-27" data-path="fglt-e/led-27" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,300.67)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-27</title>
+      <circle id="fglt-e--led-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-27/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-28" data-path="fglt-e/led-28" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,309.27)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-28</title>
+      <circle id="fglt-e--led-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-28/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-29" data-path="fglt-e/led-29" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,321.26)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-29</title>
+      <circle id="fglt-e--led-29--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-29--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-29/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-30" data-path="fglt-e/led-30" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,329.86)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-30</title>
+      <circle id="fglt-e--led-30--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-30--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-30/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-31" data-path="fglt-e/led-31" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,341.85)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-31</title>
+      <circle id="fglt-e--led-31--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-31--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-31/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-32" data-path="fglt-e/led-32" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2,350.45)" data-group="pon-leds" data-group-role="indicator" data-description="two PON lamps per cage, one per port, on the cage's left - lamp N is port N">
+      <title>fglt-e--led-32</title>
+      <circle id="fglt-e--led-32--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-32--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-32/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-alm" data-path="fglt-e/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(7.8,378.1)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fglt-e--led-alm</title>
+      <circle id="fglt-e--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-alm/lamp" data-class="led" data-states="off red" data-z-dome="0.3" />
+    </g>
+    <g id="fglt-e--led-pwr" data-path="fglt-e/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.7,378.1)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fglt-e--led-pwr</title>
+      <circle id="fglt-e--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fglt-e--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fglt-e/led-pwr/lamp" data-class="led" data-states="off init on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/felt-c@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/felt-c@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/felt-c@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/felt-c@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/felt-c@'] .state-speed-2g5 { --led-color: #f5c400; }
+    g[data-ref^='nokia/felt-c@'] .state-speed-2g5 { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/felt-c@'] .state-yellow { --led-color: #f5c400; }</style>
+  <g id="felt-c" data-path="felt-c" data-class="line-card" data-behaviour="fills" data-ref="nokia/felt-c@1:1.1.0" data-body-depth="205.0" data-wall="#8d9298" data-model="FELT-C" data-part-number="3FE 75669 AA" data-qsfp="2" data-sfp-plus="16" data-weight-kg="1.5" transform="translate(0,0)">
+    <title>felt-c</title>
+    <rect id="felt-c--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <path d="M 25 10.6 H 15.58 Q 14.08 10.6 14.08 9.1 V 0" fill="none" stroke="#8d9298" stroke-width="0.25" />
+    <path d="M 25 394.3 H 15.58 Q 14.08 394.3 14.08 395.8 V 405" fill="none" stroke="#8d9298" stroke-width="0.25" />
+    <circle cx="9.77" cy="32.2" r="1.7" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <circle cx="14.7" cy="32.2" r="1.7" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <circle cx="9.77" cy="37.3" r="1.7" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <circle cx="14.7" cy="37.3" r="1.7" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <rect x="6.67" y="48.64" width="10.8" height="30.22" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="81.59" width="10.8" height="30.23" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="114.55" width="10.8" height="30.22" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="147.5" width="10.8" height="30.23" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="180.45" width="10.8" height="30.23" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="213.41" width="10.8" height="30.23" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="246.36" width="10.8" height="30.46" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.67" y="279.55" width="10.8" height="30.22" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect id="felt-c--logo-zone" x="9" y="12.5" width="9" height="8" fill="none" data-path="felt-c/logo-zone" data-class="label" />
+    <g id="felt-c--arrow-label" data-path="felt-c/arrow-label" data-class="label">
+      <rect x="7.09" y="359.5" width="11.11" height="17.5" fill="#d9dcdf" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="8.91" y="361" width="7.66" height="5.7" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 10.15 372.4 H 15.61 M 14.81 371.6 L 15.61 372.4 L 14.81 373.2" fill="none" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="felt-c--silkscreen">
+      <text x="12.93" y="25.6" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle">FELT-C</text>
+      <text x="7.87" y="32.7" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="end">ALM</text>
+      <text x="16.6" y="32.7" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="start">PWR</text>
+      <text x="7.87" y="37.8" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="end">Q1</text>
+      <text x="16.6" y="37.8" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="start">Q2</text>
+      <text x="2.66" y="51.77" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 51.77)">1</text>
+      <text x="2.66" y="61.48" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 61.48)">2</text>
+      <text x="2.66" y="66.03" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 66.03)">3</text>
+      <text x="2.66" y="75.72" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 75.72)">4</text>
+      <text x="2.66" y="84.73" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 84.73)">5</text>
+      <text x="2.66" y="94.43" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 94.43)">6</text>
+      <text x="2.66" y="98.98" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 98.98)">7</text>
+      <text x="2.66" y="108.68" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 108.68)">8</text>
+      <text x="2.66" y="117.69" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 117.69)">9</text>
+      <text x="2.66" y="127.38" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 127.38)">10</text>
+      <text x="2.66" y="131.94" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 131.94)">11</text>
+      <text x="2.66" y="141.63" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 141.63)">12</text>
+      <text x="2.66" y="150.64" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 150.64)">13</text>
+      <text x="2.66" y="160.34" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 160.34)">14</text>
+      <text x="2.66" y="164.89" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 164.89)">15</text>
+      <text x="2.66" y="174.59" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 174.59)">16</text>
+      <text x="2.66" y="183.59" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 183.59)">17</text>
+      <text x="2.66" y="193.29" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 193.29)">18</text>
+      <text x="2.66" y="197.84" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 197.84)">19</text>
+      <text x="2.66" y="207.54" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 207.54)">20</text>
+      <text x="2.66" y="216.55" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 216.55)">21</text>
+      <text x="2.66" y="226.25" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 226.25)">22</text>
+      <text x="2.66" y="230.8" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 230.8)">23</text>
+      <text x="2.66" y="240.5" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 240.5)">24</text>
+      <text x="2.66" y="249.62" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 249.62)">25</text>
+      <text x="2.66" y="259.32" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 259.32)">26</text>
+      <text x="2.66" y="263.87" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 263.87)">27</text>
+      <text x="2.66" y="273.57" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 273.57)">28</text>
+      <text x="2.66" y="282.68" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 282.68)">29</text>
+      <text x="2.66" y="292.38" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 292.38)">30</text>
+      <text x="2.66" y="296.93" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 296.93)">31</text>
+      <text x="2.66" y="306.63" font-family="Arial" font-size="1.1" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.66 306.63)">32</text>
+      <path d="M 21.33 49.64 L 22.13 49.64 L 22.13 78.03" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 22.13 82.43 L 22.13 110.82 L 21.33 110.82" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="21.68" y="80.23" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.68 80.23)">G1</text>
+      <path d="M 21.33 115.55 L 22.13 115.55 L 22.13 143.94" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 22.13 148.34 L 22.13 176.73 L 21.33 176.73" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="21.68" y="146.14" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.68 146.14)">G2</text>
+      <path d="M 21.33 181.45 L 22.13 181.45 L 22.13 209.84" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 22.13 214.24 L 22.13 242.64 L 21.33 242.64" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="21.68" y="212.04" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.68 212.04)">G3</text>
+      <path d="M 21.33 247.36 L 22.13 247.36 L 22.13 275.87" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 22.13 280.26 L 22.13 308.77 L 21.33 308.77" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="21.68" y="278.06" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.68 278.06)">G4</text>
+      <text x="18.55" y="324.55" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 18.55 324.55)">QSFP 1</text>
+      <text x="18.55" y="347.2" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 18.55 347.2)">QSFP 2</text>
+      <path d="M 11.72 380.5 L 16.72 383.5 L 11.72 386.5 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 14.27 386.8 L 17.47 393.6 L 11.07 393.6 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="felt-c--lever-top" data-path="felt-c/lever-top" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="1.72" y="0.5" width="4.98" height="29.0" rx="0.6" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="1.72" y1="9.2" x2="6.7" y2="9.2" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="felt-c--lever-bottom" data-path="felt-c/lever-bottom" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="1.72" y="375.7" width="4.89" height="28.8" rx="0.6" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="1.72" y1="395.86" x2="6.61" y2="395.86" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="felt-c--screw-top" data-path="felt-c/screw-top" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      <path d="M 17.325 5.25 H 20.075 M 18.7 3.875 V 6.625" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="felt-c--screw-bottom" data-path="felt-c/screw-bottom" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      <path d="M 17.325 399.75 H 20.075 M 18.7 398.375 V 401.125" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="felt-c--led-alm" data-path="felt-c/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.77,31.2)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR (A/S) and ALM">
+      <title>felt-c--led-alm</title>
+      <circle id="felt-c--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-alm/lamp" data-class="led" data-states="off red" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-pwr" data-path="felt-c/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.7,31.2)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR (A/S) and ALM">
+      <title>felt-c--led-pwr</title>
+      <circle id="felt-c--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-pwr/lamp" data-class="led" data-states="off green yellow" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-q1" data-path="felt-c/led-q1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.77,36.3)" data-group="qsfp-leds" data-group-role="indicator" data-description="Q1 and Q2, one per QSFP cage, the four lanes combined">
+      <title>felt-c--led-q1</title>
+      <circle id="felt-c--led-q1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-q1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-q1/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-q2" data-path="felt-c/led-q2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.7,36.3)" data-group="qsfp-leds" data-group-role="indicator" data-description="Q1 and Q2, one per QSFP cage, the four lanes combined">
+      <title>felt-c--led-q2</title>
+      <circle id="felt-c--led-q2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-q2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-q2/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-1" data-path="felt-c/sfp-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,51.42) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-1</title>
+      <rect id="felt-c--sfp-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-1/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-1" data-path="felt-c/led-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,52.77)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-1</title>
+      <circle id="felt-c--led-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-1/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-2" data-path="felt-c/led-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,58.48)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-2</title>
+      <circle id="felt-c--led-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-2/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-2" data-path="felt-c/sfp-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,65.67) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-2</title>
+      <rect id="felt-c--sfp-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-2/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-3" data-path="felt-c/led-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,67.03)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-3</title>
+      <circle id="felt-c--led-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-3/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-4" data-path="felt-c/led-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,72.72)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-4</title>
+      <circle id="felt-c--led-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-4/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-3" data-path="felt-c/sfp-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,84.38) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-3</title>
+      <rect id="felt-c--sfp-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-3/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-5" data-path="felt-c/led-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,85.73)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-5</title>
+      <circle id="felt-c--led-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-5/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-6" data-path="felt-c/led-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,91.43)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-6</title>
+      <circle id="felt-c--led-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-6/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-4" data-path="felt-c/sfp-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,98.63) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-4</title>
+      <rect id="felt-c--sfp-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-4/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-7" data-path="felt-c/led-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,99.98)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-7</title>
+      <circle id="felt-c--led-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-7/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-8" data-path="felt-c/led-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,105.68)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-8</title>
+      <circle id="felt-c--led-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-8/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-5" data-path="felt-c/sfp-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,117.33) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-5</title>
+      <rect id="felt-c--sfp-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-5/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-9" data-path="felt-c/led-9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,118.69)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-9</title>
+      <circle id="felt-c--led-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-9/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-10" data-path="felt-c/led-10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,124.38)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-10</title>
+      <circle id="felt-c--led-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-10/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-6" data-path="felt-c/sfp-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,131.59) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-6</title>
+      <rect id="felt-c--sfp-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-6/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-11" data-path="felt-c/led-11" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,132.94)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-11</title>
+      <circle id="felt-c--led-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-11/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-12" data-path="felt-c/led-12" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,138.63)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-12</title>
+      <circle id="felt-c--led-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-12/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-7" data-path="felt-c/sfp-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,150.29) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-7</title>
+      <rect id="felt-c--sfp-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-7/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-13" data-path="felt-c/led-13" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,151.64)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-13</title>
+      <circle id="felt-c--led-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-13/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-14" data-path="felt-c/led-14" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,157.34)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-14</title>
+      <circle id="felt-c--led-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-14/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-8" data-path="felt-c/sfp-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,164.54) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-8</title>
+      <rect id="felt-c--sfp-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-8/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-15" data-path="felt-c/led-15" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,165.89)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-15</title>
+      <circle id="felt-c--led-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-15/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-16" data-path="felt-c/led-16" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,171.59)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-16</title>
+      <circle id="felt-c--led-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-16/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-9" data-path="felt-c/sfp-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,183.24) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-9</title>
+      <rect id="felt-c--sfp-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-9/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-17" data-path="felt-c/led-17" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,184.59)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-17</title>
+      <circle id="felt-c--led-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-17/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-18" data-path="felt-c/led-18" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,190.29)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-18</title>
+      <circle id="felt-c--led-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-18/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-10" data-path="felt-c/sfp-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,197.49) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-10</title>
+      <rect id="felt-c--sfp-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-10/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-19" data-path="felt-c/led-19" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,198.84)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-19</title>
+      <circle id="felt-c--led-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-19/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-20" data-path="felt-c/led-20" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,204.54)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-20</title>
+      <circle id="felt-c--led-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-20/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-11" data-path="felt-c/sfp-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,216.2) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-11</title>
+      <rect id="felt-c--sfp-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-11/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-11--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-21" data-path="felt-c/led-21" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,217.55)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-21</title>
+      <circle id="felt-c--led-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-21/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-22" data-path="felt-c/led-22" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,223.25)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-22</title>
+      <circle id="felt-c--led-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-22/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-12" data-path="felt-c/sfp-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,230.45) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-12</title>
+      <rect id="felt-c--sfp-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-12/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-23" data-path="felt-c/led-23" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,231.8)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-23</title>
+      <circle id="felt-c--led-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-23/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-24" data-path="felt-c/led-24" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,237.5)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-24</title>
+      <circle id="felt-c--led-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-24/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-13" data-path="felt-c/sfp-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,249.27) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-13</title>
+      <rect id="felt-c--sfp-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-13/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-13--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-25" data-path="felt-c/led-25" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,250.62)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-25</title>
+      <circle id="felt-c--led-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-25/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-26" data-path="felt-c/led-26" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,256.32)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-26</title>
+      <circle id="felt-c--led-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-26/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-14" data-path="felt-c/sfp-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,263.52) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-14</title>
+      <rect id="felt-c--sfp-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-14/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-14--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-27" data-path="felt-c/led-27" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,264.87)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-27</title>
+      <circle id="felt-c--led-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-27/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-28" data-path="felt-c/led-28" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,270.57)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-28</title>
+      <circle id="felt-c--led-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-28/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-15" data-path="felt-c/sfp-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,282.33) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-15</title>
+      <rect id="felt-c--sfp-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-15/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-15--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-29" data-path="felt-c/led-29" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,283.68)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-29</title>
+      <circle id="felt-c--led-29--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-29--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-29/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-30" data-path="felt-c/led-30" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,289.38)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-30</title>
+      <circle id="felt-c--led-30--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-30--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-30/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--sfp-16" data-path="felt-c/sfp-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp-plus" data-speed="10g" transform="translate(4.95,296.58) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 16 SFP cages, SFP 1-16 (CSFP FE/GE, SFP FE/GE/2.5G or SFP+ 10G). Cage n presents ports 2n-1 and 2n with a CSFP and port 2n-1 alone with an SFP/SFP+; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`. Port groups G1-G4 each take either SFP+ or any mix of CSFP and SFP.">
+      <title>felt-c--sfp-16</title>
+      <rect id="felt-c--sfp-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-c/sfp-16/opening" data-class="cutout" />
+      <rect id="felt-c--sfp-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-c--sfp-16--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--sfp-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--led-31" data-path="felt-c/led-31" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,297.93)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-31</title>
+      <circle id="felt-c--led-31--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-31--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-31/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--led-32" data-path="felt-c/led-32" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(17.68,303.63)" data-group="link-leds" data-group-role="indicator" data-description="two link lamps per SFP cage, 1-32: with a CSFP one per link; with an SFP/SFP+ the first (upper) shows link status and the second (lower) the speed">
+      <title>felt-c--led-32</title>
+      <circle id="felt-c--led-32--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-c--led-32--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-c/led-32/lamp" data-class="led" data-states="off green activity red yellow speed-2g5" data-z-dome="0.3" />
+    </g>
+    <g id="felt-c--qsfp-1" data-path="felt-c/qsfp-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-function="cross-LT link to the peer FELT-C (Nokia DAC) or 4x10G user interface" data-media="qsfp-plus" data-speed="40g" transform="translate(2.16,319.48) rotate(90 10.0 5.075)" data-group="qsfp" data-group-role="traffic" data-description="the two front crossLT QSFP cages (4 x 10G), cabled to a peer FELT-C in the adjacent slot with a customised Nokia DAC for LT redundancy">
+      <title>felt-c--qsfp-1</title>
+      <rect id="felt-c--qsfp-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="felt-c/qsfp-1/opening" data-class="cutout" />
+      <rect id="felt-c--qsfp-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--qsfp-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="felt-c--qsfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="felt-c--qsfp-2" data-path="felt-c/qsfp-2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-function="cross-LT link to the peer FELT-C (Nokia DAC) or 4x10G user interface" data-media="qsfp-plus" data-speed="40g" transform="translate(2.16,342.12) rotate(90 10.0 5.075)" data-group="qsfp" data-group-role="traffic" data-description="the two front crossLT QSFP cages (4 x 10G), cabled to a peer FELT-C in the adjacent slot with a customised Nokia DAC for LT redundancy">
+      <title>felt-c--qsfp-2</title>
+      <rect id="felt-c--qsfp-2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="felt-c/qsfp-2/opening" data-class="cutout" />
+      <rect id="felt-c--qsfp-2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-c--qsfp-2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="felt-c--qsfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

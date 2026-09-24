@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.0mm" height="405.0mm" viewBox="0 0 30.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fant-f-bd@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-f-bd@'] .state-alarm { --led-color: #ef4444; }
+    g[data-ref^='nokia/fant-f-bd@'] .state-link-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-f-bd@'] .state-power-present { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-f-bd@'] .state-standby { --led-color: #3a3f44; }</style>
+  <g id="fant-f-bd" data-path="fant-f-bd" data-class="supervisor" data-behaviour="fills" data-ref="nokia/fant-f-bd@1:1.0.0" data-body-depth="225.0" data-wall="#3a3d42" data-input-voltage="-48 V DC and -60 V DC nominal" data-model="FANT-F BC/BD/BF" data-part-number="3FE53701BD" data-power-draw-max-w="97" data-power-draw-scope="module" data-power-draw-typical-w="82" data-sfp-plus="4" data-standard="ANSI" data-switch-capacity="480 Gbps" data-variants="BC 3FE53701BC (R4.3.01 only, superseded by BD), BD 3FE53701BD, BF 3FE53701BF - one face. All three are drawn by the same Nokia drawing 22447 (3FE53701BCAATQZZA01 p8 Figure 3, 3FE53701BDAATQZZA06 p11 Figure 3, Lightspan UDS 3HH90279AAAATQZZA23 p163 Figure 67 and p175 Figure 71, the last two one embedded image object). The BD and BF list the same interfaces; the BF differs in its compliance statements" data-weight-kg="2.0" transform="translate(0,0)">
+    <title>fant-f-bd</title>
+    <rect id="fant-f-bd--face" x="0" y="0" width="30" height="405" rx="0.6" fill="#c8cbcf" stroke="#8d9298" stroke-width="0.3" />
+    <g id="fant-f-bd--port-housing">
+      <rect id="fant-f-bd--sfp1-face" x="1" y="61.7" width="22.6" height="18.5" fill="#dcdfe2" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp1-face" data-class="mechanical" data-description="face of SFP+ tooth 1, tipped 41 degrees up - the cage sits on it" data-z-out="16.0818" data-z-profile-y="0:0,18.5:16.0818" data-facet-deg="41" data-facet-facing="up" />
+      <rect id="fant-f-bd--sfp1-return" x="1" y="80.2" width="22.6" height="14.48" fill="#8a9096" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp1-return" data-class="mechanical" data-description="return closing SFP+ tooth 1 back to the plate, 48 degrees down" data-z-out="16.0817" data-z-profile-y="0:16.0817,14.48:0" data-facet-deg="48" data-facet-facing="down" />
+      <rect id="fant-f-bd--sfp2-face" x="1" y="94.68" width="22.6" height="14.9" fill="#dcdfe2" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp2-face" data-class="mechanical" data-description="face of SFP+ tooth 2, tipped 41 degrees up - the cage sits on it" data-z-out="12.9524" data-z-profile-y="0:0,14.9:12.9524" data-facet-deg="41" data-facet-facing="up" />
+      <rect id="fant-f-bd--sfp2-return" x="1" y="109.58" width="22.6" height="13.89" fill="#8a9096" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp2-return" data-class="mechanical" data-description="return closing SFP+ tooth 2 back to the plate, 43 degrees down" data-z-out="12.9526" data-z-profile-y="0:12.9526,13.89:0" data-facet-deg="43" data-facet-facing="down" />
+      <rect id="fant-f-bd--sfp3-face" x="1" y="123.47" width="22.6" height="14.9" fill="#dcdfe2" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp3-face" data-class="mechanical" data-description="face of SFP+ tooth 3, tipped 41 degrees up - the cage sits on it" data-z-out="12.9524" data-z-profile-y="0:0,14.9:12.9524" data-facet-deg="41" data-facet-facing="up" />
+      <rect id="fant-f-bd--sfp3-return" x="1" y="138.37" width="22.6" height="13.89" fill="#8a9096" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp3-return" data-class="mechanical" data-description="return closing SFP+ tooth 3 back to the plate, 43 degrees down" data-z-out="12.9526" data-z-profile-y="0:12.9526,13.89:0" data-facet-deg="43" data-facet-facing="down" />
+      <rect id="fant-f-bd--sfp4-face" x="1" y="152.26" width="22.6" height="14.9" fill="#dcdfe2" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp4-face" data-class="mechanical" data-description="face of SFP+ tooth 4, tipped 41 degrees up - the cage sits on it" data-z-out="12.9524" data-z-profile-y="0:0,14.9:12.9524" data-facet-deg="41" data-facet-facing="up" />
+      <rect id="fant-f-bd--sfp4-return" x="1" y="167.16" width="22.6" height="17.19" fill="#8a9096" stroke="#4a4f55" stroke-width="0.2" data-path="fant-f-bd/sfp4-return" data-class="mechanical" data-description="return closing SFP+ tooth 4 back to the plate, 37 degrees down" data-z-out="12.9536" data-z-profile-y="0:12.9536,17.19:0" data-facet-deg="37" data-facet-facing="down" />
+    </g>
+    <g id="fant-f-bd--jack-frames" fill="none" stroke="#5f656c" stroke-width="0.3">
+      <rect x="5.9" y="278" width="14.6" height="18.1" rx="0.3" />
+      <rect x="5.9" y="299.55" width="14.6" height="18.1" rx="0.3" />
+      <rect x="5.9" y="320.8" width="14.6" height="18.1" rx="0.3" />
+    </g>
+    <g id="fant-f-bd--marks">
+      <path d="M 11.7 203.7 L 14.1 199.5 L 16.5 203.7 Z" fill="#f2c200" stroke="#1c1f23" stroke-width="0.3" />
+      <rect x="10.7" y="209.3" width="9" height="29.6" rx="1.0" fill="#bfc3c7" stroke="#3a3d42" stroke-width="0.3" />
+      <rect x="9.5" y="378.0" width="9.5" height="15.0" rx="0.4" fill="#f4f4f1" stroke="#9a9ea3" stroke-width="0.2" />
+    </g>
+    <rect id="fant-f-bd--logo-zone" x="11.5" y="11.5" width="7.0" height="6.0" fill="none" data-path="fant-f-bd/logo-zone" data-class="logo-zone" />
+    <g id="fant-f-bd--silkscreen" fill="#1c1f23" font-family="Helvetica, Arial, sans-serif">
+      <text x="15.2" y="21.0" font-size="2.5" text-anchor="middle">Alcatel·Lucent</text>
+      <text x="15.2" y="25.3" font-size="2.8" font-weight="bold" text-anchor="middle">FANT-F</text>
+      <text x="7.6" y="37.4" font-size="2.3" font-weight="bold" text-anchor="end">ALM</text>
+      <text x="16.1" y="37.4" font-size="2.3" font-weight="bold">PWR</text>
+      <text x="16.1" y="42.48" font-size="2.3" font-weight="bold">A/S</text>
+      <text x="7.6" y="47.56" font-size="2.3" font-weight="bold" text-anchor="end">X2</text>
+      <text x="16.1" y="47.56" font-size="2.3" font-weight="bold">X1</text>
+      <text x="7.6" y="52.64" font-size="2.3" font-weight="bold" text-anchor="end">X4</text>
+      <text x="16.1" y="52.64" font-size="2.3" font-weight="bold">X3</text>
+      <text x="25.4" y="73.728" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 25.4 73.728)">X1</text>
+      <text x="25.4" y="103.108" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 25.4 103.108)">X2</text>
+      <text x="25.4" y="131.898" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 25.4 131.898)">X3</text>
+      <text x="25.4" y="160.688" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 25.4 160.688)">X4</text>
+      <text x="23.6" y="249" font-size="2.2" font-weight="bold" text-anchor="middle" transform="rotate(90 23.6 249)">1PPS</text>
+      <text x="23.6" y="266.5" font-size="2.2" font-weight="bold" text-anchor="middle" transform="rotate(90 23.6 266.5)">10MHz</text>
+      <text x="23.6" y="287.05" font-size="2.2" font-weight="bold" text-anchor="middle" transform="rotate(90 23.6 287.05)">FUI</text>
+      <text x="23.6" y="308.6" font-size="2.2" font-weight="bold" text-anchor="middle" transform="rotate(90 23.6 308.6)">CRAFT</text>
+      <text x="23.6" y="329.85" font-size="2.2" font-weight="bold" text-anchor="middle" transform="rotate(90 23.6 329.85)">ToD/1PPS</text>
+    </g>
+    <g id="fant-f-bd--lever-top" data-path="fant-f-bd/lever-top" data-class="latch" data-z-out="4.2" data-z-color="#5b6066">
+      <rect x="0.4" y="1.0" width="5.6" height="34.0" rx="1.4" fill="#5b6066" stroke="#17191c" stroke-width="0.25" />
+      <rect x="1.4" y="3.0" width="3.6" height="15.3" rx="0.8" fill="#6c7178" />
+    </g>
+    <g id="fant-f-bd--lever-bottom" data-path="fant-f-bd/lever-bottom" data-class="latch" data-z-out="4.2" data-z-color="#5b6066">
+      <rect x="0.4" y="322.0" width="5.6" height="70.0" rx="1.4" fill="#5b6066" stroke="#17191c" stroke-width="0.25" />
+      <rect x="1.4" y="366.7" width="3.6" height="23.3" rx="0.8" fill="#6c7178" />
+    </g>
+    <g id="fant-f-bd--screw-top" data-path="fant-f-bd/screw-top" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="19.4" cy="5.25" r="5.25" fill="#3a3d42" stroke="#17191c" stroke-width="0.3" />
+      <circle cx="19.4" cy="5.25" r="4.763" fill="none" stroke="#5a5e64" stroke-width="0.5" stroke-dasharray="0.5 0.5" />
+      <path d="M 17.235 5.25 L 21.565 5.25 M 19.4 3.085 L 19.4 7.415" stroke="#8d9298" stroke-width="0.45" />
+    </g>
+    <g id="fant-f-bd--screw-bottom" data-path="fant-f-bd/screw-bottom" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="19.4" cy="399.75" r="5.25" fill="#3a3d42" stroke="#17191c" stroke-width="0.3" />
+      <circle cx="19.4" cy="399.75" r="4.763" fill="none" stroke="#5a5e64" stroke-width="0.5" stroke-dasharray="0.5 0.5" />
+      <path d="M 17.235 399.75 L 21.565 399.75 M 19.4 397.585 L 19.4 401.915" stroke="#8d9298" stroke-width="0.45" />
+    </g>
+    <g id="fant-f-bd--sfp-1" data-path="fant-f-bd/sfp-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-legend="X1" data-media="sfp-plus" data-speed="10g" transform="translate(5.95,69.955) scale(1,0.75471) rotate(270 7.25 5.0)" data-tilt-on="fant-f-bd--sfp1-face" data-tilt="41" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ ports - 10GE with SFP+ optics, 1GE with SFP; SyncE clock extraction">
+      <title>fant-f-bd--sfp-1</title>
+      <rect id="fant-f-bd--sfp-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fant-f-bd/sfp-1/opening" data-class="cutout" />
+      <rect id="fant-f-bd--sfp-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fant-f-bd--sfp-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-f-bd--sfp-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fant-f-bd--sfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--sfp-2" data-path="fant-f-bd/sfp-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-legend="X2" data-media="sfp-plus" data-speed="10g" transform="translate(5.95,99.335) scale(1,0.75471) rotate(270 7.25 5.0)" data-tilt-on="fant-f-bd--sfp2-face" data-tilt="41" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ ports - 10GE with SFP+ optics, 1GE with SFP; SyncE clock extraction">
+      <title>fant-f-bd--sfp-2</title>
+      <rect id="fant-f-bd--sfp-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fant-f-bd/sfp-2/opening" data-class="cutout" />
+      <rect id="fant-f-bd--sfp-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fant-f-bd--sfp-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-f-bd--sfp-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fant-f-bd--sfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--sfp-3" data-path="fant-f-bd/sfp-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-legend="X3" data-media="sfp-plus" data-speed="10g" transform="translate(5.95,128.125) scale(1,0.75471) rotate(270 7.25 5.0)" data-tilt-on="fant-f-bd--sfp3-face" data-tilt="41" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ ports - 10GE with SFP+ optics, 1GE with SFP; SyncE clock extraction">
+      <title>fant-f-bd--sfp-3</title>
+      <rect id="fant-f-bd--sfp-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fant-f-bd/sfp-3/opening" data-class="cutout" />
+      <rect id="fant-f-bd--sfp-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fant-f-bd--sfp-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-f-bd--sfp-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fant-f-bd--sfp-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--sfp-4" data-path="fant-f-bd/sfp-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-legend="X4" data-media="sfp-plus" data-speed="10g" transform="translate(5.95,156.915) scale(1,0.75471) rotate(270 7.25 5.0)" data-tilt-on="fant-f-bd--sfp4-face" data-tilt="41" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="the four SFP+ ports - 10GE with SFP+ optics, 1GE with SFP; SyncE clock extraction">
+      <title>fant-f-bd--sfp-4</title>
+      <rect id="fant-f-bd--sfp-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fant-f-bd/sfp-4/opening" data-class="cutout" />
+      <rect id="fant-f-bd--sfp-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fant-f-bd--sfp-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-f-bd--sfp-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fant-f-bd--sfp-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--laser-mark" data-path="fant-f-bd/laser-mark" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" transform="translate(9.2,191.5)">
+      <title>fant-f-bd--laser-mark</title>
+      <path id="fant-f-bd--laser-mark--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+      <g id="fant-f-bd--laser-mark--burst" fill="#1a1a1a">
+        <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+        <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+        <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+        <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+      </g>
+    </g>
+    <g id="fant-f-bd--pps-1" data-path="fant-f-bd/pps-1" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="1 PPS input / output" data-legend="1PPS" data-media="coax-sma" transform="translate(8.45,244.25)" data-group="timing" data-group-role="management">
+      <title>fant-f-bd--pps-1</title>
+      <path id="fant-f-bd--pps-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="fant-f-bd--pps-1--jack" data-path="fant-f-bd/pps-1/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>fant-f-bd--pps-1--jack</title>
+        <circle id="fant-f-bd--pps-1--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="fant-f-bd/pps-1/jack/opening" data-class="cutout" />
+        <g id="fant-f-bd--pps-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--gps-10mhz" data-path="fant-f-bd/gps-10mhz" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="10 MHz GPS input" data-legend="10MHz" data-media="coax-sma" transform="translate(8.45,261.75)" data-group="timing" data-group-role="management">
+      <title>fant-f-bd--gps-10mhz</title>
+      <path id="fant-f-bd--gps-10mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="fant-f-bd--gps-10mhz--jack" data-path="fant-f-bd/gps-10mhz/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>fant-f-bd--gps-10mhz--jack</title>
+        <circle id="fant-f-bd--gps-10mhz--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="fant-f-bd/gps-10mhz/jack/opening" data-class="cutout" />
+        <g id="fant-f-bd--gps-10mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--fui" data-path="fant-f-bd/fui" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-function="front uplink interface" data-legend="FUI" data-media="rj45" data-speed="1g" transform="translate(5.3,280.45) rotate(270 7.9 6.6)" data-group="base-t" data-group-role="traffic" data-description="the front uplink interface (FUI), the fixed 10/100/1000Base-T port Nokia counts among the five communication interfaces">
+      <title>fant-f-bd--fui</title>
+      <g id="fant-f-bd--fui--jack" data-path="fant-f-bd/fui/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>fant-f-bd--fui--jack</title>
+        <path id="fant-f-bd--fui--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="fant-f-bd--fui--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="fant-f-bd--fui--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-f-bd/fui/jack/opening" data-class="cutout" />
+        <g id="fant-f-bd--fui--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="fant-f-bd--fui--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="fant-f-bd--fui--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/fui/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="fant-f-bd--fui--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/fui/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--lcrt" data-path="fant-f-bd/lcrt" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="local craft management interface (LCMI)" data-legend="CRAFT" data-media="rj45-serial" transform="translate(5.3,302) rotate(270 7.9 6.6)" data-group="craft" data-group-role="management" data-description="reaching the card locally - the CRAFT RJ45 (LCMI)">
+      <title>fant-f-bd--lcrt</title>
+      <path id="fant-f-bd--lcrt--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-f-bd--lcrt--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-f-bd--lcrt--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-f-bd/lcrt/opening" data-class="cutout" />
+      <g id="fant-f-bd--lcrt--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--tod" data-path="fant-f-bd/tod" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="ToD / 1PPS" data-legend="ToD/1PPS" data-media="rj45-tod" transform="translate(5.3,323.25) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-f-bd--tod</title>
+      <path id="fant-f-bd--tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-f-bd--tod--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-f-bd--tod--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-f-bd/tod/opening" data-class="cutout" />
+      <g id="fant-f-bd--tod--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-f-bd--led-alm" data-path="fant-f-bd/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="ALM - red: alarm condition exists; off: no alarm condition exists" transform="translate(8.3,35.8)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-alm</title>
+      <circle id="fant-f-bd--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.3" />
+    </g>
+    <g id="fant-f-bd--led-pwr" data-path="fant-f-bd/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PWR - green: power present; off: no power" transform="translate(13.4,35.8)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-pwr</title>
+      <circle id="fant-f-bd--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-pwr/lamp" data-class="led" data-states="off power-present" data-z-dome="0.3" />
+    </g>
+    <g id="fant-f-bd--led-a-s" data-path="fant-f-bd/led-a-s" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="A/S - green: active; off: stand-by" transform="translate(13.4,40.88)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-a-s</title>
+      <circle id="fant-f-bd--led-a-s--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-a-s--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-a-s/lamp" data-class="led" data-states="standby active" data-z-dome="0.3" />
+    </g>
+    <g id="fant-f-bd--led-x2" data-path="fant-f-bd/led-x2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="X2 (PORT2 in the UDS table) - link/activity status of SFP+ module 2" transform="translate(8.3,45.96)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-x2</title>
+      <circle id="fant-f-bd--led-x2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-x2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-x2/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-f-bd--led-x1" data-path="fant-f-bd/led-x1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="X1 (PORT1 in the UDS table) - link/activity status of SFP+ module 1" transform="translate(13.4,45.96)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-x1</title>
+      <circle id="fant-f-bd--led-x1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-x1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-x1/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-f-bd--led-x4" data-path="fant-f-bd/led-x4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="X4 (PORT4 in the UDS table) - link/activity status of SFP+ module 4" transform="translate(8.3,51.04)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-x4</title>
+      <circle id="fant-f-bd--led-x4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-x4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-x4/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-f-bd--led-x3" data-path="fant-f-bd/led-x3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="X3 (PORT3 in the UDS table) - link/activity status of SFP+ module 3" transform="translate(13.4,51.04)" data-group="leds" data-group-role="indicator">
+      <title>fant-f-bd--led-x3</title>
+      <circle id="fant-f-bd--led-x3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-f-bd--led-x3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-f-bd/led-x3/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="15 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

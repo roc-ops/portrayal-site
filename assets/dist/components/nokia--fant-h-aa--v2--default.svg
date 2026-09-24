@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.0mm" height="405.0mm" viewBox="0 0 30.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fant-h-aa@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-alarm { --led-color: #ef4444; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-alarm-cut-off { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-initializing { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-link-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-operational { --led-color: #22c55e; }
+    @keyframes portrayal-seq-nokia-fant-h-aa-operational {
+      0%, 87.4% { opacity: 1; fill: #22c55e; }
+      87.5%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='nokia/fant-h-aa@'] .state-operational { animation: portrayal-seq-nokia-fant-h-aa-operational 4s steps(1, end) infinite; }
+    g[data-ref^='nokia/fant-h-aa@'] .state-standby { --led-color: #3a3f44; }</style>
+  <g id="fant-h-aa" data-path="fant-h-aa" data-class="supervisor" data-behaviour="fills" data-ref="nokia/fant-h-aa@2:2.3.0" data-body-depth="225.0" data-wall="#3a3d42" data-model="FANT-H AA" data-part-number="3FE74828AA" data-power-draw-max-w="178" data-power-draw-typical-w="140" data-power-scope="excludes the NTIO card and pluggable (SFP/QSFP) power, per the ETSI Safety Manual note (1)" data-qsfp28="2" data-standard="ETSI" data-switch-capacity="3.2 Tbps" data-variant="AA" data-weight-kg="1.5" transform="translate(0,0)">
+    <title>fant-h-aa</title>
+    <rect id="fant-h-aa--face" x="0" y="0" width="30" height="405" rx="0.6" fill="#c8cbcf" stroke="#8d9298" stroke-width="0.3" />
+    <g id="fant-h-aa--port-housing">
+      <rect x="1.15" y="66.4" width="24.25" height="119" rx="0.5" fill="#6f757c" stroke="#33373c" stroke-width="0.35" />
+      <rect id="fant-h-aa--pps-face" x="1.15" y="66.4" width="24.25" height="11.1" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/pps-face" data-class="mechanical" data-z-out="8.0646" data-z-profile-y="0:0,11.1:8.06462" data-facet-deg="36" data-facet-facing="up" />
+      <rect id="fant-h-aa--pps-return" x="1.15" y="77.5" width="24.25" height="12.42" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/pps-return" data-class="mechanical" data-z-out="8.0656" data-z-profile-y="0:8.06564,12.42:0" data-facet-deg="33" data-facet-facing="down" />
+      <rect id="fant-h-aa--gps-face" x="1.15" y="89.92" width="24.25" height="10.63" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/gps-face" data-class="mechanical" data-z-out="7.7231" data-z-profile-y="0:0,10.63:7.72315" data-facet-deg="36" data-facet-facing="up" />
+      <rect id="fant-h-aa--gps-return" x="1.15" y="100.55" width="24.25" height="10.25" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/gps-return" data-class="mechanical" data-z-out="7.7239" data-z-profile-y="0:7.72393,10.25:0" data-facet-deg="37" data-facet-facing="down" />
+      <rect id="fant-h-aa--qsfp1-face" x="1.15" y="119.01" width="24.25" height="18.19" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/qsfp1-face" data-class="mechanical" data-z-out="13.2158" data-z-profile-y="0:0,18.19:13.2158" data-facet-deg="36" data-facet-facing="up" />
+      <rect id="fant-h-aa--qsfp1-return" x="1.15" y="137.2" width="24.25" height="9.96" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/qsfp1-return" data-class="mechanical" data-z-out="13.2174" data-z-profile-y="0:13.2174,9.96:0" data-facet-deg="53" data-facet-facing="down" />
+      <rect id="fant-h-aa--qsfp2-face" x="1.15" y="154.81" width="24.25" height="18.19" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/qsfp2-face" data-class="mechanical" data-z-out="13.2158" data-z-profile-y="0:0,18.19:13.2158" data-facet-deg="36" data-facet-facing="up" />
+      <rect id="fant-h-aa--qsfp2-return" x="1.15" y="173" width="24.25" height="9.96" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="fant-h-aa/qsfp2-return" data-class="mechanical" data-z-out="13.2174" data-z-profile-y="0:13.2174,9.96:0" data-facet-deg="53" data-facet-facing="down" />
+    </g>
+    <g id="fant-h-aa--jack-frames" fill="none" stroke="#5f656c" stroke-width="0.3">
+      <rect x="5.8" y="228.0" width="14.4" height="32.0" rx="0.3" />
+      <rect x="5.8" y="263.4" width="14.4" height="16.2" rx="0.3" />
+      <rect x="5.8" y="283.1" width="14.4" height="32.0" rx="0.3" />
+    </g>
+    <rect id="fant-h-aa--logo-zone" x="9.5" y="13.0" width="12.0" height="4.0" fill="none" data-path="fant-h-aa/logo-zone" data-class="logo-zone" />
+    <g id="fant-h-aa--marks" fill="none" stroke="#3a3d42" stroke-width="0.25">
+      <path d="M 6.4 336.3 L 8.5 328.2 L 10.6 336.3 Z" />
+      <rect x="13.3" y="328.2" width="4.6" height="8.1" />
+      <rect x="6.9" y="378.4" width="8.1" height="4.6" />
+      <rect x="6.9" y="386.5" width="8.1" height="5.2" />
+    </g>
+    <g id="fant-h-aa--silkscreen" fill="#1c1f23" font-family="Helvetica, Arial, sans-serif">
+      <path d="M 18.4 391.5 L 21.0 386.7 L 23.6 391.5 Z" fill="none" stroke="#1c1f23" stroke-width="0.3" />
+      <text x="10.5" y="25.7" font-size="2.2" font-weight="bold">FANT-H</text>
+      <text x="6.2" y="37.3" font-size="1.7" text-anchor="end">ALM</text>
+      <text x="17.2" y="37.3" font-size="1.7">PWR</text>
+      <text x="6.2" y="42.38" font-size="1.7" text-anchor="end">ACO</text>
+      <text x="17.2" y="42.38" font-size="1.7">A/S</text>
+      <text x="6.2" y="47.46" font-size="1.7" text-anchor="end">2</text>
+      <text x="17.2" y="47.46" font-size="1.7">1</text>
+      <text x="6.2" y="52.54" font-size="1.7" text-anchor="end">4</text>
+      <text x="17.2" y="52.54" font-size="1.7">3</text>
+      <text x="6.2" y="57.62" font-size="1.7" text-anchor="end">6</text>
+      <text x="17.2" y="57.62" font-size="1.7">5</text>
+      <text x="6.2" y="62.7" font-size="1.7" text-anchor="end">8</text>
+      <text x="17.2" y="62.7" font-size="1.7">7</text>
+      <path d="M 3.3 45.26 H 2.6 V 53.54 H 3.3" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+      <path d="M 20.1 45.26 H 20.8 V 53.54 H 20.1" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+      <text x="21.7" y="50.0" font-size="1.7">PORT1</text>
+      <path d="M 3.3 55.42 H 2.6 V 63.7 H 3.3" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+      <path d="M 20.1 55.42 H 20.8 V 63.7 H 20.1" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+      <text x="21.7" y="60.16" font-size="1.7">PORT2</text>
+      <text x="26.536" y="72.5" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 72.5)">1PPS</text>
+      <text x="26.536" y="92.1" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 92.1)">10MHz</text>
+      <text x="26.536" y="128.0" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 128.0)">PORT1</text>
+      <text x="26.536" y="164.1" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 164.1)">PORT2</text>
+      <text x="11.836" y="210.0" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 11.836 210.0)">USB</text>
+      <text x="23.936" y="236.1" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 236.1)">BITS IN</text>
+      <text x="23.936" y="251.9" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 251.9)">BITS OUT</text>
+      <text x="23.936" y="270.9" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 270.9)">ETH</text>
+      <text x="23.936" y="292.6" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 292.6)">LMT</text>
+      <text x="23.936" y="305.9" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 305.9)">TOD-PPS</text>
+    </g>
+    <g id="fant-h-aa--lever-top" data-path="fant-h-aa/lever-top" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="0.4" y="1.0" width="5.6" height="29.6" rx="1.4" fill="#2b2e33" stroke="#17191c" stroke-width="0.25" />
+      <rect x="1.4" y="3.0" width="3.6" height="13.32" rx="0.8" fill="#3a3e44" />
+    </g>
+    <g id="fant-h-aa--lever-bottom" data-path="fant-h-aa/lever-bottom" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="0.4" y="322.9" width="5.6" height="60.7" rx="1.4" fill="#2b2e33" stroke="#17191c" stroke-width="0.25" />
+      <rect x="1.4" y="324.9" width="3.6" height="21.245" rx="0.8" fill="#3a3e44" />
+    </g>
+    <g id="fant-h-aa--screw-top" data-path="fant-h-aa/screw-top" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="19.4" cy="5.25" r="5.25" fill="#3a3d42" stroke="#17191c" stroke-width="0.3" />
+      <circle cx="19.4" cy="5.25" r="4.763" fill="none" stroke="#5a5e64" stroke-width="0.5" stroke-dasharray="0.5 0.5" />
+      <path d="M 17.235 5.25 L 21.565 5.25 M 19.4 3.085 L 19.4 7.415" stroke="#8d9298" stroke-width="0.45" />
+    </g>
+    <g id="fant-h-aa--screw-bottom" data-path="fant-h-aa/screw-bottom" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="19.4" cy="399.75" r="5.25" fill="#3a3d42" stroke="#17191c" stroke-width="0.3" />
+      <circle cx="19.4" cy="399.75" r="4.763" fill="none" stroke="#5a5e64" stroke-width="0.5" stroke-dasharray="0.5 0.5" />
+      <path d="M 17.235 399.75 L 21.565 399.75 M 19.4 397.585 L 19.4 401.915" stroke="#8d9298" stroke-width="0.45" />
+    </g>
+    <g id="fant-h-aa--pps-1" data-path="fant-h-aa/pps-1" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="1 PPS input" data-media="coax-sma" transform="translate(8.25,68.157) scale(1,0.809017)" data-tilt-on="fant-h-aa--pps-face" data-tilt="36" data-tilt-facing="up" data-group="timing" data-group-role="management">
+      <title>fant-h-aa--pps-1</title>
+      <path id="fant-h-aa--pps-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="fant-h-aa--pps-1--jack" data-path="fant-h-aa/pps-1/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>fant-h-aa--pps-1--jack</title>
+        <circle id="fant-h-aa--pps-1--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="fant-h-aa/pps-1/jack/opening" data-class="cutout" />
+        <g id="fant-h-aa--pps-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--gps-10mhz" data-path="fant-h-aa/gps-10mhz" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="10 MHz GPS input" data-media="coax-sma" transform="translate(8.25,91.357) scale(1,0.809017)" data-tilt-on="fant-h-aa--gps-face" data-tilt="36" data-tilt-facing="up" data-group="timing" data-group-role="management">
+      <title>fant-h-aa--gps-10mhz</title>
+      <path id="fant-h-aa--gps-10mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="fant-h-aa--gps-10mhz--jack" data-path="fant-h-aa/gps-10mhz/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>fant-h-aa--gps-10mhz--jack</title>
+        <circle id="fant-h-aa--gps-10mhz--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="fant-h-aa/gps-10mhz/jack/opening" data-class="cutout" />
+        <g id="fant-h-aa--gps-10mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--qsfp-1" data-path="fant-h-aa/qsfp-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" transform="translate(1.8,123.594) scale(1,0.809017) rotate(270 10.0 5.075)" data-tilt-on="fant-h-aa--qsfp1-face" data-tilt="36" data-tilt-facing="up" data-group="qsfp28" data-group-role="traffic" data-description="QSFP28 uplinks - 100GE, 40GE and 4x10GE">
+      <title>fant-h-aa--qsfp-1</title>
+      <rect id="fant-h-aa--qsfp-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="fant-h-aa/qsfp-1/opening" data-class="cutout" />
+      <rect id="fant-h-aa--qsfp-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-h-aa--qsfp-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="fant-h-aa--qsfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--qsfp-2" data-path="fant-h-aa/qsfp-2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" transform="translate(1.8,159.394) scale(1,0.809017) rotate(270 10.0 5.075)" data-tilt-on="fant-h-aa--qsfp2-face" data-tilt="36" data-tilt-facing="up" data-group="qsfp28" data-group-role="traffic" data-description="QSFP28 uplinks - 100GE, 40GE and 4x10GE">
+      <title>fant-h-aa--qsfp-2</title>
+      <rect id="fant-h-aa--qsfp-2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="fant-h-aa/qsfp-2/opening" data-class="cutout" />
+      <rect id="fant-h-aa--qsfp-2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-h-aa--qsfp-2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="fant-h-aa--qsfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--laser-mark" data-path="fant-h-aa/laser-mark" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" transform="translate(10.9,188.8)">
+      <title>fant-h-aa--laser-mark</title>
+      <path id="fant-h-aa--laser-mark--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+      <g id="fant-h-aa--laser-mark--burst" fill="#1a1a1a">
+        <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+        <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+        <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+        <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+      </g>
+    </g>
+    <g id="fant-h-aa--usb" data-path="fant-h-aa/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-function="debug" data-media="micro-usb-b" transform="translate(4.05,208.625) rotate(90 3.75 1.375)" data-group="craft" data-group-role="management">
+      <title>fant-h-aa--usb</title>
+      <rect id="fant-h-aa--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="fant-h-aa--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="fant-h-aa/usb/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    </g>
+    <g id="fant-h-aa--bits-in" data-path="fant-h-aa/bits-in" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS input" data-media="rj48" transform="translate(5.1,229.5) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-h-aa--bits-in</title>
+      <path id="fant-h-aa--bits-in--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--bits-in--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--bits-in--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-h-aa/bits-in/opening" data-class="cutout" />
+      <g id="fant-h-aa--bits-in--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--bits-out" data-path="fant-h-aa/bits-out" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS output / daisy-chain NTR clock output" data-media="rj48" transform="translate(5.1,245.3) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-h-aa--bits-out</title>
+      <path id="fant-h-aa--bits-out--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--bits-out--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--bits-out--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-h-aa/bits-out/opening" data-class="cutout" />
+      <g id="fant-h-aa--bits-out--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--eth" data-path="fant-h-aa/eth" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(5.1,264.9) rotate(270 7.9 6.6)" data-group="base-t" data-group-role="traffic" data-description="the fixed 10/100/1000Base-T communication port (ETH)">
+      <title>fant-h-aa--eth</title>
+      <g id="fant-h-aa--eth--jack" data-path="fant-h-aa/eth/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>fant-h-aa--eth--jack</title>
+        <path id="fant-h-aa--eth--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="fant-h-aa--eth--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="fant-h-aa--eth--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-h-aa/eth/jack/opening" data-class="cutout" />
+        <g id="fant-h-aa--eth--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="fant-h-aa--eth--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="fant-h-aa--eth--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/eth/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="fant-h-aa--eth--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/eth/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--lmt" data-path="fant-h-aa/lmt" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="local craft management interface" data-media="rj45-serial" transform="translate(5.1,284.6) rotate(270 7.9 6.6)" data-group="craft" data-group-role="management">
+      <title>fant-h-aa--lmt</title>
+      <path id="fant-h-aa--lmt--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--lmt--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--lmt--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-h-aa/lmt/opening" data-class="cutout" />
+      <g id="fant-h-aa--lmt--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--tod" data-path="fant-h-aa/tod" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="ToD / 1PPS" data-media="rj45-tod" transform="translate(5.1,300.4) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-h-aa--tod</title>
+      <path id="fant-h-aa--tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--tod--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-h-aa--tod--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-h-aa/tod/opening" data-class="cutout" />
+      <g id="fant-h-aa--tod--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-h-aa--aco-switch" data-path="fant-h-aa/aco-switch" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="alarm cut-off switch" transform="translate(19.5,29.0)">
+      <title>fant-h-aa--aco-switch</title>
+      <circle id="fant-h-aa--aco-switch--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="fant-h-aa--aco-switch--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="fant-h-aa/aco-switch/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+    </g>
+    <g id="fant-h-aa--led-alm" data-path="fant-h-aa/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="ALM - red: alarm condition exists; off: no alarm condition" transform="translate(7.94,35.7)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-alm</title>
+      <circle id="fant-h-aa--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-pwr" data-path="fant-h-aa/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PWR - green flashing 0.5 s on / 0.5 s off: software initializing; green blinking 3.5 s on / 0.5 s off: initialization completed, NT operational; off: no power" transform="translate(13.14,35.7)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-pwr</title>
+      <circle id="fant-h-aa--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-pwr/lamp" data-class="led" data-states="off initializing operational" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-aco" data-path="fant-h-aa/led-aco" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="ACO - green: alarm has been cut off; off: no alarm cut off" transform="translate(7.94,40.78)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-aco</title>
+      <circle id="fant-h-aa--led-aco--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-aco--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-aco/lamp" data-class="led" data-states="off alarm-cut-off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-a-s" data-path="fant-h-aa/led-a-s" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="A/S - green: active; off: stand-by" transform="translate(13.14,40.78)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-a-s</title>
+      <circle id="fant-h-aa--led-a-s--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-a-s--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-a-s/lamp" data-class="led" data-states="standby active" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p1-2" data-path="fant-h-aa/led-p1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 2 - link/activity status, QSFP28 interface 1 channel 2" transform="translate(7.94,45.86)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p1-2</title>
+      <circle id="fant-h-aa--led-p1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p1-2/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p1-1" data-path="fant-h-aa/led-p1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 1 - link/activity status, QSFP28 interface 1 channel 1" transform="translate(13.14,45.86)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p1-1</title>
+      <circle id="fant-h-aa--led-p1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p1-1/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p1-4" data-path="fant-h-aa/led-p1-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 4 - link/activity status, QSFP28 interface 1 channel 4" transform="translate(7.94,50.94)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p1-4</title>
+      <circle id="fant-h-aa--led-p1-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p1-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p1-4/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p1-3" data-path="fant-h-aa/led-p1-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 3 - link/activity status, QSFP28 interface 1 channel 3" transform="translate(13.14,50.94)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p1-3</title>
+      <circle id="fant-h-aa--led-p1-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p1-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p1-3/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p2-6" data-path="fant-h-aa/led-p2-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 6 - link/activity status, QSFP28 interface 2 channel 2 (the AA close-up numbers the second port 5-8)" transform="translate(7.94,56.02)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p2-6</title>
+      <circle id="fant-h-aa--led-p2-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p2-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p2-6/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p2-5" data-path="fant-h-aa/led-p2-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 5 - link/activity status, QSFP28 interface 2 channel 1 (the AA close-up numbers the second port 5-8)" transform="translate(13.14,56.02)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p2-5</title>
+      <circle id="fant-h-aa--led-p2-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p2-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p2-5/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p2-8" data-path="fant-h-aa/led-p2-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 8 - link/activity status, QSFP28 interface 2 channel 4 (the AA close-up numbers the second port 5-8)" transform="translate(7.94,61.1)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p2-8</title>
+      <circle id="fant-h-aa--led-p2-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p2-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p2-8/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g id="fant-h-aa--led-p2-7" data-path="fant-h-aa/led-p2-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 7 - link/activity status, QSFP28 interface 2 channel 3 (the AA close-up numbers the second port 5-8)" transform="translate(13.14,61.1)" data-group="leds" data-group-role="indicator">
+      <title>fant-h-aa--led-p2-7</title>
+      <circle id="fant-h-aa--led-p2-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-h-aa--led-p2-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-h-aa/led-p2-7/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="15 202.5" data-cp-dir="front" />
+  </g>
+</svg>

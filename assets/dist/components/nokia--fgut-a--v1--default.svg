@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fgut-a@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/fgut-a@'] .state-init { --led-color: #39b54a; }
+    g[data-ref^='nokia/fgut-a@'] .state-init { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fgut-a@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/fgut-a@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/fgut-a@'] .state-yellow { --led-color: #f5c400; }</style>
+  <g id="fgut-a" data-path="fgut-a" data-class="line-card" data-behaviour="fills" data-ref="nokia/fgut-a@1:1.4.0" data-body-depth="225.0" data-wall="#8d9298" data-model="FGUT-A" data-part-number="3FE 76986 AA" data-power-draw-max-w="150" data-power-draw-typical-w="100" data-weight-kg="2.76" data-xgs-pon="16" transform="translate(0,0)">
+    <title>fgut-a</title>
+    <rect id="fgut-a--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <rect id="fgut-a--rail" x="0" y="0" width="3.8" height="405.0" fill="#b8bcc1" stroke="#9ba0a6" stroke-width="0.2" />
+    <rect id="fgut-a--well" x="6.2" y="36.4" width="17.2" height="328.252" fill="#2a2e33" stroke="#7d848c" stroke-width="0.2" data-path="fgut-a/well" data-class="mechanical" data-depth="22.77" data-wall="#8d9298" />
+    <g id="fgut-a--teeth">
+      <rect id="fgut-a--face-1" x="6.2" y="36.811" width="17.2" height="15.367" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-1" data-class="mechanical" data-z-out="-13.8979" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.367:-13.8979" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-1" data-path="fgut-a/return-1" data-class="mechanical" data-z-out="-13.895" data-z-lift="-22.77" data-z-profile-y="0:-13.895,5.124:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="52.178" width="17.2" height="5.124" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-2" x="6.2" y="57.301" width="17.2" height="15.367" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-2" data-class="mechanical" data-z-out="-13.8979" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.367:-13.8979" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-2" data-path="fgut-a/return-2" data-class="mechanical" data-z-out="-13.895" data-z-lift="-22.77" data-z-profile-y="0:-13.895,5.124:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="72.668" width="17.2" height="5.124" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-3" x="6.2" y="77.791" width="17.2" height="15.367" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-3" data-class="mechanical" data-z-out="-13.8979" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.367:-13.8979" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-3" data-path="fgut-a/return-3" data-class="mechanical" data-z-out="-13.895" data-z-lift="-22.77" data-z-profile-y="0:-13.895,5.124:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="93.158" width="17.2" height="5.124" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-4" x="6.2" y="98.281" width="17.2" height="15.367" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-4" data-class="mechanical" data-z-out="-13.8979" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.367:-13.8979" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-4" data-path="fgut-a/return-4" data-class="mechanical" data-z-out="-13.895" data-z-lift="-22.77" data-z-profile-y="0:-13.895,5.124:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="113.648" width="17.2" height="5.124" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-5" x="6.2" y="118.771" width="17.2" height="15.367" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-5" data-class="mechanical" data-z-out="-13.8979" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.367:-13.8979" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-5" data-path="fgut-a/return-5" data-class="mechanical" data-z-out="-13.895" data-z-lift="-22.77" data-z-profile-y="0:-13.895,5.124:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="134.138" width="17.2" height="5.124" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-6" x="6.2" y="139.261" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-6" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-6" data-path="fgut-a/return-6" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="154.629" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-7" x="6.2" y="159.751" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-7" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-7" data-path="fgut-a/return-7" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="175.119" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-8" x="6.2" y="180.241" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-8" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-8" data-path="fgut-a/return-8" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="195.609" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-9" x="6.2" y="200.731" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-9" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-9" data-path="fgut-a/return-9" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="216.099" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-10" x="6.2" y="221.221" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-10" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-10" data-path="fgut-a/return-10" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="236.589" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-11" x="6.2" y="241.711" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-11" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-11" data-path="fgut-a/return-11" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="257.079" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-12" x="6.2" y="262.201" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-12" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-12" data-path="fgut-a/return-12" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="277.569" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-13" x="6.2" y="282.691" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-13" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-13" data-path="fgut-a/return-13" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="298.059" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-14" x="6.2" y="303.181" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-14" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-14" data-path="fgut-a/return-14" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="318.549" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-15" x="6.2" y="323.671" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-15" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-15" data-path="fgut-a/return-15" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="339.039" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="fgut-a--face-16" x="6.2" y="344.161" width="17.2" height="15.368" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fgut-a/face-16" data-class="mechanical" data-z-out="-13.8973" data-z-lift="-22.77" data-z-profile-y="0:-22.77,15.368:-13.8973" data-facet-deg="30" data-facet-facing="up" />
+      <g id="fgut-a--return-16" data-path="fgut-a/return-16" data-class="mechanical" data-z-out="-13.8967" data-z-lift="-22.77" data-z-profile-y="0:-13.8967,5.123:-22.77" data-facet-deg="60" data-facet-facing="down">
+        <rect x="6.2" y="359.529" width="17.2" height="5.123" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+    </g>
+    <g id="fgut-a--label-unit" data-path="fgut-a/label-unit" data-class="label">
+      <rect x="8.7" y="14.4" width="15.3" height="11.5" rx="0.4" fill="#eceeef" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="9.8" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="10.35" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="10.75" y="21.6" width="0.45" height="2.6" fill="#26292d" />
+      <rect x="11.45" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="11.85" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="12.4" y="21.6" width="0.6" height="2.6" fill="#26292d" />
+      <rect x="13.25" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="13.65" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="14.2" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="14.6" y="21.6" width="0.45" height="2.6" fill="#26292d" />
+      <rect x="15.3" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="15.85" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="16.25" y="21.6" width="0.6" height="2.6" fill="#26292d" />
+      <rect x="17.1" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="17.5" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="18.05" y="21.6" width="0.45" height="2.6" fill="#26292d" />
+      <rect x="18.75" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="19.15" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="19.7" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+      <rect x="20.25" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="20.65" y="21.6" width="0.45" height="2.6" fill="#26292d" />
+      <rect x="21.35" y="21.6" width="0.15" height="2.6" fill="#26292d" />
+      <rect x="21.75" y="21.6" width="0.3" height="2.6" fill="#26292d" />
+    </g>
+    <rect id="fgut-a--logo-zone" x="8.7" y="26.6" width="15.3" height="3.8" fill="none" data-path="fgut-a/logo-zone" data-class="label" />
+    <g id="fgut-a--label-serial" data-path="fgut-a/label-serial" data-class="label">
+      <rect x="8.7" y="383.2" width="14.1" height="10.9" rx="0.3" fill="#eceeef" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="9.7" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="10.25" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="10.65" y="385" width="0.45" height="3.4" fill="#26292d" />
+      <rect x="11.35" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="11.75" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="12.3" y="385" width="0.6" height="3.4" fill="#26292d" />
+      <rect x="13.15" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="13.55" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="14.1" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="14.5" y="385" width="0.45" height="3.4" fill="#26292d" />
+      <rect x="15.2" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="15.75" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="16.15" y="385" width="0.6" height="3.4" fill="#26292d" />
+      <rect x="17" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="17.4" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="17.95" y="385" width="0.45" height="3.4" fill="#26292d" />
+      <rect x="18.65" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="19.05" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="19.6" y="385" width="0.3" height="3.4" fill="#26292d" />
+      <rect x="20.15" y="385" width="0.15" height="3.4" fill="#26292d" />
+      <rect x="20.55" y="385" width="0.45" height="3.4" fill="#26292d" />
+      <rect x="21.25" y="385" width="0.15" height="3.4" fill="#26292d" />
+    </g>
+    <g id="fgut-a--screw-top">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+    </g>
+    <g id="fgut-a--screw-bottom">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+    </g>
+    <g id="fgut-a--lamp-bezels">
+      <circle cx="10.3" cy="379.4" r="1.8" fill="none" stroke="#6b7076" stroke-width="0.25" />
+      <circle cx="15.2" cy="379.4" r="1.8" fill="none" stroke="#6b7076" stroke-width="0.25" />
+    </g>
+    <g id="fgut-a--silkscreen">
+      <text x="16.35" y="18.2" font-family="Arial" font-size="1.9" fill="#1d2023" text-anchor="middle" font-weight="bold">FGUT-A</text>
+      <text x="16.35" y="20.6" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" id="fgut-a--silk-part-number" data-from="part-number">3FE 76986 AA</text>
+      <text x="4.1" y="38.8" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 38.8)">1</text>
+      <text x="4.1" y="59.29" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 59.29)">2</text>
+      <text x="4.1" y="79.78" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 79.78)">3</text>
+      <text x="4.1" y="100.27" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 100.27)">4</text>
+      <text x="4.1" y="120.76" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 120.76)">5</text>
+      <text x="4.1" y="141.25" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 141.25)">6</text>
+      <text x="4.1" y="161.74" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 161.74)">7</text>
+      <text x="4.1" y="182.23" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 182.23)">8</text>
+      <text x="4.1" y="202.72" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 202.72)">9</text>
+      <text x="4.1" y="223.21" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 223.21)">10</text>
+      <text x="4.1" y="243.7" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 243.7)">11</text>
+      <text x="4.1" y="264.19" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 264.19)">12</text>
+      <text x="4.1" y="284.68" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 284.68)">13</text>
+      <text x="4.1" y="305.17" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 305.17)">14</text>
+      <text x="4.1" y="325.66" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 325.66)">15</text>
+      <text x="4.1" y="346.15" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="middle" transform="rotate(90 4.1 346.15)">16</text>
+      <text x="10.3" y="376.9" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">ALM</text>
+      <text x="15.2" y="376.9" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">PWR</text>
+      <path d="M 7.6 362.16 L 11 368.04 L 4.2 368.04 Z" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 6.5 366.9 L 8.9 364.1" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 19.3 361.8 L 23 368.2 L 15.6 368.2 Z" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 18.3 366.6 Q 18.7 365.9 18.3 365.2 Q 17.9 364.5 18.3 363.8" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 19.3 366.6 Q 19.7 365.9 19.3 365.2 Q 18.9 364.5 19.3 363.8" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 20.3 366.6 Q 20.7 365.9 20.3 365.2 Q 19.9 364.5 20.3 363.8" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 17.5 367.2 L 21.1 367.2" fill="none" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="fgut-a--ejector-top" data-z-out="4.2">
+      <path d="M 1.9 1.4 H 7.1 V 29.0 Q 7.1 31.0 5.1 31.0 H 3.9 Q 1.9 31.0 1.9 29.0 Z" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="fgut-a--ejector-bottom" data-z-out="4.2">
+      <path d="M 3.9 373.1 H 5.1 Q 7.1 373.1 7.1 375.1 V 402.7 H 3.8 V 391.2 H 1.9 V 375.1 Q 1.9 373.1 3.9 373.1 Z" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="fgut-a--port-1" data-path="fgut-a/port-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,41.07) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-1" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-1</title>
+      <rect id="fgut-a--port-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-1/opening" data-class="cutout" />
+      <rect id="fgut-a--port-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-2" data-path="fgut-a/port-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,61.56) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-2" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-2</title>
+      <rect id="fgut-a--port-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-2/opening" data-class="cutout" />
+      <rect id="fgut-a--port-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-3" data-path="fgut-a/port-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,82.05) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-3" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-3</title>
+      <rect id="fgut-a--port-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-3/opening" data-class="cutout" />
+      <rect id="fgut-a--port-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-4" data-path="fgut-a/port-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,102.54) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-4" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-4</title>
+      <rect id="fgut-a--port-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-4/opening" data-class="cutout" />
+      <rect id="fgut-a--port-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-5" data-path="fgut-a/port-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,123.03) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-5" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-5</title>
+      <rect id="fgut-a--port-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-5/opening" data-class="cutout" />
+      <rect id="fgut-a--port-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-6" data-path="fgut-a/port-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,143.52) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-6" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-6</title>
+      <rect id="fgut-a--port-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-6/opening" data-class="cutout" />
+      <rect id="fgut-a--port-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-7" data-path="fgut-a/port-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,164.01) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-7" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-7</title>
+      <rect id="fgut-a--port-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-7/opening" data-class="cutout" />
+      <rect id="fgut-a--port-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-8" data-path="fgut-a/port-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,184.5) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-8" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-8</title>
+      <rect id="fgut-a--port-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-8/opening" data-class="cutout" />
+      <rect id="fgut-a--port-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-9" data-path="fgut-a/port-9" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,204.99) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-9" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-9</title>
+      <rect id="fgut-a--port-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-9/opening" data-class="cutout" />
+      <rect id="fgut-a--port-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-9--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-10" data-path="fgut-a/port-10" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,225.48) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-10" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-10</title>
+      <rect id="fgut-a--port-10--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-10/opening" data-class="cutout" />
+      <rect id="fgut-a--port-10--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-10--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-10--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-11" data-path="fgut-a/port-11" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,245.97) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-11" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-11</title>
+      <rect id="fgut-a--port-11--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-11/opening" data-class="cutout" />
+      <rect id="fgut-a--port-11--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-11--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-11--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-12" data-path="fgut-a/port-12" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,266.46) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-12" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-12</title>
+      <rect id="fgut-a--port-12--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-12/opening" data-class="cutout" />
+      <rect id="fgut-a--port-12--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-12--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-12--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-13" data-path="fgut-a/port-13" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,286.95) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-13" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-13</title>
+      <rect id="fgut-a--port-13--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-13/opening" data-class="cutout" />
+      <rect id="fgut-a--port-13--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-13--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-13--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-14" data-path="fgut-a/port-14" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,307.44) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-14" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-14</title>
+      <rect id="fgut-a--port-14--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-14/opening" data-class="cutout" />
+      <rect id="fgut-a--port-14--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-14--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-14--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-15" data-path="fgut-a/port-15" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(4.75,327.93) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-15" data-tilt="30" data-tilt-facing="up" data-group="pon-xgs" data-group-role="traffic" data-description="the odd PON ports (1, 3 ... 15) - GPON, XGS-PON or Multi-PON (MPM)">
+      <title>fgut-a--port-15</title>
+      <rect id="fgut-a--port-15--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-15/opening" data-class="cutout" />
+      <rect id="fgut-a--port-15--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-15--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-15--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--port-16" data-path="fgut-a/port-16" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp28" data-pon="25gs-pon" data-speed="25g" transform="translate(4.75,348.42) scale(1,0.866025) rotate(90 7.25 5.0)" data-tilt-on="fgut-a--face-16" data-tilt="30" data-tilt-facing="up" data-group="pon-25gs" data-group-role="traffic" data-description="the even PON ports (2, 4 ... 16) - GPON, XGS-PON, MPM, and 25GS-PON">
+      <title>fgut-a--port-16</title>
+      <rect id="fgut-a--port-16--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fgut-a/port-16/opening" data-class="cutout" />
+      <rect id="fgut-a--port-16--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fgut-a--port-16--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fgut-a--port-16--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fgut-a--port-16--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fgut-a--led-alm" data-path="fgut-a/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(9.3,378.4)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fgut-a--led-alm</title>
+      <circle id="fgut-a--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-alm/lamp" data-class="led" data-states="off red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pwr" data-path="fgut-a/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(14.2,378.4)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fgut-a--led-pwr</title>
+      <circle id="fgut-a--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pwr/lamp" data-class="led" data-states="off init on" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-1" data-path="fgut-a/led-pon-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,41.5)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-1</title>
+      <circle id="fgut-a--led-pon-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-1/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-2" data-path="fgut-a/led-pon-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,61.99)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-2</title>
+      <circle id="fgut-a--led-pon-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-2/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-3" data-path="fgut-a/led-pon-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,82.48)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-3</title>
+      <circle id="fgut-a--led-pon-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-3/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-4" data-path="fgut-a/led-pon-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,102.97)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-4</title>
+      <circle id="fgut-a--led-pon-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-4/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-5" data-path="fgut-a/led-pon-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,123.46)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-5</title>
+      <circle id="fgut-a--led-pon-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-5/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-6" data-path="fgut-a/led-pon-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,143.95)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-6</title>
+      <circle id="fgut-a--led-pon-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-6/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-7" data-path="fgut-a/led-pon-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,164.44)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-7</title>
+      <circle id="fgut-a--led-pon-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-7/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-8" data-path="fgut-a/led-pon-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,184.93)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-8</title>
+      <circle id="fgut-a--led-pon-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-8/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-9" data-path="fgut-a/led-pon-9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,205.42)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-9</title>
+      <circle id="fgut-a--led-pon-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-9/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-10" data-path="fgut-a/led-pon-10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,225.91)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-10</title>
+      <circle id="fgut-a--led-pon-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-10/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-11" data-path="fgut-a/led-pon-11" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,246.4)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-11</title>
+      <circle id="fgut-a--led-pon-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-11/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-12" data-path="fgut-a/led-pon-12" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,266.89)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-12</title>
+      <circle id="fgut-a--led-pon-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-12/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-13" data-path="fgut-a/led-pon-13" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,287.38)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-13</title>
+      <circle id="fgut-a--led-pon-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-13/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-14" data-path="fgut-a/led-pon-14" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,307.87)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-14</title>
+      <circle id="fgut-a--led-pon-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-14/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-15" data-path="fgut-a/led-pon-15" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,328.36)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-15</title>
+      <circle id="fgut-a--led-pon-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-15/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g id="fgut-a--led-pon-16" data-path="fgut-a/led-pon-16" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(3.9,348.85)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp left of each cage">
+      <title>fgut-a--led-pon-16</title>
+      <circle id="fgut-a--led-pon-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fgut-a--led-pon-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fgut-a/led-pon-16/lamp" data-class="led" data-states="off yellow green red" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

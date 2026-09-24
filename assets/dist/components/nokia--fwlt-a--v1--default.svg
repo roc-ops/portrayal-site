@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fwlt-a@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-a@'] .state-active-ranging { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-a@'] .state-active-ranging { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fwlt-a@'] .state-alarm { --led-color: #d0021b; }
+    g[data-ref^='nokia/fwlt-a@'] .state-fault { --led-color: #d0021b; }
+    g[data-ref^='nokia/fwlt-a@'] .state-init { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-a@'] .state-init { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fwlt-a@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-a@'] .state-provisioned { --led-color: #f2c200; }</style>
+  <g id="fwlt-a" data-path="fwlt-a" data-class="line-card" data-behaviour="fills" data-ref="nokia/fwlt-a@1:1.4.0" data-body-depth="225.0" data-wall="#8d9298" data-model="FWLT-A" data-part-number="3FE 56399 AB" data-power-draw-max-w="123" data-power-draw-typical-w="108" data-power-scope="includes the XFP optics, per the Safety Manual note that PON line-card figures include their optics" data-weight-kg="1.4" data-xfp="4" data-xgs-pon="4" transform="translate(0,0)">
+    <title>fwlt-a</title>
+    <rect id="fwlt-a--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <rect id="fwlt-a--side-rail" x="0" y="0" width="0.9" height="405.0" fill="#a9aeb4" />
+    <g id="fwlt-a--housings">
+      <rect x="2.6" y="35.5" width="17.9" height="37.1" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="36.9" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="115.56" width="17.9" height="37.1" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="116.96" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="195.52" width="17.9" height="37.1" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="196.92" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="275.48" width="17.9" height="37.1" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="276.88" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-a--lips">
+      <rect id="fwlt-a--lip-1" x="2.6" y="62.5" width="17.9" height="10.1" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-a/lip-1" data-class="mechanical" data-z-out="4.9261" data-z-profile-y="0:4.9261,10.1:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-a--lip-2" x="2.6" y="142.56" width="17.9" height="10.1" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-a/lip-2" data-class="mechanical" data-z-out="4.9261" data-z-profile-y="0:4.9261,10.1:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-a--lip-3" x="2.6" y="222.52" width="17.9" height="10.1" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-a/lip-3" data-class="mechanical" data-z-out="4.9261" data-z-profile-y="0:4.9261,10.1:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-a--lip-4" x="2.6" y="302.48" width="17.9" height="10.1" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-a/lip-4" data-class="mechanical" data-z-out="4.9261" data-z-profile-y="0:4.9261,10.1:0" data-facet-deg="26" data-facet-facing="down" />
+    </g>
+    <rect id="fwlt-a--logo-zone" x="4" y="11.5" width="17" height="10" fill="none" data-path="fwlt-a/logo-zone" data-class="label" />
+    <g id="fwlt-a--part-label" data-path="fwlt-a/part-label" data-class="label">
+      <rect x="5" y="338.4" width="14.2" height="18.1" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-a--silkscreen">
+      <text x="12.2" y="25.6" font-family="Arial" font-size="2.2" font-weight="bold" fill="#1d2023" text-anchor="middle">FWLT-A</text>
+      <text x="5.9" y="31.65" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="end">ALM</text>
+      <text x="15.6" y="31.65" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">PWR</text>
+      <path d="M 9.8 378.3 L 15.2 381.35 L 9.8 384.4 Z" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <circle cx="11.74" cy="381.35" r="0.7" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 12.75 384.6 L 16.7 391.5 L 8.8 391.5 Z" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 11.55 390.5 Q 12.55 387.9 13.65 389.3" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 5.4 336 L 5.4 334.4 L 7 334.4" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 18.9 336 L 18.9 334.4 L 17.3 334.4" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 5.4 358.4 L 5.4 360 L 7 360" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 18.9 358.4 L 18.9 360 L 17.3 360" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="22" y="53.7" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 22 53.7)">PORT 1</text>
+      <text x="22" y="133.76" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 22 133.76)">PORT 2</text>
+      <text x="22" y="213.72" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 22 213.72)">PORT 3</text>
+      <text x="22" y="293.68" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 22 293.68)">PORT 4</text>
+    </g>
+    <g id="fwlt-a--screw-top" data-z-cyl="6.0">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="18.7" cy="5.25" r="4.607" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.282" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 17.629 5.25 H 19.771 M 18.7 4.179 V 6.321" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="fwlt-a--screw-bottom" data-z-cyl="6.0">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="18.7" cy="399.75" r="4.607" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.282" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 17.629 399.75 H 19.771 M 18.7 398.679 V 400.821" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="fwlt-a--ejector-top" data-z-out="4.2">
+      <rect x="1.3" y="0" width="3.5" height="12.5" fill="#3a3f44" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="0.4" y="12.5" width="4.4" height="18.5" rx="0.4" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 0.4 18.67 H 4.8" stroke="#4a4f55" stroke-width="0.2" />
+      <path d="M 0.4 24.83 H 4.8" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-a--ejector-bottom" data-z-out="4.2">
+      <rect x="0.4" y="373.8" width="4.4" height="18.5" rx="0.4" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 0.4 379.97 H 4.8" stroke="#4a4f55" stroke-width="0.2" />
+      <path d="M 0.4 386.13 H 4.8" stroke="#4a4f55" stroke-width="0.2" />
+      <rect x="1.3" y="392.3" width="3.5" height="12.7" fill="#3a3f44" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-a--port-1" data-path="fwlt-a/port-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(1.25,44.85) rotate(90 9.75 4.85)" data-group="xfp" data-group-role="traffic" data-description="the four U-NGPON ports, XFP cages for NG-PON2 TWDM or XGS-PON optics, PORT1 to PORT4 top to bottom">
+      <title>fwlt-a--port-1</title>
+      <rect id="fwlt-a--port-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fwlt-a/port-1/opening" data-class="cutout" />
+      <rect id="fwlt-a--port-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="fwlt-a--port-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-a--port-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-a--port-2" data-path="fwlt-a/port-2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(1.25,124.91) rotate(90 9.75 4.85)" data-group="xfp" data-group-role="traffic" data-description="the four U-NGPON ports, XFP cages for NG-PON2 TWDM or XGS-PON optics, PORT1 to PORT4 top to bottom">
+      <title>fwlt-a--port-2</title>
+      <rect id="fwlt-a--port-2--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fwlt-a/port-2/opening" data-class="cutout" />
+      <rect id="fwlt-a--port-2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="fwlt-a--port-2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-a--port-2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-a--port-3" data-path="fwlt-a/port-3" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(1.25,204.87) rotate(90 9.75 4.85)" data-group="xfp" data-group-role="traffic" data-description="the four U-NGPON ports, XFP cages for NG-PON2 TWDM or XGS-PON optics, PORT1 to PORT4 top to bottom">
+      <title>fwlt-a--port-3</title>
+      <rect id="fwlt-a--port-3--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fwlt-a/port-3/opening" data-class="cutout" />
+      <rect id="fwlt-a--port-3--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="fwlt-a--port-3--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-a--port-3--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-a--port-4" data-path="fwlt-a/port-4" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(1.25,284.83) rotate(90 9.75 4.85)" data-group="xfp" data-group-role="traffic" data-description="the four U-NGPON ports, XFP cages for NG-PON2 TWDM or XGS-PON optics, PORT1 to PORT4 top to bottom">
+      <title>fwlt-a--port-4</title>
+      <rect id="fwlt-a--port-4--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="fwlt-a/port-4/opening" data-class="cutout" />
+      <rect id="fwlt-a--port-4--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="fwlt-a--port-4--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-a--port-4--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-a--led-alm" data-path="fwlt-a/led-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(6.1,29.1)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fwlt-a--led-alm</title>
+      <circle id="fwlt-a--led-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="fwlt-a--led-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="fwlt-a/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.45" />
+    </g>
+    <g id="fwlt-a--led-pwr" data-path="fwlt-a/led-pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(11.4,29.1)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fwlt-a--led-pwr</title>
+      <circle id="fwlt-a--led-pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="fwlt-a--led-pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="fwlt-a/led-pwr/lamp" data-class="led" data-states="off init on" data-z-dome="0.45" />
+    </g>
+    <g id="fwlt-a--led-port-1" data-path="fwlt-a/led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.44,43.7)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-a--led-port-1</title>
+      <circle id="fwlt-a--led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-a--led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-a/led-port-1/lamp" data-class="led" data-states="off provisioned active active-ranging fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-a--led-port-2" data-path="fwlt-a/led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.44,123.76)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-a--led-port-2</title>
+      <circle id="fwlt-a--led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-a--led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-a/led-port-2/lamp" data-class="led" data-states="off provisioned active active-ranging fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-a--led-port-3" data-path="fwlt-a/led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.44,203.72)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-a--led-port-3</title>
+      <circle id="fwlt-a--led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-a--led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-a/led-port-3/lamp" data-class="led" data-states="off provisioned active active-ranging fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-a--led-port-4" data-path="fwlt-a/led-port-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.44,283.68)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-a--led-port-4</title>
+      <circle id="fwlt-a--led-port-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-a--led-port-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-a/led-port-4/lamp" data-class="led" data-states="off provisioned active active-ranging fault" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

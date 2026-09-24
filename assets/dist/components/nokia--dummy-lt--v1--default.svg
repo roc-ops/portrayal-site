@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="dummy-lt" data-path="dummy-lt" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(0,0)">
+    <title>dummy-lt</title>
+    <rect id="dummy-lt--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <g id="dummy-lt--screw-top" data-path="dummy-lt/screw-top" data-class="fastener" data-z-cyl="6.0">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="dummy-lt--screw-bottom" data-path="dummy-lt/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="dummy-lt--esd-mark" data-path="dummy-lt/esd-mark" data-class="label">
+      <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+      <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+    </g>
+    <g id="dummy-lt--part-label" data-path="dummy-lt/part-label" data-class="label">
+      <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+      <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+    </g>
+    <rect id="dummy-lt--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="dummy-lt/logo-zone" data-class="label" />
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

@@ -17,11 +17,14 @@
 
 import { createDevicePicker } from './devsel.js';
 import { nestedBays, applyOverrides, applyOccupantOverrides, applyRearOverrides, acceptSwaps, decodeSwaps,
+         occupantsOf,
          rawParam, liesOver, seatClaims, occupantRef, refusalReason,
          builtOccupants, builtBays, faceCages, cageAt, pruneCarrier,
-         freshBaysUnder, faceEntries, ownerPath } from './swap.js';
+         freshBaysUnder, seatFace, faceQueue, swapOverrides, faceEntries, ownerPath,
+         slotOptions, slotResolver } from './swap.js';
 import { jdist } from './dist.js';
 import { paintFields, unpaintFields } from './fields.js';
+import { fibreOf, farPath, fibreLabel, connectorLabel, moduleOf } from './optical.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -70,6 +73,7 @@ export const SHELL_CSS = `
           font-size:0.76rem; cursor:pointer; border-radius:4px; white-space:nowrap; }
   .node:hover { background:var(--control); }
   .node.sel { background:var(--hl); color:var(--sel-ink); }
+  .node.linked { outline:1px dashed var(--hl); outline-offset:-1px; }
   .node.grp { color:var(--dim); text-transform:uppercase; font-size:0.68rem;
               letter-spacing:0.05em; margin-top:0.25rem; }
   .node.grp .cls { text-transform:none; letter-spacing:0; }
@@ -126,6 +130,13 @@ export const SHELL_CSS = `
   .halo { fill:none; stroke:var(--hl); stroke-width:1.4; vector-effect:non-scaling-stroke;
           pointer-events:none; }
   .halo.pulse { animation: p 1.1s ease-out 2; }
+  /* THE FAR END OF A FIBRE is a dashed ring, not an outline on the part: an
+     outline is drawn in the drawing's units (mm), and on a 0.075 mm fibre dot
+     it was a solid block over half the ferrule that said nothing about which
+     fibre. Its stroke, dashes and padding are set per zoom in screen px by
+     sizeFarRing: non-scaling-stroke does not see the stage's CSS zoom, so at
+     20x a 1.4 "px" stroke was 28 px and filled the ring solid. */
+  .halo.linked { vector-effect:none; }
   @keyframes p { 0%,100%{ stroke-opacity:1 } 50%{ stroke-opacity:0.25 } }
 `;
 
@@ -217,6 +228,12 @@ export function createShell(opts = {}) {
   // the same reason - which cages exist depends on what the bays hold. The
   // rule for both kinds, and for a click inside either optic, is swap.js's
   // `cageAt` over `faceCages`, the list the 3D pass seats through as well.
+  //
+  // A SLOT AT ANY DEPTH is one too (B3 Task 10a): a cassette's duplex
+  // adapter, its bores, an adapter placed on the device - swap.js's
+  // `nestedSlots`. `cageFor` offers only the FREE level of a duplex adapter
+  // (cageAt); `cagesOnFace` is every slot, because a swap seats through it
+  // and a reload re-seats an emptied level and the filled one in any order.
   const cagesHere = () => (state.module ? [] : state.meta?.cages?.[bayView()] || []);
   const cagesOnFace = () => (state.module ? [] : faceCages(state.svg, cagesHere(), compByRef));
   function cageFor(path) {
@@ -224,14 +241,41 @@ export function createShell(opts = {}) {
     return cageAt(state.svg, path, cagesHere(), compByRef);
   }
 
+  // THE REF OF A DEVICE PLACEMENT, off whichever face draws it - the one fact
+  // about a slot on the device (`xc01/1`) that no index publishes
+  // (configs.json's cages carry no ref). What swap.js's slotResolver asks
+  // when there is no drawing to read the slot off.
+  // Only faces of the device and configuration on screen: `syncCfgBays` runs
+  // before the new device's first face is mounted, when what is held is the
+  // last device's. (The mounted face is always among `state.faces`.)
+  function placementRef(path) {
+    if (state.facesFor !== `${state.device}.${state.cfg}`) return null;
+    for (const f of Object.values(state.faces || {})) {
+      // with a ref: a group without one (a label, a cutout) at the same path
+      // must not shadow the placement
+      const r = f?.querySelector?.(`[data-path="${CSS.escape(path)}"][data-ref]`)?.getAttribute('data-ref');
+      if (r) return r.split(':')[0];
+    }
+    return null;
+  }
+  const allOf = o => Object.values(o || {}).flat();
+  // what the configuration on screen seats in each slot it keys, at the
+  // drawing's path (a deep key walked through its bays - builtOccupants)
+  const builtOccOf = cfg => builtOccupants(cfg, allOf(state.meta?.cages),
+                                           {bays: allOf(state.meta?.bays), compByRef, placementRef});
+
   // ---------------------------------------------------------------- stage
 
   let zoom = 1, panX = 0, panY = 0;
+  // one dashed ring per far end of a selected fibre (select); here because
+  // applyTransform re-pads them on every zoom
+  let farHalos = [];
   // set while the pointer is panning, so the click that ends a drag does not
   // also change the selection
   let dragged = false;
   function applyTransform() {
     if (state.svg) state.svg.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
+    padFarRings();
   }
   function fit() {
     const svg = state.svg; if (!svg) return;
@@ -260,14 +304,22 @@ export function createShell(opts = {}) {
     let on = false, sx = 0, sy = 0, px = 0, py = 0;
     const st = el.svgHost;
     st.addEventListener('pointerdown', e => { on = true; sx = e.clientX - panX; sy = e.clientY - panY;
-                                              px = e.clientX; py = e.clientY; dragged = false;
-                                              st.setPointerCapture(e.pointerId); });
+                                              px = e.clientX; py = e.clientY; dragged = false; });
     st.addEventListener('pointermove', e => { if (!on) return;
+                                              // released outside the stage before it became a drag, so
+                                              // nothing captured the pointerup
+                                              if (!e.buttons) { on = false; return; }
                                               // a few pixels of travel is a tremor, not a drag; without
                                               // this every click on a part reads as a pan and never
                                               // reaches the selection handler
-                                              if (Math.abs(e.clientX - px) + Math.abs(e.clientY - py) > 4)
+                                              if (!dragged && Math.abs(e.clientX - px) + Math.abs(e.clientY - py) > 4) {
                                                 dragged = true;
+                                                // CAPTURE ONLY ONCE IT IS A DRAG. Captured on pointerdown,
+                                                // the pointerup - and so the click - lands on this host
+                                                // div, and the <svg>'s click listener never hears a real
+                                                // mouse click on a part: only tree clicks selected.
+                                                st.setPointerCapture(e.pointerId);
+                                              }
                                               panX = e.clientX - sx; panY = e.clientY - sy; applyTransform(); });
     st.addEventListener('pointerup', () => { on = false; });
   })();
@@ -397,14 +449,18 @@ export function createShell(opts = {}) {
     'usb-a': 'USB-A', 'usb-c': 'USB-C', 'sc-apc': 'SC/APC', 'fiber': 'fibre',
     'coax': 'coax', 'ac': 'AC',
   };
-  const SPEED = {'1000base-t': '1000BASE-T', '10g-pon': '10G-PON', 'usb3': 'USB 3'};
+  // A speed is one of spec/schemas/speeds.yaml's closed set (lint L110), and
+  // every one of those reads right upper-cased - 1G, 2.5G, 1.6T - so there is
+  // no per-value table to keep in step. USB generation and PON flavour are
+  // their own attrs (data-usb, data-pon), so they are read on their own:
+  // "USB-A 3.0", "SC/APC 10G XGS-PON".
   const mediaLabel = m => MEDIA[m] || m.toUpperCase();
-  const speedLabel = s => SPEED[s] || s.toUpperCase();
   function portLabel(e) {
     const m = e.dataset.media;
     if (!m) return null;
-    return e.dataset.speed ? `${mediaLabel(m)} ${speedLabel(e.dataset.speed)}`
-                           : mediaLabel(m);
+    const d = e.dataset;
+    return [mediaLabel(m), d.usb, d.speed && d.speed.toUpperCase(),
+            d.pon && d.pon.toUpperCase()].filter(Boolean).join(' ');
   }
 
   // The targets of this node that live in another view, spelled as the manifest
@@ -432,12 +488,35 @@ export function createShell(opts = {}) {
       const m = occ && modelOf(occ);
       return m ? `${own} — ${m}` : own;
     }
+    // A REAR HOLE A SLOT IS SEEN THROUGH IS THAT SLOT (render.py stamps it).
+    // "open" means no occupant (no data-rear-ref); a ref that compByRef
+    // cannot resolve is not open - it is unresolved, so it labels with the
+    // ref itself rather than claiming the slot is empty.
+    if (e.dataset.rearOf) {
+      const ref = e.dataset.rearRef;
+      const c = ref && compByRef(ref.split(':')[0]);
+      const m = c?.attrs?.model || c?.name;
+      return `${e.dataset.rearOf} — ${ref ? (m || ref) : 'open'} (rear)`;
+    }
+    // A FIBRE ROW SAYS WHERE IT GOES; A REAR CONNECTOR, WHICH FRONT PORTS IT CARRIES
+    const mod = moduleOf(n.path);
+    if (mod) {
+      const entry = moduleEntry(mod);
+      const f = entry && fibreOf(n.path, entry, compByRef);
+      if (f) return fibreLabel(entry, f.endpoint) || own;
+      const rel = n.path.slice(mod.length + 1);
+      if (entry && !rel.includes('/') && n.projected) {
+        const carries = connectorLabel(entry, rel, 'rear');
+        if (carries) return `${own} — ${carries}`;
+      }
+    }
     const port = portLabel(e);
     if (port) return `${own} — ${port}`;
     const model = modelOf(e);
     if (model && model !== own) return `${own} — ${model}`;
-    const title = e.querySelector(':scope > title');
-    return (title && title.textContent.trim()) || own;
+    // an internal id (`cutout--3`) is not a name; the row's own id reads better
+    const title = e.querySelector(':scope > title')?.textContent.trim();
+    return title && !title.includes('--') ? title : own;
   }
 
   // Ordering rules. Tier comes from the component's class, never from the author,
@@ -473,7 +552,10 @@ export function createShell(opts = {}) {
   // a lamp reports a changing state, a legend never changes - and it is not
   // `furniture` either, because furniture is what you neither connect to nor
   // read, and reading is the whole job of a legend.
-  const ROLE = {traffic: 0, management: 1, service: 2, indicator: 3,
+  // `fabric` ranks WITH traffic: on a distributed chassis the interconnect
+  // ports are the other half of why the box exists, and on a fabric box they are
+  // all of it. The group's document order places them within the rank.
+  const ROLE = {traffic: 0, fabric: 0, management: 1, service: 2, indicator: 3,
                 furniture: 4, marking: 5};
   function roleOf(e) {
     const r = e && e.dataset.groupRole;
@@ -745,6 +827,18 @@ export function createShell(opts = {}) {
     for (const d of faceDocs()) { const e = d.querySelector(q); if (e) return e; }
     return null;
   }
+  // THE MODULE A PATH IS IN, as components.json knows it. The front draws it
+  // with its ref; the rear draws only a projection, whose ref sits on the
+  // cutout it is seen through (render.py `data-rear-ref`, kept by swaps).
+  function moduleEntry(module) {
+    if (!module) return null;
+    const drawn = elOf(module)?.dataset.ref;
+    const bay = module.slice(0, module.lastIndexOf('/module'));
+    const seen = drawn ? null : faceDocs().map(d => d.querySelector(
+      `[data-rear-of="${CSS.escape(bay)}"][data-rear-ref]`)).find(Boolean);
+    const ref = (drawn || seen?.dataset.rearRef || '').split(':')[0];
+    return ref ? compByRef(ref) : null;
+  }
   function pulledEls() { return faceDocs().flatMap(d => [...d.querySelectorAll('[data-portrayal-pulled]')]); }
   function pulledPaths() { return pulledEls().map(e => e.dataset.path).filter(Boolean); }
   function isPulled(path) { return !!elOf(path)?.hasAttribute('data-portrayal-pulled'); }
@@ -829,6 +923,82 @@ export function createShell(opts = {}) {
     if (off.length) setPulled(off, true);
   }
 
+  // A BOX AROUND A PART, in the mounted drawing's root coordinates. getBBox is
+  // in the element's OWN coordinate system and the ring is appended to the
+  // root, so the box has to be carried through every transform between them
+  // or it lands wherever that offset happens to point - which for a
+  // bay-mounted port is several slots away. `pad` is in root units.
+  function ringAround(target, cls, pad) {
+    // getScreenCTM is null for a target that is not actually rendered (e.g.
+    // display:none), which a pulled-away part can be even while its element
+    // is still in the DOM - draw no ring rather than crash on a null CTM.
+    const tm = target.getScreenCTM();
+    if (!tm) return null;
+    const b = target.getBBox();
+    const m = state.svg.getScreenCTM().inverse().multiply(tm);
+    const pt = (x, y) => ({x: m.a*x + m.c*y + m.e, y: m.b*x + m.d*y + m.f});
+    const cs = [pt(b.x, b.y), pt(b.x + b.width, b.y),
+                pt(b.x, b.y + b.height), pt(b.x + b.width, b.y + b.height)];
+    const xs = cs.map(c => c.x), ys = cs.map(c => c.y);
+    const r = document.createElementNS(NS, 'rect');
+    r.setAttribute('class', cls);
+    r._box = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+    padRing(r, pad);
+    state.svg.appendChild(r);
+    return r;
+  }
+  function padRing(r, pad) {
+    const [x0, y0, x1, y1] = r._box;
+    r.setAttribute('x', x0 - pad); r.setAttribute('y', y0 - pad);
+    r.setAttribute('width', x1 - x0 + 2 * pad);
+    r.setAttribute('height', y1 - y0 + 2 * pad);
+  }
+  // A FAR RING KEEPS ITS SCREEN SIZE AT ANY ZOOM: 4 px clear of the part, a
+  // 1.4 px stroke, 3/2 px dashes. Set once in drawing units, the ring grew
+  // with every wheel step until it boxed half the ferrule. `s` is screen px
+  // per drawing unit, the stage's CSS zoom included (getScreenCTM has it).
+  function screenScale() {
+    const ctm = state.svg?.getScreenCTM();
+    return ctm ? (Math.hypot(ctm.a, ctm.b) || 1) : null;
+  }
+  function sizeFarRing(r, s) {
+    padRing(r, 4 / s);
+    r.style.strokeWidth = String(1.4 / s);
+    r.style.strokeDasharray = `${3 / s} ${2 / s}`;
+  }
+  function padFarRings() {
+    if (!farHalos.length) return;
+    const s = screenScale();
+    if (s) for (const r of farHalos) sizeFarRing(r, s);
+  }
+  function clearHalos() {
+    if (halo) { halo.remove(); halo = null; }
+    for (const r of farHalos) r.remove();
+    farHalos = [];
+  }
+  // open every fold a row sits in, so the row can be seen
+  function openRow(row) {
+    for (let p = row.parentElement; p && p !== el.tree; p = p.parentElement)
+      if (p.classList?.contains('kids') && p.classList.contains('hid')) {
+        p.classList.remove('hid');
+        const tw = p.previousElementSibling?.querySelector('.tw');
+        if (tw?.textContent) tw.textContent = '▾';
+      }
+  }
+  // THE SELECTED ROW AND ITS FIBRE'S FAR ROWS, marked on whatever tree is
+  // drawn now. Every rebuild draws fresh rows that know nothing of either,
+  // which is how a 2D to 3D switch used to lose both highlights.
+  function markRows({open = false} = {}) {
+    const far = state.far || [];
+    for (const r of el.tree.querySelectorAll('.node')) {
+      const sel = state.sel != null && r.dataset.path === state.sel;
+      const lit = far.includes(r.dataset.path);
+      r.classList.toggle('sel', sel);
+      r.classList.toggle('linked', lit);
+      if (open && (sel || lit)) openRow(r);
+    }
+  }
+
   function select(path, fromTree) {
     state.sel = path;
     reveal(path);
@@ -850,7 +1020,22 @@ export function createShell(opts = {}) {
       for (const e of d.querySelectorAll('[data-portrayal-selected]')) e.removeAttribute('data-portrayal-selected');
       if (path != null) for (const e of d.querySelectorAll(qo)) e.setAttribute('data-portrayal-selected', '');
     }
-    if (halo) { halo.remove(); halo = null; }
+    // THE OTHER END OF A FIBRE is marked on every face, and its row lit. A
+    // splitter's common end has several (optical.js farPath returns an array
+    // for it), so `far` is always a list - empty when the path is no fibre.
+    const entry = path && moduleEntry(moduleOf(path));
+    const fib = entry && fibreOf(path, entry, compByRef);
+    const far = fib ? [].concat(farPath(fib.module, entry, fib.endpoint) || []).filter(Boolean) : [];
+    const qf = far.map(p => `[data-path="${CSS.escape(p)}"],[data-of="${CSS.escape(p)}"]`).join(',');
+    for (const d of faceDocs()) {
+      for (const e of d.querySelectorAll('[data-portrayal-linked]')) e.removeAttribute('data-portrayal-linked');
+      if (qf) for (const e of d.querySelectorAll(qf)) e.setAttribute('data-portrayal-linked', '');
+    }
+    state.far = far;
+    // lit and unfolded, but not scrolled to: the selected row keeps the scroll
+    for (const r of el.tree.querySelectorAll('.node'))
+      if (r.classList.toggle('linked', far.includes(r.dataset.path))) openRow(r);
+    clearHalos();
     // getScreenCTM is null while the SVG is hidden, which is exactly what a page
     // showing a 3D stage instead has done to it. Selection still stands; only
     // the halo waits until the drawing is on screen again.
@@ -861,30 +1046,30 @@ export function createShell(opts = {}) {
     // there is nothing to point at.
     const noExtent = target?.dataset.extent === 'none';
     // the halo is drawn in the mounted SVG, so only for a target that is in it
-    if (target && !noExtent && state.svg.contains(target) && state.svg.getScreenCTM()) {
-      // getBBox is in the element's OWN coordinate system. The halo is appended to
-      // the root, so the box has to be carried through every transform between them
-      // or it lands wherever that offset happens to point - which for a bay-mounted
-      // port is several slots away.
-      const b = target.getBBox();
-      const m = state.svg.getScreenCTM().inverse().multiply(target.getScreenCTM());
-      const pt = (x, y) => ({x: m.a*x + m.c*y + m.e, y: m.b*x + m.d*y + m.f});
-      const cs = [pt(b.x, b.y), pt(b.x + b.width, b.y),
-                  pt(b.x, b.y + b.height), pt(b.x + b.width, b.y + b.height)];
-      const xs = cs.map(c => c.x), ys = cs.map(c => c.y);
-      const x0 = Math.min(...xs), y0 = Math.min(...ys);
-      halo = document.createElementNS(NS, 'rect');
-      halo.setAttribute('class', 'halo pulse');
-      halo.setAttribute('x', x0 - 0.6); halo.setAttribute('y', y0 - 0.6);
-      halo.setAttribute('width', Math.max(...xs) - x0 + 1.2);
-      halo.setAttribute('height', Math.max(...ys) - y0 + 1.2);
-      state.svg.appendChild(halo);
+    const ctm = state.svg?.getScreenCTM();
+    if (target && !noExtent && state.svg.contains(target) && ctm)
+      halo = ringAround(target, 'halo pulse', 0.6);
+    // THE FAR END, where the mounted drawing has it: the part itself, else a
+    // projection of it. Padded by 4 screen px (sizeFarRing), so a fibre dot a
+    // fraction of a millimetre across still gets a ring the eye can find.
+    if (ctm) {
+      for (const p of far) {
+        const t = state.svg.querySelector(`[data-path="${CSS.escape(p)}"]`)
+               || state.svg.querySelector(`[data-of="${CSS.escape(p)}"]`);
+        // A far end hidden inside a pulled-out part (display:none, see the
+        // CSS rule) has no screen box to ring - skip it rather than let
+        // ringAround hand back nothing to push.
+        if (t && t.dataset.extent !== 'none' && !t.closest('[data-portrayal-pulled]')) {
+          const ring = ringAround(t, 'halo linked', 0);
+          if (ring) farHalos.push(ring);
+        }
+      }
+      padFarRings();
     }
     if (!fromTree) {
       const row = [...el.tree.querySelectorAll('.node')].find(r => r.dataset.path === path);
       if (row) {
-        for (let p = row.parentElement; p; p = p.parentElement)
-          if (p.classList?.contains('kids')) p.classList.remove('hid');
+        openRow(row);
         row.scrollIntoView({block: 'center'});
       }
     }
@@ -905,6 +1090,8 @@ export function createShell(opts = {}) {
     const bay = bayFor(path);
 
     let html = `<h2>${cls || 'node'}</h2><div class="row"><span>path</span><code>${path}</code></div>`;
+    for (const to of state.far || [])
+      html += `<div class="row"><span>fibre to</span><a href="#" data-go="${esc(to)}"><code>${esc(to)}</code></a></div>`;
     if (ref) html += `<div class="row"><span>component</span><code>${ref.split(':')[0]}</code></div>`;
 
     // Why nothing lit up. A region is allowed to name a part of the device that
@@ -934,12 +1121,21 @@ export function createShell(opts = {}) {
     // value is `cfgOccupants`, which is reset from THIS configuration's
     // `configs[].occupants` - never `cage.occupant`, which is only the DEFAULT
     // configuration's answer and would show another configuration's optic.
+    //
+    // A SLOT THAT SHIPS SOMETHING (B3) holds its `default` until the reader
+    // or the configuration says otherwise, so that is its current value when
+    // the state has no entry; the option it ships is marked "(ships with)"
+    // (swap.js `slotOptions`). A connector slot says so in its label.
     if (cage) {
-      const cur = state.cfgOccupants?.[cage.id] ?? '';
+      const cur = Object.prototype.hasOwnProperty.call(state.cfgOccupants || {}, cage.id)
+        ? state.cfgOccupants[cage.id] ?? '' : cage.default ?? '';
       const accepts = cage.accepts || [];
-      const opts = ['<option value="">— empty —</option>']
-        .concat(accepts.map(a => `<option value="${esc(a)}"${a === cur ? ' selected' : ''}>${esc(a)}</option>`));
-      html += `<div class="row"><span>optic</span><select id="optic" data-cage="${esc(cage.id)}">${opts.join('')}</select></div>`;
+      const opts = slotOptions(cage, cur).map(o =>
+        `<option value="${esc(o.value)}"${o.selected ? ' selected' : ''}>${esc(o.label)}</option>`);
+      const label = cage.kind === 'connector' ? 'connector' : 'optic';
+      html += `<div class="row"><span>${label}</span><select id="optic" data-cage="${esc(cage.id)}">${opts.join('')}</select></div>`;
+      if (cage.key && cage.key !== cage.id)
+        html += `<div class="row"><span>key</span><code>${esc(cage.key)}</code></div>`;
       if (!accepts.length)
         html += `<div class="row" style="color:var(--warn)">no generic modelled for this cage's family yet</div>`;
       // WHY A CHOSEN OPTIC IS NOT THERE, said where the choice was made. A
@@ -947,12 +1143,6 @@ export function createShell(opts = {}) {
       // leaves it holding what it held, which the select above now shows.
       const no = state.refused?.[cage.id];
       const why = {
-        // A cage in a well publishes a NEGATIVE lift (its sink), so the
-        // sign says which of the two the refusal is about.
-        'lift': (Number(cage.lift) < 0
-                  ? 'this cage sits in a well below the face'
-                  : 'this cage stands off the face')
-              + ', and the kit does not seat an optic into a cage off the face yet',
         'mirror': 'this cage is mirrored, and the build refuses to seat an '
                 + 'optic into a mirrored cage',
         'group-states': "this cage's group carries lamp states, which the build "
@@ -980,6 +1170,25 @@ export function createShell(opts = {}) {
     if (optic) optic.onchange = () => swapCage(optic.dataset.cage, optic.value);
     const open = box.querySelector('#open');
     if (open) open.onclick = () => openModule(ref.split(':')[0]);
+    for (const a of box.querySelectorAll('[data-go]'))
+      a.addEventListener('click', ev => { ev.preventDefault(); goTo(ev.currentTarget.dataset.go); });
+  }
+
+  // FOLLOW A FIBRE to its far end: select it, switching view when that end is
+  // drawn only on another face and the tree is not merged (a merged tree
+  // already lists every face). The faces not on screen are fetched first if
+  // they are not held yet, or a rear end would never be found from the front.
+  async function goTo(to) {
+    const q = `[data-path="${CSS.escape(to)}"],[data-of="${CSS.escape(to)}"]`;
+    const find = () => state.svg?.querySelector(q) ? state.view
+      : Object.entries(state.faces || {}).find(([, d]) => d.querySelector(q))?.[0];
+    let onView = find();
+    if (!onView && !state.module) { await loadFaces().catch(() => {}); onView = find(); }
+    if (onView && onView !== state.view && !state.merge) {
+      state.view = onView; el.view.value = onView;
+      await loadStage();
+    }
+    select(to);
   }
 
   // Swapping is done in the DOM, not by rebuilding: fetch the component's compiled
@@ -1031,10 +1240,17 @@ export function createShell(opts = {}) {
     const builtRef = Object.prototype.hasOwnProperty.call(cb, key) ? cb[key] || null
       : bayFor(key)?.default ?? null;
     const again = ref && ref === builtRef;
-    const rebuilt = again
-      ? builtOccupants(cfg, Object.values(state.meta?.cages || {}).flat()) : {};
+    const rebuilt = again ? builtOccOf(cfg) : {};
     const fresh = again ? freshBaysUnder(cfg, key, ref, compByRef) : {};
-    Object.assign(state, pruneCarrier(state, key, rebuilt, fresh));
+    // what a fresh seat of `ref` ships in each slot under it (B3, P5): its
+    // default, read with `ref` in the bay and the state's answer elsewhere
+    const own = (o, k) => Object.prototype.hasOwnProperty.call(o || {}, k);
+    const R = slotResolver({bays: allOf(state.meta?.bays), cages: allOf(state.meta?.cages),
+      compByRef, placementRef,
+      bayRef: (p, bay) => p === key ? ref : own(state.cfgBays, p) ? state.cfgBays[p]
+        : own(fresh, p) ? fresh[p] : bay.default ?? null});
+    const ships = k => R.entryAt(k)?.default ?? null;
+    Object.assign(state, pruneCarrier(state, key, rebuilt, fresh, ships));
     // and a swap still loading under it is no longer anyone's to make: its
     // claim retired, it neither touches the drawing nor writes the state
     claim.retireUnder(key);
@@ -1112,8 +1328,14 @@ export function createShell(opts = {}) {
       // records what the drawing still holds, not what was asked for, and the
       // inspector says the chosen one did not load.
       else if (failed.includes(key)) {
+        const was = Object.prototype.hasOwnProperty.call(state.cfgOccupants, key)
+          ? state.cfgOccupants[key] : cage.default ?? null;
         state.failed[key] = ref;
-        ref = occupantRef(svg, key);
+        // what the drawing still holds; on a back the projection keeps no
+        // ref to read it by (swap.js isOccupantOf), and it is what the state
+        // said the slot held before this swap
+        ref = occupantRef(svg, cage)
+          ?? (cage.projection && occupantsOf(svg, cage).length ? was : null);
         console.warn(`[portrayal] ${key}: ${state.failed[key]} did not load; `
                      + `the cage keeps ${ref || 'nothing'}`);
       }
@@ -1125,7 +1347,8 @@ export function createShell(opts = {}) {
 
   async function swapBay(bayId, ref) {
     if (!(await seat(bayId, ref))) return;
-    refreshTree();
+    seatDetached({[bayId]: stateRef(bayId)}).then(refreshMerged, warnFaces);
+    redrawTree();
     select(bayId, true);
     emit('change');
   }
@@ -1135,7 +1358,8 @@ export function createShell(opts = {}) {
   async function swapCage(cageId, ref) {
     if (!cagesOnFace().some(c => c.id === cageId)) return;
     if (!(await seat(cageId, ref))) return;
-    refreshTree();
+    seatDetached({[cageId]: stateRef(cageId)}).then(refreshMerged, warnFaces);
+    redrawTree();
     select(cageId, true);
     emit('change');
   }
@@ -1148,6 +1372,12 @@ export function createShell(opts = {}) {
   // here and kept, because the face that has them may be the next one shown.
   const depth = k => k.split('/module/').length;
   const byDepth = keys => [...keys].sort((a, b) => depth(a) - depth(b) || (a < b ? -1 : 1));
+  // What the state holds for a key it has touched. A cage's answer is in
+  // cfgOccupants and a bay's in cfgBays - every write puts a key in exactly
+  // one - which also sorts a card's cage from a nested bay, whose keys look
+  // alike.
+  const stateRef = key => Object.prototype.hasOwnProperty.call(state.cfgOccupants, key)
+    ? state.cfgOccupants[key] : state.cfgBays[key];
   async function reseat() {
     // THE FACE AND CONFIGURATION THIS RESEAT STARTED ON. `seat()`'s own
     // checks catch a change while ONE key's skin is loading, but not this:
@@ -1166,25 +1396,26 @@ export function createShell(opts = {}) {
     // and stop - the remaining keys are for whatever reseat the new
     // config's own loadStage already ran.
     const svg = state.svg, gen = state.cfgGen;
-    for (const key of byDepth(state.touched)) {
-      if (svg !== state.svg || gen !== state.cfgGen) return;
-      // a key a card swap pruned while this loop ran is no longer the state's
-      if (!state.touched.has(key)) continue;
-      // a cage's answer is in cfgOccupants and a bay's in cfgBays - every
-      // write puts a key in exactly one - which also sorts a card's cage from
-      // a nested bay, whose keys look alike
-      const cage = Object.prototype.hasOwnProperty.call(state.cfgOccupants, key);
-      await seat(key, cage ? state.cfgOccupants[key] : state.cfgBays[key]);
-    }
     // A SWAPPED BAY SEEN FROM BEHIND. This face may have no bays and still
     // show one: a rear hole names the front bay whose module's back it holds
     // (render.py's `rear:`). `seat` looks for the bay on this face and so never
     // reaches it; the swapped bays are re-seated through the hole instead.
-    if (svg !== state.svg || gen !== state.cfgGen || !svg?.querySelector('[data-rear-of]')) return;
-    const rear = {};
-    for (const key of state.touched)
-      if (Object.prototype.hasOwnProperty.call(state.cfgBays, key)) rear[key] = state.cfgBays[key];
-    if (Object.keys(rear).length) await applyRearOverrides(svg, rear, loadSkin, compByRef);
+    // FIRST, before the keys (B3 Task 10b): a back's own slots - its MTP
+    // bulkheads, `bay-1/module/mtp1` - are keys like any other, and they
+    // must be seated into the back the state holds, not into the build's
+    // back that this replaces.
+    if (svg?.querySelector('[data-rear-of]')) {
+      const rear = {};
+      for (const key of state.touched)
+        if (Object.prototype.hasOwnProperty.call(state.cfgBays, key)) rear[key] = state.cfgBays[key];
+      if (Object.keys(rear).length) await applyRearOverrides(svg, rear, loadSkin, compByRef);
+    }
+    for (const key of byDepth(state.touched)) {
+      if (svg !== state.svg || gen !== state.cfgGen) return;
+      // a key a card swap pruned while this loop ran is no longer the state's
+      if (!state.touched.has(key)) continue;
+      await seat(key, stateRef(key));
+    }
   }
 
   // THE SWAPS A RELOAD CARRIES (the explorer's `swap=`), taken into the state
@@ -1198,16 +1429,33 @@ export function createShell(opts = {}) {
   // or cage accepts. A link written for another device, or edited by hand,
   // cannot seat anything the inspector could never have offered.
   async function applySwaps(map) {
-    const all = o => Object.values(o || {}).flat();
+    const all = allOf;
     const bays = all(state.meta?.bays);
     const own = (o, k) => Object.prototype.hasOwnProperty.call(o || {}, k);
     // what this configuration BUILT at a path - the configuration's own map,
     // through builtBays (a nested key is the manifest's, not the drawing's),
     // not the state, which a swap has already moved; undefined = no answer
-    const cb = builtBays((state.meta?.configs || []).find(c => c.name === state.cfg));
+    const cfg = (state.meta?.configs || []).find(c => c.name === state.cfg);
+    const cb = builtBays(cfg);
     const built = p => own(cb, p) ? cb[p] || null
       : bays.find(b => b.id === p)?.default ?? undefined;
-    const {accepted, ignored, cages} = acceptSwaps(map, {bays, cages: all(state.meta?.cages), built, compByRef});
+    // and in each slot it keys: undefined for a slot it leaves at its default
+    const bo = builtOccOf(cfg);
+    const builtOcc = p => own(bo, p) ? bo[p] : undefined;
+    const gate = () => acceptSwaps(map, {bays, cages: all(state.meta?.cages), built, builtOcc,
+                                         compByRef, placementRef});
+    let verdict = gate();
+    // A SLOT ON A DEVICE PLACEMENT is found through the placement's ref, which
+    // only a face that draws it can give (placementRef). The face on screen
+    // is the one the link names; a key on another face - a bore swapped on
+    // the front, the link written from the rear - is known once the other
+    // faces are held, so they are fetched and the gate asked again.
+    if (verdict.ignored.length && !state.module
+        && (state.meta?.views || []).some(v => !state.faces?.[v])) {
+      await loadFaces().catch(() => 0);
+      verdict = gate();
+    }
+    const {accepted, ignored, cages} = verdict;
     // `cages` says which accepted keys are cages - a card's among them, whose
     // key looks like a nested bay's. Shallowest first (acceptSwaps' order), so
     // a card the link swaps drops what the build had under it (dropUnder)
@@ -1222,6 +1470,12 @@ export function createShell(opts = {}) {
       state.touched.add(key);
     }
     await reseat();
+    // the faces held but not mounted take the same entries - as the state
+    // now answers them, so a cage seat() refused is empty there too
+    const seated = {};
+    for (const key of Object.keys(accepted))
+      if (state.touched.has(key)) seated[key] = stateRef(key);
+    seatDetached(seated).then(refreshMerged, warnFaces);
     refreshTree();
     emit('change');
     return {ignored};
@@ -1237,23 +1491,105 @@ export function createShell(opts = {}) {
   // up through that or a 12-drive front reads the 24-drive bay list. `views`
   // at the top level is faces only, which is what loadFaces walks - a variant
   // has no file of its own to fetch.
-  function bayView() {
+  function bayView(view = state.view) {
     const c = (state.meta?.configs || []).find(c => c.name === state.cfg);
-    return c?.views?.[state.view] || state.view;
+    return c?.views?.[view] || view;
   }
 
-  async function loadFaces() {
-    if (state.module) return;
+  // THE FACES HELD BUT NOT MOUNTED ARE SEATED TOO. loadFaces parses them from
+  // the build, which knows only the configuration, and `reseat()` seats only
+  // the face on screen - so the merged tree listed a cassette the reader had
+  // swapped in on the rear (mounted) and its bay as "open" on the front. Each
+  // detached face goes through swap.js's `seatFace`, the pass the 3D scene
+  // makes on its own copy of the text: when it is loaded, with the state's
+  // whole delta against the build (`swapDelta`, the map index.html hands 3D
+  // and writes into `swap=`), and on every later swap, with that one entry.
+  //
+  // IN PLACE, NOT RE-FETCHED: a held face also carries what the reader did to
+  // it - parts pulled, fields painted - and a fresh parse would drop it. The
+  // ordering and the record of what each face holds are swap.js's
+  // `faceQueue`; the faces it is asked about are the ones held for THIS
+  // device and configuration when the job was asked for (`facesFor`).
+  const faceParts = view => ({bays: state.meta?.bays?.[bayView(view)] || [],
+                              cages: state.meta?.cages?.[bayView(view)] || []});
+  function swapDelta() {
+    return swapOverrides({
+      cfg: (state.meta?.configs || []).find(c => c.name === state.cfg),
+      bays: Object.values(state.meta?.bays || {}).flat(),
+      cages: Object.values(state.meta?.cages || {}).flat(),
+      cfgBays: state.cfgBays, cfgOccupants: state.cfgOccupants, compByRef, placementRef,
+    });
+  }
+  const faceWork = faceQueue({
+    loadSkin,
+    seat: (face, view, map, skin) => seatFace(face, faceParts(view), map, skin, compByRef),
+  });
+  const warnFaces = err => console.warn('[portrayal] seating the faces not on screen', err);
+  // only when something the tree lists changed, and without losing the
+  // reader's place in it
+  const refreshMerged = n => { if (n && state.merge && !state.module) redrawTree(); };
+
+  function seatDetached(map) {
+    const key = state.facesFor;
+    return faceWork.swap(map, {
+      live: () => state.facesFor === key,
+      held: () => Object.entries(state.faces || {}).filter(([, f]) => f !== state.svg),
+    });
+  }
+
+  function loadFaces() {
+    if (state.module) return Promise.resolve(0);
     const key = `${state.device}.${state.cfg}`;
     if (state.facesFor !== key) { state.faces = {}; state.facesFor = key; }
-    for (const view of state.meta?.views || []) {
-      if (state.faces[view]) continue;
-      const file = `${DIST}/${state.device}.${state.cfg}.${view}.svg`;
-      const r = await fetch(file);
-      if (!r.ok) continue;
-      const doc = new DOMParser().parseFromString(await r.text(), 'image/svg+xml');
-      state.faces[view] = document.importNode(doc.documentElement, true);
+    return faceWork.load(state.meta?.views || [], {
+      live: () => state.facesFor === key && !state.module,
+      has: view => !!state.faces[view],
+      fetch: async view => {
+        const r = await fetch(`${DIST}/${state.device}.${state.cfg}.${view}.svg`);
+        if (!r.ok) return null;
+        const doc = new DOMParser().parseFromString(await r.text(), 'image/svg+xml');
+        return document.importNode(doc.documentElement, true);
+      },
+      delta: swapDelta,
+      // the mounted face may have arrived for this view while it loaded
+      store: (view, face) => !state.faces[view] && !!(state.faces[view] = face),
+    });
+  }
+
+  // THE TREE AGAIN, WITH THE READER STILL IN IT. refreshTree draws every fold
+  // as a fresh tree draws it and marks nothing selected - which is right for
+  // a new device, and wrong for a redraw nobody asked for: a swap seated into
+  // the other faces a moment later folded the tree shut and lost the row the
+  // reader had just picked. A fold is known by its chain of labels up to its
+  // face's heading, since a group's row has no path and one group name
+  // recurs on every face.
+  function foldKey(row) {
+    const label = r => r.dataset.path || r.querySelector('.nm')?.textContent || '';
+    const chain = [label(row)];
+    let at = row.parentElement;
+    for (; at && at !== el.tree; at = at.parentElement)
+      if (at.classList.contains('kids')) chain.unshift(label(at.previousElementSibling));
+    let top = row;
+    while (top.parentElement && top.parentElement !== el.tree) top = top.parentElement;
+    for (let h = top.previousElementSibling; h; h = h.previousElementSibling)
+      if (h.classList.contains('face')) { chain.unshift(label(h)); break; }
+    return chain.join('\u0000');
+  }
+  function redrawTree() {
+    const folds = () => [...el.tree.querySelectorAll('.node')]
+      .filter(r => r.nextElementSibling?.classList.contains('kids'));
+    const shut = new Map(folds().map(r => [foldKey(r), r.nextElementSibling.classList.contains('hid')]));
+    const top = el.tree.scrollTop;
+    refreshTree();
+    for (const r of folds()) {
+      const k = foldKey(r);
+      if (!shut.has(k)) continue;
+      r.nextElementSibling.classList.toggle('hid', shut.get(k));
+      const tw = r.querySelector('.tw');
+      if (tw?.textContent) tw.textContent = shut.get(k) ? '▸' : '▾';
     }
+    markRows();
+    el.tree.scrollTop = top;
   }
   function refreshTree() {
     // `merge` is the host saying "every face is visible": one section per
@@ -1269,6 +1605,9 @@ export function createShell(opts = {}) {
     } else {
       renderTree(buildTree(state.svg));
     }
+    // a fresh tree (a 2D/3D switch) opens onto the selection and its far
+    // rows; redrawTree then puts the reader's own folds back over this
+    markRows({open: true});
     refreshPulled();
   }
 
@@ -1288,6 +1627,8 @@ export function createShell(opts = {}) {
     el.svgHost.appendChild(svg);
     state.svg = svg;
     state.sel = null;
+    state.far = [];
+    farHalos = [];        // they were drawn in the drawing just replaced
     // THE OTHER FACES ARE STILL THE SAME DEVICE. In 2D one view is on screen
     // and the tree lists it; in 3D every face is on screen at once, so a
     // tree pinned to `state.view` lists a sixth of what the reader is looking
@@ -1373,7 +1714,7 @@ export function createShell(opts = {}) {
     // cages' own `occupant`, which is the default configuration's answer -
     // read through swap.js's `builtOccupants`, which reduces a mapping value
     // to its ref and drops a chained key that names no cage
-    state.cfgOccupants = builtOccupants(c, Object.values(state.meta.cages || {}).flat());
+    state.cfgOccupants = builtOccOf(c);
     state.touched = new Set();
     state.refused = {};
     state.failed = {};
@@ -1467,7 +1808,7 @@ export function createShell(opts = {}) {
   return {
     state, el, ready, on, emit, setFields, fieldsOf,
     select, fit, refreshTree, loadFaces, loadDevice, loadStage, openModule, swapBay,
-    swapCage, cageFor, applySwaps,
+    swapCage, cageFor, applySwaps, swapDelta,
     over, setPulled, pulledPaths,
     compByRef, devices: () => DEVICES, components: () => COMPONENTS,
     device: () => DEVICES.find(d => d.name === state.device),

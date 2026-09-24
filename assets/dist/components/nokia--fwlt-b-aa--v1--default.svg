@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-alarm { --led-color: #d0021b; }
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-fault { --led-color: #d0021b; }
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-init { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-init { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/fwlt-b-aa@'] .state-provisioned { --led-color: #f2c200; }</style>
+  <g id="fwlt-b-aa" data-path="fwlt-b-aa" data-class="line-card" data-behaviour="fills" data-ref="nokia/fwlt-b-aa@1:1.3.0" data-body-depth="225.0" data-wall="#8d9298" data-model="FWLT-B AA" data-part-number="3FE 72955 AA" data-power-draw-max-w="148" data-power-draw-typical-w="126" data-power-scope="includes the SFP+ optics, per the Safety Manual note that PON line-card figures include their optics" data-weight-kg="2.0" data-xgs-pon="8" transform="translate(0,0)">
+    <title>fwlt-b-aa</title>
+    <rect id="fwlt-b-aa--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <rect id="fwlt-b-aa--side-rail" x="0" y="0" width="0.9" height="405.0" fill="#a9aeb4" />
+    <g id="fwlt-b-aa--housings">
+      <rect x="2.6" y="35.75" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="37.15" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="75.69" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="77.09" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="115.63" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="117.03" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="155.57" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="156.97" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="195.51" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="196.91" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="235.45" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="236.85" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="275.39" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="276.79" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+      <rect x="2.6" y="315.33" width="17.9" height="37.2" fill="#bfc3c8" stroke="#8d9298" stroke-width="0.2" />
+      <rect x="4.2" y="316.73" width="14.3" height="25.6" rx="0.6" fill="#a4a9af" stroke="#7d848c" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-b-aa--lips">
+      <rect id="fwlt-b-aa--lip-1" x="2.6" y="62.75" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-1" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-2" x="2.6" y="102.69" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-2" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-3" x="2.6" y="142.63" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-3" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-4" x="2.6" y="182.57" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-4" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-5" x="2.6" y="222.51" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-5" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-6" x="2.6" y="262.45" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-6" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-7" x="2.6" y="302.39" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-7" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+      <rect id="fwlt-b-aa--lip-8" x="2.6" y="342.33" width="17.9" height="10.2" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.2" data-path="fwlt-b-aa/lip-8" data-class="mechanical" data-z-out="4.9749" data-z-profile-y="0:4.97487,10.2:0" data-facet-deg="26" data-facet-facing="down" />
+    </g>
+    <rect id="fwlt-b-aa--logo-zone" x="6" y="11" width="12" height="10" fill="none" data-path="fwlt-b-aa/logo-zone" data-class="label" />
+    <g id="fwlt-b-aa--silkscreen">
+      <text x="11.9" y="25" font-family="Arial" font-size="2.2" font-weight="bold" fill="#1d2023" text-anchor="middle">FWLT-B</text>
+      <text x="6.4" y="32.45" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="end">ALM</text>
+      <text x="16" y="32.45" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">PWR</text>
+      <path d="M 10 379.2 L 15.2 381.75 L 10 384.3 Z" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <circle cx="11.87" cy="381.75" r="0.7" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 12.6 385.4 L 16.2 391.6 L 9 391.6 Z" fill="none" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 11.4 390.6 Q 12.4 388 13.5 389.4" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="21.6" y="53.25" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 53.25)">PORT 1</text>
+      <text x="21.6" y="93.19" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 93.19)">PORT 2</text>
+      <text x="21.6" y="133.13" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 133.13)">PORT 3</text>
+      <text x="21.6" y="173.07" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 173.07)">PORT 4</text>
+      <text x="21.6" y="213.01" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 213.01)">PORT 5</text>
+      <text x="21.6" y="252.95" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 252.95)">PORT 6</text>
+      <text x="21.6" y="292.89" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 292.89)">PORT 7</text>
+      <text x="21.6" y="332.83" font-family="Arial" font-size="1.8" font-weight="bold" fill="#1d2023" text-anchor="middle" transform="rotate(90 21.6 332.83)">PORT 8</text>
+    </g>
+    <g id="fwlt-b-aa--screw-top" data-z-cyl="6.0">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="18.7" cy="5.25" r="4.517" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.283" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 17.479 5.25 H 19.921 M 18.7 4.029 V 6.471" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="fwlt-b-aa--screw-bottom" data-z-cyl="6.0">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+      <circle cx="18.7" cy="399.75" r="4.517" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.283" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 17.479 399.75 H 19.921 M 18.7 398.529 V 400.971" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="fwlt-b-aa--ejector-top" data-z-out="4.2">
+      <rect x="1.5" y="0" width="2.8" height="13.2" fill="#3a3f44" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="0.5" y="13.2" width="4.8" height="18" rx="0.4" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 0.5 19.2 H 5.3" stroke="#4a4f55" stroke-width="0.2" />
+      <path d="M 0.5 25.2 H 5.3" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-b-aa--ejector-bottom" data-z-out="4.2">
+      <rect x="0.5" y="373.4" width="4.8" height="18.8" rx="0.4" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <path d="M 0.5 379.67 H 5.3" stroke="#4a4f55" stroke-width="0.2" />
+      <path d="M 0.5 385.93 H 5.3" stroke="#4a4f55" stroke-width="0.2" />
+      <rect x="1.5" y="392.2" width="2.8" height="12.8" fill="#3a3f44" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="fwlt-b-aa--port-1" data-path="fwlt-b-aa/port-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,44.95) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-1</title>
+      <rect id="fwlt-b-aa--port-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-1/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-2" data-path="fwlt-b-aa/port-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,84.89) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-2</title>
+      <rect id="fwlt-b-aa--port-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-2/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-3" data-path="fwlt-b-aa/port-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,124.83) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-3</title>
+      <rect id="fwlt-b-aa--port-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-3/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-4" data-path="fwlt-b-aa/port-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,164.77) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-4</title>
+      <rect id="fwlt-b-aa--port-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-4/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-5" data-path="fwlt-b-aa/port-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,204.71) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-5</title>
+      <rect id="fwlt-b-aa--port-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-5/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-6" data-path="fwlt-b-aa/port-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,244.65) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-6</title>
+      <rect id="fwlt-b-aa--port-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-6/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-7" data-path="fwlt-b-aa/port-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,284.59) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-7</title>
+      <rect id="fwlt-b-aa--port-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-7/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--port-8" data-path="fwlt-b-aa/port-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-pon="xgs-pon" data-speed="10g" transform="translate(3.75,324.53) rotate(90 7.25 5.0)" data-group="sfp-plus" data-group-role="traffic" data-description="the eight XGS-PON ports, SFP+ cages for XGS dual-rate OLT optics, PORT1 to PORT8 top to bottom">
+      <title>fwlt-b-aa--port-8</title>
+      <rect id="fwlt-b-aa--port-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fwlt-b-aa/port-8/opening" data-class="cutout" />
+      <rect id="fwlt-b-aa--port-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fwlt-b-aa--port-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fwlt-b-aa--port-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fwlt-b-aa--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fwlt-b-aa--led-alm" data-path="fwlt-b-aa/led-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(6.6,29.9)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fwlt-b-aa--led-alm</title>
+      <circle id="fwlt-b-aa--led-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="fwlt-b-aa--led-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.45" />
+    </g>
+    <g id="fwlt-b-aa--led-pwr" data-path="fwlt-b-aa/led-pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(11.8,29.9)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fwlt-b-aa--led-pwr</title>
+      <circle id="fwlt-b-aa--led-pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="fwlt-b-aa--led-pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-pwr/lamp" data-class="led" data-states="off init on" data-z-dome="0.45" />
+    </g>
+    <g id="fwlt-b-aa--led-port-1" data-path="fwlt-b-aa/led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,57.15)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-1</title>
+      <circle id="fwlt-b-aa--led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-1/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-2" data-path="fwlt-b-aa/led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,97.09)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-2</title>
+      <circle id="fwlt-b-aa--led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-2/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-3" data-path="fwlt-b-aa/led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,137.03)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-3</title>
+      <circle id="fwlt-b-aa--led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-3/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-4" data-path="fwlt-b-aa/led-port-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,176.97)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-4</title>
+      <circle id="fwlt-b-aa--led-port-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-4/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-5" data-path="fwlt-b-aa/led-port-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,216.91)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-5</title>
+      <circle id="fwlt-b-aa--led-port-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-5/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-6" data-path="fwlt-b-aa/led-port-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,256.85)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-6</title>
+      <circle id="fwlt-b-aa--led-port-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-6/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-7" data-path="fwlt-b-aa/led-port-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,296.79)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-7</title>
+      <circle id="fwlt-b-aa--led-port-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-7/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g id="fwlt-b-aa--led-port-8" data-path="fwlt-b-aa/led-port-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.2,336.73)" data-group="pon-leds" data-group-role="indicator" data-description="one PON lamp per port, on the left of its cage (led-port-N serves port-N)">
+      <title>fwlt-b-aa--led-port-8</title>
+      <circle id="fwlt-b-aa--led-port-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fwlt-b-aa--led-port-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fwlt-b-aa/led-port-8/lamp" data-class="led" data-states="off provisioned active fault" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

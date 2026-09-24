@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="33.1mm" height="213.5mm" viewBox="0 0 33.1 213.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fan-cover-fx4" data-path="fan-cover-fx4" data-class="blank" data-behaviour="fills" data-ref="nokia/fan-cover-fx4@1:1.1.0" data-model="FX-4 fan cover" data-role="access-cover" transform="translate(0,0)">
+    <title>fan-cover-fx4</title>
+    <path id="fan-cover-fx4--face" fill-rule="evenodd" fill="#c9ccd0" stroke="#8d9298" stroke-width="0.35" d="M 0.6 0 H 32.5 A 0.6 0.6 0 0 1 33.1 0.6 V 212.9 A 0.6 0.6 0 0 1 32.5 213.5 H 0.6 A 0.6 0.6 0 0 1 0 212.9 V 0.6 A 0.6 0.6 0 0 1 0.6 0 Z M 18.2 194.5 A 1.9 1.9 0 1 0 14.4 194.5 A 1.9 1.9 0 1 0 18.2 194.5 Z" data-path="fan-cover-fx4/face" data-class="panel" />
+    <rect x="1.2" y="1.2" width="30.7" height="211.1" rx="0.4" fill="none" stroke="#a7acb1" stroke-width="0.25" />
+    <g id="fan-cover-fx4--screw" data-path="fan-cover-fx4/screw" data-class="fastener">
+      <circle cx="18.0" cy="178.1" r="6.7" fill="#2b2e32" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="18.0" cy="178.1" r="2.2" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 16.8 178.1 H 19.2 M 18.0 176.9 V 179.3" stroke="#15171a" stroke-width="0.35" />
+    </g>
+    <g id="fan-cover-fx4--lamp-window" data-path="fan-cover-fx4/lamp-window" data-class="window">
+      <circle cx="16.3" cy="194.5" r="1.9" fill="none" stroke="#3a3f44" stroke-width="0.35" />
+    </g>
+    <g id="fan-cover-fx4--silkscreen" font-family="Arial, Helvetica, sans-serif" font-weight="bold" fill="#1d2023" text-anchor="middle">
+      <path d="M 14.5 189.6 L 18.1 189.6 M 16.3 188.2 L 16.3 191.0" stroke="#1d2023" stroke-width="0.4" fill="none" />
+      <text x="20.9" y="133.9" font-size="6.6" transform="rotate(-90 20.9 133.9)">7360 ISAM FX-4</text>
+      <text x="10.7" y="173.8" font-size="2.8" transform="rotate(-90 10.7 173.8)">NTA</text>
+      <text x="10.7" y="147.4" font-size="2.8" transform="rotate(-90 10.7 147.4)">NTIO</text>
+      <text x="10.7" y="119.7" font-size="2.8" transform="rotate(-90 10.7 119.7)">NTB</text>
+      <text x="10.7" y="89.7" font-size="2.8" transform="rotate(-90 10.7 89.7)">01</text>
+      <text x="10.7" y="64.8" font-size="2.8" transform="rotate(-90 10.7 64.8)">02</text>
+      <text x="10.7" y="39.9" font-size="2.8" transform="rotate(-90 10.7 39.9)">03</text>
+      <text x="10.7" y="15.7" font-size="2.8" transform="rotate(-90 10.7 15.7)">04</text>
+    </g>
+    <rect id="fan-cover-fx4--logo-zone" x="4.0" y="2.0" width="25.0" height="8.0" fill="none" data-path="fan-cover-fx4/logo-zone" data-class="logo-zone" />
+    <g data-cp="mate" data-cp-at="16.55 106.75" data-cp-dir="rear" />
+  </g>
+</svg>

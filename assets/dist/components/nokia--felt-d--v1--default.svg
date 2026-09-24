@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/felt-d@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/felt-d@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/felt-d@'] .state-amber { --led-color: #ff9f00; }
+    g[data-ref^='nokia/felt-d@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/felt-d@'] .state-low-temperature { --led-color: #d0021b; }
+    g[data-ref^='nokia/felt-d@'] .state-low-temperature { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/felt-d@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/felt-d@'] .state-warming-up { --led-color: #d0021b; }
+    g[data-ref^='nokia/felt-d@'] .state-warming-up { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="felt-d" data-path="felt-d" data-class="line-card" data-behaviour="fills" data-ref="nokia/felt-d@1:1.1.0" data-body-depth="205.0" data-wall="#8d9298" data-model="FELT-D" data-part-number="3FE 78462 AA" data-power-draw-max-w="91" data-power-draw-typical-w="80" data-qsfp28="2" data-sfp-plus="18" data-weight-kg="1.7" transform="translate(0,0)">
+    <title>felt-d</title>
+    <rect id="felt-d--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <path d="M 25 10.4 H 15.58 Q 14.08 10.4 14.08 8.9 V 0" fill="none" stroke="#8d9298" stroke-width="0.25" />
+    <path d="M 25 394.4 H 15.58 Q 14.08 394.4 14.08 395.9 V 405" fill="none" stroke="#8d9298" stroke-width="0.25" />
+    <circle cx="9.96" cy="32.2" r="1.7" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <circle cx="14.82" cy="32.2" r="1.7" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <rect x="6.83" y="42.38" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="75.13" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="107.93" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="140.73" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="173.53" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="206.34" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="239.14" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="271.94" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect x="6.83" y="304.69" width="10.9" height="30.05" rx="0.3" fill="#9ea3a9" stroke="#6f757c" stroke-width="0.2" />
+    <rect id="felt-d--logo-zone" x="8.5" y="12" width="14" height="8" fill="none" data-path="felt-d/logo-zone" data-class="label" />
+    <g id="felt-d--arrow-label" data-path="felt-d/arrow-label" data-class="label">
+      <rect x="7.18" y="382.8" width="14.56" height="11.1" fill="#d9dcdf" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 12.0 384.6 V 389.4 H 10.6 L 12.8 392.6 L 15.0 389.4 H 13.6 V 384.6 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="felt-d--silkscreen">
+      <text x="13.03" y="25.6" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="middle">FELT-D</text>
+      <text x="8.06" y="32.7" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="end">ALM</text>
+      <text x="16.72" y="32.7" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="start">PWR</text>
+      <path d="M 20.42 36.3 L 22.22 41.5 L 18.62 41.5 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 13.22 36.3 L 15.02 41.5 L 11.42 41.5 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 6.03 36.3 L 7.83 41.5 L 4.23 41.5 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="2.3" y="46.53" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 46.53)">1</text>
+      <text x="2.3" y="54.03" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 54.03)">2</text>
+      <text x="2.3" y="60.78" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 60.78)">3</text>
+      <text x="2.3" y="68.28" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 68.28)">4</text>
+      <text x="2.3" y="79.28" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 79.28)">5</text>
+      <text x="2.3" y="86.78" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 86.78)">6</text>
+      <text x="2.3" y="93.53" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 93.53)">7</text>
+      <text x="2.3" y="101.03" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 101.03)">8</text>
+      <text x="2.3" y="112.08" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 112.08)">9</text>
+      <text x="2.3" y="119.58" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 119.58)">10</text>
+      <text x="2.3" y="126.33" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 126.33)">11</text>
+      <text x="2.3" y="133.83" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 133.83)">12</text>
+      <text x="2.3" y="144.88" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 144.88)">13</text>
+      <text x="2.3" y="152.38" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 152.38)">14</text>
+      <text x="2.3" y="159.13" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 159.13)">15</text>
+      <text x="2.3" y="166.63" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 166.63)">16</text>
+      <text x="2.3" y="177.68" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 177.68)">17</text>
+      <text x="2.3" y="185.18" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 185.18)">18</text>
+      <text x="2.3" y="191.93" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 191.93)">19</text>
+      <text x="2.3" y="199.43" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 199.43)">20</text>
+      <text x="2.3" y="210.49" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 210.49)">21</text>
+      <text x="2.3" y="217.99" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 217.99)">22</text>
+      <text x="2.3" y="224.74" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 224.74)">23</text>
+      <text x="2.3" y="232.24" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 232.24)">24</text>
+      <text x="2.3" y="243.29" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 243.29)">25</text>
+      <text x="2.3" y="250.79" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 250.79)">26</text>
+      <text x="2.3" y="257.54" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 257.54)">27</text>
+      <text x="2.3" y="265.04" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 265.04)">28</text>
+      <text x="2.3" y="276.09" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 276.09)">29</text>
+      <text x="2.3" y="283.59" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 283.59)">30</text>
+      <text x="2.3" y="290.34" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 290.34)">31</text>
+      <text x="2.3" y="297.84" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 297.84)">32</text>
+      <text x="2.3" y="308.84" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 308.84)">33</text>
+      <text x="2.3" y="316.34" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 316.34)">34</text>
+      <text x="2.3" y="323.09" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 323.09)">35</text>
+      <text x="2.3" y="330.59" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 330.59)">36</text>
+      <text x="2.3" y="349.5" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 349.5)">37</text>
+      <text x="2.3" y="372.0" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle" transform="rotate(90 2.3 372.0)">41</text>
+    </g>
+    <g id="felt-d--lever-top" data-path="felt-d/lever-top" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="1.72" y="0.5" width="5.46" height="28.5" rx="0.6" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="1.72" y1="9.05" x2="7.18" y2="9.05" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="felt-d--lever-bottom" data-path="felt-d/lever-bottom" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="1.82" y="386.9" width="4.98" height="17.6" rx="0.6" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="1.82" y1="399.22" x2="6.8" y2="399.22" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="felt-d--screw-top" data-path="felt-d/screw-top" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      <path d="M 17.325 5.25 H 20.075 M 18.7 3.875 V 6.625" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="felt-d--screw-bottom" data-path="felt-d/screw-bottom" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      <path d="M 17.325 399.75 H 20.075 M 18.7 398.375 V 401.125" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="felt-d--led-alm" data-path="felt-d/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.96,31.2)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR (green/amber) and ALM (red)">
+      <title>felt-d--led-alm</title>
+      <circle id="felt-d--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-d--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-d/led-alm/lamp" data-class="led" data-states="off red warming-up low-temperature" data-z-dome="0.3" />
+    </g>
+    <g id="felt-d--led-pwr" data-path="felt-d/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.82,31.2)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR (green/amber) and ALM (red)">
+      <title>felt-d--led-pwr</title>
+      <circle id="felt-d--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="felt-d--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="felt-d/led-pwr/lamp" data-class="led" data-states="off green amber" data-z-dome="0.3" />
+    </g>
+    <g id="felt-d--sfp-1" data-path="felt-d/sfp-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,45.08) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-1</title>
+      <rect id="felt-d--sfp-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-1/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-1" data-path="felt-d/led-1" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,45.73) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-1</title>
+      <rect id="felt-d--led-1--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-1--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-1/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-2" data-path="felt-d/led-2" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,53.23) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-2</title>
+      <rect id="felt-d--led-2--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-2--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-2/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-2" data-path="felt-d/sfp-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,59.33) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-2</title>
+      <rect id="felt-d--sfp-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-2/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-3" data-path="felt-d/led-3" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,59.98) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-3</title>
+      <rect id="felt-d--led-3--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-3--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-3/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-4" data-path="felt-d/led-4" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,67.48) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-4</title>
+      <rect id="felt-d--led-4--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-4--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-4/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-3" data-path="felt-d/sfp-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,77.83) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-3</title>
+      <rect id="felt-d--sfp-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-3/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-5" data-path="felt-d/led-5" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,78.48) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-5</title>
+      <rect id="felt-d--led-5--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-5--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-5/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-6" data-path="felt-d/led-6" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,85.98) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-6</title>
+      <rect id="felt-d--led-6--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-6--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-6/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-4" data-path="felt-d/sfp-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,92.08) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-4</title>
+      <rect id="felt-d--sfp-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-4/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-7" data-path="felt-d/led-7" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,92.73) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-7</title>
+      <rect id="felt-d--led-7--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-7--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-7/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-8" data-path="felt-d/led-8" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,100.23) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-8</title>
+      <rect id="felt-d--led-8--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-8--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-8/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-5" data-path="felt-d/sfp-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,110.63) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-5</title>
+      <rect id="felt-d--sfp-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-5/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-9" data-path="felt-d/led-9" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,111.28) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-9</title>
+      <rect id="felt-d--led-9--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-9--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-9/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-10" data-path="felt-d/led-10" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,118.78) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-10</title>
+      <rect id="felt-d--led-10--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-10--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-10/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-6" data-path="felt-d/sfp-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,124.88) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-6</title>
+      <rect id="felt-d--sfp-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-6/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-11" data-path="felt-d/led-11" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,125.53) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-11</title>
+      <rect id="felt-d--led-11--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-11--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-11/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-12" data-path="felt-d/led-12" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,133.03) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-12</title>
+      <rect id="felt-d--led-12--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-12--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-12/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-7" data-path="felt-d/sfp-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,143.43) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-7</title>
+      <rect id="felt-d--sfp-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-7/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-13" data-path="felt-d/led-13" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,144.08) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-13</title>
+      <rect id="felt-d--led-13--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-13--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-13/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-14" data-path="felt-d/led-14" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,151.58) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-14</title>
+      <rect id="felt-d--led-14--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-14--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-14/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-8" data-path="felt-d/sfp-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,157.68) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-8</title>
+      <rect id="felt-d--sfp-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-8/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-15" data-path="felt-d/led-15" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,158.33) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-15</title>
+      <rect id="felt-d--led-15--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-15--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-15/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-16" data-path="felt-d/led-16" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,165.83) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-16</title>
+      <rect id="felt-d--led-16--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-16--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-16/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-9" data-path="felt-d/sfp-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,176.23) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-9</title>
+      <rect id="felt-d--sfp-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-9/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-17" data-path="felt-d/led-17" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,176.88) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-17</title>
+      <rect id="felt-d--led-17--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-17--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-17/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-18" data-path="felt-d/led-18" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,184.38) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-18</title>
+      <rect id="felt-d--led-18--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-18--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-18/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-10" data-path="felt-d/sfp-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,190.48) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-10</title>
+      <rect id="felt-d--sfp-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-10/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-19" data-path="felt-d/led-19" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,191.13) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-19</title>
+      <rect id="felt-d--led-19--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-19--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-19/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-20" data-path="felt-d/led-20" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,198.63) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-20</title>
+      <rect id="felt-d--led-20--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-20--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-20/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-11" data-path="felt-d/sfp-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,209.04) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-11</title>
+      <rect id="felt-d--sfp-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-11/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-11--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-21" data-path="felt-d/led-21" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,209.69) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-21</title>
+      <rect id="felt-d--led-21--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-21--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-21/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-22" data-path="felt-d/led-22" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,217.19) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-22</title>
+      <rect id="felt-d--led-22--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-22--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-22/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-12" data-path="felt-d/sfp-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,223.29) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-12</title>
+      <rect id="felt-d--sfp-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-12/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-23" data-path="felt-d/led-23" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,223.94) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-23</title>
+      <rect id="felt-d--led-23--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-23--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-23/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-24" data-path="felt-d/led-24" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,231.44) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-24</title>
+      <rect id="felt-d--led-24--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-24--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-24/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-13" data-path="felt-d/sfp-13" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,241.84) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-13</title>
+      <rect id="felt-d--sfp-13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-13/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-13--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-25" data-path="felt-d/led-25" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,242.49) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-25</title>
+      <rect id="felt-d--led-25--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-25--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-25/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-26" data-path="felt-d/led-26" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,249.99) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-26</title>
+      <rect id="felt-d--led-26--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-26--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-26/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-14" data-path="felt-d/sfp-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,256.09) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-14</title>
+      <rect id="felt-d--sfp-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-14/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-14--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-27" data-path="felt-d/led-27" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,256.74) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-27</title>
+      <rect id="felt-d--led-27--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-27--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-27/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-28" data-path="felt-d/led-28" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,264.24) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-28</title>
+      <rect id="felt-d--led-28--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-28--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-28/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-15" data-path="felt-d/sfp-15" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,274.64) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-15</title>
+      <rect id="felt-d--sfp-15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-15/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-15--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-29" data-path="felt-d/led-29" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,275.29) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-29</title>
+      <rect id="felt-d--led-29--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-29--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-29/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-30" data-path="felt-d/led-30" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,282.79) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-30</title>
+      <rect id="felt-d--led-30--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-30--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-30/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-16" data-path="felt-d/sfp-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,288.89) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-16</title>
+      <rect id="felt-d--sfp-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-16/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-16--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-31" data-path="felt-d/led-31" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,289.54) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-31</title>
+      <rect id="felt-d--led-31--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-31--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-31/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-32" data-path="felt-d/led-32" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,297.04) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-32</title>
+      <rect id="felt-d--led-32--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-32--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-32/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-17" data-path="felt-d/sfp-17" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,307.39) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-17</title>
+      <rect id="felt-d--sfp-17--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-17/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-17--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-17--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-17--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-33" data-path="felt-d/led-33" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,308.04) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-33</title>
+      <rect id="felt-d--led-33--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-33--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-33/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-34" data-path="felt-d/led-34" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,315.54) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-34</title>
+      <rect id="felt-d--led-34--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-34--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-34/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--sfp-18" data-path="felt-d/sfp-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(5.15,321.64) rotate(90 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 18 SFP28 cages in nine 1x2 blocks (cSFP GE, SFP GE, SFP+ 10G or SFP28 25G, at most 16 at 25G). Cage n presents ports 2n-1 and 2n with a cSFP and port 2n-1 alone otherwise; the two cSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>felt-d--sfp-18</title>
+      <rect id="felt-d--sfp-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="felt-d/sfp-18/opening" data-class="cutout" />
+      <rect id="felt-d--sfp-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="felt-d--sfp-18--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--sfp-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-35" data-path="felt-d/led-35" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,322.29) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-35</title>
+      <rect id="felt-d--led-35--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-35--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-35/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--led-36" data-path="felt-d/led-36" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,329.79) rotate(90 1.4 0.8)" data-group="link-leds" data-group-role="indicator" data-description="one bi-colour lamp per SFP28 port position, legends 1-36, two per cage">
+      <title>felt-d--led-36</title>
+      <rect id="felt-d--led-36--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-36--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-36/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--qsfp-1" data-path="felt-d/qsfp-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-function="100G user port, or cross-LT link in duplex (LT redundancy) mode" data-legend="37" data-media="qsfp28" data-speed="100g" transform="translate(2.16,344.43) rotate(90 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the two single QSFP28 cages, legends 37 and 41 (ports 37-40 and 41-44 when broken out): 100G user ports or the cross-LT link in duplex mode">
+      <title>felt-d--qsfp-1</title>
+      <rect id="felt-d--qsfp-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="felt-d/qsfp-1/opening" data-class="cutout" />
+      <rect id="felt-d--qsfp-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--qsfp-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="felt-d--qsfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-37" data-path="felt-d/led-37" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,348.7) rotate(90 1.4 0.8)" data-group="qsfp-leds" data-group-role="indicator" data-description="one bi-colour lamp per QSFP28 cage, legends 37 and 41">
+      <title>felt-d--led-37</title>
+      <rect id="felt-d--led-37--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-37--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-37/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g id="felt-d--qsfp-2" data-path="felt-d/qsfp-2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-function="100G user port, or cross-LT link in duplex (LT redundancy) mode" data-legend="41" data-media="qsfp28" data-speed="100g" transform="translate(2.16,366.93) rotate(90 10.0 5.075)" data-group="qsfp28" data-group-role="traffic" data-description="the two single QSFP28 cages, legends 37 and 41 (ports 37-40 and 41-44 when broken out): 100G user ports or the cross-LT link in duplex mode">
+      <title>felt-d--qsfp-2</title>
+      <rect id="felt-d--qsfp-2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="felt-d/qsfp-2/opening" data-class="cutout" />
+      <rect id="felt-d--qsfp-2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="felt-d--qsfp-2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="felt-d--qsfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="felt-d--led-41" data-path="felt-d/led-41" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" transform="translate(3.58,371.2) rotate(90 1.4 0.8)" data-group="qsfp-leds" data-group-role="indicator" data-description="one bi-colour lamp per QSFP28 cage, legends 37 and 41">
+      <title>felt-d--led-41</title>
+      <rect id="felt-d--led-41--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+      <rect id="felt-d--led-41--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="felt-d/led-41/lamp" data-class="led" data-states="off green activity red" data-z-dome="0.2" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

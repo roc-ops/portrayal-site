@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108.97mm" height="35.05mm" viewBox="0 0 108.97 35.05">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fhd-2mtp12-lc-os2-af" data-path="fhd-2mtp12-lc-os2-af" data-class="cassette" data-behaviour="fills" data-ref="fs/fhd-2mtp12-lc-os2-af@4:4.1.0" data-body-depth="117.86" data-media="fiber" data-model="FHD-2MTP12LCDOS2AF" data-vendor-sku="68540" transform="translate(0,0)">
+    <title>fhd-2mtp12-lc-os2-af</title>
+    <defs>
+      <linearGradient id="fhd-2mtp12-lc-os2-af--bez" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3c4248" />
+        <stop offset="1" stop-color="#23272c" />
+      </linearGradient>
+      <radialGradient id="fhd-2mtp12-lc-os2-af--knob" cx="0.35" cy="0.35" r="0.75">
+        <stop offset="0" stop-color="#4a5056" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </radialGradient>
+    </defs>
+    <rect id="fhd-2mtp12-lc-os2-af--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#fhd-2mtp12-lc-os2-af--bez)" stroke="#15181a" stroke-width="0.3" />
+    <circle id="fhd-2mtp12-lc-os2-af--thumb-knob-left" cx="5.1" cy="17.525" r="4.1" fill="url(#fhd-2mtp12-lc-os2-af--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <circle id="fhd-2mtp12-lc-os2-af--thumb-knob-right" cx="103.87" cy="17.525" r="4.1" fill="url(#fhd-2mtp12-lc-os2-af--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <g id="fhd-2mtp12-lc-os2-af--silkscreen">
+      <text id="fhd-2mtp12-lc-os2-af--port-14" x="15.74" y="7.55" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">14</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-13" x="15.74" y="14.95" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">13</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-24" x="93.00" y="7.55" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">24</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-23" x="93.00" y="14.95" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">23</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-2" x="15.74" y="23.18" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">2</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-1" x="15.74" y="30.51" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-12" x="93.00" y="23.18" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">12</text>
+      <text id="fhd-2mtp12-lc-os2-af--port-11" x="93.00" y="30.51" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">11</text>
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc01" data-path="fhd-2mtp12-lc-os2-af/lc01" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(17.24,18.66)">
+      <title>fhd-2mtp12-lc-os2-af--lc01</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc01--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc01--1" data-path="fhd-2mtp12-lc-os2-af/lc01/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc01--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc01--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc01/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc01--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc01--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc01--2" data-path="fhd-2mtp12-lc-os2-af/lc01/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc01--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc01--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc01/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc01--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc01--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc01--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc02" data-path="fhd-2mtp12-lc-os2-af/lc02" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(30.13,18.66)">
+      <title>fhd-2mtp12-lc-os2-af--lc02</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc02--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc02--1" data-path="fhd-2mtp12-lc-os2-af/lc02/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc02--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc02--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc02/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc02--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc02--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc02--2" data-path="fhd-2mtp12-lc-os2-af/lc02/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc02--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc02--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc02/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc02--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc02--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc02--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc03" data-path="fhd-2mtp12-lc-os2-af/lc03" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(43.19,18.66)">
+      <title>fhd-2mtp12-lc-os2-af--lc03</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc03--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc03--1" data-path="fhd-2mtp12-lc-os2-af/lc03/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc03--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc03--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc03/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc03--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc03--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc03--2" data-path="fhd-2mtp12-lc-os2-af/lc03/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc03--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc03--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc03/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc03--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc03--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc03--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc04" data-path="fhd-2mtp12-lc-os2-af/lc04" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(56.25,18.66)">
+      <title>fhd-2mtp12-lc-os2-af--lc04</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc04--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc04--1" data-path="fhd-2mtp12-lc-os2-af/lc04/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc04--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc04--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc04/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc04--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc04--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc04--2" data-path="fhd-2mtp12-lc-os2-af/lc04/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc04--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc04--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc04/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc04--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc04--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc04--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc05" data-path="fhd-2mtp12-lc-os2-af/lc05" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(69.3,18.66)">
+      <title>fhd-2mtp12-lc-os2-af--lc05</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc05--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc05--1" data-path="fhd-2mtp12-lc-os2-af/lc05/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc05--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc05--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc05/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc05--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc05--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc05--2" data-path="fhd-2mtp12-lc-os2-af/lc05/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc05--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc05--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc05/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc05--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc05--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc05--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc06" data-path="fhd-2mtp12-lc-os2-af/lc06" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(82.19,18.66)">
+      <title>fhd-2mtp12-lc-os2-af--lc06</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc06--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc06--1" data-path="fhd-2mtp12-lc-os2-af/lc06/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc06--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc06--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc06/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc06--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc06--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc06--2" data-path="fhd-2mtp12-lc-os2-af/lc06/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc06--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc06--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc06/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc06--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc06--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc06--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc07" data-path="fhd-2mtp12-lc-os2-af/lc07" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(17.24,3.89)">
+      <title>fhd-2mtp12-lc-os2-af--lc07</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc07--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc07--1" data-path="fhd-2mtp12-lc-os2-af/lc07/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc07--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc07--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc07/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc07--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc07--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc07--2" data-path="fhd-2mtp12-lc-os2-af/lc07/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc07--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc07--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc07/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc07--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc07--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc07--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc08" data-path="fhd-2mtp12-lc-os2-af/lc08" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(30.13,3.89)">
+      <title>fhd-2mtp12-lc-os2-af--lc08</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc08--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc08--1" data-path="fhd-2mtp12-lc-os2-af/lc08/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc08--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc08--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc08/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc08--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc08--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc08--2" data-path="fhd-2mtp12-lc-os2-af/lc08/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc08--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc08--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc08/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc08--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc08--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc08--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc09" data-path="fhd-2mtp12-lc-os2-af/lc09" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(43.19,3.89)">
+      <title>fhd-2mtp12-lc-os2-af--lc09</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc09--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc09--1" data-path="fhd-2mtp12-lc-os2-af/lc09/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc09--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc09--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc09/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc09--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc09--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc09--2" data-path="fhd-2mtp12-lc-os2-af/lc09/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc09--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc09--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc09/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc09--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc09--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc09--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc10" data-path="fhd-2mtp12-lc-os2-af/lc10" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(56.25,3.89)">
+      <title>fhd-2mtp12-lc-os2-af--lc10</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc10--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc10--1" data-path="fhd-2mtp12-lc-os2-af/lc10/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc10--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc10--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc10/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc10--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc10--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc10--2" data-path="fhd-2mtp12-lc-os2-af/lc10/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc10--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc10--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc10/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc10--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc10--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc10--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc11" data-path="fhd-2mtp12-lc-os2-af/lc11" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(69.3,3.89)">
+      <title>fhd-2mtp12-lc-os2-af--lc11</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc11--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc11--1" data-path="fhd-2mtp12-lc-os2-af/lc11/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc11--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc11--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc11/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc11--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc11--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc11--2" data-path="fhd-2mtp12-lc-os2-af/lc11/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc11--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc11--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc11/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc11--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc11--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc11--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc12" data-path="fhd-2mtp12-lc-os2-af/lc12" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(82.19,3.89)">
+      <title>fhd-2mtp12-lc-os2-af--lc12</title>
+      <path id="fhd-2mtp12-lc-os2-af--lc12--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="fhd-2mtp12-lc-os2-af--lc12--1" data-path="fhd-2mtp12-lc-os2-af/lc12/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc12--1</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc12--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc12/1/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc12--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc12--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="fhd-2mtp12-lc-os2-af--lc12--2" data-path="fhd-2mtp12-lc-os2-af/lc12/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>fhd-2mtp12-lc-os2-af--lc12--2</title>
+        <path id="fhd-2mtp12-lc-os2-af--lc12--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="fhd-2mtp12-lc-os2-af/lc12/2/bore" data-class="cutout" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc12--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="fhd-2mtp12-lc-os2-af--lc12--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="fhd-2mtp12-lc-os2-af--lc12--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc01-occupant" data-path="fhd-2mtp12-lc-os2-af/lc01-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(16.965,22.61) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc01">
+      <title>fhd-2mtp12-lc-os2-af--lc01-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc01-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc01-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc01-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc02-occupant" data-path="fhd-2mtp12-lc-os2-af/lc02-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(29.855,22.61) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc02">
+      <title>fhd-2mtp12-lc-os2-af--lc02-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc02-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc02-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc02-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc03-occupant" data-path="fhd-2mtp12-lc-os2-af/lc03-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(42.915,22.61) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc03">
+      <title>fhd-2mtp12-lc-os2-af--lc03-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc03-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc03-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc03-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc04-occupant" data-path="fhd-2mtp12-lc-os2-af/lc04-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(55.975,22.61) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc04">
+      <title>fhd-2mtp12-lc-os2-af--lc04-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc04-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc04-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc04-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc05-occupant" data-path="fhd-2mtp12-lc-os2-af/lc05-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(69.025,22.61) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc05">
+      <title>fhd-2mtp12-lc-os2-af--lc05-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc05-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc05-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc05-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc06-occupant" data-path="fhd-2mtp12-lc-os2-af/lc06-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(81.915,22.61) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc06">
+      <title>fhd-2mtp12-lc-os2-af--lc06-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc06-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc06-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc06-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc07-occupant" data-path="fhd-2mtp12-lc-os2-af/lc07-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(16.965,7.84) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc07">
+      <title>fhd-2mtp12-lc-os2-af--lc07-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc07-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc07-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc07-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc08-occupant" data-path="fhd-2mtp12-lc-os2-af/lc08-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(29.855,7.84) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc08">
+      <title>fhd-2mtp12-lc-os2-af--lc08-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc08-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc08-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc08-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc09-occupant" data-path="fhd-2mtp12-lc-os2-af/lc09-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(42.915,7.84) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc09">
+      <title>fhd-2mtp12-lc-os2-af--lc09-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc09-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc09-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc09-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc10-occupant" data-path="fhd-2mtp12-lc-os2-af/lc10-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(55.975,7.84) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc10">
+      <title>fhd-2mtp12-lc-os2-af--lc10-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc10-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc10-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc10-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc11-occupant" data-path="fhd-2mtp12-lc-os2-af/lc11-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(69.025,7.84) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc11">
+      <title>fhd-2mtp12-lc-os2-af--lc11-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc11-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc11-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc11-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="fhd-2mtp12-lc-os2-af--lc12-occupant" data-path="fhd-2mtp12-lc-os2-af/lc12-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(81.915,7.84) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="fhd-2mtp12-lc-os2-af/lc12">
+      <title>fhd-2mtp12-lc-os2-af--lc12-occupant</title>
+      <g id="fhd-2mtp12-lc-os2-af--lc12-occupant--body" class="cap" data-path="fhd-2mtp12-lc-os2-af/lc12-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="fhd-2mtp12-lc-os2-af--lc12-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

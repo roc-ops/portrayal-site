@@ -86,30 +86,33 @@ if [ ! -d "$SRC/dist" ]; then
   exit 1
 fi
 
-# The viewer modules moved out of demo2/ into their own library/viewer/ tree.
-# dist.js is new and non-optional: viewer3d.js imports it, and it is the fetch
-# memo that stopped components.json coming down three times a load.
-#
-# The Explorer is the shell plus its own panel, so the shell's graph comes too:
-# shell.js -> devsel.js, swap.js, dist.js, and the Explorer itself reads
-# states.js. marks.js arrives with the Annotator, and gif.js with marks.js -
-# nothing here names gif.js, but marks.toGif does `await import('./gif.js')`,
-# so a page that never mentions it still falls over without it.
-#
-# fields.js arrives the same way, except the import is a STATIC one: shell.js
-# and relief.js both `import { paintFields, unpaintFields } from './fields.js'`
-# at the top of the file, so leaving it out does not degrade a feature - it
-# stops the module graph loading at all and every page that mounts the shell or
-# the 3D relief comes up blank. It is the rule for writing a field onto a part
-# at runtime, shared between the 2D drawing and the 3D scene so the two cannot
-# disagree about what colour a label goes.
+# EVERY MODULE THE KIT SHIPS, not a list of the ones we remember.
 #
 # These modules are Portrayal's to own - they are how you talk to a drawing.
-# The pages built on them are this repository's, and the demo pages that used to
-# sit beside them upstream are gone: this site owns those now.
-for m in viewer3d.js relief.js lamps.js share.js swap.js dist.js shell.js devsel.js \
-         states.js marks.js gif.js fields.js; do
-  cp "$KIT/$m" "$HERE/vendor/$m"
+# The pages built on them are this repository's, and the demo pages that used
+# to sit beside them upstream are gone: this site owns those now.
+#
+# This was a hand-written list until the list was wrong twice. Both times a
+# module was split out upstream and imported by shell.js the same day:
+# fields.js, the colour rule shared by the 2D drawing and the 3D scene (#487),
+# and optical.js, a fibre path's far end and the words its row shows (#535).
+# Both imports are STATIC and at the top of the file, so the failure is not a
+# feature degrading - the module graph does not load at all and every page that
+# mounts the shell or the 3D relief comes up blank. Both times the refresh
+# passed and the counts looked right.
+#
+# A list cannot know what upstream split out yesterday, so stop keeping one.
+# The asymmetry decides it: a module the site does not import costs one file in
+# vendor/ and nothing at runtime, because no page fetches it. A module the site
+# DOES import and we did not copy costs the whole site.
+#
+# Some arrive indirectly and would be easy to miss by eye: gif.js is named
+# nowhere here, but marks.toGif does `await import('./gif.js')`; dist.js is the
+# fetch memo that stopped components.json coming down three times a load.
+# check-contract.py walks what the vendored modules actually import and fails
+# if one cannot resolve - that check is the backstop, this glob is the fix.
+for f in "$KIT"/*.js; do
+  cp "$f" "$HERE/vendor/$(basename "$f")"
 done
 
 # Every device, because the Explorer offers the whole library and a picker with
@@ -419,10 +422,10 @@ PYEOF
 # right and every tool page blank, so assert on the files - and on the export
 # each page actually imports, because an empty file is also a file.
 missing=0
-for m in viewer3d.js relief.js lamps.js share.js swap.js dist.js shell.js devsel.js \
-         states.js marks.js gif.js fields.js; do
-  f="$HERE/vendor/$m"
-  if [ ! -s "$f" ] || ! grep -q '^export' "$f"; then
+for f in "$KIT"/*.js; do
+  m=$(basename "$f")
+  v="$HERE/vendor/$m"
+  if [ ! -s "$v" ] || ! grep -q '^export' "$v"; then
     echo "  MISSING or empty: vendor/$m" >&2
     missing=1
   fi

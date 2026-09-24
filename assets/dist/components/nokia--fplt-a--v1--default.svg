@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fplt-a@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/fplt-a@'] .state-alarm { --led-color: #d0021b; }
+    g[data-ref^='nokia/fplt-a@'] .state-init { --led-color: #39b54a; }
+    g[data-ref^='nokia/fplt-a@'] .state-init { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fplt-a@'] .state-on { --led-color: #39b54a; }</style>
+  <g id="fplt-a" data-path="fplt-a" data-class="line-card" data-behaviour="fills" data-ref="nokia/fplt-a@1:1.2.0" data-body-depth="225.0" data-wall="#8d9298" data-mnemonic="FPLT-A" data-model="FPLT-A" data-part-number="3FE 53711 AA" data-pon="epon" data-sfp="8" data-weight-kg="0.94" transform="translate(0,0)">
+    <title>fplt-a</title>
+    <rect id="fplt-a--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <g id="fplt-a--teeth-facets">
+      <rect id="fplt-a--tooth-1-face" x="1.4" y="82.93" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-1-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-1-return" x="1.4" y="71.0" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-1-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-2-face" x="1.4" y="110.65" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-2-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-2-return" x="1.4" y="98.72" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-2-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-3-face" x="1.4" y="138.37" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-3-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-3-return" x="1.4" y="126.44" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-3-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-4-face" x="1.4" y="166.09" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-4-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-4-return" x="1.4" y="154.16" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-4-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-5-face" x="1.4" y="193.81" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-5-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-5-return" x="1.4" y="181.88" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-5-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-6-face" x="1.4" y="221.53" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-6-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-6-return" x="1.4" y="209.6" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-6-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-7-face" x="1.4" y="249.25" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-7-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-7-return" x="1.4" y="237.32" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-7-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+      <rect id="fplt-a--tooth-8-face" x="1.4" y="276.97" width="23.0" height="15.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-8-face" data-class="mechanical" data-z-out="13.2494" data-z-profile-y="0:13.2494,15.79:0" data-facet-deg="40" data-facet-facing="down" />
+      <rect id="fplt-a--tooth-8-return" x="1.4" y="265.04" width="23.0" height="11.93" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.15" data-path="fplt-a/tooth-8-return" data-class="mechanical" data-z-out="13.2496" data-z-profile-y="0:0,11.93:13.2496" data-facet-deg="48" data-facet-facing="up" />
+    </g>
+    <rect id="fplt-a--logo-zone" x="5" y="312" width="15" height="12" fill="none" data-path="fplt-a/logo-zone" data-class="label" />
+    <g id="fplt-a--screw-top">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <path d="M 16.075 5.25 H 21.325 M 18.7 2.625 V 7.875" stroke="#6b7076" stroke-width="0.5" />
+    </g>
+    <g id="fplt-a--screw-bottom">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <path d="M 16.075 399.75 H 21.325 M 18.7 397.125 V 402.375" stroke="#6b7076" stroke-width="0.5" />
+    </g>
+    <g id="fplt-a--silkscreen">
+      <text x="12" y="26.6" font-family="Arial" font-size="3" fill="#1d2023" text-anchor="middle">FPLT-A</text>
+      <text x="6.6" y="38.45" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="end">ALM</text>
+      <text x="14.9" y="38.45" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="start">PWR</text>
+      <text x="0.7" y="87.5" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 87.5)">PON 1</text>
+      <text x="0.7" y="115.22" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 115.22)">PON 2</text>
+      <text x="0.7" y="142.94" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 142.94)">PON 3</text>
+      <text x="0.7" y="170.66" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 170.66)">PON 4</text>
+      <text x="0.7" y="198.38" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 198.38)">PON 5</text>
+      <text x="0.7" y="226.1" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 226.1)">PON 6</text>
+      <text x="0.7" y="253.82" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 253.82)">PON 7</text>
+      <text x="0.7" y="281.54" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="middle" transform="rotate(90 0.7 281.54)">PON 8</text>
+      <text x="6.6" y="43.52" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="end">1</text>
+      <text x="14.9" y="43.52" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="start">2</text>
+      <text x="6.6" y="48.59" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="end">3</text>
+      <text x="14.9" y="48.59" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="start">4</text>
+      <text x="6.6" y="53.66" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="end">5</text>
+      <text x="14.9" y="53.66" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="start">6</text>
+      <text x="6.6" y="58.73" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="end">7</text>
+      <text x="14.9" y="58.73" font-family="Arial" font-size="1.6" fill="#1d2023" text-anchor="start">8</text>
+      <path d="M 17.6 41.67 H 18.6 V 59.48 H 17.6" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="19.4" y="50.58" font-family="Arial" font-size="1.4" fill="#1d2023" text-anchor="middle" transform="rotate(90 19.4 50.58)">PON</text>
+      <g id="fplt-a--esd-mark">
+        <path d="M 12.2 385.77 L 15.45 391.43 H 8.95 Z" fill="#f2c619" stroke="#1d2023" stroke-width="0.3" stroke-linejoin="round" />
+        <path d="M 11.2 390 q 0.8 -1.2 1.6 -0.4 l 0.6 -1.0" fill="none" stroke="#1d2023" stroke-width="0.35" />
+        <path d="M 10.3 389 L 14.1 390.8" stroke="#1d2023" stroke-width="0.3" />
+      </g>
+    </g>
+    <g id="fplt-a--pon-1" data-path="fplt-a/pon-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,83.67) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-1-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-1</title>
+      <rect id="fplt-a--pon-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-1/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-2" data-path="fplt-a/pon-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,111.39) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-2-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-2</title>
+      <rect id="fplt-a--pon-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-2/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-3" data-path="fplt-a/pon-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,139.11) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-3-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-3</title>
+      <rect id="fplt-a--pon-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-3/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-4" data-path="fplt-a/pon-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,166.83) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-4-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-4</title>
+      <rect id="fplt-a--pon-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-4/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-5" data-path="fplt-a/pon-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,194.55) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-5-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-5</title>
+      <rect id="fplt-a--pon-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-5/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-6" data-path="fplt-a/pon-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,222.27) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-6-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-6</title>
+      <rect id="fplt-a--pon-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-6/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-7" data-path="fplt-a/pon-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,249.99) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-7-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-7</title>
+      <rect id="fplt-a--pon-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-7/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--pon-8" data-path="fplt-a/pon-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="epon" data-speed="1g" transform="translate(2.0,277.71) scale(1,0.766044)" data-tilt-on="fplt-a--tooth-8-face" data-tilt="40" data-tilt-facing="down" data-group="pon" data-group-role="traffic" data-description="the eight 1G EPON SFP ports (1.25 Gbps symmetric), legends PON 1-8">
+      <title>fplt-a--pon-8</title>
+      <rect id="fplt-a--pon-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fplt-a/pon-8/opening" data-class="cutout" />
+      <rect id="fplt-a--pon-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fplt-a--pon-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fplt-a--pon-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fplt-a--pon-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fplt-a--led-alm" data-path="fplt-a/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(7.1,36.9)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fplt-a--led-alm</title>
+      <circle id="fplt-a--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pwr" data-path="fplt-a/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.4,36.9)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM and PWR">
+      <title>fplt-a--led-pwr</title>
+      <circle id="fplt-a--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pwr/lamp" data-class="led" data-states="off init on" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-1" data-path="fplt-a/led-pon-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(7.1,41.97)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-1</title>
+      <circle id="fplt-a--led-pon-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-1/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-2" data-path="fplt-a/led-pon-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.4,41.97)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-2</title>
+      <circle id="fplt-a--led-pon-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-2/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-3" data-path="fplt-a/led-pon-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(7.1,47.04)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-3</title>
+      <circle id="fplt-a--led-pon-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-3/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-4" data-path="fplt-a/led-pon-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.4,47.04)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-4</title>
+      <circle id="fplt-a--led-pon-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-4/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-5" data-path="fplt-a/led-pon-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(7.1,52.11)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-5</title>
+      <circle id="fplt-a--led-pon-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-5/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-6" data-path="fplt-a/led-pon-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.4,52.11)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-6</title>
+      <circle id="fplt-a--led-pon-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-6/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-7" data-path="fplt-a/led-pon-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(7.1,57.18)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-7</title>
+      <circle id="fplt-a--led-pon-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-7/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--led-pon-8" data-path="fplt-a/led-pon-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.4,57.18)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 bracketed PON">
+      <title>fplt-a--led-pon-8</title>
+      <circle id="fplt-a--led-pon-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fplt-a--led-pon-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fplt-a/led-pon-8/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="fplt-a--laser-mark" data-path="fplt-a/laser-mark" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" transform="translate(9.3,298.1) rotate(90 2.7 2.4)">
+      <title>fplt-a--laser-mark</title>
+      <path id="fplt-a--laser-mark--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+      <g id="fplt-a--laser-mark--burst" fill="#1a1a1a">
+        <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+        <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+        <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+        <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+      </g>
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

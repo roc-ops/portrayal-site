@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="30.0mm" height="405.0mm" viewBox="0 0 30.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/fant-m-etsi@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-alarm { --led-color: #d0021b; }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-alarm-cut-off { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-link-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-operational { --led-color: #39b54a; }
+    @keyframes portrayal-seq-nokia-fant-m-etsi-operational {
+      0%, 87.4% { opacity: 1; fill: #39b54a; }
+      87.5%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='nokia/fant-m-etsi@'] .state-operational { animation: portrayal-seq-nokia-fant-m-etsi-operational 4s steps(1, end) infinite; }</style>
+  <g id="fant-m-etsi" data-path="fant-m-etsi" data-class="supervisor" data-behaviour="fills" data-ref="nokia/fant-m-etsi@1:1.3.0" data-body-depth="225.0" data-wall="#9ea3a9" data-input-voltage="-48 V DC and -60 V DC nominal" data-model="FANT-M (ETSI AA/AB)" data-part-number="3FE79270AA" data-power-draw-max-w="127" data-power-draw-scope="module" data-power-draw-typical-w="120" data-qsfp28="2" data-sfp-plus="2" data-switch-capacity="2.0 Tbps" data-temperature-range="central-office" data-variants="AA 3FE79270AA - central office, -5 to +45 C with multiple subracks. AB 3FE79270AB - temperature hardened, -40 to +65 C in a central office or outdoor cabinet with multiple subracks. One face, one drawing; a bay seating the AB says so with attrs {part-number: 3FE79270AB, temperature-range: hardened}." data-weight-kg="1.7" transform="translate(0,0)">
+    <title>fant-m-etsi</title>
+    <rect id="fant-m-etsi--face" x="0" y="0" width="30" height="405" rx="0.4" fill="#c8cbcf" stroke="#8d9297" stroke-width="0.3" />
+    <rect id="fant-m-etsi--logo-zone" x="11.0" y="3.0" width="16.0" height="18.0" fill="none" data-path="fant-m-etsi/logo-zone" data-class="label" />
+    <g id="fant-m-etsi--housing">
+      <rect x="1.2" y="66.0" width="27.6" height="174.6" rx="0.4" fill="#8f949a" stroke="#5f646a" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--jack-frames" fill="none" stroke="#6f747a" stroke-width="0.3">
+      <rect x="6.4" y="262.9" width="14.2" height="33.5" rx="0.3" />
+      <rect x="6.4" y="298.4" width="14.2" height="16.8" rx="0.3" />
+      <rect x="6.4" y="317.6" width="14.2" height="33.6" rx="0.3" />
+    </g>
+    <g id="fant-m-etsi--silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#1c1f23">
+      <text x="11.0" y="25.7" font-size="2.0">FANT-M</text>
+      <g font-size="1.3">
+        <text x="7.2" y="33.95" text-anchor="end">ALM</text>
+        <text x="15.8" y="33.95">PWR</text>
+        <text x="7.2" y="38.95" text-anchor="end">ACO</text>
+        <text x="15.8" y="38.95">A/S</text>
+        <text x="7.2" y="43.95" text-anchor="end">2</text>
+        <text x="15.8" y="43.95">1</text>
+        <text x="7.2" y="48.95" text-anchor="end">4</text>
+        <text x="15.8" y="48.95">3</text>
+        <text x="7.2" y="53.95" text-anchor="end">2</text>
+        <text x="15.8" y="53.95">1</text>
+        <text x="7.2" y="58.95" text-anchor="end">4</text>
+        <text x="15.8" y="58.95">3</text>
+        <text x="7.2" y="63.95" text-anchor="end">PORT4</text>
+        <text x="15.8" y="63.95">PORT3</text>
+        <text x="18.4" y="46.45" font-size="1.1">PORT1</text>
+        <text x="18.4" y="56.45" font-size="1.1">PORT2</text>
+      </g>
+      <g fill="none" stroke="#1c1f23" stroke-width="0.18">
+        <path d="M 5.6 42.4 L 5.0 42.4 L 5.0 49.6 L 5.6 49.6" />
+        <path d="M 17.1 42.4 L 17.7 42.4 L 17.7 49.6 L 17.1 49.6" />
+        <path d="M 5.6 52.4 L 5.0 52.4 L 5.0 59.6 L 5.6 59.6" />
+        <path d="M 17.1 52.4 L 17.7 52.4 L 17.7 59.6 L 17.1 59.6" />
+      </g>
+      <g font-size="1.5" text-anchor="middle">
+        <text x="12.3" y="256.5" transform="rotate(90 12.3 256.0)">USB</text>
+        <text x="23.5" y="271.8" transform="rotate(90 23.5 271.3)">BITS_IN</text>
+        <text x="23.5" y="288.5" transform="rotate(90 23.5 288.0)">BITS_OUT</text>
+        <text x="23.5" y="307.3" transform="rotate(90 23.5 306.8)">ETH</text>
+        <text x="23.5" y="326.5" transform="rotate(90 23.5 326.0)">LCRT</text>
+        <text x="23.5" y="343.3" transform="rotate(90 23.5 342.8)">ToD/PPS</text>
+      </g>
+      <g id="fant-m-etsi--laser-label">
+        <path d="M 12.5 243.1 L 15.0 247.4 L 10.0 247.4 Z" fill="#f2c230" stroke="#1c1f23" stroke-width="0.2" />
+        <circle cx="12.5" cy="246.0" r="0.5" fill="#1c1f23" />
+      </g>
+      <g fill="none" stroke="#1c1f23" stroke-width="0.2">
+        <rect x="10.6" y="378.6" width="2.8" height="2.8" />
+        <rect x="10.6" y="386.6" width="2.8" height="2.8" />
+        <path d="M 20.5 384.9 L 23.2 389.6 L 17.8 389.6 Z" />
+      </g>
+    </g>
+    <g id="fant-m-etsi--ejector-top" data-path="fant-m-etsi/ejector-top" data-class="handle" data-description="the upper ejector lever, closed along the face" data-z-out="4.2">
+      <path d="M 1.2 0.5 L 5.6 0.5 L 5.6 12.0 L 7.9 12.6 L 8.2 29.6 Q 8.2 31.0 6.8 31.0 L 2.6 31.0 Q 1.2 31.0 1.2 29.6 Z" fill="#2e3136" stroke="#1c1f23" stroke-width="0.25" />
+      <path d="M 3.4 13.5 L 3.4 29.5" stroke="#4a4e54" stroke-width="0.4" fill="none" />
+    </g>
+    <g id="fant-m-etsi--ejector-bottom" data-path="fant-m-etsi/ejector-bottom" data-class="handle" data-description="the lower ejector lever, closed along the face, pivot at the bottom-left corner" data-z-out="4.2">
+      <path d="M 1.4 318.0 L 5.4 318.0 Q 6.4 318.0 6.4 319.0 L 6.4 404.0 L 0.8 404.0 L 0.8 319.0 Q 0.8 318.0 1.4 318.0 Z" fill="#2e3136" stroke="#1c1f23" stroke-width="0.25" />
+      <path d="M 3.4 320.0 L 3.4 394.0" stroke="#4a4e54" stroke-width="0.4" fill="none" />
+    </g>
+    <g id="fant-m-etsi--screw" data-path="fant-m-etsi/screw" data-class="screw" data-description="captive fixing screw" data-z-cyl="1.6">
+      <circle cx="19.4" cy="399.75" r="5.25" fill="#8f959b" stroke="#5d6268" stroke-width="0.25" />
+      <circle cx="19.4" cy="399.75" r="3.413" fill="#a9aeb4" stroke="#5d6268" stroke-width="0.2" />
+      <path d="M 17.562 399.75 L 21.237 399.75 M 19.4 397.913 L 19.4 401.587" stroke="#3a3e43" stroke-width="0.4" />
+    </g>
+    <g id="fant-m-etsi--pps-face" data-path="fant-m-etsi/pps-face" data-class="mechanical" data-description="the face of the 1PPS tooth, turned 39 degrees upward - its connector sits on it" data-z-out="8.5027" data-z-profile-y="0:0,10.5:8.50273" data-facet-deg="39" data-facet-facing="up">
+      <rect x="1.2" y="67.6" width="27.6" height="10.5" fill="#b4b9be" stroke="#5f646a" stroke-width="0.2" />
+      <g id="fant-m-etsi--pps-face-silkscreen">
+        <text x="26.0" y="72.5" transform="rotate(90 26.0 72.0)" font-family="Arial, Helvetica, sans-serif" font-size="1.5" text-anchor="middle" fill="#1c1f23">1PPS</text>
+      </g>
+    </g>
+    <g id="fant-m-etsi--pps-return" data-path="fant-m-etsi/pps-return" data-class="mechanical" data-description="the return closing the 1PPS tooth back to the plate, 41 degrees downward" data-z-out="8.5016" data-z-profile-y="0:8.50162,9.78:0" data-facet-deg="41" data-facet-facing="down">
+      <rect x="1.2" y="78.1" width="27.6" height="9.78" fill="#7b8086" stroke="#5f646a" stroke-width="0.2" />
+      <line x1="1.2" y1="78.25" x2="28.8" y2="78.25" stroke="#d9dcdf" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--ten-mhz-face" data-path="fant-m-etsi/ten-mhz-face" data-class="mechanical" data-description="the face of the 10MHz tooth, turned 39 degrees upward - its connector sits on it" data-z-out="8.5027" data-z-profile-y="0:0,10.5:8.50273" data-facet-deg="39" data-facet-facing="up">
+      <rect x="1.2" y="90.5" width="27.6" height="10.5" fill="#b4b9be" stroke="#5f646a" stroke-width="0.2" />
+      <g id="fant-m-etsi--ten-mhz-face-silkscreen">
+        <text x="26.0" y="95.5" transform="rotate(90 26.0 95.0)" font-family="Arial, Helvetica, sans-serif" font-size="1.5" text-anchor="middle" fill="#1c1f23">10MHz</text>
+      </g>
+    </g>
+    <g id="fant-m-etsi--ten-mhz-return" data-path="fant-m-etsi/ten-mhz-return" data-class="mechanical" data-description="the return closing the 10MHz tooth back to the plate, 39 degrees downward" data-z-out="8.5027" data-z-profile-y="0:8.50273,10.5:0" data-facet-deg="39" data-facet-facing="down">
+      <rect x="1.2" y="101.0" width="27.6" height="10.5" fill="#7b8086" stroke="#5f646a" stroke-width="0.2" />
+      <line x1="1.2" y1="101.15" x2="28.8" y2="101.15" stroke="#d9dcdf" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--port1-face" data-path="fant-m-etsi/port1-face" data-class="mechanical" data-description="the face of the PORT1 tooth, turned 24 degrees upward - its connector sits on it" data-z-out="8.4148" data-z-profile-y="0:0,18.9:8.41482" data-facet-deg="24" data-facet-facing="up">
+      <rect x="1.2" y="118.5" width="27.6" height="18.9" fill="#b4b9be" stroke="#5f646a" stroke-width="0.2" />
+      <g id="fant-m-etsi--port1-face-silkscreen">
+        <text x="26.0" y="128.5" transform="rotate(90 26.0 128.0)" font-family="Arial, Helvetica, sans-serif" font-size="1.5" text-anchor="middle" fill="#1c1f23">PORT1</text>
+      </g>
+    </g>
+    <g id="fant-m-etsi--port1-return" data-path="fant-m-etsi/port1-return" data-class="mechanical" data-description="the return closing the PORT1 tooth back to the plate, 38 degrees downward" data-z-out="8.4144" data-z-profile-y="0:8.41445,10.77:0" data-facet-deg="38" data-facet-facing="down">
+      <rect x="1.2" y="137.4" width="27.6" height="10.77" fill="#7b8086" stroke="#5f646a" stroke-width="0.2" />
+      <line x1="1.2" y1="137.55" x2="28.8" y2="137.55" stroke="#d9dcdf" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--port2-face" data-path="fant-m-etsi/port2-face" data-class="mechanical" data-description="the face of the PORT2 tooth, turned 23 degrees upward - its connector sits on it" data-z-out="8.447" data-z-profile-y="0:0,19.9:8.44705" data-facet-deg="23" data-facet-facing="up">
+      <rect x="1.2" y="153.9" width="27.6" height="19.9" fill="#b4b9be" stroke="#5f646a" stroke-width="0.2" />
+      <g id="fant-m-etsi--port2-face-silkscreen">
+        <text x="26.0" y="164.0" transform="rotate(90 26.0 163.5)" font-family="Arial, Helvetica, sans-serif" font-size="1.5" text-anchor="middle" fill="#1c1f23">PORT2</text>
+      </g>
+    </g>
+    <g id="fant-m-etsi--port2-return" data-path="fant-m-etsi/port2-return" data-class="mechanical" data-description="the return closing the PORT2 tooth back to the plate, 40 degrees downward" data-z-out="8.4497" data-z-profile-y="0:8.44973,10.07:0" data-facet-deg="40" data-facet-facing="down">
+      <rect x="1.2" y="173.8" width="27.6" height="10.07" fill="#7b8086" stroke="#5f646a" stroke-width="0.2" />
+      <line x1="1.2" y1="173.95" x2="28.8" y2="173.95" stroke="#d9dcdf" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--port3-face" data-path="fant-m-etsi/port3-face" data-class="mechanical" data-description="the face of the PORT3 tooth, turned 27 degrees upward - its connector sits on it" data-z-out="8.4734" data-z-profile-y="0:0,16.63:8.47341" data-facet-deg="27" data-facet-facing="up">
+      <rect x="1.2" y="183.87" width="27.6" height="16.63" fill="#b4b9be" stroke="#5f646a" stroke-width="0.2" />
+      <g id="fant-m-etsi--port3-face-silkscreen">
+        <text x="26.0" y="192.5" transform="rotate(90 26.0 192.0)" font-family="Arial, Helvetica, sans-serif" font-size="1.5" text-anchor="middle" fill="#1c1f23">PORT3</text>
+      </g>
+    </g>
+    <g id="fant-m-etsi--port3-return" data-path="fant-m-etsi/port3-return" data-class="mechanical" data-description="the return closing the PORT3 tooth back to the plate, 41 degrees downward" data-z-out="8.4755" data-z-profile-y="0:8.47555,9.75:0" data-facet-deg="41" data-facet-facing="down">
+      <rect x="1.2" y="200.5" width="27.6" height="9.75" fill="#7b8086" stroke="#5f646a" stroke-width="0.2" />
+      <line x1="1.2" y1="200.65" x2="28.8" y2="200.65" stroke="#d9dcdf" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--port4-face" data-path="fant-m-etsi/port4-face" data-class="mechanical" data-description="the face of the PORT4 tooth, turned 27 degrees upward - its connector sits on it" data-z-out="8.3817" data-z-profile-y="0:0,16.45:8.38169" data-facet-deg="27" data-facet-facing="up">
+      <rect x="1.2" y="210.25" width="27.6" height="16.45" fill="#b4b9be" stroke="#5f646a" stroke-width="0.2" />
+      <g id="fant-m-etsi--port4-face-silkscreen">
+        <text x="26.0" y="219.0" transform="rotate(90 26.0 218.5)" font-family="Arial, Helvetica, sans-serif" font-size="1.5" text-anchor="middle" fill="#1c1f23">PORT4</text>
+      </g>
+    </g>
+    <g id="fant-m-etsi--port4-return" data-path="fant-m-etsi/port4-return" data-class="mechanical" data-description="the return closing the PORT4 tooth back to the plate, 41 degrees downward" data-z-out="8.3799" data-z-profile-y="0:8.37992,9.64:0" data-facet-deg="41" data-facet-facing="down">
+      <rect x="1.2" y="226.7" width="27.6" height="9.64" fill="#7b8086" stroke="#5f646a" stroke-width="0.2" />
+      <line x1="1.2" y1="226.85" x2="28.8" y2="226.85" stroke="#d9dcdf" stroke-width="0.3" />
+    </g>
+    <g id="fant-m-etsi--pps" data-path="fant-m-etsi/pps" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="1 PPS input" data-legend="1PPS" data-media="coax-sma" transform="translate(7.75,68.309) scale(1,0.777146)" data-tilt-on="fant-m-etsi--pps-face" data-tilt="39" data-tilt-facing="up" data-group="timing" data-group-role="management">
+      <title>fant-m-etsi--pps</title>
+      <path id="fant-m-etsi--pps--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="fant-m-etsi--pps--jack" data-path="fant-m-etsi/pps/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>fant-m-etsi--pps--jack</title>
+        <circle id="fant-m-etsi--pps--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="fant-m-etsi/pps/jack/opening" data-class="cutout" />
+        <g id="fant-m-etsi--pps--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--ten-mhz" data-path="fant-m-etsi/ten-mhz" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="10 MHz GPS input" data-legend="10MHz" data-media="coax-sma" transform="translate(7.75,91.309) scale(1,0.777146)" data-tilt-on="fant-m-etsi--ten-mhz-face" data-tilt="39" data-tilt-facing="up" data-group="timing" data-group-role="management">
+      <title>fant-m-etsi--ten-mhz</title>
+      <path id="fant-m-etsi--ten-mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="fant-m-etsi--ten-mhz--jack" data-path="fant-m-etsi/ten-mhz/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>fant-m-etsi--ten-mhz--jack</title>
+        <circle id="fant-m-etsi--ten-mhz--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="fant-m-etsi/ten-mhz/jack/opening" data-class="cutout" />
+        <g id="fant-m-etsi--ten-mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--port1" data-path="fant-m-etsi/port1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-legend="PORT1" data-media="qsfp28" data-speed="100g" transform="translate(2.5,123.364) scale(1,0.913545) rotate(90 10.0 5.075)" data-tilt-on="fant-m-etsi--port1-face" data-tilt="24" data-tilt-facing="up" data-group="qsfp28" data-group-role="traffic" data-description="PORT1 and PORT2, QSFP28/QSFP+ uplinks - 100GE, 40GE, 4x25GE, 4x10GE, 10GE by adapter; SyncE/PTP on all of them (Table 67)">
+      <title>fant-m-etsi--port1</title>
+      <rect id="fant-m-etsi--port1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="fant-m-etsi/port1/opening" data-class="cutout" />
+      <rect id="fant-m-etsi--port1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-m-etsi--port1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="fant-m-etsi--port1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--port2" data-path="fant-m-etsi/port2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-legend="PORT2" data-media="qsfp28" data-speed="100g" transform="translate(2.5,158.828) scale(1,0.920505) rotate(90 10.0 5.075)" data-tilt-on="fant-m-etsi--port2-face" data-tilt="23" data-tilt-facing="up" data-group="qsfp28" data-group-role="traffic" data-description="PORT1 and PORT2, QSFP28/QSFP+ uplinks - 100GE, 40GE, 4x25GE, 4x10GE, 10GE by adapter; SyncE/PTP on all of them (Table 67)">
+      <title>fant-m-etsi--port2</title>
+      <rect id="fant-m-etsi--port2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="fant-m-etsi/port2/opening" data-class="cutout" />
+      <rect id="fant-m-etsi--port2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-m-etsi--port2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="fant-m-etsi--port2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--port3" data-path="fant-m-etsi/port3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-legend="PORT3" data-media="sfp-plus" data-speed="10g" transform="translate(5.25,187.545) scale(1,0.891007) rotate(90 7.25 5.0)" data-tilt-on="fant-m-etsi--port3-face" data-tilt="27" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="PORT3, SFP+ 10GE data and SyncE/PTP (Table 67)">
+      <title>fant-m-etsi--port3</title>
+      <rect id="fant-m-etsi--port3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fant-m-etsi/port3/opening" data-class="cutout" />
+      <rect id="fant-m-etsi--port3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fant-m-etsi--port3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-m-etsi--port3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fant-m-etsi--port3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--port4" data-path="fant-m-etsi/port4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-function="SyncE/PTP timing only - no traffic" data-legend="PORT4" data-media="sfp-plus" data-speed="10g" transform="translate(5.25,214.045) scale(1,0.891007) rotate(90 7.25 5.0)" data-tilt-on="fant-m-etsi--port4-face" data-tilt="27" data-tilt-facing="up" data-group="timing" data-group-role="management">
+      <title>fant-m-etsi--port4</title>
+      <rect id="fant-m-etsi--port4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="fant-m-etsi/port4/opening" data-class="cutout" />
+      <rect id="fant-m-etsi--port4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="fant-m-etsi--port4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="fant-m-etsi--port4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="fant-m-etsi--port4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--usb" data-path="fant-m-etsi/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-function="debug" data-legend="USB" data-media="micro-usb-b" transform="translate(4.25,254.625) rotate(90 3.75 1.375)" data-group="craft" data-group-role="management">
+      <title>fant-m-etsi--usb</title>
+      <rect id="fant-m-etsi--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="fant-m-etsi--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="fant-m-etsi/usb/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    </g>
+    <g id="fant-m-etsi--bits-in" data-path="fant-m-etsi/bits-in" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS input" data-legend="BITS_IN" data-media="rj48" transform="translate(5.6,264.7) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-m-etsi--bits-in</title>
+      <path id="fant-m-etsi--bits-in--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--bits-in--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--bits-in--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-m-etsi/bits-in/opening" data-class="cutout" />
+      <g id="fant-m-etsi--bits-in--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--bits-out" data-path="fant-m-etsi/bits-out" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="BITS output / daisy-chain NTR clock output" data-legend="BITS_OUT" data-media="rj48" transform="translate(5.6,281.4) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-m-etsi--bits-out</title>
+      <path id="fant-m-etsi--bits-out--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--bits-out--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--bits-out--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-m-etsi/bits-out/opening" data-class="cutout" />
+      <g id="fant-m-etsi--bits-out--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--eth" data-path="fant-m-etsi/eth" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-legend="ETH" data-media="rj45" data-speed="1g" transform="translate(5.6,300.2) rotate(270 7.9 6.6)" data-group="base-t" data-group-role="traffic" data-description="the ETH 10/100/1000Base-T port, which Nokia lists as a communication interface">
+      <title>fant-m-etsi--eth</title>
+      <g id="fant-m-etsi--eth--jack" data-path="fant-m-etsi/eth/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>fant-m-etsi--eth--jack</title>
+        <path id="fant-m-etsi--eth--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="fant-m-etsi--eth--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="fant-m-etsi--eth--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-m-etsi/eth/jack/opening" data-class="cutout" />
+        <g id="fant-m-etsi--eth--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="fant-m-etsi--eth--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="fant-m-etsi--eth--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/eth/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="fant-m-etsi--eth--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/eth/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--lcrt" data-path="fant-m-etsi/lcrt" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="local craft management interface (LCMI)" data-legend="LCRT" data-media="rj45-serial" transform="translate(5.6,319.4) rotate(270 7.9 6.6)" data-group="craft" data-group-role="management">
+      <title>fant-m-etsi--lcrt</title>
+      <path id="fant-m-etsi--lcrt--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--lcrt--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--lcrt--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-m-etsi/lcrt/opening" data-class="cutout" />
+      <g id="fant-m-etsi--lcrt--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--tod" data-path="fant-m-etsi/tod" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="ToD / 1 PPS" data-legend="ToD/PPS" data-media="rj45-tod" transform="translate(5.6,336.2) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+      <title>fant-m-etsi--tod</title>
+      <path id="fant-m-etsi--tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--tod--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="fant-m-etsi--tod--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="fant-m-etsi/tod/opening" data-class="cutout" />
+      <g id="fant-m-etsi--tod--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="fant-m-etsi--aco-switch" data-path="fant-m-etsi/aco-switch" data-class="button" data-ref="common/reset-button@1:1.1.0" data-depth="2.5" data-wall="#101214" data-cavity="recess" data-function="alarm cut-off (ACO) switch" transform="translate(8.5,27.0)" data-group="craft" data-group-role="management">
+      <title>fant-m-etsi--aco-switch</title>
+      <circle id="fant-m-etsi--aco-switch--recess" cx="2" cy="2" r="1.3" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="fant-m-etsi--aco-switch--pinhole" cx="2" cy="2" r="0.5" fill="#000000" data-path="fant-m-etsi/aco-switch/pinhole" data-class="button" data-z-sink="1.5" data-z-color="#000000" />
+    </g>
+    <g id="fant-m-etsi--alm" data-path="fant-m-etsi/alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,32.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--alm</title>
+      <circle id="fant-m-etsi--alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/alm/lamp" data-class="led" data-states="alarm off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--pwr" data-path="fant-m-etsi/pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,32.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--pwr</title>
+      <circle id="fant-m-etsi--pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/pwr/lamp" data-class="led" data-states="initializing operational off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--aco" data-path="fant-m-etsi/aco" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,37.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--aco</title>
+      <circle id="fant-m-etsi--aco--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--aco--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/aco/lamp" data-class="led" data-states="alarm-cut-off off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--as" data-path="fant-m-etsi/as" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,37.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--as</title>
+      <circle id="fant-m-etsi--as--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--as--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/as/lamp" data-class="led" data-states="active off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port1-l2" data-path="fant-m-etsi/port1-l2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,42.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port1-l2</title>
+      <circle id="fant-m-etsi--port1-l2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port1-l2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port1-l2/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port1-l1" data-path="fant-m-etsi/port1-l1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,42.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port1-l1</title>
+      <circle id="fant-m-etsi--port1-l1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port1-l1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port1-l1/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port1-l4" data-path="fant-m-etsi/port1-l4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,47.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port1-l4</title>
+      <circle id="fant-m-etsi--port1-l4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port1-l4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port1-l4/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port1-l3" data-path="fant-m-etsi/port1-l3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,47.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port1-l3</title>
+      <circle id="fant-m-etsi--port1-l3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port1-l3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port1-l3/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port2-l2" data-path="fant-m-etsi/port2-l2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,52.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port2-l2</title>
+      <circle id="fant-m-etsi--port2-l2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port2-l2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port2-l2/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port2-l1" data-path="fant-m-etsi/port2-l1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,52.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port2-l1</title>
+      <circle id="fant-m-etsi--port2-l1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port2-l1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port2-l1/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port2-l4" data-path="fant-m-etsi/port2-l4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,57.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port2-l4</title>
+      <circle id="fant-m-etsi--port2-l4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port2-l4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port2-l4/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port2-l3" data-path="fant-m-etsi/port2-l3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,57.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port2-l3</title>
+      <circle id="fant-m-etsi--port2-l3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port2-l3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port2-l3/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port4-led" data-path="fant-m-etsi/port4-led" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8.0,62.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port4-led</title>
+      <circle id="fant-m-etsi--port4-led--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port4-led--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port4-led/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g id="fant-m-etsi--port3-led" data-path="fant-m-etsi/port3-led" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.0,62.5)" data-group="leds" data-group-role="indicator" data-description="the system status lamps of Figure 91 and Table 87">
+      <title>fant-m-etsi--port3-led</title>
+      <circle id="fant-m-etsi--port3-led--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="fant-m-etsi--port3-led--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="fant-m-etsi/port3-led/lamp" data-class="led" data-states="link-activity off" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="15 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="405.0mm" height="28.8mm" viewBox="0 0 405.0 28.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/ngfc-g@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/ngfc-g@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/ngfc-g@'] .state-yellow { --led-color: #f5d000; }</style>
+  <g id="ngfc-g" data-path="ngfc-g" data-class="power" data-behaviour="fills" data-ref="nokia/ngfc-g@1:1.0.0" data-body-depth="203.0" data-branches="2 (A and B), each split into three feeds, 2 x 26 A (redundant)" data-fuses="6 x 125 V / 10 A quick-acting SMD, three per branch, on the board, not user accessible" data-hot-insertable="no" data-input-voltage="-48 V DC nominal (-40.5 to -60 V DC at the shelf connection point)" data-model="NGFC-G" data-part-number="3FE 65676 AA" data-role="general-facilities-card" data-shelf="NFXS-F BB (7360 ISAM FX-4, ANSI)" transform="translate(0,0)">
+    <title>ngfc-g</title>
+    <rect id="ngfc-g--face" x="0" y="0" width="405.0" height="28.8" fill="#c9ccd0" stroke="#6b7178" stroke-width="0.4" />
+    <rect id="ngfc-g--lip" x="0.2" y="22.7" width="404.6" height="5.900000000000002" fill="#bfc3c8" />
+    <path id="ngfc-g--lip-edge" d="M 0 21.6 L 405.0 21.6 M 0 22.7 L 405.0 22.7" stroke="#6b7178" stroke-width="0.35" />
+    <path id="ngfc-g--ejector-left" d="M 210.4 21.9 L 210.4 27.20 Q 210.4 28.50 211.70 28.50 L 237.00 28.50 Q 238.3 28.50 238.3 27.20 L 238.3 21.9" fill="#b3b8bd" stroke="#2a2d31" stroke-width="0.45" />
+    <path id="ngfc-g--ejector-right" d="M 373.0 21.9 L 373.0 27.20 Q 373.0 28.50 374.30 28.50 L 399.60 28.50 Q 400.9 28.50 400.9 27.20 L 400.9 21.9" fill="#b3b8bd" stroke="#2a2d31" stroke-width="0.45" />
+    <rect id="ngfc-g--end-flange" x="1.6" y="1.6" width="7.7" height="20.0" fill="#e4e6e8" stroke="#6b7178" stroke-width="0.25" />
+    <rect id="ngfc-g--terminal-recess" x="9.9" y="1.6" width="89.2" height="19.8" fill="#a9aeb3" stroke="#6b7178" stroke-width="0.25" />
+    <rect id="ngfc-g--terminal-window" x="14.6" y="9.3" width="10.7" height="5.8" fill="#f2f3f4" stroke="#2a2d31" stroke-width="0.3" />
+    <rect id="ngfc-g--terminal-base" x="26.6" y="2.4" width="72.5" height="19.0" fill="#b7bbc0" />
+    <rect id="ngfc-g--terminal-body" x="29.0" y="5.3" width="67.9" height="14.8" fill="#1c1e21" />
+    <g id="ngfc-g--block-screw-left" transform="rotate(45 35.0 12.75)">
+      <circle cx="35.0" cy="12.75" r="3.85" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+      <path d="M 33.08 12.75 L 36.92 12.75 M 35.0 10.82 L 35.0 14.68" stroke="#2a2d31" stroke-width="0.45" />
+    </g>
+    <g id="ngfc-g--block-screw-right" transform="rotate(45 90.9 12.75)">
+      <circle cx="90.9" cy="12.75" r="3.85" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+      <path d="M 88.98 12.75 L 92.83 12.75 M 90.9 10.82 L 90.9 14.68" stroke="#2a2d31" stroke-width="0.45" />
+    </g>
+    <g id="ngfc-g--ebatret-1" data-path="ngfc-g/ebatret-1" data-class="inlet" data-description="EBATRET branch connector, single-hole M5 lug (callout 1, first position)">
+      <rect x="40.85" y="5.3" width="10.6" height="14.8" fill="#1c1e21" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="46.15" cy="12.75" r="3.37" fill="#9ea3a9" stroke="#f0f1f2" stroke-width="0.3" />
+      <path d="M 42.95 12.75 L 49.35 12.75" stroke="#f0f1f2" stroke-width="0.35" />
+    </g>
+    <g id="ngfc-g--ebatret-2" data-path="ngfc-g/ebatret-2" data-class="inlet" data-description="EBATRET branch connector, single-hole M5 lug (callout 1, second position)">
+      <rect x="52.11" y="5.3" width="10.6" height="14.8" fill="#1c1e21" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="57.41" cy="12.75" r="3.37" fill="#9ea3a9" stroke="#f0f1f2" stroke-width="0.3" />
+      <path d="M 54.21 12.75 L 60.61 12.75" stroke="#f0f1f2" stroke-width="0.35" />
+    </g>
+    <g id="ngfc-g--ebat-a" data-path="ngfc-g/ebat-a" data-class="inlet" data-description="EBAT-A branch connector, single-hole M5 lug (callout 2)">
+      <rect x="63.37" y="5.3" width="10.6" height="14.8" fill="#1c1e21" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="68.67" cy="12.75" r="3.37" fill="#9ea3a9" stroke="#f0f1f2" stroke-width="0.3" />
+      <path d="M 65.47 12.75 L 71.87 12.75" stroke="#f0f1f2" stroke-width="0.35" />
+    </g>
+    <g id="ngfc-g--ebat-b" data-path="ngfc-g/ebat-b" data-class="inlet" data-description="EBAT-B branch connector, single-hole M5 lug (callout 3)">
+      <rect x="74.62" y="5.3" width="10.6" height="14.8" fill="#1c1e21" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="79.92" cy="12.75" r="3.37" fill="#9ea3a9" stroke="#f0f1f2" stroke-width="0.3" />
+      <path d="M 76.72 12.75 L 83.12 12.75" stroke="#f0f1f2" stroke-width="0.35" />
+    </g>
+    <g id="ngfc-g--alarm-io" data-path="ngfc-g/alarm-io" data-class="port" data-description="female 50-pin micro D-sub, 'External Alarms' - seventeen external alarm inputs and outputs, external ACO, and visual and audible critical, major and minor relay contacts (UDS Table 122)">
+      <rect x="169.4" y="10.45" width="45.7" height="8.15" fill="#f2f3f4" stroke="#2a2d31" stroke-width="0.35" />
+      <path d="M 173.0 12.0 L 211.5 12.0 L 210.6 17.2 L 173.9 17.2 Z" fill="#1c1e21" stroke="#555a60" stroke-width="0.3" />
+    </g>
+    <g id="ngfc-g--bits" data-path="ngfc-g/bits" data-class="port" data-description="six-pin right-angle wire-wrap header, recessed behind the panel, for the BITS inputs to NT-A and NT-B with frame ground between (UDS Table 123)">
+      <rect x="237.0" y="7.25" width="27.5" height="6.65" rx="3.3" fill="#d4d7da" stroke="#2a2d31" stroke-width="0.35" />
+      <rect x="241.4" y="7.6" width="2.5" height="5.95" fill="#8e949a" stroke="#2a2d31" stroke-width="0.25" />
+    </g>
+    <g id="ngfc-g--esd-mark" data-path="ngfc-g/esd-mark" data-class="marking">
+      <path d="M 395.00 8.55 L 396.5 5.95 L 398.00 8.55 Z" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+      <path d="M 395.75 7.90 L 397.10 6.99" stroke="#2a2d31" stroke-width="0.3" />
+    </g>
+    <g id="ngfc-g--silkscreen">
+      <text x="101.9" y="18.3" font-family="Arial" font-size="5.8" fill="#2a2d31" text-anchor="start">7360 ISAM FX-4</text>
+      <g id="ngfc-g--compliance-marks" data-path="ngfc-g/compliance-marks" data-class="marking">
+        <rect x="142.5" y="3.85" width="24.4" height="6.0" fill="none" stroke="none" />
+        <text x="145.3" y="8.4" font-family="Arial" font-size="3.6" fill="#2a2d31" text-anchor="middle">CE</text>
+        <rect x="148.9" y="4.2" width="3.0" height="4.2" fill="none" stroke="#2a2d31" stroke-width="0.25" />
+        <circle cx="155.6" cy="7.1" r="1.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <circle cx="164.7" cy="7.0" r="2.0" fill="#2a2d31" />
+      </g>
+      <text x="192.25" y="5.6" font-family="Arial" font-size="2.7" fill="#2a2d31" text-anchor="middle">External Alarms</text>
+      <text x="250.8" y="5.6" font-family="Arial" font-size="2.7" fill="#2a2d31" text-anchor="middle">BITS</text>
+      <path d="M 240.20 16.1 L 244.60 16.1" stroke="#2a2d31" stroke-width="0.2" />
+      <text x="242.4" y="18.4" font-family="Arial" font-size="2.3" fill="#2a2d31" text-anchor="middle">NTA</text>
+      <path d="M 249.20 16.1 L 253.60 16.1" stroke="#2a2d31" stroke-width="0.2" />
+      <text x="251.4" y="18.4" font-family="Arial" font-size="2.3" fill="#2a2d31" text-anchor="middle">GND</text>
+      <path d="M 257.00 16.1 L 261.40 16.1" stroke="#2a2d31" stroke-width="0.2" />
+      <text x="259.2" y="18.4" font-family="Arial" font-size="2.3" fill="#2a2d31" text-anchor="middle">NTB</text>
+      <text x="304.3" y="5.6" font-family="Arial" font-size="2.7" fill="#2a2d31" text-anchor="middle">Remote Craft</text>
+      <text x="326.6" y="5.6" font-family="Arial" font-size="2.1" fill="#2a2d31" text-anchor="middle">BAT A</text>
+      <text x="333.3" y="5.6" font-family="Arial" font-size="2.1" fill="#2a2d31" text-anchor="middle">BAT B</text>
+      <path d="M 326.95 6.4 L 326.95 10.4 M 332.71 6.4 L 332.71 10.4" stroke="#2a2d31" stroke-width="0.2" />
+      <text x="345.81" y="5.3" font-family="Arial" font-size="2.5" fill="#2a2d31" text-anchor="middle">FUSE</text>
+      <text x="341.78" y="8.6" font-family="Arial" font-size="2.8" fill="#2a2d31" text-anchor="middle">A</text>
+      <text x="349.84" y="8.6" font-family="Arial" font-size="2.8" fill="#2a2d31" text-anchor="middle">B</text>
+      <text x="345.81" y="12.04" font-family="Arial" font-size="2.8" fill="#2a2d31" text-anchor="middle">1</text>
+      <text x="345.81" y="15.52" font-family="Arial" font-size="2.8" fill="#2a2d31" text-anchor="middle">2</text>
+      <text x="345.81" y="18.87" font-family="Arial" font-size="2.8" fill="#2a2d31" text-anchor="middle">3</text>
+      <text x="359.4" y="8.0" font-family="Arial" font-size="3.0" fill="#2a2d31" text-anchor="start">Critical Alarms</text>
+      <text x="359.4" y="12.85" font-family="Arial" font-size="3.0" fill="#2a2d31" text-anchor="start">Major</text>
+      <text x="359.4" y="18.15" font-family="Arial" font-size="3.0" fill="#2a2d31" text-anchor="start">Minor</text>
+      <path d="M 366.3 11.9 L 368.4 11.9 L 369.11 13.2" stroke="#2a2d31" stroke-width="0.2" fill="none" />
+      <text x="369.6" y="12.9" font-family="Arial" font-size="3.0" fill="#2a2d31" text-anchor="start">ACO</text>
+    </g>
+    <g id="ngfc-g--craft" data-path="ngfc-g/craft" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-function="remote craft port" data-media="db9" transform="translate(288.9,7.15)" data-group="craft" data-group-role="management" data-description="the DB-9 remote craft port (RS-232, UDS Table 124). The alarm I/O D-sub and the BITS header are management too, but no library part exists for either, so they are elements of this card and cannot join a group.">
+      <title>ngfc-g--craft</title>
+      <g id="ngfc-g--craft--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="ngfc-g--craft--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="ngfc-g--craft--shell" data-path="ngfc-g/craft/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+        <title>ngfc-g--craft--shell</title>
+        <path id="ngfc-g--craft--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="ngfc-g/craft/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <path id="ngfc-g--craft--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+        <circle id="ngfc-g--craft--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="ngfc-g--craft--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+    <g id="ngfc-g--bat-a" data-path="ngfc-g/bat-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(325.95,13.34)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--bat-a</title>
+      <circle id="ngfc-g--bat-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--bat-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/bat-a/lamp" data-class="led" data-states="green off" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--bat-b" data-path="ngfc-g/bat-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(331.71,13.34)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--bat-b</title>
+      <circle id="ngfc-g--bat-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--bat-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/bat-b/lamp" data-class="led" data-states="green off" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--fuse-a1" data-path="ngfc-g/fuse-a1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(340.78,10.04)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--fuse-a1</title>
+      <circle id="ngfc-g--fuse-a1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--fuse-a1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/fuse-a1/lamp" data-class="led" data-states="green red" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--fuse-a2" data-path="ngfc-g/fuse-a2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(340.78,13.52)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--fuse-a2</title>
+      <circle id="ngfc-g--fuse-a2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--fuse-a2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/fuse-a2/lamp" data-class="led" data-states="green red" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--fuse-a3" data-path="ngfc-g/fuse-a3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(340.78,16.87)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--fuse-a3</title>
+      <circle id="ngfc-g--fuse-a3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--fuse-a3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/fuse-a3/lamp" data-class="led" data-states="green red" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--fuse-b1" data-path="ngfc-g/fuse-b1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(348.84,10.04)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--fuse-b1</title>
+      <circle id="ngfc-g--fuse-b1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--fuse-b1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/fuse-b1/lamp" data-class="led" data-states="green red" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--fuse-b2" data-path="ngfc-g/fuse-b2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(348.84,13.52)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--fuse-b2</title>
+      <circle id="ngfc-g--fuse-b2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--fuse-b2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/fuse-b2/lamp" data-class="led" data-states="green red" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--fuse-b3" data-path="ngfc-g/fuse-b3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(348.84,16.87)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--fuse-b3</title>
+      <circle id="ngfc-g--fuse-b3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--fuse-b3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/fuse-b3/lamp" data-class="led" data-states="green red" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--critical" data-path="ngfc-g/critical" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(356.85,5.95)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--critical</title>
+      <circle id="ngfc-g--critical--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--critical--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/critical/lamp" data-class="led" data-states="red off" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--major" data-path="ngfc-g/major" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(356.85,10.8)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--major</title>
+      <circle id="ngfc-g--major--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--major--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/major/lamp" data-class="led" data-states="red off" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--minor" data-path="ngfc-g/minor" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(356.85,16.13)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--minor</title>
+      <circle id="ngfc-g--minor--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--minor--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/minor/lamp" data-class="led" data-states="yellow off" data-z-dome="0.3" />
+    </g>
+    <g id="ngfc-g--aco" data-path="ngfc-g/aco" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(368.11,13.4)" data-group="leds" data-group-role="indicator" data-description="power presence, fuse status, office alarm and ACO lamps (UDS Table 121)">
+      <title>ngfc-g--aco</title>
+      <circle id="ngfc-g--aco--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ngfc-g--aco--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ngfc-g/aco/lamp" data-class="led" data-states="green off" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="202.5 14.4" data-cp-dir="rear" />
+  </g>
+</svg>

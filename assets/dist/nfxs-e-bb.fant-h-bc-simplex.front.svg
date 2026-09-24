@@ -1,0 +1,962 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="446.5mm" height="355.0mm" viewBox="0 0 446.5 355.0" data-device="nfxs-e-bb" data-view="front" data-config="fant-h-bc-simplex" data-part-number="3FE64936BB" data-ru="8" data-weight-kg="11.2" data-width-over-flanges-mm="480.5" data-mounting-centre-mm="465" data-depth-from-front-flanges-mm="239.8" data-depth-from-mid-flanges-mm="177.4" data-family="7360 ISAM FX / Lightspan Access Node FX" data-standard="ANSI" data-lt-slots="8" data-nt-slots="2" data-eol="none-announced">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/bfan-e@'] .state-closed-loop { --led-color: #39b54a; }
+    g[data-ref^='nokia/bfan-e@'] .state-closed-loop { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/bfan-e@'] .state-fail { --led-color: #d0021b; }
+    g[data-ref^='nokia/bfan-e@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/bfan-e@'] .state-starting { --led-color: #39b54a; }
+    g[data-ref^='nokia/bfan-e@'] .state-starting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-alarm { --led-color: #ef4444; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-initializing { --led-color: #22c55e; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-link-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-operational { --led-color: #22c55e; }
+    @keyframes portrayal-seq-nokia-fant-h-bc-operational {
+      0%, 87.4% { opacity: 1; fill: #22c55e; }
+      87.5%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='nokia/fant-h-bc@'] .state-operational { animation: portrayal-seq-nokia-fant-h-bc-operational 4s steps(1, end) infinite; }
+    g[data-ref^='nokia/fant-h-bc@'] .state-standby { --led-color: #3a3f44; }
+    g[data-ref^='nokia/ngfc-h@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/ngfc-h@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/ngfc-h@'] .state-yellow { --led-color: #f5d000; }
+    #nt-a--module--led-a-s--lamp.state-active { --led-color: #22c55e; }
+    #nt-a--module--led-alm--lamp.state-alarm { --led-color: #ef4444; }
+    #fan--module--led-status--lamp.state-closed-loop { --led-color: #39b54a; }
+    #fan--module--led-status--lamp.state-closed-loop { animation: portrayal-blink 1s linear infinite; }
+    #fan--module--led-status--lamp.state-fail { --led-color: #d0021b; }
+    #gfc--module--bat-a--lamp.state-green, #gfc--module--bat-b--lamp.state-green, #gfc--module--aco--lamp.state-green { --led-color: #39b54a; }
+    #nt-a--module--led-pwr--lamp.state-initializing { --led-color: #22c55e; }
+    #nt-a--module--led-pwr--lamp.state-initializing { animation: portrayal-blink 1s linear infinite; }
+    #nt-a--module--led-p1-2--lamp.state-link-activity, #nt-a--module--led-p1-1--lamp.state-link-activity, #nt-a--module--led-p1-4--lamp.state-link-activity, #nt-a--module--led-p1-3--lamp.state-link-activity, #nt-a--module--led-p2-2--lamp.state-link-activity, #nt-a--module--led-p2-1--lamp.state-link-activity, #nt-a--module--led-p2-4--lamp.state-link-activity, #nt-a--module--led-p2-3--lamp.state-link-activity, #nt-a--module--led-p4--lamp.state-link-activity, #nt-a--module--led-p3--lamp.state-link-activity { --led-color: #39b54a; }
+    #fan--module--led-status--lamp.state-on { --led-color: #39b54a; }
+    #nt-a--module--led-pwr--lamp.state-operational { --led-color: #22c55e; }
+    @keyframes portrayal-seq-inst-operational-8 {
+      0%, 87.4% { opacity: 1; fill: #22c55e; }
+      87.5%, 99.9% { opacity: 0; }
+    }
+    #nt-a--module--led-pwr--lamp.state-operational { animation: portrayal-seq-inst-operational-8 4s steps(1, end) infinite; }
+    #gfc--module--critical--lamp.state-red, #gfc--module--major--lamp.state-red { --led-color: #d0021b; }
+    #nt-a--module--led-a-s--lamp.state-standby { --led-color: #3a3f44; }
+    #fan--module--led-status--lamp.state-starting { --led-color: #39b54a; }
+    #fan--module--led-status--lamp.state-starting { animation: portrayal-blink 1s linear infinite; }
+    #gfc--module--minor--lamp.state-yellow { --led-color: #f5d000; }
+</style>
+  <metadata>{"config":"fant-h-bc-simplex","device":"Nokia 7360 ISAM FX-8 (NFXS-E BB)","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/db9-receptacle@1":"1.1.0","common/laser-warning@1":"1.0.0","common/led-dot@1":"1.1.0","common/led-indicator@1":"1.2.0","common/rj45-eth@1":"1.2.0","common/sma-jack@1":"1.0.1","nokia/bfan-e@1":"1.0.1","nokia/dummy-lt@1":"1.1.0","nokia/dummy-nt@1":"1.1.0","nokia/fan-cover-fx8@1":"1.1.0","nokia/fant-h-bc@2":"2.3.0","nokia/ngfc-h@1":"1.1.0","std/db9@1":"1.1.0","std/micro-usb@1":"1.0.0","std/qsfp28@1":"1.4.1","std/rj45@2":"2.1.0","std/sfp@1":"1.4.1","std/sma@1":"1.1.0"},"source":{"attrs":{"lifecycle":{"eol":"none-announced"},"physical":{"depth-from-front-flanges-mm":239.8,"depth-from-mid-flanges-mm":177.4,"mounting-centre-mm":465,"part-number":"3FE64936BB","ru":8,"weight-kg":11.2,"width-over-flanges-mm":480.5},"platform":{"family":"7360 ISAM FX / Lightspan Access Node FX","lt-slots":8,"nt-slots":2,"standard":"ANSI"}},"chassis":{"color":"#c9ccd0","depth":278.3,"height":355.0,"ru":8,"width":446.5},"configurations":{"fant-h-bc-simplex":{"bays":{"nt-a":"nokia/fant-h-bc@2"},"description":"One FANT-H BC, the 125 W ANSI build, in NT A.","kind":"orderable"},"fant-h-duplex":{"bays":{"nt-b":"nokia/fant-h-bb@2"},"description":"Two FANT-H BB NT boards, redundant.","kind":"orderable"},"fant-h-simplex":{"default":true,"description":"One FANT-H BB in NT A, the NT dummy in NT B and dummies in NTIO and every LT slot - the shelf as it is ordered before line cards are chosen.","kind":"base"},"fant-m-duplex":{"bays":{"nt-a":"nokia/fant-m@1","nt-b":"nokia/fant-m@1"},"description":"Two FANT-M (ANSI BA/BB) NT boards, redundant - the migration target.","kind":"orderable"}},"datasheet":{"sha256":"c9fe991c68b8f2599c1045132832f9e35b82f34a4b8790f605fc069dea25543f","title":"Nokia NFXS-E BB (7360 ISAM FX-8 ANSI) Unit Data Sheet, 3FE 64936 BBAA TQZZA Issue 03"},"description":"The 8RU ANSI shelf of the Nokia 7360 ISAM FX (Lightspan Access Node FX) GPON/NGPON access node, part 3FE64936BB. The eight line-termination (LT) cards, the two network-termination (NT) cards and the NT I/O card lie HORIZONTALLY, stacked from the bottom: the general facilities card (NGFC-H), NT A, NTIO, NT B, then LT1 to LT8. The BFAN-E fan unit stands at the right-hand end behind a fan cover that carries the shelf's name and the slot legends. Cards are authored upright, as the Unit Data Sheet guides draw them, and every card bay seats its card with `rotate: 270`, which turns the card's top end to the LEFT, toward the power terminals, as an installed shelf shows. The LT slots take only the LT blank until the line cards are modelled (roc-ops/Portrayal#538).","format":1,"gaps":[{"note":"Every ANSI-valid LT card the coverage grid lists is modelled and accepted in these slots, except FELT-B AC (3FE69486AC), for which no data sheet exists in any staged document. FELT-C is an ETSI/MII card and is not accepted by this ANSI shelf. The copper DSL/POTS cards (NDLS, NPOT, NIAT, NDPS, NVPS) are out of scope by decision (roc-ops/Portrayal#538).","reason":"needs-drawing","scope":["lt-1","lt-2","lt-3","lt-4","lt-5","lt-6","lt-7","lt-8"],"wanted":"a FELT-B AC unit data sheet","what":"line-cards"},{"note":"Figure 4 draws the NT rows 82.8 mm tall between the rail and the GFC where the stated pitches (30 + 25 + 30) give 85; the pitches were held and the rail drawn 2.5 mm shallower than the figure.","reason":"sources-disagree","scope":["nt-a","ntio","nt-b"],"wanted":"a dimensioned drawing of the NT block or a photograph with the rail in frame","what":"nt-row-heights"},{"note":"The top view in 3FE64936BBAATQZZA03 Figure 4 draws a column of vents along the left edge and fittings along the right; they are not transcribed yet. No staged document draws the left side, the bottom or the rear face.","reason":"needs-drawing","scope":["left","top","bottom","rear"],"wanted":"the top view transcribed; a photograph of the rear and left side","what":"side-top-bottom"},{"note":"The direction of the air across a horizontally mounted FX-8 is not stated.","reason":"vendor-silent","scope":["fans"],"wanted":"a sentence or airflow figure for the horizontal installation","what":"horizontal-airflow"}],"groups":{"covers":{"index-origin":1,"role":"furniture","term":"Cover"},"fans":{"description":"the BFAN-E fan unit at the right-hand end","index-origin":1,"role":"service","term":"Fan"},"gfc-slot":{"description":"the general facilities card slot at the bottom of the shelf - power, alarms and timing","index-origin":1,"role":"service","term":"Slot"},"grounding":{"index-origin":1,"role":"furniture","term":"Point"},"lt-slots":{"description":"the eight LT (line termination) slots, LT1 at the bottom of the LT block to LT8 at the top (UDS s6.4.1)","index-origin":1,"role":"service","term":"Slot"},"nt-slots":{"description":"NT A (rel-pos 1) and NT B (rel-pos 2), the two network-termination slots, 30 mm pitch","index-origin":1,"role":"service","term":"Slot"},"ntio-slot":{"description":"the NT I/O slot between the two NTs, 25 mm pitch","index-origin":1,"role":"service","term":"Slot"}},"kind":"device","manufacturer":"Nokia","maturity":"modelled","model":"7360 ISAM FX-8 (NFXS-E BB)","name":"nfxs-e-bb","profile":"networking","provenance":{"airflow":{"confidence":"datasheet","note":"UDS s6.4.3: the fan unit \"provides forced air cooling in the card cage area and provides the necessary air flow in the GFC\". For the horizontal installation drawn here the fan unit sits at the right-hand end and the air crosses the cards; the direction is not stated in any staged document, so no airflow is declared."},"chassis":{"confidence":"datasheet","note":"3HH90279AAAATQZZA23 s6.5.2 and 3FE64936BBAATQZZA02 s1.5.2: width 446.5 mm, overall over flanges 480.5 mm, mounting centre distance 465 mm, depth 278.3 mm, height 355 mm; UDS s6.5.3 weight 11.2 kg including the fan. 3FE64936BBAATQZZA03 prints width 485, mounting centre 463 and depth 278 and dimensions its own drawing \"485\" over a span wider than the flanges; the Issue 02 and UDS figures are taken, and the 485 is not the body. The body modelled is the 446.5 between the flange folds; the flanges (ears) are not drawn, per the method, and their extent is (480.5 - 446.5) / 2 = 17 mm a side. RU 8 is derived (8 x 44.45 = 355.6), not stated."},"columns":{"confidence":"drawing","note":"Across: the side walls are drawn 1.8 mm (left) and 3.2 mm (right) thick. Every card's right end - the GFC's top line and the LT ejectors - stops at 4028-4030 px, x 409.7, so each 405 mm card is seated from x 4.7 to 409.7; the 4.7 mm strip at the left is the wall and the card guides. The fan cover's outline lines have centres 304 px apart, 32.9 mm, exactly BFAN-E's stated width (UDS p378), so the fan column is 411.1 to 444.0, and its top and bottom lines put it at y 8.8 to 352.4 (343.6, the drawing's short scale again); nokia/bfan-e@1 is 345, centred there at 8.1 to 353.1."},"defaults":{"confidence":"datasheet","note":"The default build is one FANT-H BB in NT A, the NT dummy in NT B, the dummy in NTIO and in all eight LT slots, the NGFC-H and the BFAN-E. A shelf is never shipped with open slots - 3FE64936BBAATQZZA03 s1.5.4 \"All empty slots must be covered with a dummy front plate\" - and FANT-H BB is the current ANSI NT. The configurations below carry the other NT arrangements."},"ground":{"confidence":"estimated","note":"HIM R6.9 s10.3.1: \"the 7360 ISAM FX-8 includes two grounding cable connectors\", each for a 4 AWG dual-hole lug with 1/4 in holes at 3/4 in spacing; s10.3.2 routes the cable \"through an opening in the right side of the shelf\", and Procedure 36 \"to the right side of the shelf and up to the middle of the shelf\". Figure 103 (p197, 304 ppi raster, perspective) points \"Ground cable connector\" at a two-stud seat at the right-hand front corner, about 0.64 of the way down. The position (x 22, centred at y 227) is estimated from that perspective view, and the one seat is drawn with common/ground-lug@1 as on the FX-4. Whether the seat is on the side wall or on the front edge of it is not settled by the figure."},"model":{"confidence":"datasheet","note":"3HH90279AAAATQZZA23 chapter 6 is headed \"NFXS-E BB - FX-8 shelf\" (ANSI), and 3FE64936BBAATQZZA03 heads every page \"NFXS-E BB\". The BA build (3FE64936BAAATQZZA02) is the R4.3-R5.3 edition and its Figure 4 is the same art; the ETSI NFXS-E AA/AB are separate shelves with the NGFC-E."},"nt-occupants":{"confidence":"datasheet","note":"3HH90279AAAATQZZA23 and the ANSI UDS R6.9 list FANT-F, FANT-G, FANT-H (BB and the 125 W BC) and FANT-M (BA/BB) as NT boards for the ANSI FX-8, as for the FX-4. The ANSI FANT-F (BC/BD/BF, nokia/fant-f-bd@1) and FANT-G BA (nokia/fant-g-ba@1) are accepted. The ETSI builds (FANT-H AA/AC, nokia/fant-m-etsi@1) belong to the ETSI shelves and are not accepted here. The second NT slot takes the NT dummy 3FE65651AA when a single NT is fitted (UDS s12.3/12.4). Accepts copied from nokia/nfxs-f-bb, whose note carries the same reading."},"ntio-occupants":{"confidence":"datasheet","note":"FNIO-A, FNIO-B, FNIO-D and FNIO-E seat in the NTIO slot; the LT/NTIO dummy 3FE65651BA closes it when no NT I/O card is fitted."},"orientation":{"confidence":"photo-measured","note":"Cards are modelled upright in their own contracts and turned here with `rotate: 270`, so the card's top end (ejector lever, lamps, the NT port housings) lies at the LEFT, toward the NGFC-H power terminals, and its bottom end at the right beside the fan cover's slot legends. Settled by the owner's lab photographs of an installed NFXS-E (2026-09-24): a FANT-H's lever and lamps sit directly beside the black terminal cover, and the cards' bottom thumbscrews beside the NTA/NTB legend strip; the same photographs put breaker B above breaker A and the terminal cover at the left, as Figure 4 draws them, which fixes the frame. Figure 4 itself cannot say: it draws the NT and LT rows as generic grey port grids with a latch at each end. An earlier revision read those grids as ports at the right and seated the cards at `rotate: 90`, 180 degrees out. The NGFC-H (which only ever lies flat) is authored as it sits and is not rotated."},"panel-scale":{"confidence":"drawing","note":"Gate 1. 3FE64936BBAATQZZA03 Figure 4 front view rendered at 1200 dpi: the body is 4130 px between the outer edges of its side walls and 3296 px from top edge to bottom edge. 4130 / 446.5 = 9.250 px/mm across and 3296 / 355 = 9.285 down, 0.4 percent apart; the flanges span 4472 px, 9.307 px/mm against 480.5, 0.2 percent from the vertical. The figure is orthographic and positions below are measurements at about 0.11 mm/px, limited in practice by the drawing's 1.5 to 2 mm double edge strokes. The eight LT rows repeat at 230.9 px, which is 25.0 mm at 9.236 px/mm - the drawing's pitch runs 0.5 percent short of its own 355 mm height, the same disagreement the NGFC-H's modeller found in the BA copy (9.282 against 9.231)."},"power":{"confidence":"datasheet","note":"The shelf itself draws nothing: every consumer is a card with its own `power-draw-max-w` (from the Safety Manuals) and the fan unit's. The shelf is powered through the NGFC-H's -48 V DC terminals. No shelf-level power envelope is stated in any staged document; searched the UDS chapter 6, 3FE64936BBAATQZZA02/A03 and HIM R6.9 chapter 10 \"7360 ISAM FX-8 shelf cabling\"."},"right-vents":{"confidence":"estimated","note":"HIM R6.9 Figure 103 and Lightspan HIM Figure 158 draw the right side perforated from just behind a front strip to the rear, nearly full height; the field is placed at x 60 to 270 and y 15 to 340 by eye from those perspective views. Hole size and pitch are not documented."},"rows":{"confidence":"drawing","note":"Card rows read off Figure 4 along the right-hand ejector column (ejector tops every 230.9 px from 145 px) and the rail lines, then set to the vendor's stated pitches (UDS s6.4.1 and 3FE64936BBAATQZZA03 s1.4.1 \"NT cards: 30 mm, NT I/O card: 25 mm, LT cards: 25 mm\"). The LT block is drawn from 9.2 to 208.0 (198.8, the short pitch above) and is set as 200 mm from 9.0, so LT8 is 9.0-34.0 and LT1 184.0-209.0. The GFC's face is drawn from 297.8 to 351.9 (502 px, the same count the NGFC-H's modeller took off the BA copy) with a 3 mm sill below it to the shelf's bottom edge; nokia/ngfc-h@1 is 53.6, so it is seated at 298.0-351.6 and the sill decor closes 351.6-355. The NT rows are stacked up from the GFC at their pitches: NT A 268.0, NTIO 243.0, NT B 213.0, leaving the rail between LT1 and NT B at 209.0-213.0 (UDS s6.5.4 \"an EMC shield is provided between positions NTB and LT1\"). The drawing puts the rail's lower line at 215.5, so NT B's top is 2.5 mm higher here than drawn: the NT rows on the figure total 82.8 mm where the stated pitches give 85, and the stated pitches were held."},"slot-legends":{"confidence":"drawing","note":"The slot legends (NTA, NTIO, NTB, 01 to 08) and the shelf name are printed on the fan cover, not on the frame - see nokia/fan-cover-fx8@1 - so the frame itself carries no silkscreen in this model. Figure 4 draws no printing anywhere else on the front frame."},"sources":{"confidence":"datasheet","note":"Written first, before any number. (1) NFXS-E BB unit data sheet 3FE64936BBAATQZZA03 (Issue 03) p8 Figure 4 \"NFXS-E shelf front and top view\" - a VECTOR elevation (pdfimages lists only a 187 x 96 footer image on the page), the geometry source. (2) Lightspan Access Node FX Unit Data Sheet Guide 3HH90279AAAATQZZA23 (25.12) chapter 6: NFXS-E BB card positions, card pitches, dimensions and weight, and Figure 36, the same elevation as a 150 ppi JPEG. (3) NFXS-E BB unit data sheet 3FE64936BBAATQZZA02, whose dimension list agrees with the UDS. (4) 7360 ISAM FX ANSI Hardware Installation Manual 3HH12893AAAATCZZA29 (R6.9) s10.3, Figure 103, the grounding connection. (5) Lightspan HW Installation Manual 3HH91853AAAARJZZA08 Figure 158, the fan cover. (6) the part contracts of every seated card, each with its own provenance. No photograph of this shelf is staged."}},"references":[{"sha256":"e959f46dd3a90840a23e812aed6174398abade5ade97b8501990e57099b6c8f9","title":"Nokia NFXS-E BB (7360 ISAM FX-8 ANSI) Unit Data Sheet, 3FE 64936 BBAA TQZZA Issue 02"},{"sha256":"b06403047dff8db3becf71a183ce91a1f927fe3b99da8ec2ab546b9d1af97fb1","title":"Nokia Lightspan Access Node FX Unit Data Sheet Guide 25.12, 3HH-90279-AAAA-TQZZA Issue 23"},{"sha256":"2282eb2e3f7fee385e71df928f5d6dd4e76d6235bdc2684d7a2c4b4d8d2c20b6","title":"Nokia 7360 ISAM FX ANSI Hardware Installation Manual R6.9, 3HH-12893-AAAA-TCZZA Issue 29"},{"sha256":"745d5bb65727d7cb92e54d4c9310d6b6e19e811b25e128075b797cc4b8d7fb68","title":"Nokia Lightspan FX HW Installation Manual, 3HH-91853-AAAA-RJZZA Issue 08"}],"version":"0.1.0","views":{"bottom":{"empty":"No staged document draws the underside of the FX-8; the mount-kit figures in HIM R6.9 show brackets and baffles fitted to it, not the shelf's own bottom face.","size":{"h":278.3,"w":446.5}},"front":{"components":{"bays":[{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,9.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-8","rel-pos":8,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,34.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-7","rel-pos":7,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,59.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-6","rel-pos":6,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,84.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-5","rel-pos":5,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,109.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-4","rel-pos":4,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,134.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-3","rel-pos":3,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,159.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-2","rel-pos":2,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fglt-a@1","nokia/fglt-b@1","nokia/fglt-d@1","nokia/fglt-e@1","nokia/fwlt-a@1","nokia/fwlt-b-aa@1","nokia/fwlt-b-ab@1","nokia/fwlt-c@1","nokia/fgut-a@1","nokia/nglt-a@1","nokia/nglt-c@1","nokia/felt-b@1","nokia/felt-d@1","nokia/nelt-b@1","nokia/fplt-a@1","nokia/fpxt-a@1","nokia/fpxt-b@1","nokia/dummy-lt@1"],"at":[4.7,184.0],"default":"nokia/dummy-lt@1","group":"lt-slots","id":"lt-1","rel-pos":1,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fant-h-bb@2","nokia/fant-h-bc@2","nokia/fant-m@1","nokia/fant-f-bd@1","nokia/fant-g-ba@1","nokia/dummy-nt@1"],"at":[4.7,213.0],"default":"nokia/dummy-nt@1","group":"nt-slots","id":"nt-b","rel-pos":2,"rotate":270,"size":{"h":30.0,"w":405.0}},{"accepts":["nokia/fnio-a@1","nokia/fnio-d@1","nokia/fnio-b@1","nokia/fnio-e@1","nokia/dummy-lt@1"],"at":[4.7,243.0],"default":"nokia/dummy-lt@1","group":"ntio-slot","id":"ntio","rel-pos":1,"rotate":270,"size":{"h":25.0,"w":405.0}},{"accepts":["nokia/fant-h-bb@2","nokia/fant-h-bc@2","nokia/fant-m@1","nokia/fant-f-bd@1","nokia/fant-g-ba@1","nokia/dummy-nt@1"],"at":[4.7,268.0],"default":"nokia/fant-h-bb@2","group":"nt-slots","id":"nt-a","rel-pos":1,"rotate":270,"size":{"h":30.0,"w":405.0}},{"accepts":["nokia/ngfc-h@1"],"at":[4.7,298.0],"default":"nokia/ngfc-h@1","group":"gfc-slot","id":"gfc","rel-pos":1,"size":{"h":53.6,"w":405.0}},{"accepts":["nokia/bfan-e@1"],"at":[411.1,8.1],"default":"nokia/bfan-e@1","group":"fans","id":"fan","rel-pos":1,"size":{"h":345.0,"w":32.9},"under":["fan-cover"]}],"placements":[{"at":[411.1,8.1],"group":"covers","id":"fan-cover","ref":"nokia/fan-cover-fx8@1","rel-pos":1}]},"panel":{"decor":[{"at":[0.0,0.0],"fill":"#b7bbc0","size":[4.7,355.0]},{"at":[4.7,209.0],"fill":"#8d9298","size":[405.0,4.0]},{"at":[4.7,351.6],"fill":"#b7bbc0","size":[405.0,3.4]}]},"size":{"h":355.0,"w":446.5}},"left":{"empty":"No staged document draws the left side of the FX-8; the HIM's side figures (Figure 103, and the Lightspan HIM Figure 158) show the right side, and the data sheets draw front and top only.","size":{"h":355.0,"w":278.3}},"rear":{"empty":"No staged document draws the rear of the FX-8: searched the NFXS-E BA and BB data sheets, the Lightspan UDS chapter 6 and every FX-8 figure caption in HIM R6.9 (Figures 81-118) for rear, back and backplane views; the shelf is cabled from the front. Figure 104 \"External frame ground point rear view\" shows the rack's frame ground, not the shelf's rear.","size":{"h":355.0,"w":446.5}},"right":{"components":{"placements":[{"at":[18.5,220.0],"group":"grounding","id":"ground","ref":"common/ground-lug@1","rel-pos":1}]},"panel":{"decor":[{"at":[60.0,15.0],"fill":"#b7bbc0","size":[210.0,325.0]},{"at":[60.0,15.0],"confidence":"estimated","pattern":"vent","size":[210.0,325.0],"source":"HIM R6.9 Figure 103 and Lightspan HIM Figure 158 (perspective) draw the right side perforated behind a front strip; extent by eye, hole size and pitch not documented","vent":40}]},"size":{"h":355.0,"w":278.3}},"top":{"empty":"Drawn in plan in 3FE64936BBAATQZZA03 Figure 4 but not transcribed yet - see the side-top-bottom gap; left bare rather than drawn from a reading nobody has checked.","size":{"h":278.3,"w":446.5}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="7360 ISAM FX-8 (NFXS-E BB)" x="0" y="0" width="446.5" height="355" rx="1.2" fill="#c9ccd0" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="4.7" height="355" rx="0.6" fill="#b7bbc0" />
+    <rect id="plate-1" data-kind="plate" x="4.7" y="209" width="405" height="4" rx="0.6" fill="#8d9298" />
+    <rect id="plate-2" data-kind="plate" x="4.7" y="351.6" width="405" height="3.4" rx="0.6" fill="#b7bbc0" />
+  </g>
+  <g id="fan" data-path="fan" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1" data-under="fan-cover">
+    <title>fan</title>
+    <rect id="fan--opening" x="411.1" y="8.1" width="32.9" height="345" fill="#101214" />
+    <g id="fan--module" data-path="fan/module" data-class="fan" data-behaviour="fills" data-ref="nokia/bfan-e@1:1.0.1" data-body-depth="216.7" data-wall="#8d9298" data-airflow-m3h="6 x 192" data-dust-filter="3FE 64928 DA" data-fans="6" data-model="BFAN-E" data-part-number="3FE 66545 AA" data-power-draw-max-w="95" data-power-draw-typical-w="25" data-weight-kg="1.3" transform="translate(427.55,180.6) translate(-16.45,-172.5)">
+      <title>fan--module</title>
+      <rect id="fan--module--face" x="0" y="0" width="32.9" height="345" rx="0.4" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <rect id="fan--module--flange" x="24.2" y="0" width="8.7" height="345" fill="#b3b7bc" stroke="#9ba0a6" stroke-width="0.2" />
+      <line id="fan--module--fold" x1="2.4" y1="0" x2="2.4" y2="345" stroke="#9ba0a6" stroke-width="0.2" />
+      <rect id="fan--module--top-block" x="0" y="0" width="24.2" height="20.1" fill="#bfc3c7" stroke="#9ba0a6" stroke-width="0.2" />
+      <rect id="fan--module--window-left" x="4.3" y="25.1" width="8.5" height="43.9" rx="0.8" fill="#aeb2b7" stroke="#6f757b" stroke-width="0.25" data-path="fan/module/window-left" data-class="window" />
+      <rect id="fan--module--window-right" x="13.6" y="25.1" width="8.4" height="43.9" rx="0.8" fill="#aeb2b7" stroke="#6f757b" stroke-width="0.25" data-path="fan/module/window-right" data-class="window" />
+      <rect id="fan--module--caution-label" x="4.3" y="71.9" width="18.9" height="41.9" fill="#e9eaeb" stroke="#1d2023" stroke-width="0.25" data-path="fan/module/caution-label" data-class="label" />
+      <g id="fan--module--esd-mark" data-path="fan/module/esd-mark" data-class="label">
+        <circle cx="14.25" cy="119.8" r="3.1" fill="none" stroke="#1d2023" stroke-width="0.35" />
+        <path d="M 14.25 117.7 L 16.2 121.2 L 12.3 121.2 Z" fill="#1d2023" />
+      </g>
+      <rect id="fan--module--label-window" x="4.3" y="179.7" width="9.5" height="27.9" rx="0.8" fill="#aeb2b7" stroke="#6f757b" stroke-width="0.25" data-path="fan/module/label-window" data-class="label" />
+      <circle id="fan--module--cover-boss" cx="15.4" cy="298.0" r="1.4" fill="#8d9298" stroke="#3a3f44" stroke-width="0.25" data-path="fan/module/cover-boss" data-class="fastener" />
+      <rect id="fan--module--logo-zone" x="4.3" y="220.0" width="16.0" height="10.0" fill="none" data-path="fan/module/logo-zone" data-class="label" />
+      <g id="fan--module--silkscreen">
+        <path d="M 7.7 93.5 L 11.3 91.4 L 11.3 95.6 Z" fill="none" stroke="#1d2023" stroke-width="0.35" />
+        <text x="15.6" y="92.4" font-family="Arial" font-weight="bold" font-size="3.0" fill="#1d2023" text-anchor="middle" transform="rotate(-90 15.6 92.4)">CAUTION</text>
+        <text x="21.0" y="91.3" font-family="Arial" font-weight="bold" font-size="3.0" fill="#1d2023" text-anchor="middle" transform="rotate(-90 21.0 91.3)">ROTATING FAN BLADES</text>
+      </g>
+      <g id="fan--module--grip" data-path="fan/module/grip" data-class="handle" data-z-out="3.0">
+        <rect x="11.1" y="129.8" width="13.8" height="34.8" fill="#b3b7bc" stroke="#3a3f44" stroke-width="0.3" />
+        <line x1="21.0" y1="129.8" x2="21.0" y2="164.6" stroke="#3a3f44" stroke-width="0.25" />
+      </g>
+      <g id="fan--module--captive-screw" data-path="fan/module/captive-screw" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="15.5" cy="340.0" r="4.5" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="15.5" cy="340.0" r="2.2" fill="none" stroke="#6f757b" stroke-width="0.3" />
+        <path d="M 14.3 340.0 H 16.7 M 15.5 338.8 V 341.2" stroke="#6f757b" stroke-width="0.35" />
+      </g>
+      <g id="fan--module--led-status" data-path="fan/module/led-status" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(5.65,317.45)" data-group="status-leds" data-group-role="indicator" data-description="the fan unit's single status lamp">
+        <title>fan--module--led-status</title>
+        <circle id="fan--module--led-status--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+        <circle id="fan--module--led-status--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="fan/module/led-status/lamp" data-class="led" data-states="off starting on closed-loop fail" data-z-dome="0.45" />
+      </g>
+      <g data-cp="mate" data-cp-at="16.45 172.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="fan-cover" data-path="fan-cover" data-class="blank" data-behaviour="fills" data-ref="nokia/fan-cover-fx8@1:1.1.0" data-model="FX-8 fan cover" data-role="access-cover" data-rel-pos="1" transform="translate(411.1,8.1)" data-group="covers" data-group-role="furniture">
+    <title>fan-cover</title>
+    <path id="fan-cover--face" fill-rule="evenodd" d="M 0 0 H 32.9 V 345 H 21.5 V 340.6 A 5.8 5.8 0 0 0 9.9 340.6 V 345 H 0 Z M 9.55 319.45 A 1.9 1.9 0 1 0 5.75 319.45 A 1.9 1.9 0 1 0 9.55 319.45 Z" fill="#c9ccd0" stroke="#8d9298" stroke-width="0.35" data-path="fan-cover/face" data-class="panel" />
+    <path d="M 1.2 343.8 V 1.2 H 31.7 V 343.8" fill="none" stroke="#a7acb1" stroke-width="0.25" />
+    <g id="fan-cover--screw" data-path="fan-cover/screw" data-class="fastener">
+      <circle cx="15.9" cy="299.1" r="5.15" fill="#2b2e32" stroke="#15171a" stroke-width="0.3" />
+      <circle cx="15.9" cy="299.1" r="3.4" fill="#8d9298" stroke="#15171a" stroke-width="0.2" />
+      <path d="M 14.2 299.1 H 17.6 M 15.9 297.4 V 300.8" stroke="#15171a" stroke-width="0.45" />
+    </g>
+    <g id="fan-cover--lamp-window" data-path="fan-cover/lamp-window" data-class="window">
+      <circle cx="7.65" cy="319.45" r="1.9" fill="none" stroke="#3a3f44" stroke-width="0.35" />
+    </g>
+    <g id="fan-cover--silkscreen" font-family="Arial, Helvetica, sans-serif" fill="#1d2023" text-anchor="middle">
+      <text x="19.06" y="246.9" font-size="6.9" transform="rotate(-90 19.06 246.9)">7360 ISAM FX-8</text>
+      <g font-weight="bold">
+        <text x="7.25" y="10.53" font-size="3.5" transform="rotate(-90 7.25 10.53)">08</text>
+        <text x="7.25" y="36.06" font-size="3.5" transform="rotate(-90 7.25 36.06)">07</text>
+        <text x="7.25" y="61.26" font-size="3.5" transform="rotate(-90 7.25 61.26)">06</text>
+        <text x="7.25" y="86.25" font-size="3.5" transform="rotate(-90 7.25 86.25)">05</text>
+        <text x="7.25" y="111.61" font-size="3.5" transform="rotate(-90 7.25 111.61)">04</text>
+        <text x="7.25" y="136.38" font-size="3.5" transform="rotate(-90 7.25 136.38)">03</text>
+        <text x="7.25" y="161.53" font-size="3.5" transform="rotate(-90 7.25 161.53)">02</text>
+        <text x="7.25" y="187.16" font-size="3.5" transform="rotate(-90 7.25 187.16)">01</text>
+        <text x="7.25" y="217.64" font-size="3.5" transform="rotate(-90 7.25 217.64)">NTB</text>
+        <text x="7.25" y="245.53" font-size="3.5" transform="rotate(-90 7.25 245.53)">NTIO</text>
+        <text x="7.25" y="273.16" font-size="3.5" transform="rotate(-90 7.25 273.16)">NTA</text>
+        <text x="8.0" y="315.5" font-size="2.6">FAN</text>
+      </g>
+    </g>
+    <rect id="fan-cover--logo-zone" x="4.0" y="1.0" width="25.0" height="6.0" fill="none" data-path="fan-cover/logo-zone" data-class="logo-zone" />
+    <g data-cp="mate" data-cp-at="16.45 172.5" data-cp-dir="rear" />
+  </g>
+  <g id="lt-8" data-path="lt-8" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="8">
+    <title>lt-8</title>
+    <rect id="lt-8--opening" x="4.7" y="9" width="405" height="25" fill="#101214" />
+    <g id="lt-8--module" data-path="lt-8/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,21.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-8--module</title>
+      <rect id="lt-8--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-8--module--screw-top" data-path="lt-8/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-8--module--screw-bottom" data-path="lt-8/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-8--module--esd-mark" data-path="lt-8/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-8--module--part-label" data-path="lt-8/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-8--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-8/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-7" data-path="lt-7" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="7">
+    <title>lt-7</title>
+    <rect id="lt-7--opening" x="4.7" y="34" width="405" height="25" fill="#101214" />
+    <g id="lt-7--module" data-path="lt-7/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,46.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-7--module</title>
+      <rect id="lt-7--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-7--module--screw-top" data-path="lt-7/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-7--module--screw-bottom" data-path="lt-7/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-7--module--esd-mark" data-path="lt-7/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-7--module--part-label" data-path="lt-7/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-7--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-7/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-6" data-path="lt-6" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="6">
+    <title>lt-6</title>
+    <rect id="lt-6--opening" x="4.7" y="59" width="405" height="25" fill="#101214" />
+    <g id="lt-6--module" data-path="lt-6/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,71.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-6--module</title>
+      <rect id="lt-6--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-6--module--screw-top" data-path="lt-6/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-6--module--screw-bottom" data-path="lt-6/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-6--module--esd-mark" data-path="lt-6/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-6--module--part-label" data-path="lt-6/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-6--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-6/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-5" data-path="lt-5" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="5">
+    <title>lt-5</title>
+    <rect id="lt-5--opening" x="4.7" y="84" width="405" height="25" fill="#101214" />
+    <g id="lt-5--module" data-path="lt-5/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,96.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-5--module</title>
+      <rect id="lt-5--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-5--module--screw-top" data-path="lt-5/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-5--module--screw-bottom" data-path="lt-5/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-5--module--esd-mark" data-path="lt-5/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-5--module--part-label" data-path="lt-5/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-5--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-5/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-4" data-path="lt-4" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="4">
+    <title>lt-4</title>
+    <rect id="lt-4--opening" x="4.7" y="109" width="405" height="25" fill="#101214" />
+    <g id="lt-4--module" data-path="lt-4/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,121.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-4--module</title>
+      <rect id="lt-4--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-4--module--screw-top" data-path="lt-4/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-4--module--screw-bottom" data-path="lt-4/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-4--module--esd-mark" data-path="lt-4/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-4--module--part-label" data-path="lt-4/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-4--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-4/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-3" data-path="lt-3" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="3">
+    <title>lt-3</title>
+    <rect id="lt-3--opening" x="4.7" y="134" width="405" height="25" fill="#101214" />
+    <g id="lt-3--module" data-path="lt-3/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,146.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-3--module</title>
+      <rect id="lt-3--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-3--module--screw-top" data-path="lt-3/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-3--module--screw-bottom" data-path="lt-3/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-3--module--esd-mark" data-path="lt-3/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-3--module--part-label" data-path="lt-3/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-3--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-3/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-2" data-path="lt-2" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="2">
+    <title>lt-2</title>
+    <rect id="lt-2--opening" x="4.7" y="159" width="405" height="25" fill="#101214" />
+    <g id="lt-2--module" data-path="lt-2/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,171.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-2--module</title>
+      <rect id="lt-2--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-2--module--screw-top" data-path="lt-2/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-2--module--screw-bottom" data-path="lt-2/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-2--module--esd-mark" data-path="lt-2/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-2--module--part-label" data-path="lt-2/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-2--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-2/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="lt-1" data-path="lt-1" data-class="bay" data-group="lt-slots" data-group-role="service" data-rel-pos="1">
+    <title>lt-1</title>
+    <rect id="lt-1--opening" x="4.7" y="184" width="405" height="25" fill="#101214" />
+    <g id="lt-1--module" data-path="lt-1/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,196.5) rotate(270) translate(-12.5,-202.5)">
+      <title>lt-1--module</title>
+      <rect id="lt-1--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="lt-1--module--screw-top" data-path="lt-1/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-1--module--screw-bottom" data-path="lt-1/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="lt-1--module--esd-mark" data-path="lt-1/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="lt-1--module--part-label" data-path="lt-1/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="lt-1--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="lt-1/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="nt-b" data-path="nt-b" data-class="bay" data-group="nt-slots" data-group-role="service" data-rel-pos="2">
+    <title>nt-b</title>
+    <rect id="nt-b--opening" x="4.7" y="213" width="405" height="30" fill="#101214" />
+    <g id="nt-b--module" data-path="nt-b/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-nt@1:1.1.0" data-wall="#8d9298" data-model="Dummy front panel for NT board" data-part-number="3FE 65651 AA" data-role="slot-blank" transform="translate(207.2,228) rotate(270) translate(-15,-202.5)">
+      <title>nt-b--module</title>
+      <rect id="nt-b--module--face" x="0" y="0" width="30" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="nt-b--module--screw-top" data-path="nt-b/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="19.4" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="19.4" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="19.4" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 18.207 5.25 H 20.593 M 19.4 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="nt-b--module--screw-bottom" data-path="nt-b/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="19.4" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="19.4" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="19.4" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 18.207 399.75 H 20.593 M 19.4 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="nt-b--module--esd-mark" data-path="nt-b/module/esd-mark" data-class="label">
+        <circle cx="15.3" cy="14.8" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 15.3 13.1 L 16.8 15.8 L 13.8 15.8 Z" fill="#1d2023" />
+      </g>
+      <g id="nt-b--module--part-label" data-path="nt-b/module/part-label" data-class="label">
+        <rect x="10.9" y="354.3" width="9.3" height="19.1" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="16.4" y="356.0" width="1.6" height="15.7" fill="#9ea3a9" />
+        <rect x="13.2" y="356.0" width="1.6" height="15.7" fill="#9ea3a9" />
+      </g>
+      <rect id="nt-b--module--logo-zone" x="5.0" y="190.0" width="20.0" height="12.0" fill="none" data-path="nt-b/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="15 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="ntio" data-path="ntio" data-class="bay" data-group="ntio-slot" data-group-role="service" data-rel-pos="1">
+    <title>ntio</title>
+    <rect id="ntio--opening" x="4.7" y="243" width="405" height="25" fill="#101214" />
+    <g id="ntio--module" data-path="ntio/module" data-class="blank" data-behaviour="fills" data-ref="nokia/dummy-lt@1:1.1.0" data-wall="#8d9298" data-model="Universal dummy front panel for FD/FX LT or NTIO board" data-part-number="3FE 65651 BA" data-role="slot-blank" transform="translate(207.2,255.5) rotate(270) translate(-12.5,-202.5)">
+      <title>ntio--module</title>
+      <rect id="ntio--module--face" x="0" y="0" width="25" height="405" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+      <g id="ntio--module--screw-top" data-path="ntio/module/screw-top" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="5.25" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 5.25 H 19.893 M 18.7 4.057 V 6.443" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="ntio--module--screw-bottom" data-path="ntio/module/screw-bottom" data-class="fastener" data-z-cyl="6.0">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#b3b7bc" stroke="#8d9298" stroke-width="0.25" />
+        <circle cx="18.7" cy="399.75" r="4.534" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.267" fill="#6f757b" stroke="#15171a" stroke-width="0.2" />
+        <path d="M 17.507 399.75 H 19.893 M 18.7 398.557 V 400.943" stroke="#15171a" stroke-width="0.35" />
+      </g>
+      <g id="ntio--module--esd-mark" data-path="ntio/module/esd-mark" data-class="label">
+        <circle cx="12.8" cy="14.7" r="2.4" fill="none" stroke="#1d2023" stroke-width="0.3" />
+        <path d="M 12.8 13.0 L 14.3 15.7 L 11.3 15.7 Z" fill="#1d2023" />
+      </g>
+      <g id="ntio--module--part-label" data-path="ntio/module/part-label" data-class="label">
+        <rect x="7.8" y="354.7" width="10.0" height="19.3" fill="#f2f2f2" stroke="#6f757b" stroke-width="0.2" />
+        <rect x="13.6" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+        <rect x="10.4" y="356.4" width="1.6" height="15.9" fill="#9ea3a9" />
+      </g>
+      <rect id="ntio--module--logo-zone" x="4.0" y="190.0" width="17.0" height="12.0" fill="none" data-path="ntio/module/logo-zone" data-class="label" />
+      <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="nt-a" data-path="nt-a" data-class="bay" data-group="nt-slots" data-group-role="service" data-rel-pos="1">
+    <title>nt-a</title>
+    <rect id="nt-a--opening" x="4.7" y="268" width="405" height="30" fill="#101214" />
+    <g id="nt-a--module" data-path="nt-a/module" data-class="supervisor" data-behaviour="fills" data-ref="nokia/fant-h-bc@2:2.3.0" data-body-depth="225.0" data-wall="#3a3d42" data-model="FANT-H BC" data-part-number="3FE74828BC" data-power-draw-max-w="125" data-power-draw-typical-w="96" data-power-scope="scope NOT stated by the ANSI manual. The ETSI manual says every NT figure excludes the NTIO card and SFP power, and the BC figures equal the AC ones, but the ANSI document itself does not say so" data-qsfp28="2" data-sfp-plus="2" data-standard="ANSI" data-switch-capacity="2.0 Tbps" data-variant="BC" data-weight-kg="1.5" transform="translate(207.2,283) rotate(270) translate(-15,-202.5)">
+      <title>nt-a--module</title>
+      <rect id="nt-a--module--face" x="0" y="0" width="30" height="405" rx="0.6" fill="#c8cbcf" stroke="#8d9298" stroke-width="0.3" />
+      <g id="nt-a--module--port-housing">
+        <rect x="1.15" y="66.4" width="24.25" height="174" rx="0.5" fill="#6f757c" stroke="#33373c" stroke-width="0.35" />
+        <rect id="nt-a--module--pps-face" x="1.15" y="66.4" width="24.25" height="11.1" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/pps-face" data-class="mechanical" data-z-out="8.0646" data-z-profile-y="0:0,11.1:8.06462" data-facet-deg="36" data-facet-facing="up" />
+        <rect id="nt-a--module--pps-return" x="1.15" y="77.5" width="24.25" height="12.42" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/pps-return" data-class="mechanical" data-z-out="8.0656" data-z-profile-y="0:8.06564,12.42:0" data-facet-deg="33" data-facet-facing="down" />
+        <rect id="nt-a--module--gps-face" x="1.15" y="89.92" width="24.25" height="10.63" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/gps-face" data-class="mechanical" data-z-out="7.7231" data-z-profile-y="0:0,10.63:7.72315" data-facet-deg="36" data-facet-facing="up" />
+        <rect id="nt-a--module--gps-return" x="1.15" y="100.55" width="24.25" height="10.25" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/gps-return" data-class="mechanical" data-z-out="7.7239" data-z-profile-y="0:7.72393,10.25:0" data-facet-deg="37" data-facet-facing="down" />
+        <rect id="nt-a--module--qsfp1-face" x="1.15" y="119.01" width="24.25" height="18.19" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/qsfp1-face" data-class="mechanical" data-z-out="13.2158" data-z-profile-y="0:0,18.19:13.2158" data-facet-deg="36" data-facet-facing="up" />
+        <rect id="nt-a--module--qsfp1-return" x="1.15" y="137.2" width="24.25" height="9.96" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/qsfp1-return" data-class="mechanical" data-z-out="13.2174" data-z-profile-y="0:13.2174,9.96:0" data-facet-deg="53" data-facet-facing="down" />
+        <rect id="nt-a--module--qsfp2-face" x="1.15" y="154.81" width="24.25" height="18.19" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/qsfp2-face" data-class="mechanical" data-z-out="13.2158" data-z-profile-y="0:0,18.19:13.2158" data-facet-deg="36" data-facet-facing="up" />
+        <rect id="nt-a--module--qsfp2-return" x="1.15" y="173" width="24.25" height="9.96" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/qsfp2-return" data-class="mechanical" data-z-out="13.2174" data-z-profile-y="0:13.2174,9.96:0" data-facet-deg="53" data-facet-facing="down" />
+        <rect id="nt-a--module--sfp1-face" x="1.15" y="185.14" width="24.25" height="14.36" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/sfp1-face" data-class="mechanical" data-z-out="10.4332" data-z-profile-y="0:0,14.36:10.4332" data-facet-deg="36" data-facet-facing="up" />
+        <rect id="nt-a--module--sfp1-return" x="1.15" y="199.5" width="24.25" height="10.8" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/sfp1-return" data-class="mechanical" data-z-out="10.4294" data-z-profile-y="0:10.4294,10.8:0" data-facet-deg="44" data-facet-facing="down" />
+        <rect id="nt-a--module--sfp2-face" x="1.15" y="211.44" width="24.25" height="14.36" fill="#aeb3b8" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/sfp2-face" data-class="mechanical" data-z-out="10.4332" data-z-profile-y="0:0,14.36:10.4332" data-facet-deg="36" data-facet-facing="up" />
+        <rect id="nt-a--module--sfp2-return" x="1.15" y="225.8" width="24.25" height="10.8" fill="#7b8187" stroke="#4a4f55" stroke-width="0.2" data-path="nt-a/module/sfp2-return" data-class="mechanical" data-z-out="10.4294" data-z-profile-y="0:10.4294,10.8:0" data-facet-deg="44" data-facet-facing="down" />
+      </g>
+      <g id="nt-a--module--jack-frames" fill="none" stroke="#5f656c" stroke-width="0.3">
+        <rect x="5.8" y="297.2" width="14.4" height="16.2" rx="0.3" />
+        <rect x="5.8" y="315.5" width="14.4" height="32.0" rx="0.3" />
+      </g>
+      <rect id="nt-a--module--logo-zone" x="9.5" y="15.0" width="12.0" height="4.0" fill="none" data-path="nt-a/module/logo-zone" data-class="logo-zone" />
+      <g id="nt-a--module--marks" fill="none" stroke="#3a3d42" stroke-width="0.25">
+        <rect x="10.2" y="379.8" width="3.0" height="2.6" />
+        <rect x="10.2" y="383.4" width="3.0" height="2.6" />
+      </g>
+      <g id="nt-a--module--silkscreen" fill="#1c1f23" font-family="Helvetica, Arial, sans-serif">
+        <path d="M 16.9 387.4 L 19.5 382.6 L 22.1 387.4 Z" fill="none" stroke="#1c1f23" stroke-width="0.3" />
+        <text x="10.5" y="24.0" font-size="2.2" font-weight="bold">FANT-H</text>
+        <text x="6.2" y="34.1" font-size="1.7" text-anchor="end">ALM</text>
+        <text x="17.2" y="34.1" font-size="1.7">PWR</text>
+        <text x="17.2" y="39.15" font-size="1.7">A/S</text>
+        <text x="6.2" y="44.2" font-size="1.7" text-anchor="end">2</text>
+        <text x="17.2" y="44.2" font-size="1.7">1</text>
+        <text x="6.2" y="49.25" font-size="1.7" text-anchor="end">4</text>
+        <text x="17.2" y="49.25" font-size="1.7">3</text>
+        <text x="6.2" y="54.3" font-size="1.7" text-anchor="end">2</text>
+        <text x="17.2" y="54.3" font-size="1.7">1</text>
+        <text x="6.2" y="59.35" font-size="1.7" text-anchor="end">4</text>
+        <text x="17.2" y="59.35" font-size="1.7">3</text>
+        <text x="6.2" y="64.4" font-size="1.7" text-anchor="end">PORT4</text>
+        <text x="17.2" y="64.4" font-size="1.7">PORT3</text>
+        <path d="M 3.3 42.0 H 2.6 V 50.25 H 3.3" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+        <path d="M 20.1 42.0 H 20.8 V 50.25 H 20.1" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+        <text x="21.7" y="46.725" font-size="1.7">PORT1</text>
+        <path d="M 3.3 52.1 H 2.6 V 60.35 H 3.3" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+        <path d="M 20.1 52.1 H 20.8 V 60.35 H 20.1" fill="none" stroke="#1c1f23" stroke-width="0.22" />
+        <text x="21.7" y="56.825" font-size="1.7">PORT2</text>
+        <text x="26.536" y="72.5" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 72.5)">1PPS</text>
+        <text x="26.536" y="92.1" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 92.1)">10MHz</text>
+        <text x="26.536" y="128.0" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 128.0)">PORT1</text>
+        <text x="26.536" y="164.1" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 164.1)">PORT2</text>
+        <text x="26.536" y="191.6" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 191.6)">PORT3</text>
+        <text x="26.536" y="217.9" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 26.536 217.9)">PORT4</text>
+        <text x="11.836" y="255.2" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 11.836 255.2)">USB</text>
+        <text x="23.936" y="305.3" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 305.3)">ETH</text>
+        <text x="23.936" y="323.6" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 323.6)">LMT</text>
+        <text x="23.936" y="339.4" font-size="2.4" font-weight="bold" text-anchor="middle" transform="rotate(90 23.936 339.4)">TOD-PPS</text>
+      </g>
+      <g id="nt-a--module--lever-top" data-path="nt-a/module/lever-top" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+        <rect x="0.4" y="1.0" width="5.6" height="29.0" rx="1.4" fill="#2b2e33" stroke="#17191c" stroke-width="0.25" />
+        <rect x="1.4" y="3.0" width="3.6" height="13.05" rx="0.8" fill="#3a3e44" />
+      </g>
+      <g id="nt-a--module--lever-bottom" data-path="nt-a/module/lever-bottom" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+        <rect x="0.4" y="318.0" width="5.6" height="70.0" rx="1.4" fill="#2b2e33" stroke="#17191c" stroke-width="0.25" />
+        <rect x="1.4" y="320.0" width="3.6" height="24.5" rx="0.8" fill="#3a3e44" />
+      </g>
+      <g id="nt-a--module--screw-bottom" data-path="nt-a/module/screw-bottom" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+        <circle cx="19.4" cy="399.75" r="5.25" fill="#3a3d42" stroke="#17191c" stroke-width="0.3" />
+        <circle cx="19.4" cy="399.75" r="4.763" fill="none" stroke="#5a5e64" stroke-width="0.5" stroke-dasharray="0.5 0.5" />
+        <path d="M 17.235 399.75 L 21.565 399.75 M 19.4 397.585 L 19.4 401.915" stroke="#8d9298" stroke-width="0.45" />
+      </g>
+      <g id="nt-a--module--pps-1" data-path="nt-a/module/pps-1" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="1 PPS input" data-media="coax-sma" transform="translate(8.25,68.157) scale(1,0.809017)" data-tilt-on="nt-a--module--pps-face" data-tilt="36" data-tilt-facing="up" data-group="timing" data-group-role="management">
+        <title>nt-a--module--pps-1</title>
+        <path id="nt-a--module--pps-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+        <g id="nt-a--module--pps-1--jack" data-path="nt-a/module/pps-1/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+          <title>nt-a--module--pps-1--jack</title>
+          <circle id="nt-a--module--pps-1--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="nt-a/module/pps-1/jack/opening" data-class="cutout" />
+          <g id="nt-a--module--pps-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+            <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+            <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+            <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--gps-10mhz" data-path="nt-a/module/gps-10mhz" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-function="10 MHz GPS input" data-media="coax-sma" transform="translate(8.25,91.357) scale(1,0.809017)" data-tilt-on="nt-a--module--gps-face" data-tilt="36" data-tilt-facing="up" data-group="timing" data-group-role="management">
+        <title>nt-a--module--gps-10mhz</title>
+        <path id="nt-a--module--gps-10mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+        <g id="nt-a--module--gps-10mhz--jack" data-path="nt-a/module/gps-10mhz/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+          <title>nt-a--module--gps-10mhz--jack</title>
+          <circle id="nt-a--module--gps-10mhz--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="nt-a/module/gps-10mhz/jack/opening" data-class="cutout" />
+          <g id="nt-a--module--gps-10mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+            <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+            <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+            <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+          </g>
+          <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+        </g>
+        <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--qsfp-1" data-path="nt-a/module/qsfp-1" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" transform="translate(1.8,123.594) scale(1,0.809017) rotate(270 10.0 5.075)" data-tilt-on="nt-a--module--qsfp1-face" data-tilt="36" data-tilt-facing="up" data-group="qsfp28" data-group-role="traffic" data-description="QSFP28 uplinks - 100GE, 40GE, 4x25GE and 4x10GE">
+        <title>nt-a--module--qsfp-1</title>
+        <rect id="nt-a--module--qsfp-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="nt-a/module/qsfp-1/opening" data-class="cutout" />
+        <rect id="nt-a--module--qsfp-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="nt-a--module--qsfp-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+        <path id="nt-a--module--qsfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--qsfp-2" data-path="nt-a/module/qsfp-2" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" transform="translate(1.8,159.394) scale(1,0.809017) rotate(270 10.0 5.075)" data-tilt-on="nt-a--module--qsfp2-face" data-tilt="36" data-tilt-facing="up" data-group="qsfp28" data-group-role="traffic" data-description="QSFP28 uplinks - 100GE, 40GE, 4x25GE and 4x10GE">
+        <title>nt-a--module--qsfp-2</title>
+        <rect id="nt-a--module--qsfp-2--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="nt-a/module/qsfp-2/opening" data-class="cutout" />
+        <rect id="nt-a--module--qsfp-2--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="nt-a--module--qsfp-2--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+        <path id="nt-a--module--qsfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--sfp-1" data-path="nt-a/module/sfp-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" transform="translate(4.55,187.555) scale(1,0.809017) rotate(270 7.25 5.0)" data-tilt-on="nt-a--module--sfp1-face" data-tilt="36" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="SFP+ ports - 10GE and 1GE; their lamps are PORT3 and PORT4">
+        <title>nt-a--module--sfp-1</title>
+        <rect id="nt-a--module--sfp-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nt-a/module/sfp-1/opening" data-class="cutout" />
+        <rect id="nt-a--module--sfp-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="nt-a--module--sfp-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="nt-a--module--sfp-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="nt-a--module--sfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--sfp-2" data-path="nt-a/module/sfp-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-speed="10g" transform="translate(4.55,213.855) scale(1,0.809017) rotate(270 7.25 5.0)" data-tilt-on="nt-a--module--sfp2-face" data-tilt="36" data-tilt-facing="up" data-group="sfp-plus" data-group-role="traffic" data-description="SFP+ ports - 10GE and 1GE; their lamps are PORT3 and PORT4">
+        <title>nt-a--module--sfp-2</title>
+        <rect id="nt-a--module--sfp-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nt-a/module/sfp-2/opening" data-class="cutout" />
+        <rect id="nt-a--module--sfp-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+        <rect id="nt-a--module--sfp-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+        <rect id="nt-a--module--sfp-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+        <path id="nt-a--module--sfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+        <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--laser-mark" data-path="nt-a/module/laser-mark" data-class="marking" data-behaviour="mounts" data-ref="common/laser-warning@1:1.0.0" transform="translate(10.9,242.9)">
+        <title>nt-a--module--laser-mark</title>
+        <path id="nt-a--module--laser-mark--field" d="M 2.7 0.2 L 5.25 4.6 H 0.15 Z" fill="#f2c619" stroke="#1a1a1a" stroke-width="0.34" stroke-linejoin="round" />
+        <g id="nt-a--module--laser-mark--burst" fill="#1a1a1a">
+          <path d="M 1.15 3.55 h 1.5 v 0.34 h -1.5 z" />
+          <path d="M 2.62 3.72 l 1.55 -0.5 l 0.1 0.3 l -1.55 0.5 z" />
+          <path d="M 2.62 3.55 l 1.42 -0.95 l 0.18 0.26 l -1.42 0.95 z" />
+          <path d="M 2.62 3.4 l 1.05 -1.35 l 0.24 0.19 l -1.05 1.35 z" />
+        </g>
+      </g>
+      <g id="nt-a--module--usb" data-path="nt-a/module/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-function="debug" data-media="micro-usb-b" transform="translate(4.05,253.825) rotate(90 3.75 1.375)" data-group="craft" data-group-role="management">
+        <title>nt-a--module--usb</title>
+        <rect id="nt-a--module--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+        <path id="nt-a--module--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="nt-a/module/usb/opening" data-class="cutout" />
+        <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+      </g>
+      <g id="nt-a--module--eth" data-path="nt-a/module/eth" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(5.1,298.7) rotate(270 7.9 6.6)" data-group="base-t" data-group-role="traffic" data-description="the fixed 10/100/1000Base-T communication port (ETH)">
+        <title>nt-a--module--eth</title>
+        <g id="nt-a--module--eth--jack" data-path="nt-a/module/eth/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+          <title>nt-a--module--eth--jack</title>
+          <path id="nt-a--module--eth--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="nt-a--module--eth--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="nt-a--module--eth--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="nt-a/module/eth/jack/opening" data-class="cutout" />
+          <g id="nt-a--module--eth--jack--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <path id="nt-a--module--eth--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <rect id="nt-a--module--eth--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/eth/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+        <rect id="nt-a--module--eth--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/eth/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+        <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--lmt" data-path="nt-a/module/lmt" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="local craft management interface" data-media="rj45-serial" transform="translate(5.1,317.0) rotate(270 7.9 6.6)" data-group="craft" data-group-role="management">
+        <title>nt-a--module--lmt</title>
+        <path id="nt-a--module--lmt--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="nt-a--module--lmt--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="nt-a--module--lmt--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="nt-a/module/lmt/opening" data-class="cutout" />
+        <g id="nt-a--module--lmt--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--tod" data-path="nt-a/module/tod" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-function="ToD / 1PPS" data-media="rj45-tod" transform="translate(5.1,332.8) rotate(270 7.9 6.6)" data-group="timing" data-group-role="management">
+        <title>nt-a--module--tod</title>
+        <path id="nt-a--module--tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="nt-a--module--tod--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="nt-a--module--tod--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="nt-a/module/tod/opening" data-class="cutout" />
+        <g id="nt-a--module--tod--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <g id="nt-a--module--led-alm" data-path="nt-a/module/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="ALM - red: alarm condition exists; off: no alarm condition" transform="translate(7.94,32.5)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-alm</title>
+        <circle id="nt-a--module--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-alm/lamp" data-class="led" data-states="off alarm" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-pwr" data-path="nt-a/module/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PWR - green flashing 0.5 s on / 0.5 s off: software initializing; green blinking 3.5 s on / 0.5 s off: initialization completed, NT operational; off: no power" transform="translate(13.14,32.5)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-pwr</title>
+        <circle id="nt-a--module--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-pwr/lamp" data-class="led" data-states="off initializing operational" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-a-s" data-path="nt-a/module/led-a-s" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="A/S - green: active; off: stand-by" transform="translate(13.14,37.55)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-a-s</title>
+        <circle id="nt-a--module--led-a-s--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-a-s--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-a-s/lamp" data-class="led" data-states="standby active" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p1-2" data-path="nt-a/module/led-p1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 2 - link/activity status, QSFP28 interface 1 channel 2" transform="translate(7.94,42.6)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p1-2</title>
+        <circle id="nt-a--module--led-p1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p1-2/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p1-1" data-path="nt-a/module/led-p1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 1 - link/activity status, QSFP28 interface 1 channel 1" transform="translate(13.14,42.6)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p1-1</title>
+        <circle id="nt-a--module--led-p1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p1-1/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p1-4" data-path="nt-a/module/led-p1-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 4 - link/activity status, QSFP28 interface 1 channel 4" transform="translate(7.94,47.65)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p1-4</title>
+        <circle id="nt-a--module--led-p1-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p1-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p1-4/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p1-3" data-path="nt-a/module/led-p1-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT1 lamp 3 - link/activity status, QSFP28 interface 1 channel 3" transform="translate(13.14,47.65)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p1-3</title>
+        <circle id="nt-a--module--led-p1-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p1-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p1-3/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p2-2" data-path="nt-a/module/led-p2-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 2 - link/activity status, QSFP28 interface 2 channel 2" transform="translate(7.94,52.7)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p2-2</title>
+        <circle id="nt-a--module--led-p2-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p2-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p2-2/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p2-1" data-path="nt-a/module/led-p2-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 1 - link/activity status, QSFP28 interface 2 channel 1" transform="translate(13.14,52.7)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p2-1</title>
+        <circle id="nt-a--module--led-p2-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p2-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p2-1/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p2-4" data-path="nt-a/module/led-p2-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 4 - link/activity status, QSFP28 interface 2 channel 4" transform="translate(7.94,57.75)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p2-4</title>
+        <circle id="nt-a--module--led-p2-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p2-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p2-4/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p2-3" data-path="nt-a/module/led-p2-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT2 lamp 3 - link/activity status, QSFP28 interface 2 channel 3" transform="translate(13.14,57.75)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p2-3</title>
+        <circle id="nt-a--module--led-p2-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p2-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p2-3/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p4" data-path="nt-a/module/led-p4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT4 - link/activity status of SFP+ interface 2 (module 4)" transform="translate(7.94,62.8)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p4</title>
+        <circle id="nt-a--module--led-p4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p4/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g id="nt-a--module--led-p3" data-path="nt-a/module/led-p3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="PORT3 - link/activity status of SFP+ interface 1 (module 3)" transform="translate(13.14,62.8)" data-group="leds" data-group-role="indicator">
+        <title>nt-a--module--led-p3</title>
+        <circle id="nt-a--module--led-p3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="nt-a--module--led-p3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nt-a/module/led-p3/lamp" data-class="led" data-states="off link-activity" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="15 202.5" data-cp-dir="front" />
+    </g>
+  </g>
+  <g id="gfc" data-path="gfc" data-class="bay" data-group="gfc-slot" data-group-role="service" data-rel-pos="1">
+    <title>gfc</title>
+    <rect id="gfc--opening" x="4.7" y="298" width="405" height="53.6" fill="#101214" />
+    <g id="gfc--module" data-path="gfc/module" data-class="power" data-behaviour="fills" data-ref="nokia/ngfc-h@1:1.1.0" data-body-depth="201.4" data-branches="2 (A and B), each split into two feeds, 2 x 40 A circuit breakers (redundant)" data-hot-insertable="no" data-input-voltage="-48 V DC nominal (-40.5 to -60 V DC at the shelf connection point)" data-model="NGFC-H" data-part-number="3FE 65675 AA" data-role="general-facilities-card" data-shelf="NFXS-E BB (7360 ISAM FX-8, ANSI)" transform="translate(207.2,324.8) translate(-202.5,-26.8)">
+      <title>gfc--module</title>
+      <rect id="gfc--module--face" x="0" y="0" width="405.0" height="53.6" fill="none" />
+      <rect id="gfc--module--terminal-frame" x="0" y="0" width="95.9" height="53.6" fill="#b7bbc0" stroke="#6b7178" stroke-width="0.4" />
+      <path id="gfc--module--plate" d="M 95.9 0 L 402.0 0 Q 405.0 0 405.0 3 L 405.0 50.6 Q 405.0 53.6 402.0 53.6 L 95.9 53.6 Z" fill="#c9ccd0" stroke="#6b7178" stroke-width="0.4" />
+      <rect id="gfc--module--terminal-hinge" x="1.7" y="3.1" width="11.1" height="39.2" fill="#a3a8ae" stroke="#6b7178" stroke-width="0.25" />
+      <rect x="3.2" y="10.90" width="6.2" height="5.2" rx="1.2" fill="#6f757b" stroke="#2a2d31" stroke-width="0.25" />
+      <rect x="3.2" y="29.20" width="6.2" height="5.2" rx="1.2" fill="#6f757b" stroke="#2a2d31" stroke-width="0.25" />
+      <g>
+        <circle cx="90.6" cy="11.6" r="1.90" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 89.65 11.6 L 91.55 11.6 M 90.6 10.65 L 90.6 12.55" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="90.6" cy="28.9" r="1.90" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 89.65 28.9 L 91.55 28.9 M 90.6 27.95 L 90.6 29.85" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="27.0" cy="48.6" r="1.90" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 26.05 48.6 L 27.95 48.6 M 27.0 47.65 L 27.0 49.55" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g id="gfc--module--breaker-b" data-path="gfc/module/breaker-b" data-class="breaker" data-description="circuit breaker switch (40 A) EBAT-B, legend B-40A (callout 4)">
+        <path d="M 115.2 8.60 L 110.9 8.60 Q 107.4 8.60 107.4 12.0 Q 107.4 15.40 110.9 15.40 L 115.2 15.40 Z" fill="#1c1e21" />
+        <rect x="115.2" y="1.0" width="36.8" height="21.0" fill="#1c1e21" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="133.55" cy="11.50" r="6.6" fill="#1c1e21" stroke="#f0f1f2" stroke-width="0.35" />
+        <rect x="132.2" y="6.80" width="2.7" height="9.4" fill="none" stroke="#f0f1f2" stroke-width="0.3" />
+      </g>
+      <g>
+        <circle cx="110.9" cy="12.0" r="1.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 110.00 12.0 L 111.80 12.0 M 110.9 11.10 L 110.9 12.90" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g id="gfc--module--breaker-a" data-path="gfc/module/breaker-a" data-class="breaker" data-description="circuit breaker switch (40 A) EBAT-A, legend A-40A (callout 5)">
+        <path d="M 115.2 29.10 L 110.9 29.10 Q 107.4 29.10 107.4 32.5 Q 107.4 35.90 110.9 35.90 L 115.2 35.90 Z" fill="#1c1e21" />
+        <rect x="115.2" y="22.5" width="36.8" height="21.0" fill="#1c1e21" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="133.55" cy="33.00" r="6.6" fill="#1c1e21" stroke="#f0f1f2" stroke-width="0.35" />
+        <rect x="132.2" y="28.30" width="2.7" height="9.4" fill="none" stroke="#f0f1f2" stroke-width="0.3" />
+      </g>
+      <g>
+        <circle cx="110.9" cy="32.5" r="1.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 110.00 32.5 L 111.80 32.5 M 110.9 31.60 L 110.9 33.40" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="167.7" cy="9.7" r="2.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 166.30 9.7 L 169.10 9.7 M 167.7 8.30 L 167.7 11.10" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="167.7" cy="31.7" r="2.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 166.30 31.7 L 169.10 31.7 M 167.7 30.30 L 167.7 33.10" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="181.5" cy="8.2" r="2.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 180.10 8.2 L 182.90 8.2 M 181.5 6.80 L 181.5 9.60" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="259.1" cy="8.2" r="2.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 257.70 8.2 L 260.50 8.2 M 259.1 6.80 L 259.1 9.60" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="396.9" cy="8.8" r="2.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 395.50 8.8 L 398.30 8.8 M 396.9 7.40 L 396.9 10.20" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g>
+        <circle cx="396.9" cy="34.7" r="2.80" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 395.50 34.7 L 398.30 34.7 M 396.9 33.30 L 396.9 36.10" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <g id="gfc--module--captive-screw">
+        <circle cx="396.8" cy="21.8" r="3.50" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 395.05 21.8 L 398.55 21.8 M 396.8 20.05 L 396.8 23.55" stroke="#2a2d31" stroke-width="0.45" />
+      </g>
+      <rect id="gfc--module--handle" x="193.1" y="3.8" width="54.5" height="7.3" rx="3.65" fill="#e6e8ea" stroke="#2a2d31" stroke-width="0.5" data-path="gfc/module/handle" data-class="handle" />
+      <g id="gfc--module--alarm-io" data-path="gfc/module/alarm-io" data-class="port" data-description="female 50-pin micro D-sub, 'External Alarms' - seventeen external alarm inputs and outputs, external ACO, and visual and audible critical, major and minor relay contacts (UDS Table 115)">
+        <rect x="180.5" y="34.0" width="47.7" height="9.1" fill="#f2f3f4" stroke="#2a2d31" stroke-width="0.35" />
+        <path d="M 185.3 36.6 L 223.6 36.6 L 222.6 40.3 L 186.3 40.3 Z" fill="#1c1e21" stroke="#555a60" stroke-width="0.3" />
+      </g>
+      <g id="gfc--module--bits" data-path="gfc/module/bits" data-class="port" data-description="six-pin right-angle wire-wrap header, recessed behind the panel, for the BITS inputs to NT-A and NT-B with frame ground between (UDS Table 116)">
+        <rect x="236.7" y="29.3" width="31.0" height="9.7" rx="4.8" fill="#d4d7da" stroke="#2a2d31" stroke-width="0.35" />
+        <rect x="240.30" y="31.3" width="2.4" height="4.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <rect x="244.60" y="31.3" width="2.4" height="4.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <rect x="248.80" y="31.3" width="2.4" height="4.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <rect x="253.00" y="31.3" width="2.4" height="4.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <rect x="257.20" y="31.3" width="2.4" height="4.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <rect x="261.40" y="31.3" width="2.4" height="4.6" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+      </g>
+      <g id="gfc--module--aco-switch" data-path="gfc/module/aco-switch" data-class="button" data-description="alarm cut-off push button (callout 13)">
+        <circle cx="373.4" cy="39.6" r="2.5" fill="#f2f3f4" stroke="#1c1e21" stroke-width="1.1" />
+      </g>
+      <g id="gfc--module--esd-mark" data-path="gfc/module/esd-mark" data-class="marking">
+        <path d="M 395.30 47.70 L 396.8 45.09 L 398.30 47.70 Z" fill="none" stroke="#2a2d31" stroke-width="0.3" />
+        <path d="M 396.05 47.05 L 397.40 46.14" stroke="#2a2d31" stroke-width="0.3" />
+      </g>
+      <g id="gfc--module--silkscreen">
+        <text x="167.7" y="17.6" font-family="Arial" font-size="3.0" fill="#2a2d31" text-anchor="middle">B-40A</text>
+        <text x="167.7" y="39.6" font-family="Arial" font-size="3.0" fill="#2a2d31" text-anchor="middle">A-40A</text>
+        <text x="270.7" y="20.2" font-family="Arial" font-size="7.7" fill="#2a2d31" text-anchor="start">7360 ISAM FX-8</text>
+        <text x="204.4" y="48.4" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="middle">External Alarms</text>
+        <path d="M 241.60 41.3 L 241.60 41.9 L 246.80 41.9 L 246.80 41.3" stroke="#2a2d31" stroke-width="0.2" fill="none" />
+        <text x="244.2" y="44.4" font-family="Arial" font-size="2.4" fill="#2a2d31" text-anchor="middle">NTA</text>
+        <path d="M 250.20 41.3 L 250.20 41.9 L 255.40 41.9 L 255.40 41.3" stroke="#2a2d31" stroke-width="0.2" fill="none" />
+        <text x="252.8" y="44.4" font-family="Arial" font-size="2.4" fill="#2a2d31" text-anchor="middle">GND</text>
+        <path d="M 258.20 41.3 L 258.20 41.9 L 263.40 41.9 L 263.40 41.3" stroke="#2a2d31" stroke-width="0.2" fill="none" />
+        <text x="260.8" y="44.4" font-family="Arial" font-size="2.4" fill="#2a2d31" text-anchor="middle">NTB</text>
+        <text x="252.2" y="48.4" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="middle">BITS</text>
+        <text x="309.8" y="48.4" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="middle">Remote Craft</text>
+        <text x="334.9" y="48.4" font-family="Arial" font-size="2.2" fill="#2a2d31" text-anchor="middle">BAT A</text>
+        <text x="343.2" y="48.4" font-family="Arial" font-size="2.2" fill="#2a2d31" text-anchor="middle">BAT B</text>
+        <text x="357.3" y="25.2" font-family="Arial" font-size="3.6" fill="#2a2d31" text-anchor="middle">Alarms</text>
+        <text x="354.3" y="30.2" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="start">Critical</text>
+        <text x="354.3" y="35.7" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="start">Major</text>
+        <text x="354.3" y="41.4" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="start">Minor</text>
+        <path d="M 364.8 39.5 L 364.8 44.6 L 366.4 44.6" stroke="#2a2d31" stroke-width="0.2" fill="none" />
+        <text x="366.6" y="45.8" font-family="Arial" font-size="3.2" fill="#2a2d31" text-anchor="start">ACO</text>
+      </g>
+      <g id="gfc--module--terminal-cover" data-path="gfc/module/terminal-cover" data-class="cover" data-description="the hinged 'Energy Hazard' shield over the terminal block" data-z-out="39.187" data-z-profile="0:39.187,73.7:0" data-facet-deg="28" data-facet-facing="right">
+        <path d="M 13.3 3.2 L 87.0 6.2 L 87.0 42.5 L 13.3 45.7 Z" fill="#d9dcdf" fill-opacity="0.85" stroke="#2a2d31" stroke-width="0.35" />
+        <g id="gfc--module--ebatret-1" data-path="gfc/module/ebatret-1" data-class="inlet" data-description="EBATRET connector, double-hole lug on two M5 studs (callout 1, upper)">
+          <rect x="24.10" y="8.90" width="13.0" height="12.0" fill="#7d838a" stroke="#2a2d31" stroke-width="0.25" />
+          <circle cx="28.00" cy="14.9" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="33.20" cy="14.9" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="28.00" cy="14.9" r="1.0" fill="#5d6268" />
+          <circle cx="33.20" cy="14.9" r="1.0" fill="#5d6268" />
+        </g>
+        <g id="gfc--module--ebatret-2" data-path="gfc/module/ebatret-2" data-class="inlet" data-description="EBATRET connector, double-hole lug on two M5 studs (callout 1, lower)">
+          <rect x="24.10" y="24.30" width="13.0" height="12.0" fill="#7d838a" stroke="#2a2d31" stroke-width="0.25" />
+          <circle cx="28.00" cy="30.3" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="33.20" cy="30.3" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="28.00" cy="30.3" r="1.0" fill="#5d6268" />
+          <circle cx="33.20" cy="30.3" r="1.0" fill="#5d6268" />
+        </g>
+        <g id="gfc--module--ebat-a" data-path="gfc/module/ebat-a" data-class="inlet" data-description="EBAT-A branch connector, double-hole lug on two M5 studs (callout 3)">
+          <rect x="67.50" y="8.90" width="13.0" height="12.0" fill="#7d838a" stroke="#2a2d31" stroke-width="0.25" />
+          <circle cx="71.40" cy="14.9" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="76.60" cy="14.9" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="71.40" cy="14.9" r="1.0" fill="#5d6268" />
+          <circle cx="76.60" cy="14.9" r="1.0" fill="#5d6268" />
+        </g>
+        <g id="gfc--module--ebat-b" data-path="gfc/module/ebat-b" data-class="inlet" data-description="EBAT-B branch connector, double-hole lug on two M5 studs (callout 2)">
+          <rect x="67.50" y="24.30" width="13.0" height="12.0" fill="#7d838a" stroke="#2a2d31" stroke-width="0.25" />
+          <circle cx="71.40" cy="30.3" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="76.60" cy="30.3" r="2.5" fill="#c4c8cc" stroke="#2a2d31" stroke-width="0.3" />
+          <circle cx="71.40" cy="30.3" r="1.0" fill="#5d6268" />
+          <circle cx="76.60" cy="30.3" r="1.0" fill="#5d6268" />
+        </g>
+        <g id="gfc--module--cover-silkscreen">
+          <g id="gfc--module--energy-hazard">
+            <rect x="35.7" y="9.8" width="31.8" height="26.4" fill="#ffffff" stroke="#2a2d31" stroke-width="0.25" />
+            <text x="47.0" y="24.4" font-family="Arial" font-size="4.0" fill="#2a2d31" text-anchor="middle">Energy Hazard</text>
+            <path d="M 58.6 29.0 L 62.4 17.6 L 66.2 29.0 Z" fill="none" stroke="#2a2d31" stroke-width="0.35" />
+            <path d="M 62.4 21.0 L 62.4 25.8" stroke="#2a2d31" stroke-width="0.45" />
+          </g>
+        </g>
+      </g>
+      <g id="gfc--module--craft" data-path="gfc/module/craft" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-function="remote craft port" data-media="db9" transform="translate(294.45,28.75)" data-group="craft" data-group-role="management" data-description="the DB-9 remote craft port (RS-232, UDS Table 117). The alarm I/O D-sub and the BITS header are management too, but no library part exists for either, so they are elements of this card and cannot join a group.">
+        <title>gfc--module--craft</title>
+        <g id="gfc--module--craft--bore-floor">
+          <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+          <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+        </g>
+        <path id="gfc--module--craft--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+        <g id="gfc--module--craft--shell" data-path="gfc/module/craft/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+          <title>gfc--module--craft--shell</title>
+          <path id="gfc--module--craft--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="gfc/module/craft/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+          <path id="gfc--module--craft--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+          <circle id="gfc--module--craft--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <circle id="gfc--module--craft--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+          <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+      </g>
+      <g id="gfc--module--bat-a" data-path="gfc/module/bat-a" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(334.9,36.4)" data-group="leds" data-group-role="indicator" data-description="power presence, office alarm and ACO lamps (UDS Table 114)">
+        <title>gfc--module--bat-a</title>
+        <circle id="gfc--module--bat-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="gfc--module--bat-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="gfc/module/bat-a/lamp" data-class="led" data-states="green off" data-z-dome="0.3" />
+      </g>
+      <g id="gfc--module--bat-b" data-path="gfc/module/bat-b" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(341.4,36.4)" data-group="leds" data-group-role="indicator" data-description="power presence, office alarm and ACO lamps (UDS Table 114)">
+        <title>gfc--module--bat-b</title>
+        <circle id="gfc--module--bat-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="gfc--module--bat-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="gfc/module/bat-b/lamp" data-class="led" data-states="green off" data-z-dome="0.3" />
+      </g>
+      <g id="gfc--module--critical" data-path="gfc/module/critical" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(351.3,28.1)" data-group="leds" data-group-role="indicator" data-description="power presence, office alarm and ACO lamps (UDS Table 114)">
+        <title>gfc--module--critical</title>
+        <circle id="gfc--module--critical--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="gfc--module--critical--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="gfc/module/critical/lamp" data-class="led" data-states="red off" data-z-dome="0.3" />
+      </g>
+      <g id="gfc--module--major" data-path="gfc/module/major" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(351.3,33.6)" data-group="leds" data-group-role="indicator" data-description="power presence, office alarm and ACO lamps (UDS Table 114)">
+        <title>gfc--module--major</title>
+        <circle id="gfc--module--major--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="gfc--module--major--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="gfc/module/major/lamp" data-class="led" data-states="red off" data-z-dome="0.3" />
+      </g>
+      <g id="gfc--module--minor" data-path="gfc/module/minor" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(351.3,39.3)" data-group="leds" data-group-role="indicator" data-description="power presence, office alarm and ACO lamps (UDS Table 114)">
+        <title>gfc--module--minor</title>
+        <circle id="gfc--module--minor--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="gfc--module--minor--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="gfc/module/minor/lamp" data-class="led" data-states="yellow off" data-z-dome="0.3" />
+      </g>
+      <g id="gfc--module--aco" data-path="gfc/module/aco" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(363.8,36.6)" data-group="leds" data-group-role="indicator" data-description="power presence, office alarm and ACO lamps (UDS Table 114)">
+        <title>gfc--module--aco</title>
+        <circle id="gfc--module--aco--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+        <circle id="gfc--module--aco--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="gfc/module/aco/lamp" data-class="led" data-states="green off" data-z-dome="0.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="202.5 26.8" data-cp-dir="rear" />
+    </g>
+  </g>
+</svg>

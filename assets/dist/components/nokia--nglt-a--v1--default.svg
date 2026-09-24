@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/nglt-a@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/nglt-a@'] .state-active { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/nglt-a@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/nglt-a@'] .state-init { --led-color: #39b54a; }
+    g[data-ref^='nokia/nglt-a@'] .state-init { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/nglt-a@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/nglt-a@'] .state-red { --led-color: #d0021b; }
+    g[data-ref^='nokia/nglt-a@'] .state-yellow { --led-color: #f5c400; }</style>
+  <g id="nglt-a" data-path="nglt-a" data-class="line-card" data-behaviour="fills" data-ref="nokia/nglt-a@1:1.4.0" data-body-depth="225.0" data-wall="#8d9298" data-gpon="8" data-model="NGLT-A" data-part-number="3FE 64279 AA" data-power-draw-max-w="76.2" data-power-draw-typical-w="64.2" data-weight-kg="0.9" transform="translate(0,0)">
+    <title>nglt-a</title>
+    <rect id="nglt-a--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <rect id="nglt-a--well" x="3.1" y="106.9" width="18.4" height="228.4" fill="#2a2e33" stroke="#7d848c" stroke-width="0.2" data-path="nglt-a/well" data-class="mechanical" data-depth="15.79" data-wall="#8d9298" />
+    <g id="nglt-a--teeth">
+      <g id="nglt-a--return-0" data-path="nglt-a/return-0" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="109.62" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-1" x="3.1" y="123.41" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-1" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-1" data-path="nglt-a/return-1" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="137.2" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-2" x="3.1" y="150.99" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-2" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-2" data-path="nglt-a/return-2" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="164.78" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-3" x="3.1" y="178.57" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-3" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-3" data-path="nglt-a/return-3" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="192.36" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-4" x="3.1" y="206.15" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-4" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-4" data-path="nglt-a/return-4" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="219.94" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-5" x="3.1" y="233.73" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-5" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-5" data-path="nglt-a/return-5" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="247.52" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-6" x="3.1" y="261.31" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-6" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-6" data-path="nglt-a/return-6" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="275.1" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-7" x="3.1" y="288.89" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-7" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-7" data-path="nglt-a/return-7" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-2,13.79:-15.79" data-facet-deg="45" data-facet-facing="down">
+        <rect x="3.1" y="302.68" width="18.4" height="13.79" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+      <rect id="nglt-a--face-8" x="3.1" y="316.47" width="18.4" height="13.79" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.15" data-path="nglt-a/face-8" data-class="mechanical" data-z-out="-2.0" data-z-lift="-15.79" data-z-profile-y="0:-15.79,13.79:-2" data-facet-deg="45" data-facet-facing="up" />
+      <g id="nglt-a--return-8" data-path="nglt-a/return-8" data-class="mechanical" data-z-out="-2.0004" data-z-lift="-15.79" data-z-profile-y="0:-2.0004,5.019:-15.79" data-facet-deg="70" data-facet-facing="down">
+        <rect x="3.1" y="330.26" width="18.4" height="5.019" fill="#8a9096" stroke="#7d848c" stroke-width="0.15" />
+      </g>
+    </g>
+    <rect id="nglt-a--logo-zone" x="4.0" y="93.5" width="17.0" height="11.0" fill="none" data-path="nglt-a/logo-zone" data-class="label" />
+    <g id="nglt-a--laser-label" data-path="nglt-a/laser-label" data-class="label">
+      <rect x="1.0" y="36.6" width="20.8" height="19.4" rx="0.3" fill="#f5c400" stroke="#1d2023" stroke-width="0.25" />
+      <rect x="1.6" y="37.2" width="19.6" height="18.2" fill="none" stroke="#1d2023" stroke-width="0.15" />
+    </g>
+    <g id="nglt-a--label-window" data-path="nglt-a/label-window" data-class="label">
+      <rect x="6.6" y="337.6" width="11.3" height="24.8" rx="0.4" fill="#bfc3c7" stroke="#8d9298" stroke-width="0.2" />
+      <path d="M 7.2 339.6 V 338.2 H 8.6 M 15.9 338.2 H 17.3 V 339.6 M 17.3 360.4 V 361.8 H 15.9 M 8.6 361.8 H 7.2 V 360.4" fill="none" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <rect id="nglt-a--lever-seat" x="6.6" y="363.3" width="13.8" height="14.6" fill="#bec2c6" stroke="#8d9298" stroke-width="0.2" />
+    <g id="nglt-a--silkscreen">
+      <text x="11.4" y="39.4" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">INVISIBLE LASER</text>
+      <text x="11.4" y="41.1" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">RADIATION WHEN</text>
+      <text x="11.4" y="42.8" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">DISCONNECTED</text>
+      <path d="M 3.0 47.6 L 19.8 47.6" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <circle cx="4.2" cy="46.0" r="0.8" fill="#1d2023" />
+      <path d="M 5.2 46 L 5.9 46" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 4.91 46.71 L 5.4 47.2" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 4.2 47 L 4.2 47.7" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 3.49 46.71 L 3 47.2" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 3.2 46 L 2.5 46" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 3.49 45.29 L 3 44.8" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 4.2 45 L 4.2 44.3" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 4.91 45.29 L 5.4 44.8" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <text x="11.4" y="51.2" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">AVOID DIRECT</text>
+      <text x="11.4" y="52.9" font-family="Arial" font-size="1.3" fill="#1d2023" text-anchor="middle">EXPOSURE TO BEAM</text>
+      <text x="10.9" y="60.65" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">PWR</text>
+      <text x="10.9" y="65.6" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">A/S</text>
+      <text x="10.9" y="70.55" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">ALM</text>
+      <text x="7.1" y="75.5" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="end">1</text>
+      <text x="16.8" y="75.5" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">2</text>
+      <text x="7.1" y="80.45" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="end">3</text>
+      <text x="16.8" y="80.45" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">4</text>
+      <text x="7.1" y="85.4" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="end">5</text>
+      <text x="16.8" y="85.4" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">6</text>
+      <text x="7.1" y="90.35" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="end">7</text>
+      <text x="16.8" y="90.35" font-family="Arial" font-size="1.5" fill="#1d2023" text-anchor="start">8</text>
+    </g>
+    <g id="nglt-a--ejector-top" data-z-out="4.2">
+      <path d="M 3.0 0.6 H 14.0 V 31.5 Q 14.0 34.5 11.0 34.5 H 6.0 Q 3.0 34.5 3.0 31.5 Z" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <g id="nglt-a--screw-top">
+        <circle cx="18.7" cy="5.25" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="18.7" cy="5.25" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      </g>
+    </g>
+    <g id="nglt-a--ejector-bottom" data-z-out="4.2">
+      <path d="M 5.5 404.4 H 15.5 V 380.0 Q 15.5 377.0 12.5 377.0 H 8.5 Q 5.5 377.0 5.5 380.0 Z" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <g id="nglt-a--screw-bottom">
+        <circle cx="18.7" cy="399.75" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+        <circle cx="18.7" cy="399.75" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      </g>
+    </g>
+    <g id="nglt-a--port-1" data-path="nglt-a/port-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,125.714) scale(1,0.707107)" data-tilt-on="nglt-a--face-1" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-1</title>
+      <rect id="nglt-a--port-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-1/opening" data-class="cutout" />
+      <rect id="nglt-a--port-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-2" data-path="nglt-a/port-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,153.294) scale(1,0.707107)" data-tilt-on="nglt-a--face-2" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-2</title>
+      <rect id="nglt-a--port-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-2/opening" data-class="cutout" />
+      <rect id="nglt-a--port-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-3" data-path="nglt-a/port-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,180.874) scale(1,0.707107)" data-tilt-on="nglt-a--face-3" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-3</title>
+      <rect id="nglt-a--port-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-3/opening" data-class="cutout" />
+      <rect id="nglt-a--port-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-4" data-path="nglt-a/port-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,208.454) scale(1,0.707107)" data-tilt-on="nglt-a--face-4" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-4</title>
+      <rect id="nglt-a--port-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-4/opening" data-class="cutout" />
+      <rect id="nglt-a--port-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-5" data-path="nglt-a/port-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,236.034) scale(1,0.707107)" data-tilt-on="nglt-a--face-5" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-5</title>
+      <rect id="nglt-a--port-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-5/opening" data-class="cutout" />
+      <rect id="nglt-a--port-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-6" data-path="nglt-a/port-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,263.614) scale(1,0.707107)" data-tilt-on="nglt-a--face-6" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-6</title>
+      <rect id="nglt-a--port-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-6/opening" data-class="cutout" />
+      <rect id="nglt-a--port-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-7" data-path="nglt-a/port-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,291.194) scale(1,0.707107)" data-tilt-on="nglt-a--face-7" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-7</title>
+      <rect id="nglt-a--port-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-7/opening" data-class="cutout" />
+      <rect id="nglt-a--port-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--port-8" data-path="nglt-a/port-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-pon="gpon" data-speed="2.5g" transform="translate(5.25,318.774) scale(1,0.707107)" data-tilt-on="nglt-a--face-8" data-tilt="45" data-tilt-facing="up" data-group="gpon" data-group-role="traffic" data-description="the eight GPON SFP cages">
+      <title>nglt-a--port-8</title>
+      <rect id="nglt-a--port-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nglt-a/port-8/opening" data-class="cutout" />
+      <rect id="nglt-a--port-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nglt-a--port-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nglt-a--port-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nglt-a--port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nglt-a--led-pwr" data-path="nglt-a/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,59.1)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, A/S (LT redundancy active/standby) and ALM">
+      <title>nglt-a--led-pwr</title>
+      <circle id="nglt-a--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pwr/lamp" data-class="led" data-states="off init on" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-as" data-path="nglt-a/led-as" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,64.05)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, A/S (LT redundancy active/standby) and ALM">
+      <title>nglt-a--led-as</title>
+      <circle id="nglt-a--led-as--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-as--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-as/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-alm" data-path="nglt-a/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,69)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps PWR, A/S (LT redundancy active/standby) and ALM">
+      <title>nglt-a--led-alm</title>
+      <circle id="nglt-a--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-alm/lamp" data-class="led" data-states="off red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-1" data-path="nglt-a/led-pon-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,73.95)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-1</title>
+      <circle id="nglt-a--led-pon-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-1/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-2" data-path="nglt-a/led-pon-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.9,73.95)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-2</title>
+      <circle id="nglt-a--led-pon-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-2/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-3" data-path="nglt-a/led-pon-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,78.9)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-3</title>
+      <circle id="nglt-a--led-pon-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-3/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-4" data-path="nglt-a/led-pon-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.9,78.9)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-4</title>
+      <circle id="nglt-a--led-pon-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-4/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-5" data-path="nglt-a/led-pon-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,83.85)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-5</title>
+      <circle id="nglt-a--led-pon-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-5/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-6" data-path="nglt-a/led-pon-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.9,83.85)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-6</title>
+      <circle id="nglt-a--led-pon-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-6/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-7" data-path="nglt-a/led-pon-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(8,88.8)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-7</title>
+      <circle id="nglt-a--led-pon-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-7/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g id="nglt-a--led-pon-8" data-path="nglt-a/led-pon-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(13.9,88.8)" data-group="pon-leds" data-group-role="indicator" data-description="one PON state lamp per port, legends 1-8 in the lamp block">
+      <title>nglt-a--led-pon-8</title>
+      <circle id="nglt-a--led-pon-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nglt-a--led-pon-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nglt-a/led-pon-8/lamp" data-class="led" data-states="off yellow green active red" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

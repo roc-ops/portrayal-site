@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="493.4mm" height="59.25mm" viewBox="0 0 493.4 59.25">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/bfan-h@'] .state-closed-loop { --led-color: #39b54a; }
+    g[data-ref^='nokia/bfan-h@'] .state-closed-loop { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/bfan-h@'] .state-fail { --led-color: #d0021b; }
+    g[data-ref^='nokia/bfan-h@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/bfan-h@'] .state-starting { --led-color: #39b54a; }
+    g[data-ref^='nokia/bfan-h@'] .state-starting { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="bfan-h" data-path="bfan-h" data-class="fan" data-behaviour="fills" data-ref="nokia/bfan-h@1:1.0.0" data-body-depth="274.85" data-wall="#8d9298" data-airflow-m3h="8 x 409" data-dust-filter="3FE 67952 AA" data-fans="8" data-model="BFAN-H" data-part-number="3FE 66546 AA" data-power-draw-max-w="315" data-power-draw-typical-w="80" data-weight-kg="3.4" transform="translate(0,0)">
+    <title>bfan-h</title>
+    <rect id="bfan-h--face" x="0" y="0" width="493.4" height="59.25" fill="#9ea3a9" stroke="#8d9298" stroke-width="0.3" />
+    <rect id="bfan-h--plate" x="1.1" y="0" width="490.7" height="49.2" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <g id="bfan-h--lip-rails" fill="#8d9298" stroke="#6f757b" stroke-width="0.2">
+      <rect x="9.6" y="49.2" width="4.1" height="7.8" />
+      <rect x="479.2" y="49.2" width="4.1" height="7.8" />
+    </g>
+    <g id="bfan-h--screw-left" data-path="bfan-h/screw-left" data-class="fastener">
+      <circle cx="5.0" cy="44.2" r="3.4" fill="#8d9298" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 3.4 44.2 H 6.6 M 5.0 42.6 V 45.8" stroke="#3a3f44" stroke-width="0.4" />
+    </g>
+    <g id="bfan-h--screw-right" data-path="bfan-h/screw-right" data-class="fastener">
+      <circle cx="488.4" cy="44.2" r="3.4" fill="#8d9298" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 486.8 44.2 H 490.0 M 488.4 42.6 V 45.8" stroke="#3a3f44" stroke-width="0.4" />
+    </g>
+    <g id="bfan-h--led-bezel">
+      <circle cx="246.4" cy="20.2" r="6.3" fill="#b3b7bc" stroke="#3a3f44" stroke-width="0.35" />
+      <circle cx="246.4" cy="20.2" r="3.4" fill="#8d9298" stroke="#3a3f44" stroke-width="0.3" />
+    </g>
+    <rect id="bfan-h--label-1" x="303.0" y="17.9" width="27.5" height="9.6" rx="0.8" fill="#e9eaeb" stroke="#3a3f44" stroke-width="0.25" data-path="bfan-h/label-1" data-class="label" />
+    <rect id="bfan-h--label-2" x="332.6" y="17.9" width="59.6" height="9.3" rx="0.8" fill="#e9eaeb" stroke="#3a3f44" stroke-width="0.25" data-path="bfan-h/label-2" data-class="label" />
+    <rect id="bfan-h--label-3" x="332.6" y="28.9" width="59.6" height="8.9" rx="0.8" fill="#e9eaeb" stroke="#3a3f44" stroke-width="0.25" data-path="bfan-h/label-3" data-class="label" />
+    <rect id="bfan-h--hazard-label" x="393.0" y="14.9" width="50.0" height="25.0" fill="#e9eaeb" stroke="#1d2023" stroke-width="0.3" data-path="bfan-h/hazard-label" data-class="label" />
+    <g id="bfan-h--esd-mark" data-path="bfan-h/esd-mark" data-class="label">
+      <circle cx="453.0" cy="19.9" r="3.0" fill="none" stroke="#1d2023" stroke-width="0.35" />
+      <path d="M 453.0 17.8 L 454.9 21.2 L 451.1 21.2 Z" fill="#1d2023" />
+    </g>
+    <rect id="bfan-h--logo-zone" x="60.0" y="14.0" width="30.0" height="12.0" fill="none" data-path="bfan-h/logo-zone" data-class="label" />
+    <g id="bfan-h--silkscreen">
+      <text x="245.2" y="12.0" font-family="Arial" font-weight="bold" font-size="2.6" fill="#1d2023" text-anchor="middle">ALM</text>
+      <text x="410.0" y="29.6" font-family="Arial Narrow, Arial" font-weight="bold" font-size="4.3" fill="#1d2023" text-anchor="middle">Energy Hazard</text>
+      <path d="M 432.6 20.6 L 439.5 34.4 L 425.8 34.4 Z" fill="none" stroke="#1d2023" stroke-width="0.5" />
+      <path d="M 432.6 25.0 V 30.6 M 432.6 31.8 V 33.0" stroke="#1d2023" stroke-width="0.7" />
+    </g>
+    <g id="bfan-h--handle-left" data-path="bfan-h/handle-left" data-class="handle" data-z-out="4.0">
+      <rect x="4.1" y="6.4" width="10.1" height="25.7" rx="0.8" fill="#3a3f44" stroke="#15171a" stroke-width="0.3" />
+      <rect x="0" y="9.0" width="6.9" height="19.6" rx="1.2" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <rect x="1.5" y="11.0" width="3.0" height="15.6" rx="0.6" fill="#15171a" />
+      <circle cx="16.3" cy="19.4" r="2.2" fill="none" stroke="#3a3f44" stroke-width="0.35" />
+    </g>
+    <g id="bfan-h--handle-right" data-path="bfan-h/handle-right" data-class="handle" data-z-out="4.0">
+      <rect x="479.2" y="6.4" width="10.1" height="25.7" rx="0.8" fill="#3a3f44" stroke="#15171a" stroke-width="0.3" />
+      <rect x="486.5" y="9.0" width="6.9" height="19.6" rx="1.2" fill="#2e3236" stroke="#15171a" stroke-width="0.3" />
+      <rect x="488.9" y="11.0" width="3.0" height="15.6" rx="0.6" fill="#15171a" />
+      <circle cx="477.1" cy="19.4" r="2.2" fill="none" stroke="#3a3f44" stroke-width="0.35" />
+    </g>
+    <g id="bfan-h--led-alm" data-path="bfan-h/led-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" transform="translate(244.4,18.2)" data-group="status-leds" data-group-role="indicator" data-description="the fan tray's single status lamp, legend ALM">
+      <title>bfan-h--led-alm</title>
+      <circle id="bfan-h--led-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="bfan-h--led-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="bfan-h/led-alm/lamp" data-class="led" data-states="off starting on closed-loop fail" data-z-dome="0.45" />
+    </g>
+    <g data-cp="mate" data-cp-at="246.7 29.625" data-cp-dir="rear" />
+  </g>
+</svg>

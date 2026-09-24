@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="55.4mm" height="19.5mm" viewBox="0 0 55.4 19.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ppm-ad1-1510" data-path="ppm-ad1-1510" data-class="filter" data-behaviour="fills" data-ref="smartoptics/ppm-ad1-1510@2:2.1.0" data-wall="#22262a" data-channel-nm="1511" data-media="fiber" data-model="PPM-AD1-1510-2F" data-role="osc-filter" transform="translate(0,0)">
+    <title>ppm-ad1-1510</title>
+    <defs>
+      <linearGradient id="ppm-ad1-1510--plate" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4a4f55" />
+        <stop offset="0.35" stop-color="#33383d" />
+        <stop offset="1" stop-color="#22262a" />
+      </linearGradient>
+    </defs>
+    <rect id="ppm-ad1-1510--body" x="0" y="0" width="55.4" height="19.5" rx="1.0" fill="url(#ppm-ad1-1510--plate)" stroke="#15181a" stroke-width="0.25" />
+    <g id="ppm-ad1-1510--captions">
+      <rect id="ppm-ad1-1510--caption-osc" x="5.57" y="16.2" width="13.2" height="2.05" rx="0.3" fill="#eef0f2" data-path="ppm-ad1-1510/caption-osc" data-class="marking" data-z-out="0.15" />
+      <rect id="ppm-ad1-1510--caption-edfa" x="22.5" y="16.2" width="13.2" height="2.05" rx="0.3" fill="#eef0f2" data-path="ppm-ad1-1510/caption-edfa" data-class="marking" data-z-out="0.15" />
+      <rect id="ppm-ad1-1510--caption-line" x="35.7" y="16.2" width="13.2" height="2.05" rx="0.3" fill="#eef0f2" data-path="ppm-ad1-1510/caption-line" data-class="marking" data-z-out="0.15" />
+    </g>
+    <g id="ppm-ad1-1510--port-silkscreen" font-family="sans-serif" text-anchor="middle">
+      <text x="12.17" y="3.3" font-size="2.5" fill="#f2f4f6">OSC</text>
+      <text x="29.1" y="3.3" font-size="2.5" fill="#f2f4f6">EDFA</text>
+      <text x="42.3" y="3.3" font-size="2.5" fill="#f2f4f6">Line</text>
+      <text x="8.87" y="17.75" font-size="1.5" fill="#1c1f22">Tx</text>
+      <text x="15.47" y="17.75" font-size="1.5" fill="#1c1f22">Rx</text>
+      <text x="25.8" y="17.75" font-size="1.5" fill="#1c1f22">Tx</text>
+      <text x="32.4" y="17.75" font-size="1.5" fill="#1c1f22">Rx</text>
+      <text x="39" y="17.75" font-size="1.5" fill="#1c1f22">Tx</text>
+      <text x="45.6" y="17.75" font-size="1.5" fill="#1c1f22">Rx</text>
+    </g>
+    <g id="ppm-ad1-1510--part-silkscreen" font-family="sans-serif">
+      <text x="53.4" y="9.75" font-size="1.83" fill="#dfe3e7" text-anchor="middle" transform="rotate(90 53.4 9.75)">PPM-AD1-1510-2F</text>
+    </g>
+    <g id="ppm-ad1-1510--osc" data-path="ppm-ad1-1510/osc" data-class="port" data-ref="common/lc-duplex-adapter@6:6.0.1" data-connector="lc-duplex" data-media="fiber" data-role="osc" transform="translate(5.57,4.0)">
+      <title>ppm-ad1-1510--osc</title>
+      <g id="ppm-ad1-1510--osc--bezel" fill-rule="evenodd" data-z-out="3.175">
+        <path fill="#2b3035" d="M 0 0 h 13.2 v 11 h -13.2 z              M 2.155 0.11 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7                h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.405 0.11 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7                h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="13.2" height="11" fill="none" stroke="#585f66" stroke-width="0.2" />
+      </g>
+      <g id="ppm-ad1-1510--osc--1" data-path="ppm-ad1-1510/osc/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.125,0.11) rotate(180 2.35 4.03)" data-z-lift="3.175">
+        <title>ppm-ad1-1510--osc--1</title>
+        <path id="ppm-ad1-1510--osc--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="ppm-ad1-1510/osc/1/bore" data-class="cutout" />
+        <rect id="ppm-ad1-1510--osc--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="ppm-ad1-1510--osc--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="ppm-ad1-1510--osc--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="ppm-ad1-1510--osc--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="ppm-ad1-1510--osc--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--osc--2" data-path="ppm-ad1-1510/osc/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.375,0.11) rotate(180 2.35 4.03)" data-z-lift="3.175">
+        <title>ppm-ad1-1510--osc--2</title>
+        <path id="ppm-ad1-1510--osc--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="ppm-ad1-1510/osc/2/bore" data-class="cutout" />
+        <rect id="ppm-ad1-1510--osc--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="ppm-ad1-1510--osc--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="ppm-ad1-1510--osc--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="ppm-ad1-1510--osc--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="ppm-ad1-1510--osc--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--osc--1-occupant" data-path="ppm-ad1-1510/osc/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-dust-cap@1:1.0.1" transform="translate(1.125,3.47) rotate(180 2.35 2.35)" data-z-lift="3.175" data-for="ppm-ad1-1510/osc/1">
+        <title>ppm-ad1-1510--osc--1-occupant</title>
+        <g id="ppm-ad1-1510--osc--1-occupant--body" class="cap" data-path="ppm-ad1-1510/osc/1-occupant/body" data-class="cap" data-z-out="9.525" data-z-color="#e9ecef">
+          <rect x="0.0" y="0.0" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="ppm-ad1-1510--osc--1-occupant--inset" x="1.0" y="1.0" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-lift="6.35" data-depth="0.9" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--osc--2-occupant" data-path="ppm-ad1-1510/osc/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-dust-cap@1:1.0.1" transform="translate(7.375,3.47) rotate(180 2.35 2.35)" data-z-lift="3.175" data-for="ppm-ad1-1510/osc/2">
+        <title>ppm-ad1-1510--osc--2-occupant</title>
+        <g id="ppm-ad1-1510--osc--2-occupant--body" class="cap" data-path="ppm-ad1-1510/osc/2-occupant/body" data-class="cap" data-z-out="9.525" data-z-color="#e9ecef">
+          <rect x="0.0" y="0.0" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="ppm-ad1-1510--osc--2-occupant--inset" x="1.0" y="1.0" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-lift="6.35" data-depth="0.9" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.6 5.82" data-cp-dir="front" data-cp-on="ppm-ad1-1510--osc--bezel" />
+      <g data-cp="optical" data-cp-at="6.6 5.82" data-cp-dir="front" />
+    </g>
+    <g id="ppm-ad1-1510--edfa" data-path="ppm-ad1-1510/edfa" data-class="port" data-ref="common/lc-duplex-adapter@6:6.0.1" data-connector="lc-duplex" data-media="fiber" data-role="edfa" transform="translate(22.5,4.0)">
+      <title>ppm-ad1-1510--edfa</title>
+      <g id="ppm-ad1-1510--edfa--bezel" fill-rule="evenodd" data-z-out="3.175">
+        <path fill="#2b3035" d="M 0 0 h 13.2 v 11 h -13.2 z              M 2.155 0.11 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7                h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.405 0.11 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7                h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="13.2" height="11" fill="none" stroke="#585f66" stroke-width="0.2" />
+      </g>
+      <g id="ppm-ad1-1510--edfa--1" data-path="ppm-ad1-1510/edfa/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.125,0.11) rotate(180 2.35 4.03)" data-z-lift="3.175">
+        <title>ppm-ad1-1510--edfa--1</title>
+        <path id="ppm-ad1-1510--edfa--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="ppm-ad1-1510/edfa/1/bore" data-class="cutout" />
+        <rect id="ppm-ad1-1510--edfa--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="ppm-ad1-1510--edfa--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="ppm-ad1-1510--edfa--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="ppm-ad1-1510--edfa--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="ppm-ad1-1510--edfa--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--edfa--2" data-path="ppm-ad1-1510/edfa/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.375,0.11) rotate(180 2.35 4.03)" data-z-lift="3.175">
+        <title>ppm-ad1-1510--edfa--2</title>
+        <path id="ppm-ad1-1510--edfa--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="ppm-ad1-1510/edfa/2/bore" data-class="cutout" />
+        <rect id="ppm-ad1-1510--edfa--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="ppm-ad1-1510--edfa--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="ppm-ad1-1510--edfa--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="ppm-ad1-1510--edfa--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="ppm-ad1-1510--edfa--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--edfa--1-occupant" data-path="ppm-ad1-1510/edfa/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-dust-cap@1:1.0.1" transform="translate(1.125,3.47) rotate(180 2.35 2.35)" data-z-lift="3.175" data-for="ppm-ad1-1510/edfa/1">
+        <title>ppm-ad1-1510--edfa--1-occupant</title>
+        <g id="ppm-ad1-1510--edfa--1-occupant--body" class="cap" data-path="ppm-ad1-1510/edfa/1-occupant/body" data-class="cap" data-z-out="9.525" data-z-color="#e9ecef">
+          <rect x="0.0" y="0.0" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="ppm-ad1-1510--edfa--1-occupant--inset" x="1.0" y="1.0" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-lift="6.35" data-depth="0.9" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--edfa--2-occupant" data-path="ppm-ad1-1510/edfa/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-dust-cap@1:1.0.1" transform="translate(7.375,3.47) rotate(180 2.35 2.35)" data-z-lift="3.175" data-for="ppm-ad1-1510/edfa/2">
+        <title>ppm-ad1-1510--edfa--2-occupant</title>
+        <g id="ppm-ad1-1510--edfa--2-occupant--body" class="cap" data-path="ppm-ad1-1510/edfa/2-occupant/body" data-class="cap" data-z-out="9.525" data-z-color="#e9ecef">
+          <rect x="0.0" y="0.0" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="ppm-ad1-1510--edfa--2-occupant--inset" x="1.0" y="1.0" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-lift="6.35" data-depth="0.9" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.6 5.82" data-cp-dir="front" data-cp-on="ppm-ad1-1510--edfa--bezel" />
+      <g data-cp="optical" data-cp-at="6.6 5.82" data-cp-dir="front" />
+    </g>
+    <g id="ppm-ad1-1510--line" data-path="ppm-ad1-1510/line" data-class="port" data-ref="common/lc-duplex-adapter@6:6.0.1" data-connector="lc-duplex" data-media="fiber" data-role="line" transform="translate(35.7,4.0)">
+      <title>ppm-ad1-1510--line</title>
+      <g id="ppm-ad1-1510--line--bezel" fill-rule="evenodd" data-z-out="3.175">
+        <path fill="#2b3035" d="M 0 0 h 13.2 v 11 h -13.2 z              M 2.155 0.11 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7                h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z              M 8.405 0.11 h 2.64 v 1.42 h 1.03 v 1.19 h -0.62 v 0.75 h 0.62 v 4.7                h -4.7 v -4.7 h 0.62 v -0.75 h -0.62 v -1.19 h 1.03 z" />
+        <rect x="0" y="0" width="13.2" height="11" fill="none" stroke="#585f66" stroke-width="0.2" />
+      </g>
+      <g id="ppm-ad1-1510--line--1" data-path="ppm-ad1-1510/line/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.125,0.11) rotate(180 2.35 4.03)" data-z-lift="3.175">
+        <title>ppm-ad1-1510--line--1</title>
+        <path id="ppm-ad1-1510--line--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="ppm-ad1-1510/line/1/bore" data-class="cutout" />
+        <rect id="ppm-ad1-1510--line--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="ppm-ad1-1510--line--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="ppm-ad1-1510--line--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="ppm-ad1-1510--line--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="ppm-ad1-1510--line--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--line--2" data-path="ppm-ad1-1510/line/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(7.375,0.11) rotate(180 2.35 4.03)" data-z-lift="3.175">
+        <title>ppm-ad1-1510--line--2</title>
+        <path id="ppm-ad1-1510--line--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="ppm-ad1-1510/line/2/bore" data-class="cutout" />
+        <rect id="ppm-ad1-1510--line--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="ppm-ad1-1510--line--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="ppm-ad1-1510--line--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="ppm-ad1-1510--line--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="ppm-ad1-1510--line--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--line--1-occupant" data-path="ppm-ad1-1510/line/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-dust-cap@1:1.0.1" transform="translate(1.125,3.47) rotate(180 2.35 2.35)" data-z-lift="3.175" data-for="ppm-ad1-1510/line/1">
+        <title>ppm-ad1-1510--line--1-occupant</title>
+        <g id="ppm-ad1-1510--line--1-occupant--body" class="cap" data-path="ppm-ad1-1510/line/1-occupant/body" data-class="cap" data-z-out="9.525" data-z-color="#e9ecef">
+          <rect x="0.0" y="0.0" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="ppm-ad1-1510--line--1-occupant--inset" x="1.0" y="1.0" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-lift="6.35" data-depth="0.9" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="ppm-ad1-1510--line--2-occupant" data-path="ppm-ad1-1510/line/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-dust-cap@1:1.0.1" transform="translate(7.375,3.47) rotate(180 2.35 2.35)" data-z-lift="3.175" data-for="ppm-ad1-1510/line/2">
+        <title>ppm-ad1-1510--line--2-occupant</title>
+        <g id="ppm-ad1-1510--line--2-occupant--body" class="cap" data-path="ppm-ad1-1510/line/2-occupant/body" data-class="cap" data-z-out="9.525" data-z-color="#e9ecef">
+          <rect x="0.0" y="0.0" width="4.7" height="4.7" rx="1.1" fill="#e9ecef" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="ppm-ad1-1510--line--2-occupant--inset" x="1.0" y="1.0" width="2.7" height="2.7" rx="0.7" fill="#d3d8dd" data-z-lift="6.35" data-depth="0.9" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.6 5.82" data-cp-dir="front" data-cp-on="ppm-ad1-1510--line--bezel" />
+      <g data-cp="optical" data-cp-at="6.6 5.82" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.0mm" height="405.0mm" viewBox="0 0 25.0 405.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/nelt-b@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/nelt-b@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/nelt-b@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/nelt-b@'] .state-on { --led-color: #39b54a; }
+    g[data-ref^='nokia/nelt-b@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="nelt-b" data-path="nelt-b" data-class="line-card" data-behaviour="fills" data-ref="nokia/nelt-b@1:1.1.0" data-body-depth="205.0" data-wall="#8d9298" data-model="NELT-B" data-part-number="3FE 62543 AA" data-part-number-variants="3FE 62543 AA, 3FE 62543 AB" data-power-draw-max-w="56.5" data-power-draw-typical-w="52" data-sfp="18" data-weight-kg="0.9" transform="translate(0,0)">
+    <title>nelt-b</title>
+    <rect id="nelt-b--face" x="0" y="0" width="25.0" height="405.0" rx="0.5" fill="#c9ccd0" stroke="#9ba0a6" stroke-width="0.3" />
+    <path d="M 25 10.5 H 16.1 Q 14.6 10.5 14.6 9.0 V 0" fill="none" stroke="#8d9298" stroke-width="0.25" />
+    <path d="M 25 394.5 H 16.1 Q 14.6 394.5 14.6 396.0 V 405" fill="none" stroke="#8d9298" stroke-width="0.25" />
+    <circle cx="7.6" cy="24.8" r="1.5" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <circle cx="11.4" cy="24.8" r="1.5" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <circle cx="15.1" cy="24.8" r="1.5" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    <rect id="nelt-b--logo-zone" x="8" y="14.5" width="14" height="5.5" fill="none" data-path="nelt-b/logo-zone" data-class="label" />
+    <g id="nelt-b--label-strip" data-path="nelt-b/label-strip" data-class="label">
+      <rect x="7.2" y="12.4" width="12.1" height="1.6" fill="#b8bcc1" stroke="#8d9298" stroke-width="0.2" />
+    </g>
+    <g id="nelt-b--product-label" data-path="nelt-b/product-label" data-class="label">
+      <rect x="3" y="192" width="19" height="14" rx="0.4" fill="#e6e8ea" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="4" y="193.5" width="9" height="1" fill="#6f757c" />
+      <rect x="4" y="195.5" width="9" height="1" fill="#6f757c" />
+      <rect x="4" y="197.5" width="9" height="1" fill="#6f757c" />
+      <rect x="4" y="199.5" width="9" height="1" fill="#6f757c" />
+      <rect x="4" y="201.5" width="9" height="1" fill="#6f757c" />
+      <rect x="14.5" y="194" width="6" height="9" fill="none" stroke="#6f757c" stroke-width="0.3" />
+    </g>
+    <g id="nelt-b--silkscreen">
+      <path d="M 12.5 10.6 L 13.5 10.6 L 13.0 11.5 Z" fill="none" stroke="#1d2023" stroke-width="0.15" />
+      <text x="8.1" y="26.7" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="end" font-weight="bold" transform="rotate(-90 8.1 26.7)">ALM</text>
+      <text x="11.9" y="26.7" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="end" font-weight="bold" transform="rotate(-90 11.9 26.7)">A/S</text>
+      <text x="15.6" y="26.7" font-family="Arial" font-size="1.2" fill="#1d2023" text-anchor="end" font-weight="bold" transform="rotate(-90 15.6 26.7)">PWR</text>
+      <text x="17.3" y="37.66" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">1</text>
+      <text x="17.3" y="47.66" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">2</text>
+      <text x="17.3" y="55.32" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">3</text>
+      <text x="17.3" y="65.32" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">4</text>
+      <text x="17.3" y="72.99" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">5</text>
+      <text x="17.3" y="82.99" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">6</text>
+      <text x="17.3" y="90.66" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">7</text>
+      <text x="17.3" y="100.66" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">8</text>
+      <text x="17.3" y="108.32" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">9</text>
+      <text x="17.3" y="118.32" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">10</text>
+      <text x="17.3" y="125.98" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">11</text>
+      <text x="17.3" y="135.98" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">12</text>
+      <text x="17.3" y="143.65" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">13</text>
+      <text x="17.3" y="153.65" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">14</text>
+      <text x="17.3" y="161.31" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">15</text>
+      <text x="17.3" y="171.31" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">16</text>
+      <text x="17.3" y="178.98" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">17</text>
+      <text x="17.3" y="188.98" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">18</text>
+      <text x="17.3" y="211.3" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">19</text>
+      <text x="17.3" y="221.3" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">20</text>
+      <text x="17.3" y="229.05" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">21</text>
+      <text x="17.3" y="239.05" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">22</text>
+      <text x="17.3" y="246.8" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">23</text>
+      <text x="17.3" y="256.8" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">24</text>
+      <text x="17.3" y="264.55" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">25</text>
+      <text x="17.3" y="274.55" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">26</text>
+      <text x="17.3" y="282.3" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">27</text>
+      <text x="17.3" y="292.3" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">28</text>
+      <text x="17.3" y="300.05" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">29</text>
+      <text x="17.3" y="310.05" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">30</text>
+      <text x="17.3" y="317.8" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">31</text>
+      <text x="17.3" y="327.8" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">32</text>
+      <text x="17.3" y="335.55" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">33</text>
+      <text x="17.3" y="345.55" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">34</text>
+      <text x="17.3" y="353.3" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">35</text>
+      <text x="17.3" y="363.3" font-family="Arial" font-size="2.6" fill="#1d2023" text-anchor="start" font-weight="bold">36</text>
+      <path d="M 10.8 368.0 L 13.4 374.0 L 8.2 374.0 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+      <path d="M 16.6 368.0 L 19.2 374.0 L 14.0 374.0 Z" fill="none" stroke="#1d2023" stroke-width="0.2" />
+    </g>
+    <g id="nelt-b--lever-top" data-path="nelt-b/lever-top" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="1.0" y="0.5" width="5.0" height="25.5" rx="0.6" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="1.0" y1="8.15" x2="6.0" y2="8.15" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="nelt-b--lever-bottom" data-path="nelt-b/lever-bottom" data-class="latch" data-z-out="4.2" data-z-color="#2b2e33">
+      <rect x="1.0" y="366.0" width="5.0" height="26.0" rx="0.6" fill="#2e3236" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="1.0" y1="384.2" x2="6.0" y2="384.2" stroke="#4a4f55" stroke-width="0.2" />
+    </g>
+    <g id="nelt-b--screw-top" data-path="nelt-b/screw-top" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="18.7" cy="5.25" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="5.25" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      <path d="M 17.096 5.25 H 20.304 M 18.7 3.646 V 6.854" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="nelt-b--screw-bottom" data-path="nelt-b/screw-bottom" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="18.7" cy="399.75" r="5.25" fill="#15171a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="18.7" cy="399.75" r="2.625" fill="none" stroke="#4a4f55" stroke-width="0.25" />
+      <path d="M 17.096 399.75 H 20.304 M 18.7 398.146 V 401.354" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="nelt-b--led-alm" data-path="nelt-b/led-alm" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(6.6,23.8)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM, A/S and PWR">
+      <title>nelt-b--led-alm</title>
+      <circle id="nelt-b--led-alm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-alm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-alm/lamp" data-class="led" data-states="off red" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-as" data-path="nelt-b/led-as" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(10.4,23.8)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM, A/S and PWR">
+      <title>nelt-b--led-as</title>
+      <circle id="nelt-b--led-as--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-as--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-as/lamp" data-class="led" data-states="off active" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-pwr" data-path="nelt-b/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(14.1,23.8)" data-group="status-leds" data-group-role="indicator" data-description="the board lamps ALM, A/S and PWR">
+      <title>nelt-b--led-pwr</title>
+      <circle id="nelt-b--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-1" data-path="nelt-b/sfp-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,36.66) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-1</title>
+      <rect id="nelt-b--sfp-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-1/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-1" data-path="nelt-b/led-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,35.66)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-1</title>
+      <circle id="nelt-b--led-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-1/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-2" data-path="nelt-b/led-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,45.66)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-2</title>
+      <circle id="nelt-b--led-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-2/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-2" data-path="nelt-b/sfp-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,54.32) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-2</title>
+      <rect id="nelt-b--sfp-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-2/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-3" data-path="nelt-b/led-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,53.32)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-3</title>
+      <circle id="nelt-b--led-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-3/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-4" data-path="nelt-b/led-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,63.32)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-4</title>
+      <circle id="nelt-b--led-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-4/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-3" data-path="nelt-b/sfp-3" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,71.99) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-3</title>
+      <rect id="nelt-b--sfp-3--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-3/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-3--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-3--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-3--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-5" data-path="nelt-b/led-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,70.99)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-5</title>
+      <circle id="nelt-b--led-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-5/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-6" data-path="nelt-b/led-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,80.99)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-6</title>
+      <circle id="nelt-b--led-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-6/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-4" data-path="nelt-b/sfp-4" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,89.66) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-4</title>
+      <rect id="nelt-b--sfp-4--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-4/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-4--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-4--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-4--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-7" data-path="nelt-b/led-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,88.66)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-7</title>
+      <circle id="nelt-b--led-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-7/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-8" data-path="nelt-b/led-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,98.66)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-8</title>
+      <circle id="nelt-b--led-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-8/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-5" data-path="nelt-b/sfp-5" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,107.32) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-5</title>
+      <rect id="nelt-b--sfp-5--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-5/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-5--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-5--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-5--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-9" data-path="nelt-b/led-9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,106.32)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-9</title>
+      <circle id="nelt-b--led-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-9/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-10" data-path="nelt-b/led-10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,116.32)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-10</title>
+      <circle id="nelt-b--led-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-10/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-6" data-path="nelt-b/sfp-6" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,124.98) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-6</title>
+      <rect id="nelt-b--sfp-6--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-6/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-6--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-6--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-6--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-11" data-path="nelt-b/led-11" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,123.98)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-11</title>
+      <circle id="nelt-b--led-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-11/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-12" data-path="nelt-b/led-12" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,133.98)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-12</title>
+      <circle id="nelt-b--led-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-12/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-7" data-path="nelt-b/sfp-7" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,142.65) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-7</title>
+      <rect id="nelt-b--sfp-7--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-7/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-7--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-7--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-7--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-13" data-path="nelt-b/led-13" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,141.65)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-13</title>
+      <circle id="nelt-b--led-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-13/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-14" data-path="nelt-b/led-14" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,151.65)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-14</title>
+      <circle id="nelt-b--led-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-14/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-8" data-path="nelt-b/sfp-8" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,160.31) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-8</title>
+      <rect id="nelt-b--sfp-8--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-8/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-8--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-8--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-8--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-15" data-path="nelt-b/led-15" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,159.31)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-15</title>
+      <circle id="nelt-b--led-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-15/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-16" data-path="nelt-b/led-16" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,169.31)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-16</title>
+      <circle id="nelt-b--led-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-16/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-9" data-path="nelt-b/sfp-9" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,177.98) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-9</title>
+      <rect id="nelt-b--sfp-9--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-9/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-9--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-9--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-9--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-17" data-path="nelt-b/led-17" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,176.98)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-17</title>
+      <circle id="nelt-b--led-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-17/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-18" data-path="nelt-b/led-18" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,186.98)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-18</title>
+      <circle id="nelt-b--led-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-18/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-10" data-path="nelt-b/sfp-10" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,210.3) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-10</title>
+      <rect id="nelt-b--sfp-10--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-10/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-10--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-10--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-10--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-19" data-path="nelt-b/led-19" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,209.3)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-19</title>
+      <circle id="nelt-b--led-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-19/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-20" data-path="nelt-b/led-20" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,219.3)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-20</title>
+      <circle id="nelt-b--led-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-20/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-11" data-path="nelt-b/sfp-11" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,228.05) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-11</title>
+      <rect id="nelt-b--sfp-11--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-11/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-11--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-11--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-11--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-21" data-path="nelt-b/led-21" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,227.05)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-21</title>
+      <circle id="nelt-b--led-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-21/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-22" data-path="nelt-b/led-22" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,237.05)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-22</title>
+      <circle id="nelt-b--led-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-22/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-12" data-path="nelt-b/sfp-12" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,245.8) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-12</title>
+      <rect id="nelt-b--sfp-12--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-12/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-12--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-12--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-12--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-23" data-path="nelt-b/led-23" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,244.8)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-23</title>
+      <circle id="nelt-b--led-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-23/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-24" data-path="nelt-b/led-24" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,254.8)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-24</title>
+      <circle id="nelt-b--led-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-24/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-13" data-path="nelt-b/sfp-13" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,263.55) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-13</title>
+      <rect id="nelt-b--sfp-13--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-13/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-13--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-13--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-13--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-25" data-path="nelt-b/led-25" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,262.55)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-25</title>
+      <circle id="nelt-b--led-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-25/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-26" data-path="nelt-b/led-26" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,272.55)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-26</title>
+      <circle id="nelt-b--led-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-26/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-14" data-path="nelt-b/sfp-14" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,281.3) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-14</title>
+      <rect id="nelt-b--sfp-14--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-14/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-14--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-14--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-14--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-27" data-path="nelt-b/led-27" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,280.3)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-27</title>
+      <circle id="nelt-b--led-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-27/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-28" data-path="nelt-b/led-28" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,290.3)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-28</title>
+      <circle id="nelt-b--led-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-28/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-15" data-path="nelt-b/sfp-15" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,299.05) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-15</title>
+      <rect id="nelt-b--sfp-15--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-15/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-15--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-15--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-15--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-29" data-path="nelt-b/led-29" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,298.05)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-29</title>
+      <circle id="nelt-b--led-29--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-29--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-29/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-30" data-path="nelt-b/led-30" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,308.05)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-30</title>
+      <circle id="nelt-b--led-30--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-30--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-30/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-16" data-path="nelt-b/sfp-16" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,316.8) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-16</title>
+      <rect id="nelt-b--sfp-16--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-16/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-16--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-16--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-16--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-16--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-31" data-path="nelt-b/led-31" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,315.8)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-31</title>
+      <circle id="nelt-b--led-31--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-31--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-31/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-32" data-path="nelt-b/led-32" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,325.8)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-32</title>
+      <circle id="nelt-b--led-32--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-32--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-32/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-17" data-path="nelt-b/sfp-17" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,334.55) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-17</title>
+      <rect id="nelt-b--sfp-17--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-17/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-17--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-17--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-17--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-17--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-33" data-path="nelt-b/led-33" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,333.55)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-33</title>
+      <circle id="nelt-b--led-33--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-33--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-33/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-34" data-path="nelt-b/led-34" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,343.55)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-34</title>
+      <circle id="nelt-b--led-34--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-34--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-34/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--sfp-18" data-path="nelt-b/sfp-18" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-speed="1g" transform="translate(3.82,352.3) rotate(90 7.25 5.0)" data-group="sfp" data-group-role="traffic" data-description="the 18 single SFP cages (FE/GE SFP, or FE/GE CSFP with two channels). Cage n presents ports 2n-1 and 2n with a CSFP; the two CSFP interfaces are not declared per cage because a component part cannot carry `interfaces:`.">
+      <title>nelt-b--sfp-18</title>
+      <rect id="nelt-b--sfp-18--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="nelt-b/sfp-18/opening" data-class="cutout" />
+      <rect id="nelt-b--sfp-18--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="nelt-b--sfp-18--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="nelt-b--sfp-18--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="nelt-b--sfp-18--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="nelt-b--led-35" data-path="nelt-b/led-35" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,351.3)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-35</title>
+      <circle id="nelt-b--led-35--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-35--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-35/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g id="nelt-b--led-36" data-path="nelt-b/led-36" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(2.1,361.3)" data-group="link-leds" data-group-role="indicator" data-description="one status lamp per port, legends 1-36, two beside each cage">
+      <title>nelt-b--led-36</title>
+      <circle id="nelt-b--led-36--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="nelt-b--led-36--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="nelt-b/led-36/lamp" data-class="led" data-states="off on activity" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.5 202.5" data-cp-dir="rear" />
+  </g>
+</svg>

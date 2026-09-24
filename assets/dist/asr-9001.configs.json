@@ -1,4 +1,5 @@
 {
+ "aliases": [],
  "attrs": {
   "environmental": {
    "operating-temp": "0 to 40 C (32 to 104 F)",
@@ -148,22 +149,26 @@
      318.675,
      45.75
     ],
+    "bores": [],
+    "default": null,
     "group": "cluster",
     "group-states": false,
     "id": "cluster-1",
     "interface": "sfp",
+    "kind": "cage",
     "lift": 0.0,
     "mate": [
      325.8,
      50.95
     ],
-    "media": "sfp",
+    "media": "sfp-plus",
     "mirror": false,
     "occupant": null,
     "occupant-attrs": {
      "data-group": "cluster",
      "data-group-role": "traffic",
-     "data-media": "sfp"
+     "data-media": "sfp-plus",
+     "data-speed": "10g"
     },
     "rel-pos": 1,
     "rotate": null
@@ -177,22 +182,26 @@
      318.675,
      61.8
     ],
+    "bores": [],
+    "default": null,
     "group": "cluster",
     "group-states": false,
     "id": "cluster-0",
     "interface": "sfp",
+    "kind": "cage",
     "lift": 0.0,
     "mate": [
      325.8,
      67.0
     ],
-    "media": "sfp",
+    "media": "sfp-plus",
     "mirror": false,
     "occupant": null,
     "occupant-attrs": {
      "data-group": "cluster",
      "data-group-role": "traffic",
-     "data-media": "sfp"
+     "data-media": "sfp-plus",
+     "data-speed": "10g"
     },
     "rel-pos": 0,
     "rotate": 180
@@ -206,10 +215,13 @@
      341.675,
      45.75
     ],
+    "bores": [],
+    "default": null,
     "group": "sfp-plus",
     "group-states": false,
     "id": "sfp-plus-3",
     "interface": "sfp",
+    "kind": "cage",
     "lift": 0.0,
     "mate": [
      348.8,
@@ -236,10 +248,13 @@
      341.675,
      61.8
     ],
+    "bores": [],
+    "default": null,
     "group": "sfp-plus",
     "group-states": false,
     "id": "sfp-plus-1",
     "interface": "sfp",
+    "kind": "cage",
     "lift": 0.0,
     "mate": [
      348.8,
@@ -266,10 +281,13 @@
      362.175,
      45.75
     ],
+    "bores": [],
+    "default": null,
     "group": "sfp-plus",
     "group-states": false,
     "id": "sfp-plus-2",
     "interface": "sfp",
+    "kind": "cage",
     "lift": 0.0,
     "mate": [
      369.3,
@@ -296,10 +314,13 @@
      362.175,
      61.8
     ],
+    "bores": [],
+    "default": null,
     "group": "sfp-plus",
     "group-states": false,
     "id": "sfp-plus-0",
     "interface": "sfp",
+    "kind": "cage",
     "lift": 0.0,
     "mate": [
      369.3,
@@ -333,6 +354,7 @@
   "unknown": []
  },
  "chassis": {
+  "airflow": "side",
   "d": 470.0,
   "h": 88.2,
   "ru": 2,
@@ -340,6 +362,7 @@
  },
  "configs": [
   {
+   "airflow": "side",
    "bays": {},
    "description": "The full ASR 9001. 120 Gbps fabric, four fixed 10 GE SFP+ ports and both modular bays usable.",
    "kind": "model",
@@ -353,6 +376,7 @@
    "views": {}
   },
   {
+   "airflow": "side",
    "bays": {},
    "description": "The ASR 9001-S - THE SAME SHEET METAL, sold at half the capacity. 60 Gbps instead of 120, one usable modular bay (BAY 0) instead of two, and two usable fixed ports (SFP+ 0 and SFP+ 1) instead of four. BAY 1 and SFP+ 2 and 3 are physically present and identical - the cages are the same cages - but disabled by default and dust-capped, and unlocked by applying the A9K-9001-120G-LIC upgrade licence, after which the router must be reloaded. NOTE WHAT THIS CONFIGURATION STILL CANNOT SAY - see the config-scoped-device-attrs gap. It cannot mark SFP+ 2 and 3 as disabled, and it cannot carry the 60 Gbps figure, so both live in this sentence rather than in data.",
    "kind": "model",
@@ -369,6 +393,7 @@
    "views": {}
   },
   {
+   "airflow": "side",
    "bays": {
     "mpa-0": "cisco/a9k-mpa-blank@1",
     "mpa-1": "cisco/a9k-mpa-blank@1"
@@ -492,6 +517,10 @@
   "port-rows": {
    "confidence": "drawing",
    "note": "drawing-measured - every stacked port pair sits on the SAME two rows, which is what makes the reading safe: the upper row at y 46.5 to 55.4 and the lower at 62.6 to 71.4, a 16.1 mm pitch, reproduced independently at eight different x positions. The SFP cages measure a 15.3 mm belly-to-belly pitch against the 15.00 std/sfp-ganged carries from a measured TE part"
+  },
+  "port-speeds": {
+   "confidence": "datasheet",
+   "note": "the fixed-port install guide, Table 4 (front panel ports, shared with the 9901): SVC LAN is a 10/100 Mb/s Ethernet port for an IEEE 1588 grandmaster, so `100m`; MGT LAN 0 and 1 are tri-speed 10/100/1000, so `1g`. The data sheet (c78-685687) gives the two CLUSTER ports as 10 G out-of-band Ethernet ports for nV clustering, so the group is `10g` and `sfp-plus` - Table 4 calls the cage SFP and says it takes copper or optical modules, and a 10G module in an SFP cage is SFP+. The same table types the rest by what they carry, not by a rate: TOD is time of day with 1PPS over RS-422 (`rj45-tod`), SYNC 0/1 are BITS or DTI (`rj48`), CONSOLE and AUX are RS-232 (`rj45-serial`)."
   },
   "rear": {
    "confidence": "drawing",
