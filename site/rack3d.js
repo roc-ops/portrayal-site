@@ -17,8 +17,7 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
          setPulled as setReliefPulled, applyPulled, nodeTools } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
-import { applyAllOverrides, applyOccupantOverrides, viewsToRewrite,
-         refusalReason } from '../vendor/swap.js';
+import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
 
 export const RU = 44.45;            // EIA-310 rack unit
@@ -83,6 +82,11 @@ function faceFrames(W, H, D) {
      flipLX: true, flipLY: true},
   ];
 }
+
+// THE VIEWS A DEVICE IS BUILT FROM, derived from the table above rather than
+// written out again, so a face added there is seated as well as drawn. The
+// dimensions do not decide which views exist, so any box will do to ask.
+const RACK_VIEWS = faceFrames(1, 1, 1).map(f => f.view);
 
 // What each opening view can actually see. Everything else is built afterwards.
 // 'front' is dead-on, so only the front face; 'iso' looks down from the front
@@ -415,10 +419,31 @@ export function createRackScene(container, opts = {}) {
     SYNTH.add(k);
   }
 
-  // Apply a bay override map to a device's compiled faces before relief is
-  // taken from them. relief.js consults its override table ahead of its own
-  // cache, so one substitution per face reaches the texture, the cavity mask
-  // and everything else built from that text.
+  // Seat a device's compiled faces before relief is taken from them. relief.js
+  // consults its override table ahead of its own cache, so one substitution per
+  // face reaches the texture, the cavity mask and everything else built from
+  // that text.
+  //
+  // ONE RULE, AND IT IS SWAP.JS'S. This used to run the sequence here - bays,
+  // then `applyOccupantOverrides` over `entry.cages[view]` - and that second
+  // list is the DEVICE's cages, read from configs.json before any card is
+  // seated. It was wrong twice over, silently:
+  //
+  //   - A cage on a seated CARD is not in it. On the Nokia 7360 FX shelves the
+  //     list is empty on every view, because every cage there is on a card, so
+  //     the `cages.length` guard meant the occupant pass never ran at all: an
+  //     optic in `nt-a/module/qsfp-2` was drawn in 2D and missing in 3D, and
+  //     portAnchor on its `-occupant/tx` returned null.
+  //   - Only the views `viewsToRewrite` named were visited, so a swapped
+  //     cassette's BACK never reached the rear face. fhd-1ufce has bays on
+  //     front alone and carries its `data-rear-of` holes on the rear.
+  //
+  // `seatViews` is both rules, and it is what viewer3d.js runs: every face the
+  // map names PLUS every face holding a rear hole, each through `seatFace` -
+  // bays at every level, then `faceCages` read off the face AFTER the bays
+  // settle, then the rear holes. It is handed every view the rack builds, which
+  // costs no extra fetching: buildDevice asks for the same faces and svgSource
+  // memoises both hits and misses.
   async function overrideFaces(entry) {
     const ov = entry.overrides;
     if (!ov || !Object.keys(ov).length) return;
@@ -431,51 +456,43 @@ export function createRackScene(container, opts = {}) {
       return {comp: c, text: await svgSource(
         `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`, relief)};
     };
-    // WHICH VIEWS THIS MAP TOUCHES, bays and cages together - swap.js's
-    // `viewsToRewrite`, the rule the kit's own viewer uses. It carries the
-    // nested-key case this file used to decide for itself (a `/module/` path
-    // names no device bay, so it rewrites every view that has bays) and adds
-    // the one this file never knew: a view whose only change is an optic.
-    const views = viewsToRewrite({bays: entry.bays, cages: entry.cages}, ov);
-    for (const view of views) {
-      const bays = entry.bays?.[view] || [];
-      const cages = entry.cages?.[view] || [];
+    // Parsed roots by view. A face that will not fetch or will not parse is
+    // left out rather than failing the device: the rack draws what it has.
+    const faces = {}, docs = {};
+    for (const view of RACK_VIEWS) {
       let text;
       try { text = await svgSource(faceUrl(entry, view), relief); } catch { continue; }
+      if (!text) continue;
       const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
       if (doc.querySelector('parsererror')) continue;
-      // EVERY LEVEL of bays, by following the bay frontier down - see swap.js's
-      // `applyAllOverrides` for why a fixed number of passes is the wrong
-      // shape. This used to be two passes here, which covered the two levels
-      // the library has today and would have skipped a third silently.
-      const {applied, dropped} = await applyAllOverrides(
-        doc.documentElement, bays, ov, loadSkin, byRef);
-      // The same divergence the walk exists to prevent, so it is said out loud
-      // rather than swallowed. Reaching this means the drawing nests deeper
-      // than the walk goes, which render.py cannot produce.
-      if (dropped.length)
-        console.warn(`[portrayal] ${entry.ref}.${view}: ${dropped.length} nested `
+      docs[view] = doc;
+      faces[view] = doc.documentElement;
+    }
+    const seated = await seatViews(
+      faces, {bays: entry.bays, cages: entry.cages}, ov, loadSkin, byRef);
+    for (const [view, r] of Object.entries(seated)) {
+      // The divergences the pass exists to prevent, said out loud rather than
+      // swallowed - the same three the kit's viewer reports.
+      if (r.dropped?.length)
+        console.warn(`[portrayal] ${entry.ref}.${view}: ${r.dropped.length} nested `
                      + `bay override(s) never applied - the drawing nests deeper `
-                     + `than the walk goes, so 2D and 3D will disagree`, dropped);
-      // THEN THE OPTICS. Once one is in the face text it STANDS PROUD with no
-      // further work here: its nodes carry `data-z-out`, and buildFaceRelief
-      // extrudes them forward of the faceplate like any other relief.
-      // A refused cage is one the build does something to that the kit does
-      // not (lifted, mirrored, or in a group carrying states), so it is left
-      // empty rather than guessed at; a failed one is a skin that did not
-      // load, so the cage keeps what the build seated. Both are said, as the
-      // kit's viewer says them.
-      const {applied: seated, refused, failed} = cages.length
-        ? await applyOccupantOverrides(doc.documentElement, cages, ov, loadSkin)
-        : {applied: 0, refused: [], failed: []};
-      if (refused.length)
-        console.warn(`[portrayal] ${entry.ref}.${view}: ${refused.length} cage `
+                     + `than the walk goes, so 2D and 3D will disagree`, r.dropped);
+      // A refused cage is one the build does something to that the kit does not
+      // (lifted, mirrored, or in a group carrying states), so it is left empty
+      // rather than guessed at; a failed one is a skin that did not load, so the
+      // cage keeps what the build seated.
+      if (r.refused?.length)
+        console.warn(`[portrayal] ${entry.ref}.${view}: ${r.refused.length} cage `
                      + `override(s) refused, so the cage is left empty`,
-                     refused.map(id => `${id} (${refusalReason(cages.find(c => c.id === id))})`));
-      if (failed.length)
-        console.warn(`[portrayal] ${entry.ref}.${view}: ${failed.length} cage `
-                     + `override(s) not applied - the optic's skin did not load`, failed);
-      if (applied || seated) putFace(entry, view, new XMLSerializer().serializeToString(doc));
+                     r.refused.map(id => `${id} (${refusalReason(
+                       (r.cages || []).find(c => c.id === id))})`));
+      if (r.failed?.length)
+        console.warn(`[portrayal] ${entry.ref}.${view}: ${r.failed.length} cage `
+                     + `override(s) not applied - the optic's skin did not load`, r.failed);
+      // An optic needs no further work here once it is in the face text: its
+      // nodes carry `data-z-out`, and buildFaceRelief extrudes them forward of
+      // the faceplate like any other relief.
+      if (r.applied) putFace(entry, view, new XMLSerializer().serializeToString(docs[view]));
     }
   }
 

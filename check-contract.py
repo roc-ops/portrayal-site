@@ -165,6 +165,35 @@ for src in sorted(VENDOR.glob("*.js")):
               f"vendor/{src.name} can resolve ./{dep}",
               "add it to the module list in refresh-assets.sh")
 
+# ── the 3D rack seats a face the way the kit does ────────────────────────
+# A DEVICE'S FACE IS SEATED BY ONE RULE, and the rack must not keep a second
+# copy of it. site/rack3d.js used to run the sequence itself - applyAllOverrides
+# for the bays, then applyOccupantOverrides for `cages[view]` - and that list is
+# the DEVICE's cages, read from configs.json before any card is seated. Two
+# things went wrong with it and neither said anything:
+#
+#   - A cage on a card is not in that list. On the Nokia 7360 FX shelves the
+#     list is EMPTY on every view, because every cage there lives on a card, so
+#     `cages.length` was 0 and applyOccupantOverrides was never even called. An
+#     optic seated in `nt-a/module/qsfp-2` appeared in 2D and not in 3D.
+#   - The rack visited only the views viewsToRewrite named, so a swapped
+#     cassette's BACK never reached the rear face: fhd-1ufce has bays on front
+#     only, and its rear face carries the `data-rear-of` holes that show them.
+#
+# swap.js owns both rules now - `seatViews` walks every face, uses `faceCages`
+# to read the cages off the face AFTER the bays settle, and seats the rear
+# holes. Asserted structurally because the behaviour needs WebGL and CI has no
+# GPU: the rack must call it, and must not hand-roll the pass again.
+rack = (HERE / "site" / "rack3d.js").read_text()
+check("seatViews" in rack,
+      "site/rack3d.js seats faces through swap.js's seatViews",
+      "the rack is hand-rolling the face pass again - a cage on a seated card "
+      "will be skipped in 3D and the rear holes never re-seated")
+check(not re.search(r"\bapplyOccupantOverrides\s*\(", rack),
+      "site/rack3d.js does not seat cages itself",
+      "applyOccupantOverrides called directly means the cage list is the "
+      "device's own, not faceCages' - nested cages are silently dropped")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
