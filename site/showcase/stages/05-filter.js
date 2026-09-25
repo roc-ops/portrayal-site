@@ -74,6 +74,9 @@ export default function makeFilter() {
         let matching = 0;
         links.forEach((l, i) => { if (matches(l, i)) matching++; });
         countEl.textContent = `${matching} of ${links.length} link${links.length === 1 ? '' : 's'} match.`;
+        // The same two numbers as attributes, for a checker to read.
+        countEl.dataset.matching = String(matching);
+        countEl.dataset.total = String(links.length);
         if (scene && got.tubes) {
           let visible = 0;
           got.tubes.forEach((t, i) => {

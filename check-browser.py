@@ -29,6 +29,7 @@ Run it locally the same way CI does:
 """
 import argparse
 import contextlib
+import json
 import pathlib
 import re
 import socket
@@ -114,8 +115,25 @@ def check(page, base, name):
 STAGES = ["rails", "mount", "populate", "optics", "cable", "filter", "takeaway"]
 
 
+def refused_card(bay_id="slot-0"):
+    """A card stage 2 offers that `bay_id` does NOT accept, read off the index.
+
+    Stage 2 offers the union of `accepts` over the ASR-9006's `slots` group,
+    so a line card is on slot-0's list and slot-0 refuses it. Picked from the
+    same data the stage reads, so the walk never names a card by hand.
+    """
+    idx = json.loads((HERE / "assets" / "dist" / "asr-9006.configs.json").read_text())
+    bays = [b for b in idx.get("bays", {}).get("front", []) if b.get("group") == "slots"]
+    bay = next((b for b in bays if b.get("id") == bay_id), None)
+    if not bay:
+        return None
+    offered = sorted({r for b in bays for r in b.get("accepts", [])})
+    return next((r for r in offered if r not in bay.get("accepts", [])), None)
+
+
 def check_stages(page, base):
-    """Walk the stage rail, waiting on each stage's own ready signal."""
+    """Walk the stage rail, waiting on each stage's own ready signal, and
+    exercise what each stage claims - not only that it loads."""
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
 
@@ -125,31 +143,81 @@ def check_stages(page, base):
 
     page.on("response", on_response)
     page.goto(f"{base}/index.html", wait_until="load")
+
+    # WHAT EACH STAGE CLAIMS, driven the way a visitor would. Every one runs
+    # on the same page as the walk, so a 404 it causes - stage 3's skin fetch,
+    # say - lands in the same listener. Without WebGL these still run: the
+    # panel is built either way (R11), and it is the panel that answers.
+    def refuse():
+        card = refused_card()
+        if not card:
+            raise RuntimeError("no card in the slots group that slot-0 refuses")
+        page.select_option('#sidePanel select[data-bay="slot-0"]', card, timeout=READY_MS)
+        page.click('#sidePanel button[data-bay="slot-0"]', timeout=READY_MS)
+        page.wait_for_selector('#sidePanel [data-readout][data-refused]', timeout=READY_MS)
+
+    def seat_optic():
+        page.click('#sidePanel [data-seat]', timeout=READY_MS)
+        page.wait_for_selector('#sidePanel [data-readout][data-seated]', timeout=READY_MS)
+
+    def filter_management():
+        # The expected count is the one the management button itself states,
+        # read off the page, and the total is the lab's own link count - so a
+        # new labs.json moves both without this line changing.
+        btn = page.locator('#sidePanel .ctl button', has_text=re.compile(r"^management \(\d+\)$"))
+        want = int(re.search(r"\((\d+)\)", btn.inner_text(timeout=READY_MS)).group(1))
+        btn.click(timeout=READY_MS)
+        total = len(json.loads((HERE / "assets" / "dist" / "labs.json").read_text())["labs"][0]["links"])
+        page.wait_for_function(
+            """([w, t]) => { const c = document.querySelector('#sidePanel [data-filter-count]');
+                return !!c && c.dataset.matching === String(w) && c.dataset.total === String(t); }""",
+            arg=[want, total], timeout=READY_MS)
+
+    CLAIMS = {
+        "populate": ("slot-0 refuses a line card", refuse),
+        "optics": ("an optic seats and reads back", seat_optic),
+        "filter": ("management filters the count", filter_management),
+    }
+
     for name in STAGES:
-        page.click(f'.stage-rail button[data-stage="{name}"]')
         try:
+            page.click(f'.stage-rail button[data-stage="{name}"]', timeout=READY_MS)
             # Set by the rail only after enter() resolves, so a stage whose
             # enter() throws never sets it and this times out naming the stage
             # rather than passing quietly.
             page.wait_for_selector(f'[data-stage-ready="{name}"]', timeout=READY_MS)
         except Exception:
             bad.append(f"stage {name} never became ready")
+            continue
+        if name in CLAIMS:
+            what, run = CLAIMS[name]
+            try:
+                run()
+            except Exception as e:
+                bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
 
     # A SPOKE IS A RENDERER SWITCH, so open one and come back, from stage 2 -
-    # once on the AS7726 (whose drawing the page booted with) and once on the
-    # ASR-9006, which makes the 2D face actually change device. The return
-    # waits on the stage's own ready signal again, because the breadcrumb
-    # re-enters the stage rather than just un-hiding it.
-    page.click('.stage-rail button[data-stage="populate"]')
-    for dev in ("as7726-32x", "asr-9006"):
+    # Inspect on the AS7726 (whose drawing the page booted with) and on the
+    # ASR-9006, which makes the 2D face actually change device, then each
+    # AS7726-only lens once, so their code runs here at all. The return waits
+    # on the stage's own ready signal again, because the breadcrumb re-enters
+    # the stage rather than just un-hiding it.
+    spokes = [("as7726-32x", "inspect"), ("asr-9006", "inspect"),
+              ("as7726-32x", "callouts"), ("as7726-32x", "state"), ("as7726-32x", "select")]
+    try:
+        page.click('.stage-rail button[data-stage="populate"]', timeout=READY_MS)
+    except Exception:
+        bad.append("could not return to stage 2 for the spokes")
+    for dev, lens in spokes:
         try:
             page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
-            page.click(f'#sidePanel [data-spoke-device="{dev}"][data-spoke-lens="inspect"]')
+            page.click(f'#sidePanel [data-spoke-device="{dev}"][data-spoke-lens="{lens}"]',
+                       timeout=READY_MS)
             page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
-            page.click('.spoke-crumb button')
+            page.click('.spoke-crumb button', timeout=READY_MS)
             page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         except Exception:
-            bad.append(f"a spoke on {dev} did not open from stage 2 and return")
+            bad.append(f"the {lens} spoke on {dev} did not open from stage 2 and return")
     return bad
 
 
