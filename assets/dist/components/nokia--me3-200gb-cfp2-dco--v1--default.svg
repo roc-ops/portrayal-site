@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="193mm" height="35.4mm" viewBox="0 0 193 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-down { --led-color: #f5a623; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-loopback { --led-color: #f5a623; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-loopback { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-no-link { --led-color: #f5a623; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-no-optic { --led-color: #f5a623; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-no-optic { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-on { --led-color: #2f6fdb; }
+    g[data-ref^='nokia/me3-200gb-cfp2-dco@'] .state-up { --led-color: #39b54a; }</style>
+  <g id="me3-200gb-cfp2-dco" data-path="me3-200gb-cfp2-dco" data-class="line-card" data-behaviour="fills" data-ref="nokia/me3-200gb-cfp2-dco@1:1.0.0" data-body-depth="193" data-wall="#2b2e32" data-cfp2="3" data-model="ME3-200GB-CFP2-DCO" data-part-number="3HE13955AA" data-power-draw-max-w="66" data-power-draw-typical-w="59" data-weight-kg="1.13" transform="translate(0,0)">
+    <title>me3-200gb-cfp2-dco</title>
+    <path id="me3-200gb-cfp2-dco--face" d="M 0 0 H 193 V 27.4 H 179.2 Q 176.8 27.4 176.8 29.8 V 35.4 H 16.2 V 29.8 Q 16.2 27.4 13.8 27.4 H 0 Z" fill="#3b3f44" stroke="#24272b" stroke-width="0.3" />
+    <line x1="0.5" y1="1.91" x2="192.5" y2="1.91" stroke="#24272b" stroke-width="0.2" />
+    <rect x="24.03" y="6.86" width="44.65" height="15.6" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="74.87" y="6.86" width="44.65" height="15.6" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="125.82" y="6.86" width="44.65" height="15.6" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <g id="me3-200gb-cfp2-dco--screw-left" data-path="me3-200gb-cfp2-dco/screw-left" data-class="fastener">
+      <circle cx="8.08" cy="21" r="5.05" fill="#b9bdc2" stroke="#6d7278" stroke-width="0.3" />
+      <circle cx="8.08" cy="21" r="1.37" fill="#dfe1e4" stroke="#6d7278" stroke-width="0.2" />
+      <path d="M 4.95 17.87 L 7.11 20.03 M 11.21 17.87 L 9.05 20.03 M 4.95 24.13 L 7.11 21.97 M 11.21 24.13 L 9.05 21.97" stroke="#5d6268" stroke-width="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--screw-right" data-path="me3-200gb-cfp2-dco/screw-right" data-class="fastener">
+      <circle cx="184.92" cy="21" r="5.05" fill="#b9bdc2" stroke="#6d7278" stroke-width="0.3" />
+      <circle cx="184.92" cy="21" r="1.37" fill="#dfe1e4" stroke="#6d7278" stroke-width="0.2" />
+      <path d="M 181.79 17.87 L 183.95 20.03 M 188.05 17.87 L 185.89 20.03 M 181.79 24.13 L 183.95 21.97 M 188.05 24.13 L 185.89 21.97" stroke="#5d6268" stroke-width="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--esd-mark" data-path="me3-200gb-cfp2-dco/esd-mark" data-class="label">
+      <polygon points="178.97,5.95 182.63,8.87 175.32,8.87" fill="#f2c200" stroke="#1d2023" stroke-width="0.25" stroke-linejoin="round" />
+      <path d="M 178.07 8.47 q 0.4 -1.3 1.1 -1.5 l 0.35 0.55 q -0.6 0.3 -0.75 0.95 z" fill="#1d2023" />
+    </g>
+    <rect id="me3-200gb-cfp2-dco--model-label" x="138.41" y="30" width="32.65" height="2.76" fill="none" data-path="me3-200gb-cfp2-dco/model-label" data-class="label" />
+    <g id="me3-200gb-cfp2-dco--silkscreen">
+      <text x="14.13" y="9.13" font-family="Arial, Helvetica, sans-serif" font-size="3.62" font-weight="bold" fill="#e9eaeb" text-anchor="start">Stat</text>
+      <text x="14.24" y="13.16" font-family="Arial, Helvetica, sans-serif" font-size="3.45" font-weight="bold" fill="#e9eaeb" text-anchor="start">Pwr</text>
+      <text x="71.75" y="5.84" font-family="Arial, Helvetica, sans-serif" font-size="2.97" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Lnk</text>
+      <text x="71.68" y="16.07" font-family="Arial, Helvetica, sans-serif" font-size="3.01" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Act</text>
+      <text x="46.13" y="25.84" font-family="Arial, Helvetica, sans-serif" font-size="2.82" font-weight="bold" fill="#e9eaeb" text-anchor="middle">c1</text>
+      <text x="122.47" y="5.84" font-family="Arial, Helvetica, sans-serif" font-size="2.97" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Lnk</text>
+      <text x="122.41" y="16.07" font-family="Arial, Helvetica, sans-serif" font-size="3.01" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Act</text>
+      <text x="97.84" y="25.84" font-family="Arial, Helvetica, sans-serif" font-size="2.82" font-weight="bold" fill="#e9eaeb" text-anchor="middle">c2</text>
+      <text x="173.25" y="5.84" font-family="Arial, Helvetica, sans-serif" font-size="2.97" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Lnk</text>
+      <text x="173.19" y="16.07" font-family="Arial, Helvetica, sans-serif" font-size="3.01" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Act</text>
+      <text x="147.73" y="25.84" font-family="Arial, Helvetica, sans-serif" font-size="2.82" font-weight="bold" fill="#e9eaeb" text-anchor="middle">c3</text>
+      <text x="171.06" y="32.76" font-family="Arial, Helvetica, sans-serif" font-size="3.78" font-weight="bold" fill="#e9eaeb" text-anchor="end">ME3-200GB-CFP2-DCO</text>
+    </g>
+    <g id="me3-200gb-cfp2-dco--handle-left" data-path="me3-200gb-cfp2-dco/handle-left" data-class="handle" data-z-out="4.2">
+      <path d="M 1 5.6 V 11.3 Q 1 15.35 5.07 15.35 Q 9.14 15.35 9.14 11.3 V 5.6 H 8 V 11.0 Q 8 14.2 5.07 14.2 Q 2.15 14.2 2.15 11.0 V 5.6 Z" fill="#6d7278" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="1.07" y="0.8" width="19.62" height="5.09" rx="1.0" fill="#7d8389" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--handle-right" data-path="me3-200gb-cfp2-dco/handle-right" data-class="handle" data-z-out="4.2">
+      <path d="M 192 5.6 V 11.3 Q 192 15.35 187.93 15.35 Q 183.86 15.35 183.86 11.3 V 5.6 H 185 V 11.0 Q 185 14.2 187.93 14.2 Q 190.85 14.2 190.85 11.0 V 5.6 Z" fill="#6d7278" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="172.31" y="0.8" width="19.62" height="5.09" rx="1.0" fill="#7d8389" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--c1" data-path="me3-200gb-cfp2-dco/c1" data-class="port" data-ref="std/cfp2@1:1.0.0" data-depth="107.5" data-wall="#aab0b7" data-media="cfp2" data-speed="200g" transform="translate(25.61,8.46)" data-group="ports" data-group-role="traffic" data-description="the three CFP2 connectors c1-c3 (CFP2 at 100G or CFP2-DCO at 200G)">
+      <title>me3-200gb-cfp2-dco--c1</title>
+      <rect id="me3-200gb-cfp2-dco--c1--opening" x="0" y="0" width="41.5" height="12.4" rx="0.8" fill="#17191c" data-path="me3-200gb-cfp2-dco/c1/opening" data-class="cutout" />
+      <rect id="me3-200gb-cfp2-dco--c1--collar" x="0.6" y="0.6" width="40.3" height="11.200000000000001" rx="0.6" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="me3-200gb-cfp2-dco--c1--module-slot" x="1.6" y="1.98" width="38.3" height="2.98" rx="0.4" fill="#2b2f33" />
+      <rect id="me3-200gb-cfp2-dco--c1--latch-window" x="1.6" y="6.82" width="38.3" height="3.47" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="20.75 6.2" data-cp-dir="front" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--c2" data-path="me3-200gb-cfp2-dco/c2" data-class="port" data-ref="std/cfp2@1:1.0.0" data-depth="107.5" data-wall="#aab0b7" data-media="cfp2" data-speed="200g" transform="translate(76.45,8.46)" data-group="ports" data-group-role="traffic" data-description="the three CFP2 connectors c1-c3 (CFP2 at 100G or CFP2-DCO at 200G)">
+      <title>me3-200gb-cfp2-dco--c2</title>
+      <rect id="me3-200gb-cfp2-dco--c2--opening" x="0" y="0" width="41.5" height="12.4" rx="0.8" fill="#17191c" data-path="me3-200gb-cfp2-dco/c2/opening" data-class="cutout" />
+      <rect id="me3-200gb-cfp2-dco--c2--collar" x="0.6" y="0.6" width="40.3" height="11.200000000000001" rx="0.6" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="me3-200gb-cfp2-dco--c2--module-slot" x="1.6" y="1.98" width="38.3" height="2.98" rx="0.4" fill="#2b2f33" />
+      <rect id="me3-200gb-cfp2-dco--c2--latch-window" x="1.6" y="6.82" width="38.3" height="3.47" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="20.75 6.2" data-cp-dir="front" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--c3" data-path="me3-200gb-cfp2-dco/c3" data-class="port" data-ref="std/cfp2@1:1.0.0" data-depth="107.5" data-wall="#aab0b7" data-media="cfp2" data-speed="200g" transform="translate(127.39,8.46)" data-group="ports" data-group-role="traffic" data-description="the three CFP2 connectors c1-c3 (CFP2 at 100G or CFP2-DCO at 200G)">
+      <title>me3-200gb-cfp2-dco--c3</title>
+      <rect id="me3-200gb-cfp2-dco--c3--opening" x="0" y="0" width="41.5" height="12.4" rx="0.8" fill="#17191c" data-path="me3-200gb-cfp2-dco/c3/opening" data-class="cutout" />
+      <rect id="me3-200gb-cfp2-dco--c3--collar" x="0.6" y="0.6" width="40.3" height="11.200000000000001" rx="0.6" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="me3-200gb-cfp2-dco--c3--module-slot" x="1.6" y="1.98" width="38.3" height="2.98" rx="0.4" fill="#2b2f33" />
+      <rect id="me3-200gb-cfp2-dco--c3--latch-window" x="1.6" y="6.82" width="38.3" height="3.47" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="20.75 6.2" data-cp-dir="front" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--lnk-c1" data-path="me3-200gb-cfp2-dco/lnk-c1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.87,6.87)" data-group="port-leds" data-group-role="indicator" data-description="the 6 port lamps, a Lnk and an Act lamp per connector">
+      <title>me3-200gb-cfp2-dco--lnk-c1</title>
+      <circle id="me3-200gb-cfp2-dco--lnk-c1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--lnk-c1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/lnk-c1/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--act-c1" data-path="me3-200gb-cfp2-dco/act-c1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.87,11.25)" data-group="port-leds" data-group-role="indicator" data-description="the 6 port lamps, a Lnk and an Act lamp per connector">
+      <title>me3-200gb-cfp2-dco--act-c1</title>
+      <circle id="me3-200gb-cfp2-dco--act-c1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--act-c1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/act-c1/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--lnk-c2" data-path="me3-200gb-cfp2-dco/lnk-c2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(121.6,6.87)" data-group="port-leds" data-group-role="indicator" data-description="the 6 port lamps, a Lnk and an Act lamp per connector">
+      <title>me3-200gb-cfp2-dco--lnk-c2</title>
+      <circle id="me3-200gb-cfp2-dco--lnk-c2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--lnk-c2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/lnk-c2/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--act-c2" data-path="me3-200gb-cfp2-dco/act-c2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(121.6,11.25)" data-group="port-leds" data-group-role="indicator" data-description="the 6 port lamps, a Lnk and an Act lamp per connector">
+      <title>me3-200gb-cfp2-dco--act-c2</title>
+      <circle id="me3-200gb-cfp2-dco--act-c2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--act-c2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/act-c2/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--lnk-c3" data-path="me3-200gb-cfp2-dco/lnk-c3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(172.38,6.87)" data-group="port-leds" data-group-role="indicator" data-description="the 6 port lamps, a Lnk and an Act lamp per connector">
+      <title>me3-200gb-cfp2-dco--lnk-c3</title>
+      <circle id="me3-200gb-cfp2-dco--lnk-c3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--lnk-c3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/lnk-c3/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--act-c3" data-path="me3-200gb-cfp2-dco/act-c3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(172.38,11.25)" data-group="port-leds" data-group-role="indicator" data-description="the 6 port lamps, a Lnk and an Act lamp per connector">
+      <title>me3-200gb-cfp2-dco--act-c3</title>
+      <circle id="me3-200gb-cfp2-dco--act-c3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--act-c3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/act-c3/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--stat" data-path="me3-200gb-cfp2-dco/stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(11.38,6.83)" data-group="status-leds" data-group-role="indicator" data-description="the card lamps Stat and Pwr at the left end">
+      <title>me3-200gb-cfp2-dco--stat</title>
+      <circle id="me3-200gb-cfp2-dco--stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/stat/lamp" data-class="led" data-states="off initializing up down" data-z-dome="0.3" />
+    </g>
+    <g id="me3-200gb-cfp2-dco--pwr" data-path="me3-200gb-cfp2-dco/pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(11.38,11.25)" data-group="status-leds" data-group-role="indicator" data-description="the card lamps Stat and Pwr at the left end">
+      <title>me3-200gb-cfp2-dco--pwr</title>
+      <circle id="me3-200gb-cfp2-dco--pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me3-200gb-cfp2-dco--pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me3-200gb-cfp2-dco/pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="96.5 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="73.7mm" height="40.6mm" viewBox="0 0 73.7 40.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sr-1-psu-blank" data-path="sr-1-psu-blank" data-class="blank" data-behaviour="fills" data-ref="nokia/sr-1-psu-blank@1:1.0.0" data-model="7750 SR-1 AC PSU blank plate" data-role="slot-blank" transform="translate(0,0)">
+    <title>sr-1-psu-blank</title>
+    <rect id="sr-1-psu-blank--face" x="0" y="0" width="73.7" height="40.6" rx="0.6" fill="#a3a9b0" stroke="#3a3f44" stroke-width="0.4" />
+    <g id="sr-1-psu-blank--handle-left" data-path="sr-1-psu-blank/handle-left" data-class="handle" data-z-out="4.0">
+      <rect x="15.0" y="10.3" width="5.0" height="20.0" rx="1.2" fill="#8a9097" stroke="#2a2d31" stroke-width="0.35" />
+      <rect x="16.4" y="12.3" width="2.2" height="16.0" rx="0.8" fill="#5a6067" />
+    </g>
+    <g id="sr-1-psu-blank--handle-right" data-path="sr-1-psu-blank/handle-right" data-class="handle" data-z-out="4.0">
+      <rect x="53.7" y="10.3" width="5.0" height="20.0" rx="1.2" fill="#8a9097" stroke="#2a2d31" stroke-width="0.35" />
+      <rect x="55.1" y="12.3" width="2.2" height="16.0" rx="0.8" fill="#5a6067" />
+    </g>
+    <g id="sr-1-psu-blank--silkscreen">
+      <path d="M 23.0 18.8 H 29.5 V 16.3 L 34.0 20.3 L 29.5 24.3 V 21.8 H 23.0 Z" fill="#6f757c" stroke="#2a2d31" stroke-width="0.25" />
+      <path d="M 50.7 18.8 H 44.2 V 16.3 L 39.7 20.3 L 44.2 24.3 V 21.8 H 50.7 Z" fill="#6f757c" stroke="#2a2d31" stroke-width="0.25" />
+    </g>
+    <g data-cp="mate" data-cp-at="36.85 20.3" data-cp-dir="rear" />
+  </g>
+</svg>

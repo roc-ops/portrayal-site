@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="67.0mm" height="305.6mm" viewBox="0 0 67.0 305.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sr-7-air-filter" data-path="sr-7-air-filter" data-class="filter" data-behaviour="fills" data-ref="nokia/sr-7-air-filter@1:1.0.0" data-model="7x50 SR/ESS-7 air filter tray" data-part-number="3HE00190AA" transform="translate(0,0)">
+    <title>sr-7-air-filter</title>
+    <rect id="sr-7-air-filter--plate" x="0" y="0" width="67.0" height="305.6" fill="#aeb3b8" stroke="#3a3f44" stroke-width="0.6" />
+    <path id="sr-7-air-filter--fold" d="M 0.9 0.3 L 0.9 305.3" stroke="#3a3f44" stroke-width="0.3" />
+    <g id="sr-7-air-filter--handle" data-path="sr-7-air-filter/handle" data-class="handle" data-z-uhandle="25.0">
+      <rect x="31.0" y="100.0" width="5.0" height="100.0" rx="2.5" fill="#23262a" stroke="#1f2226" stroke-width="0.3" />
+    </g>
+    <g id="sr-7-air-filter--screw-top" data-path="sr-7-air-filter/screw-top" data-class="screw" data-z-cyl="4.0">
+      <circle cx="55.3" cy="11.9" r="3.75" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 53.05 11.9 L 57.55 11.9 M 55.3 9.65 L 55.3 14.15" stroke="#2b2e33" stroke-width="0.82" />
+    </g>
+    <g id="sr-7-air-filter--screw-bottom" data-path="sr-7-air-filter/screw-bottom" data-class="screw" data-z-cyl="4.0">
+      <circle cx="55.3" cy="292.4" r="3.75" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 53.05 292.4 L 57.55 292.4 M 55.3 290.15 L 55.3 294.65" stroke="#2b2e33" stroke-width="0.82" />
+    </g>
+    <rect id="sr-7-air-filter--logo-zone" x="8" y="255" width="20" height="10" fill="none" data-path="sr-7-air-filter/logo-zone" data-class="label" />
+    <g data-cp="mate" data-cp-at="33.5 152.8" data-cp-dir="rear" />
+  </g>
+</svg>

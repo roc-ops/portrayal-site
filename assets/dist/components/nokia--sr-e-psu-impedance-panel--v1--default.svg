@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="86.4mm" height="40.4mm" viewBox="0 0 86.4 40.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sr-e-psu-impedance-panel" data-path="sr-e-psu-impedance-panel" data-class="blank" data-behaviour="fills" data-ref="nokia/sr-e-psu-impedance-panel@1:1.0.0" data-model="ACC - 7750 SR-e PSU Impedance Panel" data-part-number="3HE09419AA" data-role="slot-blank" transform="translate(0,0)">
+    <title>sr-e-psu-impedance-panel</title>
+    <rect id="sr-e-psu-impedance-panel--face" x="0" y="0" width="86.4" height="40.4" rx="0.4" fill="#34383d" stroke="#1d2023" stroke-width="0.3" />
+    <g id="sr-e-psu-impedance-panel--handle" data-path="sr-e-psu-impedance-panel/handle" data-class="handle">
+      <line x1="7.1" y1="35.6" x2="39.4" y2="3.7" stroke="#15171a" stroke-width="5.2" stroke-linecap="round" />
+      <line x1="7.1" y1="35.6" x2="39.4" y2="3.7" stroke="#8d9298" stroke-width="4.4" stroke-linecap="round" />
+    </g>
+    <rect id="sr-e-psu-impedance-panel--logo-zone" x="50.0" y="4.0" width="26.0" height="8.0" fill="none" data-path="sr-e-psu-impedance-panel/logo-zone" data-class="label" />
+    <g id="sr-e-psu-impedance-panel--latch" data-path="sr-e-psu-impedance-panel/latch" data-class="latch" data-z-out="2.0" data-z-color="#b8bcc1">
+      <rect x="80.6" y="24.0" width="5.8" height="13.8" rx="0.4" fill="#b8bcc1" stroke="#1d2023" stroke-width="0.3" />
+      <line x1="81.6" y1="25.6" x2="85.4" y2="25.6" stroke="#6f757c" stroke-width="0.3" />
+      <line x1="81.6" y1="27.6" x2="85.4" y2="27.6" stroke="#6f757c" stroke-width="0.3" />
+      <line x1="81.6" y1="29.6" x2="85.4" y2="29.6" stroke="#6f757c" stroke-width="0.3" />
+      <line x1="81.6" y1="31.6" x2="85.4" y2="31.6" stroke="#6f757c" stroke-width="0.3" />
+      <line x1="81.6" y1="33.6" x2="85.4" y2="33.6" stroke="#6f757c" stroke-width="0.3" />
+      <line x1="81.6" y1="35.6" x2="85.4" y2="35.6" stroke="#6f757c" stroke-width="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="43.2 20.2" data-cp-dir="rear" />
+  </g>
+</svg>

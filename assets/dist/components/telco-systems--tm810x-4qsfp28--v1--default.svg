@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="376.7mm" height="33.9mm" viewBox="0 0 376.7 33.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="tm810x-4qsfp28" data-path="tm810x-4qsfp28" data-class="line-card" data-behaviour="fills" data-ref="telco-systems/tm810x-4qsfp28@1:1.0.0" data-model="TM810x-4QSFP28" data-power-absent="not-published" data-qsfp28="4" data-states="absent" transform="translate(0,0)">
+    <title>tm810x-4qsfp28</title>
+    <rect id="tm810x-4qsfp28--plate" x="0.1" y="0.1" width="376.5" height="33.7" rx="0.4" fill="#1d1f22" stroke="#3a3e43" stroke-width="0.25" />
+    <g id="tm810x-4qsfp28--handle-left" data-path="tm810x-4qsfp28/handle-left" data-class="handle">
+      <rect x="0.6" y="0.8" width="5.6" height="32.3" rx="2.4" fill="none" stroke="#c9cdd2" stroke-width="1.5" />
+    </g>
+    <g id="tm810x-4qsfp28--handle-right" data-path="tm810x-4qsfp28/handle-right" data-class="handle">
+      <rect x="370.5" y="0.8" width="5.6" height="32.3" rx="2.4" fill="none" stroke="#c9cdd2" stroke-width="1.5" />
+    </g>
+    <g id="tm810x-4qsfp28--vents" fill="#08090a" data-path="tm810x-4qsfp28/vents" data-class="vent">
+      <rect x="30.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="32.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="35.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="37.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="40.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="42.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="45.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="47.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="50.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="52.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="55.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="57.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="60.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="62.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="65.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="67.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="70.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="72.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="75.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="77.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="80.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="82.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="85.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="87.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="90.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="92.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="95.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="97.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="100.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="102.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="105.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="107.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="110.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="112.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="115.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="117.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="120.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="122.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="125.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="127.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="130.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="132.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="135.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="137.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="140.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="142.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="145.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="147.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="150.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="152.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="155.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="157.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="160.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="162.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="165.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="167.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="170.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="172.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="175.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="177.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="180.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="182.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="185.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="187.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="190.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="192.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="195.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="197.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="200.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="202.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="205.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="207.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="210.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="212.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="215.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="217.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="220.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="222.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="225.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="227.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="230.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="232.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="235.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="237.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="240.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="242.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="245.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="247.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="250.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="252.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="255.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="257.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="260.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="262.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="265.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="267.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="270.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="272.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="275.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="277.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="280.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="282.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="285.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="287.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="290.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="292.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="295.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="297.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="300.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="302.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="305.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="307.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="310.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="312.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="315.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="317.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="320.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="322.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="325.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="327.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="330.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="332.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="335.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="337.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="340.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="342.5" y="3.2" width="1.3" height="1.3" />
+      <rect x="345.0" y="3.2" width="1.3" height="1.3" />
+      <rect x="31.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="33.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="36.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="38.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="41.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="43.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="46.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="48.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="51.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="53.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="56.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="58.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="61.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="63.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="66.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="68.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="71.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="73.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="76.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="78.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="81.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="83.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="86.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="88.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="91.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="93.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="96.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="98.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="101.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="103.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="106.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="108.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="111.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="113.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="116.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="118.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="121.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="123.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="126.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="128.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="131.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="133.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="136.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="138.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="141.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="143.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="146.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="148.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="151.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="153.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="156.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="158.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="161.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="163.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="166.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="168.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="171.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="173.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="176.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="178.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="181.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="183.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="186.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="188.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="191.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="193.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="196.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="198.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="201.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="203.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="206.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="208.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="211.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="213.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="216.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="218.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="221.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="223.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="226.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="228.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="231.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="233.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="236.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="238.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="241.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="243.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="246.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="248.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="251.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="253.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="256.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="258.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="261.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="263.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="266.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="268.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="271.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="273.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="276.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="278.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="281.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="283.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="286.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="288.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="291.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="293.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="296.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="298.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="301.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="303.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="306.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="308.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="311.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="313.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="316.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="318.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="321.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="323.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="326.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="328.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="331.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="333.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="336.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="338.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="341.25" y="5.2" width="1.3" height="1.3" />
+      <rect x="343.75" y="5.2" width="1.3" height="1.3" />
+      <rect x="30.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="32.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="35.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="37.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="40.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="42.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="45.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="47.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="50.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="52.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="55.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="57.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="60.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="62.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="65.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="67.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="70.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="72.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="75.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="77.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="80.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="82.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="85.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="87.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="90.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="92.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="95.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="97.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="100.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="102.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="105.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="107.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="110.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="112.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="115.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="117.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="120.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="122.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="125.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="127.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="130.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="132.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="135.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="137.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="140.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="142.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="145.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="147.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="150.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="152.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="155.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="157.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="160.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="162.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="165.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="167.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="170.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="172.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="175.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="177.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="180.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="182.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="185.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="187.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="190.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="192.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="195.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="197.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="200.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="202.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="205.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="207.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="210.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="212.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="215.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="217.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="220.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="222.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="225.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="227.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="230.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="232.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="235.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="237.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="240.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="242.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="245.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="247.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="250.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="252.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="255.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="257.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="260.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="262.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="265.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="267.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="270.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="272.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="275.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="277.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="280.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="282.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="285.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="287.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="290.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="292.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="295.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="297.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="300.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="302.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="305.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="307.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="310.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="312.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="315.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="317.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="320.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="322.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="325.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="327.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="330.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="332.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="335.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="337.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="340.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="342.5" y="7.2" width="1.3" height="1.3" />
+      <rect x="345.0" y="7.2" width="1.3" height="1.3" />
+      <rect x="31.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="33.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="36.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="38.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="41.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="43.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="46.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="48.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="51.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="53.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="56.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="58.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="61.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="63.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="66.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="68.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="71.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="73.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="76.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="78.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="81.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="83.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="86.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="88.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="91.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="93.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="96.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="98.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="101.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="103.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="106.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="108.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="111.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="113.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="116.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="118.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="121.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="123.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="126.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="128.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="131.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="133.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="136.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="138.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="141.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="143.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="146.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="148.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="151.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="153.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="156.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="158.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="161.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="163.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="166.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="168.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="171.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="173.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="176.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="178.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="181.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="183.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="186.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="188.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="191.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="193.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="196.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="198.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="201.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="203.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="206.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="208.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="211.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="213.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="216.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="218.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="221.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="223.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="226.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="228.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="231.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="233.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="236.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="238.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="241.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="243.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="246.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="248.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="251.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="253.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="256.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="258.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="261.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="263.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="266.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="268.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="271.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="273.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="276.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="278.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="281.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="283.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="286.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="288.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="291.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="293.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="296.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="298.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="301.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="303.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="306.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="308.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="311.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="313.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="316.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="318.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="321.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="323.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="326.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="328.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="331.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="333.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="336.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="338.75" y="9.2" width="1.3" height="1.3" />
+      <rect x="341.25" y="9.2" width="1.3" height="1.3" />
+      <rect x="343.75" y="9.2" width="1.3" height="1.3" />
+    </g>
+    <g id="tm810x-4qsfp28--thumbscrew-left">
+      <circle cx="29.37" cy="7.46" r="2.3" fill="#8e949a" stroke="#50555b" stroke-width="0.25" />
+    </g>
+    <g id="tm810x-4qsfp28--thumbscrew-right">
+      <circle cx="351.3" cy="7.46" r="2.3" fill="#8e949a" stroke="#50555b" stroke-width="0.25" />
+    </g>
+    <rect x="53.67" y="18.3" width="21.62" height="10.76" rx="0.3" fill="none" stroke="#c9cdd2" stroke-width="0.45" />
+    <rect x="117.42999999999999" y="18.3" width="21.62" height="10.76" rx="0.3" fill="none" stroke="#c9cdd2" stroke-width="0.45" />
+    <rect x="181.23999999999998" y="18.3" width="21.62" height="10.76" rx="0.3" fill="none" stroke="#c9cdd2" stroke-width="0.45" />
+    <rect x="245.1" y="18.3" width="21.62" height="10.76" rx="0.3" fill="none" stroke="#c9cdd2" stroke-width="0.45" />
+    <g id="tm810x-4qsfp28--silkscreen" font-family="Helvetica, Arial, sans-serif" fill="#e4e6e8" font-size="1.6">
+      <text x="64.46" y="33.1" font-size="1.6" text-anchor="middle">1/2/1</text>
+      <text x="128.22" y="33.1" font-size="1.6" text-anchor="middle">1/3/1</text>
+      <text x="192.03" y="33.1" font-size="1.6" text-anchor="middle">1/4/1</text>
+      <text x="255.89" y="33.1" font-size="1.6" text-anchor="middle">1/5/1</text>
+      <text x="10.8" y="33.2" font-size="1.7">4 x 40/100G Port Module</text>
+    </g>
+    <g id="tm810x-4qsfp28--port-1" data-path="tm810x-4qsfp28/port-1" data-class="port" data-ref="common/qsfp-cage@3:3.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" transform="translate(54.71,18.56)" data-group="qsfp28" data-group-role="traffic" data-description="4 x 40/100GE QSFP28 (data sheets, &quot;TM810x Expansion Module With 4x100G&quot;). THE FACE NUMBERS THEM AS SLOTS: the legends under the cages read 1/2/1, 1/3/1, 1/4/1 and 1/5/1, so each cage is interface 1 of its own logical slot 2-5 rather than port 1-4 of slot 2.">
+      <title>tm810x-4qsfp28--port-1</title>
+      <rect id="tm810x-4qsfp28--port-1--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="tm810x-4qsfp28/port-1/cage" data-class="cage" />
+      <g id="tm810x-4qsfp28--port-1--aperture" data-path="tm810x-4qsfp28/port-1/aperture" data-class="port" data-inner="1" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.5,0.0)">
+        <title>tm810x-4qsfp28--port-1--aperture</title>
+        <rect id="tm810x-4qsfp28--port-1--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="tm810x-4qsfp28/port-1/aperture/opening" data-class="cutout" />
+        <rect id="tm810x-4qsfp28--port-1--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+        <rect id="tm810x-4qsfp28--port-1--aperture--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="tm810x-4qsfp28--port-1--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+      </g>
+      <g data-cp="net" data-cp-at="9.75 4.79" data-cp-dir="front" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-1-lane-1" data-path="tm810x-4qsfp28/led-port-1-lane-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(56.47,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-1-lane-1</title>
+      <circle id="tm810x-4qsfp28--led-port-1-lane-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-1-lane-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-1-lane-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-1-lane-2" data-path="tm810x-4qsfp28/led-port-1-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(61.07,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-1-lane-2</title>
+      <circle id="tm810x-4qsfp28--led-port-1-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-1-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-1-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-1-lane-3" data-path="tm810x-4qsfp28/led-port-1-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(65.83,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-1-lane-3</title>
+      <circle id="tm810x-4qsfp28--led-port-1-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-1-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-1-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-1-lane-4" data-path="tm810x-4qsfp28/led-port-1-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.44,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-1-lane-4</title>
+      <circle id="tm810x-4qsfp28--led-port-1-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-1-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-1-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--port-2" data-path="tm810x-4qsfp28/port-2" data-class="port" data-ref="common/qsfp-cage@3:3.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" transform="translate(118.47,18.56)" data-group="qsfp28" data-group-role="traffic" data-description="4 x 40/100GE QSFP28 (data sheets, &quot;TM810x Expansion Module With 4x100G&quot;). THE FACE NUMBERS THEM AS SLOTS: the legends under the cages read 1/2/1, 1/3/1, 1/4/1 and 1/5/1, so each cage is interface 1 of its own logical slot 2-5 rather than port 1-4 of slot 2.">
+      <title>tm810x-4qsfp28--port-2</title>
+      <rect id="tm810x-4qsfp28--port-2--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="tm810x-4qsfp28/port-2/cage" data-class="cage" />
+      <g id="tm810x-4qsfp28--port-2--aperture" data-path="tm810x-4qsfp28/port-2/aperture" data-class="port" data-inner="1" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.5,0.0)">
+        <title>tm810x-4qsfp28--port-2--aperture</title>
+        <rect id="tm810x-4qsfp28--port-2--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="tm810x-4qsfp28/port-2/aperture/opening" data-class="cutout" />
+        <rect id="tm810x-4qsfp28--port-2--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+        <rect id="tm810x-4qsfp28--port-2--aperture--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="tm810x-4qsfp28--port-2--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+      </g>
+      <g data-cp="net" data-cp-at="9.75 4.79" data-cp-dir="front" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-2-lane-1" data-path="tm810x-4qsfp28/led-port-2-lane-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(120.3,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-2-lane-1</title>
+      <circle id="tm810x-4qsfp28--led-port-2-lane-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-2-lane-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-2-lane-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-2-lane-2" data-path="tm810x-4qsfp28/led-port-2-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(124.85,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-2-lane-2</title>
+      <circle id="tm810x-4qsfp28--led-port-2-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-2-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-2-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-2-lane-3" data-path="tm810x-4qsfp28/led-port-2-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(129.66,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-2-lane-3</title>
+      <circle id="tm810x-4qsfp28--led-port-2-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-2-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-2-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-2-lane-4" data-path="tm810x-4qsfp28/led-port-2-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(134.22,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-2-lane-4</title>
+      <circle id="tm810x-4qsfp28--led-port-2-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-2-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-2-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--port-3" data-path="tm810x-4qsfp28/port-3" data-class="port" data-ref="common/qsfp-cage@3:3.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" transform="translate(182.28,18.56)" data-group="qsfp28" data-group-role="traffic" data-description="4 x 40/100GE QSFP28 (data sheets, &quot;TM810x Expansion Module With 4x100G&quot;). THE FACE NUMBERS THEM AS SLOTS: the legends under the cages read 1/2/1, 1/3/1, 1/4/1 and 1/5/1, so each cage is interface 1 of its own logical slot 2-5 rather than port 1-4 of slot 2.">
+      <title>tm810x-4qsfp28--port-3</title>
+      <rect id="tm810x-4qsfp28--port-3--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="tm810x-4qsfp28/port-3/cage" data-class="cage" />
+      <g id="tm810x-4qsfp28--port-3--aperture" data-path="tm810x-4qsfp28/port-3/aperture" data-class="port" data-inner="1" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.5,0.0)">
+        <title>tm810x-4qsfp28--port-3--aperture</title>
+        <rect id="tm810x-4qsfp28--port-3--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="tm810x-4qsfp28/port-3/aperture/opening" data-class="cutout" />
+        <rect id="tm810x-4qsfp28--port-3--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+        <rect id="tm810x-4qsfp28--port-3--aperture--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="tm810x-4qsfp28--port-3--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+      </g>
+      <g data-cp="net" data-cp-at="9.75 4.79" data-cp-dir="front" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-3-lane-1" data-path="tm810x-4qsfp28/led-port-3-lane-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(184.15,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-3-lane-1</title>
+      <circle id="tm810x-4qsfp28--led-port-3-lane-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-3-lane-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-3-lane-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-3-lane-2" data-path="tm810x-4qsfp28/led-port-3-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(188.69,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-3-lane-2</title>
+      <circle id="tm810x-4qsfp28--led-port-3-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-3-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-3-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-3-lane-3" data-path="tm810x-4qsfp28/led-port-3-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(193.44,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-3-lane-3</title>
+      <circle id="tm810x-4qsfp28--led-port-3-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-3-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-3-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-3-lane-4" data-path="tm810x-4qsfp28/led-port-3-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(198.04,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-3-lane-4</title>
+      <circle id="tm810x-4qsfp28--led-port-3-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-3-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-3-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--port-4" data-path="tm810x-4qsfp28/port-4" data-class="port" data-ref="common/qsfp-cage@3:3.0.0" data-depth="37.0" data-media="qsfp28" data-speed="100g" transform="translate(246.14,18.56)" data-group="qsfp28" data-group-role="traffic" data-description="4 x 40/100GE QSFP28 (data sheets, &quot;TM810x Expansion Module With 4x100G&quot;). THE FACE NUMBERS THEM AS SLOTS: the legends under the cages read 1/2/1, 1/3/1, 1/4/1 and 1/5/1, so each cage is interface 1 of its own logical slot 2-5 rather than port 1-4 of slot 2.">
+      <title>tm810x-4qsfp28--port-4</title>
+      <rect id="tm810x-4qsfp28--port-4--cage" x="0" y="0" width="19.5" height="10.18" rx="0.4" fill="#2b2f33" stroke="#171a1d" stroke-width="0.3" data-path="tm810x-4qsfp28/port-4/cage" data-class="cage" />
+      <g id="tm810x-4qsfp28--port-4--aperture" data-path="tm810x-4qsfp28/port-4/aperture" data-class="port" data-inner="1" data-ref="std/qsfp-ganged@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-cavity="module-bay" data-media="qsfp" transform="translate(0.5,0.0)">
+        <title>tm810x-4qsfp28--port-4--aperture</title>
+        <rect id="tm810x-4qsfp28--port-4--aperture--opening" x="0" y="0" width="18.5" height="9.58" rx="0.3" fill="#17191c" data-path="tm810x-4qsfp28/port-4/aperture/opening" data-class="cutout" />
+        <rect id="tm810x-4qsfp28--port-4--aperture--module-bay" x="0.075" y="0.54" width="18.35" height="8.5" rx="0.3" fill="#0d0f11" />
+        <rect id="tm810x-4qsfp28--port-4--aperture--cage-lip" x="0.9" y="6.88" width="16.7" height="1.3" rx="0.3" fill="#2b2f33" />
+        <rect id="tm810x-4qsfp28--port-4--aperture--module-slot" x="0.9" y="4.0" width="16.7" height="2.6" rx="0.4" fill="#000000" />
+        <g data-cp="mate" data-cp-at="9.25 4.79" data-cp-dir="front" />
+      </g>
+      <g data-cp="net" data-cp-at="9.75 4.79" data-cp-dir="front" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-4-lane-1" data-path="tm810x-4qsfp28/led-port-4-lane-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(247.92,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-4-lane-1</title>
+      <circle id="tm810x-4qsfp28--led-port-4-lane-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-4-lane-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-4-lane-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-4-lane-2" data-path="tm810x-4qsfp28/led-port-4-lane-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(252.53,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-4-lane-2</title>
+      <circle id="tm810x-4qsfp28--led-port-4-lane-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-4-lane-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-4-lane-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-4-lane-3" data-path="tm810x-4qsfp28/led-port-4-lane-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(257.28,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-4-lane-3</title>
+      <circle id="tm810x-4qsfp28--led-port-4-lane-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-4-lane-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-4-lane-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="tm810x-4qsfp28--led-port-4-lane-4" data-path="tm810x-4qsfp28/led-port-4-lane-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(261.83,14.59)" data-group="lane-leds" data-group-role="indicator" data-description="four round lamps above each cage, one per 25G lane.">
+      <title>tm810x-4qsfp28--led-port-4-lane-4</title>
+      <circle id="tm810x-4qsfp28--led-port-4-lane-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-4qsfp28--led-port-4-lane-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-4qsfp28/led-port-4-lane-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="188.35 16.95" data-cp-dir="rear" />
+  </g>
+</svg>

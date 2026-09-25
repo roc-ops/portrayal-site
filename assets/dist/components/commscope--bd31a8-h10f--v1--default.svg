@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="130.2mm" viewBox="0 0 52.52 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="bd31a8-h10f" data-path="bd31a8-h10f" data-class="coupler" data-behaviour="fills" data-ref="commscope/bd31a8-h10f@1:1.0.0" data-model="BD31A8-100-H10F-0-AL" data-optical-insertion-loss="0.2 dB typical, 0.3 dB max" data-rf-inputs="1 BC and 8 NC" data-slots="2" transform="translate(0,0)">
+    <title>bd31a8-h10f</title>
+    <rect id="bd31a8-h10f--body" x="0" y="0" width="52.52" height="130.2" rx="0.8" fill="#1b1d20" stroke="#0c0d0e" stroke-width="0.3" />
+    <rect x="0.6" y="9.0" width="51.3" height="112.0" rx="0.6" fill="#141618" />
+    <g id="bd31a8-h10f--screw-top-1" data-path="bd31a8-h10f/screw-top-1" data-class="fastener">
+      <circle cx="12.88" cy="4.6" r="4.6" fill="#0c0d0e" />
+      <circle cx="12.88" cy="4.6" r="3.0" fill="#232528" />
+    </g>
+    <g id="bd31a8-h10f--screw-top-2" data-path="bd31a8-h10f/screw-top-2" data-class="fastener">
+      <circle cx="39.64" cy="4.6" r="4.6" fill="#0c0d0e" />
+      <circle cx="39.64" cy="4.6" r="3.0" fill="#232528" />
+    </g>
+    <g id="bd31a8-h10f--fan" data-path="bd31a8-h10f/fan" data-class="vent">
+      <rect x="2.7" y="33.4" width="40.0" height="40.0" rx="2.0" fill="#0e0f11" stroke="#26282b" stroke-width="0.4" />
+      <circle cx="22.7" cy="53.4" r="18.6" fill="#1d1f22" />
+      <circle cx="22.7" cy="53.4" r="9.6" fill="#d9dbdd" />
+      <g fill="#8a8e93">
+        <circle cx="6.3" cy="37.0" r="1.6" />
+        <circle cx="39.1" cy="37.0" r="1.6" />
+        <circle cx="6.3" cy="69.8" r="1.6" />
+        <circle cx="39.1" cy="69.8" r="1.6" />
+      </g>
+    </g>
+    <rect x="44.2" y="34.0" width="4.4" height="30.0" rx="0.6" fill="#0b0c0d" />
+    <g id="bd31a8-h10f--screw-bottom-1" data-path="bd31a8-h10f/screw-bottom-1" data-class="fastener">
+      <circle cx="12.88" cy="125.6" r="4.6" fill="#0c0d0e" />
+      <circle cx="12.88" cy="125.6" r="3.0" fill="#232528" />
+    </g>
+    <g id="bd31a8-h10f--screw-bottom-2" data-path="bd31a8-h10f/screw-bottom-2" data-class="fastener">
+      <circle cx="39.64" cy="125.6" r="4.6" fill="#0c0d0e" />
+      <circle cx="39.64" cy="125.6" r="3.0" fill="#232528" />
+    </g>
+    <g id="bd31a8-h10f--silkscreen" fill="#e6e8ea" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <rect x="20.0" y="2.2" width="12.5" height="4.6" rx="0.4" fill="#2a2c2f" />
+      <text x="26.26" y="5.6" font-size="2.8" fill="#b9bdc1">BD31A</text>
+      <text x="2.6" y="86.9" font-size="2.2">1</text>
+      <text x="2.6" y="104.6" font-size="2.2">2</text>
+      <text x="15.5" y="78.7" font-size="2.2">3</text>
+      <text x="15.5" y="95.0" font-size="2.2">4</text>
+      <text x="28.3" y="85.5" font-size="2.2">5</text>
+      <text x="28.3" y="102.5" font-size="2.2">6</text>
+      <text x="41.1" y="76.6" font-size="2.2">7</text>
+      <text x="41.1" y="93.0" font-size="2.2">8</text>
+      <text x="27.6" y="121.4" font-size="2.2">BC</text>
+    </g>
+    <g id="bd31a8-h10f--optical-1-2" data-path="bd31a8-h10f/optical-1-2" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" data-role="optical-output" transform="translate(4.96,13.62)">
+      <title>bd31a8-h10f--optical-1-2</title>
+      <path id="bd31a8-h10f--optical-1-2--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="bd31a8-h10f--optical-1-2--1" data-path="bd31a8-h10f/optical-1-2/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-1-2--1</title>
+        <path id="bd31a8-h10f--optical-1-2--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-1-2/1/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-1-2--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-1-2--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-1-2--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-1-2--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-1-2--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="bd31a8-h10f--optical-1-2--2" data-path="bd31a8-h10f/optical-1-2/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-1-2--2</title>
+        <path id="bd31a8-h10f--optical-1-2--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-1-2/2/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-1-2--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-1-2--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-1-2--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-1-2--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-1-2--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bd31a8-h10f--optical-1-2--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-3-4" data-path="bd31a8-h10f/optical-3-4" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" data-role="optical-output" transform="translate(14.56,13.62)">
+      <title>bd31a8-h10f--optical-3-4</title>
+      <path id="bd31a8-h10f--optical-3-4--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="bd31a8-h10f--optical-3-4--1" data-path="bd31a8-h10f/optical-3-4/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-3-4--1</title>
+        <path id="bd31a8-h10f--optical-3-4--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-3-4/1/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-3-4--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-3-4--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-3-4--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-3-4--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-3-4--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="bd31a8-h10f--optical-3-4--2" data-path="bd31a8-h10f/optical-3-4/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-3-4--2</title>
+        <path id="bd31a8-h10f--optical-3-4--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-3-4/2/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-3-4--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-3-4--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-3-4--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-3-4--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-3-4--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bd31a8-h10f--optical-3-4--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-5-6" data-path="bd31a8-h10f/optical-5-6" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" data-role="optical-output" transform="translate(28.26,13.62)">
+      <title>bd31a8-h10f--optical-5-6</title>
+      <path id="bd31a8-h10f--optical-5-6--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="bd31a8-h10f--optical-5-6--1" data-path="bd31a8-h10f/optical-5-6/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-5-6--1</title>
+        <path id="bd31a8-h10f--optical-5-6--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-5-6/1/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-5-6--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-5-6--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-5-6--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-5-6--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-5-6--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="bd31a8-h10f--optical-5-6--2" data-path="bd31a8-h10f/optical-5-6/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-5-6--2</title>
+        <path id="bd31a8-h10f--optical-5-6--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-5-6/2/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-5-6--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-5-6--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-5-6--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-5-6--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-5-6--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bd31a8-h10f--optical-5-6--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-7-8" data-path="bd31a8-h10f/optical-7-8" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" data-role="optical-output" transform="translate(38.06,13.62)">
+      <title>bd31a8-h10f--optical-7-8</title>
+      <path id="bd31a8-h10f--optical-7-8--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="bd31a8-h10f--optical-7-8--1" data-path="bd31a8-h10f/optical-7-8/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-7-8--1</title>
+        <path id="bd31a8-h10f--optical-7-8--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-7-8/1/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-7-8--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-7-8--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-7-8--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-7-8--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-7-8--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="bd31a8-h10f--optical-7-8--2" data-path="bd31a8-h10f/optical-7-8/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bd31a8-h10f--optical-7-8--2</title>
+        <path id="bd31a8-h10f--optical-7-8--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bd31a8-h10f/optical-7-8/2/bore" data-class="cutout" />
+        <rect id="bd31a8-h10f--optical-7-8--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bd31a8-h10f--optical-7-8--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bd31a8-h10f--optical-7-8--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bd31a8-h10f--optical-7-8--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bd31a8-h10f--optical-7-8--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bd31a8-h10f--optical-7-8--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-1" data-path="bd31a8-h10f/rf-nc-1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(1.95,89.35)">
+      <title>bd31a8-h10f--rf-nc-1</title>
+      <path id="bd31a8-h10f--rf-nc-1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-1/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-2" data-path="bd31a8-h10f/rf-nc-2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(1.95,107.05)">
+      <title>bd31a8-h10f--rf-nc-2</title>
+      <path id="bd31a8-h10f--rf-nc-2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-2/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-3" data-path="bd31a8-h10f/rf-nc-3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(14.85,81.15)">
+      <title>bd31a8-h10f--rf-nc-3</title>
+      <path id="bd31a8-h10f--rf-nc-3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-3/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-4" data-path="bd31a8-h10f/rf-nc-4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(14.85,97.45)">
+      <title>bd31a8-h10f--rf-nc-4</title>
+      <path id="bd31a8-h10f--rf-nc-4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-4/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-bc" data-path="bd31a8-h10f/rf-bc" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-broadcast" transform="translate(14.85,114.55)">
+      <title>bd31a8-h10f--rf-bc</title>
+      <path id="bd31a8-h10f--rf-bc--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-bc/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-bc--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-bc--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-5" data-path="bd31a8-h10f/rf-nc-5" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(27.65,87.95)">
+      <title>bd31a8-h10f--rf-nc-5</title>
+      <path id="bd31a8-h10f--rf-nc-5--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-5/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-5--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-5--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-6" data-path="bd31a8-h10f/rf-nc-6" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(27.65,104.95)">
+      <title>bd31a8-h10f--rf-nc-6</title>
+      <path id="bd31a8-h10f--rf-nc-6--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-6/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-6--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-6--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-7" data-path="bd31a8-h10f/rf-nc-7" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(40.45,79.05)">
+      <title>bd31a8-h10f--rf-nc-7</title>
+      <path id="bd31a8-h10f--rf-nc-7--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-7/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-7--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-7--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--rf-nc-8" data-path="bd31a8-h10f/rf-nc-8" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-role="rf-input-narrowcast" transform="translate(40.45,95.45)">
+      <title>bd31a8-h10f--rf-nc-8</title>
+      <path id="bd31a8-h10f--rf-nc-8--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bd31a8-h10f/rf-nc-8/opening" data-class="cutout" />
+      <g id="bd31a8-h10f--rf-nc-8--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bd31a8-h10f--rf-nc-8--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-1-2-occupant" data-path="bd31a8-h10f/optical-1-2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(4.685,17.57) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bd31a8-h10f/optical-1-2">
+      <title>bd31a8-h10f--optical-1-2-occupant</title>
+      <g id="bd31a8-h10f--optical-1-2-occupant--body" class="cap" data-path="bd31a8-h10f/optical-1-2-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="bd31a8-h10f--optical-1-2-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="bd31a8-h10f--optical-1-2-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-3-4-occupant" data-path="bd31a8-h10f/optical-3-4-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(14.285,17.57) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bd31a8-h10f/optical-3-4">
+      <title>bd31a8-h10f--optical-3-4-occupant</title>
+      <g id="bd31a8-h10f--optical-3-4-occupant--body" class="cap" data-path="bd31a8-h10f/optical-3-4-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="bd31a8-h10f--optical-3-4-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="bd31a8-h10f--optical-3-4-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-5-6-occupant" data-path="bd31a8-h10f/optical-5-6-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(27.985,17.57) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bd31a8-h10f/optical-5-6">
+      <title>bd31a8-h10f--optical-5-6-occupant</title>
+      <g id="bd31a8-h10f--optical-5-6-occupant--body" class="cap" data-path="bd31a8-h10f/optical-5-6-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="bd31a8-h10f--optical-5-6-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="bd31a8-h10f--optical-5-6-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="bd31a8-h10f--optical-7-8-occupant" data-path="bd31a8-h10f/optical-7-8-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(37.785,17.57) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bd31a8-h10f/optical-7-8">
+      <title>bd31a8-h10f--optical-7-8-occupant</title>
+      <g id="bd31a8-h10f--optical-7-8-occupant--body" class="cap" data-path="bd31a8-h10f/optical-7-8-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="bd31a8-h10f--optical-7-8-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="bd31a8-h10f--optical-7-8-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 65.1" data-cp-dir="front" />
+  </g>
+</svg>

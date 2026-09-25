@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="130.2mm" viewBox="0 0 52.52 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ca3008" data-path="ca3008" data-class="mechanical" data-behaviour="fills" data-ref="commscope/ca3008@1:1.0.0" data-body-depth="292.1" data-back-plate="BD31A8 or BD35M8" data-model="CA3008" data-slots="2" transform="translate(0,0)">
+    <title>ca3008</title>
+    <rect id="ca3008--body" x="0" y="13.9" width="52.52" height="102.4" fill="#2a2d31" />
+    <rect x="0" y="13.9" width="0.3" height="102.4" fill="#8f959b" />
+    <rect x="52.22" y="13.9" width="0.3" height="102.4" fill="#8f959b" />
+    <g id="ca3008--cc" data-path="ca3008/cc" data-class="bay">
+      <rect id="ca3008--cc--opening" x="0.3" y="13.9" width="51.92" height="19.3" fill="#101214" />
+      <g id="ca3008--cc--module" data-path="ca3008/cc/module" data-class="supervisor" data-behaviour="fills" data-ref="commscope/cc3008@1:1.0.0" data-model="CC3008" data-role="controller" transform="translate(0.3,13.9)">
+        <title>ca3008--cc--module</title>
+        <rect id="ca3008--cc--module--body" x="0" y="0" width="51.92" height="19.3" rx="0.8" fill="#5f6368" stroke="#3a3d41" stroke-width="0.2" />
+        <path id="ca3008--cc--module--lip" d="M 0 16.0 H 44.0 Q 45.5 16.0 46.2 17.4 L 47.0 19.3 H 0 Z" fill="#4a4e53" />
+        <rect x="41.9" y="0.6" width="9.6" height="15.0" rx="1.4" fill="#676b70" stroke="#4a4e53" stroke-width="0.2" />
+        <g id="ca3008--cc--module--screw" data-path="ca3008/cc/module/screw" data-class="fastener">
+          <circle cx="47.4" cy="5.4" r="3.3" fill="#1b1d20" />
+          <path d="M 45.0 6.6 L 49.8 4.2" stroke="#3a3d41" stroke-width="0.7" />
+        </g>
+        <rect x="8.4" y="7.4" width="9.0" height="4.0" rx="1.0" fill="#3f4247" />
+        <g id="ca3008--cc--module--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+          <text x="5.2" y="7.0" font-size="2.2" transform="rotate(-90 5.2 7.0)">CC3008</text>
+          <text x="12.9" y="4.1" font-size="1.9" transform="rotate(-45 12.9 4.1)">Micro</text>
+          <text x="14.4" y="5.6" font-size="1.9" transform="rotate(-45 14.4 5.6)">USB</text>
+          <path d="M 18.8 7.8 V 6.8 H 29.9 V 7.8" fill="none" stroke="#eef0f2" stroke-width="0.22" />
+          <text x="24.8" y="5.8" font-size="1.9" transform="rotate(-45 24.8 5.8)">Status</text>
+          <text x="34.2" y="6.4" font-size="1.9" transform="rotate(-45 34.2 6.4)">Access</text>
+          <text x="38.6" y="7.6" font-size="1.9" transform="rotate(-45 38.6 7.6)">Fan</text>
+        </g>
+        <g id="ca3008--cc--module--usb" data-path="ca3008/cc/module/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(9.15,8.03)">
+          <title>ca3008--cc--module--usb</title>
+          <rect id="ca3008--cc--module--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+          <path id="ca3008--cc--module--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="ca3008/cc/module/usb/opening" data-class="cutout" />
+          <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+        </g>
+        <g id="ca3008--cc--module--led-status-1" data-path="ca3008/cc/module/led-status-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(18.9,10.3)">
+          <title>ca3008--cc--module--led-status-1</title>
+          <circle id="ca3008--cc--module--led-status-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="ca3008--cc--module--led-status-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ca3008/cc/module/led-status-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g id="ca3008--cc--module--led-status-2" data-path="ca3008/cc/module/led-status-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(23.4,10.3)">
+          <title>ca3008--cc--module--led-status-2</title>
+          <circle id="ca3008--cc--module--led-status-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="ca3008--cc--module--led-status-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ca3008/cc/module/led-status-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g id="ca3008--cc--module--led-status-3" data-path="ca3008/cc/module/led-status-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(27.8,10.3)">
+          <title>ca3008--cc--module--led-status-3</title>
+          <circle id="ca3008--cc--module--led-status-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="ca3008--cc--module--led-status-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ca3008/cc/module/led-status-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g id="ca3008--cc--module--led-access" data-path="ca3008/cc/module/led-access" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(32.2,10.3)">
+          <title>ca3008--cc--module--led-access</title>
+          <circle id="ca3008--cc--module--led-access--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="ca3008--cc--module--led-access--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ca3008/cc/module/led-access/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g id="ca3008--cc--module--led-fan" data-path="ca3008/cc/module/led-fan" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="fan" transform="translate(36.6,10.3)">
+          <title>ca3008--cc--module--led-fan</title>
+          <circle id="ca3008--cc--module--led-fan--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="ca3008--cc--module--led-fan--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ca3008/cc/module/led-fan/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 9.65" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-1" data-path="ca3008/tx-1" data-class="bay">
+      <rect id="ca3008--tx-1--opening" x="0.3" y="33.20" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-1--module" data-path="ca3008/tx-1/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,33.2)">
+        <title>ca3008--tx-1--module</title>
+        <rect id="ca3008--tx-1--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-1--module--latch" data-path="ca3008/tx-1/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-2" data-path="ca3008/tx-2" data-class="bay">
+      <rect id="ca3008--tx-2--opening" x="0.3" y="43.56" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-2--module" data-path="ca3008/tx-2/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,43.56)">
+        <title>ca3008--tx-2--module</title>
+        <rect id="ca3008--tx-2--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-2--module--latch" data-path="ca3008/tx-2/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-3" data-path="ca3008/tx-3" data-class="bay">
+      <rect id="ca3008--tx-3--opening" x="0.3" y="53.92" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-3--module" data-path="ca3008/tx-3/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,53.92)">
+        <title>ca3008--tx-3--module</title>
+        <rect id="ca3008--tx-3--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-3--module--latch" data-path="ca3008/tx-3/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-4" data-path="ca3008/tx-4" data-class="bay">
+      <rect id="ca3008--tx-4--opening" x="0.3" y="64.28" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-4--module" data-path="ca3008/tx-4/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,64.28)">
+        <title>ca3008--tx-4--module</title>
+        <rect id="ca3008--tx-4--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-4--module--latch" data-path="ca3008/tx-4/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-5" data-path="ca3008/tx-5" data-class="bay">
+      <rect id="ca3008--tx-5--opening" x="0.3" y="74.64" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-5--module" data-path="ca3008/tx-5/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,74.64)">
+        <title>ca3008--tx-5--module</title>
+        <rect id="ca3008--tx-5--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-5--module--latch" data-path="ca3008/tx-5/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-6" data-path="ca3008/tx-6" data-class="bay">
+      <rect id="ca3008--tx-6--opening" x="0.3" y="85.00" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-6--module" data-path="ca3008/tx-6/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,85.0)">
+        <title>ca3008--tx-6--module</title>
+        <rect id="ca3008--tx-6--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-6--module--latch" data-path="ca3008/tx-6/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-7" data-path="ca3008/tx-7" data-class="bay">
+      <rect id="ca3008--tx-7--opening" x="0.3" y="95.36" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-7--module" data-path="ca3008/tx-7/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,95.36)">
+        <title>ca3008--tx-7--module</title>
+        <rect id="ca3008--tx-7--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-7--module--latch" data-path="ca3008/tx-7/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <g id="ca3008--tx-8" data-path="ca3008/tx-8" data-class="bay">
+      <rect id="ca3008--tx-8--opening" x="0.3" y="105.72" width="51.92" height="9.66" fill="#101214" />
+      <g id="ca3008--tx-8--module" data-path="ca3008/tx-8/module" data-class="blank" data-behaviour="fills" data-ref="commscope/ht3filh@1:1.0.0" data-model="HT3FILH" transform="translate(0.3,105.72)">
+        <title>ca3008--tx-8--module</title>
+        <rect id="ca3008--tx-8--module--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+        <g id="ca3008--tx-8--module--latch" data-path="ca3008/tx-8/module/latch" data-class="latch">
+          <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+          <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+        </g>
+        <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+      </g>
+    </g>
+    <rect id="ca3008--band-top" x="0" y="0" width="52.52" height="13.9" rx="0.8" fill="#6b6f74" stroke="#4a4e53" stroke-width="0.2" />
+    <rect id="ca3008--band-bottom" x="0" y="116.3" width="52.52" height="13.9" rx="0.8" fill="#6b6f74" stroke="#4a4e53" stroke-width="0.2" />
+    <g id="ca3008--screw-top-1" data-path="ca3008/screw-top-1" data-class="fastener">
+      <circle cx="12.88" cy="6.7" r="4.6" fill="#141517" />
+      <circle cx="12.88" cy="6.7" r="3.0" fill="#26282b" />
+    </g>
+    <g id="ca3008--screw-top-2" data-path="ca3008/screw-top-2" data-class="fastener">
+      <circle cx="39.64" cy="6.7" r="4.6" fill="#141517" />
+      <circle cx="39.64" cy="6.7" r="3.0" fill="#26282b" />
+    </g>
+    <g id="ca3008--screw-bottom-1" data-path="ca3008/screw-bottom-1" data-class="fastener">
+      <circle cx="12.88" cy="125.9" r="4.3" fill="#141517" />
+      <circle cx="12.88" cy="125.9" r="2.8" fill="#26282b" />
+    </g>
+    <g id="ca3008--screw-bottom-2" data-path="ca3008/screw-bottom-2" data-class="fastener">
+      <circle cx="39.64" cy="125.9" r="4.3" fill="#141517" />
+      <circle cx="39.64" cy="125.9" r="2.8" fill="#26282b" />
+    </g>
+    <rect id="ca3008--logo-zone" x="30.4" y="118.6" width="6.0" height="2.6" fill="none" data-path="ca3008/logo-zone" data-class="logo-zone" />
+    <g id="ca3008--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="26.26" y="8.0" font-size="3.4">CA3008</text>
+      <text x="26.26" y="125.2" font-size="2.6" letter-spacing="1.0" fill="#1e2124">ARRIS</text>
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 65.1" data-cp-dir="front" />
+  </g>
+</svg>

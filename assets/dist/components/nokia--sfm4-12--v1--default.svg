@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="425.4mm" height="35.4mm" viewBox="0 0 425.4 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/sfm4-12@'] .state-absent-or-hot { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-absent-or-hot { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-booting { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-booting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-crit { --led-color: #d0021b; }
+    g[data-ref^='nokia/sfm4-12@'] .state-down { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-failure { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-fault { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-free-running { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-free-running { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-holdover { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-holdover { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-link-100m { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-link-10m { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-locked { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-maj { --led-color: #d0021b; }
+    g[data-ref^='nokia/sfm4-12@'] .state-min { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-no-signal { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-not-qualified { --led-color: #f5a623; }
+    g[data-ref^='nokia/sfm4-12@'] .state-on { --led-color: #1e73d8; }
+    g[data-ref^='nokia/sfm4-12@'] .state-over-temperature { --led-color: #d0021b; }
+    g[data-ref^='nokia/sfm4-12@'] .state-primary { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-secondary { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-secondary { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-selected { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-signal { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-standby { --led-color: #39b54a; }
+    g[data-ref^='nokia/sfm4-12@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/sfm4-12@'] .state-up { --led-color: #39b54a; }</style>
+  <g id="sfm4-12" data-path="sfm4-12" data-class="supervisor" data-behaviour="fills" data-ref="nokia/sfm4-12@1:1.0.0" data-body-depth="457.2" data-model="7750 SR SFM4-12" data-part-number="3HE05948AA" data-part-number-variants="3HE05948AA, 3HE05950AA, 3HE03617AA, 3HE03618AA" data-power-draw-max-w="375" data-weight-kg="6.51" transform="translate(0,0)">
+    <title>sfm4-12</title>
+    <path id="sfm4-12--face" d="M 0 3.3 Q 0 2.3 1.0 2.3 H 15.4 V 0 H 410.0 V 2.3 H 424.4 Q 425.4 2.3 425.4 3.3 V 32.4 Q 425.4 35.4 422.4 35.4 H 3.0 Q 0 35.4 0 32.4 Z" fill="#2e3034" stroke="#1a1c1f" stroke-width="0.3" />
+    <rect x="81.57" y="8.44" width="17.6" height="14.52" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+    <rect x="141.36" y="8.44" width="17.6" height="14.52" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+    <rect x="205.81" y="8.44" width="17.6" height="14.52" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+    <rect id="sfm4-12--reset" x="37.99" y="17.37" width="2.0" height="2.0" fill="none" data-path="sfm4-12/reset" data-class="control" />
+    <circle cx="38.99" cy="18.37" r="0.9" fill="#111315" stroke="#6f757c" stroke-width="0.2" />
+    <g id="sfm4-12--dte-dce" data-path="sfm4-12/dte-dce" data-class="control">
+      <rect x="102.18" y="14.1" width="2.83" height="5.53" rx="0.3" fill="#1c1f23" stroke="#8a9096" stroke-width="0.25" />
+      <rect x="102.6" y="14.5" width="2.0" height="2.3" fill="#b8bcc1" />
+    </g>
+    <g id="sfm4-12--aco-lt" data-path="sfm4-12/aco-lt" data-class="control">
+      <circle cx="199.11" cy="16.02" r="4.72" fill="#26282b" stroke="#8a9096" stroke-width="0.3" />
+      <circle cx="199.11" cy="16.02" r="2.66" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.25" />
+      <circle cx="199.11" cy="16.02" r="1.48" fill="#3a3d41" />
+    </g>
+    <g id="sfm4-12--cf1-eject" data-path="sfm4-12/cf1-eject" data-class="control">
+      <rect x="235.12" y="14.62" width="4.19" height="3.73" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+    </g>
+    <g id="sfm4-12--cf1-slot" data-path="sfm4-12/cf1-slot" data-class="slot" data-depth="3.0">
+      <rect x="240.01" y="13.95" width="46.53" height="6.04" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+      <rect x="242.71" y="15.05" width="41.0" height="3.2" rx="0.6" fill="#0f1113" />
+    </g>
+    <g id="sfm4-12--cf2-eject" data-path="sfm4-12/cf2-eject" data-class="control">
+      <rect x="289.66" y="14.62" width="4.19" height="3.73" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+    </g>
+    <g id="sfm4-12--cf2-slot" data-path="sfm4-12/cf2-slot" data-class="slot" data-depth="3.0">
+      <rect x="294.59" y="13.95" width="46.53" height="6.04" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+      <rect x="297.29" y="15.05" width="41.0" height="3.2" rx="0.6" fill="#0f1113" />
+    </g>
+    <g id="sfm4-12--cf3-eject" data-path="sfm4-12/cf3-eject" data-class="control">
+      <rect x="344.04" y="14.62" width="4.19" height="3.73" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+    </g>
+    <g id="sfm4-12--cf3-door" data-path="sfm4-12/cf3-door" data-class="slot">
+      <rect x="353.72" y="6.89" width="50.22" height="4.27" fill="#26282b" stroke="#8a9096" stroke-width="0.25" />
+      <rect x="348.85" y="11.16" width="59.67" height="11.33" rx="5.6" fill="#3a3d41" stroke="#8a9096" stroke-width="0.3" />
+      <circle cx="360.07" cy="16.89" r="1.77" fill="#1c1f23" stroke="#6f757c" stroke-width="0.2" />
+      <circle cx="371.3" cy="16.89" r="1.77" fill="#1c1f23" stroke="#6f757c" stroke-width="0.2" />
+      <circle cx="382.52" cy="16.89" r="1.77" fill="#1c1f23" stroke="#6f757c" stroke-width="0.2" />
+      <circle cx="402.61" cy="16.75" r="4.28" fill="#b9bcc0" stroke="#6f757c" stroke-width="0.25" />
+      <path d="M 400.9 16.75 H 404.3 M 402.61 15.05 V 18.45" stroke="#4a4f55" stroke-width="0.6" />
+    </g>
+    <rect id="sfm4-12--logo-zone" x="245.0" y="24.0" width="40.0" height="8.0" fill="none" data-path="sfm4-12/logo-zone" data-class="label" />
+    <g id="sfm4-12--silkscreen">
+      <text x="20.4" y="23.29" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 20.4 23.29)">7750 SR</text>
+      <text x="24.7" y="23.29" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 24.7 23.29)" data-from="printed-model">SFM4-12</text>
+      <text x="36.92" y="20.53" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 36.92 20.53)">Reset</text>
+      <text x="42.24" y="10.5" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 42.24 10.5)">Status</text>
+      <text x="42.24" y="24.74" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 42.24 24.74)">Power</text>
+      <text x="48.43" y="24.1" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 48.43 24.1)">Ctl</text>
+      <text x="48.43" y="14.71" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 48.43 14.71)">Ref</text>
+      <text x="51.12" y="26.99" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 51.12 26.99)">M/S</text>
+      <path d="M 47.61 15.14 V 21.06" stroke="#e6e6e6" stroke-width="0.25" />
+      <text x="53.83" y="10.54" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 53.83 10.54)">Timing</text>
+      <text x="55.68" y="22" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="end" transform="rotate(-90 55.68 22)">Reference</text>
+      <text x="61.17" y="22" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="end" transform="rotate(-90 61.17 22)">Power Supply</text>
+      <text x="66.67" y="22" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="end" transform="rotate(-90 66.67 22)">Fan Status</text>
+      <text x="72.16" y="22" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="end" transform="rotate(-90 72.16 22)">Compact Flash</text>
+      <text x="77.66" y="22" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="end" transform="rotate(-90 77.66 22)">Alarms</text>
+      <text x="80.46" y="20.13" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="middle" transform="rotate(-90 80.46 20.13)">OT</text>
+      <text x="80.46" y="16.28" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="middle" transform="rotate(-90 80.46 16.28)">Crit</text>
+      <text x="80.46" y="12.43" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="middle" transform="rotate(-90 80.46 12.43)">Maj</text>
+      <text x="80.46" y="8.57" font-family="Arial, Helvetica, sans-serif" font-size="1.9" font-weight="bold" fill="#e6e6e6" text-anchor="middle" transform="rotate(-90 80.46 8.57)">Min</text>
+      <text x="90.23" y="6.57" font-family="Arial, Helvetica, sans-serif" font-size="3.2" font-weight="bold" fill="#e6e6e6" text-anchor="middle">BITS</text>
+      <text x="103.5" y="13.18" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">DTE</text>
+      <text x="103.5" y="24.34" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">DCE</text>
+      <text x="122.8" y="6.57" font-family="Arial, Helvetica, sans-serif" font-size="3.2" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Console</text>
+      <text x="150.6" y="6.57" font-family="Arial, Helvetica, sans-serif" font-size="3.2" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Aux</text>
+      <text x="177.2" y="6.57" font-family="Arial, Helvetica, sans-serif" font-size="3.2" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Alarm</text>
+      <text x="200.77" y="31.29" font-family="Arial, Helvetica, sans-serif" font-size="2.8" font-weight="bold" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 200.77 31.29)">ACO/LT</text>
+      <text x="205.4" y="6.36" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Link</text>
+      <text x="213.72" y="5.12" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Mgmt</text>
+      <text x="222.6" y="6.36" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Data</text>
+      <text x="262.2" y="8.62" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Compact Flash #1</text>
+      <text x="315.8" y="8.62" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Compact Flash #2</text>
+      <text x="370.6" y="4.76" font-family="Arial, Helvetica, sans-serif" font-size="3" font-weight="bold" fill="#e6e6e6" text-anchor="middle">Compact Flash #3</text>
+    </g>
+    <g id="sfm4-12--screw-left" data-path="sfm4-12/screw-left" data-class="screw" data-z-cyl="1.6">
+      <circle cx="7.43" cy="20.86" r="3.93" fill="#b9bcc0" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="7.43" cy="20.86" r="3.07" fill="none" stroke="#8a9096" stroke-width="0.25" />
+      <path d="M 5.46 20.86 H 9.39 M 7.43 18.89 V 22.82" stroke="#4a4f55" stroke-width="0.86" />
+    </g>
+    <g id="sfm4-12--screw-right" data-path="sfm4-12/screw-right" data-class="screw" data-z-cyl="1.6">
+      <circle cx="418.02" cy="20.86" r="3.93" fill="#b9bcc0" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="418.02" cy="20.86" r="3.07" fill="none" stroke="#8a9096" stroke-width="0.25" />
+      <path d="M 416.06 20.86 H 419.98 M 418.02 18.89 V 22.82" stroke="#4a4f55" stroke-width="0.86" />
+    </g>
+    <g id="sfm4-12--lever-left" data-path="sfm4-12/lever-left" data-class="latch" data-z-out="4.2" data-z-color="#1c1c1c">
+      <rect x="0.75" y="27.3" width="33.37" height="4.8" rx="2.4" fill="#1c1c1c" stroke="#0b0b0b" stroke-width="0.25" />
+      <circle cx="3.15" cy="29.7" r="1.73" fill="#2a2a2a" stroke="#0b0b0b" stroke-width="0.2" />
+      <circle cx="8.93" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="12.81" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="16.69" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="20.58" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="24.46" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="28.34" cy="29.7" r="1.2" fill="#3d4146" />
+    </g>
+    <g id="sfm4-12--lever-right" data-path="sfm4-12/lever-right" data-class="latch" data-z-out="4.2" data-z-color="#1c1c1c">
+      <rect x="391.35" y="27.3" width="33.36" height="4.8" rx="2.4" fill="#1c1c1c" stroke="#0b0b0b" stroke-width="0.25" />
+      <circle cx="422.31" cy="29.7" r="1.73" fill="#2a2a2a" stroke="#0b0b0b" stroke-width="0.2" />
+      <circle cx="397.13" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="401.01" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="404.89" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="408.77" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="412.65" cy="29.7" r="1.2" fill="#3d4146" />
+      <circle cx="416.53" cy="29.7" r="1.2" fill="#3d4146" />
+    </g>
+    <g id="sfm4-12--led-status" data-path="sfm4-12/led-status" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(43.75,6.92)" data-group="status-leds" data-group-role="indicator" data-description="Status, Power, M/S Ctl and Ref, and Timing">
+      <title>sfm4-12--led-status</title>
+      <circle id="sfm4-12--led-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-status/lamp" data-class="led" data-states="off up booting secondary" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-power" data-path="sfm4-12/led-power" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(43.75,19.31)" data-group="status-leds" data-group-role="indicator" data-description="Status, Power, M/S Ctl and Ref, and Timing">
+      <title>sfm4-12--led-power</title>
+      <circle id="sfm4-12--led-power--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-power--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-power/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-timing" data-path="sfm4-12/led-timing" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(49.07,6.92)" data-group="status-leds" data-group-role="indicator" data-description="Status, Power, M/S Ctl and Ref, and Timing">
+      <title>sfm4-12--led-timing</title>
+      <circle id="sfm4-12--led-timing--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-timing--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-timing/lamp" data-class="led" data-states="off locked holdover free-running" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-ms-ref" data-path="sfm4-12/led-ms-ref" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(49.21,15.31)" data-group="status-leds" data-group-role="indicator" data-description="Status, Power, M/S Ctl and Ref, and Timing">
+      <title>sfm4-12--led-ms-ref</title>
+      <circle id="sfm4-12--led-ms-ref--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-ms-ref--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-ms-ref/lamp" data-class="led" data-states="off primary secondary" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-ms-ctl" data-path="sfm4-12/led-ms-ctl" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(49.21,19.29)" data-group="status-leds" data-group-role="indicator" data-description="Status, Power, M/S Ctl and Ref, and Timing">
+      <title>sfm4-12--led-ms-ctl</title>
+      <circle id="sfm4-12--led-ms-ctl--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-ms-ctl--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-ms-ctl/lamp" data-class="led" data-states="off primary secondary" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-ref-1" data-path="sfm4-12/led-ref-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.09,19.13)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-ref-1</title>
+      <circle id="sfm4-12--led-ref-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-ref-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-ref-1/lamp" data-class="led" data-states="off selected standby not-qualified" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-ref-2" data-path="sfm4-12/led-ref-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.09,15.28)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-ref-2</title>
+      <circle id="sfm4-12--led-ref-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-ref-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-ref-2/lamp" data-class="led" data-states="off selected standby not-qualified" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-ref-3" data-path="sfm4-12/led-ref-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(54.09,11.43)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-ref-3</title>
+      <circle id="sfm4-12--led-ref-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-ref-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-ref-3/lamp" data-class="led" data-states="off selected standby not-qualified" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-psu-1" data-path="sfm4-12/led-psu-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(59.47,19.13)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-psu-1</title>
+      <circle id="sfm4-12--led-psu-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-psu-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-psu-1/lamp" data-class="led" data-states="off up error" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-psu-2" data-path="sfm4-12/led-psu-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(59.47,15.28)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-psu-2</title>
+      <circle id="sfm4-12--led-psu-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-psu-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-psu-2/lamp" data-class="led" data-states="off up error" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-psu-3" data-path="sfm4-12/led-psu-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(59.47,11.43)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-psu-3</title>
+      <circle id="sfm4-12--led-psu-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-psu-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-psu-3/lamp" data-class="led" data-states="off up error" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-psu-4" data-path="sfm4-12/led-psu-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(59.47,7.57)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-psu-4</title>
+      <circle id="sfm4-12--led-psu-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-psu-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-psu-4/lamp" data-class="led" data-states="off up error" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-fan-1" data-path="sfm4-12/led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(64.94,19.13)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-fan-1</title>
+      <circle id="sfm4-12--led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-fan-1/lamp" data-class="led" data-states="off up failure absent-or-hot" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-fan-2" data-path="sfm4-12/led-fan-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(64.94,15.28)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-fan-2</title>
+      <circle id="sfm4-12--led-fan-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-fan-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-fan-2/lamp" data-class="led" data-states="off up failure absent-or-hot" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-fan-3" data-path="sfm4-12/led-fan-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(64.94,11.43)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-fan-3</title>
+      <circle id="sfm4-12--led-fan-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-fan-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-fan-3/lamp" data-class="led" data-states="off up failure absent-or-hot" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-cf-1" data-path="sfm4-12/led-cf-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.41,19.13)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-cf-1</title>
+      <circle id="sfm4-12--led-cf-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-cf-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-cf-1/lamp" data-class="led" data-states="off active fault down" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-cf-2" data-path="sfm4-12/led-cf-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.41,15.28)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-cf-2</title>
+      <circle id="sfm4-12--led-cf-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-cf-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-cf-2/lamp" data-class="led" data-states="off active fault down" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-cf-3" data-path="sfm4-12/led-cf-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.41,11.43)" data-group="system-leds" data-group-role="indicator" data-description="Reference 1-3, Power Supply 1-4, Fan Status 1-3 and Compact Flash 1-3, numbered from the plate's lower edge">
+      <title>sfm4-12--led-cf-3</title>
+      <circle id="sfm4-12--led-cf-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-cf-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-cf-3/lamp" data-class="led" data-states="off active fault down" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-ot" data-path="sfm4-12/led-ot" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.71,19.13)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+      <title>sfm4-12--led-ot</title>
+      <circle id="sfm4-12--led-ot--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-ot--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-ot/lamp" data-class="led" data-states="off over-temperature" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-crit" data-path="sfm4-12/led-crit" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.71,15.28)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+      <title>sfm4-12--led-crit</title>
+      <circle id="sfm4-12--led-crit--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-crit--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-crit/lamp" data-class="led" data-states="off crit" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-maj" data-path="sfm4-12/led-maj" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.71,11.43)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+      <title>sfm4-12--led-maj</title>
+      <circle id="sfm4-12--led-maj--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-maj--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-maj/lamp" data-class="led" data-states="off maj" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--led-min" data-path="sfm4-12/led-min" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(75.71,7.57)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+      <title>sfm4-12--led-min</title>
+      <circle id="sfm4-12--led-min--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-min--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-min/lamp" data-class="led" data-states="off min" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--bits" data-path="sfm4-12/bits" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj48" transform="translate(82.48,9.1) rotate(180 7.9 6.6)" data-group="timing" data-group-role="management" data-description="the BITS network-clock input (RJ-48C on an RJ-45)">
+      <title>sfm4-12--bits</title>
+      <path id="sfm4-12--bits--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="sfm4-12--bits--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="sfm4-12--bits--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sfm4-12/bits/opening" data-class="cutout" />
+      <g id="sfm4-12--bits--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="sfm4-12--led-bits-lnk" data-path="sfm4-12/led-bits-lnk" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(83.44,7.0)" data-group="timing-leds" data-group-role="indicator" data-description="the BITS link lamp, drawn as a dot above the jack">
+      <title>sfm4-12--led-bits-lnk</title>
+      <circle id="sfm4-12--led-bits-lnk--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="sfm4-12--led-bits-lnk--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/led-bits-lnk/lamp" data-class="led" data-states="off no-signal signal" data-z-dome="0.3" />
+    </g>
+    <g id="sfm4-12--console" data-path="sfm4-12/console" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(107.82,9.47)" data-group="mgmt" data-group-role="management">
+      <title>sfm4-12--console</title>
+      <g id="sfm4-12--console--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="sfm4-12--console--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="sfm4-12--console--shell" data-path="sfm4-12/console/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+        <title>sfm4-12--console--shell</title>
+        <path id="sfm4-12--console--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="sfm4-12/console/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <path id="sfm4-12--console--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+        <circle id="sfm4-12--console--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--console--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+    <g id="sfm4-12--aux" data-path="sfm4-12/aux" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" transform="translate(142.26,9.1) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>sfm4-12--aux</title>
+      <path id="sfm4-12--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="sfm4-12--aux--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="sfm4-12--aux--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sfm4-12/aux/opening" data-class="cutout" />
+      <g id="sfm4-12--aux--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="sfm4-12--alarm" data-path="sfm4-12/alarm" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(161.43,9.47)" data-group="mgmt" data-group-role="management">
+      <title>sfm4-12--alarm</title>
+      <g id="sfm4-12--alarm--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="sfm4-12--alarm--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="sfm4-12--alarm--shell" data-path="sfm4-12/alarm/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+        <title>sfm4-12--alarm--shell</title>
+        <path id="sfm4-12--alarm--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="sfm4-12/alarm/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <path id="sfm4-12--alarm--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+        <circle id="sfm4-12--alarm--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sfm4-12--alarm--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+    <g id="sfm4-12--mgmt" data-path="sfm4-12/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="100m" transform="translate(206.71,9.1) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+      <title>sfm4-12--mgmt</title>
+      <g id="sfm4-12--mgmt--jack" data-path="sfm4-12/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>sfm4-12--mgmt--jack</title>
+        <path id="sfm4-12--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sfm4-12--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="sfm4-12--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sfm4-12/mgmt/jack/opening" data-class="cutout" />
+        <g id="sfm4-12--mgmt--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="sfm4-12--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="sfm4-12--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/mgmt/led-a" data-class="led" data-states="off activity error" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="sfm4-12--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm4-12/mgmt/led-b" data-class="led" data-states="off link-10m link-100m" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="212.7 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

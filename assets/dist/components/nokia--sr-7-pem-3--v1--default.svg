@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="219.5mm" height="42.7mm" viewBox="0 0 219.5 42.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sr-7-pem-3" data-path="sr-7-pem-3" data-class="power" data-behaviour="fills" data-ref="nokia/sr-7-pem-3@1:1.0.0" data-body-depth="195.6" data-breaker-a="100" data-feeds="1" data-inlet="dc-terminal" data-input="dc" data-input-voltage="-40 to -72 VDC" data-model="7750 SR-7 100A PEM-3" data-power-output-w="4000" data-role="dc-power-entry" data-voltage="-48v" data-weight-kg="1.5" transform="translate(0,0)">
+    <title>sr-7-pem-3</title>
+    <rect id="sr-7-pem-3--plate" x="0" y="0" width="219.5" height="42.7" rx="1.2" fill="#aeb3b8" stroke="#3a3f44" stroke-width="0.5" />
+    <g id="sr-7-pem-3--terminal-block">
+      <rect x="1.8" y="2.9" width="105.5" height="36.7" fill="#c3c7cb" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 1.8 5.73 L 107.3 5.73 M 1.8 36.54 L 107.3 36.54" stroke="#3a3f44" stroke-width="0.25" />
+    </g>
+    <g id="sr-7-pem-3--terminal-neg" data-path="sr-7-pem-3/terminal-neg" data-class="terminal">
+      <g id="sr-7-pem-3--terminal-neg-stud-1" data-z-cyl="8.0">
+        <circle cx="48.32" cy="12.13" r="6.5" fill="#d4d7da" stroke="#1f2226" stroke-width="0.35" />
+        <circle cx="48.32" cy="12.13" r="4.95" fill="none" stroke="#1f2226" stroke-width="0.2" />
+        <circle cx="48.32" cy="12.13" r="2.5" fill="#9aa0a6" stroke="#1f2226" stroke-width="0.9" />
+      </g>
+      <g id="sr-7-pem-3--terminal-neg-stud-2" data-z-cyl="8.0">
+        <circle cx="64.86" cy="12.13" r="6.5" fill="#d4d7da" stroke="#1f2226" stroke-width="0.35" />
+        <circle cx="64.86" cy="12.13" r="4.95" fill="none" stroke="#1f2226" stroke-width="0.2" />
+        <circle cx="64.86" cy="12.13" r="2.5" fill="#9aa0a6" stroke="#1f2226" stroke-width="0.9" />
+      </g>
+    </g>
+    <g id="sr-7-pem-3--terminal-rtn" data-path="sr-7-pem-3/terminal-rtn" data-class="terminal">
+      <g id="sr-7-pem-3--terminal-rtn-stud-1" data-z-cyl="8.0">
+        <circle cx="48.32" cy="30.76" r="6.5" fill="#d4d7da" stroke="#1f2226" stroke-width="0.35" />
+        <circle cx="48.32" cy="30.76" r="4.95" fill="none" stroke="#1f2226" stroke-width="0.2" />
+        <circle cx="48.32" cy="30.76" r="2.5" fill="#9aa0a6" stroke="#1f2226" stroke-width="0.9" />
+      </g>
+      <g id="sr-7-pem-3--terminal-rtn-stud-2" data-z-cyl="8.0">
+        <circle cx="64.86" cy="30.76" r="6.5" fill="#d4d7da" stroke="#1f2226" stroke-width="0.35" />
+        <circle cx="64.86" cy="30.76" r="4.95" fill="none" stroke="#1f2226" stroke-width="0.2" />
+        <circle cx="64.86" cy="30.76" r="2.5" fill="#9aa0a6" stroke="#1f2226" stroke-width="0.9" />
+      </g>
+    </g>
+    <path id="sr-7-pem-3--terminal-cover" d="M 1.8 2.9 L 107.3 2.9 L 107.3 39.6 L 1.8 39.6 L 1.8 26.7 L 13.95 26.7 L 13.95 14.46 L 1.8 14.46 Z" fill="#e8ecef" fill-opacity="0.35" stroke="#1f2226" stroke-width="0.45" data-path="sr-7-pem-3/terminal-cover" data-class="cover" />
+    <path id="sr-7-pem-3--cover-shadow" d="M 2.5 14.46 L 2.5 3.6 M 2.5 26.7 L 2.5 38.9 L 106.6 38.9" fill="none" stroke="#8a9096" stroke-width="1.0" />
+    <g id="sr-7-pem-3--cover-screw-top" data-path="sr-7-pem-3/cover-screw-top" data-class="screw">
+      <circle cx="103.72" cy="14.46" r="2.9" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 101.98 14.46 L 105.46 14.46 M 103.72 12.72 L 103.72 16.2" stroke="#2b2e33" stroke-width="0.64" transform="rotate(45 103.72 14.46)" />
+    </g>
+    <g id="sr-7-pem-3--cover-screw-bottom" data-path="sr-7-pem-3/cover-screw-bottom" data-class="screw">
+      <circle cx="103.72" cy="30.76" r="2.9" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 101.98 30.76 L 105.46 30.76 M 103.72 29.02 L 103.72 32.5" stroke="#2b2e33" stroke-width="0.64" transform="rotate(45 103.72 30.76)" />
+    </g>
+    <g id="sr-7-pem-3--cover-fastener">
+      <circle cx="89.57" cy="22.61" r="2.45" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 88.1 22.61 L 91.04 22.61 M 89.57 21.14 L 89.57 24.08" stroke="#2b2e33" stroke-width="0.54" transform="rotate(45 89.57 22.61)" />
+    </g>
+    <circle id="sr-7-pem-3--cover-post" cx="96.35" cy="22.61" r="3.35" fill="#eef0f2" stroke="#1f2226" stroke-width="0.3" />
+    <g id="sr-7-pem-3--captive-screw-left" data-path="sr-7-pem-3/captive-screw-left" data-class="screw" data-z-cyl="4.0">
+      <circle cx="8.07" cy="20.77" r="4.95" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 5.1 20.77 L 11.04 20.77 M 8.07 17.8 L 8.07 23.74" stroke="#2b2e33" stroke-width="1.09" />
+    </g>
+    <g id="sr-7-pem-3--captive-screw-right" data-path="sr-7-pem-3/captive-screw-right" data-class="screw" data-z-cyl="4.0">
+      <circle cx="212.03" cy="21.25" r="4.95" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 209.06 21.25 L 215 21.25 M 212.03 18.28 L 212.03 24.22" stroke="#2b2e33" stroke-width="1.09" transform="rotate(35 212.03 21.25)" />
+    </g>
+    <g id="sr-7-pem-3--handle" data-path="sr-7-pem-3/handle" data-class="handle" data-z-uhandle="18.0">
+      <rect x="110.6" y="17.27" width="85.1" height="6.89" rx="3.45" fill="#c9cdd1" stroke="#1f2226" stroke-width="0.35" />
+    </g>
+    <g id="sr-7-pem-3--breaker" data-path="sr-7-pem-3/breaker" data-class="button" data-z-out="4.0">
+      <rect x="135.5" y="12.03" width="33.8" height="18.25" rx="1.6" fill="#9aa0a6" stroke="#1f2226" stroke-width="0.35" />
+      <rect x="138.4" y="15.62" width="27.7" height="11.16" fill="#eef0f2" stroke="#1f2226" stroke-width="0.3" />
+      <path d="M 152.34 15.62 L 152.34 26.78" stroke="#1f2226" stroke-width="0.3" />
+    </g>
+    <rect id="sr-7-pem-3--logo-zone" x="175" y="3" width="28" height="7" fill="none" data-path="sr-7-pem-3/logo-zone" data-class="label" />
+    <g id="sr-7-pem-3--silkscreen">
+      <path d="M 122.0 3.0 L 126.84 10.48 L 117.17 10.48 Z" fill="none" stroke="#1f2226" stroke-width="0.35" />
+      <path d="M 122.55 5.2 L 121.25 7.6 L 122.65 7.6 L 121.45 9.8 L 123.45 7.0 L 122.05 7.0 L 123.15 5.2 Z" fill="#1f2226" />
+      <path d="M 133.37 3.0 L 138.4 10.48 L 128.33 10.48 Z" fill="none" stroke="#1f2226" stroke-width="0.35" />
+      <path d="M 133.37 5.4 L 133.37 8.3 M 133.37 9.0 L 133.37 9.5" stroke="#1f2226" stroke-width="0.5" />
+      <text x="142.3" y="5.0" font-family="serif" font-size="3.9" fill="#1f2226">Model 7750 SR-7</text>
+      <text x="142.3" y="9.1" font-family="serif" font-size="3.9" fill="#1f2226">100A PEM-3</text>
+      <text x="26.0" y="13.97" font-family="serif" font-size="5.4" text-anchor="middle" fill="#1f2226">-48</text>
+      <text x="26.5" y="17.27" font-family="serif" font-size="2.4" text-anchor="middle" fill="#1f2226">TORQUE:</text>
+      <text x="26.5" y="19.6" font-family="serif" font-size="2.4" text-anchor="middle" fill="#1f2226">40 lbs-inch</text>
+      <text x="28.0" y="21.93" font-family="serif" font-size="2.4" text-anchor="middle" fill="#1f2226">(4.5 N-m)</text>
+      <text x="25.6" y="32.61" font-family="serif" font-size="5.4" text-anchor="middle" fill="#1f2226">RTN</text>
+      <path d="M 34.37 12.13 L 40.95 12.13 M 34.37 30.76 L 40.95 30.76" stroke="#1f2226" stroke-width="0.2" />
+      <text x="146.47" y="20.48" font-family="serif" font-size="3.2" text-anchor="middle" fill="#1f2226">OFF</text>
+      <text x="159.22" y="20.48" font-family="serif" font-size="3.2" text-anchor="middle" fill="#1f2226">ON</text>
+      <text x="146.47" y="25.33" font-family="serif" font-size="3.2" text-anchor="middle" fill="#1f2226">O</text>
+      <text x="159.22" y="25.33" font-family="serif" font-size="3.2" text-anchor="middle" fill="#1f2226">I</text>
+    </g>
+    <g data-cp="feed" data-cp-at="56.59 21.45" data-cp-dir="down" />
+    <g data-cp="mate" data-cp-at="109.75 21.35" data-cp-dir="rear" />
+  </g>
+</svg>

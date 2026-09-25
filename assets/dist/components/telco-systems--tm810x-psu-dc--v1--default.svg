@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50.91mm" height="39.43mm" viewBox="0 0 50.91 39.43">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="tm810x-psu-dc" data-path="tm810x-psu-dc" data-class="psu" data-behaviour="fills" data-ref="telco-systems/tm810x-psu-dc@1:1.0.0" data-inlet="dc-terminal" data-input="dc" data-input-voltage="24 or -48 VDC (data sheets, &quot;AC or DC 24/-48VDC&quot;)" data-model="TM810x DC PSU" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>tm810x-psu-dc</title>
+    <rect id="tm810x-psu-dc--body" x="0.1" y="0.1" width="50.71" height="39.23" rx="0.4" fill="#26292d" stroke="#44484e" stroke-width="0.25" />
+    <g id="tm810x-psu-dc--vent-field" data-path="tm810x-psu-dc/vent-field" data-class="vent">
+      <rect x="1.0" y="1.2" width="15.9" height="37.0" fill="#0c0d0f" />
+      <g fill="#3a3e44">
+        <rect x="3.65" y="1.2" width="0.5" height="37.0" />
+        <rect x="6.3" y="1.2" width="0.5" height="37.0" />
+        <rect x="8.95" y="1.2" width="0.5" height="37.0" />
+        <rect x="11.6" y="1.2" width="0.5" height="37.0" />
+        <rect x="14.25" y="1.2" width="0.5" height="37.0" />
+        <rect x="16.9" y="1.2" width="0.5" height="37.0" />
+        <rect x="1.0" y="4.28" width="15.9" height="0.5" />
+        <rect x="1.0" y="7.36" width="15.9" height="0.5" />
+        <rect x="1.0" y="10.44" width="15.9" height="0.5" />
+        <rect x="1.0" y="13.52" width="15.9" height="0.5" />
+        <rect x="1.0" y="16.6" width="15.9" height="0.5" />
+        <rect x="1.0" y="19.68" width="15.9" height="0.5" />
+        <rect x="1.0" y="22.76" width="15.9" height="0.5" />
+        <rect x="1.0" y="25.84" width="15.9" height="0.5" />
+        <rect x="1.0" y="28.92" width="15.9" height="0.5" />
+        <rect x="1.0" y="32.0" width="15.9" height="0.5" />
+        <rect x="1.0" y="35.08" width="15.9" height="0.5" />
+      </g>
+    </g>
+    <g id="tm810x-psu-dc--pull" data-path="tm810x-psu-dc/pull" data-class="handle">
+      <rect x="38.0" y="18.0" width="6.0" height="18.5" rx="2.0" fill="#0e0f11" stroke="#5c6167" stroke-width="0.3" />
+    </g>
+    <g id="tm810x-psu-dc--terminal" data-path="tm810x-psu-dc/terminal" data-class="inlet" data-behaviour="mounts" data-ref="common/dc-terminal-24@1:1.0.0" data-body-depth="9.1" data-wall="#3a3e43" data-media="dc-terminal" transform="translate(18.6,1.8)">
+      <title>tm810x-psu-dc--terminal</title>
+      <rect id="tm810x-psu-dc--terminal--body" x="0" y="0" width="24.6" height="14.4" rx="0.45" fill="#9aa1a8" stroke="#5b6167" stroke-width="0.28" data-z-out="6.6" data-z-color="#7d848c" data-z-shape="1" />
+      <rect id="tm810x-psu-dc--terminal--lip-top" x="0.45" y="0.45" width="23.7" height="2.6" rx="0.3" fill="#dde2e7" stroke="#8d949b" stroke-width="0.16" data-z-out="9.0" data-z-color="#dde2e7" />
+      <rect id="tm810x-psu-dc--terminal--lip-bottom" x="0.45" y="11.35" width="23.7" height="2.6" rx="0.3" fill="#dde2e7" stroke="#8d949b" stroke-width="0.16" data-z-out="9.0" data-z-color="#dde2e7" />
+      <rect id="tm810x-psu-dc--terminal--mid" x="0.45" y="3.15" width="23.7" height="8.2" fill="#b7bdc3" stroke="#8d949b" stroke-width="0.16" data-z-out="7.0" data-z-color="#b7bdc3" />
+      <rect id="tm810x-psu-dc--terminal--pole-1" x="2.5" y="3.6" width="6.0" height="7.4" rx="0.3" fill="#eef1f4" stroke="#6e757c" stroke-width="0.18" data-path="tm810x-psu-dc/terminal/pole-1" data-class="terminal" data-z-out="7.9" data-z-color="#7d848c" />
+      <rect id="tm810x-psu-dc--terminal--pole-2" x="10.05" y="3.6" width="6.0" height="7.4" rx="0.3" fill="#eef1f4" stroke="#6e757c" stroke-width="0.18" data-path="tm810x-psu-dc/terminal/pole-2" data-class="terminal" data-z-out="7.9" data-z-color="#7d848c" />
+      <rect id="tm810x-psu-dc--terminal--pole-3" x="17.6" y="3.6" width="6.0" height="7.4" rx="0.3" fill="#eef1f4" stroke="#6e757c" stroke-width="0.18" data-path="tm810x-psu-dc/terminal/pole-3" data-class="terminal" data-z-out="7.9" data-z-color="#7d848c" />
+      <circle id="tm810x-psu-dc--terminal--screw-1" cx="5.5" cy="7.2" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-lift="7.9" data-z-color="#c3c9cf" />
+      <circle id="tm810x-psu-dc--terminal--screw-2" cx="13.05" cy="7.2" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-lift="7.9" data-z-color="#c3c9cf" />
+      <circle id="tm810x-psu-dc--terminal--screw-3" cx="20.6" cy="7.2" r="1.7" fill="#c3c9cf" stroke="#5b6167" stroke-width="0.2" data-z-cyl="1.2" data-z-lift="7.9" data-z-color="#c3c9cf" />
+      <g id="tm810x-psu-dc--terminal--slots" stroke="#5b6167" stroke-width="0.3" stroke-linecap="round">
+        <path d="M 4.15 7.2 H 6.85 M 5.5 5.85 V 8.55" />
+        <path d="M 11.7 7.2 H 14.4 M 13.05 5.85 V 8.55" />
+        <path d="M 19.25 7.2 H 21.95 M 20.6 5.85 V 8.55" />
+      </g>
+      <g data-cp="dc-in" data-cp-at="13.05 7.2" data-cp-dir="front" />
+    </g>
+    <g id="tm810x-psu-dc--led-status" data-path="tm810x-psu-dc/led-status" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(27.23,34.91)">
+      <title>tm810x-psu-dc--led-status</title>
+      <circle id="tm810x-psu-dc--led-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="tm810x-psu-dc--led-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="tm810x-psu-dc/led-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

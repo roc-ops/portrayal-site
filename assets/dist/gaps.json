@@ -23,10 +23,10 @@
   ]
  },
  "by-kind": {
-  "declared": 693,
-  "derived": 456
+  "declared": 748,
+  "derived": 510
  },
- "devices": 127,
+ "devices": 141,
  "gaps": [
   {
    "because": "vendor-silent",
@@ -1765,6 +1765,79 @@
    "what": "templated"
   },
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "ch3000",
+   "kind": "declared",
+   "manufacturer": "CommScope",
+   "note": "no front blanking panel for an empty CH3000 slot is named in any of the 164 data sheets held. A rear plate legended BP3001 appears beside a BP-P2 in the CX3003C sheet's photograph and is probably the rear blank, but no document names or describes it.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "the part numbers of the front and rear slot blanks, if they exist",
+   "what": "slot-blanks"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "ch3000",
+   "kind": "declared",
+   "manufacturer": "CommScope",
+   "note": "the PS3006D and PS3006N on the HT3580H chassis photograph carry an older face - a 3.5 mm jack legended Serial in place of the micro-USB, and vertical vent slots on the PS3006N - than the PS3006 data sheet's own photographs. The current face is modelled.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the revision history of the PS3006 faceplate",
+   "what": "older-psu-face"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "ch3000",
+   "kind": "declared",
+   "manufacturer": "CommScope",
+   "note": "the HT3580H data sheet names three back plates for a CA3008 carrier and photographs one, the BD31A8-100-H10F modelled here. The BD31A8-100-H18F (eight BC inputs, no NC) and the BD35M8 mux plates (-ACx and -EEx with three SC/APC, -DCx with six LC/APC, each with nine F-type inputs) are described in text only, so their layouts are not drawn.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a face-on photograph or drawing of a BD31A8-100-H18F and of a BD35M8",
+   "what": "quad-density-mux-back-plates"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "ch3000",
+   "kind": "derived",
+   "manufacturer": "CommScope",
+   "wanted": "an `attrs.performance` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in `attrs.environmental` (profile `optical` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "ch3000",
+   "kind": "derived",
+   "manufacturer": "CommScope",
+   "wanted": "`physical-context` on 44 bays (front 22, rear 22) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "ch3000",
+   "kind": "derived",
+   "manufacturer": "CommScope",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
    "because": "needs-photo",
    "blocks": [],
    "device": "r740xd",
@@ -3096,7 +3169,7 @@
    "scope": [
     "rear"
    ],
-   "wanted": "THE FACEPLATE OF THE 48 VDC SUPPLY. The datasheet offers '48 VDC Power Supply: Input Voltage: 40 to 72 VDC' beside the AC one, but both staged documents draw and photograph only the AC machine - the guide's Overview calls out '8. 2 x AC PSUs' and both rear elevations show C14 inlets. There is no DC face to model, so no cor550-psu-dc part was written and no DC configuration is offered rather than the AC part being seated under a DC name, which would be wrong at the connector.",
+   "wanted": "THE FACEPLATE OF THE 48 VDC SUPPLY. The datasheet offers '48 VDC Power Supply: Input Voltage: 40 to 72 VDC' beside the AC one, but both staged documents draw and photograph only the AC machine - the guide's Overview calls out '8. 2 x AC PSUs' and both rear elevations show C14 inlets. There is no DC face to model, so no cor550-psu-dc part was written, and the dc-f2b configuration seats the AC part - wrong at the connector, which is what this gap and lint L120 keep in view until a DC face turns up.",
    "what": "dc-supply-face"
   },
   {
@@ -3108,7 +3181,7 @@
    "scope": [
     "rear"
    ],
-   "wanted": "THE VENDOR ORDERING CODES FOR THE AC SUPPLY AND THE FAN TRAY. Neither staged document carries an ordering table; the datasheet ends at Regulatory Compliance and the guide's replacement procedures name no part. Both FRUs are therefore named for the chassis, which library/components/README.md allows only because no model number exists to use instead. If a COR550 ordering table lands, both parts should be renamed to their FRUs and this device should take the major that costs - edgecore/fan-2u-1x1sn@1 is the precedent for both the rename and its price.",
+   "wanted": "THE VENDOR ORDERING CODES FOR THE AC SUPPLY AND THE FAN TRAY. The datasheet's ordering table lists chassis SKUs only (carried on the configurations), and the guide's replacement procedures name no part. Both FRUs are therefore named for the chassis, which library/components/README.md allows only because no model number exists to use instead. If a COR550 ordering table lands, both parts should be renamed to their FRUs and this device should take the major that costs - edgecore/fan-2u-1x1sn@1 is the precedent for both the rename and its price.",
    "what": "psu-and-fan-ordering-codes"
   },
   {
@@ -3745,7 +3818,7 @@
    "scope": [
     "front"
    ],
-   "wanted": "A picture of the DC supply's face. Both documents say the device takes \"2 x DC or AC PSUs\" and the datasheet publishes a DC input range of -44 to -60 V at 15.5-9.6 A per supply, so the variant certainly exists - but the only elevation draws AC modules, and the quick start's DC section pictures wiring and ring lugs rather than a module face. The bay therefore accepts edgecore/csr440-psu-ac@1 alone and there is no `dc` configuration. Inventing one from the CSR310's terminal-block module would be wrong twice over: that is a different kind of supply, and this chassis is a different chassis.",
+   "wanted": "A picture of the DC supply's face. Both documents say the device takes \"2 x DC or AC PSUs\" and the datasheet publishes a DC input range of -44 to -60 V at 15.5-9.6 A per supply, so the variant certainly exists - but the only elevation draws AC modules, and the quick start's DC section pictures wiring and ring lugs rather than a module face. The bay therefore accepts edgecore/csr440-psu-ac@1 alone, and the `dc` configuration seats it - wrong at the connector, which this gap and lint L120 keep in view. Borrowing the CSR310's terminal-block module would be wrong twice over: that is a different kind of supply, and this chassis is a different chassis.",
    "what": "dc-power-supply"
   },
   {
@@ -7593,6 +7666,975 @@
    "what": "templated"
   },
   {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-1-ac",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "No photograph of an SR-1 is staged, so every colour is estimated and the finish of the intake, the label lens and the fan guards is unconfirmed.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "NK/2018-11/7750_SR-1_f.jpg and a rear photograph",
+   "what": "photographs"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 2,
+   "device": "sr-1-ac",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "sr-1-ac",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-1-ac",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in `attrs.environmental` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-1-ac",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 8 bays (front 2, rear 6) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-1-ac",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-1-dc",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "No photograph of an SR-1 is staged, so every colour is estimated and the finish of the intake, the label lens and the fan guards is unconfirmed.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "NK/2018-11/7750_SR-1_f.jpg and a rear photograph",
+   "what": "photographs"
+  },
+  {
+   "because": "L21",
+   "blocks": [],
+   "count": 2,
+   "device": "sr-1-dc",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the buried marks moved clear of the components that paint over them",
+   "what": "silkscreen-legibility"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 1,
+   "device": "sr-1-dc",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-1-dc",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory`; one of `operating-temp`, `operating-temp-f2b`, `operating-temp-b2f` in `attrs.environmental` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-1-dc",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 6 bays (front 2, rear 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-1-dc",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-12",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "The lab photographs show the front only (slots 1-5, A, B and 6). The rear colour and finish, and the ground plate, are read off vendor line art.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "one straight-on photograph of the SR-12 rear",
+   "what": "rear-photographs"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "sr-12",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "p90 Table 25 gives the chassis 25.4 in deep without the cable-management unit and 30.1 in with it, but no figure dimensions how far the trays or their covers stand proud of the card cage, so the covers are drawn flat on the face.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a side elevation of the chassis with the cable-management trays fitted",
+   "what": "cable-tray-depth"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "sr-12",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Only isometrics (p125 rack mounting, p128 Figure 23) show the sides; nothing draws the top or the underside.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "side elevations or photographs of the sides",
+   "what": "side-top-bottom"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-12",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "The lab photographs cover slots 1 to 6 and A/B; slot 5 is hidden behind cabling and slots 7-10 are out of frame, so the lab-2026-09-24 configuration does not record them and they show the bay defaults.",
+   "scope": [
+    "slot-5",
+    "slot-7",
+    "slot-8",
+    "slot-9",
+    "slot-10"
+   ],
+   "wanted": "a photograph of the lab chassis's slots 5 and 7-10, and the label of slot 6's MDA 2",
+   "what": "unseen-lab-slots"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-12",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-12",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 18 bays (front 13, rear 5) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-12",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-1e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Every figure used is vendor line art. Colour, finish and the printing on the cable-tray links are assumed; PUBLIC-SOURCES lists straight-on product photographs that are not staged.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "NK/2018-11/7750_SR-2e_F.jpg (2880 px) and the DS 189831 chassis cut-outs, staged",
+   "what": "photographs"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "sr-1e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Only two isometrics show the sides (p116 Figure 28, p147 Figure 44); nothing draws the top or the bottom. The side decor is estimated from perspective.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a side elevation or photographs of the sides",
+   "what": "side-top-bottom"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-1e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-1e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 14 bays (front 6, rear 8) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-1e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-2e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Every figure used is vendor line art. Colour, finish and the printing on the cable-tray links are assumed; PUBLIC-SOURCES lists straight-on product photographs that are not staged.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "NK/2018-11/7750_SR-2e_F.jpg (2880 px) and the DS 189831 chassis cut-outs, staged",
+   "what": "photographs"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "sr-2e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Only two isometrics show the sides (p116 Figure 28, p147 Figure 44); nothing draws the top or the bottom. The side decor is estimated from perspective.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a side elevation or photographs of the sides",
+   "what": "side-top-bottom"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-2e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-2e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 23 bays (front 10, rear 13) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-2e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-3e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Every figure used is vendor line art. Colour, finish and the printing on the cable-tray links are assumed; PUBLIC-SOURCES lists straight-on product photographs that are not staged.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "NK/2018-11/7750_SR-2e_F.jpg (2880 px) and the DS 189831 chassis cut-outs, staged",
+   "what": "photographs"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "sr-3e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Only two isometrics show the sides (p116 Figure 28, p147 Figure 44); nothing draws the top or the bottom. The side decor is estimated from perspective.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a side elevation or photographs of the sides",
+   "what": "side-top-bottom"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "sr-3e",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "SR-e guide Figure 11 (p52) draws the SR-3e rear 586.7 mm tall, and Figure 61 (p189) draws its fan tray 524.0 tall; Table 23 gives the chassis 22.75 in (577.9, 13 RU, which Figure 10 agrees with at 577.4) and Table 28 the tray 20.2 in (513.1). The stated figures are used. Where the rear loses the 8.8 mm is not drawn: here it comes out of the plate under IOM-e 3.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph or a corrected rear elevation of the SR-3e",
+   "what": "sr3e-rear-figure-height"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-3e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-3e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 28 bays (front 14, rear 14) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-3e",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "sr-7",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Every figure used is vendor line art and no SR-7 photograph is staged, so colour and finish are estimated from the SR-12 in the owner's lab. PUBLIC-SOURCES lists a straight-on NK/2018-11/7750_SR-7_f.jpg and an eBay rear shot, neither downloaded.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "NK/2018-11/7750_SR-7_f.jpg (2880 x 2293) and a rear photograph, staged",
+   "what": "photographs"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "sr-7",
+   "kind": "declared",
+   "manufacturer": "Nokia",
+   "note": "Only isometrics show the sides (p125 Figure 25, p128 Figure 27). The right side carries the filtered air intake (p82) and the left side and top the ground receptacles (p128), but nothing dimensions them.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "side elevations or photographs of the sides and top",
+   "what": "side-top-bottom"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "sr-7",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "sr-7",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "`physical-context` on 13 bays (front 9, rear 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "sr-7",
+   "kind": "derived",
+   "manufacturer": "Nokia",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "osa-5420-quartz",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The data sheet gives 443 wide and the manual 436 \"without mounting brackets\". Both of the face's own images measure 443 x 44 to about 1% and 436 x 44 to 2-3%, so the faces are drawn 443. The reconciliation - a front plate a little wider than the body - is read from one three-quarter render, not measured.",
+   "scope": [
+    "front",
+    "rear",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a mechanical drawing of the chassis, or a ruler across a real unit's front and across its sides.",
+   "what": "width-sources-disagree"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5420-quartz",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The product-page three-quarter render shows each flank with two fields of round vent holes and three pairs of screws, two of them the bracket positions the manual describes; it is at an angle that measures none of it. The top and bottom are shown by nothing. These four views carry the envelope only.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a square-on photograph of one flank and of the lid.",
+   "what": "side-detail"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5420-quartz",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "Manual p46 - blank plates \"must be installed in unused PSU or expansion slots\", each with a captive thumbscrew on the right. No image of either blank is held. The expansion-slot blank is modelled from that text alone (oscilloquartz/osa542x-lc-blank@1, art estimated); the PSU blank is not modelled, so a pulled supply draws as its opening.",
+   "scope": [
+    "lc-1",
+    "lc-2",
+    "psu-1",
+    "psu-2"
+   ],
+   "wanted": "a photograph or drawing of the expansion-slot and PSU blank plates.",
+   "what": "blank-plates"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5420-quartz",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The IRIG-B card's optical output is a round barrel 7.4 across in a 375 px render; no document names the connector type.",
+   "scope": [
+    "lc-1",
+    "lc-2"
+   ],
+   "wanted": "the IRIG-B card's own data sheet or a newer install manual.",
+   "what": "optical-irig-connector"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5420-quartz",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The manual gives part numbers for the BTOH-16, CPOH-16 and PTOH-16 and defers the PSUs, the GE-4S and everything else to the OSA 5420/5421 System Description, which is not held. The IRIG-B card postdates the manual.",
+   "scope": [
+    "psu-1",
+    "psu-2",
+    "lc-1",
+    "lc-2"
+   ],
+   "wanted": "the OSA 5420/5421 System Description.",
+   "what": "card-and-psu-part-numbers"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 5,
+   "device": "osa-5420-quartz",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "osa-5420-quartz",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "osa-5420-quartz",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`physical-context` on 4 bays (front 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "osa-5420-quartz",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The data sheet gives 443 wide and the manual 436 \"without mounting brackets\". Both of the face's own images measure 443 x 44 to about 1% and 436 x 44 to 2-3%, so the faces are drawn 443. The reconciliation - a front plate a little wider than the body - is read from one three-quarter render, not measured.",
+   "scope": [
+    "front",
+    "rear",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a mechanical drawing of the chassis, or a ruler across a real unit's front and across its sides.",
+   "what": "width-sources-disagree"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The product-page three-quarter render shows each flank with two fields of round vent holes and three pairs of screws, two of them the bracket positions the manual describes; it is at an angle that measures none of it. The top and bottom are shown by nothing. These four views carry the envelope only.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a square-on photograph of one flank and of the lid.",
+   "what": "side-detail"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "Manual p46 - blank plates \"must be installed in unused PSU or expansion slots\", each with a captive thumbscrew on the right. No image of either blank is held. The expansion-slot blank is modelled from that text alone (oscilloquartz/osa542x-lc-blank@1, art estimated); the PSU blank is not modelled, so a pulled supply draws as its opening.",
+   "scope": [
+    "lc-1",
+    "lc-2",
+    "psu-1",
+    "psu-2"
+   ],
+   "wanted": "a photograph or drawing of the expansion-slot and PSU blank plates.",
+   "what": "blank-plates"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The IRIG-B card's optical output is a round barrel 7.4 across in a 375 px render; no document names the connector type.",
+   "scope": [
+    "lc-1",
+    "lc-2"
+   ],
+   "wanted": "the IRIG-B card's own data sheet or a newer install manual.",
+   "what": "optical-irig-connector"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The manual gives part numbers for the BTOH-16, CPOH-16 and PTOH-16 and defers the PSUs, the GE-4S and everything else to the OSA 5420/5421 System Description, which is not held. The IRIG-B card postdates the manual.",
+   "scope": [
+    "psu-1",
+    "psu-2",
+    "lc-1",
+    "lc-2"
+   ],
+   "wanted": "the OSA 5420/5421 System Description.",
+   "what": "card-and-psu-part-numbers"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 5,
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`physical-context` on 4 bays (front 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "osa-5420-quartz-hq-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The data sheet gives 443 wide and the manual 436 \"without mounting brackets\". Both of the face's own images measure 443 x 44 to about 1% and 436 x 44 to 2-3%, so the faces are drawn 443. The reconciliation - a front plate a little wider than the body - is read from one three-quarter render, not measured.",
+   "scope": [
+    "front",
+    "rear",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a mechanical drawing of the chassis, or a ruler across a real unit's front and across its sides.",
+   "what": "width-sources-disagree"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The product-page three-quarter render shows each flank with two fields of round vent holes and three pairs of screws, two of them the bracket positions the manual describes; it is at an angle that measures none of it. The top and bottom are shown by nothing. These four views carry the envelope only.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a square-on photograph of one flank and of the lid.",
+   "what": "side-detail"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "Manual p46 - blank plates \"must be installed in unused PSU or expansion slots\", each with a captive thumbscrew on the right. No image of either blank is held. The expansion-slot blank is modelled from that text alone (oscilloquartz/osa542x-lc-blank@1, art estimated); the PSU blank is not modelled, so a pulled supply draws as its opening.",
+   "scope": [
+    "lc-1",
+    "psu-1",
+    "psu-2"
+   ],
+   "wanted": "a photograph or drawing of the expansion-slot and PSU blank plates.",
+   "what": "blank-plates"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The IRIG-B card's optical output is a round barrel 7.4 across in a 375 px render; no document names the connector type.",
+   "scope": [
+    "lc-1"
+   ],
+   "wanted": "the IRIG-B card's own data sheet or a newer install manual.",
+   "what": "optical-irig-connector"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The manual gives part numbers for the BTOH-16, CPOH-16 and PTOH-16 and defers the PSUs, the GE-4S and everything else to the OSA 5420/5421 System Description, which is not held. The IRIG-B card postdates the manual.",
+   "scope": [
+    "psu-1",
+    "psu-2",
+    "lc-1"
+   ],
+   "wanted": "the OSA 5420/5421 System Description.",
+   "what": "card-and-psu-part-numbers"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 5,
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`physical-context` on 3 bays (front 3) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "osa-5421-quartz-hq-plus-plus",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "osa-5421-rubidium",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The data sheet gives 443 wide and the manual 436 \"without mounting brackets\". Both of the face's own images measure 443 x 44 to about 1% and 436 x 44 to 2-3%, so the faces are drawn 443. The reconciliation - a front plate a little wider than the body - is read from one three-quarter render, not measured.",
+   "scope": [
+    "front",
+    "rear",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a mechanical drawing of the chassis, or a ruler across a real unit's front and across its sides.",
+   "what": "width-sources-disagree"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5421-rubidium",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The product-page three-quarter render shows each flank with two fields of round vent holes and three pairs of screws, two of them the bracket positions the manual describes; it is at an angle that measures none of it. The top and bottom are shown by nothing. These four views carry the envelope only.",
+   "scope": [
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "a square-on photograph of one flank and of the lid.",
+   "what": "side-detail"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "osa-5421-rubidium",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "Manual p46 - blank plates \"must be installed in unused PSU or expansion slots\", each with a captive thumbscrew on the right. No image of either blank is held. The expansion-slot blank is modelled from that text alone (oscilloquartz/osa542x-lc-blank@1, art estimated); the PSU blank is not modelled, so a pulled supply draws as its opening.",
+   "scope": [
+    "lc-1",
+    "psu-1",
+    "psu-2"
+   ],
+   "wanted": "a photograph or drawing of the expansion-slot and PSU blank plates.",
+   "what": "blank-plates"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5421-rubidium",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The IRIG-B card's optical output is a round barrel 7.4 across in a 375 px render; no document names the connector type.",
+   "scope": [
+    "lc-1"
+   ],
+   "wanted": "the IRIG-B card's own data sheet or a newer install manual.",
+   "what": "optical-irig-connector"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "osa-5421-rubidium",
+   "kind": "declared",
+   "manufacturer": "Oscilloquartz",
+   "note": "The manual gives part numbers for the BTOH-16, CPOH-16 and PTOH-16 and defers the PSUs, the GE-4S and everything else to the OSA 5420/5421 System Description, which is not held. The IRIG-B card postdates the manual.",
+   "scope": [
+    "psu-1",
+    "psu-2",
+    "lc-1"
+   ],
+   "wanted": "the OSA 5420/5421 System Description.",
+   "what": "card-and-psu-part-numbers"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 5,
+   "device": "osa-5421-rubidium",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "osa-5421-rubidium",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "osa-5421-rubidium",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "`physical-context` on 3 bays (front 3) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "osa-5421-rubidium",
+   "kind": "derived",
+   "manufacturer": "Oscilloquartz",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "gl-8xep",
@@ -7981,6 +9023,319 @@
    "what": "templated"
   },
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; its support page says hardware documentation is on a support portal behind a login, whose contact is on telco.com/support. The one public Telco Systems installation guide (T-Marc 3306, MN100280) is for another product. Searched: the telco.com media library (120 PDFs), every product and knowledge-centre page, and the Wayback index of telco.com PDFs.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the TM-8104 / T-Metro 8104 hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "Block origins are the stencil's. The two vendor fronts disagree with it differently: the yaw-corrected 2021 TM-8104 render within -3.0 to +0.4 mm with no pattern, the near-square 2022 TM-8106 front (1.8 px/mm) placing its outer SFP+ blocks about 2.2 mm further out on each side. Neither resolves better than 2-3 mm, so the stencil stands.",
+   "scope": [
+    "sfp-plus",
+    "timing",
+    "mgmt"
+   ],
+   "wanted": "a mechanical drawing, or a square-on photograph at 4 px/mm or better.",
+   "what": "block-spacing"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No image held shows the rear. The data sheets say the fans are hot-swappable and order them as TM810x-FAN, and NetBox lists four fan bays, so the rear almost certainly holds them; where, and whether it carries a ground point or anything else, is not known.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a square-on photograph of the rear, or the installation guide's rear view.",
+   "what": "rear-and-fans"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No data sheet states the airflow direction. NetBox gives front-to-rear, which is a community reading with no cited source, so chassis.airflow is left unset.",
+   "scope": [],
+   "wanted": "the installation guide's cooling section.",
+   "what": "airflow"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The TM810x-OAM \"Full FPGA Expansion Module for Base System\" (ordering tables, 2025) and NetBox's \"OAM Expansion Bay\" have no visible opening on the front; it is presumably internal. Not drawn.",
+   "scope": [],
+   "wanted": "the installation guide, or a photograph of the chassis with its lid off.",
+   "what": "oam-module"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The 2025 data sheet's ordering table describes TM8104-BASE-2XX as \"40x1/10GE SFP+ ports, 48x1/10GE SFP+ Line Card\" and TM8104-88S-Y-2XX and TM8104-4QS-Y-2XX with the same \"4x40/100GE QSFP28 Line Card\" text, while the 2021 editions order the base as 40 x SFP+ with the modules separate. The configurations follow the 2021 reading and the SKU names (88S = the 48-port module, 4QS = the QSFP28 module); no part number is attached to a configuration while the table contradicts itself.",
+   "scope": [
+    "slot-2"
+   ],
+   "wanted": "a current price list or ordering guide.",
+   "what": "ordering-table"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "DS-v14 lists BITS, frequency, 1PPS and ToD in or out, and the face labels GPS, BITS 1 and 2, and ToD / E1-T1; which signal each connector carries, and in which direction, is not tabled anywhere held.",
+   "scope": [
+    "gps",
+    "bits-1",
+    "bits-2",
+    "tod",
+    "e1-t1"
+   ],
+   "wanted": "the installation guide's connector table.",
+   "what": "timing-port-mapping"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8104",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No edition gives the supplies' own rating or model number; only the chassis' 400 W maximum. Searched every data sheet held for \"W\", \"PSU\", \"power supply\" and \"Power\".",
+   "scope": [
+    "psu-1",
+    "psu-2"
+   ],
+   "wanted": "the supply's label or the installation guide's power section.",
+   "what": "psu-rating"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 2,
+   "device": "tm-8104",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 1,
+   "device": "tm-8104",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "tm-8104",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "tm-8104",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on 3 bays (front 3); `physical-context` on port group sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "tm-8104",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; its support page says hardware documentation is on a support portal behind a login, whose contact is on telco.com/support. The one public Telco Systems installation guide (T-Marc 3306, MN100280) is for another product. Searched: the telco.com media library (120 PDFs), every product and knowledge-centre page, and the Wayback index of telco.com PDFs.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the TM-8106 / T-Metro 8106 hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "needs-drawing",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "Block origins are the stencil's. The two vendor fronts disagree with it differently: this face's near-square 2022 front (1.8 px/mm) spreads everything about 2% outward from the left - the SFP+ blocks about 2.2 mm out on each side, the module's fourth QSFP28 cage 4.8 mm right of the stencil's - while the yaw-corrected 2021 TM-8104 render disagrees with its own stencil within -3.0 to +0.4 mm with no pattern. Neither resolves better than 2-3 mm, so the stencil stands.",
+   "scope": [
+    "sfp-plus",
+    "qsfp28",
+    "mgmt"
+   ],
+   "wanted": "a mechanical drawing, or a square-on photograph at 4 px/mm or better.",
+   "what": "block-spacing"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No image held shows the rear. The data sheets say the fans are hot-swappable and order them as TM810x-FAN, and NetBox lists four fan bays, so the rear almost certainly holds them; where, and whether it carries a ground point or anything else, is not known.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a square-on photograph of the rear, or the installation guide's rear view.",
+   "what": "rear-and-fans"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No data sheet states the airflow direction. NetBox gives front-to-rear, which is a community reading with no cited source, so chassis.airflow is left unset.",
+   "scope": [],
+   "wanted": "the installation guide's cooling section.",
+   "what": "airflow"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The TM810x-OAM \"Full FPGA Expansion Module for Base System\" (ordering tables, 2025) and NetBox's \"OAM Expansion Bay\" have no visible opening on the front; it is presumably internal. Not drawn.",
+   "scope": [],
+   "wanted": "the installation guide, or a photograph of the chassis with its lid off.",
+   "what": "oam-module"
+  },
+  {
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The 2025 data sheet's ordering table gives TM8106-2QS-O-2XX the description \"TM810x Expansion Module With 48x1G/10G\" - the 48-port module's own line, copied - while its feature table lists the base as 2 x QSFP28 + 16 x SFP+. The configurations follow the SKU names and the feature table (2QS = the bare base, 2QS-64 = with the 48-port module, 6QS = with the QSFP28 module); no part number is attached while the table contradicts itself.",
+   "scope": [
+    "slot-2"
+   ],
+   "wanted": "a current price list or ordering guide.",
+   "what": "ordering-table"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-8106",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No edition gives the supplies' own rating or model number; only the chassis' 400 W maximum. Searched every data sheet held for \"W\", \"PSU\", \"power supply\" and \"Power\".",
+   "scope": [
+    "psu-1",
+    "psu-2"
+   ],
+   "wanted": "the supply's label or the installation guide's power section.",
+   "what": "psu-rating"
+  },
+  {
+   "because": "L29",
+   "blocks": [],
+   "count": 2,
+   "device": "tm-8106",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+   "what": "module-power"
+  },
+  {
+   "because": "L40",
+   "blocks": [],
+   "count": 2,
+   "device": "tm-8106",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "which optics actually run in each pluggable cage - as prose in `attrs.optics-<media>` for now, which at least reaches the group, and structurally once enough vendors are in to say what the vocabulary has to hold",
+   "what": "port-optics-undeclared"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "tm-8106",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`attrs.platform.cpu`, `attrs.platform.memory` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "tm-8106",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on 3 bays (front 3); `physical-context` on port groups qsfp28, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "tm-8106",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "m3000-14xc",
@@ -8248,20 +9603,6 @@
    ],
    "wanted": "a photograph of the fan module's label, or a UfiSpace FRU datasheet.",
    "what": "fru-power-unpublished"
-  },
-  {
-   "because": "needs-drawing",
-   "blocks": [],
-   "device": "s6301-56st",
-   "kind": "declared",
-   "manufacturer": "UfiSpace",
-   "note": "the datasheet orders both directions - FAN-402825-HDN / -CDN and PSU-151-DESR / -DISB / -AESR / -AISB - and the HIG says the two are told apart by handle colour, red for front-to-back and blue for back-to-front. The rear render s6301-56st-3-rear.png shows the blue set. Every held component draws only the red exhaust unit, so the back-to-front build can be ordered but cannot be skinned, and no configuration is declared for it rather than declare one that would render identically to the red.",
-   "scope": [
-    "fans",
-    "psus"
-   ],
-   "wanted": "blue-handle skins on ufispace/fan-402825, psu-151-dc and psu-151-ac.",
-   "what": "intake-airflow-skins-not-drawn"
   },
   {
    "because": "L29",
@@ -8740,6 +10081,23 @@
    "what": "chassis-sku"
   },
   {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "s9300-32d",
+   "kind": "declared",
+   "manufacturer": "UfiSpace",
+   "note": "The datasheet names the supplies by airflow WORD (PSU-132-AESR-3N / DESR-3N 'exhaust air flow', PSU-132-AISB1 / DISB1 'intake air flow') and the HIG by latch COLOUR (red for front-to-back, blue for back-to-front); no held document for this chassis joins the two. The four builds pair them by inference - exhaust is front-to-back for a rear-mounted supply, as the red FAN-405637-HD is 'exhaust air flow', the front-to-back-only S9600-72XC lists only exhaust units, and the S9311-64D datasheet prints 'exhaust air ... red colored latch' for its own supplies (reasoning on ufispace/psu-132-ac@1). The same gap is on the S9301-32D.",
+   "scope": [
+    "psus",
+    "ac",
+    "dc",
+    "ac-b2f",
+    "dc-b2f"
+   ],
+   "wanted": "a UfiSpace ordering guide that prints the SKU beside the airflow direction",
+   "what": "psu-airflow-sku-mapping"
+  },
+  {
    "because": "L29",
    "blocks": [],
    "count": 1,
@@ -8821,11 +10179,13 @@
    "device": "s9301-32d",
    "kind": "declared",
    "manufacturer": "UfiSpace",
-   "note": "The datasheet lists four AC/DC PSU SKUs by airflow word (PSU-132-AESR 'exhaust air flow', -AISB 'intake air flow', and the DC pair the same way) and the HIG's Figures 6 and 8 distinguish the two builds only by LATCH COLOUR ('blue latch' for back-to-front, 'red latch' for front-to-back). No held document joins a part number to a colour or to a system airflow direction, so the configurations here name the airflow and let the PSU components keep their own model attrs rather than asserting a pairing. The fan side IS documented by colour (HIG Fan Overview: blue handle back-to-front, red handle front-to-back) and the red FAN-405637-HD is what the modelled build seats.",
+   "note": "The datasheet lists four AC/DC PSU SKUs by airflow word (PSU-132-AESR 'exhaust air flow', -AISB 'intake air flow', and the DC pair the same way) and the HIG's Figures 6 and 8 distinguish the two builds only by LATCH COLOUR ('blue latch' for back-to-front, 'red latch' for front-to-back). No held document joins a part number to a colour or to a system airflow direction. The fan side IS documented by colour (HIG Fan Overview: blue handle back-to-front, red handle front-to-back), and the configurations pair the supplies by inference: exhaust is front-to-back for these rear-mounted supplies, as the red FAN-405637-HD fan is 'exhaust air flow' and the S9600-72XC, sold front-to-back only, lists only exhaust units (the reasoning is on ufispace/psu-132-ac@1's airflow provenance). So ac and dc name PSU-132-AESR/DESR and the b2f builds PSU-132-AISB/DISB. A UfiSpace document stating the pairing would close this.",
    "scope": [
     "psus",
     "ac",
-    "dc"
+    "dc",
+    "ac-b2f",
+    "dc-b2f"
    ],
    "wanted": "a UfiSpace ordering guide that prints the SKU beside the airflow direction",
    "what": "psu-airflow-sku-mapping"
@@ -8975,6 +10335,23 @@
    ],
    "wanted": "a UfiSpace mechanical drawing, or square-on photographs of the sides and underside",
    "what": "side-and-underside-detail"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "s9301-32db",
+   "kind": "declared",
+   "manufacturer": "UfiSpace",
+   "note": "The datasheet names the supplies by airflow WORD (PSU-132-AESR / DESR 'exhaust air flow', PSU-132-AISB / DISB 'intake air flow') and the HIG by latch COLOUR (red for front-to-back, blue for back-to-front); no held document for this chassis joins the two. The four builds pair them by inference - exhaust is front-to-back for a rear-mounted supply, as the red FAN-405637-HD is 'exhaust air flow', the front-to-back-only S9600-72XC lists only exhaust units, and the S9311-64D datasheet prints 'exhaust air ... red colored latch' for its own supplies (reasoning on ufispace/psu-132-ac@1). The same gap is on the S9301-32D.",
+   "scope": [
+    "psus",
+    "ac",
+    "dc",
+    "ac-b2f",
+    "dc-b2f"
+   ],
+   "wanted": "a UfiSpace ordering guide that prints the SKU beside the airflow direction",
+   "what": "psu-airflow-sku-mapping"
   },
   {
    "because": "L29",
@@ -9134,6 +10511,20 @@
    ],
    "wanted": "a UfiSpace ordering guide or a quote naming the chassis SKUs",
    "what": "chassis-sku"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "s9311-64d",
+   "kind": "declared",
+   "manufacturer": "UfiSpace",
+   "note": "The back-to-front supplies are not the exhaust units in blue. The datasheet gives the intake AC unit a different inlet ('PSU-242-AICB-NN ... CRPS-D-SUB/AC-inlet, blue latch') and the intake DC unit a different connector ('PSU-242-DIEB-NN ... CRPS TE 2204535-3 ELON Mini, blue latch'), and the HIG says only that their outlook differs. No held image shows either face, so ac-b2f and dc-b2f seat the exhaust contracts with a blue latch: right in colour, bay and airflow, wrong in inlet.",
+   "scope": [
+    "ac-b2f",
+    "dc-b2f"
+   ],
+   "wanted": "a rear photograph of a back-to-front S9311-64D, or face drawings of PSU-242-AICB-NN and PSU-242-DIEB-NN",
+   "what": "intake-psu-face"
   },
   {
    "because": "L29",
@@ -9950,7 +11341,7 @@
    "scope": [
     "psus"
    ],
-   "wanted": "the AC build modelled as its own front face, or a per-configuration override for `placements` plus a way to vary silkscreen with it.",
+   "wanted": "the AC build modelled as its own front face, or a per-configuration override. NOTE for whoever draws it - HIG Figure 5's AC strip (page 9 at 600 dpi) shows no 1PPS/10MHz SMB pair where the DC strip has two, so that figure may be the non-timing build (non-timing-variant-not-modelled) rather than the AC one; settle which before measuring it for `placements` plus a way to vary silkscreen with it.",
    "what": "ac-build-front-panel-not-drawn"
   },
   {
@@ -12418,7 +13809,7 @@
    "device": "s9620-32e",
    "kind": "declared",
    "manufacturer": "UfiSpace",
-   "note": "the datasheet orders PSU-322-DEJR-NN (3200W DC, exhaust) beside the AC unit, and both embedded renders show the AC build with C20 inlets. Nothing held shows the DC face. ufispace/psu-322-ac is measured; no psu-322-dc component is built, because every number on it would have been guessed from the AC sibling's outline. The bays accept and default to the AC unit only, and there is no dc configuration - an orderable variant the drawing cannot show is better absent than invented.",
+   "note": "the datasheet orders PSU-322-DEJR-NN (3200W DC, exhaust) beside the AC unit, and both embedded renders show the AC build with C20 inlets. Nothing held shows the DC face. ufispace/psu-322-ac is measured; no psu-322-dc component is built, because every number on it would have been guessed from the AC sibling's outline. The bays accept and default to the AC unit only, so the dc configuration seats it under the DC model name - wrong at the inlet, which this gap and lint L120 keep in view. The build is declared anyway because its feed is a field tools filter on.",
    "scope": [
     "psus"
    ],

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="130.2mm" viewBox="0 0 52.52 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="bp-p1" data-path="bp-p1" data-class="inlet" data-behaviour="fills" data-ref="commscope/bp-p1@1:1.0.0" data-input-rating="100-240 V~, 4.0 A, 50-60 Hz" data-model="BP-P1" data-slots="2" transform="translate(0,0)">
+    <title>bp-p1</title>
+    <rect id="bp-p1--body" x="0" y="0" width="52.52" height="130.2" rx="1.0" fill="#26292c" stroke="#111315" stroke-width="0.3" />
+    <rect x="2.0" y="37.0" width="48.5" height="87.0" rx="0.6" fill="#2d3034" stroke="#3b3f44" stroke-width="0.25" />
+    <g id="bp-p1--screw-1" data-path="bp-p1/screw-1" data-class="fastener">
+      <circle cx="13.4" cy="6.2" r="4.9" fill="#111214" />
+      <circle cx="13.4" cy="6.2" r="3.1" fill="#232528" />
+    </g>
+    <g id="bp-p1--screw-2" data-path="bp-p1/screw-2" data-class="fastener">
+      <circle cx="39.6" cy="6.2" r="4.9" fill="#111214" />
+      <circle cx="39.6" cy="6.2" r="3.1" fill="#232528" />
+    </g>
+    <rect id="bp-p1--comms-cover" x="2.0" y="14.3" width="48.5" height="21.5" rx="0.6" fill="#303337" stroke="#43474c" stroke-width="0.25" data-path="bp-p1/comms-cover" data-class="blank" />
+    <g id="bp-p1--fan-grille" fill="#0c0d0e" data-path="bp-p1/fan-grille" data-class="vent">
+      <rect x="7.30" y="38.2" width="2.2" height="39.5" rx="7.30" />
+      <rect x="11.27" y="38.2" width="2.2" height="39.5" rx="11.27" />
+      <rect x="15.23" y="38.2" width="2.2" height="39.5" rx="15.23" />
+      <rect x="19.20" y="38.2" width="2.2" height="39.5" rx="19.20" />
+      <rect x="23.17" y="38.2" width="2.2" height="39.5" rx="23.17" />
+      <rect x="27.14" y="38.2" width="2.2" height="39.5" rx="27.14" />
+      <rect x="31.10" y="38.2" width="2.2" height="39.5" rx="31.10" />
+      <rect x="35.07" y="38.2" width="2.2" height="39.5" rx="35.07" />
+      <rect x="39.04" y="38.2" width="2.2" height="39.5" rx="39.04" />
+      <rect x="43.00" y="38.2" width="2.2" height="39.5" rx="43.00" />
+    </g>
+    <g id="bp-p1--flange-screw-1" data-path="bp-p1/flange-screw-1" data-class="fastener">
+      <circle cx="5.4" cy="94.4" r="1.9" fill="#8b9096" />
+      <path d="M 4.3 94.4 H 6.5 M 5.4 93.3 V 95.5" stroke="#3c4045" stroke-width="0.3" />
+    </g>
+    <g id="bp-p1--flange-screw-2" data-path="bp-p1/flange-screw-2" data-class="fastener">
+      <circle cx="46.9" cy="94.4" r="1.9" fill="#8b9096" />
+      <path d="M 45.8 94.4 H 48.0 M 46.9 93.3 V 95.5" stroke="#3c4045" stroke-width="0.3" />
+    </g>
+    <g id="bp-p1--screw-3" data-path="bp-p1/screw-3" data-class="fastener">
+      <circle cx="13.4" cy="124.5" r="4.9" fill="#111214" />
+      <circle cx="13.4" cy="124.5" r="3.1" fill="#232528" />
+    </g>
+    <g id="bp-p1--screw-4" data-path="bp-p1/screw-4" data-class="fastener">
+      <circle cx="39.6" cy="124.5" r="4.9" fill="#111214" />
+      <circle cx="39.6" cy="124.5" r="3.1" fill="#232528" />
+    </g>
+    <g id="bp-p1--silkscreen" fill="#e6e8ea" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="26.5" y="7.0" font-size="2.4">BP-P1</text>
+      <text x="26.9" y="105.0" font-size="1.7">100-240V~ 4.0 A</text>
+      <text x="26.9" y="107.2" font-size="1.7">50-60 Hz</text>
+    </g>
+    <g id="bp-p1--inlet" data-path="bp-p1/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(12.9,82.0)">
+      <title>bp-p1--inlet</title>
+      <rect id="bp-p1--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="bp-p1/inlet/opening" data-class="cutout" />
+      <path id="bp-p1--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="bp-p1--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="bp-p1--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="bp-p1--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 65.1" data-cp-dir="front" />
+  </g>
+</svg>

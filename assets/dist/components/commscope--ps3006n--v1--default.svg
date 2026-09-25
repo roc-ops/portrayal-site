@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="130.2mm" viewBox="0 0 52.52 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ps3006n" data-path="ps3006n" data-class="psu" data-behaviour="fills" data-ref="commscope/ps3006n@1:1.0.0" data-body-depth="330.0" data-back-plate="BP-P1" data-efficiency="83% typical at 120 V, 18-25 A load" data-inlet="none" data-input="ac" data-input-voltage="100-240 VAC, 50/60 Hz" data-model="PS3006N" data-output-voltage="12 VDC" data-power-output-w="300" data-slots="2" transform="translate(0,0)">
+    <title>ps3006n</title>
+    <defs>
+      <linearGradient id="ps3006n--plate" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8a8f95" />
+        <stop offset="1" stop-color="#6f747a" />
+      </linearGradient>
+    </defs>
+    <rect id="ps3006n--body" x="0" y="0" width="52.52" height="130.2" rx="1.2" fill="url(#ps3006n--plate)" stroke="#55595e" stroke-width="0.3" />
+    <g id="ps3006n--screw-1" data-path="ps3006n/screw-1" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.9" fill="#1d1f22" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="12.88" cy="5.0" r="3.2" fill="#2e3135" />
+    </g>
+    <g id="ps3006n--screw-2" data-path="ps3006n/screw-2" data-class="fastener">
+      <circle cx="39.64" cy="5.0" r="4.9" fill="#1d1f22" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="39.64" cy="5.0" r="3.2" fill="#2e3135" />
+    </g>
+    <g id="ps3006n--vent-main" fill="#16181a" data-path="ps3006n/vent-main" data-class="vent">
+      <circle cx="7.90" cy="29.85" r="1.4" />
+      <circle cx="7.90" cy="33.85" r="1.4" />
+      <circle cx="7.90" cy="37.85" r="1.4" />
+      <circle cx="7.90" cy="41.85" r="1.4" />
+      <circle cx="7.90" cy="45.85" r="1.4" />
+      <circle cx="7.90" cy="49.85" r="1.4" />
+      <circle cx="7.90" cy="53.85" r="1.4" />
+      <circle cx="7.90" cy="57.85" r="1.4" />
+      <circle cx="7.90" cy="61.85" r="1.4" />
+      <circle cx="7.90" cy="65.85" r="1.4" />
+      <circle cx="7.90" cy="69.85" r="1.4" />
+      <circle cx="7.90" cy="73.85" r="1.4" />
+      <circle cx="7.90" cy="77.85" r="1.4" />
+      <circle cx="7.90" cy="81.85" r="1.4" />
+      <circle cx="7.90" cy="85.85" r="1.4" />
+      <circle cx="7.90" cy="89.85" r="1.4" />
+      <circle cx="7.90" cy="93.85" r="1.4" />
+      <circle cx="7.90" cy="97.85" r="1.4" />
+      <circle cx="7.90" cy="101.85" r="1.4" />
+      <circle cx="7.90" cy="105.85" r="1.4" />
+      <circle cx="7.90" cy="109.85" r="1.4" />
+      <circle cx="12.10" cy="31.85" r="1.4" />
+      <circle cx="12.10" cy="35.85" r="1.4" />
+      <circle cx="12.10" cy="39.85" r="1.4" />
+      <circle cx="12.10" cy="43.85" r="1.4" />
+      <circle cx="12.10" cy="47.85" r="1.4" />
+      <circle cx="12.10" cy="51.85" r="1.4" />
+      <circle cx="12.10" cy="55.85" r="1.4" />
+      <circle cx="12.10" cy="59.85" r="1.4" />
+      <circle cx="12.10" cy="63.85" r="1.4" />
+      <circle cx="12.10" cy="67.85" r="1.4" />
+      <circle cx="12.10" cy="71.85" r="1.4" />
+      <circle cx="12.10" cy="75.85" r="1.4" />
+      <circle cx="12.10" cy="79.85" r="1.4" />
+      <circle cx="12.10" cy="83.85" r="1.4" />
+      <circle cx="12.10" cy="87.85" r="1.4" />
+      <circle cx="12.10" cy="91.85" r="1.4" />
+      <circle cx="12.10" cy="95.85" r="1.4" />
+      <circle cx="12.10" cy="99.85" r="1.4" />
+      <circle cx="12.10" cy="103.85" r="1.4" />
+      <circle cx="12.10" cy="107.85" r="1.4" />
+      <circle cx="16.30" cy="29.85" r="1.4" />
+      <circle cx="16.30" cy="33.85" r="1.4" />
+      <circle cx="16.30" cy="37.85" r="1.4" />
+      <circle cx="16.30" cy="41.85" r="1.4" />
+      <circle cx="16.30" cy="45.85" r="1.4" />
+      <circle cx="16.30" cy="49.85" r="1.4" />
+      <circle cx="16.30" cy="53.85" r="1.4" />
+      <circle cx="16.30" cy="57.85" r="1.4" />
+      <circle cx="16.30" cy="61.85" r="1.4" />
+      <circle cx="16.30" cy="65.85" r="1.4" />
+      <circle cx="16.30" cy="69.85" r="1.4" />
+      <circle cx="16.30" cy="73.85" r="1.4" />
+      <circle cx="16.30" cy="77.85" r="1.4" />
+      <circle cx="16.30" cy="81.85" r="1.4" />
+      <circle cx="16.30" cy="85.85" r="1.4" />
+      <circle cx="16.30" cy="89.85" r="1.4" />
+      <circle cx="16.30" cy="93.85" r="1.4" />
+      <circle cx="16.30" cy="97.85" r="1.4" />
+      <circle cx="16.30" cy="101.85" r="1.4" />
+      <circle cx="16.30" cy="105.85" r="1.4" />
+      <circle cx="16.30" cy="109.85" r="1.4" />
+      <circle cx="20.50" cy="31.85" r="1.4" />
+      <circle cx="20.50" cy="35.85" r="1.4" />
+      <circle cx="20.50" cy="39.85" r="1.4" />
+      <circle cx="20.50" cy="43.85" r="1.4" />
+      <circle cx="20.50" cy="47.85" r="1.4" />
+      <circle cx="20.50" cy="51.85" r="1.4" />
+      <circle cx="20.50" cy="55.85" r="1.4" />
+      <circle cx="20.50" cy="59.85" r="1.4" />
+      <circle cx="20.50" cy="63.85" r="1.4" />
+      <circle cx="20.50" cy="67.85" r="1.4" />
+      <circle cx="20.50" cy="71.85" r="1.4" />
+      <circle cx="20.50" cy="75.85" r="1.4" />
+      <circle cx="20.50" cy="79.85" r="1.4" />
+      <circle cx="20.50" cy="83.85" r="1.4" />
+      <circle cx="20.50" cy="87.85" r="1.4" />
+      <circle cx="20.50" cy="91.85" r="1.4" />
+      <circle cx="20.50" cy="95.85" r="1.4" />
+      <circle cx="20.50" cy="99.85" r="1.4" />
+      <circle cx="20.50" cy="103.85" r="1.4" />
+      <circle cx="20.50" cy="107.85" r="1.4" />
+      <circle cx="24.70" cy="29.85" r="1.4" />
+      <circle cx="24.70" cy="33.85" r="1.4" />
+      <circle cx="24.70" cy="37.85" r="1.4" />
+      <circle cx="24.70" cy="41.85" r="1.4" />
+      <circle cx="24.70" cy="45.85" r="1.4" />
+      <circle cx="24.70" cy="49.85" r="1.4" />
+      <circle cx="24.70" cy="53.85" r="1.4" />
+      <circle cx="24.70" cy="57.85" r="1.4" />
+      <circle cx="24.70" cy="61.85" r="1.4" />
+      <circle cx="24.70" cy="65.85" r="1.4" />
+      <circle cx="24.70" cy="69.85" r="1.4" />
+      <circle cx="24.70" cy="73.85" r="1.4" />
+      <circle cx="24.70" cy="77.85" r="1.4" />
+      <circle cx="24.70" cy="81.85" r="1.4" />
+      <circle cx="24.70" cy="85.85" r="1.4" />
+      <circle cx="24.70" cy="89.85" r="1.4" />
+      <circle cx="24.70" cy="93.85" r="1.4" />
+      <circle cx="24.70" cy="97.85" r="1.4" />
+      <circle cx="24.70" cy="101.85" r="1.4" />
+      <circle cx="24.70" cy="105.85" r="1.4" />
+      <circle cx="24.70" cy="109.85" r="1.4" />
+      <circle cx="29.00" cy="31.85" r="1.4" />
+      <circle cx="29.00" cy="35.85" r="1.4" />
+      <circle cx="29.00" cy="39.85" r="1.4" />
+      <circle cx="29.00" cy="43.85" r="1.4" />
+      <circle cx="29.00" cy="47.85" r="1.4" />
+      <circle cx="29.00" cy="51.85" r="1.4" />
+      <circle cx="29.00" cy="55.85" r="1.4" />
+      <circle cx="29.00" cy="59.85" r="1.4" />
+      <circle cx="29.00" cy="63.85" r="1.4" />
+      <circle cx="29.00" cy="67.85" r="1.4" />
+      <circle cx="29.00" cy="71.85" r="1.4" />
+      <circle cx="29.00" cy="75.85" r="1.4" />
+      <circle cx="29.00" cy="79.85" r="1.4" />
+      <circle cx="29.00" cy="83.85" r="1.4" />
+      <circle cx="29.00" cy="87.85" r="1.4" />
+      <circle cx="29.00" cy="91.85" r="1.4" />
+      <circle cx="29.00" cy="95.85" r="1.4" />
+      <circle cx="29.00" cy="99.85" r="1.4" />
+      <circle cx="29.00" cy="103.85" r="1.4" />
+      <circle cx="29.00" cy="107.85" r="1.4" />
+    </g>
+    <g id="ps3006n--vent-lower" fill="#16181a" data-path="ps3006n/vent-lower" data-class="vent">
+      <circle cx="33.20" cy="65.95" r="1.4" />
+      <circle cx="33.20" cy="69.95" r="1.4" />
+      <circle cx="33.20" cy="73.95" r="1.4" />
+      <circle cx="33.20" cy="77.95" r="1.4" />
+      <circle cx="33.20" cy="81.95" r="1.4" />
+      <circle cx="33.20" cy="85.95" r="1.4" />
+      <circle cx="33.20" cy="89.95" r="1.4" />
+      <circle cx="33.20" cy="93.95" r="1.4" />
+      <circle cx="33.20" cy="97.95" r="1.4" />
+      <circle cx="37.50" cy="67.95" r="1.4" />
+      <circle cx="37.50" cy="71.95" r="1.4" />
+      <circle cx="37.50" cy="75.95" r="1.4" />
+      <circle cx="37.50" cy="79.95" r="1.4" />
+      <circle cx="37.50" cy="83.95" r="1.4" />
+      <circle cx="37.50" cy="87.95" r="1.4" />
+      <circle cx="37.50" cy="91.95" r="1.4" />
+      <circle cx="37.50" cy="95.95" r="1.4" />
+      <circle cx="41.70" cy="65.95" r="1.4" />
+      <circle cx="41.70" cy="69.95" r="1.4" />
+      <circle cx="41.70" cy="73.95" r="1.4" />
+      <circle cx="41.70" cy="77.95" r="1.4" />
+      <circle cx="41.70" cy="81.95" r="1.4" />
+      <circle cx="41.70" cy="85.95" r="1.4" />
+      <circle cx="41.70" cy="89.95" r="1.4" />
+      <circle cx="41.70" cy="93.95" r="1.4" />
+      <circle cx="41.70" cy="97.95" r="1.4" />
+    </g>
+    <g id="ps3006n--handle" data-path="ps3006n/handle" data-class="handle">
+      <rect x="7.7" y="121.8" width="32.6" height="7.3" rx="3.5" fill="#1b1c1e" stroke="#0b0b0c" stroke-width="0.3" />
+      <rect x="10.2" y="123.5" width="27.6" height="2.5" rx="1.25" fill="#2f3134" />
+    </g>
+    <g id="ps3006n--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="26.26" y="13.5" font-size="2.6">Power Supply</text>
+      <text x="26.26" y="16.9" font-size="2.6">PS3006N</text>
+      <g fill="none" stroke="#eef0f2" stroke-width="0.25">
+        <path d="M 34.5 27.6 H 31.8 V 43.8 H 43.8 V 27.6 H 41.1" />
+        <path d="M 34.3 45.8 H 31.8 V 53.3 H 43.8 V 45.8 H 41.3" />
+        <path d="M 33.9 55.4 H 31.8 V 62.9 H 43.8 V 55.4 H 41.7" />
+      </g>
+      <text x="37.8" y="28.6" font-size="2.0">Status</text>
+      <text x="37.8" y="46.8" font-size="2.0">Access</text>
+      <text x="37.8" y="56.4" font-size="2.0">B/U PS</text>
+      <text x="26.26" y="119.0" font-size="3.0" letter-spacing="1.2">ARRIS</text>
+    </g>
+    <g id="ps3006n--led-status-ok" data-path="ps3006n/led-status-ok" data-class="led" data-ref="common/led-dot@1:1.1.0" data-color="green" data-function="status" transform="translate(36.8,30.6)">
+      <title>ps3006n--led-status-ok</title>
+      <circle id="ps3006n--led-status-ok--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ps3006n--led-status-ok--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ps3006n/led-status-ok/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ps3006n--led-status-minor" data-path="ps3006n/led-status-minor" data-class="led" data-ref="common/led-dot@1:1.1.0" data-color="yellow" data-function="status" transform="translate(36.8,35.4)">
+      <title>ps3006n--led-status-minor</title>
+      <circle id="ps3006n--led-status-minor--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ps3006n--led-status-minor--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ps3006n/led-status-minor/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ps3006n--led-status-major" data-path="ps3006n/led-status-major" data-class="led" data-ref="common/led-dot@1:1.1.0" data-color="red" data-function="status" transform="translate(36.8,39.2)">
+      <title>ps3006n--led-status-major</title>
+      <circle id="ps3006n--led-status-major--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ps3006n--led-status-major--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ps3006n/led-status-major/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ps3006n--led-access" data-path="ps3006n/led-access" data-class="led" data-ref="common/led-dot@1:1.1.0" data-color="blue" data-function="activity" transform="translate(36.8,48.8)">
+      <title>ps3006n--led-access</title>
+      <circle id="ps3006n--led-access--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ps3006n--led-access--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ps3006n/led-access/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ps3006n--led-backup-psu" data-path="ps3006n/led-backup-psu" data-class="led" data-ref="common/led-dot@1:1.1.0" data-color="green" data-function="redundancy" transform="translate(36.8,58.4)">
+      <title>ps3006n--led-backup-psu</title>
+      <circle id="ps3006n--led-backup-psu--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ps3006n--led-backup-psu--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ps3006n/led-backup-psu/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ps3006n--usb" data-path="ps3006n/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(32.2,106.7) rotate(90 3.75 1.375)">
+      <title>ps3006n--usb</title>
+      <rect id="ps3006n--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="ps3006n--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="ps3006n/usb/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 65.1" data-cp-dir="front" />
+  </g>
+</svg>

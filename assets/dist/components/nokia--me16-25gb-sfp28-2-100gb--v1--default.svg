@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="193mm" height="35.4mm" viewBox="0 0 193 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-down { --led-color: #f5a623; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-loopback { --led-color: #f5a623; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-loopback { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-no-link { --led-color: #f5a623; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-no-optic { --led-color: #f5a623; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-no-optic { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-on { --led-color: #2f6fdb; }
+    g[data-ref^='nokia/me16-25gb-sfp28-2-100gb@'] .state-up { --led-color: #39b54a; }</style>
+  <g id="me16-25gb-sfp28-2-100gb" data-path="me16-25gb-sfp28-2-100gb" data-class="line-card" data-behaviour="fills" data-ref="nokia/me16-25gb-sfp28-2-100gb@1:1.1.0" data-body-depth="193" data-wall="#2b2e32" data-model="ME16-10/25GB-SFP28+2-100GB" data-part-number="3HE15151AA" data-part-number-b="3HE18361AA" data-power-draw-max-w="83" data-power-draw-typical-w="75" data-qsfp28="2" data-sfp28="16" data-weight-kg="1.18" transform="translate(0,0)">
+    <title>me16-25gb-sfp28-2-100gb</title>
+    <path id="me16-25gb-sfp28-2-100gb--face" d="M 0 0 H 193 V 27.4 H 179.2 Q 176.8 27.4 176.8 29.8 V 35.4 H 16.2 V 29.8 Q 16.2 27.4 13.8 27.4 H 0 Z" fill="#3b3f44" stroke="#24272b" stroke-width="0.3" />
+    <line x1="0.5" y1="1.91" x2="192.5" y2="1.91" stroke="#24272b" stroke-width="0.2" />
+    <rect x="25.99" y="4.58" width="58.58" height="11.26" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="25.99" y="18.86" width="58.58" height="11.26" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="85.98" y="4.58" width="58.58" height="11.26" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="85.98" y="18.86" width="58.58" height="11.26" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="146.98" y="4.76" width="19.79" height="10.09" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <rect x="146.92" y="19.84" width="19.79" height="10.09" rx="0.4" fill="#8d9298" stroke="#1d2023" stroke-width="0.2" />
+    <g id="me16-25gb-sfp28-2-100gb--screw-left" data-path="me16-25gb-sfp28-2-100gb/screw-left" data-class="fastener">
+      <circle cx="8.08" cy="21" r="5.05" fill="#b9bdc2" stroke="#6d7278" stroke-width="0.3" />
+      <circle cx="8.08" cy="21" r="1.37" fill="#dfe1e4" stroke="#6d7278" stroke-width="0.2" />
+      <path d="M 4.95 17.87 L 7.11 20.03 M 11.21 17.87 L 9.05 20.03 M 4.95 24.13 L 7.11 21.97 M 11.21 24.13 L 9.05 21.97" stroke="#5d6268" stroke-width="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--screw-right" data-path="me16-25gb-sfp28-2-100gb/screw-right" data-class="fastener">
+      <circle cx="184.92" cy="21" r="5.05" fill="#b9bdc2" stroke="#6d7278" stroke-width="0.3" />
+      <circle cx="184.92" cy="21" r="1.37" fill="#dfe1e4" stroke="#6d7278" stroke-width="0.2" />
+      <path d="M 181.79 17.87 L 183.95 20.03 M 188.05 17.87 L 185.89 20.03 M 181.79 24.13 L 183.95 21.97 M 188.05 24.13 L 185.89 21.97" stroke="#5d6268" stroke-width="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--esd-mark" data-path="me16-25gb-sfp28-2-100gb/esd-mark" data-class="label">
+      <polygon points="178.82,8.2 182,13.71 175.64,13.71" fill="#f2c200" stroke="#1d2023" stroke-width="0.25" stroke-linejoin="round" />
+      <path d="M 177.92 13.31 q 0.4 -1.3 1.1 -1.5 l 0.35 0.55 q -0.6 0.3 -0.75 0.95 z" fill="#1d2023" />
+    </g>
+    <rect id="me16-25gb-sfp28-2-100gb--model-label" x="139.59" y="2.04" width="31.69" height="1.95" fill="none" data-path="me16-25gb-sfp28-2-100gb/model-label" data-class="label" />
+    <g id="me16-25gb-sfp28-2-100gb--silkscreen">
+      <text x="14.53" y="8.8" font-family="Arial, Helvetica, sans-serif" font-size="3.45" font-weight="bold" fill="#e9eaeb" text-anchor="start">Stat</text>
+      <text x="14.64" y="13.97" font-family="Arial, Helvetica, sans-serif" font-size="3.37" font-weight="bold" fill="#e9eaeb" text-anchor="start">Pwr</text>
+      <text x="30.95" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c1</text>
+      <text x="34.45" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c2</text>
+      <text x="45.43" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c3</text>
+      <text x="48.93" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c4</text>
+      <text x="59.58" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c5</text>
+      <text x="63.08" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c6</text>
+      <text x="74.1" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c7</text>
+      <text x="77.6" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c8</text>
+      <text x="90.94" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c9</text>
+      <text x="94.44" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c10</text>
+      <text x="105.42" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c11</text>
+      <text x="108.92" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c12</text>
+      <text x="119.57" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c13</text>
+      <text x="123.07" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c14</text>
+      <text x="134.09" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="end">c15</text>
+      <text x="137.59" y="18.28" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c16</text>
+      <text x="19.57" y="30.49" font-family="Arial, Helvetica, sans-serif" font-size="1.9" fill="#e9eaeb" text-anchor="middle">Lnk</text>
+      <text x="22.84" y="30.49" font-family="Arial, Helvetica, sans-serif" font-size="1.9" fill="#e9eaeb" text-anchor="middle">Act</text>
+      <text x="169.33" y="7.45" font-family="Arial, Helvetica, sans-serif" font-size="1.95" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Lnk</text>
+      <text x="169.33" y="12.61" font-family="Arial, Helvetica, sans-serif" font-size="2.15" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Act</text>
+      <text x="169.33" y="20.55" font-family="Arial, Helvetica, sans-serif" font-size="1.95" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Lnk</text>
+      <text x="169.33" y="25.75" font-family="Arial, Helvetica, sans-serif" font-size="2.15" font-weight="bold" fill="#e9eaeb" text-anchor="middle">Act</text>
+      <text x="151" y="32.69" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c17</text>
+      <text x="157.4" y="32.69" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e9eaeb" text-anchor="start">c18</text>
+      <text x="171.28" y="3.99" font-family="Arial, Helvetica, sans-serif" font-size="2.67" font-weight="bold" fill="#e9eaeb" text-anchor="end" data-from="printed-model">ME16-10/25GB-SFP28+2-100GB</text>
+      <polygon points="31.25,18.2 32.75,18.2 32,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="37.28,16.7 38.78,16.7 38.03,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="45.73,18.2 47.23,18.2 46.48,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="51.76,16.7 53.26,16.7 52.51,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="59.88,18.2 61.38,18.2 60.63,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="65.91,16.7 67.41,16.7 66.66,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="74.4,18.2 75.9,18.2 75.15,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="80.43,16.7 81.93,16.7 81.18,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="91.24,18.2 92.74,18.2 91.99,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="98.61,16.7 100.11,16.7 99.36,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="105.72,18.2 107.22,18.2 106.47,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="113.09,16.7 114.59,16.7 113.84,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="119.87,18.2 121.37,18.2 120.62,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="127.24,16.7 128.74,16.7 127.99,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="134.39,18.2 135.89,18.2 135.14,16.7" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="141.76,16.7 143.26,16.7 142.51,18.2" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="29.89,32.34 31.09,32.34 30.49,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="36.54,31.14 37.74,31.14 37.14,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="44.08,32.34 45.28,32.34 44.68,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="50.73,31.14 51.93,31.14 51.33,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="58.28,32.34 59.48,32.34 58.88,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="64.93,31.14 66.13,31.14 65.53,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="72.5,32.34 73.7,32.34 73.1,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="79.15,31.14 80.35,31.14 79.75,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="89.56,32.34 90.76,32.34 90.16,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="96.21,31.14 97.41,31.14 96.81,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="103.75,32.34 104.95,32.34 104.35,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="110.4,31.14 111.6,31.14 111,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="117.9,32.34 119.1,32.34 118.5,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="124.55,31.14 125.75,31.14 125.15,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="132.15,32.34 133.35,32.34 132.75,31.14" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="138.8,31.14 140,31.14 139.4,32.34" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <circle cx="19.57" cy="31.74" r="0.72" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <circle cx="22.84" cy="31.74" r="0.72" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="155.17,32.6 156.67,32.6 155.92,31.1" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+      <polygon points="161.57,31.1 163.07,31.1 162.32,32.6" fill="none" stroke="#e9eaeb" stroke-width="0.2" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--handle-left" data-path="me16-25gb-sfp28-2-100gb/handle-left" data-class="handle" data-z-out="4.2">
+      <path d="M 1 5.6 V 11.3 Q 1 15.35 5.07 15.35 Q 9.14 15.35 9.14 11.3 V 5.6 H 8 V 11.0 Q 8 14.2 5.07 14.2 Q 2.15 14.2 2.15 11.0 V 5.6 Z" fill="#6d7278" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="1.07" y="0.8" width="19.62" height="5.09" rx="1.0" fill="#7d8389" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--handle-right" data-path="me16-25gb-sfp28-2-100gb/handle-right" data-class="handle" data-z-out="4.2">
+      <path d="M 192 5.6 V 11.3 Q 192 15.35 187.93 15.35 Q 183.86 15.35 183.86 11.3 V 5.6 H 185 V 11.0 Q 185 14.2 187.93 14.2 Q 190.85 14.2 190.85 11.0 V 5.6 Z" fill="#6d7278" stroke="#1d2023" stroke-width="0.2" />
+      <rect x="172.31" y="0.8" width="19.62" height="5.09" rx="1.0" fill="#7d8389" stroke="#1d2023" stroke-width="0.25" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c1" data-path="me16-25gb-sfp28-2-100gb/c1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(26.78,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c1</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c1/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c2" data-path="me16-25gb-sfp28-2-100gb/c2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(26.78,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c2</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c2/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c3" data-path="me16-25gb-sfp28-2-100gb/c3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(41.03,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c3</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c3/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c4" data-path="me16-25gb-sfp28-2-100gb/c4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(41.03,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c4</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c4/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c5" data-path="me16-25gb-sfp28-2-100gb/c5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(55.28,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c5</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c5/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c6" data-path="me16-25gb-sfp28-2-100gb/c6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(55.28,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c6</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c6/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c7" data-path="me16-25gb-sfp28-2-100gb/c7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(69.53,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c7</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c7/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c8" data-path="me16-25gb-sfp28-2-100gb/c8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(69.53,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c8</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c8/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c9" data-path="me16-25gb-sfp28-2-100gb/c9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(86.77,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c9</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c9/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c10" data-path="me16-25gb-sfp28-2-100gb/c10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(86.77,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c10</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c10/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c11" data-path="me16-25gb-sfp28-2-100gb/c11" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(101.02,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c11</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c11/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c11--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c12" data-path="me16-25gb-sfp28-2-100gb/c12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(101.02,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c12</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c12/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c13" data-path="me16-25gb-sfp28-2-100gb/c13" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(115.27,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c13</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c13--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c13/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c13--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c13--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c13--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c14" data-path="me16-25gb-sfp28-2-100gb/c14" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(115.27,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c14</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c14/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c14--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c15" data-path="me16-25gb-sfp28-2-100gb/c15" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(129.52,5.01)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c15</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c15--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c15/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c15--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c15--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c15--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c16" data-path="me16-25gb-sfp28-2-100gb/c16" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(129.52,19.29) rotate(180 7.125 5.2)" data-group="sfp-ports" data-group-role="traffic" data-description="the sixteen SFP28 connectors c1-c16 with MACsec (SFP+ and SFP28, 10/25GE), odd on the top row">
+      <title>me16-25gb-sfp28-2-100gb--c16</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c16/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me16-25gb-sfp28-2-100gb--c16--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c17" data-path="me16-25gb-sfp28-2-100gb/c17" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" transform="translate(146.85,4.72)" data-group="qsfp-ports" data-group-role="traffic" data-description="the two QSFP28 connectors, c17 over c18 (QSFP+ and QSFP28, 10/40/100GE)">
+      <title>me16-25gb-sfp28-2-100gb--c17</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c17--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c17/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c17--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c17--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="me16-25gb-sfp28-2-100gb--c17--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--c18" data-path="me16-25gb-sfp28-2-100gb/c18" data-class="port" data-ref="std/qsfp28@1:1.4.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp28" data-speed="100g" transform="translate(146.85,19.8) rotate(180 10.0 5.075)" data-group="qsfp-ports" data-group-role="traffic" data-description="the two QSFP28 connectors, c17 over c18 (QSFP+ and QSFP28, 10/40/100GE)">
+      <title>me16-25gb-sfp28-2-100gb--c18</title>
+      <rect id="me16-25gb-sfp28-2-100gb--c18--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="me16-25gb-sfp28-2-100gb/c18/opening" data-class="cutout" />
+      <rect id="me16-25gb-sfp28-2-100gb--c18--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="me16-25gb-sfp28-2-100gb--c18--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="me16-25gb-sfp28-2-100gb--c18--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c1" data-path="me16-25gb-sfp28-2-100gb/lnk-c1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(27.79,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c1</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c1/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c1" data-path="me16-25gb-sfp28-2-100gb/act-c1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(31.2,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c1</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c1/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c2" data-path="me16-25gb-sfp28-2-100gb/lnk-c2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(34.44,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c2</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c2/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c2" data-path="me16-25gb-sfp28-2-100gb/act-c2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(37.84,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c2</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c2/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c3" data-path="me16-25gb-sfp28-2-100gb/lnk-c3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(41.98,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c3</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c3/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c3" data-path="me16-25gb-sfp28-2-100gb/act-c3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(45.38,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c3</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c3/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c4" data-path="me16-25gb-sfp28-2-100gb/lnk-c4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(48.62,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c4</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c4/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c4" data-path="me16-25gb-sfp28-2-100gb/act-c4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(52.03,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c4</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c4/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c5" data-path="me16-25gb-sfp28-2-100gb/lnk-c5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(56.18,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c5</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c5/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c5" data-path="me16-25gb-sfp28-2-100gb/act-c5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(59.59,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c5</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c5/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c6" data-path="me16-25gb-sfp28-2-100gb/lnk-c6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(62.83,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c6</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c6/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c6" data-path="me16-25gb-sfp28-2-100gb/act-c6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(66.23,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c6</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c6/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c7" data-path="me16-25gb-sfp28-2-100gb/lnk-c7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(70.39,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c7</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c7/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c7" data-path="me16-25gb-sfp28-2-100gb/act-c7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(73.8,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c7</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c7/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c8" data-path="me16-25gb-sfp28-2-100gb/lnk-c8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(77.05,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c8</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c8/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c8" data-path="me16-25gb-sfp28-2-100gb/act-c8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(80.45,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c8</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c8/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c9" data-path="me16-25gb-sfp28-2-100gb/lnk-c9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(87.45,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c9</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c9/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c9" data-path="me16-25gb-sfp28-2-100gb/act-c9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(90.86,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c9</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c9/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c10" data-path="me16-25gb-sfp28-2-100gb/lnk-c10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(94.11,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c10</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c10/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c10" data-path="me16-25gb-sfp28-2-100gb/act-c10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(97.52,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c10</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c10/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c11" data-path="me16-25gb-sfp28-2-100gb/lnk-c11" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(101.64,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c11</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c11/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c11" data-path="me16-25gb-sfp28-2-100gb/act-c11" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(105.05,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c11</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c11/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c12" data-path="me16-25gb-sfp28-2-100gb/lnk-c12" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(108.3,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c12</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c12/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c12" data-path="me16-25gb-sfp28-2-100gb/act-c12" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(111.7,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c12</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c12/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c13" data-path="me16-25gb-sfp28-2-100gb/lnk-c13" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(115.8,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c13</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c13/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c13" data-path="me16-25gb-sfp28-2-100gb/act-c13" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(119.2,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c13</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c13/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c14" data-path="me16-25gb-sfp28-2-100gb/lnk-c14" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(122.45,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c14</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c14/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c14" data-path="me16-25gb-sfp28-2-100gb/act-c14" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(125.86,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c14</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c14/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c15" data-path="me16-25gb-sfp28-2-100gb/lnk-c15" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(130.04,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c15</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c15/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c15" data-path="me16-25gb-sfp28-2-100gb/act-c15" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(133.46,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c15</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c15/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c16" data-path="me16-25gb-sfp28-2-100gb/lnk-c16" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(136.69,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c16</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c16/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c16" data-path="me16-25gb-sfp28-2-100gb/act-c16" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(140.11,30.74)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c16</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c16/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c17" data-path="me16-25gb-sfp28-2-100gb/lnk-c17" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(168.72,7.66)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c17</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c17/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c17" data-path="me16-25gb-sfp28-2-100gb/act-c17" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(168.72,12.87)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c17</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c17/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--lnk-c18" data-path="me16-25gb-sfp28-2-100gb/lnk-c18" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(168.72,20.91)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--lnk-c18</title>
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--lnk-c18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/lnk-c18/lamp" data-class="led" data-states="off link no-optic loopback no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--act-c18" data-path="me16-25gb-sfp28-2-100gb/act-c18" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(168.72,25.97)" data-group="port-leds" data-group-role="indicator" data-description="the 36 port lamps, a Lnk and an Act lamp per connector">
+      <title>me16-25gb-sfp28-2-100gb--act-c18</title>
+      <circle id="me16-25gb-sfp28-2-100gb--act-c18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--act-c18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/act-c18/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--stat" data-path="me16-25gb-sfp28-2-100gb/stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(11.73,6.4)" data-group="status-leds" data-group-role="indicator" data-description="the card lamps Stat and Pwr at the left end">
+      <title>me16-25gb-sfp28-2-100gb--stat</title>
+      <circle id="me16-25gb-sfp28-2-100gb--stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/stat/lamp" data-class="led" data-states="off initializing up down" data-z-dome="0.3" />
+    </g>
+    <g id="me16-25gb-sfp28-2-100gb--pwr" data-path="me16-25gb-sfp28-2-100gb/pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(11.73,11.61)" data-group="status-leds" data-group-role="indicator" data-description="the card lamps Stat and Pwr at the left end">
+      <title>me16-25gb-sfp28-2-100gb--pwr</title>
+      <circle id="me16-25gb-sfp28-2-100gb--pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me16-25gb-sfp28-2-100gb--pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me16-25gb-sfp28-2-100gb/pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="96.5 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

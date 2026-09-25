@@ -34,7 +34,8 @@
    "storage": "32 GB SSD"
   },
   "power": {
-   "input": "AC 100 to 240V, 3A max x2; DC -36 to -72V, 6A max x2",
+   "input-ac": "100 to 240V, 3A max x2",
+   "input-dc": "-36 to -72V, 6A max x2",
    "power-envelope": "fully-configured",
    "power-max-dc-w": "111",
    "power-max-w": "111.5",
@@ -418,6 +419,7 @@
   "airflow": "front-to-back",
   "d": 440,
   "h": 43.8,
+  "power": null,
   "ru": 1,
   "w": 440
  },
@@ -433,6 +435,25 @@
    "name": "ac",
    "occupants": {},
    "part-numbers": {},
+   "power": [
+    "ac"
+   ],
+   "views": {}
+  },
+  {
+   "airflow": "back-to-front",
+   "bays": {
+    "psu-0": "ufispace/psu-151-ac@1",
+    "psu-1": "ufispace/psu-151-ac@1"
+   },
+   "description": "Dual 150W AC PSUs (PSU-151-AISB, intake) 1+1, dual FAN-402825-CDN fan modules 1+1, back-to-front airflow",
+   "kind": "orderable",
+   "name": "ac-b2f",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "ac"
+   ],
    "views": {}
   },
   {
@@ -443,6 +464,22 @@
    "name": "dc",
    "occupants": {},
    "part-numbers": {},
+   "power": [
+    "dc"
+   ],
+   "views": {}
+  },
+  {
+   "airflow": "back-to-front",
+   "bays": {},
+   "description": "Dual 150W DC PSUs (PSU-151-DISB, intake) 1+1, dual FAN-402825-CDN fan modules 1+1, back-to-front airflow - blue handles, latches and tags, as the vendor's -3-rear render shows and the HIG's colour rule states",
+   "kind": "orderable",
+   "name": "dc-b2f",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "dc"
+   ],
    "views": {}
   }
  ],
@@ -494,18 +531,6 @@
    "what": "fru-power-unpublished"
   },
   {
-   "because": "needs-drawing",
-   "blocks": [],
-   "kind": "declared",
-   "note": "the datasheet orders both directions - FAN-402825-HDN / -CDN and PSU-151-DESR / -DISB / -AESR / -AISB - and the HIG says the two are told apart by handle colour, red for front-to-back and blue for back-to-front. The rear render s6301-56st-3-rear.png shows the blue set. Every held component draws only the red exhaust unit, so the back-to-front build can be ordered but cannot be skinned, and no configuration is declared for it rather than declare one that would render identically to the red.",
-   "scope": [
-    "fans",
-    "psus"
-   ],
-   "wanted": "blue-handle skins on ufispace/fan-402825, psu-151-dc and psu-151-ac.",
-   "what": "intake-airflow-skins-not-drawn"
-  },
-  {
    "because": "L29",
    "blocks": [],
    "count": 1,
@@ -533,6 +558,16 @@
   }
  ],
  "model": "S6301-56ST",
+ "options": {
+  "airflow": [
+   "back-to-front",
+   "front-to-back"
+  ],
+  "power": [
+   "ac",
+   "dc"
+  ]
+ },
  "provenance": {
   "attrs": {
    "confidence": "datasheet",

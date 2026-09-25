@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="219.5mm" height="42.7mm" viewBox="0 0 219.5 42.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sr-7-pem-blank" data-path="sr-7-pem-blank" data-class="blank" data-behaviour="fills" data-ref="nokia/sr-7-pem-blank@1:1.0.0" data-model="7750 SR-7 PEM slot filler panel" data-role="slot-blank" transform="translate(0,0)">
+    <title>sr-7-pem-blank</title>
+    <rect id="sr-7-pem-blank--plate" x="0" y="0" width="219.5" height="42.7" rx="1.2" fill="#aeb3b8" stroke="#3a3f44" stroke-width="0.5" />
+    <g id="sr-7-pem-blank--captive-screw-left" data-path="sr-7-pem-blank/captive-screw-left" data-class="screw" data-z-cyl="4.0">
+      <circle cx="8.07" cy="20.77" r="4.95" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 5.1 20.77 L 11.04 20.77 M 8.07 17.8 L 8.07 23.74" stroke="#2b2e33" stroke-width="1.09" transform="rotate(35 8.07 20.77)" />
+    </g>
+    <g id="sr-7-pem-blank--captive-screw-right" data-path="sr-7-pem-blank/captive-screw-right" data-class="screw" data-z-cyl="4.0">
+      <circle cx="212.03" cy="21.25" r="4.95" fill="#c9cdd1" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 209.06 21.25 L 215 21.25 M 212.03 18.28 L 212.03 24.22" stroke="#2b2e33" stroke-width="1.09" transform="rotate(35 212.03 21.25)" />
+    </g>
+    <g data-cp="mate" data-cp-at="109.75 21.35" data-cp-dir="rear" />
+  </g>
+</svg>

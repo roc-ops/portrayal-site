@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="218.2mm" height="64.5mm" viewBox="0 0 218.2 64.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sr-7-power-filter" data-path="sr-7-power-filter" data-class="filter" data-behaviour="fills" data-ref="nokia/sr-7-power-filter@1:1.0.0" data-input="dc" data-model="DC 100A Power Supply Filter" data-part-number="3HE04498AA" data-role="dc-emi-filter" transform="translate(0,0)">
+    <title>sr-7-power-filter</title>
+    <rect id="sr-7-power-filter--plate" x="0" y="0" width="218.2" height="64.5" rx="0.8" fill="#34373c" stroke="#16181b" stroke-width="0.5" />
+    <path id="sr-7-power-filter--top-fold" d="M 0.4 2.45 L 217.8 2.45" stroke="#16181b" stroke-width="0.35" />
+    <rect id="sr-7-power-filter--handle-slot" x="54.9" y="22.1" width="112.4" height="8.1" rx="4.05" fill="#121416" stroke="#16181b" stroke-width="0.35" data-path="sr-7-power-filter/handle-slot" data-class="handle" data-depth="8.0" />
+    <rect id="sr-7-power-filter--label-upper" x="178.8" y="26.7" width="37.0" height="11.1" fill="#c8cacc" stroke="#16181b" stroke-width="0.25" data-path="sr-7-power-filter/label-upper" data-class="label" />
+    <rect id="sr-7-power-filter--label-lower" x="188.3" y="39.6" width="27.6" height="10.3" fill="#c8cacc" stroke="#16181b" stroke-width="0.25" data-path="sr-7-power-filter/label-lower" data-class="label" />
+    <g id="sr-7-power-filter--panel-screw-1">
+      <circle cx="31.1" cy="56.4" r="3.8" fill="#5a6067" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 28.82 56.4 L 33.38 56.4 M 31.1 54.12 L 31.1 58.68" stroke="#16181b" stroke-width="0.84" />
+    </g>
+    <g id="sr-7-power-filter--panel-screw-2">
+      <circle cx="81.1" cy="56.4" r="3.8" fill="#5a6067" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 78.82 56.4 L 83.38 56.4 M 81.1 54.12 L 81.1 58.68" stroke="#16181b" stroke-width="0.84" />
+    </g>
+    <g id="sr-7-power-filter--panel-screw-3">
+      <circle cx="137.1" cy="56.4" r="3.8" fill="#5a6067" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 134.82 56.4 L 139.38 56.4 M 137.1 54.12 L 137.1 58.68" stroke="#16181b" stroke-width="0.84" />
+    </g>
+    <g id="sr-7-power-filter--panel-screw-4">
+      <circle cx="187.1" cy="56.4" r="3.8" fill="#5a6067" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 184.82 56.4 L 189.38 56.4 M 187.1 54.12 L 187.1 58.68" stroke="#16181b" stroke-width="0.84" />
+    </g>
+    <rect id="sr-7-power-filter--logo-zone" x="5.0" y="3.5" width="36.0" height="10.0" fill="none" data-path="sr-7-power-filter/logo-zone" data-class="label" />
+    <g id="sr-7-power-filter--silkscreen">
+      <path d="M 164.8 4.2 L 169.2 11.8 L 160.4 11.8 Z" fill="none" stroke="#e6e6e6" stroke-width="0.35" />
+      <path d="M 176.6 4.2 L 181 11.8 L 172.2 11.8 Z" fill="none" stroke="#e6e6e6" stroke-width="0.35" />
+    </g>
+    <g id="sr-7-power-filter--captive-screw-left" data-path="sr-7-power-filter/captive-screw-left" data-class="screw" data-z-cyl="5.0">
+      <circle cx="6.6" cy="57.2" r="6.45" fill="#4a4f55" stroke="#3a3f44" stroke-width="0.3" />
+      <circle cx="6.6" cy="57.2" r="5.03" fill="#6f757c" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 3.58 57.2 L 9.62 57.2 M 6.6 54.18 L 6.6 60.22" stroke="#16181b" stroke-width="1.11" />
+    </g>
+    <g id="sr-7-power-filter--captive-screw-right" data-path="sr-7-power-filter/captive-screw-right" data-class="screw" data-z-cyl="5.0">
+      <circle cx="211.6" cy="57.2" r="6.45" fill="#4a4f55" stroke="#3a3f44" stroke-width="0.3" />
+      <circle cx="211.6" cy="57.2" r="5.03" fill="#6f757c" stroke="#3a3f44" stroke-width="0.3" />
+      <path d="M 208.58 57.2 L 214.62 57.2 M 211.6 54.18 L 211.6 60.22" stroke="#16181b" stroke-width="1.11" />
+    </g>
+    <g id="sr-7-power-filter--monitor" data-path="sr-7-power-filter/monitor" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(95.9,37.35)" data-group="monitoring" data-group-role="management" data-description="the DE-9 power-supply monitoring port, which takes the Eltek AC shelf's status cable (SR7 p146)">
+      <title>sr-7-power-filter--monitor</title>
+      <g id="sr-7-power-filter--monitor--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="sr-7-power-filter--monitor--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="sr-7-power-filter--monitor--shell" data-path="sr-7-power-filter/monitor/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+        <title>sr-7-power-filter--monitor--shell</title>
+        <path id="sr-7-power-filter--monitor--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="sr-7-power-filter/monitor/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <path id="sr-7-power-filter--monitor--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="sr-7-power-filter--monitor--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="109.1 32.25" data-cp-dir="rear" />
+  </g>
+</svg>

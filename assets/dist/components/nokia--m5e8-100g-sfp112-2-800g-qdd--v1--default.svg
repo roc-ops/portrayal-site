@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="193.0mm" height="35.4mm" viewBox="0 0 193.0 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-active { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-blue { --led-color: #2f7fe0; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-errored { --led-color: #f5a623; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-errored { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-loopback { --led-color: #f5a623; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-loopback { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-no-link { --led-color: #f5a623; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-no-optic { --led-color: #f5a623; }
+    g[data-ref^='nokia/m5e8-100g-sfp112-2-800g-qdd@'] .state-no-optic { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="m5e8-100g-sfp112-2-800g-qdd" data-path="m5e8-100g-sfp112-2-800g-qdd" data-class="line-card" data-behaviour="fills" data-ref="nokia/m5e8-100g-sfp112-2-800g-qdd@1:1.1.0" data-body-depth="193.0" data-wall="#1f2125" data-cli-type="m5e8-100g-sfp112+2-800g-qdd" data-model="M5E8-100G-SFP112+2-800G-QDD" data-part-number="3HE20979AA" data-power-draw-max-w="185" data-power-draw-typical-w="160" data-qsfp-dd-800g="2" data-sfp112="8" data-weight-kg="1.32" transform="translate(0,0)">
+    <title>m5e8-100g-sfp112-2-800g-qdd</title>
+    <path id="m5e8-100g-sfp112-2-800g-qdd--plate" d="M 0 0 H 193 V 27 H 178.9 Q 176.9 27 176.9 29 V 35.4 H 16.1 V 29 Q 16.1 27 14.1 27 H 0 Z" fill="#2b2e33" stroke="#15171a" stroke-width="0.3" />
+    <path id="m5e8-100g-sfp112-2-800g-qdd--lip" d="M 16.6 31.9 H 176.4" fill="none" stroke="#1f2125" stroke-width="0.15" />
+    <g id="m5e8-100g-sfp112-2-800g-qdd--recess-left">
+      <path d="M 1.2 5.6 H 9.6 V 11.4 Q 9.6 15.6 5.4 15.6 Q 1.2 15.6 1.2 11.4 Z" fill="#1c1e21" stroke="#0f1012" stroke-width="0.2" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--recess-right">
+      <path d="M 183.4 5.6 H 191.8 V 11.4 Q 191.8 15.6 187.6 15.6 Q 183.4 15.6 183.4 11.4 Z" fill="#1c1e21" stroke="#0f1012" stroke-width="0.2" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--sfp-shells">
+      <rect x="15.83" y="9.82" width="59.17" height="11.2" fill="#9ea3a9" stroke="#5c6167" stroke-width="0.2" />
+      <rect x="75.6" y="9.82" width="59.0" height="11.2" fill="#9ea3a9" stroke="#5c6167" stroke-width="0.2" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--qdd-bezels">
+      <rect x="135.28" y="9.86" width="20.86" height="11.28" fill="#9ea3a9" stroke="#5c6167" stroke-width="0.2" />
+      <rect x="156.85" y="9.86" width="20.86" height="11.28" fill="#9ea3a9" stroke="#5c6167" stroke-width="0.2" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--esd-mark">
+      <path d="M 176.2 8.5 L 179.15 5.95 L 182.1 8.5 Z" fill="#f2c200" stroke="#15171a" stroke-width="0.12" />
+      <path d="M 178.2 8.1 L 179.15 7.0 L 180.1 8.1" fill="none" stroke="#15171a" stroke-width="0.18" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--silkscreen">
+      <text x="23.87" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c1</text>
+      <text x="37.72" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c2</text>
+      <text x="52.2" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c3</text>
+      <text x="66.69" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c4</text>
+      <text x="82.96" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c5</text>
+      <text x="97.3" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c6</text>
+      <text x="111.95" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c7</text>
+      <text x="126.1" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c8</text>
+      <text x="146.3" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c9</text>
+      <text x="167.63" y="8.22" font-family="Arial" font-size="2.8" fill="#e8e8e6">c10</text>
+      <text x="13.08" y="15.6" font-family="Arial" font-size="2.0" fill="#e8e8e6" text-anchor="middle">Pwr</text>
+      <text x="174.1" y="31.3" font-family="Arial" font-size="3.3" fill="#e8e8e6" text-anchor="end" font-weight="bold" textLength="48.6" lengthAdjust="spacingAndGlyphs">M5E8-100G-SFP112+2-800G-QDD</text>
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--handle-left" data-z-out="4.2">
+      <rect x="1.0" y="0.9" width="19.6" height="4.7" rx="0.6" fill="#3b3f44" stroke="#101113" stroke-width="0.25" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--handle-right" data-z-out="4.2">
+      <rect x="172.4" y="0.9" width="19.6" height="4.7" rx="0.6" fill="#3b3f44" stroke="#101113" stroke-width="0.25" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--screw-left" data-z-cyl="1.6">
+      <circle cx="8.33" cy="20.97" r="5.18" fill="#8e949a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="8.33" cy="20.97" r="1.1" fill="none" stroke="#4a4f55" stroke-width="0.35" />
+      <path d="M 4.6 17.24 L 7.55 20.19 M 9.11 21.75 L 12.06 24.7 M 12.06 17.24 L 9.11 20.19 M 7.55 21.75 L 4.6 24.7" fill="none" stroke="#4a4f55" stroke-width="0.35" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--screw-right" data-z-cyl="1.6">
+      <circle cx="185.5" cy="20.97" r="5.18" fill="#8e949a" stroke="#4a4f55" stroke-width="0.3" />
+      <circle cx="185.5" cy="20.97" r="1.1" fill="none" stroke="#4a4f55" stroke-width="0.35" />
+      <path d="M 181.77 17.24 L 184.72 20.19 M 186.28 21.75 L 189.23 24.7 M 189.23 17.24 L 186.28 20.19 M 184.72 21.75 L 181.77 24.7" fill="none" stroke="#4a4f55" stroke-width="0.35" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c1" data-path="m5e8-100g-sfp112-2-800g-qdd/c1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(17,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c1</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c1/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c2" data-path="m5e8-100g-sfp112-2-800g-qdd/c2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(31.25,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c2</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c2/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c3" data-path="m5e8-100g-sfp112-2-800g-qdd/c3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(45.5,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c3</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c3/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c4" data-path="m5e8-100g-sfp112-2-800g-qdd/c4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(59.75,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c4</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c4/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c5" data-path="m5e8-100g-sfp112-2-800g-qdd/c5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(76.5,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c5</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c5/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c6" data-path="m5e8-100g-sfp112-2-800g-qdd/c6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(90.75,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c6</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c6/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c7" data-path="m5e8-100g-sfp112-2-800g-qdd/c7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(105,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c7</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c7/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c8" data-path="m5e8-100g-sfp112-2-800g-qdd/c8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp112" data-speed="100g" transform="translate(119.25,10.15)" data-group="sfp112" data-group-role="traffic" data-description="connectors c1-c8, SFP112 in two ganged 1x4 blocks (SFP56, SFP28, SFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c8</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c8/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c9" data-path="m5e8-100g-sfp112-2-800g-qdd/c9" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="800g" transform="translate(136.21,10.5)" data-group="qdd" data-group-role="traffic" data-description="connectors c9-c10, QSFP-DD800 &quot;QDD&quot; cages (QSFP112-DD, QSFP56-DD, QSFP112, QSFP28, QSFP28-DD, QSFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c9</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c9--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c9/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c9--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c9--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="m5e8-100g-sfp112-2-800g-qdd--c9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--c10" data-path="m5e8-100g-sfp112-2-800g-qdd/c10" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" data-speed="800g" transform="translate(157.79,10.5)" data-group="qdd" data-group-role="traffic" data-description="connectors c9-c10, QSFP-DD800 &quot;QDD&quot; cages (QSFP112-DD, QSFP56-DD, QSFP112, QSFP28, QSFP28-DD, QSFP+ optics)">
+      <title>m5e8-100g-sfp112-2-800g-qdd--c10</title>
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c10--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="m5e8-100g-sfp112-2-800g-qdd/c10/opening" data-class="cutout" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c10--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="m5e8-100g-sfp112-2-800g-qdd--c10--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="m5e8-100g-sfp112-2-800g-qdd--c10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c1" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(21.52,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c1</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c1/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c2" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(35.37,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c2</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c2/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c3" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(49.85,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c3</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c3/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c4" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(64.34,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c4</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c4/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c5" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(80.61,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c5</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c5/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c6" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(94.95,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c6</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c6/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c7" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(109.6,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c7</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c7/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c8" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(123.75,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c8</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c8/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c9" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c9" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(143.95,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c9</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c9/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-c10" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c10" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(165.28,6.27)" data-group="port-leds" data-group-role="indicator" data-description="one Lnk/Act lamp per connector, labelled with the connector's name">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-c10</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-c10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-c10/lamp" data-class="led" data-states="off link active no-optic loopback no-link errored" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-stat" data-path="m5e8-100g-sfp112-2-800g-qdd/led-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.08,6.27)" data-group="status-leds" data-group-role="indicator" data-description="the adapter lamps Stat and Pwr">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-stat</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-stat/lamp" data-class="led" data-states="off green initializing amber" data-z-dome="0.3" />
+    </g>
+    <g id="m5e8-100g-sfp112-2-800g-qdd--led-pwr" data-path="m5e8-100g-sfp112-2-800g-qdd/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(12.08,11)" data-group="status-leds" data-group-role="indicator" data-description="the adapter lamps Stat and Pwr">
+      <title>m5e8-100g-sfp112-2-800g-qdd--led-pwr</title>
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m5e8-100g-sfp112-2-800g-qdd--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m5e8-100g-sfp112-2-800g-qdd/led-pwr/lamp" data-class="led" data-states="off blue" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="96.5 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

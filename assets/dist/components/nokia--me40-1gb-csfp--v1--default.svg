@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="193.0mm" height="35.4mm" viewBox="0 0 193.0 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-blue { --led-color: #2f7fe0; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-loopback { --led-color: #f5a623; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-loopback { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-no-link { --led-color: #f5a623; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-no-optic { --led-color: #f5a623; }
+    g[data-ref^='nokia/me40-1gb-csfp@'] .state-no-optic { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="me40-1gb-csfp" data-path="me40-1gb-csfp" data-class="line-card" data-behaviour="fills" data-ref="nokia/me40-1gb-csfp@1:1.1.0" data-body-depth="195.6" data-wall="#23272a" data-cli-type="me40-1gb-csfp" data-model="ME40-1GB-CSFP" data-part-number="3HE10642AA" data-power-draw-max-w="59" data-power-draw-typical-w="40" data-sfp="20" data-weight-kg="0.95" transform="translate(0,0)">
+    <title>me40-1gb-csfp</title>
+    <path id="me40-1gb-csfp--plate" d="M 0 0 H 193 V 27.3 H 178 Q 176.8 27.3 176.8 28.5 V 35.4 H 16.2 V 28.5 Q 16.2 27.3 15 27.3 H 0 Z" fill="#34383c" stroke="#1c1f22" stroke-width="0.3" />
+    <path id="me40-1gb-csfp--top-fold" d="M 0.3 1.6 L 192.7 1.6" stroke="#1c1f22" stroke-width="0.25" />
+    <rect id="me40-1gb-csfp--bezel-1" x="24.575" y="7.71" width="86.7" height="11" rx="0.4" fill="#1d2023" stroke="#8f959b" stroke-width="0.3" />
+    <rect id="me40-1gb-csfp--bezel-2" x="112.51" y="7.71" width="58.2" height="11" rx="0.4" fill="#1d2023" stroke="#8f959b" stroke-width="0.3" />
+    <rect id="me40-1gb-csfp--bezel-3" x="24.575" y="21.75" width="86.7" height="11" rx="0.4" fill="#1d2023" stroke="#8f959b" stroke-width="0.3" />
+    <rect id="me40-1gb-csfp--bezel-4" x="112.51" y="21.75" width="58.2" height="11" rx="0.4" fill="#1d2023" stroke="#8f959b" stroke-width="0.3" />
+    <rect id="me40-1gb-csfp--logo-zone" x="14.5" y="14.2" width="9" height="4.5" fill="none" data-path="me40-1gb-csfp/logo-zone" data-class="label" />
+    <g id="me40-1gb-csfp--esd-mark" data-path="me40-1gb-csfp/esd-mark" data-class="label">
+      <path d="M 184 7.9 L 186.9 3 L 189.8 7.9 Z" fill="#f2c200" stroke="#1c1f22" stroke-width="0.2" />
+      <path d="M 185.6 7 Q 186.9 5.3 188 6.8" fill="none" stroke="#1c1f22" stroke-width="0.35" />
+    </g>
+    <g id="me40-1gb-csfp--silkscreen">
+      <text x="9.71" y="8.47" font-family="Arial" font-size="2.4" fill="#e6e8ea" text-anchor="end">Stat</text>
+      <text x="9.71" y="12.55" font-family="Arial" font-size="2.4" fill="#e6e8ea" text-anchor="end">Pwr</text>
+      <text x="27.72" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">1</text>
+      <text x="30.99" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">2</text>
+      <text x="34.26" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">3</text>
+      <text x="37.64" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">4</text>
+      <text x="41.97" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">5</text>
+      <text x="45.24" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">6</text>
+      <text x="48.51" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">7</text>
+      <text x="51.89" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">8</text>
+      <text x="56.22" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">9</text>
+      <text x="59.49" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">10</text>
+      <text x="62.76" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">11</text>
+      <text x="66.14" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">12</text>
+      <text x="70.47" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">13</text>
+      <text x="73.74" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">14</text>
+      <text x="77.01" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">15</text>
+      <text x="80.39" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">16</text>
+      <text x="84.72" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">17</text>
+      <text x="87.99" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">18</text>
+      <text x="91.26" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">19</text>
+      <text x="94.64" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">20</text>
+      <text x="98.97" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">21</text>
+      <text x="102.24" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">22</text>
+      <text x="105.51" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">23</text>
+      <text x="108.89" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">24</text>
+      <text x="115.655" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">25</text>
+      <text x="118.925" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">26</text>
+      <text x="122.195" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">27</text>
+      <text x="125.575" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">28</text>
+      <text x="129.905" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">29</text>
+      <text x="133.175" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">30</text>
+      <text x="136.445" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">31</text>
+      <text x="139.825" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">32</text>
+      <text x="144.155" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">33</text>
+      <text x="147.425" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">34</text>
+      <text x="150.695" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">35</text>
+      <text x="154.075" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">36</text>
+      <text x="158.405" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">37</text>
+      <text x="161.675" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">38</text>
+      <text x="164.945" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">39</text>
+      <text x="168.325" y="4.2" font-family="Arial" font-size="1.3" fill="#e6e8ea" text-anchor="middle">40</text>
+      <text x="25.2" y="6.35" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="end">Lnk/Act</text>
+      <path d="M 27.87 6.45 L 28.97 6.45 L 28.42 5.35 Z" fill="#e6e8ea" />
+      <path d="M 31.14 6.45 L 32.24 6.45 L 31.69 5.35 Z" fill="#e6e8ea" />
+      <path d="M 34.41 5.35 L 35.51 5.35 L 34.96 6.45 Z" fill="#e6e8ea" />
+      <path d="M 37.79 5.35 L 38.89 5.35 L 38.34 6.45 Z" fill="#e6e8ea" />
+      <path d="M 42.12 6.45 L 43.22 6.45 L 42.67 5.35 Z" fill="#e6e8ea" />
+      <path d="M 45.39 6.45 L 46.49 6.45 L 45.94 5.35 Z" fill="#e6e8ea" />
+      <path d="M 48.66 5.35 L 49.76 5.35 L 49.21 6.45 Z" fill="#e6e8ea" />
+      <path d="M 52.04 5.35 L 53.14 5.35 L 52.59 6.45 Z" fill="#e6e8ea" />
+      <path d="M 56.37 6.45 L 57.47 6.45 L 56.92 5.35 Z" fill="#e6e8ea" />
+      <path d="M 59.64 6.45 L 60.74 6.45 L 60.19 5.35 Z" fill="#e6e8ea" />
+      <path d="M 62.91 5.35 L 64.01 5.35 L 63.46 6.45 Z" fill="#e6e8ea" />
+      <path d="M 66.29 5.35 L 67.39 5.35 L 66.84 6.45 Z" fill="#e6e8ea" />
+      <path d="M 70.62 6.45 L 71.72 6.45 L 71.17 5.35 Z" fill="#e6e8ea" />
+      <path d="M 73.89 6.45 L 74.99 6.45 L 74.44 5.35 Z" fill="#e6e8ea" />
+      <path d="M 77.16 5.35 L 78.26 5.35 L 77.71 6.45 Z" fill="#e6e8ea" />
+      <path d="M 80.54 5.35 L 81.64 5.35 L 81.09 6.45 Z" fill="#e6e8ea" />
+      <path d="M 84.87 6.45 L 85.97 6.45 L 85.42 5.35 Z" fill="#e6e8ea" />
+      <path d="M 88.14 6.45 L 89.24 6.45 L 88.69 5.35 Z" fill="#e6e8ea" />
+      <path d="M 91.41 5.35 L 92.51 5.35 L 91.96 6.45 Z" fill="#e6e8ea" />
+      <path d="M 94.79 5.35 L 95.89 5.35 L 95.34 6.45 Z" fill="#e6e8ea" />
+      <path d="M 99.12 6.45 L 100.22 6.45 L 99.67 5.35 Z" fill="#e6e8ea" />
+      <path d="M 102.39 6.45 L 103.49 6.45 L 102.94 5.35 Z" fill="#e6e8ea" />
+      <path d="M 105.66 5.35 L 106.76 5.35 L 106.21 6.45 Z" fill="#e6e8ea" />
+      <path d="M 109.04 5.35 L 110.14 5.35 L 109.59 6.45 Z" fill="#e6e8ea" />
+      <path d="M 115.805 6.45 L 116.905 6.45 L 116.355 5.35 Z" fill="#e6e8ea" />
+      <path d="M 119.075 6.45 L 120.175 6.45 L 119.625 5.35 Z" fill="#e6e8ea" />
+      <path d="M 122.345 5.35 L 123.445 5.35 L 122.895 6.45 Z" fill="#e6e8ea" />
+      <path d="M 125.725 5.35 L 126.825 5.35 L 126.275 6.45 Z" fill="#e6e8ea" />
+      <path d="M 130.055 6.45 L 131.155 6.45 L 130.605 5.35 Z" fill="#e6e8ea" />
+      <path d="M 133.325 6.45 L 134.425 6.45 L 133.875 5.35 Z" fill="#e6e8ea" />
+      <path d="M 136.595 5.35 L 137.695 5.35 L 137.145 6.45 Z" fill="#e6e8ea" />
+      <path d="M 139.975 5.35 L 141.075 5.35 L 140.525 6.45 Z" fill="#e6e8ea" />
+      <path d="M 144.305 6.45 L 145.405 6.45 L 144.855 5.35 Z" fill="#e6e8ea" />
+      <path d="M 147.575 6.45 L 148.675 6.45 L 148.125 5.35 Z" fill="#e6e8ea" />
+      <path d="M 150.845 5.35 L 151.945 5.35 L 151.395 6.45 Z" fill="#e6e8ea" />
+      <path d="M 154.225 5.35 L 155.325 5.35 L 154.775 6.45 Z" fill="#e6e8ea" />
+      <path d="M 158.555 6.45 L 159.655 6.45 L 159.105 5.35 Z" fill="#e6e8ea" />
+      <path d="M 161.825 6.45 L 162.925 6.45 L 162.375 5.35 Z" fill="#e6e8ea" />
+      <path d="M 165.095 5.35 L 166.195 5.35 L 165.645 6.45 Z" fill="#e6e8ea" />
+      <path d="M 168.475 5.35 L 169.575 5.35 L 169.025 6.45 Z" fill="#e6e8ea" />
+      <g id="me40-1gb-csfp--model-label" data-path="me40-1gb-csfp/model-label" data-class="label">
+        <text x="181.5" y="12.4" font-family="Arial" font-size="2.3" font-weight="bold" fill="#e6e8ea" text-anchor="middle">ME40-1GB-CSFP</text>
+      </g>
+    </g>
+    <g id="me40-1gb-csfp--screw-left" data-z-cyl="1.6">
+      <circle cx="8" cy="21.05" r="5.1" fill="#1c1f23" stroke="#1c1f22" stroke-width="0.3" />
+      <path d="M 4.838 17.888 L 11.162 24.212 M 4.838 24.212 L 11.162 17.888" stroke="#4a4f55" stroke-width="0.35" />
+      <circle cx="8" cy="21.05" r="1.15" fill="#6f757b" stroke="#1c1f22" stroke-width="0.25" />
+    </g>
+    <g id="me40-1gb-csfp--screw-right" data-z-cyl="1.6">
+      <circle cx="185" cy="21.05" r="5.1" fill="#1c1f23" stroke="#1c1f22" stroke-width="0.3" />
+      <path d="M 181.838 17.888 L 188.162 24.212 M 181.838 24.212 L 188.162 17.888" stroke="#4a4f55" stroke-width="0.35" />
+      <circle cx="185" cy="21.05" r="1.15" fill="#6f757b" stroke="#1c1f22" stroke-width="0.25" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-1-2" data-path="me40-1gb-csfp/csfp-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(25.175,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-1-2</title>
+      <rect id="me40-1gb-csfp--csfp-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-1-2/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-5-6" data-path="me40-1gb-csfp/csfp-5-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(39.425,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-5-6</title>
+      <rect id="me40-1gb-csfp--csfp-5-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-5-6/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-5-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-5-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-5-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-9-10" data-path="me40-1gb-csfp/csfp-9-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(53.675,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-9-10</title>
+      <rect id="me40-1gb-csfp--csfp-9-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-9-10/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-9-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-9-10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-9-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-13-14" data-path="me40-1gb-csfp/csfp-13-14" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(67.925,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-13-14</title>
+      <rect id="me40-1gb-csfp--csfp-13-14--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-13-14/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-13-14--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-13-14--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-13-14--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-17-18" data-path="me40-1gb-csfp/csfp-17-18" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(82.175,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-17-18</title>
+      <rect id="me40-1gb-csfp--csfp-17-18--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-17-18/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-17-18--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-17-18--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-17-18--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-21-22" data-path="me40-1gb-csfp/csfp-21-22" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(96.425,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-21-22</title>
+      <rect id="me40-1gb-csfp--csfp-21-22--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-21-22/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-21-22--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-21-22--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-21-22--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-25-26" data-path="me40-1gb-csfp/csfp-25-26" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(113.11,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-25-26</title>
+      <rect id="me40-1gb-csfp--csfp-25-26--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-25-26/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-25-26--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-25-26--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-25-26--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-29-30" data-path="me40-1gb-csfp/csfp-29-30" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(127.36,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-29-30</title>
+      <rect id="me40-1gb-csfp--csfp-29-30--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-29-30/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-29-30--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-29-30--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-29-30--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-33-34" data-path="me40-1gb-csfp/csfp-33-34" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(141.61,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-33-34</title>
+      <rect id="me40-1gb-csfp--csfp-33-34--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-33-34/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-33-34--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-33-34--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-33-34--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-37-38" data-path="me40-1gb-csfp/csfp-37-38" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(155.86,8.01) rotate(180 7.125 5.2)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-37-38</title>
+      <rect id="me40-1gb-csfp--csfp-37-38--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-37-38/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-37-38--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-37-38--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-37-38--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-3-4" data-path="me40-1gb-csfp/csfp-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(25.175,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-3-4</title>
+      <rect id="me40-1gb-csfp--csfp-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-3-4/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-7-8" data-path="me40-1gb-csfp/csfp-7-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(39.425,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-7-8</title>
+      <rect id="me40-1gb-csfp--csfp-7-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-7-8/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-7-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-7-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-7-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-11-12" data-path="me40-1gb-csfp/csfp-11-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(53.675,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-11-12</title>
+      <rect id="me40-1gb-csfp--csfp-11-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-11-12/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-11-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-11-12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-11-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-15-16" data-path="me40-1gb-csfp/csfp-15-16" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(67.925,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-15-16</title>
+      <rect id="me40-1gb-csfp--csfp-15-16--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-15-16/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-15-16--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-15-16--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-15-16--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-19-20" data-path="me40-1gb-csfp/csfp-19-20" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(82.175,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-19-20</title>
+      <rect id="me40-1gb-csfp--csfp-19-20--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-19-20/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-19-20--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-19-20--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-19-20--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-23-24" data-path="me40-1gb-csfp/csfp-23-24" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(96.425,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-23-24</title>
+      <rect id="me40-1gb-csfp--csfp-23-24--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-23-24/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-23-24--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-23-24--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-23-24--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-27-28" data-path="me40-1gb-csfp/csfp-27-28" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(113.11,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-27-28</title>
+      <rect id="me40-1gb-csfp--csfp-27-28--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-27-28/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-27-28--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-27-28--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-27-28--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-31-32" data-path="me40-1gb-csfp/csfp-31-32" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(127.36,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-31-32</title>
+      <rect id="me40-1gb-csfp--csfp-31-32--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-31-32/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-31-32--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-31-32--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-31-32--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-35-36" data-path="me40-1gb-csfp/csfp-35-36" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(141.61,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-35-36</title>
+      <rect id="me40-1gb-csfp--csfp-35-36--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-35-36/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-35-36--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-35-36--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-35-36--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--csfp-39-40" data-path="me40-1gb-csfp/csfp-39-40" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(155.86,22.05)" data-group="csfp" data-group-role="traffic" data-description="the 20 CSFP/SFP cages in two ganged 2-row blocks (six columns, then four). Each cage takes a dual-port CSFP (two interfaces) or a single-port SFP (the odd interface only): column k has ports 4k-3 and 4k-2 in its top cage and 4k-1 and 4k in its bottom cage, 40 ports in all (MDAE Table 10 keys 3-4, section 4.2.1). The two CSFP interfaces per cage are not declared: `interfaces:` is a device placement key and a component part cannot carry it; the cage id names both.">
+      <title>me40-1gb-csfp--csfp-39-40</title>
+      <rect id="me40-1gb-csfp--csfp-39-40--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="me40-1gb-csfp/csfp-39-40/opening" data-class="cutout" />
+      <rect id="me40-1gb-csfp--csfp-39-40--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="me40-1gb-csfp--csfp-39-40--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="me40-1gb-csfp--csfp-39-40--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="me40-1gb-csfp--stat" data-path="me40-1gb-csfp/stat" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Stat - green blinking: initializing; green: operationally up, administratively up; amber: operationally down, administratively up; unlit: administratively down, shut down" transform="translate(9.61,5.62)" data-group="status-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--stat</title>
+      <circle id="me40-1gb-csfp--stat--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="me40-1gb-csfp--stat--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/stat/lamp" data-class="led" data-states="off green initializing amber" data-z-dome="0.45" />
+    </g>
+    <g id="me40-1gb-csfp--pwr" data-path="me40-1gb-csfp/pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Pwr - blue: power is on; unlit: no power at the board" transform="translate(9.61,9.7)" data-group="status-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--pwr</title>
+      <circle id="me40-1gb-csfp--pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="me40-1gb-csfp--pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/pwr/lamp" data-class="led" data-states="off blue" data-z-dome="0.45" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-1" data-path="me40-1gb-csfp/lnk-act-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(26.07,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-1</title>
+      <circle id="me40-1gb-csfp--lnk-act-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-1/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-2" data-path="me40-1gb-csfp/lnk-act-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(29.34,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-2</title>
+      <circle id="me40-1gb-csfp--lnk-act-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-2/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-3" data-path="me40-1gb-csfp/lnk-act-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(32.61,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-3</title>
+      <circle id="me40-1gb-csfp--lnk-act-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-3/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-4" data-path="me40-1gb-csfp/lnk-act-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(35.99,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-4</title>
+      <circle id="me40-1gb-csfp--lnk-act-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-4/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-5" data-path="me40-1gb-csfp/lnk-act-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(40.32,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-5</title>
+      <circle id="me40-1gb-csfp--lnk-act-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-5/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-6" data-path="me40-1gb-csfp/lnk-act-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(43.59,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-6</title>
+      <circle id="me40-1gb-csfp--lnk-act-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-6/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-7" data-path="me40-1gb-csfp/lnk-act-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(46.86,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-7</title>
+      <circle id="me40-1gb-csfp--lnk-act-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-7/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-8" data-path="me40-1gb-csfp/lnk-act-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(50.24,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-8</title>
+      <circle id="me40-1gb-csfp--lnk-act-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-8/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-9" data-path="me40-1gb-csfp/lnk-act-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(54.57,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-9</title>
+      <circle id="me40-1gb-csfp--lnk-act-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-9/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-10" data-path="me40-1gb-csfp/lnk-act-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(57.84,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-10</title>
+      <circle id="me40-1gb-csfp--lnk-act-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-10/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-11" data-path="me40-1gb-csfp/lnk-act-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(61.11,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-11</title>
+      <circle id="me40-1gb-csfp--lnk-act-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-11/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-12" data-path="me40-1gb-csfp/lnk-act-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(64.49,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-12</title>
+      <circle id="me40-1gb-csfp--lnk-act-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-12/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-13" data-path="me40-1gb-csfp/lnk-act-13" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(68.82,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-13</title>
+      <circle id="me40-1gb-csfp--lnk-act-13--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-13--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-13/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-14" data-path="me40-1gb-csfp/lnk-act-14" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(72.09,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-14</title>
+      <circle id="me40-1gb-csfp--lnk-act-14--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-14--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-14/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-15" data-path="me40-1gb-csfp/lnk-act-15" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(75.36,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-15</title>
+      <circle id="me40-1gb-csfp--lnk-act-15--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-15--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-15/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-16" data-path="me40-1gb-csfp/lnk-act-16" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(78.74,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-16</title>
+      <circle id="me40-1gb-csfp--lnk-act-16--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-16--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-16/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-17" data-path="me40-1gb-csfp/lnk-act-17" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(83.07,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-17</title>
+      <circle id="me40-1gb-csfp--lnk-act-17--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-17--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-17/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-18" data-path="me40-1gb-csfp/lnk-act-18" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(86.34,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-18</title>
+      <circle id="me40-1gb-csfp--lnk-act-18--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-18--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-18/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-19" data-path="me40-1gb-csfp/lnk-act-19" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(89.61,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-19</title>
+      <circle id="me40-1gb-csfp--lnk-act-19--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-19--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-19/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-20" data-path="me40-1gb-csfp/lnk-act-20" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(92.99,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-20</title>
+      <circle id="me40-1gb-csfp--lnk-act-20--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-20--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-20/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-21" data-path="me40-1gb-csfp/lnk-act-21" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(97.32,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-21</title>
+      <circle id="me40-1gb-csfp--lnk-act-21--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-21--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-21/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-22" data-path="me40-1gb-csfp/lnk-act-22" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(100.59,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-22</title>
+      <circle id="me40-1gb-csfp--lnk-act-22--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-22--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-22/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-23" data-path="me40-1gb-csfp/lnk-act-23" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(103.86,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-23</title>
+      <circle id="me40-1gb-csfp--lnk-act-23--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-23--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-23/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-24" data-path="me40-1gb-csfp/lnk-act-24" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(107.24,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-24</title>
+      <circle id="me40-1gb-csfp--lnk-act-24--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-24--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-24/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-25" data-path="me40-1gb-csfp/lnk-act-25" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(114.005,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-25</title>
+      <circle id="me40-1gb-csfp--lnk-act-25--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-25--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-25/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-26" data-path="me40-1gb-csfp/lnk-act-26" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(117.275,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-26</title>
+      <circle id="me40-1gb-csfp--lnk-act-26--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-26--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-26/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-27" data-path="me40-1gb-csfp/lnk-act-27" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(120.545,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-27</title>
+      <circle id="me40-1gb-csfp--lnk-act-27--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-27--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-27/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-28" data-path="me40-1gb-csfp/lnk-act-28" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(123.925,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-28</title>
+      <circle id="me40-1gb-csfp--lnk-act-28--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-28--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-28/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-29" data-path="me40-1gb-csfp/lnk-act-29" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(128.255,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-29</title>
+      <circle id="me40-1gb-csfp--lnk-act-29--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-29--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-29/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-30" data-path="me40-1gb-csfp/lnk-act-30" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(131.525,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-30</title>
+      <circle id="me40-1gb-csfp--lnk-act-30--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-30--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-30/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-31" data-path="me40-1gb-csfp/lnk-act-31" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(134.795,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-31</title>
+      <circle id="me40-1gb-csfp--lnk-act-31--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-31--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-31/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-32" data-path="me40-1gb-csfp/lnk-act-32" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(138.175,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-32</title>
+      <circle id="me40-1gb-csfp--lnk-act-32--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-32--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-32/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-33" data-path="me40-1gb-csfp/lnk-act-33" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(142.505,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-33</title>
+      <circle id="me40-1gb-csfp--lnk-act-33--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-33--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-33/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-34" data-path="me40-1gb-csfp/lnk-act-34" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(145.775,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-34</title>
+      <circle id="me40-1gb-csfp--lnk-act-34--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-34--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-34/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-35" data-path="me40-1gb-csfp/lnk-act-35" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(149.045,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-35</title>
+      <circle id="me40-1gb-csfp--lnk-act-35--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-35--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-35/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-36" data-path="me40-1gb-csfp/lnk-act-36" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(152.425,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-36</title>
+      <circle id="me40-1gb-csfp--lnk-act-36--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-36--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-36/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-37" data-path="me40-1gb-csfp/lnk-act-37" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(156.755,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-37</title>
+      <circle id="me40-1gb-csfp--lnk-act-37--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-37--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-37/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-38" data-path="me40-1gb-csfp/lnk-act-38" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(160.025,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-38</title>
+      <circle id="me40-1gb-csfp--lnk-act-38--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-38--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-38/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-39" data-path="me40-1gb-csfp/lnk-act-39" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(163.295,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-39</title>
+      <circle id="me40-1gb-csfp--lnk-act-39--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-39--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-39/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="me40-1gb-csfp--lnk-act-40" data-path="me40-1gb-csfp/lnk-act-40" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk/Act - green: link; green blink: active; amber fast blink: loopback; amber slow blink: no optic; amber: optic installed, no link or LOS; unlit: laser disabled or shut down. No blink rates are given" transform="translate(166.675,4.88)" data-group="port-leds" data-group-role="indicator">
+      <title>me40-1gb-csfp--lnk-act-40</title>
+      <circle id="me40-1gb-csfp--lnk-act-40--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="me40-1gb-csfp--lnk-act-40--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="me40-1gb-csfp/lnk-act-40/lamp" data-class="led" data-states="off link activity loopback no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="96.5 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

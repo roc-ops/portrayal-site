@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="259.1mm" height="35.4mm" viewBox="0 0 259.1 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/cpm-e@'] .state-loading { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm-e@'] .state-loading { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm-e@'] .state-powered { --led-color: #1e73d8; }
+    g[data-ref^='nokia/cpm-e@'] .state-primary { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm-e@'] .state-secondary { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm-e@'] .state-secondary { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="cpm-e" data-path="cpm-e" data-class="supervisor" data-behaviour="fills" data-ref="nokia/cpm-e@1:1.0.0" data-body-depth="292.1" data-model="7750 SR-e CPM-e" data-power-draw-max-w="60" data-power-draw-typical-w="50" data-weight-kg="1.5" transform="translate(0,0)">
+    <title>cpm-e</title>
+    <path id="cpm-e--face" d="M 0 0.70 H 13.5 V 2.3 H 245.6 V 0.70 H 259.1 V 31.3 H 180.1 V 34.7 H 75.1 V 31.3 H 0 Z" fill="#34383d" stroke="#1d2023" stroke-width="0.3" />
+    <rect id="cpm-e--logo-zone" x="100.0" y="10.30" width="40.0" height="8.0" fill="none" data-path="cpm-e/logo-zone" data-class="label" />
+    <g id="cpm-e--silkscreen">
+      <text x="37.6" y="28.6" font-family="Arial" font-size="2.8" fill="#e6e8ea" text-anchor="end">Pwr</text>
+      <text x="43.2" y="28.6" font-family="Arial" font-size="2.8" fill="#e6e8ea" text-anchor="start">Stat</text>
+      <text x="217.1" y="28.6" font-family="Arial" font-size="2.8" fill="#e6e8ea" text-anchor="middle">7750 SR-e CPM-e</text>
+    </g>
+    <g id="cpm-e--screw-left" data-path="cpm-e/screw-left" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="5.6" cy="8.2" r="5.50" fill="#b8bcc1" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="5.6" cy="8.2" r="1.92" fill="none" stroke="#6f757c" stroke-width="0.3" />
+      <path d="M 0.65 6.55 L 10.55 9.85 M 3.95 13.15 L 7.25 3.25" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="cpm-e--screw-right" data-path="cpm-e/screw-right" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="251.3" cy="8.2" r="5.50" fill="#b8bcc1" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="251.3" cy="8.2" r="1.92" fill="none" stroke="#6f757c" stroke-width="0.3" />
+      <path d="M 246.35 6.55 L 256.25 9.85 M 249.65 13.15 L 252.95 3.25" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="cpm-e--lever-left" data-path="cpm-e/lever-left" data-class="latch" data-z-out="4.2" data-z-color="#5a6066">
+      <rect x="11.5" y="31.3" width="63.60" height="3.40" rx="0.4" fill="#5a6066" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="12.50" y1="33.00" x2="74.10" y2="33.00" stroke="#454a50" stroke-width="0.3" />
+    </g>
+    <g id="cpm-e--lever-right" data-path="cpm-e/lever-right" data-class="latch" data-z-out="4.2" data-z-color="#5a6066">
+      <rect x="180.1" y="31.3" width="67.30" height="3.40" rx="0.4" fill="#5a6066" stroke="#1d2023" stroke-width="0.25" />
+      <line x1="181.10" y1="33.00" x2="246.40" y2="33.00" stroke="#454a50" stroke-width="0.3" />
+    </g>
+    <g id="cpm-e--led-pwr-stat" data-path="cpm-e/led-pwr-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(39.4,26.6)" data-group="status-leds" data-group-role="indicator" data-description="the one Pwr/Stat lamp">
+      <title>cpm-e--led-pwr-stat</title>
+      <circle id="cpm-e--led-pwr-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cpm-e--led-pwr-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cpm-e/led-pwr-stat/lamp" data-class="led" data-states="off powered loading primary secondary" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="129.55 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

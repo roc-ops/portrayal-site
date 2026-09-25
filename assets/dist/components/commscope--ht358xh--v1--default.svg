@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="51.92mm" height="9.66mm" viewBox="0 0 51.92 9.66">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ht358xh" data-path="ht358xh" data-class="line-card" data-behaviour="fills" data-ref="commscope/ht358xh@1:1.0.0" data-body-depth="292.1" data-model="HT358xH-Q" data-optical-output="10 +/- 0.25 dBm" data-power-draw-max-w="6" data-rf-passband="45-1218 MHz" data-role="transmitter" data-wavelengths="ITU channels 20-62, 100 GHz grid" transform="translate(0,0)">
+    <title>ht358xh</title>
+    <defs>
+      <radialGradient id="ht358xh--nut" cx="0.45" cy="0.4" r="0.7">
+        <stop offset="0" stop-color="#e6e8ea" />
+        <stop offset="1" stop-color="#9ea3a8" />
+      </radialGradient>
+    </defs>
+    <rect id="ht358xh--body" x="0" y="0" width="51.92" height="9.66" rx="0.6" fill="#63676c" stroke="#2c2f32" stroke-width="0.2" />
+    <rect id="ht358xh--label-box" x="1.5" y="0.9" width="5.9" height="7.9" rx="0.5" fill="#7a7f84" data-path="ht358xh/label-box" data-class="label" />
+    <g id="ht358xh--test-point" data-path="ht358xh/test-point" data-class="port">
+      <circle cx="11.8" cy="4.83" r="3.1" fill="url(#ht358xh--nut)" stroke="#7d8287" stroke-width="0.2" />
+      <circle cx="11.8" cy="4.83" r="1.9" fill="none" stroke="#8e9398" stroke-width="0.35" />
+      <circle cx="11.8" cy="4.83" r="0.9" fill="#2a2d31" />
+      <circle cx="11.8" cy="4.83" r="0.3" fill="#c9ccd0" />
+    </g>
+    <g id="ht358xh--vent" fill="#101214" data-path="ht358xh/vent" data-class="vent">
+      <circle cx="16.20" cy="2.35" r="0.95" />
+      <circle cx="18.60" cy="2.35" r="0.95" />
+      <circle cx="21.00" cy="2.35" r="0.95" />
+      <circle cx="23.40" cy="2.35" r="0.95" />
+      <circle cx="25.80" cy="2.35" r="0.95" />
+      <circle cx="28.20" cy="2.35" r="0.95" />
+      <circle cx="30.60" cy="2.35" r="0.95" />
+      <circle cx="33.00" cy="2.35" r="0.95" />
+      <circle cx="17.40" cy="4.83" r="0.95" />
+      <circle cx="19.80" cy="4.83" r="0.95" />
+      <circle cx="22.20" cy="4.83" r="0.95" />
+      <circle cx="24.60" cy="4.83" r="0.95" />
+      <circle cx="31.80" cy="4.83" r="0.95" />
+      <circle cx="34.20" cy="4.83" r="0.95" />
+      <circle cx="16.20" cy="7.31" r="0.95" />
+      <circle cx="18.60" cy="7.31" r="0.95" />
+      <circle cx="21.00" cy="7.31" r="0.95" />
+      <circle cx="23.40" cy="7.31" r="0.95" />
+      <circle cx="25.80" cy="7.31" r="0.95" />
+      <circle cx="30.60" cy="7.31" r="0.95" />
+      <circle cx="33.00" cy="7.31" r="0.95" />
+    </g>
+    <g id="ht358xh--latch" data-path="ht358xh/latch" data-class="latch">
+      <rect x="36.3" y="0.8" width="15.4" height="8.1" rx="1.2" fill="#141618" />
+      <path d="M 40.8 1.6 Q 38.6 4.83 40.8 8.1" fill="none" stroke="#2c2f33" stroke-width="0.5" />
+    </g>
+    <g id="ht358xh--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="4.45" y="3.9" font-size="2.2">Ch.</text>
+      <text x="4.45" y="7.3" font-size="2.2" data-from="channel" />
+    </g>
+    <g id="ht358xh--led-status" data-path="ht358xh/led-status" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(27.7,4.2)">
+      <title>ht358xh--led-status</title>
+      <circle id="ht358xh--led-status--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ht358xh--led-status--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ht358xh/led-status/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="25.96 4.83" data-cp-dir="front" />
+  </g>
+</svg>

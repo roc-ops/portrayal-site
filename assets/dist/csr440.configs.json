@@ -45,13 +45,13 @@
    "storage": "128 GB mSATA SSD"
   },
   "power": {
+   "input-ac": "100V-240V, 6.0-2.4 A per PS",
+   "input-dc": "-44 to -60 V, 15.5-9.6 A per PS",
    "power-envelope": "as-tested",
-   "power-input-ac": "100V-240V, 6.0-2.4 A per PS",
-   "power-input-dc": "-44 to -60 V, 15.5-9.6 A per PS",
    "power-max-w": 383.6
   },
   "thermal": {
-   "airflow": "side-to-side",
+   "airflow": "front-to-back",
    "cooling": "six hot-swappable rear fan modules, 5+1 redundant"
   }
  },
@@ -1148,15 +1148,16 @@
   "unknown": []
  },
  "chassis": {
-  "airflow": "side",
+  "airflow": "front-to-back",
   "d": 300.0,
   "h": 43.3,
+  "power": null,
   "ru": 1,
   "w": 438.4
  },
  "configs": [
   {
-   "airflow": "side",
+   "airflow": "front-to-back",
    "bays": {
     "fan-1": "edgecore/csr440-fan@1",
     "fan-2": "edgecore/csr440-fan@1",
@@ -1167,11 +1168,61 @@
     "psu-1": "edgecore/csr440-psu-ac@1",
     "psu-2": "edgecore/csr440-psu-ac@1"
    },
-   "description": "Two hot-swappable AC supplies and six rear fan modules. This is the variant both elevations draw. Neither staged document publishes an ordering matrix for this model, so the configuration carries no part numbers, and the DC variant is a gap rather than a second configuration.",
+   "description": "Two hot-swappable AC supplies and six rear fan modules. This is the variant both elevations draw. The datasheet's ordering table lists seven AC rows by power-cord region, carried below; the DC build is dc.",
    "kind": "base",
    "name": "ac",
    "occupants": {},
-   "part-numbers": {},
+   "part-numbers": {
+    "AS7535-28XB-O-AC-F V2": {
+     "part": "F0PEC7332007A",
+     "power-cord": "none"
+    },
+    "AS7535-28XB-O-AC-F-CN V2": {
+     "part": "F0PEC7332703A",
+     "power-cord": "CN"
+    },
+    "AS7535-28XB-O-AC-F-EU V2": {
+     "part": "F0PEC7332203A",
+     "power-cord": "EU"
+    },
+    "AS7535-28XB-O-AC-F-JP V2": {
+     "part": "F0PEC7332503A",
+     "power-cord": "JP"
+    },
+    "AS7535-28XB-O-AC-F-TW V2": {
+     "part": "F0PEC7332T03A",
+     "power-cord": "TW"
+    },
+    "AS7535-28XB-O-AC-F-UK V2": {
+     "part": "F0PEC7332303A",
+     "power-cord": "UK"
+    },
+    "AS7535-28XB-O-AC-F-US V2": {
+     "part": "F0PEC7332403A",
+     "power-cord": "N. America"
+    }
+   },
+   "power": [
+    "ac"
+   ],
+   "views": {}
+  },
+  {
+   "airflow": "front-to-back",
+   "bays": {},
+   "description": "Two hot-swappable DC supplies (-44 to -60 V, 15.5-9.6 A each) and the same six rear fan modules - the datasheet's one DC ordering row. DRAWN WITH THE AC SUPPLY'S FACE, because neither document pictures the DC module; the build is declared so a tool filtering by feed finds it, and the wrong face is the dc-power-supply gap.",
+   "kind": "orderable",
+   "name": "dc",
+   "occupants": {},
+   "part-numbers": {
+    "AS7535-28XB-O-48V-F V2": {
+     "part": "F0PEC7332006A",
+     "power-cord": "none"
+    }
+   },
+   "power": [
+    "dc"
+   ],
    "views": {}
   }
  ],
@@ -1185,7 +1236,7 @@
    "scope": [
     "front"
    ],
-   "wanted": "A picture of the DC supply's face. Both documents say the device takes \"2 x DC or AC PSUs\" and the datasheet publishes a DC input range of -44 to -60 V at 15.5-9.6 A per supply, so the variant certainly exists - but the only elevation draws AC modules, and the quick start's DC section pictures wiring and ring lugs rather than a module face. The bay therefore accepts edgecore/csr440-psu-ac@1 alone and there is no `dc` configuration. Inventing one from the CSR310's terminal-block module would be wrong twice over: that is a different kind of supply, and this chassis is a different chassis.",
+   "wanted": "A picture of the DC supply's face. Both documents say the device takes \"2 x DC or AC PSUs\" and the datasheet publishes a DC input range of -44 to -60 V at 15.5-9.6 A per supply, so the variant certainly exists - but the only elevation draws AC modules, and the quick start's DC section pictures wiring and ring lugs rather than a module face. The bay therefore accepts edgecore/csr440-psu-ac@1 alone, and the `dc` configuration seats it - wrong at the connector, which this gap and lint L120 keep in view. Borrowing the CSR310's terminal-block module would be wrong twice over: that is a different kind of supply, and this chassis is a different chassis.",
    "what": "dc-power-supply"
   },
   {
@@ -1280,10 +1331,19 @@
   }
  ],
  "model": "AS7535-28XB",
+ "options": {
+  "airflow": [
+   "front-to-back"
+  ],
+  "power": [
+   "ac",
+   "dc"
+  ]
+ },
  "provenance": {
   "airflow": {
    "confidence": "datasheet",
-   "note": "Each fan module prints a small arrow beside its bay number, and the chassis is side-to-side like the rest of this family. The quick start's fan procedure does not repeat the CSR430's \"matching airflow direction\" caution, and no airflow-direction SKU is published in either document, so `side` is taken from the family and the arrows rather than from an ordering code."
+   "note": "datasheet - every row of the Ordering Information table reads 'Front-to-Back Airflow', and the SKUs end -F where the CSR310's and CSR200's end -S against 'Side-to-Side Airflow'. So the CSR440 is NOT side-to-side like the rest of this family, which fits the split its description records: ports and supplies on the front, all six fans on the rear. This used to read `side`, taken from the family and the fan arrows on the belief that no airflow-direction SKU was published; the ordering table was missed."
   },
   "chassis": {
    "confidence": "datasheet",

@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="425.4mm" height="35.4mm" viewBox="0 0 425.4 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/cpm5@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-booting { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-booting { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-crit { --led-color: #d0021b; }
+    g[data-ref^='nokia/cpm5@'] .state-down { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-fault { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-free-running { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-free-running { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-holdover { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-holdover { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-link-10-fd { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-link-10-hd { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-link-10-hd { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-link-100-fd { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-link-100-hd { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-link-100-hd { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-loading { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-loading { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-locked { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-maj { --led-color: #d0021b; }
+    g[data-ref^='nokia/cpm5@'] .state-min { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-no-power { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-no-signal { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-not-qualified { --led-color: #f5a623; }
+    g[data-ref^='nokia/cpm5@'] .state-on { --led-color: #1e73d8; }
+    g[data-ref^='nokia/cpm5@'] .state-over-temperature { --led-color: #d0021b; }
+    g[data-ref^='nokia/cpm5@'] .state-primary { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-secondary { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-secondary { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-selected { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-signal { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-standby { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-standby { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-synchronizing { --led-color: #39b54a; }
+    g[data-ref^='nokia/cpm5@'] .state-synchronizing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/cpm5@'] .state-up { --led-color: #39b54a; }</style>
+  <g id="sfm5-12" data-path="sfm5-12" data-class="fabric" data-behaviour="fills" data-ref="nokia/sfm5-12@1:1.0.0" data-body-depth="457.2" data-model="7750 SR SFM5-12" data-part-number="3HE08428AA" data-part-number-variants="3HE08428AA, 3HE08430AA" data-power-draw-max-w="260" data-power-draw-typical-w="240" transform="translate(0,0)">
+    <title>sfm5-12</title>
+    <rect id="sfm5-12--face" x="0" y="0" width="425.4" height="35.4" rx="0.8" fill="#2e3034" stroke="#1a1c1f" stroke-width="0.3" />
+    <rect x="0" y="0" width="16.7" height="35.4" rx="0.8" fill="#27292d" stroke="#1a1c1f" stroke-width="0.3" />
+    <rect x="408.7" y="0" width="16.7" height="35.4" rx="0.8" fill="#27292d" stroke="#1a1c1f" stroke-width="0.3" />
+    <line x1="16.3" y1="0.4" x2="16.3" y2="35" stroke="#3f4247" stroke-width="0.5" />
+    <line x1="409.1" y1="0.4" x2="409.1" y2="35" stroke="#3f4247" stroke-width="0.5" />
+    <g id="sfm5-12--cpm" data-path="sfm5-12/cpm" data-class="bay">
+      <rect id="sfm5-12--cpm--opening" x="16.7" y="0" width="392" height="31.8" fill="#141619" stroke="#0b0c0e" stroke-width="0.3" />
+      <g id="sfm5-12--cpm--module" data-path="sfm5-12/cpm/module" data-class="supervisor" data-behaviour="fills" data-ref="nokia/cpm5@1:1.0.0" data-model="7750 SR CPM5" data-part-number="3HE08423AA" data-part-number-variants="3HE08423AA, 3HE08432AA" data-power-draw-max-w="255" data-power-draw-typical-w="180" transform="translate(16.7,0)">
+        <title>sfm5-12--cpm--module</title>
+        <rect id="sfm5-12--cpm--module--face" x="0" y="0" width="392" height="31.8" rx="0.8" fill="#2e3034" stroke="#1a1c1f" stroke-width="0.3" />
+        <rect x="0.43" y="27.25" width="13.72" height="4.27" rx="0.9" fill="#27292c" stroke="#1a1c1f" stroke-width="0.25" />
+        <rect x="377.93" y="27.25" width="13.72" height="4.27" rx="0.9" fill="#27292c" stroke="#1a1c1f" stroke-width="0.25" />
+        <rect x="90.35" y="5.75" width="16.52" height="24.04" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+        <rect x="109.55" y="5.75" width="16.52" height="24.04" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+        <rect x="71.4" y="10.2" width="16.44" height="14.89" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+        <rect id="sfm5-12--cpm--module--reset" x="23.93" y="19.51" width="2.0" height="2.0" fill="none" data-path="sfm5-12/cpm/module/reset" data-class="control" />
+        <circle cx="24.93" cy="20.51" r="0.9" fill="#111315" stroke="#6f757c" stroke-width="0.2" />
+        <g id="sfm5-12--cpm--module--cf2-eject" data-path="sfm5-12/cpm/module/cf2-eject" data-class="control">
+          <rect x="138.93" y="5.12" width="6.74" height="5.7" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+          <rect x="139.38" y="5.57" width="5.69" height="4.72" rx="0.3" fill="#26282b" />
+        </g>
+        <g id="sfm5-12--cpm--module--cf2-slot" data-path="sfm5-12/cpm/module/cf2-slot" data-class="slot" data-depth="3.0">
+          <rect x="146.2" y="6.77" width="45.53" height="5.62" rx="0.4" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+          <rect x="146.9" y="7.87" width="44.1" height="3.4" rx="1.2" fill="#0f1113" />
+        </g>
+        <g id="sfm5-12--cpm--module--cf1-eject" data-path="sfm5-12/cpm/module/cf1-eject" data-class="control">
+          <rect x="138.93" y="17.02" width="6.74" height="5.7" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+          <rect x="139.38" y="17.47" width="5.69" height="4.72" rx="0.3" fill="#26282b" />
+        </g>
+        <g id="sfm5-12--cpm--module--cf1-slot" data-path="sfm5-12/cpm/module/cf1-slot" data-class="slot" data-depth="3.0">
+          <rect x="146.2" y="18.66" width="45.53" height="5.62" rx="0.4" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+          <rect x="146.9" y="19.76" width="44.1" height="3.4" rx="1.2" fill="#0f1113" />
+        </g>
+        <path d="M 190.86 3.87 H 193.73 V 26.0 H 190.86" fill="none" stroke="#8a9096" stroke-width="0.3" />
+        <g id="sfm5-12--cpm--module--cf3-eject" data-path="sfm5-12/cpm/module/cf3-eject" data-class="control">
+          <rect x="195.29" y="16.92" width="6.74" height="5.69" rx="0.3" fill="#3a3d41" stroke="#8a9096" stroke-width="0.25" />
+          <rect x="195.74" y="17.37" width="5.69" height="4.71" rx="0.3" fill="#26282b" />
+        </g>
+        <g id="sfm5-12--cpm--module--cf3-door" data-path="sfm5-12/cpm/module/cf3-door" data-class="slot">
+          <rect x="202.96" y="12.39" width="66.92" height="4.53" fill="#26282b" stroke="#8a9096" stroke-width="0.25" />
+          <path d="M 202.42 15.57 H 267.3 A 2.4 2.4 0 0 1 270.29 17.9 V 23.0 A 2.4 2.4 0 0 1 267.3 25.31 H 202.42 Z" fill="#3a3d41" stroke="#8a9096" stroke-width="0.3" />
+          <circle cx="265.88" cy="20.65" r="3.0" fill="#1c1f23" stroke="#6f757c" stroke-width="0.25" />
+          <path d="M 263.9 20.65 H 267.86 M 265.88 18.67 V 22.63" stroke="#6f757c" stroke-width="0.45" />
+        </g>
+        <g id="sfm5-12--cpm--module--dte-dce" data-path="sfm5-12/cpm/module/dte-dce" data-class="control">
+          <rect x="275.18" y="16.65" width="4.76" height="7.45" rx="0.5" fill="#1c1f23" stroke="#8a9096" stroke-width="0.25" />
+          <rect x="275.9" y="17.3" width="3.3" height="3.0" fill="#b8bcc1" />
+        </g>
+        <g id="sfm5-12--cpm--module--aco-lt" data-path="sfm5-12/cpm/module/aco-lt" data-class="control">
+          <circle cx="339.81" cy="20.66" r="3.8" fill="#26282b" stroke="#8a9096" stroke-width="0.3" />
+          <circle cx="339.81" cy="20.66" r="2.86" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.25" />
+        </g>
+        <rect id="sfm5-12--cpm--module--logo-zone" x="335.0" y="2.0" width="40.0" height="8.0" fill="none" data-path="sfm5-12/cpm/module/logo-zone" data-class="label" />
+        <g id="sfm5-12--cpm--module--silkscreen">
+          <rect x="26.64" y="3.13" width="5.82" height="27.05" fill="none" stroke="#e6e6e6" stroke-width="0.25" />
+          <line x1="26.64" y1="16.68" x2="32.46" y2="16.68" stroke="#e6e6e6" stroke-width="0.25" />
+          <path d="M 34.6 27.4 V 26.7 M 33.59 17.42 V 23.18 M 34.6 16.0 V 15.4" fill="none" stroke="#e6e6e6" stroke-width="0.25" />
+          <line x1="65.01" y1="9.66" x2="65.01" y2="23.57" stroke="#e6e6e6" stroke-width="0.25" />
+          <text x="18.16" y="24.42" font-family="Arial, Helvetica, sans-serif" font-size="3.4" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 18.16 24.42)">7750 SR CPM5</text>
+          <text x="22.88" y="23.09" font-family="Arial, Helvetica, sans-serif" font-size="2.2" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 22.88 23.09)">Reset</text>
+          <text x="29.18" y="25.17" font-family="Arial, Helvetica, sans-serif" font-size="2.1" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 29.18 25.17)">Pwr</text>
+          <text x="29.18" y="20.8" font-family="Arial, Helvetica, sans-serif" font-size="2.1" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 29.18 20.8)">Stat</text>
+          <text x="29.18" y="16.21" font-family="Arial, Helvetica, sans-serif" font-size="2.1" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 29.18 16.21)">Pwr</text>
+          <text x="29.18" y="11.85" font-family="Arial, Helvetica, sans-serif" font-size="2.1" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 29.18 11.85)">Stat</text>
+          <text x="31.54" y="29.56" font-family="Arial, Helvetica, sans-serif" font-size="2.1" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 31.54 29.56)">CPM</text>
+          <text x="31.54" y="8.76" font-family="Arial, Helvetica, sans-serif" font-size="2.1" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 31.54 8.76)">SFM</text>
+          <text x="34.78" y="26.28" font-family="Arial, Helvetica, sans-serif" font-size="2.2" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 34.78 26.28)">Ctl</text>
+          <text x="34.78" y="16.88" font-family="Arial, Helvetica, sans-serif" font-size="2.2" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 34.78 16.88)">Ref</text>
+          <text x="36.96" y="29.75" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 36.96 29.75)">M/S</text>
+          <text x="36.95" y="8.62" font-family="Arial, Helvetica, sans-serif" font-size="2" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 36.95 8.62)">Timing</text>
+          <text x="42.06" y="29.75" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 42.06 29.75)">Ref.</text>
+          <text x="47.23" y="29.75" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 47.23 29.75)">Pwr</text>
+          <text x="52.4" y="29.75" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 52.4 29.75)">Pwr</text>
+          <text x="57.76" y="29.75" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 57.76 29.75)">Fan</text>
+          <text x="62.84" y="29.75" font-family="Arial, Helvetica, sans-serif" font-size="2.3" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 62.84 29.75)">CF</text>
+          <text x="65.99" y="8.62" font-family="Arial, Helvetica, sans-serif" font-size="2.2" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 65.99 8.62)">Alarms</text>
+          <text x="70.12" y="23.66" font-family="Arial, Helvetica, sans-serif" font-size="1.8" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 70.12 23.66)">OT</text>
+          <text x="70.12" y="20.32" font-family="Arial, Helvetica, sans-serif" font-size="1.8" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 70.12 20.32)">Crit</text>
+          <text x="70.12" y="16.3" font-family="Arial, Helvetica, sans-serif" font-size="1.8" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 70.12 16.3)">Maj</text>
+          <text x="70.12" y="12.19" font-family="Arial, Helvetica, sans-serif" font-size="1.8" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 70.12 12.19)">Min</text>
+          <text x="76.05" y="4.1" font-family="Arial, Helvetica, sans-serif" font-size="2.7" fill="#e6e6e6" text-anchor="start">Mgmt</text>
+          <text x="71.67" y="9.18" font-family="Arial, Helvetica, sans-serif" font-size="2.6" fill="#e6e6e6" text-anchor="start">Link</text>
+          <text x="81.97" y="9.2" font-family="Arial, Helvetica, sans-serif" font-size="2.6" fill="#e6e6e6" text-anchor="start">Data</text>
+          <text x="95.05" y="4.41" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="start">OES 2</text>
+          <text x="114.97" y="4.41" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="start">BITS</text>
+          <text x="83.51" y="29.5" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e6e6e6" text-anchor="start">OES 1</text>
+          <text x="129.7" y="29.87" font-family="Arial, Helvetica, sans-serif" font-size="2.4" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 129.7 29.87)">SyncE</text>
+          <text x="169" y="4.41" font-family="Arial, Helvetica, sans-serif" font-size="2.6" fill="#e6e6e6" text-anchor="middle">Compact Flash #2</text>
+          <text x="169" y="29.88" font-family="Arial, Helvetica, sans-serif" font-size="2.6" fill="#e6e6e6" text-anchor="middle">Compact Flash #1</text>
+          <text x="231" y="29.88" font-family="Arial, Helvetica, sans-serif" font-size="2.6" fill="#e6e6e6" text-anchor="middle">Compact Flash #3</text>
+          <text x="241.22" y="4.41" font-family="Arial, Helvetica, sans-serif" font-size="2.6" fill="#e6e6e6" text-anchor="start">AUX</text>
+          <text x="277.6" y="15.85" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="middle">DTE</text>
+          <text x="277.6" y="27.01" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="middle">DCE</text>
+          <text x="291.05" y="29.88" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="middle">Console</text>
+          <text x="317.87" y="29.88" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="middle">Alarm</text>
+          <text x="340.16" y="29.88" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="middle">ACO/LT</text>
+          <text x="362" y="29.88" font-family="Arial, Helvetica, sans-serif" font-size="2.5" fill="#e6e6e6" text-anchor="middle">1PPS</text>
+          <path d="M 386.46 1.74 L 390.09 8.03 L 382.83 8.03 Z" fill="#e8c21e" stroke="#1c1c1c" stroke-width="0.2" />
+          <path d="M 385.16 6.93 Q 386.46 4.83 387.76 6.93" fill="none" stroke="#1c1c1c" stroke-width="0.35" />
+        </g>
+        <g id="sfm5-12--cpm--module--screw-left" data-path="sfm5-12/cpm/module/screw-left" data-class="screw" data-z-cyl="1.6">
+          <circle cx="6.78" cy="21.88" r="3.9" fill="#1c1f23" stroke="#0e1012" stroke-width="0.3" />
+          <circle cx="6.78" cy="21.88" r="3.12" fill="none" stroke="#33373c" stroke-width="0.25" />
+          <path d="M 4.36 21.88 H 9.2 M 6.78 19.46 V 24.3" stroke="#4a4f55" stroke-width="0.62" />
+        </g>
+        <g id="sfm5-12--cpm--module--screw-right" data-path="sfm5-12/cpm/module/screw-right" data-class="screw" data-z-cyl="1.6">
+          <circle cx="385.11" cy="21.88" r="3.9" fill="#1c1f23" stroke="#0e1012" stroke-width="0.3" />
+          <circle cx="385.11" cy="21.88" r="3.12" fill="none" stroke="#33373c" stroke-width="0.25" />
+          <path d="M 382.69 21.88 H 387.53 M 385.11 19.46 V 24.3" stroke="#4a4f55" stroke-width="0.62" />
+        </g>
+        <g id="sfm5-12--cpm--module--handle" data-path="sfm5-12/cpm/module/handle" data-class="handle" data-z-out="12.0" data-z-color="#1c1c1c">
+          <rect x="132.94" y="3.27" width="4.39" height="25.03" rx="1.2" fill="#1c1c1c" stroke="#0b0b0b" stroke-width="0.3" />
+          <rect x="133.9" y="4.6" width="2.47" height="22.4" rx="0.8" fill="#2b2d30" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-sfm-stat" data-path="sfm5-12/cpm/module/led-sfm-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(29.88,9.93)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-sfm-stat</title>
+          <circle id="sfm5-12--cpm--module--led-sfm-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-sfm-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-sfm-stat/lamp" data-class="led" data-states="off up booting" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-sfm-pwr" data-path="sfm5-12/cpm/module/led-sfm-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(29.88,13.8)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-sfm-pwr</title>
+          <circle id="sfm5-12--cpm--module--led-sfm-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-sfm-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-sfm-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-cpm-stat" data-path="sfm5-12/cpm/module/led-cpm-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(29.88,17.68)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-cpm-stat</title>
+          <circle id="sfm5-12--cpm--module--led-cpm-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-cpm-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-cpm-stat/lamp" data-class="led" data-states="off up loading synchronizing" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-cpm-pwr" data-path="sfm5-12/cpm/module/led-cpm-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(29.88,21.55)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-cpm-pwr</title>
+          <circle id="sfm5-12--cpm--module--led-cpm-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-cpm-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-cpm-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-ms-ctl" data-path="sfm5-12/cpm/module/led-ms-ctl" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(35.05,21.52)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-ms-ctl</title>
+          <circle id="sfm5-12--cpm--module--led-ms-ctl--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-ms-ctl--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-ms-ctl/lamp" data-class="led" data-states="off primary secondary fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-ms-ref" data-path="sfm5-12/cpm/module/led-ms-ref" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(35.05,17.68)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-ms-ref</title>
+          <circle id="sfm5-12--cpm--module--led-ms-ref--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-ms-ref--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-ms-ref/lamp" data-class="led" data-states="off primary secondary fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-timing" data-path="sfm5-12/cpm/module/led-timing" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(35.05,9.93)" data-group="status-leds" data-group-role="indicator" data-description="the CPM and SFM Pwr and Stat lamps, M/S Ctl and Ref, and Timing">
+          <title>sfm5-12--cpm--module--led-timing</title>
+          <circle id="sfm5-12--cpm--module--led-timing--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-timing--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-timing/lamp" data-class="led" data-states="off locked holdover free-running" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-ref-1" data-path="sfm5-12/cpm/module/led-ref-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(40.22,21.55)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-ref-1</title>
+          <circle id="sfm5-12--cpm--module--led-ref-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-ref-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-ref-1/lamp" data-class="led" data-states="off selected standby not-qualified" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-ref-2" data-path="sfm5-12/cpm/module/led-ref-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(40.22,17.68)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-ref-2</title>
+          <circle id="sfm5-12--cpm--module--led-ref-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-ref-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-ref-2/lamp" data-class="led" data-states="off selected standby not-qualified" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-ref-3" data-path="sfm5-12/cpm/module/led-ref-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(40.22,13.8)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-ref-3</title>
+          <circle id="sfm5-12--cpm--module--led-ref-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-ref-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-ref-3/lamp" data-class="led" data-states="off selected standby not-qualified" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-1" data-path="sfm5-12/cpm/module/led-pwr-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(45.39,21.55)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-1</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-1/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-2" data-path="sfm5-12/cpm/module/led-pwr-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(45.39,17.68)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-2</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-2/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-3" data-path="sfm5-12/cpm/module/led-pwr-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(45.39,13.8)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-3</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-3/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-4" data-path="sfm5-12/cpm/module/led-pwr-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(45.39,9.91)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-4</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-4/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-5" data-path="sfm5-12/cpm/module/led-pwr-5" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(50.56,21.55)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-5</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-5/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-6" data-path="sfm5-12/cpm/module/led-pwr-6" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(50.56,17.68)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-6</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-6/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-7" data-path="sfm5-12/cpm/module/led-pwr-7" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(50.56,13.8)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-7</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-7/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-pwr-8" data-path="sfm5-12/cpm/module/led-pwr-8" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(50.56,9.91)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-pwr-8</title>
+          <circle id="sfm5-12--cpm--module--led-pwr-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-pwr-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-pwr-8/lamp" data-class="led" data-states="off up no-power fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-fan-1" data-path="sfm5-12/cpm/module/led-fan-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(55.73,21.55)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-fan-1</title>
+          <circle id="sfm5-12--cpm--module--led-fan-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-fan-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-fan-1/lamp" data-class="led" data-states="off up fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-fan-2" data-path="sfm5-12/cpm/module/led-fan-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(55.73,17.68)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-fan-2</title>
+          <circle id="sfm5-12--cpm--module--led-fan-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-fan-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-fan-2/lamp" data-class="led" data-states="off up fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-fan-3" data-path="sfm5-12/cpm/module/led-fan-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(55.73,13.8)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-fan-3</title>
+          <circle id="sfm5-12--cpm--module--led-fan-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-fan-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-fan-3/lamp" data-class="led" data-states="off up fault" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-cf-1" data-path="sfm5-12/cpm/module/led-cf-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(60.88,21.55)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-cf-1</title>
+          <circle id="sfm5-12--cpm--module--led-cf-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-cf-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-cf-1/lamp" data-class="led" data-states="off active fault down" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-cf-2" data-path="sfm5-12/cpm/module/led-cf-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(60.88,17.68)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-cf-2</title>
+          <circle id="sfm5-12--cpm--module--led-cf-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-cf-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-cf-2/lamp" data-class="led" data-states="off active fault down" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-cf-3" data-path="sfm5-12/cpm/module/led-cf-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(60.88,13.8)" data-group="system-leds" data-group-role="indicator" data-description="Ref 1-3, Pwr 1-8 (only 1 and 2 are ever lit in the SR-7 and SR-12), Fan 1-3 and CF 1-3">
+          <title>sfm5-12--cpm--module--led-cf-3</title>
+          <circle id="sfm5-12--cpm--module--led-cf-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-cf-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-cf-3/lamp" data-class="led" data-states="off active fault down" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-ot" data-path="sfm5-12/cpm/module/led-ot" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(66.08,21.55)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+          <title>sfm5-12--cpm--module--led-ot</title>
+          <circle id="sfm5-12--cpm--module--led-ot--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-ot--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-ot/lamp" data-class="led" data-states="off over-temperature" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-crit" data-path="sfm5-12/cpm/module/led-crit" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(66.08,17.68)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+          <title>sfm5-12--cpm--module--led-crit</title>
+          <circle id="sfm5-12--cpm--module--led-crit--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-crit--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-crit/lamp" data-class="led" data-states="off crit" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-maj" data-path="sfm5-12/cpm/module/led-maj" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(66.08,13.77)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+          <title>sfm5-12--cpm--module--led-maj</title>
+          <circle id="sfm5-12--cpm--module--led-maj--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-maj--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-maj/lamp" data-class="led" data-states="off maj" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-min" data-path="sfm5-12/cpm/module/led-min" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(66.08,9.93)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps OT, Crit, Maj and Min">
+          <title>sfm5-12--cpm--module--led-min</title>
+          <circle id="sfm5-12--cpm--module--led-min--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-min--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-min/lamp" data-class="led" data-states="off min" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--mgmt" data-path="sfm5-12/cpm/module/mgmt" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="100m" transform="translate(71.72,11.04)" data-group="mgmt" data-group-role="management">
+          <title>sfm5-12--cpm--module--mgmt</title>
+          <g id="sfm5-12--cpm--module--mgmt--jack" data-path="sfm5-12/cpm/module/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+            <title>sfm5-12--cpm--module--mgmt--jack</title>
+            <path id="sfm5-12--cpm--module--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sfm5-12--cpm--module--mgmt--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sfm5-12--cpm--module--mgmt--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sfm5-12/cpm/module/mgmt/jack/opening" data-class="cutout" />
+            <g id="sfm5-12--cpm--module--mgmt--jack--pins" fill="#a8873c">
+              <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+              <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+              <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+              <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+              <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+              <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+              <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+              <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+            </g>
+            <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+          </g>
+          <path id="sfm5-12--cpm--module--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <rect id="sfm5-12--cpm--module--mgmt--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/mgmt/led-a" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-out="0.3" data-z-color="#0d0f11" />
+          <rect id="sfm5-12--cpm--module--mgmt--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/mgmt/led-b" data-class="led" data-states="off activity error" data-z-out="0.3" data-z-color="#0d0f11" />
+          <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--oes-2" data-path="sfm5-12/cpm/module/oes-2" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="100m" transform="translate(92.21,5.74) rotate(180 6.35 5.5)" data-group="mgmt" data-group-role="management">
+          <title>sfm5-12--cpm--module--oes-2</title>
+          <g id="sfm5-12--cpm--module--oes-2--jack" data-path="sfm5-12/cpm/module/oes-2/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+            <title>sfm5-12--cpm--module--oes-2--jack</title>
+            <path id="sfm5-12--cpm--module--oes-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sfm5-12--cpm--module--oes-2--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sfm5-12--cpm--module--oes-2--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sfm5-12/cpm/module/oes-2/jack/opening" data-class="cutout" />
+            <g id="sfm5-12--cpm--module--oes-2--jack--pins" fill="#a8873c">
+              <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+              <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+              <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+              <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+              <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+              <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+              <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+              <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+            </g>
+            <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+          </g>
+          <path id="sfm5-12--cpm--module--oes-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <rect id="sfm5-12--cpm--module--oes-2--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/oes-2/led-a" data-class="led" data-states="off activity error" data-z-out="0.3" data-z-color="#0d0f11" />
+          <rect id="sfm5-12--cpm--module--oes-2--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/oes-2/led-b" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-out="0.3" data-z-color="#0d0f11" />
+          <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--oes-1" data-path="sfm5-12/cpm/module/oes-1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="100m" transform="translate(92.21,18.8)" data-group="mgmt" data-group-role="management">
+          <title>sfm5-12--cpm--module--oes-1</title>
+          <g id="sfm5-12--cpm--module--oes-1--jack" data-path="sfm5-12/cpm/module/oes-1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+            <title>sfm5-12--cpm--module--oes-1--jack</title>
+            <path id="sfm5-12--cpm--module--oes-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sfm5-12--cpm--module--oes-1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+            <path id="sfm5-12--cpm--module--oes-1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sfm5-12/cpm/module/oes-1/jack/opening" data-class="cutout" />
+            <g id="sfm5-12--cpm--module--oes-1--jack--pins" fill="#a8873c">
+              <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+              <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+              <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+              <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+              <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+              <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+              <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+              <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+            </g>
+            <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+          </g>
+          <path id="sfm5-12--cpm--module--oes-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <rect id="sfm5-12--cpm--module--oes-1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/oes-1/led-a" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-out="0.3" data-z-color="#0d0f11" />
+          <rect id="sfm5-12--cpm--module--oes-1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/oes-1/led-b" data-class="led" data-states="off activity error" data-z-out="0.3" data-z-color="#0d0f11" />
+          <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--bits" data-path="sfm5-12/cpm/module/bits" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj48" transform="translate(111.41,5.74) rotate(180 6.35 5.5)" data-group="timing" data-group-role="management">
+          <title>sfm5-12--cpm--module--bits</title>
+          <path id="sfm5-12--cpm--module--bits--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sfm5-12--cpm--module--bits--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sfm5-12--cpm--module--bits--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sfm5-12/cpm/module/bits/opening" data-class="cutout" />
+          <g id="sfm5-12--cpm--module--bits--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-bits-lnk" data-path="sfm5-12/cpm/module/led-bits-lnk" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(111.23,3.9)" data-group="timing-leds" data-group-role="indicator" data-description="the BITS link lamp and the SyncE Link and Data lamps, drawn as dots at the jacks' latch edges">
+          <title>sfm5-12--cpm--module--led-bits-lnk</title>
+          <circle id="sfm5-12--cpm--module--led-bits-lnk--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-bits-lnk--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-bits-lnk/lamp" data-class="led" data-states="off no-signal signal" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--synce" data-path="sfm5-12/cpm/module/synce" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-sync" transform="translate(111.41,18.8)" data-group="timing" data-group-role="management">
+          <title>sfm5-12--cpm--module--synce</title>
+          <path id="sfm5-12--cpm--module--synce--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sfm5-12--cpm--module--synce--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sfm5-12--cpm--module--synce--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="sfm5-12/cpm/module/synce/opening" data-class="cutout" />
+          <g id="sfm5-12--cpm--module--synce--pins" fill="#a8873c">
+            <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+            <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+            <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+            <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+            <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+            <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+            <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+            <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+          </g>
+          <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-synce-lnk" data-path="sfm5-12/cpm/module/led-synce-lnk" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(111.23,29.4)" data-group="timing-leds" data-group-role="indicator" data-description="the BITS link lamp and the SyncE Link and Data lamps, drawn as dots at the jacks' latch edges">
+          <title>sfm5-12--cpm--module--led-synce-lnk</title>
+          <circle id="sfm5-12--cpm--module--led-synce-lnk--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-synce-lnk--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-synce-lnk/lamp" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--led-synce-data" data-path="sfm5-12/cpm/module/led-synce-data" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(122.37,29.4)" data-group="timing-leds" data-group-role="indicator" data-description="the BITS link lamp and the SyncE Link and Data lamps, drawn as dots at the jacks' latch edges">
+          <title>sfm5-12--cpm--module--led-synce-data</title>
+          <circle id="sfm5-12--cpm--module--led-synce-data--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+          <circle id="sfm5-12--cpm--module--led-synce-data--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="sfm5-12/cpm/module/led-synce-data/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+        </g>
+        <g id="sfm5-12--cpm--module--aux" data-path="sfm5-12/cpm/module/aux" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(209.0,1.0)" data-group="mgmt" data-group-role="management">
+          <title>sfm5-12--cpm--module--aux</title>
+          <g id="sfm5-12--cpm--module--aux--bore-floor">
+            <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+            <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+          </g>
+          <path id="sfm5-12--cpm--module--aux--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+          <g id="sfm5-12--cpm--module--aux--shell" data-path="sfm5-12/cpm/module/aux/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+            <title>sfm5-12--cpm--module--aux--shell</title>
+            <path id="sfm5-12--cpm--module--aux--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="sfm5-12/cpm/module/aux/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+            <path id="sfm5-12--cpm--module--aux--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--aux--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+          </g>
+          <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--console" data-path="sfm5-12/cpm/module/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" transform="translate(283.56,12.43) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+          <title>sfm5-12--cpm--module--console</title>
+          <path id="sfm5-12--cpm--module--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sfm5-12--cpm--module--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+          <path id="sfm5-12--cpm--module--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="sfm5-12/cpm/module/console/opening" data-class="cutout" />
+          <g id="sfm5-12--cpm--module--console--pins" fill="#a8873c">
+            <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+            <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+            <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+            <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+            <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+            <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+            <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+            <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+          </g>
+          <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--alarm" data-path="sfm5-12/cpm/module/alarm" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(302.59,13.94)" data-group="mgmt" data-group-role="management">
+          <title>sfm5-12--cpm--module--alarm</title>
+          <g id="sfm5-12--cpm--module--alarm--bore-floor">
+            <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+            <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+          </g>
+          <path id="sfm5-12--cpm--module--alarm--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+          <g id="sfm5-12--cpm--module--alarm--shell" data-path="sfm5-12/cpm/module/alarm/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+            <title>sfm5-12--cpm--module--alarm--shell</title>
+            <path id="sfm5-12--cpm--module--alarm--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="sfm5-12/cpm/module/alarm/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+            <path id="sfm5-12--cpm--module--alarm--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <circle id="sfm5-12--cpm--module--alarm--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+            <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+          </g>
+          <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+        </g>
+        <g id="sfm5-12--cpm--module--pps-1" data-path="sfm5-12/cpm/module/pps-1" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(358.9,17.49)" data-group="timing" data-group-role="management">
+          <title>sfm5-12--cpm--module--pps-1</title>
+          <path id="sfm5-12--cpm--module--pps-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+          <g id="sfm5-12--cpm--module--pps-1--jack" data-path="sfm5-12/cpm/module/pps-1/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+            <title>sfm5-12--cpm--module--pps-1--jack</title>
+            <circle id="sfm5-12--cpm--module--pps-1--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="sfm5-12/cpm/module/pps-1/jack/opening" data-class="cutout" />
+            <g id="sfm5-12--cpm--module--pps-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+              <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+              <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+              <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+            </g>
+            <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+          </g>
+          <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="196 15.9" data-cp-dir="rear" />
+      </g>
+    </g>
+    <rect id="sfm5-12--model-label" x="0.8" y="5.4" width="8.8" height="11.4" rx="0.8" fill="#222428" stroke="#44474c" stroke-width="0.3" data-path="sfm5-12/model-label" data-class="label" />
+    <rect id="sfm5-12--logo-zone" x="411.9" y="1.5" width="11.0" height="13.0" fill="none" data-path="sfm5-12/logo-zone" data-class="label" />
+    <g id="sfm5-12--screw-left" data-path="sfm5-12/screw-left" data-class="screw" data-z-cyl="1.6">
+      <circle cx="6.6" cy="21.6" r="4" fill="#1c1f23" stroke="#0e1012" stroke-width="0.3" />
+      <circle cx="6.6" cy="21.6" r="3.2" fill="none" stroke="#33373c" stroke-width="0.25" />
+      <path d="M 4.12 21.6 H 9.08 M 6.6 19.12 V 24.08" stroke="#4a4f55" stroke-width="0.64" />
+    </g>
+    <g id="sfm5-12--screw-right" data-path="sfm5-12/screw-right" data-class="screw" data-z-cyl="1.6">
+      <circle cx="418.8" cy="21.6" r="4" fill="#1c1f23" stroke="#0e1012" stroke-width="0.3" />
+      <circle cx="418.8" cy="21.6" r="3.2" fill="none" stroke="#33373c" stroke-width="0.25" />
+      <path d="M 416.32 21.6 H 421.28 M 418.8 19.12 V 24.08" stroke="#4a4f55" stroke-width="0.64" />
+    </g>
+    <g id="sfm5-12--lever-left" data-path="sfm5-12/lever-left" data-class="latch" data-z-out="4.2" data-z-color="#1c1c1c">
+      <rect x="0.8" y="26.5" width="39.1" height="5.3" rx="2.65" fill="#1c1c1c" stroke="#0b0b0b" stroke-width="0.25" />
+      <circle cx="3.45" cy="29.15" r="1.91" fill="#2a2a2a" stroke="#0b0b0b" stroke-width="0.2" />
+      <circle cx="10.02" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="14.68" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="19.34" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="24.01" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="28.67" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="33.33" cy="29.15" r="1.2" fill="#3d4146" />
+    </g>
+    <g id="sfm5-12--lever-right" data-path="sfm5-12/lever-right" data-class="latch" data-z-out="4.2" data-z-color="#1c1c1c">
+      <rect x="385.5" y="26.5" width="39.1" height="5.3" rx="2.65" fill="#1c1c1c" stroke="#0b0b0b" stroke-width="0.25" />
+      <circle cx="421.95" cy="29.15" r="1.91" fill="#2a2a2a" stroke="#0b0b0b" stroke-width="0.2" />
+      <circle cx="392.07" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="396.73" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="401.39" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="406.06" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="410.72" cy="29.15" r="1.2" fill="#3d4146" />
+      <circle cx="415.38" cy="29.15" r="1.2" fill="#3d4146" />
+    </g>
+    <g id="sfm5-12--silkscreen">
+      <text x="4.2" y="15.8" font-family="Arial, Helvetica, sans-serif" font-size="2.9" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 4.2 15.8)">SFM5</text>
+      <text x="7.9" y="15.8" font-family="Arial, Helvetica, sans-serif" font-size="2.9" fill="#e6e6e6" text-anchor="start" transform="rotate(-90 7.9 15.8)">-12</text>
+    </g>
+    <g data-cp="mate" data-cp-at="212.7 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

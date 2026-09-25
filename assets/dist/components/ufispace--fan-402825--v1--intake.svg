@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="51.5mm" height="42.2mm" viewBox="0 0 51.5 42.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/fan-402825@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='ufispace/fan-402825@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/fan-402825@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="fan-402825" data-path="fan-402825" data-class="fan" data-behaviour="fills" data-ref="ufispace/fan-402825@1:1.2.0" data-airflow="exhaust" data-model="FAN-402825-HD" data-power-absent="not-published" transform="translate(0,0)">
+    <title>fan-402825</title>
+    <defs>
+      <pattern id="fan-402825--hex" width="4.43" height="2.555" patternUnits="userSpaceOnUse">
+        <path d="M 1.275 0 L 0.6375 1.104 L -0.6375 1.104 L -1.275 0 L -0.6375 -1.104 L 0.6375 -1.104 Z" fill="#0d0f11" />
+        <path d="M 5.705 0 L 5.0675 1.104 L 3.7925 1.104 L 3.155 0 L 3.7925 -1.104 L 5.0675 -1.104 Z" fill="#0d0f11" />
+        <path d="M 3.49 1.2775 L 2.8525 2.3815 L 1.5775 2.3815 L 0.94 1.2775 L 1.5775 0.1735 L 2.8525 0.1735 Z" fill="#0d0f11" />
+        <path d="M 1.275 2.555 L 0.6375 3.659 L -0.6375 3.659 L -1.275 2.555 L -0.6375 1.451 L 0.6375 1.451 Z" fill="#0d0f11" />
+        <path d="M 5.705 2.555 L 5.0675 3.659 L 3.7925 3.659 L 3.155 2.555 L 3.7925 1.451 L 5.0675 1.451 Z" fill="#0d0f11" />
+      </pattern>
+    </defs>
+    <rect id="fan-402825--body" x="0" y="0" width="51.5" height="42.2" rx="0.6" fill="#2b2f33" stroke="#1a1d20" stroke-width="0.4" />
+    <rect id="fan-402825--grille" x="1.0" y="1.0" width="40.5" height="40.2" rx="0.4" fill="url(#fan-402825--hex)" data-z-vent="25" />
+    <rect id="fan-402825--flange" x="41.5" y="0.6" width="9.4" height="41.0" rx="0.4" fill="#33373c" />
+    <path id="fan-402825--handle" fill="none" stroke="#4867aa" stroke-width="2.8" stroke-linecap="round" data-stroke-from="handle-finish" d="M 15.0 4.7 L 10.8 4.7 A 2.8 2.8 0 0 0 8.0 7.5 L 8.0 29.3 A 2.8 2.8 0 0 0 10.8 32.1 L 15.0 32.1" data-z-uhandle="25" />
+    <g id="fan-402825--silkscreen">
+      <rect x="44.5" y="10.4" width="6.3" height="7.3" rx="0.4" fill="#496aad" />
+      <text x="47.65" y="16.6" font-family="sans-serif" font-size="6.2" font-weight="bold" text-anchor="middle" fill="#17191c">I</text>
+    </g>
+    <g id="fan-402825--thumbscrew" data-z-cyl="5" data-z-knurl="1">
+      <circle cx="43.9" cy="23.9" r="3.15" fill="#b9bec4" stroke="#6b7178" stroke-width="0.3" />
+      <circle cx="43.9" cy="23.9" r="1.5" fill="none" stroke="#8a9099" stroke-width="0.3" />
+      <line x1="42.4" y1="23.9" x2="45.4" y2="23.9" stroke="#6b7178" stroke-width="0.35" />
+    </g>
+    <circle id="fan-402825--status-led" cx="49.4" cy="32.85" r="1.5" fill="var(--led-color, #3a3f44)" data-path="fan-402825/status-led" data-class="led" data-states="off ok fault" data-description="HIG Fan FRU LED table - Off (main board 3.3V power fail, or fan not present), Solid Green (fan present and interrupt de-assert), Blinking Yellow (fan present but interrupt assert). The table's Blinking Green and Solid Yellow rows read N/A and are deliberately not modelled" data-z-dome="0.4" />
+  </g>
+</svg>

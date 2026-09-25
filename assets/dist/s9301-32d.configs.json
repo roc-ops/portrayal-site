@@ -1416,6 +1416,7 @@
   "airflow": "front-to-back",
   "d": 645,
   "h": 43.8,
+  "power": null,
   "ru": 1,
   "w": 436
  },
@@ -1423,11 +1424,27 @@
   {
    "airflow": "front-to-back",
    "bays": {},
-   "description": "Dual 1300W AC PSUs with front-to-back airflow fans (FAN-405637-HD, red handles) - the build both vendor rear renders show. The back-to-front build (blue handles and latches, FAN-405637-CD) is orderable and is not modelled; no held document ties a PSU part number to a latch colour (see the psu-airflow-sku-mapping gap) and none prints a chassis SKU (see chassis-sku)",
+   "description": "Dual 1300W AC PSUs (PSU-132-AESR, exhaust, red latch) with front-to-back airflow fans (FAN-405637-HD, red handles) - the build both vendor rear renders show. The back-to-front build is ac-b2f. The PSU part numbers are paired with airflow by inference (see the psu-airflow-sku-mapping gap); no held document prints a chassis SKU (see chassis-sku)",
    "kind": "base",
    "name": "ac",
    "occupants": {},
    "part-numbers": {},
+   "power": [
+    "ac"
+   ],
+   "views": {}
+  },
+  {
+   "airflow": "back-to-front",
+   "bays": {},
+   "description": "Dual 1300W AC PSUs (PSU-132-AISB, intake) with back-to-front fans (FAN-405637-CD) - the HIG's blue-latch, blue-handle build (Figures 6 and 8, Fan Overview). The PSU part number is paired by inference; see the psu-airflow-sku-mapping gap",
+   "kind": "orderable",
+   "name": "ac-b2f",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "ac"
+   ],
    "views": {}
   },
   {
@@ -1441,6 +1458,25 @@
    "name": "dc",
    "occupants": {},
    "part-numbers": {},
+   "power": [
+    "dc"
+   ],
+   "views": {}
+  },
+  {
+   "airflow": "back-to-front",
+   "bays": {
+    "psu-0": "ufispace/psu-132-dc@1",
+    "psu-1": "ufispace/psu-132-dc@1"
+   },
+   "description": "Dual 1300W DC PSUs (PSU-132-DISB, intake) with back-to-front fans (FAN-405637-CD), blue latches and handles",
+   "kind": "orderable",
+   "name": "dc-b2f",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "dc"
+   ],
    "views": {}
   }
  ],
@@ -1489,11 +1525,13 @@
    "because": "vendor-silent",
    "blocks": [],
    "kind": "declared",
-   "note": "The datasheet lists four AC/DC PSU SKUs by airflow word (PSU-132-AESR 'exhaust air flow', -AISB 'intake air flow', and the DC pair the same way) and the HIG's Figures 6 and 8 distinguish the two builds only by LATCH COLOUR ('blue latch' for back-to-front, 'red latch' for front-to-back). No held document joins a part number to a colour or to a system airflow direction, so the configurations here name the airflow and let the PSU components keep their own model attrs rather than asserting a pairing. The fan side IS documented by colour (HIG Fan Overview: blue handle back-to-front, red handle front-to-back) and the red FAN-405637-HD is what the modelled build seats.",
+   "note": "The datasheet lists four AC/DC PSU SKUs by airflow word (PSU-132-AESR 'exhaust air flow', -AISB 'intake air flow', and the DC pair the same way) and the HIG's Figures 6 and 8 distinguish the two builds only by LATCH COLOUR ('blue latch' for back-to-front, 'red latch' for front-to-back). No held document joins a part number to a colour or to a system airflow direction. The fan side IS documented by colour (HIG Fan Overview: blue handle back-to-front, red handle front-to-back), and the configurations pair the supplies by inference: exhaust is front-to-back for these rear-mounted supplies, as the red FAN-405637-HD fan is 'exhaust air flow' and the S9600-72XC, sold front-to-back only, lists only exhaust units (the reasoning is on ufispace/psu-132-ac@1's airflow provenance). So ac and dc name PSU-132-AESR/DESR and the b2f builds PSU-132-AISB/DISB. A UfiSpace document stating the pairing would close this.",
    "scope": [
     "psus",
     "ac",
-    "dc"
+    "dc",
+    "ac-b2f",
+    "dc-b2f"
    ],
    "wanted": "a UfiSpace ordering guide that prints the SKU beside the airflow direction",
    "what": "psu-airflow-sku-mapping"
@@ -1549,6 +1587,16 @@
   }
  ],
  "model": "S9301-32D",
+ "options": {
+  "airflow": [
+   "back-to-front",
+   "front-to-back"
+  ],
+  "power": [
+   "ac",
+   "dc"
+  ]
+ },
  "provenance": {
   "attrs": {
    "confidence": "datasheet",

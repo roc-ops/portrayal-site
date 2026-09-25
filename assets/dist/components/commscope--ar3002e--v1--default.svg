@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.76mm" height="130.2mm" viewBox="0 0 25.76 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ar3002e" data-path="ar3002e" data-class="line-card" data-behaviour="fills" data-ref="commscope/ar3002e@1:1.0.0" data-body-depth="330.0" data-back-plate="BP-A5 or BP-35D4x" data-model="AR3002E-1-AS" data-optical-input-range="-6 to +3 dBm typical, 1270-1650 nm" data-output-level="28 dBmV/ch at 0 dBm input, 4% OMI" data-power-draw-max-w="11" data-rf-passband="46-1218 MHz" data-role="receiver" data-slots="1" transform="translate(0,0)">
+    <title>ar3002e</title>
+    <defs>
+      <linearGradient id="ar3002e--plate" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8a8f95" />
+        <stop offset="1" stop-color="#6f747a" />
+      </linearGradient>
+      <radialGradient id="ar3002e--nut" cx="0.45" cy="0.4" r="0.7">
+        <stop offset="0" stop-color="#e2e4e6" />
+        <stop offset="1" stop-color="#9ea3a8" />
+      </radialGradient>
+    </defs>
+    <rect id="ar3002e--body" x="0" y="0" width="25.76" height="130.2" rx="1.0" fill="url(#ar3002e--plate)" stroke="#55595e" stroke-width="0.3" />
+    <g id="ar3002e--screw-top" data-path="ar3002e/screw-top" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.9" fill="#1d1f22" />
+      <circle cx="12.88" cy="5.0" r="3.2" fill="#2e3135" />
+    </g>
+    <rect id="ar3002e--vent-left" x="2.6" y="24.9" width="2.6" height="53.7" rx="1.2" fill="#16181a" data-path="ar3002e/vent-left" data-class="vent" />
+    <g id="ar3002e--vent-right" fill="#16181a" data-path="ar3002e/vent-right" data-class="vent">
+      <rect x="20.3" y="24.5" width="2.6" height="32.0" rx="1.2" />
+      <rect x="20.3" y="63.5" width="2.6" height="21.9" rx="1.2" />
+      <rect x="15.7" y="63.4" width="2.6" height="21.9" rx="1.2" />
+    </g>
+    <rect id="ar3002e--vent-mid" x="6.9" y="57.0" width="2.6" height="9.1" rx="1.2" fill="#16181a" data-path="ar3002e/vent-mid" data-class="vent" />
+    <rect x="8.7" y="70.0" width="4.6" height="9.9" rx="0.8" fill="#3a3d41" />
+    <g fill="#16181a">
+      <circle cx="12.8" cy="64.7" r="1.1" />
+      <circle cx="8.1" cy="83.9" r="1.1" />
+      <circle cx="12.7" cy="84.0" r="1.1" />
+    </g>
+    <g id="ar3002e--test-point" data-path="ar3002e/test-point" data-class="port">
+      <circle cx="12.9" cy="105.2" r="7.9" fill="url(#ar3002e--nut)" stroke="#6d7277" stroke-width="0.3" />
+      <circle cx="12.9" cy="105.2" r="5.6" fill="none" stroke="#8e9398" stroke-width="0.4" />
+      <circle cx="12.9" cy="105.2" r="1.3" fill="#55595e" />
+    </g>
+    <g id="ar3002e--screw-bottom" data-path="ar3002e/screw-bottom" data-class="fastener">
+      <circle cx="12.88" cy="125.2" r="4.9" fill="#1d1f22" />
+      <circle cx="12.88" cy="125.2" r="3.2" fill="#2e3135" />
+    </g>
+    <g id="ar3002e--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="12.88" y="13.8" font-size="2.5">Forward Receiver</text>
+      <text x="12.88" y="17.1" font-size="2.5">AR3002E</text>
+      <text x="12.88" y="20.4" font-size="2.5">1.2 GHz</text>
+      <g fill="none" stroke="#eef0f2" stroke-width="0.22">
+        <path d="M 9.3 26.7 H 7.7 V 43.0 H 18.5 V 26.7 H 16.5" />
+        <path d="M 9.0 45.3 H 7.7 V 53.5 H 18.5 V 45.3 H 16.8" />
+      </g>
+      <text x="12.9" y="27.5" font-size="2.1">Status</text>
+      <text x="12.9" y="46.1" font-size="2.1">Access</text>
+      <text x="12.9" y="95.2" font-size="2.5">Out TP</text>
+      <text x="12.88" y="119.4" font-size="3.0" letter-spacing="1.1" fill="#26292c">ARRIS</text>
+    </g>
+    <g id="ar3002e--led-status-1" data-path="ar3002e/led-status-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(11.9,29.8)">
+      <title>ar3002e--led-status-1</title>
+      <circle id="ar3002e--led-status-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ar3002e--led-status-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ar3002e/led-status-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ar3002e--led-status-2" data-path="ar3002e/led-status-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(11.9,34.1)">
+      <title>ar3002e--led-status-2</title>
+      <circle id="ar3002e--led-status-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ar3002e--led-status-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ar3002e/led-status-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ar3002e--led-status-3" data-path="ar3002e/led-status-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(11.9,38.4)">
+      <title>ar3002e--led-status-3</title>
+      <circle id="ar3002e--led-status-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ar3002e--led-status-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ar3002e/led-status-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ar3002e--led-access" data-path="ar3002e/led-access" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(11.9,48.6)">
+      <title>ar3002e--led-access</title>
+      <circle id="ar3002e--led-access--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ar3002e--led-access--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ar3002e/led-access/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ar3002e--usb" data-path="ar3002e/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(7.25,73.5) rotate(90 3.75 1.375)">
+      <title>ar3002e--usb</title>
+      <rect id="ar3002e--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="ar3002e--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="ar3002e/usb/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.88 65.1" data-cp-dir="front" />
+  </g>
+</svg>

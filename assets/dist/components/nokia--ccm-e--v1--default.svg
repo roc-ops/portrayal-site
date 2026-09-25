@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="193.0mm" height="35.4mm" viewBox="0 0 193.0 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/ccm-e@'] .state-activity { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/ccm-e@'] .state-critical { --led-color: #d0021b; }
+    g[data-ref^='nokia/ccm-e@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/ccm-e@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/ccm-e@'] .state-link-10-fd { --led-color: #f5a623; }
+    g[data-ref^='nokia/ccm-e@'] .state-link-10-hd { --led-color: #f5a623; }
+    g[data-ref^='nokia/ccm-e@'] .state-link-10-hd { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/ccm-e@'] .state-link-100-fd { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-link-100-hd { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-link-100-hd { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/ccm-e@'] .state-loading { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-loading { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/ccm-e@'] .state-los { --led-color: #f5a623; }
+    g[data-ref^='nokia/ccm-e@'] .state-major { --led-color: #d0021b; }
+    g[data-ref^='nokia/ccm-e@'] .state-minor { --led-color: #f5a623; }
+    g[data-ref^='nokia/ccm-e@'] .state-on { --led-color: #1e73d8; }
+    g[data-ref^='nokia/ccm-e@'] .state-primary { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-secondary { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-secondary { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/ccm-e@'] .state-selected { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-standby { --led-color: #39b54a; }
+    g[data-ref^='nokia/ccm-e@'] .state-standby { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="ccm-e" data-path="ccm-e" data-class="supervisor" data-behaviour="fills" data-ref="nokia/ccm-e@1:1.1.0" data-body-depth="188.0" data-model="7750 SR-e CCM-e" data-power-draw-max-w="16" data-power-draw-typical-w="14" data-weight-kg="0.7" transform="translate(0,0)">
+    <title>ccm-e</title>
+    <rect id="ccm-e--face" x="0" y="0" width="193.0" height="35.4" rx="0.8" fill="#34383d" stroke="#1d2023" stroke-width="0.3" />
+    <rect id="ccm-e--jack-shell" x="39.0" y="7.5" width="30.4" height="23.9" rx="0.3" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+    <g class="dsub-nut">
+      <polygon points="79.00,20.60 77.65,22.94 74.95,22.94 73.60,20.60 74.95,18.26 77.65,18.26" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+      <circle cx="76.3" cy="20.6" r="1.2" fill="#2b2e33" />
+    </g>
+    <g class="dsub-nut">
+      <polygon points="112.50,20.60 111.15,22.94 108.45,22.94 107.10,20.60 108.45,18.26 111.15,18.26" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.25" />
+      <circle cx="109.8" cy="20.6" r="1.2" fill="#2b2e33" />
+    </g>
+    <g id="ccm-e--dte-dce" data-path="ccm-e/dte-dce" data-class="control">
+      <rect x="21.9" y="4.4" width="7.7" height="5.2" rx="0.3" fill="#2b2e33" stroke="#6f757c" stroke-width="0.25" />
+      <rect x="24.6" y="4.9" width="2.3" height="4.2" fill="#b8bcc1" />
+    </g>
+    <g id="ccm-e--cf-slot" data-path="ccm-e/cf-slot" data-class="slot" data-depth="3.0">
+      <path d="M 129.8 19.6 L 131.4 18.2 H 175.9 V 25.7 H 129.8 Z" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.3" />
+      <rect x="130.6" y="20.2" width="43.6" height="4.4" fill="#1d2023" />
+      <rect x="131.6" y="21.0" width="41.2" height="2.6" fill="#6f757c" />
+    </g>
+    <g id="ccm-e--cf-eject" data-path="ccm-e/cf-eject" data-class="control">
+      <rect x="176.4" y="18.0" width="5.7" height="4.7" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.3" />
+    </g>
+    <rect id="ccm-e--logo-zone" x="76.0" y="28.0" width="30.0" height="5.0" fill="none" data-path="ccm-e/logo-zone" data-class="label" />
+    <g id="ccm-e--silkscreen">
+      <text x="21.3" y="8.0" font-family="Arial" font-size="1.9" fill="#e6e8ea" text-anchor="end" font-weight="bold">DTE</text>
+      <text x="30.2" y="8.0" font-family="Arial" font-size="1.9" fill="#e6e8ea" text-anchor="start" font-weight="bold">DCE</text>
+      <text x="10.2" y="20.4" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="end" font-weight="bold">Stat</text>
+      <text x="10.2" y="25.4" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="end" font-weight="bold">Pwr</text>
+      <text x="25.9" y="16.4" font-family="Arial" font-size="2.1" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Console</text>
+      <text x="41.8" y="5.4" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Lnk</text>
+      <text x="51.8" y="5.4" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Flt</text>
+      <text x="56.5" y="5.4" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Lnk</text>
+      <text x="66.5" y="5.4" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Flt</text>
+      <text x="37.9" y="13.2" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="middle" font-weight="bold" transform="rotate(-90 37.9 13.2)">OES</text>
+      <text x="37.9" y="25.0" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="middle" font-weight="bold" transform="rotate(-90 37.9 25.0)">Mgmt</text>
+      <text x="72.1" y="13.2" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="middle" font-weight="bold" transform="rotate(-90 72.1 13.2)">BITS</text>
+      <text x="72.1" y="25.0" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold" transform="rotate(-90 72.1 25.0)">SyncE/1588</text>
+      <text x="84.5" y="5.6" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Critical</text>
+      <text x="93.1" y="5.6" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Major</text>
+      <text x="102.2" y="5.6" font-family="Arial" font-size="1.7" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Minor</text>
+      <text x="93.3" y="13.3" font-family="Arial" font-size="2.3" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Alarms</text>
+      <text x="120.8" y="29.0" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="middle" font-weight="bold">ACO/LT</text>
+      <text x="138.6" y="10.4" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="end" font-weight="bold">1PPS</text>
+      <text x="155.5" y="17.0" font-family="Arial" font-size="2.0" fill="#e6e8ea" text-anchor="middle" font-weight="bold">Compact Flash</text>
+      <text x="162.5" y="31.4" font-family="Arial" font-size="2.6" fill="#e6e8ea" text-anchor="middle" font-weight="bold">7750 SR-e CCM-e</text>
+      <path d="M 187.10 25.0 L 190.80 31.50 L 183.4 31.50 Z" fill="none" stroke="#e6e8ea" stroke-width="0.3" />
+      <path d="M 185.62 30.20 Q 187.10 27.93 188.58 30.20" fill="none" stroke="#e6e8ea" stroke-width="0.25" />
+    </g>
+    <g id="ccm-e--screw-left" data-path="ccm-e/screw-left" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="8.5" cy="7.4" r="5.50" fill="#b8bcc1" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="8.5" cy="7.4" r="1.92" fill="none" stroke="#6f757c" stroke-width="0.3" />
+      <path d="M 3.55 5.75 L 13.45 9.05 M 6.85 12.35 L 10.15 2.45" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="ccm-e--screw-right" data-path="ccm-e/screw-right" data-class="screw" data-z-cyl="1.6" data-z-knurl="1">
+      <circle cx="184.5" cy="7.4" r="5.50" fill="#b8bcc1" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="184.5" cy="7.4" r="1.92" fill="none" stroke="#6f757c" stroke-width="0.3" />
+      <path d="M 179.55 5.75 L 189.45 9.05 M 182.85 12.35 L 186.15 2.45" stroke="#6f757c" stroke-width="0.35" />
+    </g>
+    <g id="ccm-e--aco-lt" data-path="ccm-e/aco-lt" data-class="control" data-z-cyl="0.8">
+      <circle cx="120.8" cy="22.0" r="3.1" fill="#b0b5bb" stroke="#6f757c" stroke-width="0.3" />
+      <circle cx="120.8" cy="22.0" r="2.1" fill="#3a3f45" />
+    </g>
+    <g id="ccm-e--alarms" data-path="ccm-e/alarms" data-class="port" data-ref="std/da15@1:1.0.0" data-depth="6.73" data-wall="#3a3e43" data-media="da15" transform="translate(78.65,14.9)" data-group="mgmt" data-group-role="management">
+      <title>ccm-e--alarms</title>
+      <path id="ccm-e--alarms--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L24.683 0.450 A3.350 3.350 0 0 1 27.982 4.382 L27.312 8.182 A3.350 3.350 0 0 1 24.013 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L24.841 1.350 A2.450 2.450 0 0 1 27.254 4.225 L26.584 8.025 A2.450 2.450 0 0 1 24.171 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="ccm-e/alarms/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+      <g id="ccm-e--alarms--socket-floor">
+        <circle cx="4.81" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="7.55" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="10.29" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="13.03" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="15.77" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="18.51" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="21.25" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="23.99" cy="4.28" r="0.5" fill="#050607" />
+        <circle cx="6.18" cy="7.12" r="0.5" fill="#050607" />
+        <circle cx="8.92" cy="7.12" r="0.5" fill="#050607" />
+        <circle cx="11.66" cy="7.12" r="0.5" fill="#050607" />
+        <circle cx="14.4" cy="7.12" r="0.5" fill="#050607" />
+        <circle cx="17.14" cy="7.12" r="0.5" fill="#050607" />
+        <circle cx="19.88" cy="7.12" r="0.5" fill="#050607" />
+        <circle cx="22.62" cy="7.12" r="0.5" fill="#050607" />
+      </g>
+      <path id="ccm-e--alarms--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L24.841 1.350 A2.450 2.450 0 0 1 27.254 4.225 L26.584 8.025 A2.450 2.450 0 0 1 24.171 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M4.310 4.280 A0.500 0.500 0 1 0 5.310 4.280 A0.500 0.500 0 1 0 4.310 4.280 Z M7.050 4.280 A0.500 0.500 0 1 0 8.050 4.280 A0.500 0.500 0 1 0 7.050 4.280 Z M9.790 4.280 A0.500 0.500 0 1 0 10.790 4.280 A0.500 0.500 0 1 0 9.790 4.280 Z M12.530 4.280 A0.500 0.500 0 1 0 13.530 4.280 A0.500 0.500 0 1 0 12.530 4.280 Z M15.270 4.280 A0.500 0.500 0 1 0 16.270 4.280 A0.500 0.500 0 1 0 15.270 4.280 Z M18.010 4.280 A0.500 0.500 0 1 0 19.010 4.280 A0.500 0.500 0 1 0 18.010 4.280 Z M20.750 4.280 A0.500 0.500 0 1 0 21.750 4.280 A0.500 0.500 0 1 0 20.750 4.280 Z M23.490 4.280 A0.500 0.500 0 1 0 24.490 4.280 A0.500 0.500 0 1 0 23.490 4.280 Z M5.680 7.120 A0.500 0.500 0 1 0 6.680 7.120 A0.500 0.500 0 1 0 5.680 7.120 Z M8.420 7.120 A0.500 0.500 0 1 0 9.420 7.120 A0.500 0.500 0 1 0 8.420 7.120 Z M11.160 7.120 A0.500 0.500 0 1 0 12.160 7.120 A0.500 0.500 0 1 0 11.160 7.120 Z M13.900 7.120 A0.500 0.500 0 1 0 14.900 7.120 A0.500 0.500 0 1 0 13.900 7.120 Z M16.640 7.120 A0.500 0.500 0 1 0 17.640 7.120 A0.500 0.500 0 1 0 16.640 7.120 Z M19.380 7.120 A0.500 0.500 0 1 0 20.380 7.120 A0.500 0.500 0 1 0 19.380 7.120 Z M22.120 7.120 A0.500 0.500 0 1 0 23.120 7.120 A0.500 0.500 0 1 0 22.120 7.120 Z" fill="#2b2e33" stroke="#3a3e43" stroke-width="0.2" data-z-out="6.73" data-z-color="#2b2e33" data-z-shape="1" />
+      <g data-cp="mate" data-cp-at="14.4 5.7" data-cp-dir="front" />
+    </g>
+    <g id="ccm-e--led-stat" data-path="ccm-e/led-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(10.8,18.7)" data-group="status-leds" data-group-role="indicator" data-description="the module lamps Stat and Pwr">
+      <title>ccm-e--led-stat</title>
+      <circle id="ccm-e--led-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-stat/lamp" data-class="led" data-states="off loading primary secondary" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--led-pwr" data-path="ccm-e/led-pwr" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(10.8,23.7)" data-group="status-leds" data-group-role="indicator" data-description="the module lamps Stat and Pwr">
+      <title>ccm-e--led-pwr</title>
+      <circle id="ccm-e--led-pwr--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-pwr--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--console" data-path="ccm-e/console" data-class="port" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" transform="translate(18.0,17.9)" data-group="mgmt" data-group-role="management">
+      <title>ccm-e--console</title>
+      <path id="ccm-e--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ccm-e--console--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ccm-e--console--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ccm-e/console/opening" data-class="cutout" />
+      <g id="ccm-e--console--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="ccm-e--oes" data-path="ccm-e/oes" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="100m" transform="translate(40.4,7.75) rotate(180 6.35 5.5)" data-group="mgmt" data-group-role="management">
+      <title>ccm-e--oes</title>
+      <g id="ccm-e--oes--jack" data-path="ccm-e/oes/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>ccm-e--oes--jack</title>
+        <path id="ccm-e--oes--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ccm-e--oes--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ccm-e--oes--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ccm-e/oes/jack/opening" data-class="cutout" />
+        <g id="ccm-e--oes--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="ccm-e--oes--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="ccm-e--oes--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ccm-e/oes/led-a" data-class="led" data-states="off activity error" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="ccm-e--oes--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ccm-e/oes/led-b" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="ccm-e--bits" data-path="ccm-e/bits" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj48" transform="translate(55.05,7.75) rotate(180 6.35 5.5)" data-group="timing" data-group-role="management">
+      <title>ccm-e--bits</title>
+      <path id="ccm-e--bits--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ccm-e--bits--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ccm-e--bits--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ccm-e/bits/opening" data-class="cutout" />
+      <g id="ccm-e--bits--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="ccm-e--led-bits-lnk" data-path="ccm-e/led-bits-lnk" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(56.25,6.0)" data-group="timing-leds" data-group-role="indicator" data-description="the Lnk and Flt lamps of the BITS and SyncE/1588 jacks, drawn as dots at the jacks' latch edges">
+      <title>ccm-e--led-bits-lnk</title>
+      <circle id="ccm-e--led-bits-lnk--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-bits-lnk--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-bits-lnk/lamp" data-class="led" data-states="off selected standby" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--led-bits-flt" data-path="ccm-e/led-bits-flt" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(64.55,6.0)" data-group="timing-leds" data-group-role="indicator" data-description="the Lnk and Flt lamps of the BITS and SyncE/1588 jacks, drawn as dots at the jacks' latch edges">
+      <title>ccm-e--led-bits-flt</title>
+      <circle id="ccm-e--led-bits-flt--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-bits-flt--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-bits-flt/lamp" data-class="led" data-states="off los error" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--mgmt" data-path="ccm-e/mgmt" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="100m" transform="translate(40.4,19.5)" data-group="mgmt" data-group-role="management">
+      <title>ccm-e--mgmt</title>
+      <g id="ccm-e--mgmt--jack" data-path="ccm-e/mgmt/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>ccm-e--mgmt--jack</title>
+        <path id="ccm-e--mgmt--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ccm-e--mgmt--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="ccm-e--mgmt--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ccm-e/mgmt/jack/opening" data-class="cutout" />
+        <g id="ccm-e--mgmt--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="ccm-e--mgmt--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="ccm-e--mgmt--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ccm-e/mgmt/led-a" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="ccm-e--mgmt--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ccm-e/mgmt/led-b" data-class="led" data-states="off activity error" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="ccm-e--synce-1588" data-path="ccm-e/synce-1588" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-sync" transform="translate(55.05,19.5)" data-group="timing" data-group-role="management">
+      <title>ccm-e--synce-1588</title>
+      <path id="ccm-e--synce-1588--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ccm-e--synce-1588--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ccm-e--synce-1588--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="ccm-e/synce-1588/opening" data-class="cutout" />
+      <g id="ccm-e--synce-1588--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="ccm-e--led-synce-lnk" data-path="ccm-e/led-synce-lnk" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(56.25,30.1)" data-group="timing-leds" data-group-role="indicator" data-description="the Lnk and Flt lamps of the BITS and SyncE/1588 jacks, drawn as dots at the jacks' latch edges">
+      <title>ccm-e--led-synce-lnk</title>
+      <circle id="ccm-e--led-synce-lnk--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-synce-lnk--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-synce-lnk/lamp" data-class="led" data-states="off link-100-fd link-100-hd link-10-fd link-10-hd" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--led-synce-flt" data-path="ccm-e/led-synce-flt" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(64.55,30.1)" data-group="timing-leds" data-group-role="indicator" data-description="the Lnk and Flt lamps of the BITS and SyncE/1588 jacks, drawn as dots at the jacks' latch edges">
+      <title>ccm-e--led-synce-flt</title>
+      <circle id="ccm-e--led-synce-flt--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-synce-flt--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-synce-flt/lamp" data-class="led" data-states="off activity error" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--led-critical" data-path="ccm-e/led-critical" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(83.5,7.3)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps Critical, Major and Minor">
+      <title>ccm-e--led-critical</title>
+      <circle id="ccm-e--led-critical--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-critical--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-critical/lamp" data-class="led" data-states="off critical" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--led-major" data-path="ccm-e/led-major" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(92.1,7.3)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps Critical, Major and Minor">
+      <title>ccm-e--led-major</title>
+      <circle id="ccm-e--led-major--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-major--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-major/lamp" data-class="led" data-states="off major" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--led-minor" data-path="ccm-e/led-minor" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(101.2,7.3)" data-group="alarm-leds" data-group-role="indicator" data-description="the office alarm lamps Critical, Major and Minor">
+      <title>ccm-e--led-minor</title>
+      <circle id="ccm-e--led-minor--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="ccm-e--led-minor--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="ccm-e/led-minor/lamp" data-class="led" data-states="off minor" data-z-dome="0.3" />
+    </g>
+    <g id="ccm-e--pps-1" data-path="ccm-e/pps-1" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(140.2,6.1)" data-group="timing" data-group-role="management">
+      <title>ccm-e--pps-1</title>
+      <path id="ccm-e--pps-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="ccm-e--pps-1--jack" data-path="ccm-e/pps-1/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>ccm-e--pps-1--jack</title>
+        <circle id="ccm-e--pps-1--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="ccm-e/pps-1/jack/opening" data-class="cutout" />
+        <g id="ccm-e--pps-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="96.5 17.7" data-cp-dir="rear" />
+  </g>
+</svg>
