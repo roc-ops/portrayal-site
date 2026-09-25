@@ -92,6 +92,44 @@ def check(page, base, name):
     return bad
 
 
+# EVERY STAGE, NOT JUST THE ONE THAT LOADS. This checker used to open a page
+# and stop, so on index.html only the default tab's enter() ever ran and six
+# tabs' code never executed here at all. The staged showcase puts every stage
+# behind a click and each fetches its own artifacts, so a mistyped path would
+# pass the contract, pass this check, and 404 on first open - the fields.js /
+# optical.js shape again.
+#
+# Safe without a GPU: site/webgl.js's webglTrouble() returns a sentence rather
+# than letting three.js throw, and this checker fails only on uncaught errors
+# and 4xx. The 3D stages contribute real 404 coverage with nothing rendered.
+STAGES = ["rails", "mount", "populate", "optics", "cable", "filter", "takeaway"]
+
+
+def check_stages(page, base):
+    """Walk the stage rail, waiting on each stage's own ready signal."""
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+
+    def on_response(r):
+        if r.status >= 400 and r.url.startswith(base) and not EXPECTED_404.search(r.url):
+            bad.append(f"{r.status} {r.url[len(base):]}")
+
+    page.on("response", on_response)
+    page.goto(f"{base}/index.html", wait_until="load")
+    for name in STAGES:
+        page.click(f'.stage-rail button[data-stage="{name}"]')
+        try:
+            # Set by the rail only after enter() resolves, so a stage whose
+            # enter() throws never sets it and this times out naming the stage
+            # rather than passing quietly. 60-second timeout accounts for stages
+            # on slow CI runners: stage 4 measured 5-17s on a loaded machine, and
+            # a GitHub runner renders WebGL on the CPU.
+            page.wait_for_selector(f'[data-stage-ready="{name}"]', timeout=60000)
+        except Exception:
+            bad.append(f"stage {name} never became ready")
+    return bad
+
+
 def run_marks_harness(page, base):
     """Press Run and read the results off the page, as a person would."""
     page.goto(f"{base}/marks-harness.html", wait_until="load")
@@ -154,6 +192,18 @@ def main():
 
             page = browser.new_page()
             try:
+                bad = check_stages(page, base)
+            finally:
+                page.close()
+            if bad:
+                failed_things += 1
+                problems.append(f"FAIL  the stage rail: 7 stages")
+                problems += [f"        {b}" for b in dict.fromkeys(bad)]
+            else:
+                notes.append(f"ok    the stage rail: 7 stages")
+
+            page = browser.new_page()
+            try:
                 passed, failed = run_marks_harness(page, base)
             finally:
                 page.close()
@@ -177,7 +227,7 @@ def main():
         print("deliberate removal, the list at the top of this file is where it goes.")
         return 1
     print(f"browser: {len(notes)} checks passed, "
-          f"{len(PAGES)} pages and {passed} in the marks harness")
+          f"{len(PAGES)} pages, {len(STAGES)} stage rail, and {passed} in the marks harness")
     return 0
 
 
