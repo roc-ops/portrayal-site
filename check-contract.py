@@ -293,6 +293,45 @@ check(avail.get("inspect") == "*"
       "Callouts, Live state and Select are offered only on as7726-32x; Inspect on every device",
       f"LENS_DEVICES in spoke-host.js reads {avail or 'nothing'}")
 
+# THE CAST IS VENDORED. Stages 1-3 and 6 mount four devices named in
+# rack.js's CAST, and a cast device whose index or face is missing does not
+# fail anything visible: loadMeta drops it from the rack and the stage paints
+# a rack one device short. So each cast ref needs its configs.json and the
+# compiled front face of its cast configuration - the cfg written in CAST, or
+# the index's own `default` where CAST gives none. Records on every run: a
+# CAST this cannot read is itself a failure, not a skipped check.
+rack_js = HERE / "site" / "showcase" / "rack.js"
+m = re.search(r"export const CAST\s*=\s*\[(.*?)\];", rack_js.read_text() if rack_js.is_file() else "", re.S)
+cast = []
+if m:
+    for body in re.findall(r"\{([^}]*)\}", m.group(1)):
+        ref = re.search(r"\bref\s*:\s*'([^']+)'", body)
+        cfg = re.search(r"\bcfg\s*:\s*'([^']+)'", body)
+        if ref:
+            cast.append((ref.group(1), cfg.group(1) if cfg else None))
+if not cast:
+    check(False, "rack.js's CAST names the cast devices",
+          "could not parse `export const CAST = [...]` in site/showcase/rack.js"
+          if rack_js.is_file() else "site/showcase/rack.js is missing")
+else:
+    missing = []
+    for ref, cfg in cast:
+        idx_path = DIST / f"{ref}.configs.json"
+        if not idx_path.is_file():
+            missing.append(idx_path.name)
+            continue
+        if cfg is None:
+            try:
+                cfg = json.loads(idx_path.read_text()).get("default")
+            except Exception as e:
+                missing.append(f"{idx_path.name} unreadable ({e})")
+                continue
+        if not cfg or not (DIST / f"{ref}.{cfg}.front.svg").is_file():
+            missing.append(f"{ref}.{cfg}.front.svg")
+    check(not missing,
+          f"the cast is vendored: {len(cast)} devices, each with its index and front face",
+          f"missing {missing} - loadMeta would drop the device and the rack comes up short")
+
 # STAGES THAT MOUNT THE RACK GO THROUGH rack.js's mount3d, which wraps
 # guard3d. A stage that calls createRackScene directly loses the WebGL guard,
 # and the symptom is the scrim never coming down - which reads as a slow build
