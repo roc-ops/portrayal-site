@@ -168,6 +168,23 @@ stage 0's.
 48 of the 60 link endpoints are **3-tuples ending in `tx`/`rx`**; 12 are
 2-tuples:
 
+> **Correction.** An earlier draft of this section said resolving a fibre end
+> means `portAnchor(…/tx)`. That is wrong: **no vendored face carries a `tx` or
+> `rx` data-path.** `tx`/`rx` appear only on a *pluggable optic's* skin
+> (`generic/qsfp-lc@1` and `generic/sfp-lc@1` both have `tx`, `rx` and their
+> bores), so they exist only once an optic is seated — which is what
+> `a7255061` fixed and what `vendor/swap.js:76` describes. The ROADM's `xc34`
+> is a `connector` with `bores: ["1","2"]` and nothing seated, so
+> `xc34/tx` will never resolve.
+>
+> **Stage 4 anchors every end at the port path itself** (`ep[1]`), which the
+> contract assertion in §6.3 proves resolves for all 60 ends. `tx`/`rx` are
+> semantic: they say which strand of the pair a tube is, and the stage uses
+> them only to offset the two tubes of a pair so both are visible. The
+> `bores: ["1","2"]` sub-paths are available as a later refinement, but which
+> bore is TX is **not stated in the data**, so the stage must not pretend to
+> know.
+
 ```json
 {"media":"smf","from":["site-a-roadm01-D1","xc34","tx"],
                  "to":["site-a-roadm01-D2","xc34","rx"]}
@@ -219,13 +236,43 @@ So: a hard `cp` beside `devices.json`, plus the contract assertion in §6.
   USDZ via `vendor/share.js`, PNG via `site/raster.js`, raw SVG, and the NetBox
   and Nautobot DCIM exports under `assets/exports/`. Stage 6 is wiring.
 
-### 5.3 Stage 5 ships media-only
+### 5.3 Stage 5 filters by media *and* by purpose — both work today
 
-Filtering by **media** works today and the ring gives a real split: 24 `smf`,
-6 `ethernet`. Filtering by **purpose** ("show me just management") needs an
-optional `role`/`tags` field on a link upstream. That is a small schema ask,
-filed separately (§8); Stage 5 ships media-only with purpose filtering as the
-documented next step, rather than blocking this design on an upstream change.
+Filtering by **media** works and the ring gives a real split: 24 `smf`,
+6 `ethernet`.
+
+Filtering by **purpose** also works, which contradicts this design's earlier
+assumption that it needed an upstream field. **Every port a link names already
+carries `data-group` on the compiled face:**
+
+| port | `data-group` |
+|---|---|
+| `eth4` (ROADM rear) | `mgmt` |
+| `xc34` | `xc` |
+| `port-line`, `port-osc`, `port-1510` | `line` |
+| `port-1`, `port-2` (controller front) | `rj45-1g` |
+
+`configs.json`'s `cages` carry the same thing plus an explicit
+`occupant-attrs.data-group-role` (`management` / `traffic`), and
+`data-group-role="management"` appears on 22 elements across the two refs'
+faces.
+
+So a link's purpose is **the group of the ports it connects**, read off the
+drawing — which is exactly the kind of thing this site claims the model already
+knows. The four roles fall out:
+
+- **management** — an end in `group: mgmt`
+- **cross-connect** — an end in `group: xc`
+- **ring-span** — `group: line` *and* the link carries `span`
+- **osc-loop** — `group: line`, no `span`, and both ends on the same device
+
+No upstream change and no fabricated data: stage 5 ships **both axes**.
+
+roc-ops/Portrayal#565 (an optional `role` on a link) is still worth having — it
+would let an author *state* the purpose instead of having every consumer
+re-derive it, and deriving it depends on group-naming conventions that could
+drift. But it is now a convenience, not a prerequisite, and the issue has been
+corrected to say so.
 
 ---
 
@@ -303,8 +350,9 @@ shipping.
 
 ## 8. Out of scope
 
-- **Purpose filtering** (§5.3) — needs an upstream `role`/`tags` on a link.
-  File as a schema ask against roc-ops/Portrayal; do not block on it.
+- **Purpose filtering** (§5.3) — needs an upstream optional `role` on a link.
+  Filed as roc-ops/Portrayal#565; do not block on it. If it lands before stage 5
+  is built, stage 5 gains a second filter axis for free — it is additive.
 - **`vendors.json`, `overlays.json`, `gaps.json`** stay vendored-but-unread. The
   1,149 gaps in `gaps.json` are a separate story with its own page.
 - **`compare.html`** is a 75-line photo overlay, not a comparison page.
