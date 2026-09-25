@@ -34,6 +34,20 @@ const COVER = 'cisco/a9k-slot-cover@1';
 export default function makePopulate() {
   let scene = null;
   let readout = null;
+  // Seats are serialized through this chain. rack3d.js's build() has no
+  // reentrancy guard of its own - buildAll() clears its `mounted` array and
+  // disposes the previous meshes SYNCHRONOUSLY before its first await, then
+  // resolves the rest across several awaits. A second build() starting while
+  // the first is still mid-await would clear and repopulate the very arrays
+  // the first call is still writing into: two seats fired back to back (a
+  // double-click, or one bay's button while another bay's rebuild is still in
+  // flight) is exactly that, since the old buttons stay live during `await
+  // sc.build()`. Queuing every seat() behind the one before it means only one
+  // sc.build() is ever in flight, writes to `overrides` land and are painted
+  // in the order they were requested, and the final panel always matches the
+  // final `overrides` regardless of how the awaits interleaved.
+  let queue = Promise.resolve();
+  let inFlight = 0;
 
   function bays() {
     return (baysOf(DEV).front || []).filter(b => b.group === GROUP);
@@ -50,8 +64,11 @@ export default function makePopulate() {
   function buildPanel(message, refused) {
     const all = bays();
     const candidates = union(all);
-    readout = el('p', {class: 'panel-lead', text: message || 'Pick a bay and a card, then seat it.'});
+    const busy = inFlight > 0;
+    readout = el('p', {class: 'panel-lead', 'data-readout': 'true',
+      text: message || (busy ? 'Applying…' : 'Pick a bay and a card, then seat it.')});
     if (refused) readout.dataset.refused = 'true';
+    if (busy) readout.dataset.busy = 'true';
 
     const bayRows = all.map(b => {
       const sel = el('select', {'data-bay': b.id});
@@ -78,11 +95,14 @@ export default function makePopulate() {
     );
   }
 
-  async function seat(bay, ref) {
+  // The queued unit of work. Returns what to paint, or null when the stage
+  // moved on mid-await and there is nothing left worth painting - never
+  // touches `overrides` on the refusal path.
+  async function doSeat(bay, ref) {
     if (!(bay.accepts || []).includes(ref)) {
       const accepts = (bay.accepts || []).filter(r => r !== COVER).map(shortRef).join(', ');
-      buildPanel(`refused — ${bay.id} accepts: ${accepts}. ${shortRef(ref)} is not in that list.`, true);
-      return;
+      return {message: `refused — ${bay.id} accepts: ${accepts}. ${shortRef(ref)} is not in that list.`,
+              refused: true};
     }
     overrides[DEV] = overrides[DEV] || {};
     overrides[DEV][bay.id] = ref;
@@ -92,9 +112,25 @@ export default function makePopulate() {
       const mine = epoch;
       sc.setOverrides(DEV, overrides[DEV]);
       await sc.build();
-      if (stale(mine) || scene !== sc) return;
+      if (stale(mine) || scene !== sc) return null;
     }
-    buildPanel(`seated — ${bay.id}: ${shortRef(ref)}`, false);
+    return {message: `seated — ${bay.id}: ${shortRef(ref)}`, refused: false};
+  }
+
+  // Every click enqueues rather than runs - the chain is what keeps two
+  // sc.build() calls from ever overlapping. buildPanel() only runs after
+  // inFlight has been decremented, so whichever seat was queued LAST is also
+  // painted last, and once the chain drains the panel reflects the final
+  // `overrides` no matter how the clicks landed.
+  function seat(bay, ref) {
+    inFlight++;
+    queue = queue
+      .then(() => doSeat(bay, ref))
+      .catch(err => { console.warn('[portrayal] stage 2 seat failed', err); return null; })
+      .then(result => {
+        inFlight--;
+        if (result) buildPanel(result.message, result.refused);
+      });
   }
 
   return {
