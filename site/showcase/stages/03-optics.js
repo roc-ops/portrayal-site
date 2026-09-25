@@ -53,7 +53,7 @@ import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
         enqueueRebuild, byRef, loadSkin, build2dElevation} from '../rack.js';
 import {boxIn, highlight, clearHighlights} from '../svg2d.js';
-import {lookCloser} from '../spoke-host.js';
+import {wireDevices} from '../spoke-host.js';
 import {occupantNames} from '../../../vendor/swap.js';
 
 const DEV = 'as7726-32x';
@@ -85,6 +85,9 @@ export default function makeOptics() {
     const pz = panZoom(out, () => base);
     const b = boxIn(out, out.querySelector(`[data-device-ref="${DEV}"]`));
     if (b) pz.show([b.x - 20, b.y - 40, b.width + 40, b.height + 80]);
+    // Every draw, the first and each seat's redraw: the devices on THIS
+    // picture open their Inspect lens (spoke-host.js), in this framing too.
+    wireDevices(out, 'optics');
     svg = out;
     return true;
   }
@@ -232,7 +235,7 @@ export default function makeOptics() {
     }
 
     if (!ui.live() || scene !== sc || svg !== pic) return;
-    ui.setPanel(...kids, lookCloser('optics'));
+    ui.setPanel(...kids);
   }
 
   // The queued unit of work. `ui` is the lease of the panel the visitor
@@ -295,6 +298,9 @@ export default function makeOptics() {
       }
 
       await buildPanel(ui);
+      // "Look closer" lives under the stage, not at the foot of the panel.
+      // ui.strip() is a no-op if this entry went stale during that await.
+      ui.strip();
     },
     exit() {
       // Both layers, whichever this entry drew: a 2D/3D switch re-enters this

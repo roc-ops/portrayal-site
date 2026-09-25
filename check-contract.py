@@ -549,6 +549,16 @@ check("function readMode" in sr
 idx_html = (HERE / "index.html").read_text()
 check('id="stageMode"' in idx_html, "index.html carries the 2D/3D switch")
 
+# ── look closer: on the drawing, with an index strip ───────────────────────
+# It used to sit 400 px down a side panel clipped at 520 px. Now it is the
+# drawing itself (2D) plus an always-visible strip under the stage (2D and 3D).
+sh = (HERE / "site" / "showcase" / "spoke-host.js").read_text()
+check("export function renderStrip" in sh, "spoke-host.js exports renderStrip")
+check("export function wireDevices" in sh, "spoke-host.js exports wireDevices")
+check('id="lookStrip"' in (HERE / "index.html").read_text(), "index.html carries the look strip")
+stage_txt = "".join(p.read_text() for p in (HERE / "site" / "showcase" / "stages").glob("*.js"))
+check("lookCloser(" not in stage_txt, "no stage puts Look closer in its side panel")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

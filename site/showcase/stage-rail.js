@@ -17,7 +17,7 @@ import makeTakeaway from './stages/06-takeaway.js';
 // come back to it), and the rail imports it (a rung click closes an open
 // spoke). Safe because both sides only read the other's bindings inside
 // functions, never while the modules are being evaluated.
-import {spokeOpen, closeSpoke} from './spoke-host.js';
+import {spokeOpen, closeSpoke, renderStrip, hideStrip} from './spoke-host.js';
 
 // Bumped on every switch. An enter() that awaits checks it after each await
 // and gives up if the stage has moved on, so a slow build cannot paint over
@@ -42,9 +42,10 @@ export const stale = mine => mine !== epoch;
 //   2. A write that was already in flight cannot land. enter(ui) receives a
 //      lease minted for that one entry: `ui.mine` is its epoch, `ui.live()`
 //      is !stale(mine), and ui.setPanel / ui.setExports / ui.scrim /
-//      ui.unscrim do nothing once the entry is stale. A handler closes over
-//      the lease of the panel it was built into, never over the global epoch,
-//      so a click can only ever act for the entry that drew its button.
+//      ui.unscrim / ui.strip do nothing once the entry is stale. A handler
+//      closes over the lease of the panel it was built into, never over the
+//      global epoch, so a click can only ever act for the entry that drew its
+//      button.
 //
 // The lease is the ONLY way a stage reaches those three writes:
 // check-contract.py fails any file under stages/ that imports setPanel,
@@ -54,7 +55,10 @@ export const stale = mine => mine !== epoch;
 //
 // `mode` is captured when the lease is minted, so an entry that began in 2D
 // never sees 3D half-way through: switching mints a new entry, and a new lease.
-function lease(mine) {
+// `name` is the stage the lease was minted for, so ui.strip() puts up THAT
+// stage's "Look closer" strip (the breadcrumb returns to it); a spoke's lease
+// (suspend) has none, and its strip() does nothing.
+function lease(mine, name = null) {
   const live = () => !stale(mine);
   const m = mode;
   return Object.freeze({
@@ -65,6 +69,7 @@ function lease(mine) {
     setExports: items => { if (live()) setExports(items); },
     scrim: text => { if (live()) { loading.textContent = text; loading.hidden = false; } },
     unscrim: () => { if (live()) loading.hidden = true; },
+    strip: () => { if (live() && name) renderStrip(name); },
   });
 }
 
@@ -85,11 +90,14 @@ function paintMode() {
 }
 
 // What leaving a stage takes off the screen, at once: its panel (so none of
-// its controls can be clicked while the next one loads), its downloads, and
-// the ready signal a checker waits on.
+// its controls can be clicked while the next one loads), its downloads, its
+// "Look closer" strip (a rung click or a 2D/3D switch leaves none behind; the
+// next stage puts its own up if it has one), and the ready signal a checker
+// waits on.
 function vacate() {
   panel.replaceChildren();
   exportSlot.replaceChildren();
+  hideStrip();
   stageHost.removeAttribute('data-stage-ready');
 }
 
@@ -150,7 +158,7 @@ async function enterStage(name) {
   paintRail(name);
   hint.textContent = MODULES[name].hint || '';
   srcLine.textContent = '';
-  await MODULES[name].enter(lease(mine));
+  await MODULES[name].enter(lease(mine, name));
   // Only for a stage that is still current, and never for one whose enter()
   // threw: a checker waiting on this must fail loudly, not pass quietly.
   if (!stale(mine)) stageHost.setAttribute('data-stage-ready', name);

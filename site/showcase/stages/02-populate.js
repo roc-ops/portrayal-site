@@ -29,7 +29,7 @@
 import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef,
         enqueueRebuild, build2dElevation} from '../rack.js';
-import {lookCloser} from '../spoke-host.js';
+import {wireDevices} from '../spoke-host.js';
 
 const DEV = 'asr-9006';
 const GROUP = 'slots';
@@ -57,6 +57,9 @@ export default function makePopulate() {
     stageRack.replaceChildren(svg);
     const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
     panZoom(svg, () => base);
+    // Every draw, the first and each seat's redraw: the devices on THIS
+    // picture open their Inspect lens (spoke-host.js).
+    wireDevices(svg, 'populate');
     return true;
   }
 
@@ -106,7 +109,6 @@ export default function makePopulate() {
       ...bayRows,
       readout,
       kv(seatedRows),
-      lookCloser('populate'),
     );
   }
 
@@ -188,6 +190,9 @@ export default function makePopulate() {
       }
 
       buildPanel(ui);
+      // "Look closer" lives under the stage, not at the foot of the panel.
+      // Once per entry: a seat rebuilds the panel, and the strip is unchanged.
+      ui.strip();
     },
     exit() {
       // Both layers, whichever this entry drew: a 2D/3D switch re-enters this

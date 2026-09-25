@@ -12,7 +12,7 @@
 import {stage3d, stageRack, title, lead, kv, save, saveSvg, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, unitsOf, overrides, mount3d, build2dElevation}
   from '../rack.js';
-import {lookCloser} from '../spoke-host.js';
+import {wireDevices} from '../spoke-host.js';
 
 export default function makeMount() {
   let scene = null;
@@ -67,6 +67,8 @@ export default function makeMount() {
         stageRack.replaceChildren(svg);
         const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
         panZoom(svg, () => base);
+        // Each device on it opens its Inspect lens (spoke-host.js).
+        wireDevices(svg, 'mount');
         ui.unscrim();
         exports = [{label: 'SVG', title: 'Download the mounted rack as drawn',
           run: () => saveSvg(svg, 'rack-mounted.svg')}];
@@ -82,8 +84,9 @@ export default function makeMount() {
           ['free', `${free} U`],
           ...rows.map(r => [r.label, `U${r.ru}–${r.top} (${r.u} U)`]),
         ]),
-        lookCloser('mount'),
       );
+      // "Look closer" lives under the stage, not at the foot of this panel.
+      ui.strip();
       if (exports.length) ui.setExports(exports);
     },
     exit() {

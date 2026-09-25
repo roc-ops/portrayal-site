@@ -293,10 +293,25 @@ def check_stages(page, base):
         page.click('.stage-rail button[data-stage="populate"]', timeout=READY_MS)
     except Exception:
         bad.append("could not return to stage 2 for the spokes")
+    # LOOK CLOSER, BOTH WAYS IN. By the drawing: stage 2 is in 2D by default,
+    # and every device is a real element.
+    try:
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.click('#stageRack svg [data-device-ref="as7726-32x"]')
+        page.wait_for_selector('#spokeCrumb:not([hidden])', timeout=READY_MS)
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    except Exception as e:
+        bad.append(f"clicking the AS7726-32X on stage 2's drawing did not open a spoke and return ({str(e).splitlines()[0]})")
+    # By the strip: always visible under the stage. The walk below opens every
+    # other spoke from its buttons.
+    if not page.is_visible('#lookStrip'):
+        bad.append("the look strip is not visible on a cast stage")
     for dev, lens in spokes:
         try:
             page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
-            page.click(f'#sidePanel [data-spoke-device="{dev}"][data-spoke-lens="{lens}"]',
+            page.click(f'#lookStrip [data-spoke-device="{dev}"][data-spoke-lens="{lens}"]',
                        timeout=READY_MS)
             page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
             page.click('.spoke-crumb button', timeout=READY_MS)

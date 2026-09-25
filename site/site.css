@@ -225,12 +225,32 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .stage-mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
 @media (max-width: 900px) { .show-bar { padding: 0.4rem 0.75rem; } }
 
-/* "Look closer": the spoke entry points in stages 1-3's panels. */
-.look-closer { display: flex; flex-direction: column; gap: 0.6rem;
-               border-top: 1px solid var(--pt-line); padding-top: 0.9rem; }
-.lens-row { display: flex; flex-direction: column; gap: 0.3rem; }
-.lens-row > .mono { font-size: 0.78rem; color: var(--pt-ink); }
-.lens-note { margin: 0; font-size: 0.74rem; color: var(--pt-ink-faint); line-height: 1.45; }
+/* "Look closer", stages 1-3: a strip between the stage and its foot, one
+   group per cast device with a button per lens. It used to sit at the foot of
+   the side panel, below the panel's cut, where nobody found it. */
+.look-strip {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 1.1rem;
+  padding: 0.55rem 1.25rem; border-top: 1px solid var(--pt-line);
+  background: var(--pt-surface);
+}
+.look-strip[hidden] { display: none; }
+.look-label { margin: 0; font-size: 0.8rem; color: var(--pt-ink-muted); }
+.look-label strong { color: var(--pt-brass); font-weight: 600; }
+.look-dev { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+.look-dev > .mono { font-size: 0.76rem; color: var(--pt-ink); margin-right: 0.15rem; }
+.look-dev button {
+  background: var(--pt-surface-2); color: var(--pt-ink-muted);
+  border: 1px solid var(--pt-line); border-radius: var(--pt-radius-sm);
+  font: inherit; font-size: 0.74rem; padding: 0.22rem 0.55rem; cursor: pointer;
+}
+.look-dev button:hover { border-color: var(--pt-brass-dim); color: var(--pt-ink); }
+.look-dev button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
+@media (max-width: 900px) { .look-strip { padding: 0.5rem 0.75rem; } }
+
+/* In 2D the device on the drawing is the button (spoke-host.js's
+   wireDevices). The outline is drawn by the browser round the group's box. */
+.pt-device { cursor: pointer; }
+.pt-device:hover, .pt-device:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 1px; }
 
 .show-stage {
   position: relative;

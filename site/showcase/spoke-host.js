@@ -6,10 +6,13 @@
 // came from. Leaving goes back through the rail, so the stage is re-entered -
 // its seats survive because rack.js's `overrides` is module state.
 //
-// The entry point is a list in the stage's panel, not a click on the 3D rack:
-// rack3d has no picking API, and a GPU-less CI runner cannot click a canvas.
-// Picking a device in the canvas is deferred until the rack can say what was
-// hit; when it can, it calls openSpoke exactly as these buttons do.
+// Two ways in, both only in stages 1-3. In 2D the drawing is the entry point:
+// every cast device on it is a real element, so clicking one (or Enter on it)
+// opens Inspect - wireDevices, below. Under the stage, a strip names every
+// cast device and its lenses (renderStrip): always visible, so the feature is
+// found without scrolling a panel, and the only way in from 3D - rack3d has no
+// picking API, and a GPU-less CI runner cannot click a canvas. When the rack
+// can say what was hit, it calls openSpoke exactly as these do.
 
 import {stage2d, stage3d, stageRack, panel, hint, srcLine, exportSlot, el,
         setDrawing, setHost, isHost, srcName} from './artifact.js';
@@ -18,7 +21,7 @@ import {CAST} from './rack.js';
 // spoke), and this imports the rail. Safe for the same reason rack.js's is -
 // every binding from the rail is read inside a function, never while the
 // modules are being evaluated.
-import {suspend, activate, stageLabel} from './stage-rail.js';
+import {suspend, activate, stageLabel, mode} from './stage-rail.js';
 import makeInspect  from './spokes/inspect.js';
 import makeCallouts from './spokes/callouts.js';
 import makeState    from './spokes/state.js';
@@ -51,12 +54,14 @@ const crumb = document.getElementById('spokeCrumb');
 const back = document.getElementById('spokeBack');
 const where = document.getElementById('spokeWhere');
 const lensRow = document.getElementById('spokeLenses');
+const strip = document.getElementById('lookStrip');
 
 let open = null;    // {dev, cfg, lens, spoke, returnTo, origin}
 
 export const spokeOpen = () => open !== null;
 
-// `origin` is the button that started this detour - focus goes back to it on
+// `origin` is what started this detour - a strip button, or with
+// `via: 'drawing'` the device on the drawing - and focus goes back to it on
 // the way out. Switching lens inside a spoke keeps the original one.
 export async function openSpoke({dev, cfg, lens, returnTo, origin = {dev, lens}}) {
   if (!LENSES[lens] || !offered(lens, dev)) {
@@ -137,8 +142,15 @@ export async function closeSpoke({resume = true} = {}) {
   stage2d.hidden = true;
   if (!resume) return;
   await activate(returnTo);                       // re-enters the stage we left
-  panel.querySelector(
-    `[data-spoke-device="${origin.dev}"][data-spoke-lens="${origin.lens}"]`)?.focus();
+  // Back to what started the detour: the device on the drawing, or its strip
+  // button, whichever it was - and the other when that one is not there (a
+  // spoke opened from the strip in 3D and closed after a switch to 2D, say).
+  // Looked up only now: the stage redrew its picture on the way back in, so
+  // the group that was clicked is gone and this is its replacement.
+  const button = strip.querySelector(
+    `[data-spoke-device="${origin.dev}"][data-spoke-lens="${origin.lens}"]`);
+  const device = stageRack.querySelector(`svg [data-device-ref="${origin.dev}"][tabindex]`);
+  (origin.via === 'drawing' ? device || button : button || device)?.focus();
 }
 
 function showCrumb() {
@@ -157,28 +169,95 @@ function showCrumb() {
 }
 back.onclick = () => closeSpoke();
 
-// "Look closer": the same section in stages 1, 2 and 3's panels - one row per
+// "LOOK CLOSER", UNDER THE STAGE. It used to be a section at the foot of
+// stages 1-3's panels, 400 px down a panel clipped at 520 px, where nobody
+// found it. Now it is a strip between the stage and its foot: one group per
 // cast device, a button per lens it is offered. Built here once so the three
-// stages cannot drift apart.
-export function lookCloser(returnTo) {
-  const rows = CAST.map(e => {
+// stages cannot drift apart; the rail's lease calls it (ui.strip), and the
+// rail's vacate() hides it, so no stage's strip outlives the stage.
+const NARROW = 'Callouts, Live state and Select are written against the AS7726-32X’s front face.';
+
+export function renderStrip(returnTo) {
+  const groups = CAST.map(e => {
     const lenses = lensesFor(e.ref);
     const btns = lenses.map(l => {
       const b = el('button', {type: 'button', text: LENSES[l].label,
                               'data-spoke-device': e.ref, 'data-spoke-lens': l});
-      b.onclick = () => openSpoke({dev: e.ref, cfg: e.cfg, lens: l, returnTo});
+      b.onclick = () => openSpoke({dev: e.ref, cfg: e.cfg, lens: l, returnTo})
+        .catch(err => console.warn('[portrayal] open spoke', err));
       return b;
     });
-    const kids = [el('span', {class: 'mono', text: e.label}), el('div', {class: 'ctl'}, btns)];
-    if (lenses.length < Object.keys(LENSES).length) {
-      kids.push(el('p', {class: 'lens-note',
-        text: 'Callouts, Live state and Select are written against the AS7726-32X’s front face.'}));
-    }
-    return el('div', {class: 'lens-row', 'data-spoke-row': e.ref}, kids);
+    const attrs = {class: 'look-dev', 'data-spoke-row': e.ref};
+    if (lenses.length < Object.keys(LENSES).length) attrs.title = NARROW;
+    return el('div', attrs, [el('span', {class: 'mono', text: e.label}), ...btns]);
   });
-  return el('div', {class: 'look-closer', 'data-look-closer': 'true'}, [
-    el('p', {class: 'panel-title', text: 'Look closer'}),
-    el('p', {class: 'panel-lead', text: 'Open one device’s compiled 2D face under a lens. The breadcrumb brings you back here.'}),
-    ...rows,
-  ]);
+  const label = el('p', {class: 'look-label'}, [el('strong', {text: 'Look closer'})]);
+  if (mode === '2d') label.append(' · click a device on the drawing, or');
+  strip.replaceChildren(label, ...groups);
+  strip.hidden = false;
+}
+
+export function hideStrip() {
+  strip.replaceChildren();
+  strip.hidden = true;
+}
+
+// IN 2D, THE DEVICE IS THE BUTTON. build2dElevation tags every device group
+// with data-device-ref; hovering one outlines it and its <title> names its
+// lenses, and clicking (or Enter) opens Inspect. Only cast devices drawn in
+// THIS picture are wired, and only by stages 1-3: stage 6's elevation is not
+// an entry point.
+//
+// A drag that pans the drawing is not a click. panZoom (artifact.js) captures
+// the pointer on the <svg> at pointerdown, so in Chromium the click that ends
+// a gesture is aimed at the <svg>, not the group under it. So the click is
+// listened for on the root, and the device is the one the pointer went DOWN
+// on; a pointer that moved more than panZoom's own 3 px since then panned,
+// and opens nothing.
+const wired = new WeakSet();
+export function wireDevices(root, returnTo) {
+  if (!root || wired.has(root)) return;
+  wired.add(root);
+  const open = ref => {
+    const e = CAST.find(c => c.ref === ref);
+    openSpoke({dev: ref, cfg: e.cfg, lens: 'inspect', returnTo,
+               origin: {dev: ref, lens: 'inspect', via: 'drawing'}})
+      .catch(err => console.warn('[portrayal] open spoke', err));
+  };
+  const devices = [];
+  for (const g of root.querySelectorAll('[data-device-ref]')) {
+    const ref = g.dataset.deviceRef;
+    const e = CAST.find(c => c.ref === ref);
+    if (!e) continue;
+    const lenses = lensesFor(ref).map(l => LENSES[l].label);
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('aria-label',
+      `${e.label}: look closer (${lenses.length} lens${lenses.length > 1 ? 'es' : ''})`);
+    g.classList.add('pt-device');
+    const tip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    tip.textContent = `${e.label} · ${lenses.join(', ')}`;
+    g.prepend(tip);
+    g.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(ref); }
+    });
+    devices.push(g);
+  }
+  const deviceAt = t => devices.find(g => g.contains(t)) || null;
+  let down = null;
+  // Capture phase, so it is recorded before panZoom's own pointerdown takes
+  // the pointer.
+  root.addEventListener('pointerdown', ev => {
+    down = ev.button === 0 ? {g: deviceAt(ev.target), x: ev.clientX, y: ev.clientY} : null;
+  }, true);
+  root.addEventListener('click', ev => {
+    const d = down;
+    down = null;
+    // A click with no pointerdown before it (element.click(), assistive
+    // tech) has no drag to rule out: take the target it names.
+    const g = d ? d.g : deviceAt(ev.target);
+    if (!g) return;
+    if (d && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 3) return;
+    open(g.dataset.deviceRef);
+  });
 }
