@@ -86,14 +86,23 @@ export default function makeOptics() {
       .map(p => ({suffix: p.slice(prefix.length), path: `${occId}/${p.slice(prefix.length)}`}));
   }
 
-  async function buildPanel(message) {
+  // `mine` is the epoch this build was started under - enter()'s for the
+  // initial paint, or the click-time epoch for a seat/unseat. This function
+  // awaits a skin fetch (uncached on a component's first seat) and, on the
+  // scene path, portAnchor - either can resolve after the visitor has left
+  // this stage. R18 applies here exactly as it does to doSeat: check
+  // stale(mine) after every await, and once more right before setPanel, so a
+  // build that outlives the stage paints nothing over whatever stage is
+  // current by the time it finishes.
+  async function buildPanel(mine, message) {
+    const sc = scene;   // this build's own scene, for the identity check below
     const all = cages();
     const cage = all.find(c => c.id === selected) || all[0];
 
     const cageSel = el('select', {'data-cage': 'true'});
     for (const c of all) cageSel.append(el('option', {value: c.id, text: c.id}));
     cageSel.value = cage?.id || '';
-    cageSel.onchange = () => { selected = cageSel.value; buildPanel(); };
+    cageSel.onchange = () => { selected = cageSel.value; buildPanel(epoch); };
 
     const seatBtn = el('button', {type: 'button', 'data-seat': 'true', text: 'Seat optic'});
     seatBtn.onclick = () => seat(cage, (cage.accepts || [])[0] || null);
@@ -133,6 +142,7 @@ export default function makeOptics() {
         }&rdquo;`));
 
       const paths = await occupantPaths(cage, seatedRef, seatedComp);
+      if (stale(mine)) return;
       if (paths === null) {
         kids.push(lead('The skin could not be loaded, so its paths are unknown.'));
       } else if (!paths.length) {
@@ -140,8 +150,9 @@ export default function makeOptics() {
       } else {
         kids.push(lead(`Newly addressable: ${paths.map(p => `<code>${p.path}</code>`).join(', ')}`));
         const tx = paths.find(p => p.suffix === 'tx');
-        if (scene && tx) {
-          const anchor = await scene.portAnchor(DEV, tx.path);
+        if (sc && tx) {
+          const anchor = await sc.portAnchor(DEV, tx.path);
+          if (stale(mine) || scene !== sc) return;
           if (anchor) {
             const {x, y, z} = anchor.position;
             kids.push(kv([[tx.path,
@@ -149,7 +160,7 @@ export default function makeOptics() {
           } else {
             kids.push(lead('portAnchor found no matching path on the mounted scene.'));
           }
-        } else if (scene && !tx) {
+        } else if (sc && !tx) {
           kids.push(lead('The skin carries no tx path to anchor.'));
         } else {
           kids.push(lead('3D is unavailable in this browser, so the tx position cannot be shown.'));
@@ -159,6 +170,7 @@ export default function makeOptics() {
       kids.push(lead(`${cage.id} is empty.`));
     }
 
+    if (stale(mine) || scene !== sc) return;
     setPanel(...kids);
   }
 
@@ -188,7 +200,7 @@ export default function makeOptics() {
     const mine = epoch;   // captured NOW, at the click - not when this runs
     enqueueRebuild(() => doSeat(cage, ref, mine))
       .catch(err => { console.warn('[portrayal] stage 3 seat failed', err); return null; })
-      .then(result => { if (result && !stale(mine)) buildPanel(result.message); });
+      .then(result => { if (result && !stale(mine)) buildPanel(mine, result.message); });
   }
 
   return {
@@ -209,7 +221,7 @@ export default function makeOptics() {
       // its attrs back, just without a 3D position.
       if (scene) loading.hidden = true;
 
-      await buildPanel();
+      await buildPanel(mine);
     },
     exit() {
       scene?.dispose();
