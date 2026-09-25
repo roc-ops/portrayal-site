@@ -297,27 +297,45 @@ if opt.is_file():
 # refresh. That is the fields.js/optical.js shape, twice in three days.
 labs = jload("labs.json")
 check(labs is not None, "labs.json is vendored", "stage 4 has no topology to draw")
-if labs:
-    ring = (labs.get("labs") or [None])[0] or {}
-    check(bool(ring.get("devices")), "labs.json's first lab has devices")
-    check(bool(ring.get("links")), "labs.json's first lab has links")
-    # EVERY CABLE END MUST LAND ON A DRAWN PORT. portAnchor resolves an end by
-    # data-path against the compiled faces, so an endpoint naming a port that
-    # is not drawn is a cable that silently does not appear. The port is
-    # ep[1], never a tx/rx suffix: no vendored face carries one.
-    byid = {d["id"]: d["ref"] for d in ring.get("devices") or []}
-    paths = {}
-    for ref in set(byid.values()):
-        p = set()
-        for f in DIST.glob(f"{ref}.*.svg"):
-            p |= set(re.findall(r'data-path="([^"]+)"', f.read_text()))
-        paths[ref] = p
-    ends = [ep for l in ring.get("links") or [] for ep in (l["from"], l["to"])]
-    bad = [f"{ep[0]}:{ep[1]}" for ep in ends
-           if ep[1] not in paths.get(byid.get(ep[0], ""), ())]
-    check(bool(ends) and not bad,
-          f"every link endpoint resolves to a drawn data-path ({len(ends) - len(bad)}/{len(ends)})",
-          f"{len(bad)} unresolved, e.g. {bad[:3]}")
+if labs is not None:
+    # PARSED IS NOT USABLE. `{}` and `[]` both parse, and a guard of `if labs:`
+    # let `{}` through as vendored while recording none of the checks below -
+    # the silent green the bare cp exists to prevent. So once the file parses,
+    # all three checks record on every run, and an unusable lab fails all three.
+    lablist = labs.get("labs") if isinstance(labs, dict) else None
+    ring = (lablist[0] if isinstance(lablist, list) and lablist
+            and isinstance(lablist[0], dict) else None)
+    if ring is None:
+        why = (f"labs.json parsed as {type(labs).__name__}, not an object" if not isinstance(labs, dict)
+               else "labs.json has no `labs` list" if not isinstance(lablist, list)
+               else "labs.json's `labs` list is empty" if not lablist
+               else "labs.json's first lab is not an object")
+        check(False, "labs.json's first lab has devices", why)
+        check(False, "labs.json's first lab has links", why)
+        check(False, "every link endpoint resolves to a drawn data-path", why)
+    else:
+        devs = ring.get("devices") if isinstance(ring.get("devices"), list) else []
+        links = ring.get("links") if isinstance(ring.get("links"), list) else []
+        check(bool(devs), "labs.json's first lab has devices", "no devices list, or it is empty")
+        check(bool(links), "labs.json's first lab has links", "no links list, or it is empty")
+        # EVERY CABLE END MUST LAND ON A DRAWN PORT. portAnchor resolves an end
+        # by data-path against the compiled faces, so an endpoint naming a port
+        # that is not drawn is a cable that silently does not appear. The port
+        # is ep[1], never a tx/rx suffix: no vendored face carries one.
+        byid = {d.get("id"): d.get("ref") for d in devs if isinstance(d, dict)}
+        paths = {}
+        for ref in set(v for v in byid.values() if v):
+            p = set()
+            for f in DIST.glob(f"{ref}.*.svg"):
+                p |= set(re.findall(r'data-path="([^"]+)"', f.read_text()))
+            paths[ref] = p
+        ends = [ep for l in links if isinstance(l, dict) for ep in (l.get("from"), l.get("to"))]
+        bad = [str(ep) for ep in ends
+               if not (isinstance(ep, list) and len(ep) >= 2
+                       and ep[1] in paths.get(byid.get(ep[0]) or "", ()))]
+        check(bool(ends) and not bad,
+              f"every link endpoint resolves to a drawn data-path ({len(ends) - len(bad)}/{len(ends)})",
+              f"{len(bad)} unresolved, e.g. {bad[:3]}" if ends else "no endpoints to resolve")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:

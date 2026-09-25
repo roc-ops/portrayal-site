@@ -90,6 +90,11 @@ export function colorOf(link, lab) {
 // `default`, and chassis/bays/cages come from the same index, so mount3d has
 // nothing to guess. label is the lab's id - unique, which is what lets
 // portAnchor name one of nine devices that are only two models.
+//
+// A device whose ref's index fails to load is left OUT of the stack, not
+// drawn at a guessed size - and its id is returned in `unmounted`, so the
+// panel can say that is why its cables are missing rather than blaming the
+// ports.
 async function ringStack(lab) {
   const {jdist} = await import('../../vendor/dist.js');
   const idx = {};
@@ -97,10 +102,12 @@ async function ringStack(lab) {
     try { idx[ref] = await jdist(`${DIST}${ref}.configs.json`); }
     catch (err) { console.warn('[portrayal] no config index for', ref, err); }
   }
-  return lab.devices.filter(d => idx[d.ref]).map(d => ({
+  const stack = lab.devices.filter(d => idx[d.ref]).map(d => ({
     ref: d.ref, cfg: idx[d.ref].default, ru: d.ru, label: d.id,
     chassis: idx[d.ref].chassis, bays: idx[d.ref].bays || {}, cages: idx[d.ref].cages || {},
   }));
+  const unmounted = lab.devices.filter(d => !idx[d.ref]).map(d => d.id);
+  return {stack, unmounted};
 }
 
 // Remove the tubes from the scene and free them. The scene's own dispose()
@@ -160,9 +167,14 @@ function route(THREE, a, na, b, nb, rackW) {
 // Mount the ring on its own rails and cable it.
 //
 //   mountRing({mine, onScene?}) ->
-//     {scene, lab, tubes: [{link, object, anchored, views?}], ends: {anchored, total}}
-//       views is [fromFace, toFace] as portAnchor found them, on drawn tubes
-//     {scene: null, lab}              no WebGL, or no lab (lab is then null)
+//     {scene, lab, unmounted, tubes: [{link, object, anchored, views?}],
+//      ends: {anchored, total, failed: {unmounted, threw, missing}}}
+//       views is [fromFace, toFace] as portAnchor found them, on drawn tubes;
+//       unmounted is the ids of devices whose config index failed to load;
+//       failed counts the ends that did not anchor, BY REASON: the end's
+//       device was not mounted, portAnchor threw, or it returned null (the
+//       mounted device has no such data-path)
+//     {scene: null, lab, unmounted}   no WebGL, or no lab (lab is then null)
 //     null                            the stage went stale; nothing is left over
 //
 // `mine` is the caller's epoch. Every await is followed by a stale check, and
@@ -178,17 +190,18 @@ function route(THREE, a, na, b, nb, rackW) {
 export async function mountRing({mine, onScene} = {}) {
   const lab = await loadLab();
   if (stale(mine)) return null;
-  if (!lab) return {scene: null, lab: null};
+  if (!lab) return {scene: null, lab: null, unmounted: []};
 
-  const stack = await ringStack(lab);
+  const {stack, unmounted} = await ringStack(lab);
   if (stale(mine)) return null;
 
   // Its own rails, at the lab's own height. An empty overrides map: the
   // cast's seated modules belong to the cast, not to this rack.
   const scene = await mount3d({stack, heightRU: lab.rack?.['height-ru'] || 42, overrides: {}});
   if (stale(mine)) { scene?.dispose(); return null; }
-  if (!scene) return {scene: null, lab};
-  const ring = {scene, lab, tubes: [], ends: {anchored: 0, total: 0}, disposed: false};
+  if (!scene) return {scene: null, lab, unmounted};
+  const ring = {scene, lab, unmounted, tubes: [], disposed: false,
+                ends: {anchored: 0, total: 0, failed: {unmounted: 0, threw: 0, missing: 0}}};
   onScene?.(ring);
 
   // NO await scene.complete() HERE, on purpose. portAnchor reads the face
@@ -206,12 +219,25 @@ export async function mountRing({mine, onScene} = {}) {
   // one face would each park a measuring copy in the document and the cache
   // would keep only one of them.
   const ends = [];
+  const failed = ring.ends.failed;
+  const off = new Set(unmounted);
   for (const ep of lab.links.flatMap(l => [l.from, l.to])) {
+    // Not asked at all for a device that never mounted: there is nothing to
+    // anchor to, and the reason is the missing index, not the port.
+    if (off.has(ep[0])) { failed.unmounted++; ends.push(null); continue; }
     // {label}, NEVER a bare ref: nine devices, two models, and a bare ref is
     // the first of that model every time. The port is ep[1]; ep[2] is a
     // strand, not a path.
-    ends.push(await scene.portAnchor({label: ep[0]}, ep[1]).catch(() => null));
+    let a = null;
+    try {
+      a = await scene.portAnchor({label: ep[0]}, ep[1]);
+      if (!a) failed.missing++;
+    } catch (err) {
+      failed.threw++;
+      console.warn('[portrayal] portAnchor failed for', `${ep[0]}:${ep[1]}`, err);
+    }
     if (stale(mine) || ring.disposed) { disposeRing(ring); return null; }
+    ends.push(a);
   }
 
   const group = new THREE.Group();
@@ -233,6 +259,6 @@ export async function mountRing({mine, onScene} = {}) {
     tubes.push({link, object: mesh, anchored: true, views: [a.view, b.view]});
   });
   world.add(group);
-  ring.ends = {anchored, total: ends.length};
+  ring.ends = {anchored, total: ends.length, failed};
   return ring;
 }

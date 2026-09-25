@@ -71,10 +71,19 @@ export default function makeCable() {
       if (scene) {
         const drawn = got.tubes.filter(t => t.anchored).length;
         const missing = got.tubes.length - drawn;
+        // WHY a cable is missing, by the reason ring.js recorded for each
+        // end - never a guess. The contract proves every port is drawn, so
+        // at runtime a missing cable is far likelier a load failure, and
+        // blaming the port would be wrong exactly when this shows.
+        const f = got.ends.failed;
+        const why = [];
+        if (f.unmounted) why.push(`${f.unmounted} end${f.unmounted === 1 ? '' : 's'} on devices that did not mount (their config index failed to load)`);
+        if (f.threw) why.push(`${f.threw} anchor lookup${f.threw === 1 ? '' : 's'} failed (see the console)`);
+        if (f.missing) why.push(`${f.missing} end${f.missing === 1 ? '' : 's'} not found on the mounted device`);
         kids.push(kv([
           ['cables drawn', `${drawn} / ${s.links}`, true],
           ['ends anchored', `${got.ends.anchored} / ${got.ends.total}`, true],
-          ['not drawn', missing ? `${missing} — an end named a port no face draws` : '0'],
+          ['not drawn', missing ? `${missing} — ${why.join('; ')}` : '0'],
         ]));
         // Which faces the ends landed on, as portAnchor found them - read
         // back, not asserted, so a port that moved faces shows up here.
@@ -88,7 +97,14 @@ export default function makeCable() {
         kids.push(lead('Every end is found by its port on the device the lab names, and leaves straight out of the face that port is on. tx and rx only set which side of the port a strand sits: which bore carries TX is not in the data, so it is not drawn as if it were.'));
         setExports([{label: 'GLB', title: 'Download the cabled ring as a GLB',
           run: async () => save(await scene.toGLB(), 'roadm-ring.glb', 'model/gltf-binary')}]);
-      } else {
+      }
+      if (got.unmounted?.length) {
+        const ul = el('p', {class: 'panel-lead', 'data-unmounted': 'true'});
+        ul.append(el('strong', {text: `Not mounted (${got.unmounted.length}): `}),
+                  el('span', {text: got.unmounted.join(', ')}));
+        kids.push(ul);
+      }
+      if (!scene) {
         kids.push(lead('3D is unavailable in this browser, so the cables are not drawn. The counts above are read from the lab file, not from the picture.'));
       }
       setPanel(...kids);
