@@ -52,13 +52,16 @@
 import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
         enqueueRebuild, byRef, loadSkin, build2dElevation} from '../rack.js';
-import {highlight, clearHighlights} from '../svg2d.js';
+import {boxIn, highlight, clearHighlights} from '../svg2d.js';
 import {lookCloser} from '../spoke-host.js';
 import {occupantNames} from '../../../vendor/swap.js';
 
 const DEV = 'as7726-32x';
 const GROUP = 'qsfp28';
 const DEFAULT_CAGE = 'port-1';
+// Padding round the highlighted bore, in mm: a halo, so a 7 mm bore reads as
+// a mark you can find at the opening framing, not a hairline on its edge.
+const HALO = 3;
 
 export default function makeOptics() {
   let scene = null;
@@ -68,7 +71,9 @@ export default function makeOptics() {
 
   // The 2D picture, as stage 2 draws it. Put up only while `ui` is live, and
   // attached before anything is highlighted on it (svg2d's boxIn needs the
-  // root in the document).
+  // root in the document). It opens framed on the AS7726-32X, because a bore
+  // is a few millimeters in a rack a meter tall; the pan/zoom base stays the
+  // whole rack, so double-click still fits all of it.
   async function draw2d(ui) {
     const out = await build2dElevation({stack: CAST.filter(e => e.ru != null),
                                         heightRU: RACK_U, overrides});
@@ -77,7 +82,9 @@ export default function makeOptics() {
     stageRack.hidden = false;
     stageRack.replaceChildren(out);
     const base = out.getAttribute('viewBox').split(/\s+/).map(Number);
-    panZoom(out, () => base);
+    const pz = panZoom(out, () => base);
+    const b = boxIn(out, out.querySelector(`[data-device-ref="${DEV}"]`));
+    if (b) pz.show([b.x - 20, b.y - 40, b.width + 40, b.height + 80]);
     svg = out;
     return true;
   }
@@ -189,16 +196,20 @@ export default function makeOptics() {
         const tx = paths.find(p => p.suffix === 'tx');
         const bore = paths.find(p => p.suffix === 'tx/bore');
         if (ui.mode === '2d') {
-          const want = bore || tx;
+          // The path and the element are resolved together, so the panel
+          // names exactly what the box is on: the bore when the face has it,
+          // else the tx element, else neither.
           const g = pic?.querySelector(`[data-device-ref="${DEV}"]`);
-          const target = (bore && g?.querySelector(`[data-path="${CSS.escape(bore.path)}"]`))
-                      || (tx && g?.querySelector(`[data-path="${CSS.escape(tx.path)}"]`));
-          if (!want) {
+          const at = p => p && g?.querySelector(`[data-path="${CSS.escape(p.path)}"]`);
+          const hit = [bore, tx].find(at);
+          if (!bore && !tx) {
             kids.push(lead('The skin carries no tx path to highlight.'));
-          } else if (target && highlight(pic, target)) {
-            kids.push(kv([[want.path, 'TX bore highlighted on the face', true]]));
+          } else if (hit && highlight(pic, at(hit), 'hl', HALO)) {
+            kids.push(kv([[hit.path,
+              `${hit === bore ? 'TX bore' : 'TX'} highlighted on the face`, true]]));
           } else {
-            kids.push(lead(`<code>${want.path}</code> is not on the drawn face, so nothing is highlighted.`));
+            kids.push(lead(`${[bore, tx].filter(Boolean).map(p => `<code>${p.path}</code>`).join(' and ')
+              } ${bore && tx ? 'are' : 'is'} not on the drawn face, so nothing is highlighted.`));
           }
         } else if (sc && tx) {
           const anchor = await sc.portAnchor(DEV, tx.path);

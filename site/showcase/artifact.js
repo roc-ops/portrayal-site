@@ -173,7 +173,9 @@ export const resetFrame = () => setFrame(...BASE_FRAME);
 
 // Wheel to zoom about the cursor, drag to pan, double-click to fit. Operates on
 // the viewBox rather than a transform, so millimeters stay millimeters and
-// getBBox-derived overlays keep working unchanged.
+// getBBox-derived overlays keep working unchanged. `show(frame)` puts up a
+// view other than the base - an opening close-up - without changing what
+// double-click fits back to.
 export function panZoom(node, baseFrame) {
   let view = [...baseFrame()];
   let drag = null, moved = false;
@@ -219,7 +221,8 @@ export function panZoom(node, baseFrame) {
   node.addEventListener('click', ev => { if (moved) { ev.stopPropagation(); moved = false; } }, true);
   node.addEventListener('dblclick', reset);
 
-  return {reset};
+  const show = frame => { view = [...frame]; apply(); };
+  return {reset, show};
 }
 export const clearOverlay = () => { while (overlay.firstChild) overlay.firstChild.remove(); };
 

@@ -180,6 +180,11 @@ def check_stages(page, base):
         page.wait_for_selector('#sidePanel [data-readout][data-seated]', timeout=READY_MS)
         if not page.query_selector('#stageRack svg [data-highlight]'):
             bad.append("stage optics in 2D: the seated optic's TX bore is not highlighted on the face")
+        # And big enough to find: the stage opens framed on the switch.
+        side = page.evaluate("""() => { const r = document.querySelector('#stageRack svg [data-highlight-box]');
+            if (!r) return 0; const b = r.getBoundingClientRect(); return Math.min(b.width, b.height); }""")
+        if side < 8:
+            bad.append(f"stage optics in 2D: the highlight is {side:.1f} px on its shorter side (< 8)")
 
     def filter_management():
         # The expected count is the one the management button itself states,

@@ -5,9 +5,12 @@
 
 export function boxIn(root, el) {
   if (!el || !root) return null;
+  // No CTM means a detached or undisplayed root or element: there is no
+  // honest box to give, and a local-space one would land in the wrong place.
+  const rc = root.getScreenCTM(), ec = el.getScreenCTM();
+  if (!rc || !ec) return null;
   const b = el.getBBox();
-  const m = root.getScreenCTM()?.inverse().multiply(el.getScreenCTM());
-  if (!m) return {x: b.x, y: b.y, width: b.width, height: b.height};
+  const m = rc.inverse().multiply(ec);
   const p = (x, y) => { const q = root.createSVGPoint(); q.x = x; q.y = y; return q.matrixTransform(m); };
   const a = p(b.x, b.y), c = p(b.x + b.width, b.y + b.height);
   return {x: Math.min(a.x, c.x), y: Math.min(a.y, c.y),
