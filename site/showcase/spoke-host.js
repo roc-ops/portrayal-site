@@ -1,9 +1,11 @@
 // Spokes: one device, one lens, and the way back.
 //
-// The four lenses drive the inlined 2D face (#stage2d); stages 1-3 drive the
-// 3D rack. So a spoke is a RENDERER SWITCH, not a panel swap (spec §3.4): it
-// takes the whole stage, the ladder dims, and a breadcrumb names the stage it
-// came from. Leaving goes back through the rail, so the stage is re-entered -
+// Three lenses - Callouts, Live state, Select - drive the inlined 2D face
+// (#stage2d); Inspect is Explorer itself, in a same-origin frame (#lensFrame,
+// openFrame below); stages 1-3 drive the 3D rack. So a spoke is a RENDERER
+// SWITCH, not a panel swap (spec §3.4): it takes the whole stage, the ladder
+// dims, and a breadcrumb names the stage it came from. Leaving goes back
+// through the rail, so the stage is re-entered -
 // its seats survive because rack.js's `overrides` is module state.
 //
 // Two ways in, both only in stages 1-3. In 2D the drawing is the entry point:
@@ -35,11 +37,12 @@ const LENSES = {
   select:   {make: makeSelect,   label: 'Select'},
 };
 
-// WHICH LENSES A DEVICE IS OFFERED. Inspect reads whatever the drawing
-// carries, so every device gets it. Callouts, Live state and Select name the
-// AS7726-32X's own paths - port-14, region:mgmt-block, led-psu1/lamp - so on
-// any other face they would ring nothing and toggle nothing. They are offered
-// there and only there, rather than generalized into something that pretends.
+// WHICH LENSES A DEVICE IS OFFERED. Inspect is Explorer, which opens any
+// device in the index, so every device gets it. Callouts, Live state and
+// Select name the AS7726-32X's own paths - port-14, region:mgmt-block,
+// led-psu1/lamp - so on any other face they would ring nothing and toggle
+// nothing. They are offered there and only there, rather than generalized
+// into something that pretends.
 // check-contract.py reads this table.
 export const LENS_DEVICES = {
   inspect: '*',
@@ -210,6 +213,10 @@ async function openFrame({dev, cfg, lens, returnTo, origin, ui}) {
   lensHost.replaceChildren(frame, cover);
   lensHost.hidden = false;
   body.classList.add('frame-open');
+  // Nothing under the frame may still name the lens it replaced: an inline
+  // lens (Callouts, say) left its face's filename and its hint behind.
+  srcLine.textContent = '';
+  hint.textContent = '';
   let api = null;
   try {
     await Promise.race([gone, new Promise((res, rej) => {
@@ -242,10 +249,18 @@ async function openFrame({dev, cfg, lens, returnTo, origin, ui}) {
     return;
   }
   pendingFrame = null;
-  if (!api) { dropFrame(); await activate(returnTo); return; }
+  // A failed open says so on the stage it returns to (R4), not only in the
+  // console: the visitor clicked Inspect and got the stage back.
+  if (!api) {
+    dropFrame();
+    notice(`${name} could not be opened in Explorer.`);
+    await activate(returnTo);
+    return;
+  }
   cover.remove();
   open = {dev, cfg, lens, frame, api, returnTo, origin};
   hint.textContent = '';
+  srcLine.textContent = '';
   document.body.classList.add('spoke-open');     // dims the ladder, per §3.4
   showCrumb();
   frame.focus();
@@ -254,14 +269,25 @@ async function openFrame({dev, cfg, lens, returnTo, origin, ui}) {
 // THE SWAPS COME BACK - if they still mean what the rack means. Explorer's
 // swaps, like the rack's overrides, are a delta against a configuration's
 // defaults; made on another configuration they would say something else on
-// the cast's, so they stay in the lens and the stage says so.
+// the cast's, so they stay in the lens and the stage says so - but only when
+// there ARE swaps there (R3): a visitor who only looked at another
+// configuration made nothing that stayed behind, and a notice saying so would
+// be fabricated. And only for the device this lens was opened on: the frame
+// hides Explorer's device picker, but a lens reporting some other device has
+// swaps that are not this device's to write.
 function readBack({dev, api}) {
   let cur = null;
   try { cur = api?.current?.(); } catch (err) { console.warn('[portrayal] reading the lens back', err); }
   if (!cur) return;
+  if (cur.device !== dev) {
+    console.warn('[portrayal] the lens for', dev, 'reports', cur.device, '- nothing read back');
+    return;
+  }
   const castCfg = CAST.find(e => e.ref === dev)?.cfg;
-  if (cur.config === castCfg) overrides[dev] = {...cur.swaps};
-  else notice(`Your swaps in ${cur.config} stayed in the lens; the rack uses ${castCfg}.`);
+  const swaps = cur.swaps || {};
+  if (cur.config === castCfg) overrides[dev] = {...swaps};
+  else if (Object.keys(swaps).length > 0)
+    notice(`Your swaps in ${cur.config} stayed in the lens; the rack uses ${castCfg}.`);
 }
 
 // The rail's 2D/3D switch, while a frame lens is open, is the frame's.
