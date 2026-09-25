@@ -12,13 +12,10 @@
 // hides tubes when one exists.
 
 import {stage3d, stageRack, el, title, lead, kv, controls, panel} from '../artifact.js';
-import {mountRing, disposeRing, purpose, MEDIA_COLORS, OTHER_MEDIA, sitesOf, loadLab} from '../ring.js';
+import {mountRing, disposeRing, purpose, sitesOf, loadLab, legendEl} from '../ring.js';
 import {siteView, siteCaption} from '../ring2d.js';
 
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-const hex = n => `#${n.toString(16).padStart(6, '0')}`;
-const swatch = c => el('span', {style: `display:inline-block;width:0.9em;height:0.9em;`
-  + `border-radius:2px;vertical-align:-0.1em;margin-right:0.4em;background:${hex(c)}`});
 
 export default function makeFilter() {
   let ring = null;
@@ -115,11 +112,9 @@ export default function makeFilter() {
     const mediaCounts = new Map(mediaVals.map(m => [m, links.filter(l => l.media === m).length]));
     const purposeCounts = new Map(purposeVals.map(p => [p, purposes.filter(x => x === p).length]));
 
-    const legend = el('div', {class: 'panel-lead', 'data-legend': 'true'});
-    for (const m of mediaVals) {
-      legend.append(el('div', {}, [swatch(MEDIA_COLORS[m] ?? OTHER_MEDIA),
-        el('span', {text: `${m} (${mediaCounts.get(m)})`})]));
-    }
+    // One entry per colour drawn, span strands under their span: stage 4's
+    // legend (ring.js), not a per-media count the colours do not match.
+    const legend = legendEl(lab);
 
     kids.push(
       // The same caption stage 4 leads with (spec §5.2): always, in 2D.
@@ -224,11 +219,8 @@ export default function makeFilter() {
       const mediaCounts = new Map(mediaVals.map(m => [m, links.filter(l => l.media === m).length]));
       const purposeCounts = new Map(purposeVals.map(p => [p, purposes.filter(x => x === p).length]));
 
-      const legend = el('div', {class: 'panel-lead', 'data-legend': 'true'});
-      for (const m of mediaVals) {
-        legend.append(el('div', {}, [swatch(MEDIA_COLORS[m] ?? OTHER_MEDIA),
-          el('span', {text: `${m} (${mediaCounts.get(m)})`})]));
-      }
+      // The tubes are coloured as the 2D cables are: the same legend.
+      const legend = legendEl(lab);
 
       kids.push(
         lead(`Filtering the same ${links.length}-link ring stage 4 cabled, on two independent axes: media, straight off each link, and purpose, the group of the ports it connects - read off the compiled face, the same way stage 4's labels are.`),

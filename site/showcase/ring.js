@@ -9,7 +9,7 @@
 //
 // Stage 5 reuses this module, so it is the ring's, not stage 4's.
 
-import {DIST} from './artifact.js';
+import {DIST, el} from './artifact.js';
 import {mount3d} from './rack.js';
 import {stale} from './stage-rail.js';
 
@@ -157,6 +157,46 @@ export function colorOf(link, lab) {
     return SPAN_COLORS[order.indexOf(link.span) % SPAN_COLORS.length];
   }
   return MEDIA_COLORS[link.media] ?? OTHER_MEDIA;
+}
+
+// THE LEGEND: one entry per colour actually drawn, counted from the links
+// drawn in it. A link on a span is drawn in its span's colour, not its
+// media's, so a media entry counts only that media's links NOT on a span -
+// the smf swatch once said 24 while six of those strands were span-coloured.
+// A media whose every link is on a span gets no entry. The media come from
+// the lab, not from the colour map, so a media the map does not know still
+// gets its (grey) entry. Stages 4 and 5 both read this, in 2D and 3D alike -
+// the tubes and the 2D cables are coloured by the same colorOf.
+//   -> [{media, count, some, color} | {span, count, color}]
+//      (`some`: only some of that media's links are drawn in its colour)
+export function legendOf(lab) {
+  const s = summarize(lab);
+  const out = [];
+  for (const m of Object.keys(s.byMedia)) {
+    const own = (lab.links || []).filter(l => l.media === m && !l.span);
+    if (!own.length) continue;
+    out.push({media: m, count: own.length, some: own.length < s.byMedia[m], color: colorOf(own[0], lab)});
+  }
+  for (const sp of s.spans) {
+    const link = lab.links.find(l => l.span === sp.span);
+    out.push({span: sp.span, count: sp.links, color: colorOf(link, lab)});
+  }
+  return out;
+}
+
+// legendOf as the panel shows it: a swatch and a line per entry.
+export function legendEl(lab) {
+  const swatch = c => el('span', {style: `display:inline-block;width:0.9em;height:0.9em;`
+    + `border-radius:2px;vertical-align:-0.1em;margin-right:0.4em;`
+    + `background:#${c.toString(16).padStart(6, '0')}`});
+  const legend = el('div', {class: 'panel-lead', 'data-legend': 'true'});
+  for (const e of legendOf(lab)) {
+    legend.append(e.span
+      ? el('div', {'data-span': e.span}, [swatch(e.color), el('span', {text: `span ${e.span} (${e.count} strands)`})])
+      : el('div', {'data-media': e.media}, [swatch(e.color),
+          el('span', {text: `${e.media}${e.some ? ', not on a span' : ''} (${e.count})`})]));
+  }
+  return legend;
 }
 
 // As a CSS colour, for the 2D drawing: the same colour the 3D tube gets.

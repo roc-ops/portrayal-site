@@ -19,16 +19,13 @@
 // the panel says so first. 3D is unchanged: the one physical rack.
 
 import {stage3d, stageRack, el, title, lead, kv, save, saveSvg} from '../artifact.js';
-import {mountRing, disposeRing, summarize, colorOf, loadLab, sitesOf} from '../ring.js';
+import {mountRing, disposeRing, summarize, loadLab, sitesOf, legendEl} from '../ring.js';
 import {siteView, siteCaption} from '../ring2d.js';
 // A circular import (the rail imports this stage); setMode is only read inside
 // a click handler, never while the modules are being evaluated.
 import {setMode} from '../stage-rail.js';
 
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-const hex = n => `#${n.toString(16).padStart(6, '0')}`;
-const swatch = c => el('span', {style: `display:inline-block;width:0.9em;height:0.9em;`
-  + `border-radius:2px;vertical-align:-0.1em;margin-right:0.4em;background:${hex(c)}`});
 
 // What the lab says, whichever view draws it: the counts, and one legend
 // entry per colour actually drawn.
@@ -39,26 +36,9 @@ function summaryKids(lab) {
     ['links', String(s.links), true],
     ...Object.entries(s.byMedia).map(([m, n]) => [m, String(n)]),
   ])];
-  // ONE ENTRY PER COLOUR ACTUALLY DRAWN, counted from the links drawn in
-  // it. A link on a span is drawn in its span's colour, not its media's,
-  // so a media swatch counts only that media's links NOT on a span - the
-  // smf swatch once said 24 while six of those strands were span-coloured.
-  // The media come from the lab (s.byMedia), not from ring.js's colour
-  // map, so a media the map does not know still gets its (grey) entry.
-  const legend = el('div', {class: 'panel-lead', 'data-legend': 'true'});
-  for (const m of Object.keys(s.byMedia)) {
-    const own = lab.links.filter(l => l.media === m && !l.span);
-    if (!own.length) continue;          // every one is drawn in a span colour
-    const some = own.length < s.byMedia[m];
-    legend.append(el('div', {'data-media': m}, [swatch(colorOf(own[0], lab)),
-      el('span', {text: `${m}${some ? ', not on a span' : ''} (${own.length})`})]));
-  }
-  for (const sp of s.spans) {
-    const link = lab.links.find(l => l.span === sp.span);
-    legend.append(el('div', {'data-span': sp.span},
-      [swatch(colorOf(link, lab)), el('span', {text: `span ${sp.span} (${sp.links} strands)`})]));
-  }
-  kids.push(legend);
+  // One entry per colour actually drawn: ring.js's legend, which stage 5
+  // shares, so a span strand is counted under its span and not its media.
+  kids.push(legendEl(lab));
   return kids;
 }
 
