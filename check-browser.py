@@ -64,6 +64,13 @@ SETTLE_MS = 9000
 # runner renders WebGL on the CPU.
 READY_MS = 60000
 
+# How long a stage gets in 3D. The first entry into 3D compiles WebGL shaders,
+# and on a cold or loaded machine - or a runner rendering on the CPU - that
+# alone has taken most of READY_MS; the ring's 3D mount then builds nine
+# devices and thirty tubes on top of it. A separate, longer budget keeps the
+# 3D walk from flaking without loosening every 2D wait.
+READY_3D_MS = 120000
+
 
 def free_port():
     with contextlib.closing(socket.socket()) as s:
@@ -136,6 +143,56 @@ def accepted_card(bay_id):
     idx = json.loads((HERE / "assets" / "dist" / "asr-9006.configs.json").read_text())
     bay = next((b for b in idx.get("bays", {}).get("front", []) if b.get("id") == bay_id), None)
     return next((r for r in (bay or {}).get("accepts", []) if r != bay.get("default")), None)
+
+
+def management_by_site():
+    """How many management links each 2D ring site draws, in sitesOf's order.
+
+    Recomputed here from the data, the way ring.js does it, so the filter
+    assertion checks the page against the lab rather than against a number
+    the page wrote itself. A site is a connected component once the span
+    links are dropped, ordered top to bottom by its highest U. A link is
+    management when either end's port is in the mgmt group on its device's
+    default-config faces (ring.js's loadGroupMaps). A site draws a link as a
+    cable when both ends are in it, as a stub when one is.
+    """
+    lab = json.loads((HERE / "assets" / "dist" / "labs.json").read_text())["labs"][0]
+    devs = {d["id"]: d for d in lab["devices"]}
+    par = {i: i for i in devs}
+
+    def root(x):
+        while par[x] != x:
+            x = par[x]
+        return x
+    for l in lab["links"]:
+        if not l.get("span"):
+            a, b = root(l["from"][0]), root(l["to"][0])
+            if a != b:
+                par[a] = b
+    comps = {}
+    for i in devs:
+        comps.setdefault(root(i), set()).add(i)
+    sites = sorted(comps.values(), key=lambda ids: -max(devs[i]["ru"] for i in ids))
+
+    groups = {}
+    for ref in {d["ref"] for d in devs.values()}:
+        idx = json.loads((HERE / "assets" / "dist" / f"{ref}.configs.json").read_text())
+        g = {}
+        for view in idx.get("views", []):
+            f = HERE / "assets" / "dist" / f"{ref}.{idx['default']}.{view}.svg"
+            if not f.is_file():
+                continue
+            for tag in re.findall(r"<[^>]+>", f.read_text()):
+                pth = re.search(r'\sdata-path="([^"]+)"', tag)
+                grp = re.search(r'\sdata-group="([^"]+)"', tag)
+                if pth and grp:
+                    g[pth.group(1)] = grp.group(1)
+        groups[ref] = g
+
+    def mgmt(l):
+        return any(groups.get(devs[ep[0]]["ref"], {}).get(ep[1]) == "mgmt" for ep in (l["from"], l["to"]))
+    return [sum(1 for l in lab["links"] if mgmt(l) and (l["from"][0] in ids or l["to"][0] in ids))
+            for ids in sites]
 
 
 def check_stages(page, base):
@@ -291,6 +348,14 @@ def check_stages(page, base):
                 # 05-filter.js sets data-visible-cables on the panel element itself.
                 if vis != int(page.get_attribute('#sidePanel', 'data-visible-cables') or -1):
                     bad.append(f"stage filter in 2D: the drawn count ({vis}) and data-visible-cables disagree")
+                # And against the lab, not just against itself: with
+                # "management" on, what is visible in the current site is that
+                # site's management links, recomputed above from the data.
+                at = int(page.get_attribute('#stageTabs [aria-selected="true"]', 'data-tab-index'))
+                want = management_by_site()[at]
+                if vis != want:
+                    bad.append(f"stage filter in 2D: site {at} shows {vis} with management on; "
+                               f"the lab has {want} management links there")
             except Exception as e:
                 bad.append(f"stage filter in 2D: {e}")
 
@@ -305,7 +370,24 @@ def check_stages(page, base):
         }""", m)
 
     # THE SWITCH. 2D is the default; flip stage 1 to 3D, confirm the choice
-    # follows to stage 2, then flip back. Each re-entry must reach ready.
+    # follows to stage 2, then exercise stages 3 and 4 in 3D too (R12): the
+    # seat's readout, which in 3D goes through portAnchor, and the ring's
+    # mountRing. Then flip back. Each re-entry must reach ready.
+    def seat_optic_3d():
+        page.click('#sidePanel [data-seat]', timeout=READY_3D_MS)
+        # The readout says "seated" only once THIS seat's rebuild ran (the
+        # panel it opened on may already carry data-seated from the 2D walk).
+        page.wait_for_function(
+            """() => { const r = document.querySelector('#sidePanel [data-readout][data-seated]');
+                return !!r && r.textContent.startsWith('seated'); }""", timeout=READY_3D_MS)
+        text = page.inner_text('#sidePanel')
+        # With a scene, portAnchor's position; without WebGL, the panel says
+        # so (R11). Anything else - "found no matching path" - is a break.
+        if not (re.search(r"x -?\d+\.\d, y -?\d+\.\d, z -?\d+\.\d mm", text)
+                or "3D is unavailable in this browser" in text):
+            bad.append("stage optics in 3D: the seated optic's tx has neither a position nor "
+                       "an 'unavailable' note")
+
     try:
         if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
             bad.append("the switch does not default to 2D")
@@ -314,28 +396,42 @@ def check_stages(page, base):
         if not page.query_selector('#stageRack svg [data-device-ref]'):
             bad.append("stage mount in 2D draws no devices")
         page.click('#stageMode [data-mode="3d"]')
-        page.wait_for_selector('[data-stage-ready="mount"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="mount"]', timeout=READY_3D_MS)
         if not layers_are("3d"):
             bad.append("stage mount: switching to 3D left the 2D drawing showing")
         page.click('.stage-rail button[data-stage="populate"]')
-        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_3D_MS)
         if page.get_attribute('#stageMode [data-mode="3d"]', "aria-pressed") != "true":
             bad.append("the 3D choice did not follow to the next stage")
         if not layers_are("3d"):
             bad.append("stage populate in 3D: the 2D drawing is showing")
+        for name in ("optics", "cable"):
+            try:
+                page.click(f'.stage-rail button[data-stage="{name}"]', timeout=READY_3D_MS)
+                page.wait_for_selector(f'[data-stage-ready="{name}"]', timeout=READY_3D_MS)
+                if not layers_are("3d"):
+                    bad.append(f"stage {name} in 3D: the 2D drawing is showing")
+                if name == "optics":
+                    seat_optic_3d()
+            except Exception as e:
+                bad.append(f"stage {name} in 3D: {str(e).splitlines()[0]}")
         page.click('#stageMode [data-mode="2d"]')
-        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
         if not layers_are("2d"):
-            bad.append("stage populate: switching back to 2D did not replace the 3D picture")
+            bad.append("stage cable: switching back to 2D did not replace the 3D picture")
     except Exception as e:
-        bad.append(f"the 2D/3D switch: {e}")
+        bad.append(f"the 2D/3D switch: {str(e).splitlines()[0]}")
     finally:
-        # Never leave '3d' stored for the spoke walk below, whatever failed.
+        # Never leave '3d' stored for the spoke walk below, whatever failed -
+        # and wait for the stage to come back in 2D, so the walk starts from a
+        # ready page. A failure here is recorded, not swallowed.
         try:
             if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
                 page.click('#stageMode [data-mode="2d"]', timeout=READY_MS)
-        except Exception:
-            pass
+            at = page.get_attribute('.stage-rail [data-stage][aria-selected="true"]', "data-stage")
+            page.wait_for_selector(f'[data-stage-ready="{at}"]', timeout=READY_3D_MS)
+        except Exception as e:
+            bad.append(f"the 2D/3D switch: could not restore 2D ({str(e).splitlines()[0]})")
 
     # A SPOKE IS A RENDERER SWITCH, so open one and come back, from stage 2 -
     # Inspect on the AS7726 (whose drawing the page booted with) and on the
