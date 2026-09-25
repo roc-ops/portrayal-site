@@ -288,6 +288,37 @@ if opt.is_file():
           "stage 3 does not quietly infer 100G or 4 lanes",
           "R15: the generic optic carries no speed or lane count - showing that gap is the point")
 
+# ── stage 4 cables a real topology ───────────────────────────────────────
+# labs.json is the ROADM ring: 9 devices, 30 links, each end naming a device
+# and a port. It is LOAD-BEARING for stage 4, which is why it is copied with a
+# bare cp rather than through the `[ -f ] &&` loop that carries
+# vendors/overlays/gaps - those are vendored-but-unread, so a silent miss
+# costs nothing, and this one would ship a broken stage behind a green
+# refresh. That is the fields.js/optical.js shape, twice in three days.
+labs = jload("labs.json")
+check(labs is not None, "labs.json is vendored", "stage 4 has no topology to draw")
+if labs:
+    ring = (labs.get("labs") or [None])[0] or {}
+    check(bool(ring.get("devices")), "labs.json's first lab has devices")
+    check(bool(ring.get("links")), "labs.json's first lab has links")
+    # EVERY CABLE END MUST LAND ON A DRAWN PORT. portAnchor resolves an end by
+    # data-path against the compiled faces, so an endpoint naming a port that
+    # is not drawn is a cable that silently does not appear. The port is
+    # ep[1], never a tx/rx suffix: no vendored face carries one.
+    byid = {d["id"]: d["ref"] for d in ring.get("devices") or []}
+    paths = {}
+    for ref in set(byid.values()):
+        p = set()
+        for f in DIST.glob(f"{ref}.*.svg"):
+            p |= set(re.findall(r'data-path="([^"]+)"', f.read_text()))
+        paths[ref] = p
+    ends = [ep for l in ring.get("links") or [] for ep in (l["from"], l["to"])]
+    bad = [f"{ep[0]}:{ep[1]}" for ep in ends
+           if ep[1] not in paths.get(byid.get(ep[0], ""), ())]
+    check(bool(ends) and not bad,
+          f"every link endpoint resolves to a drawn data-path ({len(ends) - len(bad)}/{len(ends)})",
+          f"{len(bad)} unresolved, e.g. {bad[:3]}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

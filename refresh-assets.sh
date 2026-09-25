@@ -153,6 +153,11 @@ done
 [ -f "$SRC/../NOTICE" ] && cp "$SRC/../NOTICE" "$HERE/vendor/NOTICE"
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
+# labs.json is the ROADM ring the showcase's cable stage draws. A BARE cp, not
+# the tolerant loop below: that loop carries indexes nothing reads yet, so a
+# miss there is free, and a miss here ships a cable stage with no topology
+# behind a refresh that passed.
+cp "$SRC"/dist/labs.json "$HERE/assets/dist/"
 # Published as of the kit split, when the exporter stopped needing a checkout.
 # vendors.json carries the alias and lineage registry - who owns a brand now,
 # which is what stops an ArcOS box being filed under the metal it runs on.

@@ -220,8 +220,14 @@ export async function mount3d({stack, heightRU, overrides: ov = overrides}) {
   const built = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
     if (stale(mine)) return null;
-    const scStack = stack.map(e => ({...e, chassis: chassisOf(e.ref), bays: baysOf(e.ref),
-      cages: cagesOf(e.ref), componentIndex: components,
+    // What a caller supplies wins: the ROADM ring's refs are not in the
+    // cast's index, so ring.js hands over its own chassis, bays and cages,
+    // and filling them from `meta` here would blank them to {} - which is
+    // truthy, so rack3d's hydrate() would skip loading the index and every
+    // device would mount with no dimensions.
+    const scStack = stack.map(e => ({...e, chassis: e.chassis || chassisOf(e.ref),
+      bays: e.bays || baysOf(e.ref), cages: e.cages || cagesOf(e.ref),
+      componentIndex: e.componentIndex || components,
       overrides: ov?.[e.ref] ? {...ov[e.ref]} : null}));
     const sc = createRackScene(stage3d, {dist: DIST, stack: scStack, heightRU,
                                          background: 0x0E1013});

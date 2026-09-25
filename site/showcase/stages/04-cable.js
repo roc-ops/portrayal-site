@@ -1,17 +1,103 @@
-// Stage 4 - Cable. A placeholder until its own task replaces this file: the
-// rail's contract is the list of stages, so every rung is a real registered
-// stage from the start.
+// Stage 4 - Cable. "What is connected to what?"
+//
+// The one deliberate scene change. Stages 0-3 build the cast rack, but the cast
+// has no links anywhere in the data, and inventing some would break the
+// standing rule against fabricating it. So this stage cuts to a second, real
+// rack - labs.json's three-site ROADM ring - on its own rails, and draws its
+// thirty cables from the ports the compiled faces put them on. ring.js does
+// the mounting and the cabling; this file owns the question and the panel.
+//
+// R11: the panel is built whether or not 3D mounted. Without a scene it still
+// says what the lab says - devices, links, media, spans - and that 3D is
+// unavailable; with one it adds how many cables were drawn and how many ends
+// anchored, which is the honest measure of whether the picture is complete.
 
-import {setPanel, title, lead} from '../artifact.js';
+import {stage3d, stageRack, loading, el, title, lead, kv, setPanel, setExports, save}
+  from '../artifact.js';
+import {epoch, stale} from '../stage-rail.js';
+import {mountRing, disposeRing, summarize, colorOf, MEDIA_COLORS} from '../ring.js';
+
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const hex = n => `#${n.toString(16).padStart(6, '0')}`;
+const swatch = c => el('span', {style: `display:inline-block;width:0.9em;height:0.9em;`
+  + `border-radius:2px;vertical-align:-0.1em;margin-right:0.4em;background:${hex(c)}`});
 
 export default function makeCable() {
+  let ring = null;
   return {
     title: 'Cable',
     question: 'What is connected to what?',
     async enter() {
-      setPanel(title('Stage 4 · Cable'), lead('<strong>What is connected to what?</strong>'),
-               lead('This stage is not built yet.'));
+      const mine = epoch;
+      stageRack.hidden = true; stage3d.hidden = false;
+      loading.hidden = false; loading.textContent = 'Racking the ROADM ring…';
+
+      // Adopted as soon as the scene exists, so exit() can dispose it even
+      // while mountRing is still waiting on the relief pass or the anchors.
+      const got = await mountRing({mine, onScene: r => { if (!stale(mine)) ring = r; }});
+      if (stale(mine)) { disposeRing(got); return; }
+      const lab = got?.lab;
+      const scene = got?.scene || null;
+      // mount3d already hid the scrim when a scene mounted; on the no-WebGL
+      // path it deliberately leaves guard3d's message showing.
+      if (scene) loading.hidden = true;
+
+      const kids = [title('Stage 4 · Cable'), lead('<strong>What is connected to what?</strong>')];
+      if (!lab) {
+        kids.push(lead('labs.json could not be loaded, so there is no topology to draw.'));
+        setPanel(...kids);
+        return;
+      }
+      const s = summarize(lab);
+      kids.push(
+        lead(`A different rack: <strong>${esc(lab.title || lab.name)}</strong>, from the lab file Portrayal ships. The cast has no links in the data, so this stage cables a topology that does, on its own ${s.rackU ?? '?'} U rails.`),
+        kv([
+          ['devices', String(s.devices), true],
+          ['links', String(s.links), true],
+          ...Object.entries(s.byMedia).map(([m, n]) => [m, String(n)]),
+        ]),
+      );
+      const legend = el('div', {class: 'panel-lead', 'data-legend': 'true'});
+      for (const [m, c] of Object.entries(MEDIA_COLORS)) {
+        legend.append(el('div', {}, [swatch(c), el('span', {text: `${m} (${s.byMedia[m] || 0})`})]));
+      }
+      for (const sp of s.spans) {
+        const link = lab.links.find(l => l.span === sp.span);
+        legend.append(el('div', {'data-span': sp.span},
+          [swatch(colorOf(link, lab)), el('span', {text: `span ${sp.span} (${sp.links} strands)`})]));
+      }
+      kids.push(legend);
+
+      if (scene) {
+        const drawn = got.tubes.filter(t => t.anchored).length;
+        const missing = got.tubes.length - drawn;
+        kids.push(kv([
+          ['cables drawn', `${drawn} / ${s.links}`, true],
+          ['ends anchored', `${got.ends.anchored} / ${got.ends.total}`, true],
+          ['not drawn', missing ? `${missing} — an end named a port no face draws` : '0'],
+        ]));
+        // Which faces the ends landed on, as portAnchor found them - read
+        // back, not asserted, so a port that moved faces shows up here.
+        const faces = {};
+        for (const t of got.tubes) {
+          if (!t.views) continue;
+          const k = `${t.link.media}: ${t.views[0]} → ${t.views[1]}`;
+          faces[k] = (faces[k] || 0) + 1;
+        }
+        kids.push(kv(Object.entries(faces).map(([k, n]) => [k, String(n)])));
+        kids.push(lead('Every end is found by its port on the device the lab names, and leaves straight out of the face that port is on. tx and rx only set which side of the port a strand sits: which bore carries TX is not in the data, so it is not drawn as if it were.'));
+        setExports([{label: 'GLB', title: 'Download the cabled ring as a GLB',
+          run: async () => save(await scene.toGLB(), 'roadm-ring.glb', 'model/gltf-binary')}]);
+      } else {
+        kids.push(lead('3D is unavailable in this browser, so the cables are not drawn. The counts above are read from the lab file, not from the picture.'));
+      }
+      setPanel(...kids);
     },
-    exit() {},
+    exit() {
+      disposeRing(ring);
+      ring = null;
+      stage3d.hidden = true;
+      stage3d.replaceChildren();
+    },
   };
 }
