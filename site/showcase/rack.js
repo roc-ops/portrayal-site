@@ -29,7 +29,9 @@ const GAP = 1;
 // teardown (data-under, R24) is half there: inside the Inspect lens, which is
 // Explorer, its bezel comes off with Explorer's own pull control - but not on
 // the rack, whose 2D elevation and 3D build draw it as it ships. The
-// FHD-1UFCE as a fibre path (R28) is NOT built yet.
+// FHD-1UFCE as a fibre path (R28) is NOT built yet. The AS4630-54TE is the
+// copper top-of-rack switch stage 4's plan lands the server and every
+// management port on, uplinked to the AS7726-32X over its two QSFP28 ports.
 //
 // `cfg` is the configuration each device is cast in, named in its
 // configs.json, not a guess: a wrong cfg is a silent empty slot rather than an
@@ -43,6 +45,7 @@ const GAP = 1;
 export const CAST = [
   {ref: 'asr-9006',   cfg: 'base',             label: 'ASR-9006'},
   {ref: 'r740xd',     cfg: 'sff24-rc5-1b2a3a', label: 'R740xd'},
+  {ref: 'eps201',     cfg: 'ac-f2b',           label: 'AS4630-54TE'},
   {ref: 'as7726-32x', cfg: 'ac-f2b',           label: 'AS7726-32X'},
   {ref: 'fhd-1ufce',  cfg: 'populated',       label: 'FHD-1UFCE'},
 ];

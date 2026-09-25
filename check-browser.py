@@ -522,11 +522,11 @@ def check_stages(page, base):
     # EVERY INSPECT OPENS ON ITS CAST CONFIGURATION. explorer_frame(dev) holds
     # the frame, once Explorer is ready, to the device it was opened for and to
     # that device's cfg in rack.js's CAST - the configuration the rack draws,
-    # and the only one whose swaps come back. All four cast devices are opened
-    # below, so all four are held to it.
+    # and the only one whose swaps come back. All five cast devices are opened
+    # below, so all five are held to it.
     cast = cast_cfgs()
-    if len(cast) != 4:
-        bad.append(f"inspect frame: could not read the four cast configurations from rack.js ({cast})")
+    if len(cast) != 5:
+        bad.append(f"inspect frame: could not read the five cast configurations from rack.js ({cast})")
     opened_on_cast = set()
     def explorer_frame(dev):
         fr = None
@@ -703,6 +703,19 @@ def check_stages(page, base):
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
     except Exception as e:
         bad.append(f"callouts -> inspect: {str(e).splitlines()[0]}")
+
+    try:
+        # The fifth cast device: the copper top-of-rack switch.
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.click('[data-spoke-device="eps201"][data-spoke-lens="inspect"]')
+        page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
+        explorer_frame("eps201")
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    except Exception as e:
+        bad.append(f"inspect frame: {str(e).splitlines()[0]}")
+
     missing = sorted(set(cast) - opened_on_cast)
     if missing:
         bad.append(f"inspect frame: not proven to open on its cast configuration: {missing}")

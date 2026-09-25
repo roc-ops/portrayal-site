@@ -335,7 +335,7 @@ fhd_idx = jload("fhd-1ufce.configs.json") or {}
 check(any(c.get("name") == "populated" for c in fhd_idx.get("configs", [])),
       "fhd-1ufce's index carries a 'populated' configuration")
 
-# THE CAST IS VENDORED. Stages 1-3 and 6 mount four devices named in
+# THE CAST IS VENDORED. Stages 1-3 and 6 mount five devices named in
 # rack.js's CAST, and a cast device whose index or face is missing does not
 # fail anything visible: loadMeta drops it from the rack and the stage paints
 # a rack one device short. So each cast ref needs its configs.json and the
@@ -370,6 +370,17 @@ else:
                 continue
         if not cfg or not (DIST / f"{ref}.{cfg}.front.svg").is_file():
             missing.append(f"{ref}.{cfg}.front.svg")
+
+    # THE CAST IS FIVE, BOTTOM-UP, AND THE COPPER SWITCH SITS BETWEEN THE SERVER
+    # AND THE 100G SWITCH (patching spec §3). Stage 4's plan cables the server and
+    # every management port to it, so a cast without it has nowhere to land them.
+    check([r for r, _ in cast] == ["asr-9006", "r740xd", "eps201", "as7726-32x", "fhd-1ufce"],
+          "the cast is the five patched devices, bottom-up",
+          f"CAST is {[r for r, _ in cast]}")
+    check(dict(cast).get("eps201") == "ac-f2b",
+          "the AS4630-54TE is cast front-to-back, matching the AS7726-32X",
+          f"eps201 cfg is {dict(cast).get('eps201')!r}")
+
     check(not missing,
           f"the cast is vendored: {len(cast)} devices, each with its index and front face",
           f"missing {missing} - loadMeta would drop the device and the rack comes up short")
