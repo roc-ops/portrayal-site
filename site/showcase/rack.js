@@ -25,16 +25,21 @@ const GAP = 1;
 // ASR-9006 is modular - stage 2 seats its slots and refuses a card a slot
 // does not accept; the AS7726-32X is the optics story in stage 3, and the one
 // device every lens is written against; the R740xd and the FHD-1UFCE are
-// mounted, sized from their own chassis, and open under Inspect. The spec
-// casts two more roles that are NOT built yet: the R740xd as a teardown spoke
-// (data-under, R24) and the FHD-1UFCE as a fibre path (R28).
+// mounted, sized from their own chassis, and open under Inspect. The R740xd's
+// teardown (data-under, R24) is half there: inside the Inspect lens, which is
+// Explorer, its bezel comes off with Explorer's own pull control - but not on
+// the rack, whose 2D elevation and 3D build draw it as it ships. The
+// FHD-1UFCE as a fibre path (R28) is NOT built yet.
 //
-// `cfg` is each device's own `default` in its configs.json, not a guess: a
-// wrong cfg is a silent empty slot rather than an error, so loadMeta warns when
-// one is not in the index. `ru` - the device's bottom U, counted from 1 at the
-// bottom of the rack, which is what rack3d.js and the elevation below both read
-// - and the height `u` are filled in by loadMeta from the chassis each index
-// declares, because a height written here is one that can drift from the model.
+// `cfg` is the configuration each device is cast in, named in its
+// configs.json, not a guess: a wrong cfg is a silent empty slot rather than an
+// error, so loadMeta warns when one is not in the index. Three are their
+// index's own `default`; the FHD-1UFCE is not - its default `base` is an empty
+// tray, so it is cast `populated`, with its four cassettes. `ru` - the
+// device's bottom U, counted from 1 at the bottom of the rack, which is what
+// rack3d.js and the elevation below both read - and the height `u` are
+// filled in by loadMeta from the chassis each index declares, because a height
+// written here is one that can drift from the model.
 export const CAST = [
   {ref: 'asr-9006',   cfg: 'base',             label: 'ASR-9006'},
   {ref: 'r740xd',     cfg: 'sff24-rc5-1b2a3a', label: 'R740xd'},
@@ -213,9 +218,11 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
     out.append(g);
     const mine = ov?.[e.ref];
     // Seating overrides is front-only: bays and cages are keyed per view in
-    // the index (e.g. cages.front, cages.rear), and the only seats this
-    // showcase makes are front seats - applying them against a rear face
-    // would look up the wrong keys and seat nothing, or the wrong thing.
+    // the index (e.g. cages.front, cages.rear). The stages only ever seat
+    // front bays, but the Inspect lens is Explorer, and a swap made there on
+    // a REAR bay comes back into `overrides` too. This front elevation
+    // ignores it: applying it against a rear face's keys would seat nothing,
+    // or the wrong thing.
     if (view === 'front' && mine && Object.keys(mine).length) {
       const {applyFaceOverrides} = await import('../../vendor/swap.js');
       await applyFaceOverrides(g, {bays: baysOf(e.ref).front || [], cages: cagesOf(e.ref).front || []},
