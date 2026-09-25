@@ -1,0 +1,520 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="106.04mm" height="130.2mm" viewBox="0 0 106.04 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="bp3400c" data-path="bp3400c" data-class="coupler" data-behaviour="fills" data-ref="commscope/bp3400c@1:1.0.0" data-model="BP3400C-00" data-slots="4" transform="translate(0,0)">
+    <title>bp3400c</title>
+    <rect id="bp3400c--body" x="0" y="0" width="106.04" height="130.2" rx="0.8" fill="#26292d" stroke="#0e0f10" stroke-width="0.3" />
+    <g id="bp3400c--screw-top-1" data-path="bp3400c/screw-top-1" data-class="fastener">
+      <circle cx="13.3" cy="5.3" r="4.3" fill="#0f1011" />
+      <circle cx="13.3" cy="5.3" r="2.8" fill="#2c2f33" />
+    </g>
+    <g id="bp3400c--screw-top-2" data-path="bp3400c/screw-top-2" data-class="fastener">
+      <circle cx="94.3" cy="5.3" r="4.3" fill="#0f1011" />
+      <circle cx="94.3" cy="5.3" r="2.8" fill="#2c2f33" />
+    </g>
+    <g id="bp3400c--vents-left" fill="#0a0b0c" data-path="bp3400c/vents-left" data-class="vent">
+      <rect x="5.15" y="17.5" width="2.9" height="11.4" rx="1.4" />
+      <rect x="5.15" y="41.0" width="2.9" height="7.8" rx="1.4" />
+      <rect x="9.75" y="17.5" width="2.9" height="11.4" rx="1.4" />
+      <rect x="9.75" y="41.0" width="2.9" height="7.8" rx="1.4" />
+      <rect x="14.45" y="17.5" width="2.9" height="11.4" rx="1.4" />
+      <rect x="14.45" y="41.0" width="2.9" height="7.8" rx="1.4" />
+      <rect x="19.05" y="17.5" width="2.9" height="11.4" rx="1.4" />
+      <rect x="19.05" y="41.0" width="2.9" height="7.8" rx="1.4" />
+    </g>
+    <g id="bp3400c--vents-right" fill="#0a0b0c" data-path="bp3400c/vents-right" data-class="vent">
+      <rect x="85.95" y="35.3" width="2.9" height="13.5" rx="1.4" />
+      <rect x="90.35" y="35.3" width="2.9" height="13.5" rx="1.4" />
+      <rect x="94.95" y="35.3" width="2.9" height="13.5" rx="1.4" />
+      <rect x="99.45" y="35.3" width="2.9" height="13.5" rx="1.4" />
+    </g>
+    <g id="bp3400c--screw-bottom-1" data-path="bp3400c/screw-bottom-1" data-class="fastener">
+      <circle cx="13.3" cy="124.3" r="4.3" fill="#0f1011" />
+      <circle cx="13.3" cy="124.3" r="2.8" fill="#2c2f33" />
+    </g>
+    <g id="bp3400c--screw-bottom-2" data-path="bp3400c/screw-bottom-2" data-class="fastener">
+      <circle cx="94.3" cy="124.3" r="4.3" fill="#0f1011" />
+      <circle cx="94.3" cy="124.3" r="2.8" fill="#2c2f33" />
+    </g>
+    <g id="bp3400c--silkscreen" fill="#e6e8ea" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="52.0" y="4.8" font-size="3.2" font-weight="bold">BP3400C</text>
+      <text x="52.4" y="11.0" font-size="2.1">OPTICAL INPUTS</text>
+      <text x="53.4" y="18.4" font-size="1.8">LOS</text>
+      <text x="53.4" y="49.2" font-size="1.8">LOS</text>
+      <text x="94.1" y="15.2" font-size="2.0">DATA PORT</text>
+      <text x="91.0" y="34.2" font-size="2.0">TX</text>
+      <text x="97.1" y="34.2" font-size="2.0">RX</text>
+      <text x="13.6" y="30.6" font-size="2.0">2-fer</text>
+      <text x="52.4" y="125.0" font-size="2.1">RF OUTPUTS</text>
+      <text x="32.1" y="15.8" font-size="2.0">2 – D – 1</text>
+      <text x="32.1" y="52.0" font-size="2.0">3 – D – 4</text>
+      <text x="15.5" y="119.6" font-size="2.6">D</text>
+      <text x="46.4" y="15.8" font-size="2.0">2 – C – 1</text>
+      <text x="46.4" y="52.0" font-size="2.0">3 – C – 4</text>
+      <text x="42.7" y="119.6" font-size="2.6">C</text>
+      <text x="61.5" y="15.8" font-size="2.0">2 – B – 1</text>
+      <text x="61.5" y="52.0" font-size="2.0">3 – B – 4</text>
+      <text x="69.6" y="119.6" font-size="2.6">B</text>
+      <text x="75.8" y="15.8" font-size="2.0">2 – A – 1</text>
+      <text x="75.8" y="52.0" font-size="2.0">3 – A – 4</text>
+      <text x="96.7" y="119.6" font-size="2.6">A</text>
+      <text x="29.4" y="62.7" font-size="2.2">1</text>
+      <text x="29.4" y="78.8" font-size="2.2">2</text>
+      <text x="29.4" y="94.8" font-size="2.2">3</text>
+      <text x="29.4" y="110.6" font-size="2.2">4</text>
+      <text x="56.7" y="62.7" font-size="2.2">1</text>
+      <text x="56.7" y="78.8" font-size="2.2">2</text>
+      <text x="56.7" y="94.8" font-size="2.2">3</text>
+      <text x="56.7" y="110.6" font-size="2.2">4</text>
+      <text x="83.5" y="62.7" font-size="2.2">1</text>
+      <text x="83.5" y="78.8" font-size="2.2">2</text>
+      <text x="83.5" y="94.8" font-size="2.2">3</text>
+      <text x="83.5" y="110.6" font-size="2.2">4</text>
+      <text x="6.6" y="34.6" font-size="1.9">D</text>
+      <text x="11.2" y="34.6" font-size="1.9">C</text>
+      <text x="15.9" y="34.6" font-size="1.9">B</text>
+      <text x="20.5" y="34.6" font-size="1.9">A</text>
+    </g>
+    <g id="bp3400c--in-d-1-2" data-path="bp3400c/in-d-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="D" data-role="optical-input" transform="translate(25.1,20.8)">
+      <title>bp3400c--in-d-1-2</title>
+      <rect id="bp3400c--in-d-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-d-1-2/opening" data-class="cutout" />
+      <rect id="bp3400c--in-d-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-d-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-d-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-c-1-2" data-path="bp3400c/in-c-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="C" data-role="optical-input" transform="translate(39.35,20.8)">
+      <title>bp3400c--in-c-1-2</title>
+      <rect id="bp3400c--in-c-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-c-1-2/opening" data-class="cutout" />
+      <rect id="bp3400c--in-c-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-c-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-c-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-b-1-2" data-path="bp3400c/in-b-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="B" data-role="optical-input" transform="translate(53.6,20.8)">
+      <title>bp3400c--in-b-1-2</title>
+      <rect id="bp3400c--in-b-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-b-1-2/opening" data-class="cutout" />
+      <rect id="bp3400c--in-b-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-b-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-b-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-a-1-2" data-path="bp3400c/in-a-1-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="A" data-role="optical-input" transform="translate(67.85,20.8)">
+      <title>bp3400c--in-a-1-2</title>
+      <rect id="bp3400c--in-a-1-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-a-1-2/opening" data-class="cutout" />
+      <rect id="bp3400c--in-a-1-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-a-1-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-a-1-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-d-3-4" data-path="bp3400c/in-d-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="D" data-role="optical-input" transform="translate(25.1,33.9) rotate(180 7.125 5.2)">
+      <title>bp3400c--in-d-3-4</title>
+      <rect id="bp3400c--in-d-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-d-3-4/opening" data-class="cutout" />
+      <rect id="bp3400c--in-d-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-d-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-d-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-c-3-4" data-path="bp3400c/in-c-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="C" data-role="optical-input" transform="translate(39.35,33.9) rotate(180 7.125 5.2)">
+      <title>bp3400c--in-c-3-4</title>
+      <rect id="bp3400c--in-c-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-c-3-4/opening" data-class="cutout" />
+      <rect id="bp3400c--in-c-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-c-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-c-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-b-3-4" data-path="bp3400c/in-b-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="B" data-role="optical-input" transform="translate(53.6,33.9) rotate(180 7.125 5.2)">
+      <title>bp3400c--in-b-3-4</title>
+      <rect id="bp3400c--in-b-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-b-3-4/opening" data-class="cutout" />
+      <rect id="bp3400c--in-b-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-b-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-b-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--in-a-3-4" data-path="bp3400c/in-a-3-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-proprietary-link="Digital return" data-receiver="A" data-role="optical-input" transform="translate(67.85,33.9) rotate(180 7.125 5.2)">
+      <title>bp3400c--in-a-3-4</title>
+      <rect id="bp3400c--in-a-3-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="bp3400c/in-a-3-4/opening" data-class="cutout" />
+      <rect id="bp3400c--in-a-3-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="bp3400c--in-a-3-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--in-a-3-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--data-port" data-path="bp3400c/data-port" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp" data-role="data-port" transform="translate(87.1,21.0)">
+      <title>bp3400c--data-port</title>
+      <rect id="bp3400c--data-port--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="bp3400c/data-port/opening" data-class="cutout" />
+      <rect id="bp3400c--data-port--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+      <rect id="bp3400c--data-port--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="bp3400c--data-port--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+      <path id="bp3400c--data-port--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--led-los-d-1" data-path="bp3400c/led-los-d-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(28.1,16.9)">
+      <title>bp3400c--led-los-d-1</title>
+      <circle id="bp3400c--led-los-d-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-d-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-d-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-d-2" data-path="bp3400c/led-los-d-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(34.1,16.9)">
+      <title>bp3400c--led-los-d-2</title>
+      <circle id="bp3400c--led-los-d-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-d-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-d-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-d-4" data-path="bp3400c/led-los-d-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(28.1,46.4)">
+      <title>bp3400c--led-los-d-4</title>
+      <circle id="bp3400c--led-los-d-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-d-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-d-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-d-3" data-path="bp3400c/led-los-d-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(34.1,46.4)">
+      <title>bp3400c--led-los-d-3</title>
+      <circle id="bp3400c--led-los-d-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-d-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-d-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-c-1" data-path="bp3400c/led-los-c-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(42.4,16.9)">
+      <title>bp3400c--led-los-c-1</title>
+      <circle id="bp3400c--led-los-c-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-c-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-c-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-c-2" data-path="bp3400c/led-los-c-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(48.4,16.9)">
+      <title>bp3400c--led-los-c-2</title>
+      <circle id="bp3400c--led-los-c-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-c-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-c-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-c-4" data-path="bp3400c/led-los-c-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(42.4,46.4)">
+      <title>bp3400c--led-los-c-4</title>
+      <circle id="bp3400c--led-los-c-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-c-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-c-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-c-3" data-path="bp3400c/led-los-c-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(48.4,46.4)">
+      <title>bp3400c--led-los-c-3</title>
+      <circle id="bp3400c--led-los-c-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-c-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-c-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-b-1" data-path="bp3400c/led-los-b-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(57.5,16.9)">
+      <title>bp3400c--led-los-b-1</title>
+      <circle id="bp3400c--led-los-b-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-b-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-b-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-b-2" data-path="bp3400c/led-los-b-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(63.5,16.9)">
+      <title>bp3400c--led-los-b-2</title>
+      <circle id="bp3400c--led-los-b-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-b-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-b-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-b-4" data-path="bp3400c/led-los-b-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(57.5,46.4)">
+      <title>bp3400c--led-los-b-4</title>
+      <circle id="bp3400c--led-los-b-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-b-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-b-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-b-3" data-path="bp3400c/led-los-b-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(63.5,46.4)">
+      <title>bp3400c--led-los-b-3</title>
+      <circle id="bp3400c--led-los-b-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-b-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-b-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-a-1" data-path="bp3400c/led-los-a-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(71.8,16.9)">
+      <title>bp3400c--led-los-a-1</title>
+      <circle id="bp3400c--led-los-a-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-a-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-a-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-a-2" data-path="bp3400c/led-los-a-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(77.8,16.9)">
+      <title>bp3400c--led-los-a-2</title>
+      <circle id="bp3400c--led-los-a-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-a-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-a-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-a-4" data-path="bp3400c/led-los-a-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(71.8,46.4)">
+      <title>bp3400c--led-los-a-4</title>
+      <circle id="bp3400c--led-los-a-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-a-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-a-4/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-los-a-3" data-path="bp3400c/led-los-a-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="los" transform="translate(77.8,46.4)">
+      <title>bp3400c--led-los-a-3</title>
+      <circle id="bp3400c--led-los-a-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-los-a-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-los-a-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-data-tx" data-path="bp3400c/led-data-tx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(90.0,16.9)">
+      <title>bp3400c--led-data-tx</title>
+      <circle id="bp3400c--led-data-tx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-data-tx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-data-tx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-data-rx" data-path="bp3400c/led-data-rx" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(96.1,16.9)">
+      <title>bp3400c--led-data-rx</title>
+      <circle id="bp3400c--led-data-rx--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-data-rx--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-data-rx/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-2fer-d" data-path="bp3400c/led-2fer-d" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="mode" transform="translate(5.6,36.4)">
+      <title>bp3400c--led-2fer-d</title>
+      <circle id="bp3400c--led-2fer-d--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-2fer-d--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-2fer-d/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-2fer-c" data-path="bp3400c/led-2fer-c" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="mode" transform="translate(10.2,36.4)">
+      <title>bp3400c--led-2fer-c</title>
+      <circle id="bp3400c--led-2fer-c--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-2fer-c--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-2fer-c/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-2fer-b" data-path="bp3400c/led-2fer-b" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="mode" transform="translate(14.9,36.4)">
+      <title>bp3400c--led-2fer-b</title>
+      <circle id="bp3400c--led-2fer-b--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-2fer-b--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-2fer-b/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--led-2fer-a" data-path="bp3400c/led-2fer-a" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="mode" transform="translate(19.5,36.4)">
+      <title>bp3400c--led-2fer-a</title>
+      <circle id="bp3400c--led-2fer-a--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="bp3400c--led-2fer-a--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="bp3400c/led-2fer-a/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="bp3400c--rf-d-1" data-path="bp3400c/rf-d-1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="D" data-role="rf-output" transform="translate(10.65,57.95)">
+      <title>bp3400c--rf-d-1</title>
+      <path id="bp3400c--rf-d-1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-d-1/opening" data-class="cutout" />
+      <g id="bp3400c--rf-d-1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-d-1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-d-2" data-path="bp3400c/rf-d-2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="D" data-role="rf-output" transform="translate(10.65,74.05)">
+      <title>bp3400c--rf-d-2</title>
+      <path id="bp3400c--rf-d-2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-d-2/opening" data-class="cutout" />
+      <g id="bp3400c--rf-d-2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-d-2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-d-3" data-path="bp3400c/rf-d-3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="D" data-role="rf-output" transform="translate(10.65,90.05)">
+      <title>bp3400c--rf-d-3</title>
+      <path id="bp3400c--rf-d-3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-d-3/opening" data-class="cutout" />
+      <g id="bp3400c--rf-d-3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-d-3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-d-4" data-path="bp3400c/rf-d-4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="D" data-role="rf-output" transform="translate(10.65,105.85)">
+      <title>bp3400c--rf-d-4</title>
+      <path id="bp3400c--rf-d-4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-d-4/opening" data-class="cutout" />
+      <g id="bp3400c--rf-d-4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-d-4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-c-1" data-path="bp3400c/rf-c-1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="C" data-role="rf-output" transform="translate(37.85,57.95)">
+      <title>bp3400c--rf-c-1</title>
+      <path id="bp3400c--rf-c-1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-c-1/opening" data-class="cutout" />
+      <g id="bp3400c--rf-c-1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-c-1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-c-2" data-path="bp3400c/rf-c-2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="C" data-role="rf-output" transform="translate(37.85,74.05)">
+      <title>bp3400c--rf-c-2</title>
+      <path id="bp3400c--rf-c-2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-c-2/opening" data-class="cutout" />
+      <g id="bp3400c--rf-c-2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-c-2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-c-3" data-path="bp3400c/rf-c-3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="C" data-role="rf-output" transform="translate(37.85,90.05)">
+      <title>bp3400c--rf-c-3</title>
+      <path id="bp3400c--rf-c-3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-c-3/opening" data-class="cutout" />
+      <g id="bp3400c--rf-c-3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-c-3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-c-4" data-path="bp3400c/rf-c-4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="C" data-role="rf-output" transform="translate(37.85,105.85)">
+      <title>bp3400c--rf-c-4</title>
+      <path id="bp3400c--rf-c-4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-c-4/opening" data-class="cutout" />
+      <g id="bp3400c--rf-c-4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-c-4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-b-1" data-path="bp3400c/rf-b-1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="B" data-role="rf-output" transform="translate(64.75,57.95)">
+      <title>bp3400c--rf-b-1</title>
+      <path id="bp3400c--rf-b-1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-b-1/opening" data-class="cutout" />
+      <g id="bp3400c--rf-b-1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-b-1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-b-2" data-path="bp3400c/rf-b-2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="B" data-role="rf-output" transform="translate(64.75,74.05)">
+      <title>bp3400c--rf-b-2</title>
+      <path id="bp3400c--rf-b-2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-b-2/opening" data-class="cutout" />
+      <g id="bp3400c--rf-b-2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-b-2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-b-3" data-path="bp3400c/rf-b-3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="B" data-role="rf-output" transform="translate(64.75,90.05)">
+      <title>bp3400c--rf-b-3</title>
+      <path id="bp3400c--rf-b-3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-b-3/opening" data-class="cutout" />
+      <g id="bp3400c--rf-b-3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-b-3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-b-4" data-path="bp3400c/rf-b-4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="B" data-role="rf-output" transform="translate(64.75,105.85)">
+      <title>bp3400c--rf-b-4</title>
+      <path id="bp3400c--rf-b-4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-b-4/opening" data-class="cutout" />
+      <g id="bp3400c--rf-b-4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-b-4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-a-1" data-path="bp3400c/rf-a-1" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="A" data-role="rf-output" transform="translate(91.85,57.95)">
+      <title>bp3400c--rf-a-1</title>
+      <path id="bp3400c--rf-a-1--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-a-1/opening" data-class="cutout" />
+      <g id="bp3400c--rf-a-1--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-a-1--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-a-2" data-path="bp3400c/rf-a-2" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="A" data-role="rf-output" transform="translate(91.85,74.05)">
+      <title>bp3400c--rf-a-2</title>
+      <path id="bp3400c--rf-a-2--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-a-2/opening" data-class="cutout" />
+      <g id="bp3400c--rf-a-2--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-a-2--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-a-3" data-path="bp3400c/rf-a-3" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="A" data-role="rf-output" transform="translate(91.85,90.05)">
+      <title>bp3400c--rf-a-3</title>
+      <path id="bp3400c--rf-a-3--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-a-3/opening" data-class="cutout" />
+      <g id="bp3400c--rf-a-3--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-a-3--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g id="bp3400c--rf-a-4" data-path="bp3400c/rf-a-4" data-class="port" data-ref="std/f-type@1:1.0.0" data-media="coax-f" data-receiver="A" data-role="rf-output" transform="translate(91.85,105.85)">
+      <title>bp3400c--rf-a-4</title>
+      <path id="bp3400c--rf-a-4--opening" d="M 2.036 0 H 7.664 A 4.85 4.85 0 0 1 7.664 7.9 H 2.036 A 4.85 4.85 0 0 1 2.036 0 Z" fill="#15181b" data-path="bp3400c/rf-a-4/opening" data-class="cutout" />
+      <g id="bp3400c--rf-a-4--nut" data-z-cyl="2.4" data-z-color="#c0c4c8">
+        <path d="M 2.136 0.12 H 7.564 A 4.73 4.73 0 0 1 7.564 7.78 H 2.136 A 4.73 4.73 0 0 1 2.136 0.12 Z" fill="#c0c4c8" stroke="#7d8388" stroke-width="0.14" />
+        <polygon points="9.122,3.95 6.986,0.25 2.714,0.25 0.578,3.95 2.714,7.65 6.986,7.65" fill="#d7dade" stroke="#7d8388" stroke-width="0.16" />
+      </g>
+      <g id="bp3400c--rf-a-4--thread" data-z-cyl="10.6" data-z-lift="2.4" data-z-color="#c0c4c8" data-z-thread="0.794">
+        <circle cx="4.85" cy="3.95" r="2.55" fill="#2b2f33" />
+        <circle cx="4.85" cy="3.95" r="1.55" fill="#e8e4d6" />
+        <circle cx="4.85" cy="3.95" r="0.42" fill="#8a8f95" />
+      </g>
+      <g data-cp="mate" data-cp-at="4.85 3.95" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="53.02 65.1" data-cp-dir="front" />
+  </g>
+</svg>

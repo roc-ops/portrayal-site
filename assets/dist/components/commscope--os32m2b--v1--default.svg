@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.76mm" height="130.2mm" viewBox="0 0 25.76 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="os32m2b" data-path="os32m2b" data-class="switch" data-behaviour="fills" data-ref="commscope/os32m2b@1:1.0.0" data-body-depth="165.1" data-model="OS32M2B" data-power-draw-max-w="1.6" data-role="optical-switch" data-switches="2 x 2x1" data-switching-threshold="-22 to +22 dBm, 1 dB steps" transform="translate(0,0)">
+    <title>os32m2b</title>
+    <defs>
+      <linearGradient id="os32m2b--plate" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#7a7f85" />
+        <stop offset="1" stop-color="#62676d" />
+      </linearGradient>
+    </defs>
+    <rect id="os32m2b--body" x="0" y="0" width="25.76" height="130.2" rx="1.0" fill="url(#os32m2b--plate)" stroke="#55595e" stroke-width="0.3" />
+    <g id="os32m2b--screw-top" data-path="os32m2b/screw-top" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.4" fill="#1d1f22" />
+      <circle cx="12.88" cy="5.0" r="2.9" fill="#2e3135" />
+    </g>
+    <g id="os32m2b--screw-bottom" data-path="os32m2b/screw-bottom" data-class="fastener">
+      <circle cx="12.88" cy="125.2" r="4.4" fill="#1d1f22" />
+      <circle cx="12.88" cy="125.2" r="2.9" fill="#2e3135" />
+    </g>
+    <g id="os32m2b--adapter-in-a1" data-path="os32m2b/adapter-in-a1" data-class="port">
+      <rect x="1.6" y="26.95" width="17.0" height="10.3" rx="0.4" fill="#2fb36a" stroke="#1d7a46" stroke-width="0.3" />
+      <rect x="6.2" y="27.70" width="10.6" height="8.8" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="os32m2b--adapter-out-1" data-path="os32m2b/adapter-out-1" data-class="port">
+      <rect x="1.6" y="38.05" width="17.0" height="10.3" rx="0.4" fill="#2fb36a" stroke="#1d7a46" stroke-width="0.3" />
+      <rect x="6.2" y="38.80" width="10.6" height="8.8" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="os32m2b--adapter-in-b1" data-path="os32m2b/adapter-in-b1" data-class="port">
+      <rect x="1.6" y="49.05" width="17.0" height="10.3" rx="0.4" fill="#2fb36a" stroke="#1d7a46" stroke-width="0.3" />
+      <rect x="6.2" y="49.80" width="10.6" height="8.8" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="os32m2b--adapter-in-a2" data-path="os32m2b/adapter-in-a2" data-class="port">
+      <rect x="1.6" y="70.65" width="17.0" height="10.3" rx="0.4" fill="#2fb36a" stroke="#1d7a46" stroke-width="0.3" />
+      <rect x="6.2" y="71.40" width="10.6" height="8.8" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="os32m2b--adapter-out-2" data-path="os32m2b/adapter-out-2" data-class="port">
+      <rect x="1.6" y="81.65" width="17.0" height="10.3" rx="0.4" fill="#2fb36a" stroke="#1d7a46" stroke-width="0.3" />
+      <rect x="6.2" y="82.40" width="10.6" height="8.8" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="os32m2b--adapter-in-b2" data-path="os32m2b/adapter-in-b2" data-class="port">
+      <rect x="1.6" y="92.65" width="17.0" height="10.3" rx="0.4" fill="#2fb36a" stroke="#1d7a46" stroke-width="0.3" />
+      <rect x="6.2" y="93.40" width="10.6" height="8.8" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="os32m2b--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="12.88" y="10.0" font-size="2.1">2X1 Optical Switch</text>
+      <text x="12.88" y="13.3" font-size="2.2">OS32M2B</text>
+      <text x="8.4" y="20.9" font-size="1.5">A1</text>
+      <text x="8.4" y="25.3" font-size="1.5">B1</text>
+      <text x="8.4" y="63.6" font-size="1.5">A2</text>
+      <text x="8.4" y="67.6" font-size="1.5">B2</text>
+      <text x="21.2" y="23.1" font-size="1.5">OUT 1</text>
+      <text x="21.2" y="65.8" font-size="1.5">OUT 2</text>
+      <path d="M 14.2 20.3 H 15.2 L 16.6 22.5 L 15.2 24.7 H 14.2 M 16.6 22.5 H 17.8 M 14.2 63.0 H 15.2 L 16.6 65.0 L 15.2 67.0 H 14.2 M 16.6 65.0 H 17.8" fill="none" stroke="#eef0f2" stroke-width="0.22" />
+      <text x="22.6" y="32.7" font-size="1.6">A1</text>
+      <text x="22.6" y="42.8" font-size="1.6">OUT</text>
+      <text x="22.6" y="44.8" font-size="1.6">1</text>
+      <text x="22.6" y="54.8" font-size="1.6">B1</text>
+      <text x="22.6" y="76.4" font-size="1.6">A2</text>
+      <text x="22.6" y="86.4" font-size="1.6">OUT</text>
+      <text x="22.6" y="88.4" font-size="1.6">2</text>
+      <text x="22.6" y="98.4" font-size="1.6">B2</text>
+      <text x="17.2" y="106.4" font-size="1.5">Alarm</text>
+      <text x="17.4" y="110.8" font-size="1.5">Access</text>
+      <text x="12.88" y="119.0" font-size="3.0" letter-spacing="1.1" fill="#26292c">ARRIS</text>
+    </g>
+    <g id="os32m2b--in-a1" data-path="os32m2b/in-a1" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(7.3,27.6) rotate(90 4.195 4.5)">
+      <title>os32m2b--in-a1</title>
+      <path id="os32m2b--in-a1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="os32m2b/in-a1/bore" data-class="cutout" />
+      <rect id="os32m2b--in-a1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="os32m2b--in-a1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="os32m2b--in-a1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="os32m2b--in-a1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="os32m2b--in-a1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="os32m2b--out-1" data-path="os32m2b/out-1" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(7.3,38.7) rotate(90 4.195 4.5)">
+      <title>os32m2b--out-1</title>
+      <path id="os32m2b--out-1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="os32m2b/out-1/bore" data-class="cutout" />
+      <rect id="os32m2b--out-1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="os32m2b--out-1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="os32m2b--out-1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="os32m2b--out-1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="os32m2b--out-1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="os32m2b--in-b1" data-path="os32m2b/in-b1" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(7.3,49.7) rotate(90 4.195 4.5)">
+      <title>os32m2b--in-b1</title>
+      <path id="os32m2b--in-b1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="os32m2b/in-b1/bore" data-class="cutout" />
+      <rect id="os32m2b--in-b1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="os32m2b--in-b1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="os32m2b--in-b1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="os32m2b--in-b1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="os32m2b--in-b1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="os32m2b--in-a2" data-path="os32m2b/in-a2" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(7.3,71.3) rotate(90 4.195 4.5)">
+      <title>os32m2b--in-a2</title>
+      <path id="os32m2b--in-a2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="os32m2b/in-a2/bore" data-class="cutout" />
+      <rect id="os32m2b--in-a2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="os32m2b--in-a2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="os32m2b--in-a2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="os32m2b--in-a2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="os32m2b--in-a2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="os32m2b--out-2" data-path="os32m2b/out-2" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(7.3,82.3) rotate(90 4.195 4.5)">
+      <title>os32m2b--out-2</title>
+      <path id="os32m2b--out-2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="os32m2b/out-2/bore" data-class="cutout" />
+      <rect id="os32m2b--out-2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="os32m2b--out-2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="os32m2b--out-2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="os32m2b--out-2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="os32m2b--out-2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="os32m2b--in-b2" data-path="os32m2b/in-b2" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(7.3,93.3) rotate(90 4.195 4.5)">
+      <title>os32m2b--in-b2</title>
+      <path id="os32m2b--in-b2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="os32m2b/in-b2/bore" data-class="cutout" />
+      <rect id="os32m2b--in-b2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="os32m2b--in-b2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="os32m2b--in-b2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="os32m2b--in-b2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="os32m2b--in-b2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="os32m2b--led-a1" data-path="os32m2b/led-a1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="input" transform="translate(11.3,19.3)">
+      <title>os32m2b--led-a1</title>
+      <circle id="os32m2b--led-a1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="os32m2b--led-a1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="os32m2b/led-a1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="os32m2b--led-b1" data-path="os32m2b/led-b1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="input" transform="translate(11.3,23.7)">
+      <title>os32m2b--led-b1</title>
+      <circle id="os32m2b--led-b1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="os32m2b--led-b1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="os32m2b/led-b1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="os32m2b--led-a2" data-path="os32m2b/led-a2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="input" transform="translate(11.3,62.0)">
+      <title>os32m2b--led-a2</title>
+      <circle id="os32m2b--led-a2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="os32m2b--led-a2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="os32m2b/led-a2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="os32m2b--led-b2" data-path="os32m2b/led-b2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="input" transform="translate(11.3,66.0)">
+      <title>os32m2b--led-b2</title>
+      <circle id="os32m2b--led-b2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="os32m2b--led-b2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="os32m2b/led-b2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="os32m2b--led-alarm" data-path="os32m2b/led-alarm" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="alarm" transform="translate(11.3,104.8)">
+      <title>os32m2b--led-alarm</title>
+      <circle id="os32m2b--led-alarm--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="os32m2b--led-alarm--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="os32m2b/led-alarm/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="os32m2b--led-access" data-path="os32m2b/led-access" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(11.3,109.2)">
+      <title>os32m2b--led-access</title>
+      <circle id="os32m2b--led-access--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="os32m2b--led-access--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="os32m2b/led-access/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.88 65.1" data-cp-dir="front" />
+  </g>
+</svg>

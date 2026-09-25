@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="40.85mm" height="64.66mm" viewBox="0 0 40.85 64.66">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="tm-7124s-fan-tray" data-path="tm-7124s-fan-tray" data-class="fan" data-behaviour="fills" data-ref="telco-systems/tm-7124s-fan-tray@1:1.0.0" data-model="TM-7124S fan tray" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>tm-7124s-fan-tray</title>
+    <rect id="tm-7124s-fan-tray--plate" x="0.1" y="0.1" width="40.65" height="64.46" rx="0.4" fill="#d6d8da" stroke="#8d9298" stroke-width="0.25" />
+    <rect x="7.73" y="9.63" width="25.38" height="34.78" rx="1.4" fill="#f1f2f3" stroke="#9aa0a6" stroke-width="0.3" />
+    <rect x="9.56" y="37.44" width="21.71" height="17.54" rx="1.2" fill="#eceeef" stroke="#b3b8bd" stroke-width="0.25" />
+    <rect id="tm-7124s-fan-tray--handle" x="10.7" y="12.89" width="19.43" height="28.65" rx="1.0" fill="#16181b" data-path="tm-7124s-fan-tray/handle" data-class="handle" />
+    <g id="tm-7124s-fan-tray--thumbscrew-top" data-path="tm-7124s-fan-tray/thumbscrew-top" data-class="fastener">
+      <circle cx="4.13" cy="4.34" r="3.27" fill="#c9cdd1" stroke="#7a7f85" stroke-width="0.3" />
+      <circle cx="4.13" cy="4.34" r="2.35" fill="#b2b7bc" />
+      <rect x="1.84" y="4.09" width="4.58" height="0.5" fill="#5c6167" />
+    </g>
+    <g id="tm-7124s-fan-tray--thumbscrew-bottom" data-path="tm-7124s-fan-tray/thumbscrew-bottom" data-class="fastener">
+      <circle cx="35.5" cy="59.61" r="3.27" fill="#c9cdd1" stroke="#7a7f85" stroke-width="0.3" />
+      <circle cx="35.5" cy="59.61" r="2.35" fill="#b2b7bc" />
+      <rect x="33.21" y="59.36" width="4.58" height="0.5" fill="#5c6167" />
+    </g>
+    <g id="tm-7124s-fan-tray--silkscreen" font-family="Helvetica, Arial, sans-serif" fill="#4d5156">
+      <text x="20.4" y="7.4" font-size="1.4" text-anchor="middle">Fan</text>
+    </g>
+  </g>
+</svg>

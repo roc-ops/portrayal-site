@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="190.5mm" height="35.4mm" viewBox="0 0 190.5 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-down { --led-color: #f5a623; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-link { --led-color: #39b54a; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-no-link { --led-color: #f5a623; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-no-optic { --led-color: #f5a623; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-no-optic { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-on { --led-color: #2f7fe0; }
+    g[data-ref^='nokia/m12-1gb-xp-sfp@'] .state-up { --led-color: #39b54a; }</style>
+  <g id="m12-1gb-xp-sfp" data-path="m12-1gb-xp-sfp" data-class="line-card" data-behaviour="fills" data-ref="nokia/m12-1gb-xp-sfp@1:1.0.0" data-body-depth="177.8" data-model="M12-1GB-XP-SFP" data-part-number="3HE07285AA" data-part-number-variants="3HE07285AA (7750 SR), 3HE07284AA (7450 ESS)" data-power-draw-max-w="30" data-sfp="12" transform="translate(0,0)">
+    <title>m12-1gb-xp-sfp</title>
+    <path id="m12-1gb-xp-sfp--face" d="M 0 0.9 Q 0 0 0.9 0 H 189.6 Q 190.5 0 190.5 0.9 V 35.4 H 158.62 V 33.26 H 31.84 V 35.4 H 0 Z" fill="#2e3034" stroke="#1a1c1f" stroke-width="0.3" />
+    <g id="m12-1gb-xp-sfp--cage-bezels" fill="#1f2124" stroke="#101112" stroke-width="0.35">
+      <rect x="13.91" y="0.9" width="89.64" height="11.97" />
+      <rect x="13.91" y="14.56" width="89.64" height="12.33" />
+    </g>
+    <g id="m12-1gb-xp-sfp--esd-mark" fill="none" stroke="#e6e6e6" stroke-linejoin="round" data-path="m12-1gb-xp-sfp/esd-mark" data-class="label">
+      <path d="M 184.84 1.78 L 188.94 9.04 H 180.74 Z" stroke-width="0.35" />
+      <path d="M 184.84 2.68 L 188.19 8.59 H 181.49 Z" stroke-width="0.2" />
+      <path d="M 182.74 4.98 L 187.24 8.14" stroke-width="0.25" />
+      <path d="M 183.24 7.38 q 0.3 -1.6 1.3 -2.0 l 1.2 -0.3 l -0.2 0.7 l -1.0 0.4 l 1.4 0.2 l -0.3 0.6 z" fill="#e6e6e6" stroke="none" />
+    </g>
+    <rect id="m12-1gb-xp-sfp--label-strip" x="154.07" y="21.55" width="12.94" height="2.09" fill="none" stroke="#1a1c1f" stroke-width="0.3" />
+    <rect id="m12-1gb-xp-sfp--logo-zone" x="108.0" y="1.0" width="26.0" height="6.5" fill="none" data-path="m12-1gb-xp-sfp/logo-zone" data-class="label" />
+    <g id="m12-1gb-xp-sfp--silkscreen">
+      <text x="6.15" y="5.74" font-family="Arial" font-weight="bold" font-size="3.4" fill="#e6e6e6" text-anchor="middle" textLength="4.5" lengthAdjust="spacingAndGlyphs">Stat</text>
+      <text x="6.2" y="10.87" font-family="Arial" font-weight="bold" font-size="3.4" fill="#e6e6e6" text-anchor="middle" textLength="4.4" lengthAdjust="spacingAndGlyphs">Pwr</text>
+      <text x="12.98" y="8.2" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="1.16" lengthAdjust="spacingAndGlyphs">1</text>
+      <text x="104.99" y="8.2" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="2.32" lengthAdjust="spacingAndGlyphs">11</text>
+      <text x="36.53" y="29.69" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="1.16" lengthAdjust="spacingAndGlyphs">4</text>
+      <text x="51.42" y="29.69" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="1.16" lengthAdjust="spacingAndGlyphs">6</text>
+      <text x="66.66" y="29.69" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="1.16" lengthAdjust="spacingAndGlyphs">8</text>
+      <text x="81.78" y="29.69" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="2.32" lengthAdjust="spacingAndGlyphs">10</text>
+      <text x="96.66" y="29.69" font-family="Arial" font-weight="bold" font-size="2.9" fill="#e6e6e6" text-anchor="middle" textLength="2.32" lengthAdjust="spacingAndGlyphs">12</text>
+      <text x="59.63" y="31.64" font-family="Arial" font-weight="bold" font-size="3.4" fill="#e6e6e6" text-anchor="middle" textLength="12.05" lengthAdjust="spacingAndGlyphs">SFP Ports</text>
+      <path d="M 16.2 30.6 H 51.79 M 67.74 30.6 H 97.94" stroke="#e6e6e6" stroke-width="0.35" />
+      <path d="M 118.21 8.84 H 165.7 Q 166.9 8.84 166.9 10.04 V 12.69 Q 166.9 13.89 165.7 13.89 H 118.21 Z" fill="none" stroke="#e6e6e6" stroke-width="0.22" />
+      <rect x="118.21" y="8.84" width="6.01" height="5.05" fill="#e6e6e6" />
+      <path d="M 118.21 13.89 H 165.7 Q 166.9 13.89 166.9 15.09 V 17.48 Q 166.9 18.68 165.7 18.68 H 118.21 Z" fill="none" stroke="#e6e6e6" stroke-width="0.22" />
+      <rect x="118.21" y="13.89" width="6.01" height="4.79" fill="#e6e6e6" />
+      <path d="M 131.3 8.84 V 18.68 M 138.5 8.84 V 18.68 M 145.65 8.84 V 18.68 M 152.84 8.84 V 18.68 M 159.95 8.84 V 18.68" stroke="#e6e6e6" stroke-width="0.22" />
+      <text x="121.22" y="11.14" font-family="Arial" font-weight="bold" font-size="2.3" fill="#2e3034" text-anchor="middle" textLength="3.0" lengthAdjust="spacingAndGlyphs">Lnk</text>
+      <text x="121.22" y="13.33" font-family="Arial" font-weight="bold" font-size="2.3" fill="#2e3034" text-anchor="middle" textLength="2.8" lengthAdjust="spacingAndGlyphs">Act</text>
+      <text x="121.22" y="16.19" font-family="Arial" font-weight="bold" font-size="2.3" fill="#2e3034" text-anchor="middle" textLength="3.0" lengthAdjust="spacingAndGlyphs">Lnk</text>
+      <text x="121.22" y="18.38" font-family="Arial" font-weight="bold" font-size="2.3" fill="#2e3034" text-anchor="middle" textLength="2.8" lengthAdjust="spacingAndGlyphs">Act</text>
+      <text x="125.93" y="12.34" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">1</text>
+      <text x="125.93" y="17.1" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">2</text>
+      <text x="133.1" y="12.34" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">3</text>
+      <text x="133.1" y="17.1" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">4</text>
+      <text x="140.18" y="12.34" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">5</text>
+      <text x="140.18" y="17.1" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">6</text>
+      <text x="147.35" y="12.34" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">7</text>
+      <text x="147.35" y="17.1" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">8</text>
+      <text x="154.61" y="12.34" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="1.04" lengthAdjust="spacingAndGlyphs">9</text>
+      <text x="154.61" y="17.1" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="2.08" lengthAdjust="spacingAndGlyphs">10</text>
+      <text x="161.87" y="12.34" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="2.08" lengthAdjust="spacingAndGlyphs">11</text>
+      <text x="161.87" y="17.1" font-family="Arial" font-weight="bold" font-size="2.6" fill="#e6e6e6" text-anchor="middle" textLength="2.08" lengthAdjust="spacingAndGlyphs">12</text>
+      <text x="142.54" y="7.86" font-family="Arial" font-weight="bold" font-size="3.4" fill="#e6e6e6" text-anchor="middle" textLength="12.05" lengthAdjust="spacingAndGlyphs">SFP Ports</text>
+    </g>
+    <g id="m12-1gb-xp-sfp--lever-left" data-path="m12-1gb-xp-sfp/lever-left" data-class="latch">
+      <rect x="0" y="27.92" width="31.84" height="7.48" fill="#25272a" stroke="#1a1c1f" stroke-width="0.35" />
+      <path d="M 19.0 27.92 V 30.21 M 19.0 32.86 V 35.4" stroke="#1a1c1f" stroke-width="0.35" />
+      <rect x="0" y="30.21" width="33.07" height="2.65" fill="#1c1c1c" stroke="#1a1c1f" stroke-width="0.3" />
+      <rect x="0.0" y="30.26" width="11.3" height="2.55" rx="1.3" fill="#3a3d42" stroke="#1a1c1f" stroke-width="0.3" />
+      <path d="M 20.6 30.21 V 32.86 M 23.1 30.21 V 32.86 M 24.3 30.21 V 32.86 M 27.6 30.21 V 32.86 M 28.8 30.21 V 32.86 M 31.0 30.21 V 32.86 M 32.9 30.21 V 32.86" stroke="#4a4f55" stroke-width="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lever-right" data-path="m12-1gb-xp-sfp/lever-right" data-class="latch">
+      <rect x="158.62" y="27.92" width="31.88" height="7.48" fill="#25272a" stroke="#1a1c1f" stroke-width="0.35" />
+      <path d="M 171.4 27.92 V 30.21 M 171.4 32.86 V 35.4" stroke="#1a1c1f" stroke-width="0.35" />
+      <rect x="157.43" y="30.21" width="33.07" height="2.65" fill="#1c1c1c" stroke="#1a1c1f" stroke-width="0.3" />
+      <rect x="179.2" y="30.26" width="11.3" height="2.55" rx="1.3" fill="#3a3d42" stroke="#1a1c1f" stroke-width="0.3" />
+      <path d="M 157.6 30.21 V 32.86 M 159.5 30.21 V 32.86 M 161.4 30.21 V 32.86 M 162.6 30.21 V 32.86 M 165.9 30.21 V 32.86 M 167.1 30.21 V 32.86 M 169.7 30.21 V 32.86" stroke="#4a4f55" stroke-width="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--screw-left" data-path="m12-1gb-xp-sfp/screw-left" data-class="screw" data-z-cyl="1.6">
+      <circle cx="6.76" cy="22.0" r="5.25" fill="#34373b" stroke="#1a1c1f" stroke-width="0.25" />
+      <circle cx="6.76" cy="22.0" r="4.35" fill="#1c1f23" stroke="#1a1c1f" stroke-width="0.25" />
+      <path d="M 3.31 22.0 H 10.21 M 6.76 18.6 V 25.4" stroke="#4a4f55" stroke-width="0.9" />
+    </g>
+    <g id="m12-1gb-xp-sfp--screw-right" data-path="m12-1gb-xp-sfp/screw-right" data-class="screw" data-z-cyl="1.6">
+      <circle cx="184.14" cy="22.0" r="5.25" fill="#34373b" stroke="#1a1c1f" stroke-width="0.25" />
+      <circle cx="184.14" cy="22.0" r="4.35" fill="#1c1f23" stroke="#1a1c1f" stroke-width="0.25" />
+      <path d="M 180.69 22.0 H 187.59 M 184.14 18.6 V 25.4" stroke="#4a4f55" stroke-width="0.9" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-1" data-path="m12-1gb-xp-sfp/port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(15.95,1.67)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-1</title>
+      <rect id="m12-1gb-xp-sfp--port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-1/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-2" data-path="m12-1gb-xp-sfp/port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(15.95,15.43) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-2</title>
+      <rect id="m12-1gb-xp-sfp--port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-2/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-3" data-path="m12-1gb-xp-sfp/port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(30.2,1.67)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-3</title>
+      <rect id="m12-1gb-xp-sfp--port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-3/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-4" data-path="m12-1gb-xp-sfp/port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(30.2,15.43) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-4</title>
+      <rect id="m12-1gb-xp-sfp--port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-4/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-5" data-path="m12-1gb-xp-sfp/port-5" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(44.45,1.67)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-5</title>
+      <rect id="m12-1gb-xp-sfp--port-5--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-5/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-5--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-5--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-5--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-6" data-path="m12-1gb-xp-sfp/port-6" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(44.45,15.43) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-6</title>
+      <rect id="m12-1gb-xp-sfp--port-6--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-6/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-6--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-6--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-6--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-7" data-path="m12-1gb-xp-sfp/port-7" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(58.7,1.67)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-7</title>
+      <rect id="m12-1gb-xp-sfp--port-7--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-7/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-7--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-7--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-7--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-8" data-path="m12-1gb-xp-sfp/port-8" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(58.7,15.43) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-8</title>
+      <rect id="m12-1gb-xp-sfp--port-8--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-8/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-8--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-8--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-8--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-9" data-path="m12-1gb-xp-sfp/port-9" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(72.95,1.67)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-9</title>
+      <rect id="m12-1gb-xp-sfp--port-9--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-9/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-9--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-9--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-9--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-10" data-path="m12-1gb-xp-sfp/port-10" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(72.95,15.43) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-10</title>
+      <rect id="m12-1gb-xp-sfp--port-10--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-10/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-10--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-10--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-10--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-11" data-path="m12-1gb-xp-sfp/port-11" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(87.2,1.67)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-11</title>
+      <rect id="m12-1gb-xp-sfp--port-11--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-11/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-11--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-11--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-11--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--port-12" data-path="m12-1gb-xp-sfp/port-12" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" data-speed="1g" transform="translate(87.2,15.43) rotate(180 7.125 5.2)" data-group="sfp" data-group-role="traffic" data-description="the 12 SFP cages, Gigabit Ethernet, in two ganged rows of six: odd ports 1-11 left to right across the top and even ports 2-12 left to right across the bottom, as Figure 7 numbers them">
+      <title>m12-1gb-xp-sfp--port-12</title>
+      <rect id="m12-1gb-xp-sfp--port-12--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="m12-1gb-xp-sfp/port-12/opening" data-class="cutout" />
+      <rect id="m12-1gb-xp-sfp--port-12--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="m12-1gb-xp-sfp--port-12--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m12-1gb-xp-sfp--port-12--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="m12-1gb-xp-sfp--stat" data-path="m12-1gb-xp-sfp/stat" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Stat - green blinking: initializing; green: operationally up, administratively up; amber: operationally down, administratively up; unlit: administratively down, shut down" transform="translate(8.51,2.75)" data-group="status-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--stat</title>
+      <circle id="m12-1gb-xp-sfp--stat--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m12-1gb-xp-sfp--stat--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/stat/lamp" data-class="led" data-states="off initializing up down" data-z-dome="0.45" />
+    </g>
+    <g id="m12-1gb-xp-sfp--pwr" data-path="m12-1gb-xp-sfp/pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Pwr - blue: on; off: no power" transform="translate(8.51,7.95)" data-group="status-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--pwr</title>
+      <circle id="m12-1gb-xp-sfp--pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m12-1gb-xp-sfp--pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-1" data-path="m12-1gb-xp-sfp/lnk-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(127.37,9.29)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-1</title>
+      <circle id="m12-1gb-xp-sfp--lnk-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-1/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-2" data-path="m12-1gb-xp-sfp/lnk-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(127.37,14.05)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-2</title>
+      <circle id="m12-1gb-xp-sfp--lnk-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-2/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-3" data-path="m12-1gb-xp-sfp/lnk-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(134.56,9.29)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-3</title>
+      <circle id="m12-1gb-xp-sfp--lnk-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-3/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-4" data-path="m12-1gb-xp-sfp/lnk-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(134.56,14.05)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-4</title>
+      <circle id="m12-1gb-xp-sfp--lnk-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-4/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-5" data-path="m12-1gb-xp-sfp/lnk-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(141.74,9.29)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-5</title>
+      <circle id="m12-1gb-xp-sfp--lnk-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-5/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-6" data-path="m12-1gb-xp-sfp/lnk-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(141.74,14.05)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-6</title>
+      <circle id="m12-1gb-xp-sfp--lnk-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-6/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-7" data-path="m12-1gb-xp-sfp/lnk-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(148.92,9.29)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-7</title>
+      <circle id="m12-1gb-xp-sfp--lnk-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-7/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-8" data-path="m12-1gb-xp-sfp/lnk-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(148.92,14.05)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-8</title>
+      <circle id="m12-1gb-xp-sfp--lnk-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-8/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-9" data-path="m12-1gb-xp-sfp/lnk-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(156.07,9.29)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-9</title>
+      <circle id="m12-1gb-xp-sfp--lnk-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-9/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-10" data-path="m12-1gb-xp-sfp/lnk-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(156.07,14.05)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-10</title>
+      <circle id="m12-1gb-xp-sfp--lnk-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-10/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-11" data-path="m12-1gb-xp-sfp/lnk-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(163.31,9.29)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-11</title>
+      <circle id="m12-1gb-xp-sfp--lnk-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-11/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--lnk-12" data-path="m12-1gb-xp-sfp/lnk-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Lnk - green: valid communications link established, 1000 Mb/s; amber slow blinking: no SFP installed; amber: optics installed, no link present; unlit: disabled, shut down" transform="translate(163.31,14.05)" data-group="link-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--lnk-12</title>
+      <circle id="m12-1gb-xp-sfp--lnk-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--lnk-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/lnk-12/lamp" data-class="led" data-states="off link no-optic no-link" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-1" data-path="m12-1gb-xp-sfp/act-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(127.37,11.37)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-1</title>
+      <circle id="m12-1gb-xp-sfp--act-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-1/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-2" data-path="m12-1gb-xp-sfp/act-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(127.37,16.13)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-2</title>
+      <circle id="m12-1gb-xp-sfp--act-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-2/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-3" data-path="m12-1gb-xp-sfp/act-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(134.56,11.37)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-3</title>
+      <circle id="m12-1gb-xp-sfp--act-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-3/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-4" data-path="m12-1gb-xp-sfp/act-4" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(134.56,16.13)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-4</title>
+      <circle id="m12-1gb-xp-sfp--act-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-4/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-5" data-path="m12-1gb-xp-sfp/act-5" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(141.74,11.37)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-5</title>
+      <circle id="m12-1gb-xp-sfp--act-5--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-5--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-5/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-6" data-path="m12-1gb-xp-sfp/act-6" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(141.74,16.13)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-6</title>
+      <circle id="m12-1gb-xp-sfp--act-6--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-6--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-6/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-7" data-path="m12-1gb-xp-sfp/act-7" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(148.92,11.37)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-7</title>
+      <circle id="m12-1gb-xp-sfp--act-7--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-7--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-7/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-8" data-path="m12-1gb-xp-sfp/act-8" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(148.92,16.13)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-8</title>
+      <circle id="m12-1gb-xp-sfp--act-8--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-8--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-8/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-9" data-path="m12-1gb-xp-sfp/act-9" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(156.07,11.37)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-9</title>
+      <circle id="m12-1gb-xp-sfp--act-9--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-9--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-9/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-10" data-path="m12-1gb-xp-sfp/act-10" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(156.07,16.13)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-10</title>
+      <circle id="m12-1gb-xp-sfp--act-10--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-10--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-10/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-11" data-path="m12-1gb-xp-sfp/act-11" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(163.31,11.37)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-11</title>
+      <circle id="m12-1gb-xp-sfp--act-11--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-11--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-11/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g id="m12-1gb-xp-sfp--act-12" data-path="m12-1gb-xp-sfp/act-12" data-class="led" data-ref="common/led-dot@1:1.1.0" data-description="Act - green: port active, receiving or transmitting data; amber: error condition (send or receive errors); unlit: no activity" transform="translate(163.31,16.13)" data-group="activity-leds" data-group-role="indicator">
+      <title>m12-1gb-xp-sfp--act-12</title>
+      <circle id="m12-1gb-xp-sfp--act-12--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="m12-1gb-xp-sfp--act-12--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="m12-1gb-xp-sfp/act-12/lamp" data-class="led" data-states="off active error" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="95.25 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

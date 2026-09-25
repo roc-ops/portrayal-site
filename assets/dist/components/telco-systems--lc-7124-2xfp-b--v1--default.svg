@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="166.0mm" height="30.58mm" viewBox="0 0 166.0 30.58">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="lc-7124-2xfp-b" data-path="lc-7124-2xfp-b" data-class="line-card" data-behaviour="fills" data-ref="telco-systems/lc-7124-2xfp-b@1:1.0.0" data-model="LC-7124-2XFP-B" data-power-absent="not-published" data-xfp="2" data-states="absent" transform="translate(0,0)">
+    <title>lc-7124-2xfp-b</title>
+    <rect id="lc-7124-2xfp-b--plate" x="0.1" y="0.1" width="165.8" height="30.38" rx="0.5" fill="#d9dbdd" stroke="#8d9298" stroke-width="0.3" />
+    <rect x="86.4" y="10.5" width="29.1" height="12.6" rx="1.6" fill="none" stroke="#9aa0a6" stroke-width="0.35" />
+    <rect x="117.6" y="10.5" width="28.8" height="12.6" rx="1.6" fill="none" stroke="#9aa0a6" stroke-width="0.35" />
+    <g id="lc-7124-2xfp-b--thumbscrew-left" data-path="lc-7124-2xfp-b/thumbscrew-left" data-class="fastener">
+      <circle cx="4.7" cy="14.6" r="3.2" fill="#c9cdd1" stroke="#7a7f85" stroke-width="0.3" />
+      <circle cx="4.7" cy="14.6" r="2.3" fill="#b2b7bc" />
+      <rect x="2.46" y="14.35" width="4.48" height="0.5" fill="#5c6167" />
+    </g>
+    <g id="lc-7124-2xfp-b--thumbscrew-right" data-path="lc-7124-2xfp-b/thumbscrew-right" data-class="fastener">
+      <circle cx="162.0" cy="14.6" r="3.2" fill="#c9cdd1" stroke="#7a7f85" stroke-width="0.3" />
+      <circle cx="162.0" cy="14.6" r="2.3" fill="#b2b7bc" />
+      <rect x="159.76" y="14.35" width="4.48" height="0.5" fill="#5c6167" />
+    </g>
+    <path d="M 44.9 16.2 L 48.9 18.7 M 74.6 16.2 L 78.7 18.7" stroke="#4d5156" stroke-width="0.3" />
+    <g id="lc-7124-2xfp-b--silkscreen" font-family="Helvetica, Arial, sans-serif" fill="#4d5156">
+      <text x="34.85" y="26.2" font-size="2.4" text-anchor="middle">2/1</text>
+      <text x="64.5" y="26.2" font-size="2.4" text-anchor="middle">2/2</text>
+      <text x="49.8" y="23.4" font-size="1.1" text-anchor="middle">Link/Act</text>
+      <text x="79.6" y="23.4" font-size="1.1" text-anchor="middle">Link/Act</text>
+      <text x="101.1" y="9.4" font-size="1.3" text-anchor="middle">Sync Clock</text>
+      <text x="132.0" y="9.4" font-size="1.3" text-anchor="middle">Phase</text>
+      <text x="142.0" y="26.4" font-size="2.2" text-anchor="middle">LC-7124-2XFP-B</text>
+    </g>
+    <g id="lc-7124-2xfp-b--port-1" data-path="lc-7124-2xfp-b/port-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(25.1,8.81)" data-group="xfp" data-group-role="traffic" data-description="two 10GE XFP ports, 2/1 and 2/2 as the face prints them - slot 2 of the chassis.">
+      <title>lc-7124-2xfp-b--port-1</title>
+      <rect id="lc-7124-2xfp-b--port-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="lc-7124-2xfp-b/port-1/opening" data-class="cutout" />
+      <rect id="lc-7124-2xfp-b--port-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="lc-7124-2xfp-b--port-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="lc-7124-2xfp-b--port-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--port-2" data-path="lc-7124-2xfp-b/port-2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(54.75,8.81)" data-group="xfp" data-group-role="traffic" data-description="two 10GE XFP ports, 2/1 and 2/2 as the face prints them - slot 2 of the chassis.">
+      <title>lc-7124-2xfp-b--port-2</title>
+      <rect id="lc-7124-2xfp-b--port-2--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="lc-7124-2xfp-b/port-2/opening" data-class="cutout" />
+      <rect id="lc-7124-2xfp-b--port-2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="lc-7124-2xfp-b--port-2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="lc-7124-2xfp-b--port-2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--led-port-1" data-path="lc-7124-2xfp-b/led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(48.8,17.8)" data-group="port-leds" data-group-role="indicator">
+      <title>lc-7124-2xfp-b--led-port-1</title>
+      <circle id="lc-7124-2xfp-b--led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lc-7124-2xfp-b--led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lc-7124-2xfp-b/led-port-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="lc-7124-2xfp-b--led-port-2" data-path="lc-7124-2xfp-b/led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(78.6,17.8)" data-group="port-leds" data-group-role="indicator">
+      <title>lc-7124-2xfp-b--led-port-2</title>
+      <circle id="lc-7124-2xfp-b--led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="lc-7124-2xfp-b--led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="lc-7124-2xfp-b/led-port-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="lc-7124-2xfp-b--sync-clock-1" data-path="lc-7124-2xfp-b/sync-clock-1" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(86.9,13.26)" data-group="clocks" data-group-role="management" data-description="the card's timing jacks, three under &quot;Sync Clock&quot; and three under &quot;Phase&quot; - the sync and phase clock the data sheet names, which discipline the box's timing rather than carry traffic.">
+      <title>lc-7124-2xfp-b--sync-clock-1</title>
+      <path id="lc-7124-2xfp-b--sync-clock-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="lc-7124-2xfp-b--sync-clock-1--jack" data-path="lc-7124-2xfp-b/sync-clock-1/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>lc-7124-2xfp-b--sync-clock-1--jack</title>
+        <circle id="lc-7124-2xfp-b--sync-clock-1--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="lc-7124-2xfp-b/sync-clock-1/jack/opening" data-class="cutout" />
+        <g id="lc-7124-2xfp-b--sync-clock-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--sync-clock-2" data-path="lc-7124-2xfp-b/sync-clock-2" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(97.6,13.26)" data-group="clocks" data-group-role="management" data-description="the card's timing jacks, three under &quot;Sync Clock&quot; and three under &quot;Phase&quot; - the sync and phase clock the data sheet names, which discipline the box's timing rather than carry traffic.">
+      <title>lc-7124-2xfp-b--sync-clock-2</title>
+      <path id="lc-7124-2xfp-b--sync-clock-2--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="lc-7124-2xfp-b--sync-clock-2--jack" data-path="lc-7124-2xfp-b/sync-clock-2/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>lc-7124-2xfp-b--sync-clock-2--jack</title>
+        <circle id="lc-7124-2xfp-b--sync-clock-2--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="lc-7124-2xfp-b/sync-clock-2/jack/opening" data-class="cutout" />
+        <g id="lc-7124-2xfp-b--sync-clock-2--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--sync-clock-3" data-path="lc-7124-2xfp-b/sync-clock-3" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(108.0,13.26)" data-group="clocks" data-group-role="management" data-description="the card's timing jacks, three under &quot;Sync Clock&quot; and three under &quot;Phase&quot; - the sync and phase clock the data sheet names, which discipline the box's timing rather than carry traffic.">
+      <title>lc-7124-2xfp-b--sync-clock-3</title>
+      <path id="lc-7124-2xfp-b--sync-clock-3--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="lc-7124-2xfp-b--sync-clock-3--jack" data-path="lc-7124-2xfp-b/sync-clock-3/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>lc-7124-2xfp-b--sync-clock-3--jack</title>
+        <circle id="lc-7124-2xfp-b--sync-clock-3--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="lc-7124-2xfp-b/sync-clock-3/jack/opening" data-class="cutout" />
+        <g id="lc-7124-2xfp-b--sync-clock-3--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--phase-1" data-path="lc-7124-2xfp-b/phase-1" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(118.1,13.26)" data-group="clocks" data-group-role="management" data-description="the card's timing jacks, three under &quot;Sync Clock&quot; and three under &quot;Phase&quot; - the sync and phase clock the data sheet names, which discipline the box's timing rather than carry traffic.">
+      <title>lc-7124-2xfp-b--phase-1</title>
+      <path id="lc-7124-2xfp-b--phase-1--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="lc-7124-2xfp-b--phase-1--jack" data-path="lc-7124-2xfp-b/phase-1/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>lc-7124-2xfp-b--phase-1--jack</title>
+        <circle id="lc-7124-2xfp-b--phase-1--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="lc-7124-2xfp-b/phase-1/jack/opening" data-class="cutout" />
+        <g id="lc-7124-2xfp-b--phase-1--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--phase-2" data-path="lc-7124-2xfp-b/phase-2" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(128.5,13.26)" data-group="clocks" data-group-role="management" data-description="the card's timing jacks, three under &quot;Sync Clock&quot; and three under &quot;Phase&quot; - the sync and phase clock the data sheet names, which discipline the box's timing rather than carry traffic.">
+      <title>lc-7124-2xfp-b--phase-2</title>
+      <path id="lc-7124-2xfp-b--phase-2--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="lc-7124-2xfp-b--phase-2--jack" data-path="lc-7124-2xfp-b/phase-2/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>lc-7124-2xfp-b--phase-2--jack</title>
+        <circle id="lc-7124-2xfp-b--phase-2--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="lc-7124-2xfp-b/phase-2/jack/opening" data-class="cutout" />
+        <g id="lc-7124-2xfp-b--phase-2--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="lc-7124-2xfp-b--phase-3" data-path="lc-7124-2xfp-b/phase-3" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" transform="translate(138.9,13.26)" data-group="clocks" data-group-role="management" data-description="the card's timing jacks, three under &quot;Sync Clock&quot; and three under &quot;Phase&quot; - the sync and phase clock the data sheet names, which discipline the box's timing rather than carry traffic.">
+      <title>lc-7124-2xfp-b--phase-3</title>
+      <path id="lc-7124-2xfp-b--phase-3--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="lc-7124-2xfp-b--phase-3--jack" data-path="lc-7124-2xfp-b/phase-3/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>lc-7124-2xfp-b--phase-3--jack</title>
+        <circle id="lc-7124-2xfp-b--phase-3--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="lc-7124-2xfp-b/phase-3/jack/opening" data-class="cutout" />
+        <g id="lc-7124-2xfp-b--phase-3--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="83 15.29" data-cp-dir="rear" />
+  </g>
+</svg>

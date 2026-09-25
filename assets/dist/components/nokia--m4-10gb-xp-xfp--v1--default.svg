@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="190.5mm" height="35.4mm" viewBox="0 0 190.5 35.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-active { --led-color: #39b54a; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-disabled { --led-color: #f5a623; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-down { --led-color: #f5a623; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-error { --led-color: #f5a623; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-initializing { --led-color: #39b54a; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-initializing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-no-link { --led-color: #f5a623; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-no-xfp { --led-color: #f5a623; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-no-xfp { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-on { --led-color: #2f7fe0; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-up { --led-color: #39b54a; }
+    g[data-ref^='nokia/m4-10gb-xp-xfp@'] .state-wan-phy { --led-color: #39b54a; }</style>
+  <g id="m4-10gb-xp-xfp" data-path="m4-10gb-xp-xfp" data-class="line-card" data-behaviour="fills" data-ref="nokia/m4-10gb-xp-xfp@1:1.0.0" data-body-depth="177.8" data-model="M4-10GB-XP-XFP" data-part-number="3HE03686AA" data-part-number-variants="3HE03686AA (7750 SR), 3HE03688AA (7450 ESS)" data-power-draw-max-w="60" data-xfp="4" transform="translate(0,0)">
+    <title>m4-10gb-xp-xfp</title>
+    <path id="m4-10gb-xp-xfp--face" d="M 0 0 H 190.5 V 28.25 H 175.0 V 35.4 H 15.5 V 28.25 H 0 Z" fill="#2e3034" stroke="#1a1c1f" stroke-width="0.3" />
+    <path id="m4-10gb-xp-xfp--lip" d="M 1.6 17.6 V 2.5 Q 1.6 1.55 2.5 1.55 H 188.3 Q 189.2 1.55 189.2 2.5 V 17.6 M 17.6 33.33 H 173.3" fill="none" stroke="#1a1c1f" stroke-width="0.2" />
+    <g id="m4-10gb-xp-xfp--cage-bezels">
+      <rect x="30.19" y="3.57" width="20.0" height="10.37" fill="#1f2124" stroke="#101112" stroke-width="0.25" />
+      <rect x="67.19" y="3.57" width="20.0" height="10.37" fill="#1f2124" stroke="#101112" stroke-width="0.25" />
+      <rect x="104.17" y="3.57" width="20.0" height="10.37" fill="#1f2124" stroke="#101112" stroke-width="0.25" />
+      <rect x="141.16" y="3.57" width="20.0" height="10.37" fill="#1f2124" stroke="#101112" stroke-width="0.25" />
+    </g>
+    <g id="m4-10gb-xp-xfp--screw-tabs" fill="#34373b" stroke="#1a1c1f" stroke-width="0.2">
+      <rect x="5.2" y="28.25" width="4.9" height="1.55" />
+      <rect x="180.5" y="28.25" width="4.9" height="3.1" />
+    </g>
+    <g id="m4-10gb-xp-xfp--silkscreen">
+      <text x="9.05" y="7.7" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="end">Stat</text>
+      <text x="9.05" y="12.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="end">Pwr</text>
+      <text x="26.71" y="10.45" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">1</text>
+      <text x="63.8" y="10.45" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">2</text>
+      <text x="101.0" y="10.45" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">3</text>
+      <text x="137.82" y="10.45" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">4</text>
+      <text x="31.97" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Lnk</text>
+      <text x="40.02" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Act</text>
+      <text x="46.9" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6">Laser</text>
+      <text x="46.9" y="27.1" font-family="Arial" font-size="3.2" fill="#e6e6e6">Disabled</text>
+      <text x="68.89" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Lnk</text>
+      <text x="77.02" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Act</text>
+      <text x="83.82" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6">Laser</text>
+      <text x="83.82" y="27.1" font-family="Arial" font-size="3.2" fill="#e6e6e6">Disabled</text>
+      <text x="106.1" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Lnk</text>
+      <text x="114.0" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Act</text>
+      <text x="121.03" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6">Laser</text>
+      <text x="121.03" y="27.1" font-family="Arial" font-size="3.2" fill="#e6e6e6">Disabled</text>
+      <text x="142.96" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Lnk</text>
+      <text x="150.99" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">Act</text>
+      <text x="157.91" y="23.8" font-family="Arial" font-size="3.2" fill="#e6e6e6">Laser</text>
+      <text x="157.91" y="27.1" font-family="Arial" font-size="3.2" fill="#e6e6e6">Disabled</text>
+      <text x="179.34" y="11.6" font-family="Arial" font-size="3.2" fill="#e6e6e6" text-anchor="middle">WAN</text>
+      <g id="m4-10gb-xp-xfp--model-label" data-path="m4-10gb-xp-xfp/model-label" data-class="label">
+        <text x="172.27" y="32.06" font-family="Arial" font-size="3.0" font-weight="bold" fill="#e6e6e6" text-anchor="end">M4-10GB-XP-XFP</text>
+      </g>
+    </g>
+    <g id="m4-10gb-xp-xfp--screw-left" data-path="m4-10gb-xp-xfp/screw-left" data-class="screw" data-z-cyl="1.6">
+      <circle cx="7.6" cy="22.9" r="5.0" fill="#34373b" stroke="#1a1c1f" stroke-width="0.25" />
+      <circle cx="7.6" cy="22.9" r="4.1" fill="#1c1f23" stroke="#1a1c1f" stroke-width="0.25" />
+      <path d="M 5.1 20.4 L 10.1 25.4 M 10.1 20.4 L 5.1 25.4" stroke="#4a4f55" stroke-width="0.7" />
+    </g>
+    <g id="m4-10gb-xp-xfp--screw-right" data-path="m4-10gb-xp-xfp/screw-right" data-class="screw" data-z-cyl="1.6">
+      <circle cx="183.0" cy="22.9" r="5.0" fill="#34373b" stroke="#1a1c1f" stroke-width="0.25" />
+      <circle cx="183.0" cy="22.9" r="4.1" fill="#1c1f23" stroke="#1a1c1f" stroke-width="0.25" />
+      <path d="M 180.5 20.4 L 185.5 25.4 M 185.5 20.4 L 180.5 25.4" stroke="#4a4f55" stroke-width="0.7" />
+    </g>
+    <g id="m4-10gb-xp-xfp--port-1" data-path="m4-10gb-xp-xfp/port-1" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(30.44,3.91)" data-group="xfp" data-group-role="traffic" data-description="the four XFP cages, 10 Gigabit Ethernet, 1-4 left to right as Figure 8 prints them">
+      <title>m4-10gb-xp-xfp--port-1</title>
+      <rect id="m4-10gb-xp-xfp--port-1--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="m4-10gb-xp-xfp/port-1/opening" data-class="cutout" />
+      <rect id="m4-10gb-xp-xfp--port-1--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="m4-10gb-xp-xfp--port-1--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m4-10gb-xp-xfp--port-1--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="m4-10gb-xp-xfp--port-2" data-path="m4-10gb-xp-xfp/port-2" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(67.44,3.91)" data-group="xfp" data-group-role="traffic" data-description="the four XFP cages, 10 Gigabit Ethernet, 1-4 left to right as Figure 8 prints them">
+      <title>m4-10gb-xp-xfp--port-2</title>
+      <rect id="m4-10gb-xp-xfp--port-2--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="m4-10gb-xp-xfp/port-2/opening" data-class="cutout" />
+      <rect id="m4-10gb-xp-xfp--port-2--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="m4-10gb-xp-xfp--port-2--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m4-10gb-xp-xfp--port-2--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="m4-10gb-xp-xfp--port-3" data-path="m4-10gb-xp-xfp/port-3" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(104.42,3.91)" data-group="xfp" data-group-role="traffic" data-description="the four XFP cages, 10 Gigabit Ethernet, 1-4 left to right as Figure 8 prints them">
+      <title>m4-10gb-xp-xfp--port-3</title>
+      <rect id="m4-10gb-xp-xfp--port-3--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="m4-10gb-xp-xfp/port-3/opening" data-class="cutout" />
+      <rect id="m4-10gb-xp-xfp--port-3--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="m4-10gb-xp-xfp--port-3--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m4-10gb-xp-xfp--port-3--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="m4-10gb-xp-xfp--port-4" data-path="m4-10gb-xp-xfp/port-4" data-class="port" data-ref="std/xfp@1:1.0.0" data-depth="61.7" data-wall="#aab0b7" data-media="xfp" data-speed="10g" transform="translate(141.41,3.91)" data-group="xfp" data-group-role="traffic" data-description="the four XFP cages, 10 Gigabit Ethernet, 1-4 left to right as Figure 8 prints them">
+      <title>m4-10gb-xp-xfp--port-4</title>
+      <rect id="m4-10gb-xp-xfp--port-4--opening" x="0" y="0" width="19.5" height="9.7" rx="0.5" fill="#17191c" data-path="m4-10gb-xp-xfp/port-4/opening" data-class="cutout" />
+      <rect id="m4-10gb-xp-xfp--port-4--collar" x="0.5" y="0.5" width="18.5" height="8.7" rx="0.4" fill="#0d0f11" data-z-out="1.0" data-z-color="#7d848c" />
+      <rect id="m4-10gb-xp-xfp--port-4--module-slot" x="1.4" y="1.5" width="16.7" height="2.2" rx="0.3" fill="#2b2f33" />
+      <rect id="m4-10gb-xp-xfp--port-4--latch-window" x="1.4" y="5.4" width="16.7" height="2.6" rx="0.3" fill="#000000" />
+      <g data-cp="mate" data-cp-at="9.75 4.85" data-cp-dir="front" />
+    </g>
+    <g id="m4-10gb-xp-xfp--lnk-1" data-path="m4-10gb-xp-xfp/lnk-1" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Lnk, port 1 - green: link established, 10000 Mbps; amber slow blinking: no XFP installed; amber: optics installed, no link; unlit: disabled, shut down" transform="translate(29.81,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--lnk-1</title>
+      <circle id="m4-10gb-xp-xfp--lnk-1--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--lnk-1--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/lnk-1/lamp" data-class="led" data-states="off up no-xfp no-link" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--act-1" data-path="m4-10gb-xp-xfp/act-1" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Act, port 1 - green: active, receiving or transmitting; amber: error condition; unlit: no activity" transform="translate(38.22,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--act-1</title>
+      <circle id="m4-10gb-xp-xfp--act-1--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--act-1--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/act-1/lamp" data-class="led" data-states="off active error" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--laser-1" data-path="m4-10gb-xp-xfp/laser-1" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Laser Disabled, port 1 - amber: laser disabled; off: laser on" transform="translate(46.64,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--laser-1</title>
+      <circle id="m4-10gb-xp-xfp--laser-1--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--laser-1--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/laser-1/lamp" data-class="led" data-states="off disabled" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--lnk-2" data-path="m4-10gb-xp-xfp/lnk-2" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Lnk, port 2 - green: link established, 10000 Mbps; amber slow blinking: no XFP installed; amber: optics installed, no link; unlit: disabled, shut down" transform="translate(66.81,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--lnk-2</title>
+      <circle id="m4-10gb-xp-xfp--lnk-2--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--lnk-2--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/lnk-2/lamp" data-class="led" data-states="off up no-xfp no-link" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--act-2" data-path="m4-10gb-xp-xfp/act-2" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Act, port 2 - green: active, receiving or transmitting; amber: error condition; unlit: no activity" transform="translate(75.22,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--act-2</title>
+      <circle id="m4-10gb-xp-xfp--act-2--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--act-2--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/act-2/lamp" data-class="led" data-states="off active error" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--laser-2" data-path="m4-10gb-xp-xfp/laser-2" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Laser Disabled, port 2 - amber: laser disabled; off: laser on" transform="translate(83.64,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--laser-2</title>
+      <circle id="m4-10gb-xp-xfp--laser-2--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--laser-2--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/laser-2/lamp" data-class="led" data-states="off disabled" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--lnk-3" data-path="m4-10gb-xp-xfp/lnk-3" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Lnk, port 3 - green: link established, 10000 Mbps; amber slow blinking: no XFP installed; amber: optics installed, no link; unlit: disabled, shut down" transform="translate(103.79,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--lnk-3</title>
+      <circle id="m4-10gb-xp-xfp--lnk-3--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--lnk-3--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/lnk-3/lamp" data-class="led" data-states="off up no-xfp no-link" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--act-3" data-path="m4-10gb-xp-xfp/act-3" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Act, port 3 - green: active, receiving or transmitting; amber: error condition; unlit: no activity" transform="translate(112.21,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--act-3</title>
+      <circle id="m4-10gb-xp-xfp--act-3--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--act-3--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/act-3/lamp" data-class="led" data-states="off active error" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--laser-3" data-path="m4-10gb-xp-xfp/laser-3" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Laser Disabled, port 3 - amber: laser disabled; off: laser on" transform="translate(120.62,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--laser-3</title>
+      <circle id="m4-10gb-xp-xfp--laser-3--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--laser-3--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/laser-3/lamp" data-class="led" data-states="off disabled" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--lnk-4" data-path="m4-10gb-xp-xfp/lnk-4" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Lnk, port 4 - green: link established, 10000 Mbps; amber slow blinking: no XFP installed; amber: optics installed, no link; unlit: disabled, shut down" transform="translate(140.77,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--lnk-4</title>
+      <circle id="m4-10gb-xp-xfp--lnk-4--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--lnk-4--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/lnk-4/lamp" data-class="led" data-states="off up no-xfp no-link" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--act-4" data-path="m4-10gb-xp-xfp/act-4" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Act, port 4 - green: active, receiving or transmitting; amber: error condition; unlit: no activity" transform="translate(149.19,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--act-4</title>
+      <circle id="m4-10gb-xp-xfp--act-4--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--act-4--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/act-4/lamp" data-class="led" data-states="off active error" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--laser-4" data-path="m4-10gb-xp-xfp/laser-4" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Laser Disabled, port 4 - amber: laser disabled; off: laser on" transform="translate(157.6,16.08)" data-group="port-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--laser-4</title>
+      <circle id="m4-10gb-xp-xfp--laser-4--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--laser-4--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/laser-4/lamp" data-class="led" data-states="off disabled" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--stat" data-path="m4-10gb-xp-xfp/stat" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Stat - green blinking: initializing; green: operationally up, administratively up; amber: operationally down, administratively up; unlit: administratively down" transform="translate(9.14,4.25)" data-group="status-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--stat</title>
+      <circle id="m4-10gb-xp-xfp--stat--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--stat--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/stat/lamp" data-class="led" data-states="off initializing up down" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--pwr" data-path="m4-10gb-xp-xfp/pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="Pwr - blue: on; off: no power" transform="translate(9.14,9.41)" data-group="status-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--pwr</title>
+      <circle id="m4-10gb-xp-xfp--pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+    </g>
+    <g id="m4-10gb-xp-xfp--wan" data-path="m4-10gb-xp-xfp/wan" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-description="WAN - green: all ports configured for 10GBASE WAN PHY framing; unlit: not" transform="translate(177.73,4.27)" data-group="status-leds" data-group-role="indicator">
+      <title>m4-10gb-xp-xfp--wan</title>
+      <circle id="m4-10gb-xp-xfp--wan--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+      <circle id="m4-10gb-xp-xfp--wan--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="m4-10gb-xp-xfp/wan/lamp" data-class="led" data-states="off wan-phy" data-z-dome="0.45" />
+    </g>
+    <g data-cp="mate" data-cp-at="95.25 17.7" data-cp-dir="rear" />
+  </g>
+</svg>

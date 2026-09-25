@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.76mm" height="130.2mm" viewBox="0 0 25.76 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="bp-f2-al" data-path="bp-f2-al" data-class="coupler" data-behaviour="fills" data-ref="commscope/bp-f2-al@1:1.0.0" data-model="BP-F2-AL" data-slots="1" transform="translate(0,0)">
+    <title>bp-f2-al</title>
+    <rect id="bp-f2-al--body" x="0" y="0" width="25.76" height="130.2" rx="0.6" fill="#d9dbdd" stroke="#8d9297" stroke-width="0.3" />
+    <g fill="none" stroke="#b3b7bb" stroke-width="0.3">
+      <path d="M 1.1 0.4 V 129.8 M 24.66 0.4 V 129.8" />
+    </g>
+    <path d="M 0 66.5 H 25.76 M 0 113.4 H 25.76" stroke="#8d9297" stroke-width="0.3" fill="none" />
+    <g id="bp-f2-al--screw-top" data-path="bp-f2-al/screw-top" data-class="fastener">
+      <circle cx="12.88" cy="5.5" r="5.0" fill="#141517" />
+    </g>
+    <g id="bp-f2-al--vents" fill="#c3c6ca" stroke="#6d7277" stroke-width="0.2" data-path="bp-f2-al/vents" data-class="vent">
+      <rect x="4.30" y="32.3" width="2.0" height="29.2" rx="1.0" />
+      <rect x="9.60" y="32.3" width="2.0" height="29.2" rx="1.0" />
+      <rect x="14.50" y="32.3" width="2.0" height="29.2" rx="1.0" />
+      <rect x="19.50" y="32.3" width="2.0" height="29.2" rx="1.0" />
+    </g>
+    <g id="bp-f2-al--screw-bottom" data-path="bp-f2-al/screw-bottom" data-class="fastener">
+      <circle cx="12.88" cy="124.3" r="5.0" fill="#141517" />
+    </g>
+    <g id="bp-f2-al--silkscreen" font-family="Helvetica, Arial, sans-serif" text-anchor="middle" fill="#1e2124">
+      <text x="12.88" y="12.6" font-size="2.3">BP-F2-AL</text>
+      <rect x="5.4" y="15.9" width="1.8" height="1.8" fill="#1e2124" />
+      <text x="8.0" y="17.5" font-size="1.7" text-anchor="start" fill="#1e2124">OPTICAL INP</text>
+      <rect x="5.4" y="19.2" width="1.8" height="1.8" fill="#1e2124" />
+      <text x="8.0" y="20.8" font-size="1.7" text-anchor="start" fill="#1e2124">OPTICAL OUT</text>
+    </g>
+    <g id="bp-f2-al--optical" data-path="bp-f2-al/optical" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" data-role="optical" transform="translate(14.36,71.72)">
+      <title>bp-f2-al--optical</title>
+      <path id="bp-f2-al--optical--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="bp-f2-al--optical--1" data-path="bp-f2-al/optical/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bp-f2-al--optical--1</title>
+        <path id="bp-f2-al--optical--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bp-f2-al/optical/1/bore" data-class="cutout" />
+        <rect id="bp-f2-al--optical--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bp-f2-al--optical--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bp-f2-al--optical--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bp-f2-al--optical--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bp-f2-al--optical--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="bp-f2-al--optical--2" data-path="bp-f2-al/optical/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>bp-f2-al--optical--2</title>
+        <path id="bp-f2-al--optical--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bp-f2-al/optical/2/bore" data-class="cutout" />
+        <rect id="bp-f2-al--optical--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="bp-f2-al--optical--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="bp-f2-al--optical--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="bp-f2-al--optical--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="bp-f2-al--optical--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bp-f2-al--optical--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="bp-f2-al--optical-occupant" data-path="bp-f2-al/optical-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(14.085,75.67) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bp-f2-al/optical">
+      <title>bp-f2-al--optical-occupant</title>
+      <g id="bp-f2-al--optical-occupant--body" class="cap" data-path="bp-f2-al/optical-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="bp-f2-al--optical-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="bp-f2-al--optical-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.88 65.1" data-cp-dir="front" />
+  </g>
+</svg>

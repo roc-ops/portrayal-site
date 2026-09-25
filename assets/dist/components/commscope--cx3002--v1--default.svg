@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="43.2mm" viewBox="0 0 52.52 43.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="cx3002" data-path="cx3002" data-class="supervisor" data-behaviour="fills" data-ref="commscope/cx3002@1:1.0.0" data-model="CX3002" data-power-draw-max-w="5" data-role="communications" transform="translate(0,0)">
+    <title>cx3002</title>
+    <rect id="cx3002--body" x="0" y="0" width="52.52" height="43.2" rx="0.8" fill="#1d1f22" stroke="#0c0d0e" stroke-width="0.3" />
+    <g id="cx3002--screw-1" data-path="cx3002/screw-1" data-class="fastener">
+      <circle cx="13.4" cy="6.2" r="4.4" fill="#0e0f10" />
+      <circle cx="13.4" cy="6.2" r="2.8" fill="#26282b" />
+    </g>
+    <g id="cx3002--screw-2" data-path="cx3002/screw-2" data-class="fastener">
+      <circle cx="39.6" cy="6.2" r="4.4" fill="#0e0f10" />
+      <circle cx="39.6" cy="6.2" r="2.8" fill="#26282b" />
+    </g>
+    <rect x="8.6" y="13.4" width="34.6" height="15.0" rx="0.4" fill="#b9bdc1" stroke="#6d7277" stroke-width="0.3" />
+    <g id="cx3002--rs232-cli" data-path="cx3002/rs232-cli" data-class="port">
+      <rect x="14.00" y="29.10" width="7.4" height="7.4" rx="0.8" fill="#161719" />
+      <circle cx="17.7" cy="32.8" r="2.6" fill="#2a2c2f" stroke="#55585c" stroke-width="0.4" />
+      <circle cx="17.7" cy="32.8" r="1.2" fill="#08090a" />
+    </g>
+    <g id="cx3002--rs232-ext" data-path="cx3002/rs232-ext" data-class="port">
+      <rect x="30.50" y="29.10" width="7.4" height="7.4" rx="0.8" fill="#161719" />
+      <circle cx="34.2" cy="32.8" r="2.6" fill="#2a2c2f" stroke="#55585c" stroke-width="0.4" />
+      <circle cx="34.2" cy="32.8" r="1.2" fill="#08090a" />
+    </g>
+    <g id="cx3002--reset" data-path="cx3002/reset" data-class="button">
+      <circle cx="47.9" cy="27.0" r="0.8" fill="#08090a" stroke="#6d7277" stroke-width="0.2" />
+    </g>
+    <g id="cx3002--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="26.3" y="7.0" font-size="2.6">CX3002</text>
+      <text x="5.3" y="12.6" font-size="1.7">STATUS</text>
+      <text x="5.3" y="31.0" font-size="1.7">ACCESS</text>
+      <text x="26.0" y="12.8" font-size="1.7">OUT — 10 BASE-T — IN</text>
+      <text x="17.7" y="38.4" font-size="1.7">CLI</text>
+      <text x="17.7" y="40.4" font-size="1.7">RS232</text>
+      <text x="34.2" y="38.4" font-size="1.7">EXT</text>
+      <text x="34.2" y="40.4" font-size="1.7">RS232</text>
+      <text x="47.7" y="31.0" font-size="1.7">RESET</text>
+      <path d="M 3.2 17.2 V 24.6 M 3.2 25.8 V 29.6 H 4.2" fill="none" stroke="#eef0f2" stroke-width="0.2" />
+    </g>
+    <g id="cx3002--eth-out" data-path="cx3002/eth-out" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10m" transform="translate(9.4,14.3)" data-group="mgmt" data-group-role="management">
+      <title>cx3002--eth-out</title>
+      <g id="cx3002--eth-out--jack" data-path="cx3002/eth-out/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>cx3002--eth-out--jack</title>
+        <path id="cx3002--eth-out--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3002--eth-out--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3002--eth-out--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cx3002/eth-out/jack/opening" data-class="cutout" />
+        <g id="cx3002--eth-out--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="cx3002--eth-out--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="cx3002--eth-out--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3002/eth-out/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="cx3002--eth-out--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3002/eth-out/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="cx3002--eth-in" data-path="cx3002/eth-in" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="10m" transform="translate(26.6,14.3)" data-group="mgmt" data-group-role="management">
+      <title>cx3002--eth-in</title>
+      <g id="cx3002--eth-in--jack" data-path="cx3002/eth-in/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>cx3002--eth-in--jack</title>
+        <path id="cx3002--eth-in--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3002--eth-in--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3002--eth-in--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cx3002/eth-in/jack/opening" data-class="cutout" />
+        <g id="cx3002--eth-in--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="cx3002--eth-in--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="cx3002--eth-in--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3002/eth-in/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="cx3002--eth-in--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3002/eth-in/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="cx3002--led-status-1" data-path="cx3002/led-status-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(3.8,17.5)">
+      <title>cx3002--led-status-1</title>
+      <circle id="cx3002--led-status-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3002--led-status-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3002/led-status-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="cx3002--led-status-2" data-path="cx3002/led-status-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(3.8,20.2)">
+      <title>cx3002--led-status-2</title>
+      <circle id="cx3002--led-status-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3002--led-status-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3002/led-status-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="cx3002--led-status-3" data-path="cx3002/led-status-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(3.8,22.9)">
+      <title>cx3002--led-status-3</title>
+      <circle id="cx3002--led-status-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3002--led-status-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3002/led-status-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="cx3002--led-access" data-path="cx3002/led-access" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(3.8,25.6)">
+      <title>cx3002--led-access</title>
+      <circle id="cx3002--led-access--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3002--led-access--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3002/led-access/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 21.6" data-cp-dir="front" />
+  </g>
+</svg>

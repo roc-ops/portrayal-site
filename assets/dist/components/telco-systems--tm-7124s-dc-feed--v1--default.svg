@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="18.3mm" height="42.2mm" viewBox="0 0 18.3 42.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="tm-7124s-dc-feed" data-path="tm-7124s-dc-feed" data-class="inlet" data-behaviour="mounts" data-ref="telco-systems/tm-7124s-dc-feed@1:1.0.0" data-media="dc-terminal" data-poles="4" transform="translate(0,0)">
+    <title>tm-7124s-dc-feed</title>
+    <rect x="0.1" y="0.1" width="18.1" height="42.0" rx="0.6" fill="#8fd08f" stroke="#4e8a4e" stroke-width="0.3" />
+    <g id="tm-7124s-dc-feed--poles" data-path="tm-7124s-dc-feed/poles" data-class="terminal">
+      <rect x="2.3" y="9.9" width="6.8" height="4.6" rx="0.4" fill="#1f5e2c" />
+      <circle cx="5.7" cy="12.2" r="1.4" fill="#9ea3a8" />
+      <rect x="2.3" y="15.03" width="6.8" height="4.6" rx="0.4" fill="#1f5e2c" />
+      <circle cx="5.7" cy="17.33" r="1.4" fill="#9ea3a8" />
+      <rect x="2.3" y="20.16" width="6.8" height="4.6" rx="0.4" fill="#1f5e2c" />
+      <circle cx="5.7" cy="22.46" r="1.4" fill="#9ea3a8" />
+      <rect x="2.3" y="25.29" width="6.8" height="4.6" rx="0.4" fill="#1f5e2c" />
+      <circle cx="5.7" cy="27.59" r="1.4" fill="#9ea3a8" />
+    </g>
+    <circle cx="12.4" cy="3.8" r="2.0" fill="#9ea3a8" stroke="#5c6167" stroke-width="0.3" />
+    <circle cx="12.4" cy="36.1" r="2.0" fill="#9ea3a8" stroke="#5c6167" stroke-width="0.3" />
+    <g data-cp="dc-in" data-cp-at="5.7 20" data-cp-dir="front" />
+  </g>
+</svg>

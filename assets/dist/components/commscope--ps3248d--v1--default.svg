@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="130.2mm" viewBox="0 0 52.52 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="ps3248d" data-path="ps3248d" data-class="psu" data-behaviour="fills" data-ref="commscope/ps3248d@1:1.0.0" data-body-depth="330.2" data-back-plate="BP-P2" data-efficiency="93% typical at 48 V input, 18-25 A load" data-inlet="none" data-input="dc" data-input-voltage="-36 to -60 VDC" data-model="PS3248D" data-output-voltage="12 VDC" data-power-output-w="300" data-slots="2" transform="translate(0,0)">
+    <title>ps3248d</title>
+    <defs>
+      <linearGradient id="ps3248d--plate" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8a8f95" />
+        <stop offset="1" stop-color="#6f747a" />
+      </linearGradient>
+      <radialGradient id="ps3248d--knob" cx="0.4" cy="0.35" r="0.7">
+        <stop offset="0" stop-color="#4a4d51" />
+        <stop offset="1" stop-color="#1c1e20" />
+      </radialGradient>
+    </defs>
+    <rect id="ps3248d--body" x="0" y="0" width="52.52" height="130.2" rx="1.2" fill="url(#ps3248d--plate)" stroke="#55595e" stroke-width="0.3" />
+    <g id="ps3248d--screw-1" data-path="ps3248d/screw-1" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.9" fill="#1d1f22" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="12.88" cy="5.0" r="3.2" fill="#2e3135" />
+    </g>
+    <g id="ps3248d--screw-2" data-path="ps3248d/screw-2" data-class="fastener">
+      <circle cx="39.64" cy="5.0" r="4.9" fill="#1d1f22" stroke="#0e0f10" stroke-width="0.3" />
+      <circle cx="39.64" cy="5.0" r="3.2" fill="#2e3135" />
+    </g>
+    <g id="ps3248d--display" data-path="ps3248d/display" data-class="display" data-characters="7">
+      <rect x="3.6" y="23.7" width="44.6" height="54.0" rx="0.6" fill="#0b1026" stroke="#2a2d31" stroke-width="0.4" />
+      <rect x="6.0" y="27.0" width="39.8" height="47.4" fill="#101a44" opacity="0.7" />
+    </g>
+    <g id="ps3248d--joystick" data-path="ps3248d/joystick" data-class="button">
+      <circle cx="28.6" cy="92.7" r="9.3" fill="#2a2c2f" stroke="#121315" stroke-width="0.3" />
+      <circle cx="28.6" cy="92.7" r="6.6" fill="url(#ps3248d--knob)" />
+    </g>
+    <g id="ps3248d--vent-left" fill="#16181a" data-path="ps3248d/vent-left" data-class="vent">
+      <rect x="3.5" y="90.8" width="3.0" height="21.5" rx="1.4" />
+      <rect x="7.6" y="90.8" width="3.0" height="21.5" rx="1.4" />
+      <rect x="11.9" y="90.8" width="3.0" height="21.5" rx="1.4" />
+      <rect x="16.3" y="98.5" width="3.0" height="13.8" rx="1.4" />
+      <rect x="20.7" y="103.9" width="3.0" height="8.4" rx="1.4" />
+      <rect x="25.0" y="103.9" width="3.0" height="8.4" rx="1.4" />
+      <rect x="29.4" y="103.9" width="3.0" height="8.4" rx="1.4" />
+    </g>
+    <g id="ps3248d--vent-right" fill="#16181a" data-path="ps3248d/vent-right" data-class="vent">
+      <rect x="43.2" y="98.5" width="3.0" height="14.1" rx="1.4" />
+      <rect x="47.6" y="98.5" width="3.0" height="14.1" rx="1.4" />
+    </g>
+    <g id="ps3248d--handle" data-path="ps3248d/handle" data-class="handle">
+      <rect x="7.6" y="121.9" width="34.0" height="7.5" rx="3.6" fill="#1b1c1e" stroke="#0b0b0c" stroke-width="0.3" />
+      <rect x="10.2" y="123.6" width="28.8" height="2.6" rx="1.3" fill="#2f3134" />
+    </g>
+    <g id="ps3248d--silkscreen" fill="#eef0f2" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="26.26" y="13.5" font-size="2.6">Power Supply</text>
+      <text x="26.26" y="16.9" font-size="2.6">PS3248D</text>
+      <text x="46.0" y="89.5" font-size="2.1">Enter</text>
+      <path d="M 44.9 83.2 L 46.0 81.3 L 47.1 83.2 Z" />
+      <path d="M 41.4 88.6 L 43.1 87.5 L 43.1 89.7 Z" />
+      <path d="M 50.6 88.6 L 48.9 87.5 L 48.9 89.7 Z" />
+      <path d="M 44.9 91.0 L 46.0 92.9 L 47.1 91.0 Z" />
+      <path d="M 39.4 93.2 L 41.2 93.2 L 42.6 91.4" fill="none" stroke="#eef0f2" stroke-width="0.3" />
+      <text x="41.3" y="108.2" font-size="1.7" transform="rotate(-90 41.3 108.2)">microUSB</text>
+      <text x="26.26" y="119.0" font-size="3.0" letter-spacing="1.2">ARRIS</text>
+    </g>
+    <g id="ps3248d--usb" data-path="ps3248d/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(33.8,106.3) rotate(90 3.75 1.375)">
+      <title>ps3248d--usb</title>
+      <rect id="ps3248d--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="ps3248d--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="ps3248d/usb/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 65.1" data-cp-dir="front" />
+  </g>
+</svg>

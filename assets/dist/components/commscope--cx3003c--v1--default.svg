@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="52.52mm" height="43.2mm" viewBox="0 0 52.52 43.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="cx3003c" data-path="cx3003c" data-class="supervisor" data-behaviour="fills" data-ref="commscope/cx3003c@1:1.0.0" data-model="CX3003C" data-power-draw-max-w="4" data-role="communications" transform="translate(0,0)">
+    <title>cx3003c</title>
+    <rect id="cx3003c--heatsink" x="4.0" y="0" width="44.5" height="5.5" fill="#1a1b1d" />
+    <rect x="16.5" y="0.3" width="2.4" height="5.2" rx="0.4" fill="#141517" />
+    <rect x="20.5" y="0.3" width="2.4" height="5.2" rx="0.4" fill="#141517" />
+    <rect x="24.5" y="0.3" width="2.4" height="5.2" rx="0.4" fill="#141517" />
+    <rect x="28.5" y="0.3" width="2.4" height="5.2" rx="0.4" fill="#141517" />
+    <rect x="32.5" y="0.3" width="2.4" height="5.2" rx="0.4" fill="#141517" />
+    <g id="cx3003c--screw-1" data-path="cx3003c/screw-1" data-class="fastener">
+      <circle cx="13.4" cy="3.0" r="2.9" fill="#0e0f10" />
+    </g>
+    <g id="cx3003c--screw-2" data-path="cx3003c/screw-2" data-class="fastener">
+      <circle cx="39.6" cy="3.0" r="2.9" fill="#0e0f10" />
+    </g>
+    <rect id="cx3003c--body" x="0" y="5.5" width="52.52" height="37.7" rx="0.6" fill="#232528" stroke="#0c0d0e" stroke-width="0.3" />
+    <rect x="8.3" y="27.7" width="35.8" height="13.6" rx="0.3" fill="#b9bdc1" stroke="#6d7277" stroke-width="0.3" />
+    <g id="cx3003c--rs232" data-path="cx3003c/rs232" data-class="port">
+      <rect x="9.50" y="13.40" width="7.4" height="7.4" rx="0.8" fill="#161719" />
+      <circle cx="13.2" cy="17.1" r="2.6" fill="#2a2c2f" stroke="#55585c" stroke-width="0.4" />
+      <circle cx="13.2" cy="17.1" r="1.2" fill="#08090a" />
+    </g>
+    <g id="cx3003c--reset" data-path="cx3003c/reset" data-class="button">
+      <circle cx="44.3" cy="23.1" r="0.7" fill="#08090a" />
+    </g>
+    <g id="cx3003c--silkscreen" fill="#d9dcdf" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="43.4" y="11.7" font-size="2.6">CX3003C</text>
+      <text x="13.2" y="13.1" font-size="1.6">RS-232</text>
+      <text x="44.3" y="15.9" font-size="1.6">microUSB</text>
+      <text x="44.3" y="25.9" font-size="1.6">RESET</text>
+      <text x="7.5" y="24.1" font-size="1.6">ACCESS</text>
+      <text x="6.4" y="26.3" font-size="1.6">STATUS</text>
+      <text x="17.2" y="26.6" font-size="1.6">OUT</text>
+      <text x="34.7" y="26.6" font-size="1.6">IN</text>
+      <text x="12.0" y="42.5" font-size="1.3">10/100M</text>
+      <text x="24.0" y="42.5" font-size="1.3">1G</text>
+      <text x="29.5" y="42.5" font-size="1.3">10/100M</text>
+      <text x="42.0" y="42.5" font-size="1.3">1G</text>
+      <path d="M 4.0 10.3 V 25.7 M 4.7 18.3 V 23.5" fill="none" stroke="#d9dcdf" stroke-width="0.2" />
+    </g>
+    <g id="cx3003c--eth-out" data-path="cx3003c/eth-out" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(9.5,27.5)" data-group="mgmt" data-group-role="management">
+      <title>cx3003c--eth-out</title>
+      <g id="cx3003c--eth-out--jack" data-path="cx3003c/eth-out/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>cx3003c--eth-out--jack</title>
+        <path id="cx3003c--eth-out--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3003c--eth-out--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3003c--eth-out--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cx3003c/eth-out/jack/opening" data-class="cutout" />
+        <g id="cx3003c--eth-out--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="cx3003c--eth-out--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="cx3003c--eth-out--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3003c/eth-out/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="cx3003c--eth-out--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3003c/eth-out/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="cx3003c--eth-in" data-path="cx3003c/eth-in" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" transform="translate(27.0,27.5)" data-group="mgmt" data-group-role="management">
+      <title>cx3003c--eth-in</title>
+      <g id="cx3003c--eth-in--jack" data-path="cx3003c/eth-in/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>cx3003c--eth-in--jack</title>
+        <path id="cx3003c--eth-in--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3003c--eth-in--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+        <path id="cx3003c--eth-in--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="cx3003c/eth-in/jack/opening" data-class="cutout" />
+        <g id="cx3003c--eth-in--jack--pins" fill="#a8873c">
+          <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+          <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+          <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+          <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+          <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+          <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+          <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+          <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+        </g>
+        <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+      </g>
+      <path id="cx3003c--eth-in--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="cx3003c--eth-in--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3003c/eth-in/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="cx3003c--eth-in--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="cx3003c/eth-in/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <g id="cx3003c--usb" data-path="cx3003c/usb" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-role="console" transform="translate(40.55,17.73)" data-group="mgmt" data-group-role="management">
+      <title>cx3003c--usb</title>
+      <rect id="cx3003c--usb--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+      <path id="cx3003c--usb--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="cx3003c/usb/opening" data-class="cutout" />
+      <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+    </g>
+    <g id="cx3003c--led-status-1" data-path="cx3003c/led-status-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(5.1,10.0)">
+      <title>cx3003c--led-status-1</title>
+      <circle id="cx3003c--led-status-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3003c--led-status-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3003c/led-status-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="cx3003c--led-status-2" data-path="cx3003c/led-status-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(5.1,12.4)">
+      <title>cx3003c--led-status-2</title>
+      <circle id="cx3003c--led-status-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3003c--led-status-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3003c/led-status-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="cx3003c--led-status-3" data-path="cx3003c/led-status-3" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="status" transform="translate(5.1,15.5)">
+      <title>cx3003c--led-status-3</title>
+      <circle id="cx3003c--led-status-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3003c--led-status-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3003c/led-status-3/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g id="cx3003c--led-access" data-path="cx3003c/led-access" data-class="led" data-ref="common/led-dot@1:1.1.0" data-function="activity" transform="translate(5.1,18.0)">
+      <title>cx3003c--led-access</title>
+      <circle id="cx3003c--led-access--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="cx3003c--led-access--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="cx3003c/led-access/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+    <g data-cp="mate" data-cp-at="26.26 21.6" data-cp-dir="front" />
+  </g>
+</svg>
