@@ -40,8 +40,12 @@ const RAIL_CLEAR = 8;      // a pill stops this far short of the other elevation
 const ESC = v => (window.CSS?.escape ? CSS.escape(v) : String(v).replace(/"/g, '\\"'));
 
 // What a stub says, in the one form the drawing's tooltip and the panel's
-// button both use: far site, far device, far port.
-const stubText = (farSite, there) => `→ ${farSite.label} · ${there[0]} · ${there[1]}`;
+// button both use: far site, far device, far port. A span is two strands on
+// the same pair of ports, so the port line also names the far end's strand
+// (`port-line · rx`) - without it a span's two stubs read identically. An
+// end that names no strand shows nothing extra.
+const portLine = there => (there[2] ? `${there[1]} · ${there[2]}` : there[1]);
+const stubText = (farSite, there) => `→ ${farSite.label} · ${there[0]} · ${portLine(there)}`;
 
 // THE CAPTION, for every stage that shows the ring by site (spec §5.2). A
 // 2D site looks like a rack of its own, and it is not one: the sites are
@@ -75,7 +79,7 @@ async function indexOf(ref) {
 //   cables:     [{link, li, el, faces: [fromFace, toFace]}]   in-site links drawn
 //   stubs:      [{link, li, end: 'from'|'to', far, el, port, text}] span ends drawn
 //               (far is the far end's site index; port is this end's port element;
-//               text is "→ far site · device · port")
+//               text is "→ far site · device · port[ · far strand]")
 //   unanchored: in-site links plus span ends that could NOT be drawn, because
 //               an end's device did not load or has no such port. It should be 0.
 //   faces:      {front, rear}, the two nested elevations
@@ -204,14 +208,14 @@ export async function drawSite2d({lab, sites, index, host = stageRack, live = ()
       const far = sites[s.far];
       const g = svgEl('g', {'data-stub': 'true', 'data-link-index': String(s.li), 'data-end': s.end,
         'data-far': String(s.far), tabindex: '0', role: 'button',
-        'aria-label': `${s.link.span ? `span ${s.link.span}: ` : ''}go to ${far.label}, ${s.there[0]} ${s.there[1]}`,
+        'aria-label': `${s.link.span ? `span ${s.link.span}: ` : ''}go to ${far.label}, ${s.there[0]} ${portLine(s.there)}`,
         'data-pt-ui': 'tabindex role aria-label'});
       const tip = svgEl('title', {'data-pt-ui': '*'});
       tip.textContent = stubText(far, s.there);
       const rect = svgEl('rect', {rx: 4, fill: 'var(--pt-surface)', stroke: s.color, 'stroke-width': 1.4});
       const text = svgEl('text', {'font-family': 'IBM Plex Mono, monospace', 'font-size': STUB_FONT,
         fill: 'var(--pt-ink)'});
-      const lines = [`→ ${far.label}`, s.there[0], s.there[1]].map(t => {
+      const lines = [`→ ${far.label}`, s.there[0], portLine(s.there)].map(t => {
         const ts = svgEl('tspan', {});
         ts.textContent = t;
         return ts;

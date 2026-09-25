@@ -247,6 +247,14 @@ def check_stages(page, base):
                 # The same jump from the panel: each span end is also a real
                 # button, legible at any zoom. It must switch the site and
                 # highlight the partner stub exactly as the drawing's stub does.
+                # A span is two strands on one pair of ports: each end must
+                # still be told apart, on the drawing and in the panel.
+                names = page.evaluate("""() => ({
+                    stubs: [...document.querySelectorAll('#stageRack [data-stub]')].map(g => g.getAttribute('aria-label')),
+                    buttons: [...document.querySelectorAll('#sidePanel [data-span-end]')].map(b => b.textContent)})""")
+                for k, v in names.items():
+                    if len(set(v)) != len(v):
+                        bad.append(f"stage cable in 2D: two span {k} say the same thing: {v}")
                 btn = page.query_selector('#sidePanel [data-span-end]')
                 if not btn:
                     bad.append("stage cable in 2D: the panel lists no span-end buttons")
