@@ -51,16 +51,37 @@ export const stale = mine => mine !== epoch;
 // setExports or loading from artifact.js, or reads the rail's `epoch`. mount3d
 // (rack.js) and artifact.js's load keep their own guards; they are shared
 // with callers that are not stages.
+//
+// `mode` is captured when the lease is minted, so an entry that began in 2D
+// never sees 3D half-way through: switching mints a new entry, and a new lease.
 function lease(mine) {
   const live = () => !stale(mine);
+  const m = mode;
   return Object.freeze({
     mine,
     live,
+    mode: m,
     setPanel: (...kids) => { if (live()) setPanel(...kids); },
     setExports: items => { if (live()) setExports(items); },
     scrim: text => { if (live()) { loading.textContent = text; loading.hidden = false; } },
     unscrim: () => { if (live()) loading.hidden = true; },
   });
+}
+
+// 2D FIRST. One view for the whole ladder, remembered across stages and
+// visits. Storage can be blocked (private windows, previews); then the page
+// still works and simply forgets.
+const MODE_KEY = 'portrayal.showcase.mode';
+function readMode() {
+  try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
+  catch { return '2d'; }
+}
+function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
+export let mode = readMode();
+
+const modeButtons = () => [...document.querySelectorAll('#stageMode [data-mode]')];
+function paintMode() {
+  for (const b of modeButtons()) b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
 }
 
 // What leaving a stage takes off the screen, at once: its panel (so none of
@@ -108,6 +129,15 @@ export async function activate(name) {
   // to where the spoke came from - so the spoke closes WITHOUT resuming.
   if (spokeOpen()) await closeSpoke({resume: false});
   if (current === name) return;
+  await enterStage(name);
+}
+
+// Leave whatever is current and enter `name`, even when it IS the current
+// stage: that is how switching 2D/3D redraws the stage you are on. The same
+// epoch bump guards both: a switch while the old entry's enter() is still
+// awaiting makes that entry stale, so its late writes go nowhere and it
+// never marks itself ready.
+async function enterStage(name) {
   epoch++;
   const mine = epoch;
   vacate();
@@ -124,6 +154,17 @@ export async function activate(name) {
   // Only for a stage that is still current, and never for one whose enter()
   // threw: a checker waiting on this must fail loudly, not pass quietly.
   if (!stale(mine)) stageHost.setAttribute('data-stage-ready', name);
+}
+
+// The switch. A spoke is always a 2D face, so while one is open the new mode
+// is only remembered, and applies when the spoke closes and re-enters.
+export async function setMode(m) {
+  if ((m !== '2d' && m !== '3d') || m === mode) return;
+  mode = m;
+  saveMode(m);
+  paintMode();
+  if (spokeOpen() || !current) return;
+  await enterStage(current);
 }
 
 // Leave the current stage without entering another: a spoke is taking the
@@ -162,6 +203,8 @@ export async function boot() {
   setHost(null);
   stage2d.hidden = true;
   for (const b of rungs()) b.onclick = () => activate(b.dataset.stage);
+  paintMode();
+  for (const b of modeButtons()) b.onclick = () => setMode(b.dataset.mode);
   document.querySelector('.stage-rail')?.addEventListener('keydown', onKey);
   await activate(STAGES[0]);
 }

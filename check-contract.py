@@ -535,6 +535,20 @@ check("from './showcase/rails.js'" in r3d, "rack3d.js draws its rails from rails
 check(not re.search(r"\[\s*6\.35\s*,\s*22\.22", r3d),
       "rack3d.js keeps no hole positions of its own", "HOLE_DY belongs to rails.js")
 
+# ── the 2D/3D switch ───────────────────────────────────────────────────────
+# 2D is the default and the product; 3D is a second view of the same data.
+# One switch for the whole ladder, remembered across stages and visits.
+sr = (HERE / "site" / "showcase" / "stage-rail.js").read_text()
+check("export async function setMode" in sr, "stage-rail.js exports setMode")
+check("portrayal.showcase.mode" in sr, "the mode is persisted under its key")
+check("function readMode" in sr
+      and re.search(r"===\s*'3d'\s*\?\s*'3d'\s*:\s*'2d'", sr) is not None
+      and re.search(r"catch\s*\{\s*return\s+'2d'", sr) is not None,
+      "the mode defaults to 2D, including when storage is unreadable",
+      "readMode must return '2d' unless storage says '3d', and '2d' when it throws")
+idx_html = (HERE / "index.html").read_text()
+check('id="stageMode"' in idx_html, "index.html carries the 2D/3D switch")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

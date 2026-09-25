@@ -212,6 +212,26 @@ def check_stages(page, base):
             except Exception as e:
                 bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
 
+    # THE SWITCH. 2D is the default; flip stage 1 to 3D, confirm the choice
+    # follows to stage 2, then flip back. Each re-entry must reach ready.
+    try:
+        if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
+            bad.append("the switch does not default to 2D")
+        page.click('.stage-rail button[data-stage="mount"]')
+        page.wait_for_selector('[data-stage-ready="mount"]', timeout=READY_MS)
+        if not page.query_selector('#stageRack svg [data-device-ref]'):
+            bad.append("stage mount in 2D draws no devices")
+        page.click('#stageMode [data-mode="3d"]')
+        page.wait_for_selector('[data-stage-ready="mount"]', timeout=READY_MS)
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        if page.get_attribute('#stageMode [data-mode="3d"]', "aria-pressed") != "true":
+            bad.append("the 3D choice did not follow to the next stage")
+        page.click('#stageMode [data-mode="2d"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    except Exception as e:
+        bad.append(f"the 2D/3D switch: {e}")
+
     # A SPOKE IS A RENDERER SWITCH, so open one and come back, from stage 2 -
     # Inspect on the AS7726 (whose drawing the page booted with) and on the
     # ASR-9006, which makes the 2D face actually change device, then each

@@ -189,6 +189,42 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .spoke-open .stage-rail { opacity: 0.35; transition: opacity 0.15s; }
 .spoke-open .stage-rail:hover, .spoke-open .stage-rail:focus-within { opacity: 0.7; }
 
+/* Over the stage: the ring's site tabs on the left, the 2D/3D switch on the
+   right. Same ground and ink as the ladder, so it reads as the ladder's bar.
+   The switch is a segmented control; the selected half carries the brass the
+   ladder uses for its selected rung. */
+.show-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 0.4rem 1.25rem; background: var(--pt-surface-2);
+  border-bottom: 1px solid var(--pt-line);
+}
+.stage-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.stage-tabs:empty { display: none; }
+.stage-tabs button {
+  background: none; border: 1px solid var(--pt-line); border-radius: var(--pt-radius-sm);
+  color: var(--pt-ink-muted); cursor: pointer;
+  font: inherit; font-size: 0.78rem; padding: 0.25rem 0.6rem;
+}
+.stage-tabs button:hover { color: var(--pt-ink); }
+.stage-tabs button[aria-selected="true"] { color: var(--pt-ink); border-color: var(--pt-brass); }
+.stage-tabs button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
+.stage-mode {
+  display: inline-flex; margin-left: auto;
+  border: 1px solid var(--pt-line); border-radius: var(--pt-radius-sm); overflow: hidden;
+}
+.stage-mode button {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--pt-ink-muted); cursor: pointer;
+  font: inherit; font-size: 0.82rem; line-height: 1.25;
+  padding: 0.3rem 0.8rem;
+}
+.stage-mode button + button { border-left: 1px solid var(--pt-line); }
+.stage-mode button:hover { color: var(--pt-ink); }
+.stage-mode button[aria-pressed="true"] { color: var(--pt-ink); background: var(--pt-surface);
+                                          border-bottom-color: var(--pt-brass); }
+.stage-mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
+@media (max-width: 900px) { .show-bar { padding: 0.4rem 0.75rem; } }
+
 /* "Look closer": the spoke entry points in stages 1-3's panels. */
 .look-closer { display: flex; flex-direction: column; gap: 0.6rem;
                border-top: 1px solid var(--pt-line); padding-top: 0.9rem; }
