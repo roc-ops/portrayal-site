@@ -243,6 +243,22 @@ check(re.search(r"inspect:\s*\{[^}]*frame:\s*true", sh) is not None,
       "spoke-host's Inspect lens is a frame lens")
 check("encodeSwaps(" in sh and "swap=" in sh,
       "the Inspect frame carries the rack's swaps via encodeSwaps")
+# AND NO swap= IS HAND-ROLLED. Every swap= in the code (comments aside) must be
+# `swap=${v}` where v is the one variable holding encodeSwaps(...) - not a
+# second encoder, not a URLSearchParams key (which would re-escape what
+# encodeSwaps already escaped), not string concatenation.
+sh_code = re.sub(r"(?m)^\s*//.*$", "", sh)                    # whole-line comments
+sh_code = re.sub(r"(?<![:'\"])//[^\n'\"`]*$", "", sh_code, flags=re.M)  # trailing ones
+enc_vars = re.findall(r"\b(?:const|let|var)\s+(\w+)\s*=\s*encodeSwaps\(", sh_code)
+uses = [m.group(0) for m in re.finditer(r"swap=\S{0,24}", sh_code)]
+bad_uses = [u for u in uses
+            if not (len(enc_vars) == 1 and re.match(r"swap=\$\{" + re.escape(enc_vars[0]) + r"\}", u))]
+check(len(enc_vars) == 1 and bool(uses) and not bad_uses
+      and not re.search(r"URLSearchParams\([^)]*\bswap\b", sh_code)
+      and not re.search(r"\.(?:set|append)\(\s*['\"]swap['\"]", sh_code),
+      f"every swap= in spoke-host.js is the encodeSwaps result, appended raw ({len(uses)} use(s))",
+      f"encodeSwaps variables {enc_vars}; swap= uses {uses}; not from it: {bad_uses}; "
+      "a swap key handed to URLSearchParams or set()/append() would also fail this")
 check(".contentWindow" not in sh.replace("contentWindow?.portrayalEmbed", "").replace("contentWindow.portrayalEmbed", ""),
       "spoke-host reaches into the frame only through portrayalEmbed")
 
@@ -721,8 +737,17 @@ else:
 ex = (HERE / "explorer.html").read_text()
 check("get('embed') === '1'" in ex or 'get("embed") === "1"' in ex,
       "explorer.html reads ?embed=1")
-for k in ("portrayalEmbed", "ready", "setMode", "current"):
-    check(k in ex, f"explorer.html's embed API carries {k}")
+# Held against the FROZEN OBJECT ITSELF, not the page: "ready", "setMode" and
+# "current" all appear in explorer.html for other reasons, so a bare substring
+# test would pass with the embed API gone. The block is the one guarded by
+# EMBED; each key must be a property of the object it freezes.
+emb = re.search(r"if\s*\(EMBED\)\s*\{[\s\S]*?window\.portrayalEmbed\s*=\s*Object\.freeze\(\{([\s\S]*?)\n\s*\}\);", ex)
+check(bool(emb), "explorer.html freezes window.portrayalEmbed inside its EMBED block",
+      "no `if (EMBED) { ... window.portrayalEmbed = Object.freeze({ ... });` found")
+for k in ("ready", "setMode", "current"):
+    check(bool(emb) and re.search(rf"(?m)^\s*{k}\s*:", emb.group(1)) is not None,
+          f"explorer.html's frozen portrayalEmbed has a {k} property",
+          "the embed block is missing" if not emb else f"no `{k}:` in the frozen object")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
