@@ -96,9 +96,15 @@ export default function makePopulate() {
         [el('span', {class: 'mono', text: b.id}), sel, btn]);
     });
 
+    // PRESENT BUT NULL IS EMPTY, not "the default". An override is a delta:
+    // no key means the bay holds what the configuration gives it; a key whose
+    // value is null (or '') means it was deliberately emptied - which is how
+    // Explorer reports a bay opened in the Inspect lens, and how swap.js
+    // draws it. Listing the default there contradicted the picture.
     const seatedRows = all.map(b => {
       const mine = overrides[DEV]?.[b.id];
-      return [b.id, mine ? shortRef(mine) : shortRef(b.default)];
+      const has = Object.hasOwn(overrides[DEV] || {}, b.id);
+      return [b.id, has ? (mine ? shortRef(mine) : 'empty') : shortRef(b.default)];
     });
 
     ui.setPanel(

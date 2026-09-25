@@ -221,8 +221,15 @@ async function openFrame({dev, cfg, lens, returnTo, origin, ui}) {
       if (!api) throw new Error('explorer.html did not expose portrayalEmbed');
       await Promise.race([gone, api.ready]);
       // `mode` is the rail's live binding: a switch clicked during the load
-      // was remembered there, and this applies it.
-      if (!aborted && ui.live()) await Promise.race([gone, api.setMode(mode)]);
+      // was remembered there (lensMode has no api to forward to until `open`
+      // is set, below), and this applies it. UNTIL THEY AGREE, not once: the
+      // 3D viewer's import can take seconds, and a switch clicked while
+      // setMode is awaiting it would otherwise be lost - the frame left in the
+      // old mode under a switch showing the new one. Explorer sets its mode
+      // synchronously on entry, so each pass converges on the latest click;
+      // the cap is only a backstop.
+      for (let i = 0; i < 8 && !aborted && ui.live() && api.current().mode !== mode; i++)
+        await Promise.race([gone, api.setMode(mode)]);
     }
   } catch (err) {
     console.warn('[portrayal] could not open Explorer for', dev, err);

@@ -529,6 +529,14 @@ def check_stages(page, base):
         fr.wait_for_function(
             "() => window.portrayalEmbed.current().swaps['slot-3'] === 'cisco/a9k-4x100ge-se@1'",
             timeout=READY_MS)
+        # And EMPTY one: slot-2's occupant set to "— open —" in Explorer's own
+        # menu. Explorer reports that as a present-but-null swap.
+        fr.click('#tree .node[data-path="slot-2"]')
+        fr.wait_for_selector("#occ", timeout=READY_MS)
+        fr.select_option("#occ", "")
+        fr.wait_for_function(
+            "() => Object.hasOwn(window.portrayalEmbed.current().swaps, 'slot-2')"
+            " && !window.portrayalEmbed.current().swaps['slot-2']", timeout=READY_MS)
         # The showcase's switch drives the frame.
         page.click('#stageMode [data-mode="3d"]')
         fr.wait_for_function("() => window.portrayalEmbed.current().mode === '3d'", timeout=READY_3D_MS)
@@ -543,13 +551,19 @@ def check_stages(page, base):
         # PROVEN ON THE RACK, NOT ON ANY TEXT. The card's short name is also in
         # stage 2's accepts list, so finding it in the panel proves nothing:
         # the seated list must say slot-3 holds it, and the drawing must seat it.
-        seated = page.evaluate("""() => {
+        row = lambda slot: page.evaluate("""(slot) => {
             const dts = [...document.querySelectorAll('#sidePanel dl.kv dt')]
-              .filter(dt => dt.textContent === 'slot-3');
+              .filter(dt => dt.textContent === slot);
             return dts.map(dt => dt.nextElementSibling?.textContent || '');
-        }""")
+        }""", slot)
+        seated = row("slot-3")
         if "a9k-4x100ge-se" not in seated:
             bad.append(f"inspect frame: stage 2's seated list does not show slot-3 holding the card ({seated})")
+        # The emptied bay: listed as empty, and drawn empty - not its default.
+        if "empty" not in row("slot-2"):
+            bad.append(f"inspect frame: a bay emptied in Explorer is not listed as empty ({row('slot-2')})")
+        if page.query_selector('#stageRack svg [data-device-ref="asr-9006"] [data-path="slot-2/module"]'):
+            bad.append("inspect frame: a bay emptied in Explorer is still drawn filled")
         if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
                                    '[data-path="slot-3/module"][data-ref^="cisco/a9k-4x100ge-se@1"]'):
             bad.append("inspect frame: a card seated in Explorer did not come back to the rack's drawing")
@@ -560,11 +574,27 @@ def check_stages(page, base):
         fr = explorer_frame()
         fr.select_option("#cfg", "base")
         fr.wait_for_function("() => window.portrayalEmbed.current().config === 'base'", timeout=READY_MS)
+        # A real swap on that other configuration - a splice cassette in bay-1 -
+        # so a write-back that ignored the rule would show on the rack.
+        fr.click('#tree .node[data-path="bay-1"]')
+        fr.wait_for_selector("#occ", timeout=READY_MS)
+        fr.select_option("#occ", "fs/fhd-splice-12-lc@3")
+        fr.wait_for_function(
+            "() => window.portrayalEmbed.current().swaps['bay-1'] === 'fs/fhd-splice-12-lc@3'",
+            timeout=READY_MS)
         page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
         page.click('#spokeBack')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         if "stayed in the lens" not in page.inner_text("#sidePanel"):
             bad.append("inspect frame: switching config in the lens gave no notice")
+        # AND THE RACK IS UNCHANGED - read off the drawing, not off `overrides`:
+        # the FHD is still drawn populated, its four cassettes the cast's own.
+        fhd = '#stageRack svg [data-device-ref="fhd-1ufce"]'
+        cast_cassettes = page.query_selector_all(
+            f'{fhd} [data-path^="bay-"][data-path$="/module"][data-ref^="fs/fhd-1mtp6lcd-os2-a@4"]')
+        if len(cast_cassettes) != 4 or page.query_selector(f'{fhd} [data-ref^="fs/fhd-splice-12-lc@3"]'):
+            bad.append(f"inspect frame: the FHD is not drawn as the cast's populated tray after a "
+                       f"swap on another configuration ({len(cast_cassettes)} cast cassettes)")
     except Exception as e:
         bad.append(f"inspect frame: {str(e).splitlines()[0]}")
     return bad
