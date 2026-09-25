@@ -13,7 +13,7 @@
 // anchored, which is the honest measure of whether the picture is complete.
 
 import {stage3d, stageRack, el, title, lead, kv, save} from '../artifact.js';
-import {mountRing, disposeRing, summarize, colorOf, MEDIA_COLORS} from '../ring.js';
+import {mountRing, disposeRing, summarize, colorOf} from '../ring.js';
 
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const hex = n => `#${n.toString(16).padStart(6, '0')}`;
@@ -57,9 +57,19 @@ export default function makeCable() {
           ...Object.entries(s.byMedia).map(([m, n]) => [m, String(n)]),
         ]),
       );
+      // ONE ENTRY PER COLOUR ACTUALLY DRAWN, counted from the links drawn in
+      // it. A link on a span is drawn in its span's colour, not its media's,
+      // so a media swatch counts only that media's links NOT on a span - the
+      // smf swatch once said 24 while six of those strands were span-coloured.
+      // The media come from the lab (s.byMedia), not from ring.js's colour
+      // map, so a media the map does not know still gets its (grey) entry.
       const legend = el('div', {class: 'panel-lead', 'data-legend': 'true'});
-      for (const [m, c] of Object.entries(MEDIA_COLORS)) {
-        legend.append(el('div', {}, [swatch(c), el('span', {text: `${m} (${s.byMedia[m] || 0})`})]));
+      for (const m of Object.keys(s.byMedia)) {
+        const own = lab.links.filter(l => l.media === m && !l.span);
+        if (!own.length) continue;          // every one is drawn in a span colour
+        const some = own.length < s.byMedia[m];
+        legend.append(el('div', {'data-media': m}, [swatch(colorOf(own[0], lab)),
+          el('span', {text: `${m}${some ? ', not on a span' : ''} (${own.length})`})]));
       }
       for (const sp of s.spans) {
         const link = lab.links.find(l => l.span === sp.span);
