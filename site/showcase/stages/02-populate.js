@@ -23,8 +23,8 @@
 
 import {stage3d, stageRack, loading, el, title, lead, kv, setPanel}
   from '../artifact.js';
-import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef}
-  from '../rack.js';
+import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef,
+        enqueueRebuild} from '../rack.js';
 import {epoch, stale} from '../stage-rail.js';
 
 const DEV = 'asr-9006';
@@ -34,19 +34,11 @@ const COVER = 'cisco/a9k-slot-cover@1';
 export default function makePopulate() {
   let scene = null;
   let readout = null;
-  // Seats are serialized through this chain. rack3d.js's build() has no
-  // reentrancy guard of its own - buildAll() clears its `mounted` array and
-  // disposes the previous meshes SYNCHRONOUSLY before its first await, then
-  // resolves the rest across several awaits. A second build() starting while
-  // the first is still mid-await would clear and repopulate the very arrays
-  // the first call is still writing into: two seats fired back to back (a
-  // double-click, or one bay's button while another bay's rebuild is still in
-  // flight) is exactly that, since the old buttons stay live during `await
-  // sc.build()`. Queuing every seat() behind the one before it means only one
-  // sc.build() is ever in flight, writes to `overrides` land and are painted
-  // in the order they were requested, and the final panel always matches the
-  // final `overrides` regardless of how the awaits interleaved.
-  let queue = Promise.resolve();
+  // Seats are serialized through rack.js's enqueueRebuild - see the comment
+  // there for why (build() disposes the shared `mounted` array before its
+  // first await, so two concurrent build()s corrupt each other). This stage
+  // only has to track how many of ITS OWN seats are still outstanding, for
+  // the "Applying…" readout below.
   let inFlight = 0;
 
   function bays() {
@@ -95,10 +87,18 @@ export default function makePopulate() {
     );
   }
 
-  // The queued unit of work. Returns what to paint, or null when the stage
-  // moved on mid-await and there is nothing left worth painting - never
-  // touches `overrides` on the refusal path.
-  async function doSeat(bay, ref) {
+  // The queued unit of work. `mine` is the epoch at the moment the visitor
+  // CLICKED (captured by seat(), below) - not at the moment this runs, which
+  // can be much later if it was queued behind another bay's rebuild. R18: the
+  // very first thing this does is check whether the stage has already moved
+  // on, and if so it drops the seat entirely - no `overrides` write, no
+  // rebuild, no panel update - on both the scene and no-scene paths, because
+  // a queued item that survives exit() and paints anyway would setPanel()
+  // over whatever stage is current by the time it runs. Returns what to
+  // paint, or null when there is nothing worth painting. Never touches
+  // `overrides` on the refusal path.
+  async function doSeat(bay, ref, mine) {
+    if (stale(mine)) return null;
     if (!(bay.accepts || []).includes(ref)) {
       const accepts = (bay.accepts || []).filter(r => r !== COVER).map(shortRef).join(', ');
       return {message: `refused — ${bay.id} accepts: ${accepts}. ${shortRef(ref)} is not in that list.`,
@@ -109,7 +109,6 @@ export default function makePopulate() {
 
     const sc = scene;
     if (sc) {
-      const mine = epoch;
       sc.setOverrides(DEV, overrides[DEV]);
       await sc.build();
       if (stale(mine) || scene !== sc) return null;
@@ -117,19 +116,21 @@ export default function makePopulate() {
     return {message: `seated — ${bay.id}: ${shortRef(ref)}`, refused: false};
   }
 
-  // Every click enqueues rather than runs - the chain is what keeps two
-  // sc.build() calls from ever overlapping. buildPanel() only runs after
-  // inFlight has been decremented, so whichever seat was queued LAST is also
-  // painted last, and once the chain drains the panel reflects the final
-  // `overrides` no matter how the clicks landed.
+  // Every click enqueues rather than runs, through rack.js's shared rebuild
+  // queue - that is what keeps two sc.build() calls from ever overlapping,
+  // including one started by a DIFFERENT stage (stage 3 rebuilds the same
+  // scene). buildPanel() only runs after inFlight has been decremented, so
+  // whichever seat was queued LAST is also painted last, and once the queue
+  // drains the panel reflects the final `overrides` no matter how the clicks
+  // landed.
   function seat(bay, ref) {
+    const mine = epoch;   // captured NOW, at the click - not when this runs
     inFlight++;
-    queue = queue
-      .then(() => doSeat(bay, ref))
+    enqueueRebuild(() => doSeat(bay, ref, mine))
       .catch(err => { console.warn('[portrayal] stage 2 seat failed', err); return null; })
       .then(result => {
         inFlight--;
-        if (result) buildPanel(result.message, result.refused);
+        if (result && !stale(mine)) buildPanel(result.message, result.refused);
       });
   }
 

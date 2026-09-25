@@ -48,6 +48,28 @@ export let RACK_U = null;
 // what makes the ladder cumulative.
 export const overrides = {};
 
+// rack3d.js's build() is not re-entrant: buildAll() clears and disposes the
+// scene's shared `mounted` array SYNCHRONOUSLY, before its first await, and
+// only repopulates it across several awaits after that. A second build()
+// starting while the first is still mid-await would run that same clear on
+// meshes the first call is still building - this is a property of the rack,
+// not of any one stage, so it belongs here rather than duplicated in every
+// stage that rebuilds it (stage 2 seating a card, stage 3 seating an optic,
+// ...). Every rebuild goes through this one module-level chain instead, so at
+// most one build() is ever in flight regardless of how many callers race.
+//
+// A rejection is swallowed at the CHAIN level, not the caller's: `fn`
+// throwing must not leave every later enqueue()'d rebuild permanently stuck
+// behind a rejected promise, but the caller still gets `fn`'s own rejection
+// back on the promise this returns, so it can handle or log it.
+let rebuildQueue = Promise.resolve();
+export function enqueueRebuild(fn) {
+  const ready = rebuildQueue.catch(() => {});
+  const step = ready.then(fn);
+  rebuildQueue = step.catch(() => {});
+  return step;
+}
+
 let meta = null;        // ref -> the device's configs.json, from the compiled index
 let components = null;  // the component index, for resolving a bay occupant
 
