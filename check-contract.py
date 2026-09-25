@@ -256,11 +256,10 @@ if rail.is_file():
 # guard3d. A stage that calls createRackScene directly loses the WebGL guard,
 # and the symptom is the scrim never coming down - which reads as a slow build
 # rather than a browser with acceleration switched off.
-for p in sorted((HERE / "site" / "showcase" / "stages").glob("*.js")):
-    s = p.read_text()
-    if "createRackScene" in s:
-        check(False, f"{p.name} does not call createRackScene directly",
-              "mount through rack.js's mount3d so guard3d still wraps it")
+offenders = [p.name for p in sorted((HERE / "site" / "showcase" / "stages").glob("*.js"))
+             if "createRackScene" in p.read_text()]
+check(not offenders, "no stage calls createRackScene directly",
+      f"{offenders} - mount through rack.js's mount3d so guard3d still wraps it")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:

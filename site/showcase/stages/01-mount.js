@@ -37,7 +37,11 @@ export default function makeMount() {
 
       scene = await mount3d({stack, heightRU: RACK_U, overrides});
       if (stale(mine)) { scene?.dispose(); scene = null; return; }
-      loading.hidden = true;
+      // Only when a scene actually mounted: on the no-WebGL path mount3d
+      // returns null and deliberately leaves guard3d's message on the scrim,
+      // so hiding it unconditionally would show an empty 3D pane with no
+      // explanation. The panel below is built either way - R11.
+      if (scene) loading.hidden = true;
 
       setPanel(
         title('Stage 1 · Mount'),
