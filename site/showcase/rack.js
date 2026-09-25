@@ -122,10 +122,13 @@ export function unitsOf(ref) {
   return c.ru ?? Math.max(1, Math.round((c.h || RU) / RU));
 }
 
-// Resolve "cisco/a9k-mpa-4x10ge@1" to its compiled standalone skin.
-const byRef = ref => (components || []).find(
+// Resolve "cisco/a9k-mpa-4x10ge@1" to its compiled standalone skin. Exported
+// so a stage that needs the same skin - stage 3 reading an occupant's own
+// data-paths off it, rather than hardcoding them - reuses this instead of
+// writing a second copy that can drift from it.
+export const byRef = ref => (components || []).find(
   c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
-async function loadSkin(ref) {
+export async function loadSkin(ref) {
   const c = byRef(ref);
   if (!c) return null;
   const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];

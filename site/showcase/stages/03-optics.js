@@ -23,19 +23,27 @@
 // outlives leaving this stage, never paints over whatever stage is current by
 // the time it runs.
 //
-// Once seated, the occupant's paths become addressable on the device - not
-// guessed, but read off vendor/swap.js's own naming (occupantNames): a
-// device-level cage's occupant is `<cage-id>-occupant`, and the skin's own
-// data-paths (qsfp-lc/tx, qsfp-lc/rx, qsfp-lc/tx/bore, qsfp-lc/rx/bore) hang
-// off that root once renamed in. When a scene is mounted, portAnchor resolves
-// the tx path to a real position in the room - this is exactly what commit
-// a7255061 fixed, and it is the proof that the seated optic is real in 3D.
-// When there is no scene (no WebGL), the panel says so instead of a position -
-// R11: the panel builds either way, only the "loading" scrim depends on 3D.
+// Once seated, the occupant's paths become addressable on the device - and
+// this stage reads them off the seated component's own compiled skin,
+// through rack.js's `loadSkin` (the same fetch `overrideFaces` in rack3d.js
+// runs, and the same one `build2dElevation` goes through for a bay swap):
+// every `data-path` on the skin that starts with the component's own root id
+// plus `/` (`qsfp-lc/…`) is real, and none of them are hand-typed here. Each
+// is renamed onto the occupant path exactly as vendor/swap.js's own naming
+// does (occupantNames): a device-level cage's occupant is `<cage-id>-occupant`,
+// so `qsfp-lc/tx` becomes `port-1-occupant/tx`. If the skin fails to fetch,
+// the panel says so rather than falling back to a guessed list - a stale or
+// wrong list would be worse than admitting the fetch failed.
+//
+// When a scene is mounted, portAnchor resolves the derived tx path to a real
+// position in the room - this is exactly what commit a7255061 fixed, and it
+// is the proof that the seated optic is real in 3D. When there is no scene
+// (no WebGL), the panel says so instead of a position - R11: the panel
+// builds either way, only the "loading" scrim depends on 3D.
 
-import {stage3d, stageRack, loading, el, title, lead, kv, setPanel, DIST} from '../artifact.js';
+import {stage3d, stageRack, loading, el, title, lead, kv, setPanel} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
-        enqueueRebuild} from '../rack.js';
+        enqueueRebuild, byRef, loadSkin} from '../rack.js';
 import {epoch, stale} from '../stage-rail.js';
 import {occupantNames} from '../../../vendor/swap.js';
 
@@ -46,26 +54,41 @@ const DEFAULT_CAGE = 'port-1';
 export default function makeOptics() {
   let scene = null;
   let selected = DEFAULT_CAGE;
-  let components = null;   // the component index, loaded once and memoized
+  const skinCache = new Map();   // ref -> {comp, text} | null, memoized
 
   function cages() {
     return (cagesOf(DEV).front || []).filter(c => c.group === GROUP);
   }
 
-  async function loadComponents() {
-    if (components) return components;
-    const {jdist} = await import('../../../vendor/dist.js');
-    try { components = (await jdist(`${DIST}components.json`)).components || []; }
-    catch (err) { console.warn('[portrayal] no component index', err); components = []; }
-    return components;
+  // Memoized per component ref - a re-render (cage change, unrelated seat)
+  // must not refetch a skin it already has, but two different refs must
+  // never share a cache slot.
+  async function skinFor(ref) {
+    if (skinCache.has(ref)) return skinCache.get(ref);
+    const loaded = await loadSkin(ref).catch(() => null);
+    skinCache.set(ref, loaded);
+    return loaded;
   }
-  const byRef = (list, ref) => (list || []).find(
-    c => ref && `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
+
+  // Every data-path on the skin that hangs off the component's own root id,
+  // renamed onto the seated occupant - not a literal list. Returns [] when
+  // the skin carries none, null when the skin could not be fetched at all
+  // (the caller tells the visitor honestly rather than guessing).
+  async function occupantPaths(cage, ref, comp) {
+    const skin = await skinFor(ref);
+    if (!skin) return null;
+    const doc = new DOMParser().parseFromString(skin.text, 'image/svg+xml');
+    const prefix = `${comp.name}/`;
+    const occId = occupantNames(cage).path;
+    return [...doc.querySelectorAll('[data-path]')]
+      .map(el => el.getAttribute('data-path'))
+      .filter(p => p && p.startsWith(prefix))
+      .map(p => ({suffix: p.slice(prefix.length), path: `${occId}/${p.slice(prefix.length)}`}));
+  }
 
   async function buildPanel(message) {
     const all = cages();
     const cage = all.find(c => c.id === selected) || all[0];
-    const comps = await loadComponents();
 
     const cageSel = el('select', {'data-cage': 'true'});
     for (const c of all) cageSel.append(el('option', {value: c.id, text: c.id}));
@@ -81,7 +104,7 @@ export default function makeOptics() {
       text: message || `Pick a cage and seat its optic (defaults to ${DEFAULT_CAGE}).`});
 
     const seatedRef = cage ? (overrides[DEV]?.[cage.id] || null) : null;
-    const seatedComp = seatedRef ? byRef(comps, seatedRef) : null;
+    const seatedComp = seatedRef ? byRef(seatedRef) : null;
 
     const kids = [
       title('Stage 3 · Seat optics'),
@@ -109,21 +132,28 @@ export default function makeOptics() {
           (seatedComp.description || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
         }&rdquo;`));
 
-      const occId = occupantNames(cage).path;
-      const paths = ['tx', 'rx', 'tx/bore', 'rx/bore'].map(p => `${occId}/${p}`);
-      kids.push(lead(`Newly addressable: ${paths.map(p => `<code>${p}</code>`).join(', ')}`));
-
-      if (scene) {
-        const anchor = await scene.portAnchor(DEV, `${occId}/tx`);
-        if (anchor) {
-          const {x, y, z} = anchor.position;
-          kids.push(kv([[`${occId}/tx`,
-            `x ${x.toFixed(1)}, y ${y.toFixed(1)}, z ${z.toFixed(1)} mm`, true]]));
-        } else {
-          kids.push(lead('portAnchor found no matching path on the mounted scene.'));
-        }
+      const paths = await occupantPaths(cage, seatedRef, seatedComp);
+      if (paths === null) {
+        kids.push(lead('The skin could not be loaded, so its paths are unknown.'));
+      } else if (!paths.length) {
+        kids.push(lead('The skin carries no data-paths under its own root.'));
       } else {
-        kids.push(lead('3D is unavailable in this browser, so the tx position cannot be shown.'));
+        kids.push(lead(`Newly addressable: ${paths.map(p => `<code>${p.path}</code>`).join(', ')}`));
+        const tx = paths.find(p => p.suffix === 'tx');
+        if (scene && tx) {
+          const anchor = await scene.portAnchor(DEV, tx.path);
+          if (anchor) {
+            const {x, y, z} = anchor.position;
+            kids.push(kv([[tx.path,
+              `x ${x.toFixed(1)}, y ${y.toFixed(1)}, z ${z.toFixed(1)} mm`, true]]));
+          } else {
+            kids.push(lead('portAnchor found no matching path on the mounted scene.'));
+          }
+        } else if (scene && !tx) {
+          kids.push(lead('The skin carries no tx path to anchor.'));
+        } else {
+          kids.push(lead('3D is unavailable in this browser, so the tx position cannot be shown.'));
+        }
       }
     } else if (cage) {
       kids.push(lead(`${cage.id} is empty.`));
