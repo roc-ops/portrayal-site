@@ -102,6 +102,10 @@ def check(page, base, name):
 # Safe without a GPU: site/webgl.js's webglTrouble() returns a sentence rather
 # than letting three.js throw, and this checker fails only on uncaught errors
 # and 4xx. The 3D stages contribute real 404 coverage with nothing rendered.
+#
+# This list must match the STAGES list in site/showcase/stage-rail.js in both
+# content and order. check-contract.py verifies the rail against the stage files,
+# not against this list, so a mismatch here would silently skip stages.
 STAGES = ["rails", "mount", "populate", "optics", "cable", "filter", "takeaway"]
 
 
