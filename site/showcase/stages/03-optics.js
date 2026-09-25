@@ -68,6 +68,7 @@ export default function makeOptics() {
   let svg = null;      // the 2D picture on stageRack, when this entry is 2D
   let selected = DEFAULT_CAGE;
   const skinCache = new Map();   // ref -> {comp, text} | null, memoized
+  let buildSeq = 0;    // the newest buildPanel; an older one never paints
 
   // The 2D picture, as stage 2 draws it. Put up only while `ui` is live, and
   // attached before anything is highlighted on it (svg2d's boxIn needs the
@@ -131,7 +132,17 @@ export default function makeOptics() {
   // doSeat: check ui.live() after every await, and ui.setPanel is itself a
   // no-op once stale, so a build that outlives the stage paints nothing over
   // whatever stage is current by the time it finishes.
+  //
+  // And only the NEWEST build paints. Live is not enough: on a component's
+  // first seat the skin fetch is uncached, so seat port-1 (this build awaits
+  // the skin) and switch the cage to port-2, which is empty and paints at
+  // once - when port-1's build resumes the lease is still live and the
+  // picture is the same, and it would clear port-2's panel and highlight
+  // port-1's bore while port-2 is selected. `my` is this build's number;
+  // every check after an await asks that it is still the latest.
   async function buildPanel(ui, message) {
+    const my = ++buildSeq;
+    const current = () => ui.live() && my === buildSeq;
     const sc = scene;   // this build's own scene, for the identity check below
     const pic = svg;    // and its own 2D picture, likewise
     // The last cage's highlight goes whatever this cage holds; it is redrawn
@@ -185,7 +196,7 @@ export default function makeOptics() {
         }&rdquo;`));
 
       const paths = await occupantPaths(cage, seatedRef, seatedComp);
-      if (!ui.live()) return;
+      if (!current()) return;
       // A redraw replaced the picture while the skin loaded: the build that
       // follows that redraw paints the panel and the highlight, not this one.
       if (svg !== pic) return;
@@ -216,7 +227,7 @@ export default function makeOptics() {
           }
         } else if (sc && tx) {
           const anchor = await sc.portAnchor(DEV, tx.path);
-          if (!ui.live() || scene !== sc) return;
+          if (!current() || scene !== sc) return;
           if (anchor) {
             const {x, y, z} = anchor.position;
             kids.push(kv([[tx.path,
@@ -234,7 +245,7 @@ export default function makeOptics() {
       kids.push(lead(`${cage.id} is empty.`));
     }
 
-    if (!ui.live() || scene !== sc || svg !== pic) return;
+    if (!current() || scene !== sc || svg !== pic) return;
     ui.setPanel(...kids);
   }
 

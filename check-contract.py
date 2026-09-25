@@ -570,6 +570,16 @@ check(not own, "wireDevices and the ring stubs both click through wireClicks",
       f"{own} keep their own pointer handling")
 check("lookCloser(" not in stage_txt, "no stage puts Look closer in its side panel")
 
+# Stage 3: an older buildPanel (awaiting an uncached skin) must not paint
+# over a newer one - a cage switched while the skin loads keeps its panel.
+opt = (HERE / "site" / "showcase" / "stages" / "03-optics.js").read_text()
+bp = opt[opt.find("async function buildPanel"):opt.find("async function doSeat")]
+bl = bp.splitlines()
+after_await = [bl[i + 1].strip() for i, l in enumerate(bl[:-1]) if re.search(r"=\s*await\b", l)]
+check("++buildSeq" in bp and after_await and all("current()" in l for l in after_await),
+      "stage 3's buildPanel paints only when it is the newest build",
+      "every post-await check in buildPanel must ask my === buildSeq")
+
 # ── a download is what its title says ────────────────────────────────────
 # panZoom rewrites the live viewBox, so a copy of the live node is the crop
 # the visitor last zoomed to. standalone() writes panZoom's recorded base
