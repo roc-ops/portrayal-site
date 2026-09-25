@@ -37,11 +37,13 @@ const EAR_GRIP_MAX = 76.2;          // 3in: how far an ear runs back along a fla
 // away from the camera and foreshortened.
 // `wide` is how much room to leave across, as a multiple of the rail width, and
 // `aimX` shifts what the camera looks at sideways by the same measure. Both
-// exist because the scene is not symmetric about the rails: RU numbers sit
-// 34 mm to the left of them and device tags start 120 mm out and run further
-// left again by the width of their own text, so content spans roughly -510 to
-// +241 mm. Straight on that asymmetry is the whole picture and the tags fall off
-// the edge without it; obliquely the margin already swallows it.
+// exist because the scene is not symmetric about the rails: device tags start
+// 120 mm out on the left and run further left again by the width of their own
+// text, while the U numbers sit on each post's own outboard half (rails.js's
+// SIDES), so content spans roughly -510 mm on the left to about +251 mm on the
+// right (the right rail's outer edge). Straight on that asymmetry is the whole
+// picture and the tags fall off the edge without it; obliquely the margin
+// already swallows it.
 const VIEWS = {
   iso:   {dir: [0.4647, 0.1608, 0.8707], aim: 0.42, margin: 1.72, z: -60,
           wide: 1.1, aimX: 0},
@@ -375,7 +377,9 @@ export function createRackScene(container, opts = {}) {
     // box three inches would be most of it anyway.
     const legLen = RECESS + Math.min(EAR_GRIP_MAX, depth * 0.75);
     for (const side of [-1, 1]) {
-      const holeX = side * (RACK_W / 2 - 8);
+      // The screw lands on the rail's own hole, not a second hand-derived x -
+      // rail geometry lives only in rails.js.
+      const holeX = SIDES.find(s => s.side === (side < 0 ? 'left' : 'right')).hole;
       const earX = side * (halfW + 12);
       const flange = new THREE.Mesh(new THREE.BoxGeometry(24, h, 3), earMat);
       flange.position.set(earX, yBase + ruHeight * RU / 2, RACK_FACE_Z + 1.5);
