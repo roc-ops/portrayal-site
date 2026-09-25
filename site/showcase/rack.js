@@ -13,10 +13,8 @@ import {DIST, stage3d, stageRack, loading, svgEl} from './artifact.js';
 // safe because epoch and stale are only ever read inside mount3d, never while
 // the modules are being evaluated.
 import {epoch, stale} from './stage-rail.js';
-
-export const RU = 44.45;
-export const RAIL = 26;
-export const INNER = 450.85;
+import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SIZE, SIDES} from './rails.js';
+export {RU};
 // The rack heights a cabinet is actually sold in. The rack is the smallest of
 // these that holds the cast, so it is a real cabinet and not one sized to fit.
 const RACK_SIZES = [12, 16, 22, 24, 42];
@@ -157,36 +155,41 @@ export const shortRef = ref => (ref || '(empty)').split('/').pop().replace(/@\d+
 // the bays alone is how stage 3's optics went missing from stage 6's SVG and
 // PNG - the AS7726-32X has no front bays at all, and its 34 cages are in
 // `cages.front`.
-export async function build2dElevation({stack, heightRU, overrides: ov = overrides}) {
+export async function build2dElevation({stack, heightRU, overrides: ov = overrides,
+                                        view = 'front', baseRU = 1}) {
   const totalH = heightRU * RU;
+  const X = x => x + OPENING / 2;          // centre-line mm -> this drawing's x
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg',
-    viewBox: `${-RAIL - 6} -18 ${INNER + RAIL * 2 + 12} ${totalH + 30}`});
+    viewBox: `${-RAIL_W - 6} -18 ${OPENING + RAIL_W * 2 + 12} ${totalH + 30}`});
 
-  for (const x of [-RAIL, INNER]) {
-    out.append(svgEl('rect', {x, y: 0, width: RAIL, height: totalH, 'data-rail': '',
+  for (const s of SIDES) {
+    const x0 = X(Math.min(s.inner, s.outer));
+    out.append(svgEl('rect', {x: x0, y: 0, width: RAIL_W, height: totalH, 'data-rail': s.side,
       fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
   }
-  for (let u = 0; u < heightRU; u++) {
-    const yTop = totalH - (u + 1) * RU;
-    for (const x of [-RAIL, INNER]) {
-      out.append(svgEl('line', {x1: x, y1: yTop, x2: x + RAIL, y2: yTop,
+  for (let i = 0; i < heightRU; i++) {
+    const u = baseRU + i;                              // the real U number
+    const yBottom = totalH - i * RU;
+    for (const s of SIDES) {
+      const x0 = X(Math.min(s.inner, s.outer));
+      out.append(svgEl('line', {x1: x0, y1: yBottom - RU, x2: x0 + RAIL_W, y2: yBottom - RU,
         stroke: 'var(--pt-line)', 'stroke-width': 0.8}));
-      for (const f of [0.22, 0.5, 0.78]) {
-        out.append(svgEl('rect', {x: x + RAIL * 0.72, y: yTop + RU * f - 2.6,
-          width: 4.2, height: 5.2, rx: 0.8, fill: 'var(--pt-ground)',
-          stroke: 'var(--pt-line)', 'stroke-width': 0.5}));
+      for (const dy of HOLE_DY) {
+        out.append(svgEl('rect', {x: X(s.hole) - HOLE_SIZE / 2, y: yBottom - dy - HOLE_SIZE / 2,
+          width: HOLE_SIZE, height: HOLE_SIZE, rx: 0.6, fill: 'var(--pt-ground)',
+          stroke: 'var(--pt-line)', 'stroke-width': 0.5, 'data-rail-hole': s.side}));
       }
-      const t = svgEl('text', {x: x + RAIL * 0.34, y: yTop + RU / 2 + 4,
+      const t = svgEl('text', {x: X(s.number), y: yBottom - RU / 2 + 4,
         'text-anchor': 'middle', 'font-family': 'IBM Plex Mono, monospace',
-        'font-size': 11, 'font-weight': 500, fill: 'var(--pt-ink-muted)'});
-      t.textContent = String(u + 1);
+        'font-size': 11, 'font-weight': 500, fill: 'var(--pt-ink-muted)', 'data-rail-num': s.side});
+      t.textContent = String(u);
       out.append(t);
     }
   }
 
   let styled = false;
   for (const e of stack) {
-    const url = `${DIST}${e.ref}.${e.cfg}.front.svg`;
+    const url = `${DIST}${e.ref}.${e.cfg}.${view}.svg`;
     const text = await fetch(url).then(r => r.ok ? r.text() : null);
     if (!text) continue;
     const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
@@ -195,9 +198,9 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
     const w = parseFloat(root.getAttribute('width')) || vb[2];
     const h = parseFloat(root.getAttribute('height')) || vb[3];
     const ruH = e.u ?? Math.max(1, Math.round(h / RU));
-    const y = totalH - (e.ru - 1 + ruH) * RU + (ruH * RU - h) / 2;
+    const y = totalH - (e.ru - baseRU + ruH) * RU + (ruH * RU - h) / 2;
 
-    const g = svgEl('g', {transform: `translate(${(INNER - w) / 2} ${y})`,
+    const g = svgEl('g', {transform: `translate(${(OPENING - w) / 2} ${y})`,
                           'data-device-name': e.label, 'data-device-ref': e.ref});
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
     // no url(#...) and no href="#...", so there is nothing to collide - and
@@ -209,7 +212,11 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
     }
     out.append(g);
     const mine = ov?.[e.ref];
-    if (mine && Object.keys(mine).length) {
+    // Seating overrides is front-only: bays and cages are keyed per view in
+    // the index (e.g. cages.front, cages.rear), and the only seats this
+    // showcase makes are front seats - applying them against a rear face
+    // would look up the wrong keys and seat nothing, or the wrong thing.
+    if (view === 'front' && mine && Object.keys(mine).length) {
       const {applyFaceOverrides} = await import('../../vendor/swap.js');
       await applyFaceOverrides(g, {bays: baysOf(e.ref).front || [], cages: cagesOf(e.ref).front || []},
                                mine, loadSkin, byRef);

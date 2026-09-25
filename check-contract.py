@@ -511,6 +511,25 @@ if labs is not None:
               f"purpose() classifies every link ({len(classified)}/{len(links)})",
               f"{len(links) - len(classified)} unclassified" if links else "no links to classify")
 
+# ── one rail, drawn twice ──────────────────────────────────────────────────
+# The 2D rails and the 3D posts were two ideas of a rail. The right 2D rail
+# was a copy of the left instead of its mirror, so its numbers sat inside and
+# its holes outside. rails.js now holds the only description, and neither
+# renderer may keep its own.
+rails = HERE / "site" / "showcase" / "rails.js"
+rtxt = rails.read_text() if rails.is_file() else ""
+check(bool(rtxt), "site/showcase/rails.js exists", "the rail has no single description")
+for name in ("RU", "RAIL_W", "OPENING", "HOLE_CC", "HOLE_DY", "HOLE_SIZE", "SIDES"):
+    check(re.search(rf"export const {name}\b", rtxt) is not None,
+          f"rails.js exports {name}", "missing")
+rack_js = (HERE / "site" / "showcase" / "rack.js").read_text()
+check("from './rails.js'" in rack_js, "rack.js draws its rails from rails.js")
+check(not re.search(r"const\s+(RAIL|INNER)\s*=", rack_js),
+      "rack.js keeps no rail constants of its own",
+      "RAIL/INNER belong to rails.js")
+check("0.22" not in rack_js and "0.78" not in rack_js,
+      "rack.js has no non-EIA hole fractions", "holes must come from HOLE_DY")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

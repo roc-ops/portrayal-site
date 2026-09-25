@@ -189,6 +189,22 @@ def check_stages(page, base):
         except Exception:
             bad.append(f"stage {name} never became ready")
             continue
+        if name == "rails":
+            geo = page.evaluate("""() => {
+              const c = el => { const b = el.getBBox(); return b.x + b.width / 2; };
+              const q = (k, s) => document.querySelector(`#stageRack [data-rail-${k}="${s}"]`);
+              const out = {};
+              for (const s of ['left', 'right']) {
+                const h = q('hole', s), n = q('num', s);
+                out[s] = h && n ? {hole: c(h), num: c(n)} : null;
+              }
+              return out;
+            }""")
+            ok = (geo.get("left") and geo.get("right")
+                  and geo["left"]["num"] < geo["left"]["hole"]      # numbers outboard (left of the hole) on the left rail
+                  and geo["right"]["num"] > geo["right"]["hole"])   # and to its right on the right rail
+            if not ok:
+                bad.append(f"stage rails: rail numbers are not outboard of the holes on both rails: {geo}")
         if name in CLAIMS:
             what, run = CLAIMS[name]
             try:
