@@ -71,6 +71,20 @@ READY_MS = 60000
 # 3D walk from flaking without loosening every 2D wait.
 READY_3D_MS = 120000
 
+# THE CAST, READ FROM rack.js - the configuration each cast device is cast in,
+# parsed the way check-contract.py parses it, so the Inspect lens is held to
+# what the rack says rather than to a copy written here that could drift.
+def cast_cfgs():
+    src = (HERE / "site" / "showcase" / "rack.js").read_text()
+    m = re.search(r"export const CAST\s*=\s*\[(.*?)\];", src, re.S)
+    out = {}
+    for body in re.findall(r"\{([^}]*)\}", m.group(1) if m else ""):
+        ref = re.search(r"\bref\s*:\s*'([^']+)'", body)
+        cfg = re.search(r"\bcfg\s*:\s*'([^']+)'", body)
+        if ref and cfg:
+            out[ref.group(1)] = cfg.group(1)
+    return out
+
 
 def free_port():
     with contextlib.closing(socket.socket()) as s:
@@ -500,7 +514,17 @@ def check_stages(page, base):
     # card through Explorer's own occupant dropdown, come back, and the rack
     # has it. The frame is driven through Explorer's UI because that is how a
     # person uses it; the showcase itself talks to it only via portrayalEmbed.
-    def explorer_frame():
+    #
+    # EVERY INSPECT OPENS ON ITS CAST CONFIGURATION. explorer_frame(dev) holds
+    # the frame, once Explorer is ready, to the device it was opened for and to
+    # that device's cfg in rack.js's CAST - the configuration the rack draws,
+    # and the only one whose swaps come back. All four cast devices are opened
+    # below, so all four are held to it.
+    cast = cast_cfgs()
+    if len(cast) != 4:
+        bad.append(f"inspect frame: could not read the four cast configurations from rack.js ({cast})")
+    opened_on_cast = set()
+    def explorer_frame(dev):
         fr = None
         for _ in range(100):
             fr = next((f for f in page.frames if "explorer.html" in f.url), None)
@@ -510,13 +534,21 @@ def check_stages(page, base):
             raise RuntimeError("no explorer.html frame")
         fr.wait_for_function("() => window.portrayalEmbed", timeout=READY_3D_MS)
         fr.evaluate("async () => { await window.portrayalEmbed.ready; }")
+        cur = fr.evaluate("() => window.portrayalEmbed.current()")
+        if cur.get("device") != dev:
+            bad.append(f"inspect frame: opened for {dev} but Explorer has {cur.get('device')}")
+        elif cur.get("config") != cast.get(dev):
+            bad.append(f"inspect frame: {dev} opened on {cur.get('config')}, not its cast "
+                       f"configuration {cast.get(dev)}")
+        else:
+            opened_on_cast.add(dev)
         return fr
     try:
         page.click('.stage-rail button[data-stage="populate"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         page.click('[data-spoke-device="asr-9006"][data-spoke-lens="inspect"]')
         page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
-        fr = explorer_frame()
+        fr = explorer_frame("asr-9006")
         if fr.is_visible(".site-bar") or fr.is_visible("#devpick") or fr.is_visible("#mode"):
             bad.append("inspect frame: site bar, device picker or mode buttons visible")
         # slot-3 accepts line cards (asr-9006 index); a9k-4x100ge-se@1 is one of them.
@@ -567,11 +599,27 @@ def check_stages(page, base):
         if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
                                    '[data-path="slot-3/module"][data-ref^="cisco/a9k-4x100ge-se@1"]'):
             bad.append("inspect frame: a card seated in Explorer did not come back to the rack's drawing")
+        # ONLY LOOKING AT ANOTHER CONFIGURATION IS NOT A SWAP (R3). Switch the
+        # FHD to base inside the lens, seat nothing, close: nothing stayed in
+        # the lens, so nothing may say it did.
+        page.click('[data-spoke-device="fhd-1ufce"][data-spoke-lens="inspect"]')
+        page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
+        fr = explorer_frame("fhd-1ufce")
+        fr.select_option("#cfg", "base")
+        fr.wait_for_function("() => window.portrayalEmbed.current().config === 'base'", timeout=READY_MS)
+        if fr.evaluate("() => Object.keys(window.portrayalEmbed.current().swaps).length"):
+            bad.append("inspect frame: switching the FHD to base alone reported swaps")
+        page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        if "stayed in the lens" in page.inner_text("#sidePanel"):
+            bad.append("inspect frame: a config looked at, with no swaps, still gave the "
+                       "\"stayed in the lens\" notice")
         # The config rule: switch the FHD to its empty base inside the lens,
         # close, and the rack is unchanged with a notice saying why.
         page.click('[data-spoke-device="fhd-1ufce"][data-spoke-lens="inspect"]')
         page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
-        fr = explorer_frame()
+        fr = explorer_frame("fhd-1ufce")
         fr.select_option("#cfg", "base")
         fr.wait_for_function("() => window.portrayalEmbed.current().config === 'base'", timeout=READY_MS)
         # A real swap on that other configuration - a splice cassette in bay-1 -
@@ -602,7 +650,7 @@ def check_stages(page, base):
         # guessed dialog button - the same click a person uses in Explorer itself.
         page.click('[data-spoke-device="r740xd"][data-spoke-lens="inspect"]')
         page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
-        fr = explorer_frame()
+        fr = explorer_frame("r740xd")
         before = fr.evaluate("() => window.portrayalEmbed.current().pulled.length")
         fr.click('#tree .node[data-path="bezel"] .pull')
         fr.wait_for_function(
@@ -614,6 +662,132 @@ def check_stages(page, base):
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
     except Exception as e:
         bad.append(f"inspect frame: {str(e).splitlines()[0]}")
+
+    # CALLOUTS -> INSPECT ON THE AS7726-32X, from the crumb's own lens row. The
+    # inline Callouts face named its SVG under the stage; the frame that
+    # replaces it must not leave that name there - not while it loads, and not
+    # once it is open. This is also the fourth cast device's Inspect open.
+    try:
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.click('#lookStrip [data-spoke-device="as7726-32x"][data-spoke-lens="callouts"]')
+        page.wait_for_selector('#spokeCrumb:not([hidden])', timeout=READY_MS)
+        if ".svg" not in page.inner_text("#showSrc"):
+            bad.append("callouts -> inspect: Callouts did not name its face under the stage, "
+                       "so the check below proves nothing")
+        page.click('#spokeLenses button:has-text("Inspect")')
+        page.wait_for_selector('#lensFrame iframe', state="attached", timeout=READY_MS)
+        if re.search(r"\.svg\b", page.inner_text("#showSrc")):
+            bad.append(f"callouts -> inspect: the loading frame sits over a stale source line "
+                       f"({page.inner_text('#showSrc')!r})")
+        explorer_frame("as7726-32x")
+        page.wait_for_selector('#spokeCrumb:not([hidden])', timeout=READY_MS)
+        if re.search(r"\.svg\b", page.inner_text("#showSrc")):
+            bad.append(f"callouts -> inspect: the open frame sits over a stale source line "
+                       f"({page.inner_text('#showSrc')!r})")
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    except Exception as e:
+        bad.append(f"callouts -> inspect: {str(e).splitlines()[0]}")
+    missing = sorted(set(cast) - opened_on_cast)
+    if missing:
+        bad.append(f"inspect frame: not proven to open on its cast configuration: {missing}")
+
+    # MID-LOAD, FOR CERTAIN. Clicks the Inspect button, and the moment the
+    # frame is put in the page - inside the same MutationObserver callback, so
+    # before its document can have loaded, let alone said it is ready -
+    # clicks `second`. Returns what was true right then (the cover up, so it
+    # really was mid-load) and right after the second click's synchronous work.
+    def click_during_load(dev, second):
+        return page.evaluate("""([dev, second]) => new Promise((res, rej) => {
+            const host = document.getElementById('lensFrame');
+            const t = setTimeout(() => { mo.disconnect(); rej(new Error('no frame appeared')); }, 30000);
+            const mo = new MutationObserver(() => {
+              if (!host.querySelector('iframe')) return;
+              mo.disconnect(); clearTimeout(t);
+              const mid = !!host.querySelector('.lens-cover')
+                && !document.body.classList.contains('spoke-open');
+              document.querySelector(second).click();
+              res({mid,
+                   frameAfter: !!host.querySelector('iframe') || !host.hidden,
+                   crumbAfter: !document.getElementById('spokeCrumb').hidden,
+                   dimAfter: document.body.classList.contains('spoke-open')});
+            });
+            mo.observe(host, {childList: true});
+            document.querySelector(
+              `#lookStrip [data-spoke-device="${dev}"][data-spoke-lens="inspect"]`).click();
+        })""", [dev, second])
+
+    # A RUNG CLICKED WHILE THE FRAME LOADS goes where it was clicked, at once:
+    # no frame, no crumb, no dimmed ladder, and the stage asked for comes up.
+    try:
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        at = click_during_load("asr-9006", '.stage-rail button[data-stage="mount"]')
+        mid = at["mid"]
+        left = [w for w, k in (("the frame is still up", "frameAfter"),
+                               ("the crumb is showing", "crumbAfter"),
+                               ("the ladder is dimmed (spoke-open)", "dimAfter")) if at[k]]
+        page.wait_for_selector('[data-stage-ready="mount"]', timeout=READY_MS)
+        def frame_gone():
+            out = []
+            if page.is_visible('#lensFrame') or page.query_selector('#lensFrame iframe'):
+                out.append("the frame is still up")
+            if page.is_visible('#spokeCrumb'):
+                out.append("the crumb is showing")
+            if page.evaluate("() => document.body.classList.contains('spoke-open')"):
+                out.append("the ladder is dimmed (spoke-open)")
+            return out
+        left += [f"{w} once stage 1 is ready" for w in frame_gone()]
+        # And the abandoned load cannot come back when it lands.
+        page.wait_for_timeout(2500)
+        late = frame_gone()
+        if page.get_attribute('#stageHost', "data-stage-ready") != "mount":
+            late.append("stage 1 is no longer the ready stage")
+        if not mid:
+            bad.append("rung click during load: the frame had finished loading before the click, "
+                       "so this proves nothing")
+        if left or late:
+            bad.append(f"rung click during load: at once [{'; '.join(left)}], "
+                       f"2.5 s later [{'; '.join(late)}]")
+    except Exception as e:
+        bad.append(f"rung click during load: {str(e).splitlines()[0]}")
+
+    # 3D CLICKED WHILE THE FRAME LOADS is remembered, and the frame opens in
+    # 3D - read at the moment the lens is open, not waited for, because
+    # openFrame is what must apply it. Then back to 2D, frame and page both.
+    try:
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        mid = click_during_load("r740xd", '#stageMode [data-mode="3d"]')["mid"]
+        page.wait_for_selector('#spokeCrumb:not([hidden])', timeout=READY_3D_MS)
+        fr = explorer_frame("r740xd")
+        m = fr.evaluate("() => window.portrayalEmbed.current().mode")
+        if not mid:
+            bad.append("3D click during load: the frame had finished loading before the click, "
+                       "so this proves nothing")
+        if m != "3d":
+            bad.append(f"3D click during load: the lens opened in {m}, under a switch showing 3D")
+        page.click('#stageMode [data-mode="2d"]')
+        fr.wait_for_function("() => window.portrayalEmbed.current().mode === '2d'", timeout=READY_MS)
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+    except Exception as e:
+        bad.append(f"3D click during load: {str(e).splitlines()[0]}")
+    finally:
+        # 2D IS THE DEFAULT, and nothing after this may start in 3D.
+        try:
+            if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
+                page.click('#stageMode [data-mode="2d"]', timeout=READY_MS)
+            if page.is_visible('#spokeBack'):
+                page.click('#spokeBack', timeout=READY_MS)
+            at = page.get_attribute('.stage-rail [data-stage][aria-selected="true"]', "data-stage")
+            page.wait_for_selector(f'[data-stage-ready="{at}"]', timeout=READY_3D_MS)
+            stored = page.evaluate("() => { try { return localStorage.getItem('portrayal.showcase.mode'); } catch { return null; } }")
+            if stored == "3d" or page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
+                bad.append(f"3D click during load: the page was not left in 2D (stored {stored!r})")
+        except Exception as e:
+            bad.append(f"3D click during load: could not restore 2D ({str(e).splitlines()[0]})")
     return bad
 
 
