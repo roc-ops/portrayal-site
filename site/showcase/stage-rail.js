@@ -151,6 +151,13 @@ export async function activate(name) {
 async function enterStage(name) {
   epoch++;
   const mine = epoch;
+  // THE NOTICE IS THIS ENTRY'S, OR NOBODY'S. It was raised for the stage being
+  // entered now (closeSpoke raises it just before re-entering), so this entry
+  // claims it at once: shown if the entry finishes as the live one, dropped if
+  // its enter() throws or it is overtaken - never left to surface on some
+  // later, unrelated entry.
+  const note = pending;
+  pending = null;
   vacate();
   // An exit that throws must not stop the next stage entering (R11).
   try { if (current) await MODULES[current].exit?.(); }
@@ -184,9 +191,8 @@ async function enterStage(name) {
   }
   // The rail's one line (notice, below), on the stage the visitor landed on -
   // only if this entry is still that stage.
-  if (pending && !stale(mine)) {
-    panel.prepend(el('p', {class: 'panel-notice', role: 'status', text: pending}));
-    pending = null;
+  if (note && !stale(mine)) {
+    panel.prepend(el('p', {class: 'panel-notice', role: 'status', text: note}));
   }
   // Only for a stage that is still current, and never for one whose enter()
   // threw: a checker waiting on this must fail loudly, not pass quietly.
@@ -194,7 +200,8 @@ async function enterStage(name) {
 }
 
 // ONE LINE, ONCE, ON THE STAGE THE VISITOR LANDS ON. Written by the rail, not
-// by the stage, so it cannot be painted over a stage that has moved on.
+// by the stage, so it cannot be painted over a stage that has moved on. The
+// next enterStage claims it (above), whether or not that entry lands.
 let pending = null;
 export function notice(text) { pending = text; }
 
