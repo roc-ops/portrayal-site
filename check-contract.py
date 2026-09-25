@@ -274,6 +274,20 @@ if pop.is_file():
           "stage 2 does not hardcode an accepted list",
           "found an inline accepts array - that is the page fabricating data")
 
+# STAGE 3'S WHOLE CLAIM IS THAT SPEED AND LANES ARE NOT ON THE GENERIC OPTIC -
+# a speed table here would be the page inferring the one fact the component
+# index withholds. speeds.yaml and pluggables.yaml belong upstream; a second
+# copy here would drift from them silently.
+opt = (HERE / "site" / "showcase" / "stages" / "03-optics.js")
+if opt.is_file():
+    s = opt.read_text()
+    check(not re.search(r"(100G|400G|25G)\s*['\"]?\s*:", s),
+          "stage 3 does not keep its own speed table",
+          "speeds belong to the component index; a copy here will drift")
+    check(not re.search(r"100GE?\b|lanes\s*[:=]\s*4\b", s),
+          "stage 3 does not quietly infer 100G or 4 lanes",
+          "R15: the generic optic carries no speed or lane count - showing that gap is the point")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
