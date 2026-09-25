@@ -39,7 +39,7 @@ export const CAST = [
   {ref: 'asr-9006',   cfg: 'base',             label: 'ASR-9006'},
   {ref: 'r740xd',     cfg: 'sff24-rc5-1b2a3a', label: 'R740xd'},
   {ref: 'as7726-32x', cfg: 'ac-f2b',           label: 'AS7726-32X'},
-  {ref: 'fhd-1ufce',  cfg: 'base',             label: 'FHD-1UFCE'},
+  {ref: 'fhd-1ufce',  cfg: 'populated',       label: 'FHD-1UFCE'},
 ];
 
 // The rack's height in U, settled by loadMeta. Stage 0 draws exactly this, so

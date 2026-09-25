@@ -293,6 +293,18 @@ check(avail.get("inspect") == "*"
       "Callouts, Live state and Select are offered only on as7726-32x; Inspect on every device",
       f"LENS_DEVICES in spoke-host.js reads {avail or 'nothing'}")
 
+# THE FHD-1UFCE OPENS POPULATED. Its `base` is an empty tray; the showcase is
+# about what a rack holds, so it opens with its four cassettes - and the
+# configuration named must exist in the device's own index.
+cast_src = (HERE / "site" / "showcase" / "rack.js").read_text()
+m = re.search(r"\{ref:\s*'fhd-1ufce',\s*cfg:\s*'([^']+)'", cast_src)
+fhd_cfg = m.group(1) if m else None
+check(fhd_cfg == "populated", "the cast FHD-1UFCE opens in its populated configuration",
+      f"cfg is {fhd_cfg!r}")
+fhd_idx = jload("fhd-1ufce.configs.json") or {}
+check(any(c.get("name") == "populated" for c in fhd_idx.get("configs", [])),
+      "fhd-1ufce's index carries a 'populated' configuration")
+
 # THE CAST IS VENDORED. Stages 1-3 and 6 mount four devices named in
 # rack.js's CAST, and a cast device whose index or face is missing does not
 # fail anything visible: loadMeta drops it from the rack and the stage paints
