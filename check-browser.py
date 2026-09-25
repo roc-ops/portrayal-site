@@ -201,7 +201,14 @@ def check_embed(page, base):
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/explorer.html?embed=1&device=r740xd&view=front", wait_until="load")
     try:
-        page.wait_for_function("() => window.portrayalEmbed", timeout=READY_MS)
+        # SYNCHRONOUS: the showcase reads window.portrayalEmbed off this same
+        # `load` event, before it ever awaits `.ready`. If the object only
+        # showed up later, that read would find nothing.
+        if not page.evaluate("() => !!window.portrayalEmbed"):
+            bad.append("embed: window.portrayalEmbed missing at load")
+        early = page.evaluate("() => window.portrayalEmbed.current()")
+        if not isinstance(early, dict):
+            bad.append(f"embed: current() before ready returned {early!r}")
         cur = page.evaluate("async () => { await window.portrayalEmbed.ready; return window.portrayalEmbed.current(); }")
         if cur.get("device") != "r740xd":
             bad.append(f"embed: current().device is {cur.get('device')!r}")

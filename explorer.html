@@ -495,6 +495,29 @@ shell.el.stage.appendChild(host3d);
 
 let mode = '2d', viewer = null, loading = null, loadedKey = '';
 
+// SYNCHRONOUS, NOT AFTER shell.ready. The showcase reads window.portrayalEmbed
+// off the frame's `load` event and then awaits `.ready` itself - so the object
+// has to exist before the device loads, not after. `current()` is safe to call
+// in that gap: `state.device` is null until the shell has actually loaded a
+// device, so until then this falls back to the URL's own device/config/view
+// (the values the shell is about to apply) and reports no swaps and nothing
+// pulled, rather than reading state that is not there yet.
+if (EMBED) {
+  const q = new URLSearchParams(location.search);
+  window.portrayalEmbed = Object.freeze({
+    ready: shell.ready,
+    setMode: m => setMode(m),
+    current: () => ({
+      device: state.device ?? q.get('device') ?? null,
+      config: state.cfg ?? q.get('config') ?? null,
+      view: state.view ?? q.get('view') ?? null,
+      mode,
+      swaps: state.device ? {...swapsNow(shell)} : {},
+      pulled: state.device ? shell.pulledPaths() : [],
+    }),
+  });
+}
+
 async function ensureViewer() {
   if (viewer) return viewer;
   if (!loading) loading = (async () => {
@@ -875,18 +898,6 @@ addEventListener('resize', () => { if (mode === '3d' && viewer) viewer.resize();
 
 await shell.ready;
 applyPendingFields();
-
-if (EMBED) {
-  window.portrayalEmbed = Object.freeze({
-    ready: shell.ready,
-    setMode: m => setMode(m),
-    current: () => ({
-      device: state.device, config: state.cfg, view: state.view, mode,
-      swaps: {...swapsNow(shell)},
-      pulled: typeof shell.pulledPaths === 'function' ? shell.pulledPaths() : [],
-    }),
-  });
-}
 </script>
 <script>
 // Close the export menu on Escape or on a click outside it. <details> handles
