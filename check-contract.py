@@ -252,6 +252,16 @@ if rail.is_file():
               f"listed {sorted(listed)} but found {on_disk}")
         check(len(listed) == 7, "there are seven stages", f"found {len(listed)}")
 
+# STAGES THAT MOUNT THE RACK GO THROUGH rack.js's mount3d, which wraps
+# guard3d. A stage that calls createRackScene directly loses the WebGL guard,
+# and the symptom is the scrim never coming down - which reads as a slow build
+# rather than a browser with acceleration switched off.
+for p in sorted((HERE / "site" / "showcase" / "stages").glob("*.js")):
+    s = p.read_text()
+    if "createRackScene" in s:
+        check(False, f"{p.name} does not call createRackScene directly",
+              "mount through rack.js's mount3d so guard3d still wraps it")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
