@@ -313,6 +313,9 @@ if labs is not None:
         check(False, "labs.json's first lab has devices", why)
         check(False, "labs.json's first lab has links", why)
         check(False, "every link endpoint resolves to a drawn data-path", why)
+        check(False, "the lab has more than one media to filter by", why)
+        check(False, "every link endpoint's port declares a data-group", why)
+        check(False, "purpose() classifies every link", why)
     else:
         devs = ring.get("devices") if isinstance(ring.get("devices"), list) else []
         links = ring.get("links") if isinstance(ring.get("links"), list) else []
@@ -336,6 +339,61 @@ if labs is not None:
         check(bool(ends) and not bad,
               f"every link endpoint resolves to a drawn data-path ({len(ends) - len(bad)}/{len(ends)})",
               f"{len(bad)} unresolved, e.g. {bad[:3]}" if ends else "no endpoints to resolve")
+
+        # ── stage 5 filters on what the drawing already says ────────────
+        # A link's purpose is the group of the ports it connects, and every
+        # port these links name carries data-group on its face: eth4 -> mgmt,
+        # xc34 -> xc, port-line/port-osc -> line. So purpose filtering needs
+        # no upstream field and no table in the page. Asserted because it is
+        # the premise of the stage: if a link's port stops carrying a group,
+        # the filter silently offers one bucket.
+        media = sorted({l["media"] for l in links if isinstance(l, dict) and "media" in l})
+        check(len(media) > 1, "the lab has more than one media to filter by",
+              f"only {media} - a filter with one value demonstrates nothing")
+
+        groups = {}
+        for ref in set(v for v in byid.values() if v):
+            for f in DIST.glob(f"{ref}.*.svg"):
+                for pth, attrs in re.findall(r'data-path="([^"]+)"([^>]*)', f.read_text()):
+                    g = re.search(r'data-group="([^"]+)"', attrs)
+                    if g:
+                        groups.setdefault((ref, pth), g.group(1))
+        ungrouped = [f"{ep[0]}:{ep[1]}" for l in links if isinstance(l, dict)
+                     for ep in (l.get("from"), l.get("to"))
+                     if isinstance(ep, list) and len(ep) >= 2
+                     and (byid.get(ep[0]), ep[1]) not in groups]
+        check(not ungrouped, "every link endpoint's port declares a data-group",
+              f"{len(ungrouped)} without one, e.g. {ungrouped[:3]} - purpose filtering "
+              "reads the group off the face, so a port without one cannot be classified")
+
+        # The same partition ring.js's purpose() derives, recomputed here the
+        # same way: `line` splits into a ring span (carries span) or an OSC
+        # loop (both ends on the same device), everything else falls through
+        # to its own group name. Every link must land in a bucket - an
+        # unclassified link would mean the filter's rows silently miss a
+        # cable the picture still draws.
+        def group_of(ep):
+            if not (isinstance(ep, list) and len(ep) >= 2):
+                return None
+            return groups.get((byid.get(ep[0]), ep[1]))
+
+        def link_purpose(l):
+            gf, gt = group_of(l.get("from")), group_of(l.get("to"))
+            if gf == "mgmt" or gt == "mgmt":
+                return "management"
+            g = gf or gt
+            if g == "xc":
+                return "cross-connect"
+            if g == "line":
+                f, t = l.get("from"), l.get("to")
+                same_dev = isinstance(f, list) and isinstance(t, list) and f[0] == t[0]
+                return "ring-span" if l.get("span") else ("osc-loop" if same_dev else "line")
+            return g
+
+        classified = [l for l in links if isinstance(l, dict) and link_purpose(l) is not None]
+        check(bool(links) and len(classified) == len(links),
+              f"purpose() classifies every link ({len(classified)}/{len(links)})",
+              f"{len(links) - len(classified)} unclassified" if links else "no links to classify")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:

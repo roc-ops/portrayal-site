@@ -57,6 +57,79 @@ export async function loadLab() {
   }
 }
 
+let groupMapPromise = null;
+
+// Map<ref, Map<data-path, data-group>> for every device ref the lab uses.
+// Built ONCE per page load (memoised, like loadLab/ringStack) by fetching
+// each ref's vendored face SVGs and reading their own data-group attribute -
+// the compiled drawing already carries it, so this is reading, not guessing.
+//
+// The view list for each ref comes from that ref's own configs.json `views`,
+// never a literal list of view names: check-browser.py fails the whole run
+// on any response >= 400, so a view this ref does not have must never be
+// requested. This works with NO 3D scene (R11) - it is a second, independent
+// fetch of the same static SVG files rack3d's face cache also loads, not a
+// read of that cache, so stage 5's purpose filter is not hostage to WebGL.
+async function loadGroupMaps(lab) {
+  if (groupMapPromise) return groupMapPromise;
+  groupMapPromise = (async () => {
+    const {jdist} = await import('../../vendor/dist.js');
+    const refs = [...new Set((lab.devices || []).map(d => d.ref))];
+    const map = new Map();
+    for (const ref of refs) {
+      const groups = new Map();
+      let idx = null;
+      try { idx = await jdist(`${DIST}${ref}.configs.json`); }
+      catch (err) { console.warn('[portrayal] no config index for', ref, err); }
+      if (idx) {
+        for (const view of idx.views || []) {
+          try {
+            const res = await fetch(`${DIST}${ref}.${idx.default}.${view}.svg`);
+            if (!res.ok) continue;
+            const doc = new DOMParser().parseFromString(await res.text(), 'image/svg+xml');
+            for (const el of doc.querySelectorAll('[data-path][data-group]')) {
+              groups.set(el.getAttribute('data-path'), el.getAttribute('data-group'));
+            }
+          } catch (err) {
+            console.warn('[portrayal] face fetch failed for', ref, view, err);
+          }
+        }
+      }
+      map.set(ref, groups);
+    }
+    return map;
+  })();
+  return groupMapPromise;
+}
+
+// (devId, port) -> its data-group, or null when the device is unknown, its
+// index failed to load, or the port declares no group. Never a guess: a port
+// with no group is reported by the caller as ungrouped, not assigned one.
+export async function groupOf(devId, port) {
+  const lab = await loadLab();
+  if (!lab) return null;
+  const dev = (lab.devices || []).find(d => d.id === devId);
+  if (!dev) return null;
+  const map = await loadGroupMaps(lab);
+  return map.get(dev.ref)?.get(port) ?? null;
+}
+
+// A link's purpose: the group of the ports it connects, read off the face.
+// The only structural inference: `line` splits into a ring span (the link
+// itself carries `span`) or an OSC loop (both ends on the same device) - both
+// come from the lab's own structure, not from a port-name guess. A group
+// that isn't mgmt/xc/line falls through to its own name; no group at all on
+// either end is reported honestly as ungrouped.
+export async function purpose(l) {
+  const gFrom = await groupOf(l.from[0], l.from[1]);
+  const gTo = await groupOf(l.to[0], l.to[1]);
+  if (gFrom === 'mgmt' || gTo === 'mgmt') return 'management';
+  const g = gFrom || gTo;
+  if (g === 'xc') return 'cross-connect';
+  if (g === 'line') return l.span ? 'ring-span' : l.from[0] === l.to[0] ? 'osc-loop' : 'line';
+  return g || 'ungrouped';
+}
+
 // What the lab says, as counts. Needs no scene, so the panel can show it
 // whether or not 3D mounted.
 export function summarize(lab) {
