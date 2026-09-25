@@ -11,9 +11,7 @@
 // Toggling still narrows the counted set with no scene; it only additionally
 // hides tubes when one exists.
 
-import {stage3d, stageRack, loading, el, title, lead, kv, controls, setPanel, panel}
-  from '../artifact.js';
-import {epoch, stale} from '../stage-rail.js';
+import {stage3d, stageRack, el, title, lead, kv, controls, panel} from '../artifact.js';
 import {mountRing, disposeRing, purpose, MEDIA_COLORS, OTHER_MEDIA} from '../ring.js';
 
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -23,31 +21,27 @@ const swatch = c => el('span', {style: `display:inline-block;width:0.9em;height:
 
 export default function makeFilter() {
   let ring = null;
-  // True only while this stage's own enter() is the current one. Toggle
-  // handlers are synchronous but must be no-ops once exit() has run - they
-  // cannot check the epoch themselves, since nothing awaits between a click
-  // and the handler running.
-  let live = false;
 
   return {
     title: 'Filter',
     question: 'Show me just management.',
-    async enter() {
-      const mine = epoch;
-      live = true;
+    // `ui` is the rail's lease on this entry (stage-rail.js). The toggle
+    // handlers below close over it: once the rail has moved on, ui.live() is
+    // false and a click that somehow reaches them changes nothing.
+    async enter(ui) {
       stageRack.hidden = true; stage3d.hidden = false;
-      loading.hidden = false; loading.textContent = 'Racking the ROADM ring…';
+      ui.scrim('Racking the ROADM ring…');
 
-      const got = await mountRing({mine, onScene: r => { if (!stale(mine)) ring = r; }});
-      if (stale(mine)) { disposeRing(got); return; }
+      const got = await mountRing({mine: ui.mine, onScene: r => { if (ui.live()) ring = r; }});
+      if (!ui.live()) { disposeRing(got); return; }
       const lab = got?.lab;
       const scene = got?.scene || null;
-      if (scene) loading.hidden = true;
+      if (scene) ui.unscrim();
 
       const kids = [title('Stage 5 · Filter'), lead('<strong>Show me just management.</strong>')];
       if (!lab) {
         kids.push(lead('labs.json could not be loaded, so there is nothing to filter.'));
-        setPanel(...kids);
+        ui.setPanel(...kids);
         return;
       }
 
@@ -55,7 +49,7 @@ export default function makeFilter() {
       // One purpose per link, in link order, so it lines up with got.tubes
       // (built in the same lab.links order) whether or not a scene exists.
       const purposes = await Promise.all(links.map(purpose));
-      if (stale(mine)) { disposeRing(got); return; }
+      if (!ui.live()) { disposeRing(got); return; }
 
       // Both rows straight off the data - values that appear, not a fixed
       // vocabulary - so an unforeseen media or group gets its own row rather
@@ -73,7 +67,7 @@ export default function makeFilter() {
       const countEl = el('p', {class: 'panel-lead', 'data-filter-count': 'true'});
 
       function apply() {
-        if (!live || stale(mine)) return;
+        if (!ui.live()) return;
         let matching = 0;
         links.forEach((l, i) => { if (matches(l, i)) matching++; });
         countEl.textContent = `${matching} of ${links.length} link${links.length === 1 ? '' : 's'} match.`;
@@ -92,7 +86,7 @@ export default function makeFilter() {
       }
 
       const toggleBtn = (set, value) => (btn) => {
-        if (!live || stale(mine)) return;
+        if (!ui.live()) return;
         set.has(value) ? set.delete(value) : set.add(value);
         apply();
       };
@@ -122,11 +116,10 @@ export default function makeFilter() {
       if (!scene) {
         kids.push(lead('3D is unavailable in this browser, so no tubes are drawn, but the counts above and a toggle\'s effect on them are read from the same data a picture would use.'));
       }
-      setPanel(...kids);
+      ui.setPanel(...kids);
       apply();
     },
     exit() {
-      live = false;
       disposeRing(ring);
       ring = null;
       delete panel.dataset.visibleCables;

@@ -302,6 +302,42 @@ offenders = [p.name for p in sorted((HERE / "site" / "showcase" / "stages").glob
 check(not offenders, "no stage calls createRackScene directly",
       f"{offenders} - mount through rack.js's mount3d so guard3d still wraps it")
 
+# A STAGE WRITES THE SHARED UI THROUGH ITS LEASE, NEVER DIRECTLY. The rail
+# hands each enter() a lease (stage-rail.js) whose setPanel, setExports and
+# scrim are no-ops once that entry is stale. A stage importing setPanel,
+# setExports or the loading scrim from artifact.js has stepped round it - the
+# stale-panel defect recurred four times under per-caller guards exactly like
+# that - and one reading the rail's global `epoch` can capture a CURRENT epoch
+# in a click handler on a panel that is not current, which is how a stale
+# seat looked fresh. Both are asserted on every run, whatever is on disk.
+BANNED = {"setPanel", "setExports", "loading"}
+IMPORT_FROM = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]([^'\"]+)['\"]", re.S)
+stage_files = sorted((HERE / "site" / "showcase" / "stages").glob("*.js"))
+direct, epoch_readers = [], []
+for p in stage_files:
+    for names, src in IMPORT_FROM.findall(p.read_text()):
+        got = {n.strip().split(" as ")[0] for n in names.split(",") if n.strip()}
+        if src.endswith("/artifact.js") and got & BANNED:
+            direct.append(f"{p.name}: {sorted(got & BANNED)}")
+        if src.endswith("/stage-rail.js") and "epoch" in got:
+            epoch_readers.append(p.name)
+check(bool(stage_files) and not direct,
+      f"no stage imports setPanel, setExports or loading directly ({len(stage_files)} stages)",
+      f"{direct or 'no stage files found'} - write through the lease enter(ui) is given")
+check(bool(stage_files) and not epoch_readers,
+      "no stage reads the rail's global epoch",
+      f"{epoch_readers or 'no stage files found'} - capture ui.mine / ui.live() from the lease instead")
+
+# A LENS REDRAWS THROUGH THE `redraw` ITS SPOKE HANDS IT, bound to that
+# spoke's lifetime, so a lens control that outlives its spoke is refused
+# before it touches the stage. A lens importing setDrawing has stepped round
+# that.
+lens_direct = [p.name for p in sorted((HERE / "site" / "showcase" / "spokes").glob("*.js"))
+               if any(src.endswith("/artifact.js") and "setDrawing" in names
+                      for names, src in IMPORT_FROM.findall(p.read_text()))]
+check(not lens_direct, "no lens calls artifact.js's setDrawing itself",
+      f"{lens_direct} - use the redraw spoke-host.js passes in")
+
 # STAGE 2's WHOLE CLAIM IS THAT THE BAY KNOWS WHAT IT ACCEPTS - so the
 # accepted list has to come from the compiled index, not from a list this page
 # invents. A hardcoded accepts array here would be the page fabricating the

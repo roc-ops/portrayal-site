@@ -12,9 +12,7 @@
 // unavailable; with one it adds how many cables were drawn and how many ends
 // anchored, which is the honest measure of whether the picture is complete.
 
-import {stage3d, stageRack, loading, el, title, lead, kv, setPanel, setExports, save}
-  from '../artifact.js';
-import {epoch, stale} from '../stage-rail.js';
+import {stage3d, stageRack, el, title, lead, kv, save} from '../artifact.js';
 import {mountRing, disposeRing, summarize, colorOf, MEDIA_COLORS} from '../ring.js';
 
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -27,25 +25,27 @@ export default function makeCable() {
   return {
     title: 'Cable',
     question: 'What is connected to what?',
-    async enter() {
-      const mine = epoch;
+    // `ui` is the rail's lease on this entry (stage-rail.js): every panel,
+    // export and scrim write goes through it and is a no-op once stale.
+    async enter(ui) {
+      const mine = ui.mine;
       stageRack.hidden = true; stage3d.hidden = false;
-      loading.hidden = false; loading.textContent = 'Racking the ROADM ring…';
+      ui.scrim('Racking the ROADM ring…');
 
       // Adopted as soon as the scene exists, so exit() can dispose it even
       // while mountRing is still waiting on the relief pass or the anchors.
-      const got = await mountRing({mine, onScene: r => { if (!stale(mine)) ring = r; }});
-      if (stale(mine)) { disposeRing(got); return; }
+      const got = await mountRing({mine, onScene: r => { if (ui.live()) ring = r; }});
+      if (!ui.live()) { disposeRing(got); return; }
       const lab = got?.lab;
       const scene = got?.scene || null;
       // mount3d already hid the scrim when a scene mounted; on the no-WebGL
       // path it deliberately leaves guard3d's message showing.
-      if (scene) loading.hidden = true;
+      if (scene) ui.unscrim();
 
       const kids = [title('Stage 4 · Cable'), lead('<strong>What is connected to what?</strong>')];
       if (!lab) {
         kids.push(lead('labs.json could not be loaded, so there is no topology to draw.'));
-        setPanel(...kids);
+        ui.setPanel(...kids);
         return;
       }
       const s = summarize(lab);
@@ -95,7 +95,7 @@ export default function makeCable() {
         }
         kids.push(kv(Object.entries(faces).map(([k, n]) => [k, String(n)])));
         kids.push(lead('Every end is found by its port on the device the lab names, and leaves straight out of the face that port is on. tx and rx only set which side of the port a strand sits: which bore carries TX is not in the data, so it is not drawn as if it were.'));
-        setExports([{label: 'GLB', title: 'Download the cabled ring as a GLB',
+        ui.setExports([{label: 'GLB', title: 'Download the cabled ring as a GLB',
           run: async () => save(await scene.toGLB(), 'roadm-ring.glb', 'model/gltf-binary')}]);
       }
       if (got.unmounted?.length) {
@@ -107,7 +107,7 @@ export default function makeCable() {
       if (!scene) {
         kids.push(lead('3D is unavailable in this browser, so the cables are not drawn. The counts above are read from the lab file, not from the picture.'));
       }
-      setPanel(...kids);
+      ui.setPanel(...kids);
     },
     exit() {
       disposeRing(ring);

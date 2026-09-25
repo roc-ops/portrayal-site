@@ -11,14 +11,14 @@
 // Picking a device in the canvas is deferred until the rack can say what was
 // hit; when it can, it calls openSpoke exactly as these buttons do.
 
-import {stage2d, stage3d, stageRack, loading, panel, hint, srcLine, el,
-        setDrawing, setHost, srcName} from './artifact.js';
+import {stage2d, stage3d, stageRack, panel, hint, srcLine, exportSlot, el,
+        setDrawing, setHost, isHost, srcName} from './artifact.js';
 import {CAST} from './rack.js';
 // A circular import: stage-rail.js imports this (a rung click closes an open
 // spoke), and this imports the rail. Safe for the same reason rack.js's is -
 // every binding from the rail is read inside a function, never while the
 // modules are being evaluated.
-import {epoch, stale, suspend, activate, stageLabel} from './stage-rail.js';
+import {suspend, activate, stageLabel} from './stage-rail.js';
 import makeInspect  from './spokes/inspect.js';
 import makeCallouts from './spokes/callouts.js';
 import makeState    from './spokes/state.js';
@@ -64,36 +64,49 @@ export async function openSpoke({dev, cfg, lens, returnTo, origin = {dev, lens}}
   }
   if (open) await closeSpoke({resume: false});
   // Leaving the stage bumps the epoch: its own late work (a queued seat) is
-  // dropped, and a rung clicked from here on makes THIS open stale.
-  const mine = await suspend();
-  if (stale(mine)) return;
+  // dropped, and a rung clicked from here on makes THIS open stale. The rail
+  // hands back a lease on that epoch - the same one a stage gets - and every
+  // scrim write below goes through it.
+  const ui = await suspend();
+  if (!ui.live()) return;
   setHost(null);
   stage3d.hidden = true; stageRack.hidden = true;
 
   // The lenses read the inlined face, so the drawing has to be the DEVICE's,
   // not whatever was last on the stage. The stale guard is handed down too, so
   // a fetch that lands after a rung click does not touch the stage at all.
-  loading.hidden = false; loading.textContent = `Loading ${dev}…`;
+  ui.scrim(`Loading ${dev}…`);
+  let ok = false;
   try {
-    await setDrawing('front', cfg, dev, () => stale(mine));
+    ok = await setDrawing('front', cfg, dev, () => !ui.live());
   } catch (err) {
     // A face that will not load is not a place to strand the visitor: say so
     // in the console and put them back on the stage they came from.
     console.warn('[portrayal] could not open a spoke on', dev, err);
-    if (!stale(mine)) await activate(returnTo);
-    return;
   }
-  if (stale(mine)) return;
-  loading.hidden = true;
+  if (!ui.live()) return;
+  // FALSE MEANS THIS DRAWING IS NOT THE ONE ON THE STAGE. setDrawing returns
+  // false when another redraw overtook it, and entering the lens anyway would
+  // wire it to whatever face did land. Not stale, so nobody else is taking
+  // the stage: go back where the visitor came from, as for a failed load.
+  if (!ok) { await activate(returnTo); return; }
+  ui.unscrim();
   stage2d.hidden = false;
   srcLine.textContent = srcName();
 
-  const spoke = LENSES[lens].make({dev, cfg});
-  // The host hook: the lens's own view/config controls call setDrawing, which
+  // `redraw` is the lens's only way to change the drawing, and it is bound to
+  // THIS spoke: once the spoke is no longer the host (closed, or replaced by
+  // another lens) it refuses before touching anything - no load generation
+  // bumped, no fetch, no srcLine, no scrim - so a lens control that somehow
+  // outlives its spoke is inert rather than merely late.
+  let spoke = null;
+  const redraw = (view, config) => setDrawing(view, config, dev, () => !isHost(spoke));
+  spoke = LENSES[lens].make({dev, cfg, redraw});
+  // The host hook: the lens's own view/config controls call redraw, which
   // exits and re-enters whatever is hosted - this lens.
   setHost(spoke);
   await spoke.enter();
-  if (stale(mine)) {
+  if (!ui.live()) {
     await spoke.exit?.();
     setHost(null);
     stage2d.hidden = true;
@@ -113,6 +126,10 @@ export async function closeSpoke({resume = true} = {}) {
   if (!open) return;
   const {spoke, returnTo, origin} = open;
   open = null;
+  // The lens's controls go with it, at once - the same rule the rail applies
+  // to a stage it leaves - so none of them can be clicked on the way out.
+  panel.replaceChildren();
+  exportSlot.replaceChildren();
   await spoke.exit?.();
   setHost(null);
   document.body.classList.remove('spoke-open');

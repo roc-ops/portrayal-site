@@ -67,6 +67,9 @@ export let BASE_FRAME = null;
 // tab's own view/config controls expect.
 let host = null;
 export function setHost(h) { host = h; gen++; }
+// Whether `h` is the one mounted now - what a spoke's redraw asks, so a lens
+// whose spoke has closed is refused before it can touch anything.
+export const isHost = h => h !== null && host === h;
 
 // THE LOAD GENERATION - the one guard every redraw goes through. Bumped by
 // every loadDrawing/setDrawing and by every setHost, and captured before the
@@ -122,7 +125,13 @@ async function load(dev, view, config, isStale, mine) {
 // The host is captured once, at entry. It is re-entered only if it is still
 // the host and nothing has redrawn since - otherwise a late fetch would enter
 // a lens a second time, or enter one that has already been closed.
+//
+// A caller that is ALREADY stale is refused before anything moves, the load
+// generation included: bumping it would cancel whatever load is legitimately
+// in flight (a spoke opening), so a dead lens's click would strand the live
+// one on its scrim.
 export async function setDrawing(view, config, dev = DEVICE, isStale = null) {
+  if (isStale?.()) return false;
   if (dev === DEVICE && view === VIEW && config === CONFIG) return true;
   const h = host;
   const mine = ++gen;

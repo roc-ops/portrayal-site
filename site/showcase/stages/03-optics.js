@@ -21,7 +21,8 @@
 // comment on the shared rebuild queue), and the epoch/stale guard captured at
 // click time (R17/R18) so a click queued behind a slow rebuild, or one that
 // outlives leaving this stage, never paints over whatever stage is current by
-// the time it runs.
+// the time it runs. "Click time" is the rail's lease (stage-rail.js) of the
+// entry that drew the button, never the global epoch read when it is clicked.
 //
 // Once seated, the occupant's paths become addressable on the device - and
 // this stage reads them off the seated component's own compiled skin,
@@ -41,10 +42,9 @@
 // (no WebGL), the panel says so instead of a position - R11: the panel
 // builds either way, only the "loading" scrim depends on 3D.
 
-import {stage3d, stageRack, loading, el, title, lead, kv, setPanel} from '../artifact.js';
+import {stage3d, stageRack, el, title, lead, kv} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
         enqueueRebuild, byRef, loadSkin} from '../rack.js';
-import {epoch, stale} from '../stage-rail.js';
 import {lookCloser} from '../spoke-host.js';
 import {occupantNames} from '../../../vendor/swap.js';
 
@@ -87,15 +87,16 @@ export default function makeOptics() {
       .map(p => ({suffix: p.slice(prefix.length), path: `${occId}/${p.slice(prefix.length)}`}));
   }
 
-  // `mine` is the epoch this build was started under - enter()'s for the
-  // initial paint, or the click-time epoch for a seat/unseat. This function
-  // awaits a skin fetch (uncached on a component's first seat) and, on the
-  // scene path, portAnchor - either can resolve after the visitor has left
-  // this stage. R18 applies here exactly as it does to doSeat: check
-  // stale(mine) after every await, and once more right before setPanel, so a
-  // build that outlives the stage paints nothing over whatever stage is
-  // current by the time it finishes.
-  async function buildPanel(mine, message) {
+  // `ui` is the lease this build was started under (stage-rail.js) -
+  // enter()'s for the initial paint, and the SAME lease for a seat, unseat
+  // or cage change clicked on that panel, since every control closes over
+  // it. This function awaits a skin fetch (uncached on a component's first
+  // seat) and, on the scene path, portAnchor - either can resolve after the
+  // visitor has left this stage. R18 applies here exactly as it does to
+  // doSeat: check ui.live() after every await, and ui.setPanel is itself a
+  // no-op once stale, so a build that outlives the stage paints nothing over
+  // whatever stage is current by the time it finishes.
+  async function buildPanel(ui, message) {
     const sc = scene;   // this build's own scene, for the identity check below
     const all = cages();
     const cage = all.find(c => c.id === selected) || all[0];
@@ -103,18 +104,20 @@ export default function makeOptics() {
     const cageSel = el('select', {'data-cage': 'true'});
     for (const c of all) cageSel.append(el('option', {value: c.id, text: c.id}));
     cageSel.value = cage?.id || '';
-    cageSel.onchange = () => { selected = cageSel.value; buildPanel(epoch); };
+    cageSel.onchange = () => { if (!ui.live()) return; selected = cageSel.value; buildPanel(ui); };
 
     const seatBtn = el('button', {type: 'button', 'data-seat': 'true', text: 'Seat optic'});
-    seatBtn.onclick = () => seat(cage, (cage.accepts || [])[0] || null);
+    seatBtn.onclick = () => seat(ui, cage, (cage.accepts || [])[0] || null);
     const unseatBtn = el('button', {type: 'button', 'data-unseat': 'true', text: 'Unseat'});
-    unseatBtn.onclick = () => seat(cage, null);
+    unseatBtn.onclick = () => seat(ui, cage, null);
 
     const readout = el('p', {class: 'panel-lead', 'data-readout': 'true',
       text: message || `Pick a cage and seat its optic (defaults to ${DEFAULT_CAGE}).`});
 
     const seatedRef = cage ? (overrides[DEV]?.[cage.id] || null) : null;
     const seatedComp = seatedRef ? byRef(seatedRef) : null;
+    // What the cage holds, as a marker a checker can wait on.
+    if (seatedRef) readout.dataset.seated = seatedRef;
 
     const kids = [
       title('Stage 3 · Seat optics'),
@@ -143,7 +146,7 @@ export default function makeOptics() {
         }&rdquo;`));
 
       const paths = await occupantPaths(cage, seatedRef, seatedComp);
-      if (stale(mine)) return;
+      if (!ui.live()) return;
       if (paths === null) {
         kids.push(lead('The skin could not be loaded, so its paths are unknown.'));
       } else if (!paths.length) {
@@ -153,7 +156,7 @@ export default function makeOptics() {
         const tx = paths.find(p => p.suffix === 'tx');
         if (sc && tx) {
           const anchor = await sc.portAnchor(DEV, tx.path);
-          if (stale(mine) || scene !== sc) return;
+          if (!ui.live() || scene !== sc) return;
           if (anchor) {
             const {x, y, z} = anchor.position;
             kids.push(kv([[tx.path,
@@ -171,19 +174,19 @@ export default function makeOptics() {
       kids.push(lead(`${cage.id} is empty.`));
     }
 
-    if (stale(mine) || scene !== sc) return;
-    setPanel(...kids, lookCloser('optics'));
+    if (!ui.live() || scene !== sc) return;
+    ui.setPanel(...kids, lookCloser('optics'));
   }
 
-  // The queued unit of work. `mine` is the epoch at the moment the visitor
-  // CLICKED - captured by seat(), below - not at the moment this runs, which
+  // The queued unit of work. `ui` is the lease of the panel the visitor
+  // CLICKED - handed down by seat(), below - not the state when this runs, which
   // can be later if it was queued behind another cage's rebuild, or behind
   // stage 2's own seats (both stages share rack.js's one rebuild queue).
   // R18: the first thing this does is check whether the stage has already
   // moved on, and if so it drops the seat entirely - no `overrides` write, no
   // rebuild, no panel update.
-  async function doSeat(cage, ref, mine) {
-    if (stale(mine)) return null;
+  async function doSeat(cage, ref, ui) {
+    if (!ui.live()) return null;
     overrides[DEV] = overrides[DEV] || {};
     overrides[DEV][cage.id] = ref;
 
@@ -191,38 +194,36 @@ export default function makeOptics() {
     if (sc) {
       sc.setOverrides(DEV, overrides[DEV]);
       await sc.build();
-      if (stale(mine) || scene !== sc) return null;
+      if (!ui.live() || scene !== sc) return null;
     }
     return {message: ref ? `seated — ${cage.id}: ${shortRef(ref)}` : `unseated — ${cage.id}`};
   }
 
-  function seat(cage, ref) {
+  function seat(ui, cage, ref) {
     if (!cage) return;
-    const mine = epoch;   // captured NOW, at the click - not when this runs
-    enqueueRebuild(() => doSeat(cage, ref, mine))
+    enqueueRebuild(() => doSeat(cage, ref, ui))
       .catch(err => { console.warn('[portrayal] stage 3 seat failed', err); return null; })
-      .then(result => { if (result && !stale(mine)) buildPanel(mine, result.message); });
+      .then(result => { if (result && ui.live()) buildPanel(ui, result.message); });
   }
 
   return {
     title: 'Seat optics',
     question: 'What media, speed and lanes?',
-    async enter() {
-      const mine = epoch;
+    async enter(ui) {
       stageRack.hidden = true; stage3d.hidden = false;
-      loading.hidden = false; loading.textContent = 'Mounting the cast…';
+      ui.scrim('Mounting the cast…');
       await loadMeta();
-      if (stale(mine)) return;
+      if (!ui.live()) return;
 
       const stack = CAST.map(e => ({...e}));
       scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (stale(mine)) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) { scene?.dispose(); scene = null; return; }
       // Only when a scene actually mounted - R11: the panel is built either
       // way, so a no-WebGL run still lets the visitor seat an optic and read
       // its attrs back, just without a 3D position.
-      if (scene) loading.hidden = true;
+      if (scene) ui.unscrim();
 
-      await buildPanel(mine);
+      await buildPanel(ui);
     },
     exit() {
       scene?.dispose();

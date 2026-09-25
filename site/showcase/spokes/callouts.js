@@ -1,5 +1,5 @@
 import {
-  svg, overlay, node, box, ring, clearOverlay, resetFrame, setFrame, setDrawing,
+  svg, overlay, node, box, ring, clearOverlay, resetFrame, setFrame,
   el, svgEl, declared, setState, clearStates, setExports, saveSvg,
   title, lead, kv, controls, setPanel, VIEWS, CONFIGS, VIEW, CONFIG, BASE_FRAME,
 } from '../artifact.js';

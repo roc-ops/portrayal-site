@@ -1,12 +1,15 @@
 import {
-  svg, node, box, ring, clearOverlay, resetFrame, setFrame, setDrawing,
+  svg, node, box, ring, clearOverlay, resetFrame, setFrame,
   el, svgEl, declared, setState, clearStates, setExports, saveSvg,
   title, lead, kv, controls, setPanel, VIEWS, CONFIGS, VIEW, CONFIG, DEV,
 } from '../artifact.js';
 import {configsOf} from '../rack.js';
 
-export default function makeInspect({dev, cfg}) {
+export default function makeInspect({dev, cfg, redraw}) {
   let readout, onMove, onLeave, hoverRing;
+  // `redraw(view, config)` comes from spoke-host.js, bound to this spoke: it
+  // redraws this device, and refuses once the spoke is no longer the one on
+  // the stage. The lens never calls artifact.js's setDrawing itself.
   // CONFIGS carries the AS7726's labels. Any other device offers the
   // configurations its own index lists, so a button can never ask for a
   // compile that does not exist.
@@ -39,10 +42,10 @@ export default function makeInspect({dev, cfg}) {
       resetFrame();
       readout = el('div', {class: 'readout'});
       const viewRow = controls(VIEWS.map(v => ({
-        label: v, run: () => setDrawing(v, CONFIG, dev),
+        label: v, run: () => redraw(v, CONFIG),
       })));
       const cfgRow = controls(cfgs.map(c => ({
-        label: c.label, run: () => setDrawing(VIEW, c.id, dev),
+        label: c.label, run: () => redraw(VIEW, c.id),
       })));
       const mark = () => {
         [...viewRow.children].forEach(b => b.setAttribute('aria-pressed', String(b.textContent === VIEW)));

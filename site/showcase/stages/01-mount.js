@@ -7,10 +7,8 @@
 // null when WebGL is unavailable, after guard3d has already put its message
 // on the loading scrim; the 3D is the picture, the panel is the answer.
 
-import {stage3d, stageRack, loading, title, lead, kv, setPanel, setExports, save}
-  from '../artifact.js';
+import {stage3d, stageRack, title, lead, kv, save} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, unitsOf, overrides, mount3d} from '../rack.js';
-import {epoch, stale} from '../stage-rail.js';
 import {lookCloser} from '../spoke-host.js';
 
 export default function makeMount() {
@@ -18,12 +16,13 @@ export default function makeMount() {
   return {
     title: 'Mount',
     question: 'Will it fit?',
-    async enter() {
-      const mine = epoch;
+    // `ui` is the rail's lease on this entry (stage-rail.js): every panel,
+    // export and scrim write goes through it and is a no-op once stale.
+    async enter(ui) {
       stageRack.hidden = true; stage3d.hidden = false;
-      loading.hidden = false; loading.textContent = 'Mounting the cast…';
+      ui.scrim('Mounting the cast…');
       await loadMeta();
-      if (stale(mine)) return;
+      if (!ui.live()) return;
 
       // Height per device comes from the chassis (unitsOf), not from CAST's
       // own `ru` - that field is a *position*, the chassis' is a *height*.
@@ -37,14 +36,14 @@ export default function makeMount() {
       const free = RACK_U - used;
 
       scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (stale(mine)) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) { scene?.dispose(); scene = null; return; }
       // Only when a scene actually mounted: on the no-WebGL path mount3d
       // returns null and deliberately leaves guard3d's message on the scrim,
       // so hiding it unconditionally would show an empty 3D pane with no
       // explanation. The panel below is built either way - R11.
-      if (scene) loading.hidden = true;
+      if (scene) ui.unscrim();
 
-      setPanel(
+      ui.setPanel(
         title('Stage 1 · Mount'),
         lead('<strong>Will it fit?</strong>'),
         lead('The chassis dimensions are in each device manifest, so whether it fits is arithmetic rather than judgement.'),
@@ -57,7 +56,7 @@ export default function makeMount() {
         lookCloser('mount'),
       );
       if (scene) {
-        setExports([{label: 'GLB', title: 'Download the mounted rack as a GLB',
+        ui.setExports([{label: 'GLB', title: 'Download the mounted rack as a GLB',
           run: async () => save(await scene.toGLB(), 'rack.glb', 'model/gltf-binary')}]);
       }
     },

@@ -25,12 +25,10 @@
 //               hand-typed filename; a device missing from the index gets no
 //               links rather than a guessed one.
 
-import {stage3d, stageRack, loading, el, title, lead, kv, setPanel,
-        setExports, save, saveSvg, standalone, DIST}
+import {stage3d, stageRack, el, title, lead, kv, save, saveSvg, standalone, DIST}
   from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, overrides, mount3d, build2dElevation}
   from '../rack.js';
-import {epoch, stale} from '../stage-rail.js';
 import {rackDiagram, loadFace, portsOf} from '../../drawio.js';
 import {rasterize} from '../../raster.js';
 
@@ -98,28 +96,29 @@ export default function makeTakeaway() {
   return {
     title: 'Take it away',
     question: 'Where can it go from here?',
-    async enter() {
-      const mine = epoch;
+    // `ui` is the rail's lease on this entry (stage-rail.js): every panel,
+    // export and scrim write goes through it and is a no-op once stale.
+    async enter(ui) {
       // The same mount stage 1 does (R6): the cast, with whatever overrides
       // the visitor already made, so the downloads reflect their choices.
       stageRack.hidden = true; stage3d.hidden = false;
-      loading.hidden = false; loading.textContent = 'Mounting the cast…';
+      ui.scrim('Mounting the cast…');
       await loadMeta();
-      if (stale(mine)) return;
+      if (!ui.live()) return;
 
       const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
       scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (stale(mine)) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) { scene?.dispose(); scene = null; return; }
       // Only when a scene actually mounted - R11: the panel and every
       // non-3D format are built either way.
-      if (scene) loading.hidden = true;
+      if (scene) ui.unscrim();
 
       // Built for the SVG/PNG exports, not for display - the 3D scene is
       // what this stage shows. Kept attached (hidden) to stageRack purely so
       // standalone() has a document to resolve --pt-* custom properties
       // against.
       elevationSvg = await build2dElevation({stack, heightRU: RACK_U, overrides});
-      if (stale(mine)) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) { scene?.dispose(); scene = null; return; }
       stageRack.replaceChildren(elevationSvg);
 
       let exportsIndex = null;
@@ -128,9 +127,9 @@ export default function makeTakeaway() {
       } catch (err) {
         console.warn('[portrayal] no export index', err);
       }
-      if (stale(mine)) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) { scene?.dispose(); scene = null; return; }
 
-      setPanel(
+      ui.setPanel(
         title('Take it away'),
         lead('<strong>Where can it go from here?</strong>'),
         lead('The cast rack as built here, handed over in the formats a network team uses next.'),
@@ -163,7 +162,7 @@ export default function makeTakeaway() {
         items.push({label: 'USDZ', title: 'Download the mounted rack as a USDZ, with the current overrides',
           run: async () => save(await scene.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip')});
       }
-      setExports(items);
+      ui.setExports(items);
     },
     exit() {
       scene?.dispose();

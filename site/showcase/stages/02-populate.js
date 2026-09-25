@@ -21,11 +21,9 @@
 //   slot-2..slot-5 accept only line cards (a9k-16x100ge-tr, a9k-4x100ge-se,
 //   a9k-8x100ge-se, ...) + the slot cover
 
-import {stage3d, stageRack, loading, el, title, lead, kv, setPanel}
-  from '../artifact.js';
+import {stage3d, stageRack, el, title, lead, kv} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef,
         enqueueRebuild} from '../rack.js';
-import {epoch, stale} from '../stage-rail.js';
 import {lookCloser} from '../spoke-host.js';
 
 const DEV = 'asr-9006';
@@ -54,7 +52,10 @@ export default function makePopulate() {
       .sort();
   }
 
-  function buildPanel(message, refused) {
+  // `ui` is the lease of the entry this panel belongs to (stage-rail.js).
+  // Every control below closes over THAT lease, never the rail's global
+  // epoch - so a click can only act for the entry that drew its button.
+  function buildPanel(ui, message, refused) {
     const all = bays();
     const candidates = union(all);
     const busy = inFlight > 0;
@@ -67,7 +68,7 @@ export default function makePopulate() {
       const sel = el('select', {'data-bay': b.id});
       for (const ref of candidates) sel.append(el('option', {value: ref, text: shortRef(ref)}));
       const btn = el('button', {type: 'button', 'data-bay': b.id, text: `Seat in ${b.id}`});
-      btn.onclick = () => seat(b, sel.value);
+      btn.onclick = () => seat(ui, b, sel.value);
       return el('div', {class: 'ctl-row', 'data-bay-row': b.id},
         [el('span', {class: 'mono', text: b.id}), sel, btn]);
     });
@@ -77,7 +78,7 @@ export default function makePopulate() {
       return [b.id, mine ? shortRef(mine) : shortRef(b.default)];
     });
 
-    setPanel(
+    ui.setPanel(
       title('Stage 2 · Populate'),
       lead('<strong>What does this bay accept?</strong>'),
       lead('slot-0 and slot-1 take route processors; slot-2 through slot-5 take line cards. The list below is each bay’s own `accepts`, read off the compiled index - choose a card and the bay either seats it or refuses it on that basis.'),
@@ -89,18 +90,19 @@ export default function makePopulate() {
     );
   }
 
-  // The queued unit of work. `mine` is the epoch at the moment the visitor
-  // CLICKED (captured by seat(), below) - not at the moment this runs, which
-  // can be much later if it was queued behind another bay's rebuild. R18: the
-  // very first thing this does is check whether the stage has already moved
-  // on, and if so it drops the seat entirely - no `overrides` write, no
+  // The queued unit of work. `ui` is the lease of the panel the visitor
+  // CLICKED (handed down by seat(), below), so it is judged by the entry that
+  // drew the button - not by whatever is current when this runs, which can be
+  // much later if it was queued behind another bay's rebuild. R18: the very
+  // first thing this does is check whether that entry has already gone
+  // stale, and if so it drops the seat entirely - no `overrides` write, no
   // rebuild, no panel update - on both the scene and no-scene paths, because
   // a queued item that survives exit() and paints anyway would setPanel()
   // over whatever stage is current by the time it runs. Returns what to
   // paint, or null when there is nothing worth painting. Never touches
   // `overrides` on the refusal path.
-  async function doSeat(bay, ref, mine) {
-    if (stale(mine)) return null;
+  async function doSeat(bay, ref, ui) {
+    if (!ui.live()) return null;
     if (!(bay.accepts || []).includes(ref)) {
       const accepts = (bay.accepts || []).filter(r => r !== COVER).map(shortRef).join(', ');
       return {message: `refused — ${bay.id} accepts: ${accepts}. ${shortRef(ref)} is not in that list.`,
@@ -113,7 +115,7 @@ export default function makePopulate() {
     if (sc) {
       sc.setOverrides(DEV, overrides[DEV]);
       await sc.build();
-      if (stale(mine) || scene !== sc) return null;
+      if (!ui.live() || scene !== sc) return null;
     }
     return {message: `seated — ${bay.id}: ${shortRef(ref)}`, refused: false};
   }
@@ -125,36 +127,34 @@ export default function makePopulate() {
   // whichever seat was queued LAST is also painted last, and once the queue
   // drains the panel reflects the final `overrides` no matter how the clicks
   // landed.
-  function seat(bay, ref) {
-    const mine = epoch;   // captured NOW, at the click - not when this runs
+  function seat(ui, bay, ref) {
     inFlight++;
-    enqueueRebuild(() => doSeat(bay, ref, mine))
+    enqueueRebuild(() => doSeat(bay, ref, ui))
       .catch(err => { console.warn('[portrayal] stage 2 seat failed', err); return null; })
       .then(result => {
         inFlight--;
-        if (result && !stale(mine)) buildPanel(result.message, result.refused);
+        if (result && ui.live()) buildPanel(ui, result.message, result.refused);
       });
   }
 
   return {
     title: 'Populate',
     question: 'What does this bay accept?',
-    async enter() {
-      const mine = epoch;
+    async enter(ui) {
       stageRack.hidden = true; stage3d.hidden = false;
-      loading.hidden = false; loading.textContent = 'Mounting the cast…';
+      ui.scrim('Mounting the cast…');
       await loadMeta();
-      if (stale(mine)) return;
+      if (!ui.live()) return;
 
       const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
       scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (stale(mine)) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) { scene?.dispose(); scene = null; return; }
       // Only when a scene actually mounted - R11: the panel is built either
       // way, so a no-WebGL run still lets the visitor seat cards and see the
       // refusal, just without the 3D picture.
-      if (scene) loading.hidden = true;
+      if (scene) ui.unscrim();
 
-      buildPanel();
+      buildPanel(ui);
     },
     exit() {
       scene?.dispose();
