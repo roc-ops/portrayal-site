@@ -178,7 +178,9 @@ back.onclick = () => closeSpoke();
 // rail's vacate() hides it, so no stage's strip outlives the stage.
 const NARROW = 'Callouts, Live state and Select are written against the AS7726-32X’s front face.';
 
-export function renderStrip(returnTo) {
+// `m` is the view of the entry that asked - its lease's mode, handed down by
+// ui.strip() - not the rail's global, which a switch may already have moved.
+export function renderStrip(returnTo, m = mode) {
   const groups = CAST.map(e => {
     const lenses = lensesFor(e.ref);
     const btns = lenses.map(l => {
@@ -193,7 +195,7 @@ export function renderStrip(returnTo) {
     return el('div', attrs, [el('span', {class: 'mono', text: e.label}), ...btns]);
   });
   const label = el('p', {class: 'look-label'}, [el('strong', {text: 'Look closer'})]);
-  if (mode === '2d') label.append(' · click a device on the drawing, or');
+  if (m === '2d') label.append(' · click a device on the drawing, or');
   strip.replaceChildren(label, ...groups);
   strip.hidden = false;
 }

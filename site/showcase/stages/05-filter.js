@@ -33,7 +33,7 @@ export default function makeFilter() {
   async function enter2d(ui) {
     stage3d.hidden = true; stageRack.hidden = false;
     stageRack.replaceChildren();
-    ui.scrim('Racking the ROADM ring…');
+    ui.scrim('Drawing the ROADM ring…');
     const lab = await loadLab();
     if (!ui.live()) return;
     const kids = [title('Stage 5 · Filter'), lead('<strong>Show me just management.</strong>')];

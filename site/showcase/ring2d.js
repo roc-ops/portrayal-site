@@ -297,8 +297,9 @@ export async function drawSite2d({lab, sites, index, host = stageRack, live = ()
 // drag that pans is not a click, a double-click fits the drawing rather than
 // jumping, a pointer click jumps after the double-click window, and Enter or
 // Space on a focused stub jumps at once, taking focus to the partner stub.
-// The stub's tabindex, role, aria-label and <title>, and the highlight, are
-// marked data-pt-ui, so an SVG export is the drawing, not the controls.
+// The stub's tabindex, role, aria-label and <title> are marked data-pt-ui
+// here, and the highlight marks itself (svg2d.js), so an SVG export is the
+// drawing, not the controls.
 export function siteView({ui, lab, sites, host = stageRack,
                           tabs = document.getElementById('stageTabs'), onDraw = null}) {
   let seq = 0;
@@ -341,14 +342,6 @@ export function siteView({ui, lab, sites, host = stageRack,
       if (ui.live()) show(j);
     };
   }
-
-  const mark = (root, el) => {
-    const r = highlight(root, el);
-    if (!r) return;
-    r.setAttribute('data-pt-ui', '*');
-    const had = el.getAttribute('data-pt-ui');
-    if (had !== '*') el.setAttribute('data-pt-ui', `${had ? had + ' ' : ''}data-highlight`);
-  };
 
   // THE jump, for a stub on the drawing and for its button in the panel
   // alike: only from the picture still on screen, and only while live.
@@ -431,8 +424,9 @@ export function siteView({ui, lab, sites, host = stageRack,
       clearHighlights(drawn.svg);
       const partner = drawn.stubs.find(s => s.li === highlightLink);
       if (partner) {
-        mark(drawn.svg, partner.el);
-        mark(drawn.svg, partner.port);
+        // highlight() marks its own rect and attribute as UI (svg2d.js).
+        highlight(drawn.svg, partner.el);
+        highlight(drawn.svg, partner.port);
         if (focus) partner.el.focus({preventScroll: true});
       }
     }

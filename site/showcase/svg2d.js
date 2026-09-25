@@ -17,21 +17,35 @@ export function boxIn(root, el) {
           width: Math.abs(c.x - a.x), height: Math.abs(c.y - a.y)};
 }
 
+// A highlight is page UI, not drawing, and it says so itself: the rect is
+// marked data-pt-ui="*" and `data-highlight` is added to the element's
+// data-pt-ui list, so artifact.js's standalone() strips both and no export
+// ever carries one - whoever called this.
 export function highlight(root, el, tag = 'hl', pad = 1.2) {
   const b = boxIn(root, el);
   if (!b) return null;
   el.setAttribute('data-highlight', tag);
+  const had = el.getAttribute('data-pt-ui');
+  if (had !== '*' && !(had || '').split(/\s+/).includes('data-highlight')) {
+    el.setAttribute('data-pt-ui', `${had ? had + ' ' : ''}data-highlight`);
+  }
   const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   for (const [k, v] of Object.entries({x: b.x - pad, y: b.y - pad, width: b.width + pad * 2,
       height: b.height + pad * 2, rx: 1, class: 'pt-hl', 'data-highlight-box': tag,
-      'pointer-events': 'none'})) r.setAttribute(k, v);
+      'data-pt-ui': '*', 'pointer-events': 'none'})) r.setAttribute(k, v);
   root.append(r);
   return r;
 }
 
 export function clearHighlights(root, tag = 'hl') {
   root.querySelectorAll(`[data-highlight-box="${tag}"]`).forEach(n => n.remove());
-  root.querySelectorAll(`[data-highlight="${tag}"]`).forEach(n => n.removeAttribute('data-highlight'));
+  root.querySelectorAll(`[data-highlight="${tag}"]`).forEach(n => {
+    n.removeAttribute('data-highlight');
+    const ui = n.getAttribute('data-pt-ui');
+    if (ui == null || ui === '*') return;
+    const rest = ui.split(/\s+/).filter(t => t && t !== 'data-highlight').join(' ');
+    rest ? n.setAttribute('data-pt-ui', rest) : n.removeAttribute('data-pt-ui');
+  });
 }
 
 // ONE WAY TO CLICK ON A DRAWING. A cast device on a 2D elevation (spoke-host's

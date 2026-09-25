@@ -70,7 +70,7 @@ function lease(mine, name = null) {
     setExports: items => { if (live()) setExports(items); },
     scrim: text => { if (live()) { loading.textContent = text; loading.hidden = false; } },
     unscrim: () => { if (live()) loading.hidden = true; },
-    strip: () => { if (live() && name) renderStrip(name); },
+    strip: () => { if (live() && name) renderStrip(name, m); },
   });
 }
 
