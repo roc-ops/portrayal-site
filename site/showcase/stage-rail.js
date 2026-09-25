@@ -17,7 +17,7 @@ import makeTakeaway from './stages/06-takeaway.js';
 // come back to it), and the rail imports it (a rung click closes an open
 // spoke). Safe because both sides only read the other's bindings inside
 // functions, never while the modules are being evaluated.
-import {spokeOpen, closeSpoke, renderStrip, hideStrip} from './spoke-host.js';
+import {spokeOpen, closeSpoke, renderStrip, hideStrip, lensMode} from './spoke-host.js';
 
 // Bumped on every switch. An enter() that awaits checks it after each await
 // and gives up if the stage has moved on, so a slow build cannot paint over
@@ -182,19 +182,32 @@ async function enterStage(name) {
       text: `This stage could not be drawn. ${err?.message || err}`}));
     return;
   }
+  // The rail's one line (notice, below), on the stage the visitor landed on -
+  // only if this entry is still that stage.
+  if (pending && !stale(mine)) {
+    panel.prepend(el('p', {class: 'panel-notice', role: 'status', text: pending}));
+    pending = null;
+  }
   // Only for a stage that is still current, and never for one whose enter()
   // threw: a checker waiting on this must fail loudly, not pass quietly.
   if (!stale(mine)) stageHost.setAttribute('data-stage-ready', name);
 }
 
-// The switch. A spoke is always a 2D face, so while one is open the new mode
-// is only remembered, and applies when the spoke closes and re-enters.
+// ONE LINE, ONCE, ON THE STAGE THE VISITOR LANDS ON. Written by the rail, not
+// by the stage, so it cannot be painted over a stage that has moved on.
+let pending = null;
+export function notice(text) { pending = text; }
+
+// The switch. An inline spoke is always a 2D face, so while one is open the
+// new mode is only remembered, and applies when the spoke closes and
+// re-enters; a frame lens (Inspect, which is Explorer) follows it as well.
 export async function setMode(m) {
   if ((m !== '2d' && m !== '3d') || m === mode) return;
   mode = m;
   saveMode(m);
   paintMode();
-  if (spokeOpen() || !current) return;
+  if (spokeOpen()) { lensMode(m); return; }     // a frame lens follows the switch; an inline one ignores it
+  if (!current) return;
   await enterStage(current);
 }
 

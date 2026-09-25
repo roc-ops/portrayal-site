@@ -495,6 +495,78 @@ def check_stages(page, base):
             page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         except Exception:
             bad.append(f"the {lens} spoke on {dev} did not open from stage 2 and return")
+
+    # INSPECT IS EXPLORER. Open it on the ASR-9006 from stage 2, seat a line
+    # card through Explorer's own occupant dropdown, come back, and the rack
+    # has it. The frame is driven through Explorer's UI because that is how a
+    # person uses it; the showcase itself talks to it only via portrayalEmbed.
+    def explorer_frame():
+        fr = None
+        for _ in range(100):
+            fr = next((f for f in page.frames if "explorer.html" in f.url), None)
+            if fr: break
+            page.wait_for_timeout(100)
+        if not fr:
+            raise RuntimeError("no explorer.html frame")
+        fr.wait_for_function("() => window.portrayalEmbed", timeout=READY_3D_MS)
+        fr.evaluate("async () => { await window.portrayalEmbed.ready; }")
+        return fr
+    try:
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.click('[data-spoke-device="asr-9006"][data-spoke-lens="inspect"]')
+        page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
+        fr = explorer_frame()
+        if fr.is_visible(".site-bar") or fr.is_visible("#devpick") or fr.is_visible("#mode"):
+            bad.append("inspect frame: site bar, device picker or mode buttons visible")
+        # slot-3 accepts line cards (asr-9006 index); a9k-4x100ge-se@1 is one of them.
+        # Picked from Explorer's TREE, not its drawing: the bay is filled edge to
+        # edge by its slot cover, so a click on the drawing selects the cover
+        # (slot-3/module), whose inspector has no occupant menu.
+        fr.click('#tree .node[data-path="slot-3"]')
+        fr.wait_for_selector("#occ", timeout=READY_MS)
+        fr.select_option("#occ", "cisco/a9k-4x100ge-se@1")
+        fr.wait_for_function(
+            "() => window.portrayalEmbed.current().swaps['slot-3'] === 'cisco/a9k-4x100ge-se@1'",
+            timeout=READY_MS)
+        # The showcase's switch drives the frame.
+        page.click('#stageMode [data-mode="3d"]')
+        fr.wait_for_function("() => window.portrayalEmbed.current().mode === '3d'", timeout=READY_3D_MS)
+        if not fr.is_visible("#stage-3d"):
+            bad.append("inspect frame: 3D selected but Explorer's 3D stage is hidden")
+        page.click('#stageMode [data-mode="2d"]')
+        fr.wait_for_function("() => window.portrayalEmbed.current().mode === '2d'", timeout=READY_MS)
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        if page.query_selector('#lensFrame iframe') or page.is_visible('#lensFrame'):
+            bad.append("inspect frame: the frame outlived the lens")
+        # PROVEN ON THE RACK, NOT ON ANY TEXT. The card's short name is also in
+        # stage 2's accepts list, so finding it in the panel proves nothing:
+        # the seated list must say slot-3 holds it, and the drawing must seat it.
+        seated = page.evaluate("""() => {
+            const dts = [...document.querySelectorAll('#sidePanel dl.kv dt')]
+              .filter(dt => dt.textContent === 'slot-3');
+            return dts.map(dt => dt.nextElementSibling?.textContent || '');
+        }""")
+        if "a9k-4x100ge-se" not in seated:
+            bad.append(f"inspect frame: stage 2's seated list does not show slot-3 holding the card ({seated})")
+        if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
+                                   '[data-path="slot-3/module"][data-ref^="cisco/a9k-4x100ge-se@1"]'):
+            bad.append("inspect frame: a card seated in Explorer did not come back to the rack's drawing")
+        # The config rule: switch the FHD to its empty base inside the lens,
+        # close, and the rack is unchanged with a notice saying why.
+        page.click('[data-spoke-device="fhd-1ufce"][data-spoke-lens="inspect"]')
+        page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
+        fr = explorer_frame()
+        fr.select_option("#cfg", "base")
+        fr.wait_for_function("() => window.portrayalEmbed.current().config === 'base'", timeout=READY_MS)
+        page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        if "stayed in the lens" not in page.inner_text("#sidePanel"):
+            bad.append("inspect frame: switching config in the lens gave no notice")
+    except Exception as e:
+        bad.append(f"inspect frame: {str(e).splitlines()[0]}")
     return bad
 
 

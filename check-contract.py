@@ -224,13 +224,27 @@ for f in sorted((HERE / "site" / "showcase").rglob("*.js")) + [HERE / "site" / "
 # The four 2D lenses are spokes now - reached from a device in the rack, not
 # siblings in a tab strip. Each is its own file and takes the device as an
 # argument, because the same lens is used on four different devices.
-for s in ("inspect", "callouts", "state", "select"):
+for s in ("callouts", "state", "select"):
     p = HERE / "site" / "showcase" / "spokes" / f"{s}.js"
     check(p.is_file(), f"spoke {s}.js exists", "not re-homed yet")
     if p.is_file():
         check("export default function" in p.read_text(),
               f"spoke {s}.js default-exports a factory",
               "a spoke must take {dev, cfg} so it can serve more than one device")
+
+# INSPECT IS EXPLORER, IN A FRAME. The inline lens could not remove a part,
+# swap a module or show 3D; Explorer can, so the lens is Explorer in a
+# same-origin frame, seeded with the rack's swaps and spoken to only through
+# window.portrayalEmbed.
+sh = (HERE / "site" / "showcase" / "spoke-host.js").read_text()
+check(not (HERE / "site" / "showcase" / "spokes" / "inspect.js").exists(),
+      "the inline Inspect lens is gone; Inspect is Explorer in a frame")
+check(re.search(r"inspect:\s*\{[^}]*frame:\s*true", sh) is not None,
+      "spoke-host's Inspect lens is a frame lens")
+check("encodeSwaps(" in sh and "swap=" in sh,
+      "the Inspect frame carries the rack's swaps via encodeSwaps")
+check(".contentWindow" not in sh.replace("contentWindow?.portrayalEmbed", "").replace("contentWindow.portrayalEmbed", ""),
+      "spoke-host reaches into the frame only through portrayalEmbed")
 
 # ── the stage rail ───────────────────────────────────────────────────────
 # THE RAIL'S STAGE LIST IS NAMED, NOT GLOBBED - the same rule PAGES follows in

@@ -326,11 +326,30 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 @media (max-width: 900px) { .show-side { border-left: none; border-top: 1px solid var(--pt-line); } }
 .side-panel { padding: 1.15rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 
+/* THE INSPECT LENS IS EXPLORER, IN A FRAME (spoke-host.js openFrame). While it
+   is open it takes the stage's and the side panel's place. .show-body is a
+   GRID (rail | stage | panel), not a flex row, so the frame spans the last two
+   columns rather than flexing into them; below 900px the grid is one column
+   and the frame is simply the row after the rail. */
+.show-body.frame-open #stageHost,
+.show-body.frame-open .show-side { display: none; }
+.lens-frame { grid-column: 2 / span 2; min-width: 0; min-height: 560px; position: relative; }
+.lens-frame[hidden] { display: none; }
+@media (max-width: 900px) { .lens-frame { grid-column: auto; } }
+.lens-cover { position: absolute; inset: 0; margin: 0; display: grid; place-items: center;
+              background: var(--pt-ground); color: var(--pt-ink-muted);
+              font-family: var(--pt-font-mono); font-size: 0.8rem; }
+.lens-frame iframe { display: block; width: 100%; height: 100%; min-height: 560px;
+                     border: 0; background: var(--pt-ground); }
+
 .panel-title {
   font-family: var(--pt-font-mono); font-size: 0.7rem;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--pt-ink-faint);
 }
 .panel-lead { font-size: 0.88rem; color: var(--pt-ink-muted); line-height: 1.55; }
+/* One line from the rail (stage-rail.js notice), atop the stage it lands on. */
+.panel-notice { font-size: 0.88rem; color: var(--pt-ink-muted); line-height: 1.55;
+                margin: 0; padding-left: 0.75rem; border-left: 2px solid var(--pt-brass); }
 
 .readout { min-height: 108px; }
 
