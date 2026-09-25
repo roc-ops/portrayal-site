@@ -266,6 +266,16 @@ def check_stages(page, base):
                 run()
             except Exception as e:
                 bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
+        if name == "filter":
+            try:
+                vis = page.evaluate("""() => [...document.querySelectorAll(
+                    '#stageRack [data-cable], #stageRack [data-stub]')]
+                    .filter(n => getComputedStyle(n).display !== 'none' && n.getAttribute('visibility') !== 'hidden').length""")
+                # 05-filter.js sets data-visible-cables on the panel element itself.
+                if vis != int(page.get_attribute('#sidePanel', 'data-visible-cables') or -1):
+                    bad.append(f"stage filter in 2D: the drawn count ({vis}) and data-visible-cables disagree")
+            except Exception as e:
+                bad.append(f"stage filter in 2D: {e}")
 
     # Which layer is showing: in 2D the rack drawing and no 3D pane; in 3D the
     # 3D pane and a rack layer that is hidden or empty (stage 6 keeps a
