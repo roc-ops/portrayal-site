@@ -14,6 +14,11 @@ export default function makeInspect({dev, cfg, redraw}) {
   // configurations its own index lists, so a button can never ask for a
   // compile that does not exist.
   const cfgs = dev === DEV ? CONFIGS : configsOf(dev).map(id => ({id, label: id}));
+  // AC AGAINST DC IS THE AS7726-32X's STORY. Only its configurations swap
+  // PSU modules and flip an airflow stripe; the FHD-1UFCE is a passive fibre
+  // panel with no PSU at all. Anywhere else the copy says only what is true
+  // of every device: the configurations offered are its own, from its index.
+  const acdc = dev === DEV;
   const FIELDS = [
     ['data-class', 'class'], ['data-ref', 'contract'], ['data-media', 'media'],
     ['data-speed', 'speed'], ['data-lanes', 'lanes'], ['data-group', 'group'],
@@ -37,7 +42,9 @@ export default function makeInspect({dev, cfg, redraw}) {
     readout.replaceChildren(kv(rows));
   }
   return {
-    hint: 'Hover any element; everything shown is read off its own attributes. Switch to the rear and try AC against DC — the PSU modules and the airflow stripe both change, because a configuration is a different compile.',
+    hint: acdc
+      ? 'Hover any element; everything shown is read off its own attributes. Switch to the rear and try AC against DC — the PSU modules and the airflow stripe both change, because a configuration is a different compile.'
+      : 'Hover any element; everything shown is read off its own attributes. The configurations listed are this device’s own, from its compiled index - each one is a separate compile.',
     enter() {
       resetFrame();
       readout = el('div', {class: 'readout'});
@@ -61,7 +68,9 @@ export default function makeInspect({dev, cfg, redraw}) {
         readout,
         el('p', {class: 'panel-title', text: 'view'}), viewRow,
         el('p', {class: 'panel-title', text: 'configuration'}), cfgRow,
-        el('p', {class: 'panel-lead', html: 'A configuration populates the bays. Swapping AC for DC swaps the <em>modules</em> — the drawing is recompiled per configuration, not recolored.'}),
+        el('p', {class: 'panel-lead', html: acdc
+          ? 'A configuration populates the bays. Swapping AC for DC swaps the <em>modules</em> — the drawing is recompiled per configuration, not recolored.'
+          : 'These are the configurations this device’s own index lists. Each is recompiled, not recolored, so choosing one draws that build.'}),
       );
       show(null);
       setExports([{label: 'SVG', title: 'Download this view as SVG',
