@@ -74,11 +74,15 @@ export default function makeRails() {
     // No scene means no WebGL: guard3d's message stays on the scrim, and the
     // panel is built regardless (R11).
     if (scene) ui.unscrim();
-    srcLine.textContent = `${RACK_U} U rack · 3D`;
+    // Say "drawn in 3D" only when something was: without a scene nothing is
+    // drawn, and the numbers below are rails.js's, not read off a picture.
+    srcLine.textContent = scene ? `${RACK_U} U rack · 3D` : `${RACK_U} U rack · 3D unavailable`;
     ui.setPanel(
       title('Stage 0 · Rails'),
       lead('<strong>Is this to scale?</strong>'),
-      lead('Drawn in 3D from the same rail description as the 2D view. These are the rails stage 1 mounts into.'),
+      lead(scene
+        ? 'Drawn in 3D from the same rail description as the 2D view. These are the rails stage 1 mounts into.'
+        : '3D is unavailable in this browser, so nothing is drawn here. The values below come from rails.js, the rail description both views draw from. These are the rails stage 1 mounts into.'),
       kv([['rack unit', mm(RU), true],
           ['height', `${RACK_U} U — ${mm(RACK_U * RU)}`],
           ['inner width', mm(OPENING)]]),
