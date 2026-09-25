@@ -7,16 +7,21 @@
 // read off the compiled SVG's own attributes, and a state is only ever applied
 // to an element that declares it in data-states.
 
+// The default device: the one the page boots with. Which device is actually
+// on the stage is DEVICE, below - a spoke opens any device in the cast.
 export const DEV = 'as7726-32x';
 export const CFG = 'ac-f2b';          // the default configuration
 export const DIST = 'assets/dist/';
 
-// Which face and which configuration is on the stage. The Inspect tab lets you
-// change both; every other tab is written against the front view of the default
-// config and resets to it on entry.
+// Which device, face and configuration is on the stage. Assigned only here,
+// by loadDrawing, and only once the file has actually arrived - so these always
+// name the drawing that is loaded, never one that was asked for and failed.
+export let DEVICE = DEV;
 export let VIEW = 'front';
 export let CONFIG = CFG;
-const src = () => `${DIST}${DEV}.${CONFIG}.${VIEW}.svg`;
+const file = (dev, config, view) => `${dev}.${config}.${view}.svg`;
+// The file on the stage, as the footer names it.
+export const srcName = () => file(DEVICE, CONFIG, VIEW);
 
 export const VIEWS = ['front', 'rear', 'top', 'bottom', 'left', 'right'];
 export const CONFIGS = [
@@ -64,12 +69,17 @@ let host = null;
 export function setHost(h) { host = h; }
 
 // ── Loading the artifact ───────────────────────────────────────────────
-export async function loadDrawing() {
-  const url = src();
+// `isStale`, when given, is asked once the file has arrived: a caller that has
+// been overtaken (a spoke whose open lost to a rung click) gets false back and
+// the stage is left exactly as it was - no drawing swapped, no scrim hidden.
+export async function loadDrawing(dev = DEVICE, view = VIEW, config = CONFIG, isStale = null) {
+  const url = DIST + file(dev, config, view);
   const text = await fetch(url).then(r => {
     if (!r.ok) throw new Error(`${url} — ${r.status}`);
     return r.text();
   });
+  if (isStale?.()) return false;
+  DEVICE = dev; VIEW = view; CONFIG = config;
   stage2d.innerHTML = text;
   svg = stage2d.querySelector('svg');
   // The file is authored at true size (438.4mm x 43.5mm). Drop the physical
@@ -83,20 +93,23 @@ export async function loadDrawing() {
   svg.append(overlay);
   TAB_FRAME = [...BASE_FRAME];
   pz2d = panZoom(svg, () => TAB_FRAME);
-  srcLine.textContent = `${DEV}.${CONFIG}.${VIEW}.svg`;
+  srcLine.textContent = srcName();
   loading.hidden = true;
+  return true;
 }
 
-// Swap the artifact under the current tab. The tab is torn down and rebuilt
+// Swap the artifact under the current host. The host is torn down and rebuilt
 // around the new drawing rather than patched, because its listeners are bound
 // to the old SVG element and its overlay lives inside it.
-export async function setDrawing(view, config, dev = DEV) {
-  if (view === VIEW && config === CONFIG) return;
+//
+// `dev` defaults to the device already on the stage, not to DEV: a caller that
+// only asks for another view must not silently change device underneath it.
+export async function setDrawing(view, config, dev = DEVICE, isStale = null) {
+  if (dev === DEVICE && view === VIEW && config === CONFIG) return true;
   await host?.exit?.();
-  VIEW = view;
-  CONFIG = config;
-  await loadDrawing();
-  await host?.enter?.();
+  const ok = await loadDrawing(dev, view, config, isStale);
+  if (ok) await host?.enter?.();
+  return ok;
 }
 
 // ── Small helpers over the drawing ─────────────────────────────────────

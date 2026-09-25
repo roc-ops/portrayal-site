@@ -167,6 +167,35 @@ code { font-size: 0.875em; color: var(--pt-ink); }
   .stage-rail button[aria-selected="true"] { border-bottom-color: var(--pt-brass); }
 }
 
+/* A spoke: the stage is a device's 2D face, and the breadcrumb names the way
+   back. The ladder dims to say it is not where you are - but it stays
+   clickable, because a rung is also a way out, and a dimmed control that
+   silently ignores clicks is a trap. So no pointer-events here. */
+.spoke-crumb {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
+  padding: 0.55rem 1.25rem; background: var(--pt-surface-2);
+  border-bottom: 1px solid var(--pt-line);
+}
+.spoke-crumb[hidden] { display: none; }
+.spoke-back {
+  background: none; border: 1px solid var(--pt-brass-dim); border-radius: var(--pt-radius-sm);
+  color: var(--pt-brass); font: inherit; font-size: 0.82rem;
+  padding: 0.3rem 0.7rem; cursor: pointer;
+}
+.spoke-back:hover { border-color: var(--pt-brass); }
+.spoke-back:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: 2px; }
+.spoke-where { font-size: 0.78rem; color: var(--pt-ink-muted); }
+.spoke-lenses { margin-left: auto; }
+.spoke-open .stage-rail { opacity: 0.35; transition: opacity 0.15s; }
+.spoke-open .stage-rail:hover, .spoke-open .stage-rail:focus-within { opacity: 0.7; }
+
+/* "Look closer": the spoke entry points in stages 1-3's panels. */
+.look-closer { display: flex; flex-direction: column; gap: 0.6rem;
+               border-top: 1px solid var(--pt-line); padding-top: 0.9rem; }
+.lens-row { display: flex; flex-direction: column; gap: 0.3rem; }
+.lens-row > .mono { font-size: 0.78rem; color: var(--pt-ink); }
+.lens-note { margin: 0; font-size: 0.74rem; color: var(--pt-ink-faint); line-height: 1.45; }
+
 .show-stage {
   position: relative;
   /* An explicit height, and each stage layer absolutely positioned to fill it.

@@ -12,6 +12,11 @@ import makeOptics   from './stages/03-optics.js';
 import makeCable    from './stages/04-cable.js';
 import makeFilter   from './stages/05-filter.js';
 import makeTakeaway from './stages/06-takeaway.js';
+// A circular import: spoke-host.js imports the rail (to suspend a stage and to
+// come back to it), and the rail imports it (a rung click closes an open
+// spoke). Safe because both sides only read the other's bindings inside
+// functions, never while the modules are being evaluated.
+import {spokeOpen, closeSpoke} from './spoke-host.js';
 
 // Bumped on every switch. An enter() that awaits checks it after each await
 // and gives up if the stage has moved on, so a slow build cannot paint over
@@ -47,7 +52,13 @@ function paintRail(name) {
   }
 }
 
+// "stage 2 · Populate", for the breadcrumb that leads back to it.
+export const stageLabel = name => ({n: STAGES.indexOf(name), title: MODULES[name].title});
+
 export async function activate(name) {
+  // A rung clicked while a spoke is open goes where it was clicked, not back
+  // to where the spoke came from - so the spoke closes WITHOUT resuming.
+  if (spokeOpen()) await closeSpoke({resume: false});
   if (current === name) return;
   epoch++;
   const mine = epoch;
@@ -63,6 +74,22 @@ export async function activate(name) {
   // Only for a stage that is still current, and never for one whose enter()
   // threw: a checker waiting on this must fail loudly, not pass quietly.
   if (!stale(mine)) stageHost.setAttribute('data-stage-ready', name);
+}
+
+// Leave the current stage without entering another: a spoke is taking the
+// stage. Bumps the epoch, so the stage's own late work (a seat still queued)
+// is dropped, and returns it - the caller's `mine`. The rung stays selected,
+// because the spoke is a detour from it; `current` is cleared, so coming back
+// through activate() re-enters the stage rather than returning early.
+export async function suspend() {
+  epoch++;
+  const mine = epoch;
+  const was = current;
+  current = null;
+  stageHost.removeAttribute('data-stage-ready');
+  exportSlot.replaceChildren();
+  if (was) await MODULES[was].exit?.();
+  return mine;
 }
 
 // A vertical tablist: Up/Down move between rungs, Home/End to either end.

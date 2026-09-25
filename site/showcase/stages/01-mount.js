@@ -11,6 +11,7 @@ import {stage3d, stageRack, loading, title, lead, kv, setPanel, setExports, save
   from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, unitsOf, overrides, mount3d} from '../rack.js';
 import {epoch, stale} from '../stage-rail.js';
+import {lookCloser} from '../spoke-host.js';
 
 export default function makeMount() {
   let scene = null;
@@ -53,6 +54,7 @@ export default function makeMount() {
           ['free', `${free} U`],
           ...rows.map(r => [r.label, `U${r.ru}–${r.top} (${r.u} U)`]),
         ]),
+        lookCloser('mount'),
       );
       if (scene) {
         setExports([{label: 'GLB', title: 'Download the mounted rack as a GLB',

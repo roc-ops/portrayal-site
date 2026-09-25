@@ -45,6 +45,7 @@ import {stage3d, stageRack, loading, el, title, lead, kv, setPanel} from '../art
 import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
         enqueueRebuild, byRef, loadSkin} from '../rack.js';
 import {epoch, stale} from '../stage-rail.js';
+import {lookCloser} from '../spoke-host.js';
 import {occupantNames} from '../../../vendor/swap.js';
 
 const DEV = 'as7726-32x';
@@ -171,7 +172,7 @@ export default function makeOptics() {
     }
 
     if (stale(mine) || scene !== sc) return;
-    setPanel(...kids);
+    setPanel(...kids, lookCloser('optics'));
   }
 
   // The queued unit of work. `mine` is the epoch at the moment the visitor

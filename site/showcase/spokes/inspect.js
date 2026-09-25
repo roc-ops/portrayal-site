@@ -1,11 +1,16 @@
 import {
   svg, node, box, ring, clearOverlay, resetFrame, setFrame, setDrawing,
   el, svgEl, declared, setState, clearStates, setExports, saveSvg,
-  title, lead, kv, controls, setPanel, VIEWS, CONFIGS, VIEW, CONFIG,
+  title, lead, kv, controls, setPanel, VIEWS, CONFIGS, VIEW, CONFIG, DEV,
 } from '../artifact.js';
+import {configsOf} from '../rack.js';
 
 export default function makeInspect({dev, cfg}) {
   let readout, onMove, onLeave, hoverRing;
+  // CONFIGS carries the AS7726's labels. Any other device offers the
+  // configurations its own index lists, so a button can never ask for a
+  // compile that does not exist.
+  const cfgs = dev === DEV ? CONFIGS : configsOf(dev).map(id => ({id, label: id}));
   const FIELDS = [
     ['data-class', 'class'], ['data-ref', 'contract'], ['data-media', 'media'],
     ['data-speed', 'speed'], ['data-lanes', 'lanes'], ['data-group', 'group'],
@@ -36,12 +41,12 @@ export default function makeInspect({dev, cfg}) {
       const viewRow = controls(VIEWS.map(v => ({
         label: v, run: () => setDrawing(v, CONFIG, dev),
       })));
-      const cfgRow = controls(CONFIGS.map(c => ({
+      const cfgRow = controls(cfgs.map(c => ({
         label: c.label, run: () => setDrawing(VIEW, c.id, dev),
       })));
       const mark = () => {
         [...viewRow.children].forEach(b => b.setAttribute('aria-pressed', String(b.textContent === VIEW)));
-        [...cfgRow.children].forEach((b, i) => b.setAttribute('aria-pressed', String(CONFIGS[i].id === CONFIG)));
+        [...cfgRow.children].forEach((b, i) => b.setAttribute('aria-pressed', String(cfgs[i].id === CONFIG)));
       };
       mark();
       // The readout goes first. It is the only thing here that changes while you

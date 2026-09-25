@@ -8,7 +8,7 @@
 // read off the compiled SVG's own attributes, and a state is only ever applied
 // to an element that declares it in data-states.
 
-import {VIEW, CONFIG, DEV, DIST, loading, loadDrawing} from './showcase/artifact.js';
+import {DIST, srcName, loading, loadDrawing} from './showcase/artifact.js';
 import {boot} from './showcase/stage-rail.js';
 
 (async () => {
@@ -18,7 +18,7 @@ import {boot} from './showcase/stage-rail.js';
   try {
     await loadDrawing();
   } catch (err) {
-    loading.textContent = `Could not load ${DIST}${DEV}.${CONFIG}.${VIEW}.svg — ${err.message}. This page must be served over HTTP, not opened from disk.`;
+    loading.textContent = `Could not load ${DIST}${srcName()} — ${err.message}. This page must be served over HTTP, not opened from disk.`;
     return;
   }
   await boot();

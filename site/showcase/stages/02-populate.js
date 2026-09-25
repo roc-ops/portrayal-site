@@ -26,6 +26,7 @@ import {stage3d, stageRack, loading, el, title, lead, kv, setPanel}
 import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef,
         enqueueRebuild} from '../rack.js';
 import {epoch, stale} from '../stage-rail.js';
+import {lookCloser} from '../spoke-host.js';
 
 const DEV = 'asr-9006';
 const GROUP = 'slots';
@@ -84,6 +85,7 @@ export default function makePopulate() {
       ...bayRows,
       readout,
       kv(seatedRows),
+      lookCloser('populate'),
     );
   }
 

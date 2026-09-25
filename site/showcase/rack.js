@@ -112,6 +112,9 @@ export async function loadMeta() {
 export const placed = () => CAST.filter(e => e.ru != null);
 
 export const chassisOf = ref => meta?.[ref]?.chassis || {};
+// The configurations the device compiles to, by name - what Inspect offers a
+// spoke to switch between, so it never asks for a file that was not built.
+export const configsOf = ref => (meta?.[ref]?.configs || []).map(c => c.name);
 // The index's own shape, {view: [{id, accepts, default, group, ...}]}.
 export const baysOf = ref => meta?.[ref]?.bays || {};
 export const cagesOf = ref => meta?.[ref]?.cages || {};

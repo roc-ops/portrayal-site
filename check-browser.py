@@ -58,6 +58,11 @@ EXPECTED_404 = re.compile(r"/reference/")
 # slower by a ceiling they never reach.
 SETTLE_MS = 9000
 
+# How long a stage, or a spoke, gets to say it is ready. 60 seconds accounts for
+# slow CI runners: stage 4 measured 5-17s on a loaded machine, and a GitHub
+# runner renders WebGL on the CPU.
+READY_MS = 60000
+
 
 def free_port():
     with contextlib.closing(socket.socket()) as s:
@@ -125,12 +130,26 @@ def check_stages(page, base):
         try:
             # Set by the rail only after enter() resolves, so a stage whose
             # enter() throws never sets it and this times out naming the stage
-            # rather than passing quietly. 60-second timeout accounts for stages
-            # on slow CI runners: stage 4 measured 5-17s on a loaded machine, and
-            # a GitHub runner renders WebGL on the CPU.
-            page.wait_for_selector(f'[data-stage-ready="{name}"]', timeout=60000)
+            # rather than passing quietly.
+            page.wait_for_selector(f'[data-stage-ready="{name}"]', timeout=READY_MS)
         except Exception:
             bad.append(f"stage {name} never became ready")
+
+    # A SPOKE IS A RENDERER SWITCH, so open one and come back, from stage 2 -
+    # once on the AS7726 (whose drawing the page booted with) and once on the
+    # ASR-9006, which makes the 2D face actually change device. The return
+    # waits on the stage's own ready signal again, because the breadcrumb
+    # re-enters the stage rather than just un-hiding it.
+    page.click('.stage-rail button[data-stage="populate"]')
+    for dev in ("as7726-32x", "asr-9006"):
+        try:
+            page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+            page.click(f'#sidePanel [data-spoke-device="{dev}"][data-spoke-lens="inspect"]')
+            page.wait_for_selector('.spoke-crumb:not([hidden]) button', timeout=READY_MS)
+            page.click('.spoke-crumb button')
+            page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        except Exception:
+            bad.append(f"a spoke on {dev} did not open from stage 2 and return")
     return bad
 
 

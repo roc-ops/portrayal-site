@@ -262,6 +262,37 @@ if rail.is_file() and "not built yet" in rail.read_text():
 check(not unbuilt, "no stage file has an unbuilt-stage fallback",
       f"found the placeholder in {unbuilt} - all seven stages exist now")
 
+# ── spokes: a device, a lens, and the way back ───────────────────────────
+# A SPOKE IS A RENDERER SWITCH. The lenses drive the inlined 2D face
+# (#stage2d); stages 1-3 drive the 3D rack. So opening one swaps renderers,
+# and it must go back to the stage it came from - a detour with no way back is
+# a dead end. Every check below records whether or not the file exists, so a
+# missing spoke-host is counted as failures rather than skipped.
+host = HERE / "site" / "showcase" / "spoke-host.js"
+h = host.read_text() if host.is_file() else ""
+check(host.is_file(), "site/showcase/spoke-host.js exists",
+      "the four lenses are re-homed but nothing opens them")
+for name in ("openSpoke", "closeSpoke"):
+    check(f"export async function {name}" in h or f"export function {name}" in h,
+          f"spoke-host.js exports {name}")
+check("returnTo" in h, "openSpoke records where to return to",
+      "a spoke with no way back is a dead end")
+
+# CALLOUTS, LIVE STATE AND SELECT ARE WRITTEN AGAINST THE AS7726's FRONT FACE.
+# They name its paths (port-14, region:mgmt-block, led-psu1/lamp...), so on any
+# other device they would ring nothing and toggle nothing. Inspect reads
+# whatever the drawing carries, so it is the one lens every device gets. The
+# availability table is the single place that decides, so it is read here.
+avail = {}
+m = re.search(r"export const LENS_DEVICES\s*=\s*\{(.*?)\};", h, re.S)
+if m:
+    for lens, val in re.findall(r"(\w+)\s*:\s*(\[[^\]]*\]|'\*')", m.group(1)):
+        avail[lens] = "*" if val == "'*'" else re.findall(r"'([a-z0-9-]+)'", val)
+check(avail.get("inspect") == "*"
+      and all(avail.get(l) == ["as7726-32x"] for l in ("callouts", "state", "select")),
+      "Callouts, Live state and Select are offered only on as7726-32x; Inspect on every device",
+      f"LENS_DEVICES in spoke-host.js reads {avail or 'nothing'}")
+
 # STAGES THAT MOUNT THE RACK GO THROUGH rack.js's mount3d, which wraps
 # guard3d. A stage that calls createRackScene directly loses the WebGL guard,
 # and the symptom is the scrim never coming down - which reads as a slow build
