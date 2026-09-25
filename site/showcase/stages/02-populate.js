@@ -13,17 +13,22 @@
 // slot-3 - is a real refusal: the candidate is real hardware for THIS device,
 // just not for that bay. Acceptance is enforced by testing membership in the
 // bay's own `accepts` array below; setState is not involved in that decision
-// (R5) - it only marks a declared visual state on a 2D element, and this
-// stage works the 3D rack, not the 2D drawing.
+// (R5) - it only marks a declared visual state on a 2D element, and nothing
+// here uses it.
+//
+// The picture follows the switch (ui.mode): in 2D the cast's front faces on
+// the rails, through build2dElevation, which seats `overrides` through
+// swap.js; in 3D the rack scene. Seats live in `overrides`, not in either
+// picture, so a card seated in 2D is there in 3D and back again.
 //
 // Verified against assets/dist/asr-9006.configs.json's .bays.front:
 //   slot-0/slot-1 accept only a9k-rsp880-{se,tr,lt-se,lt-tr} + the slot cover
 //   slot-2..slot-5 accept only line cards (a9k-16x100ge-tr, a9k-4x100ge-se,
 //   a9k-8x100ge-se, ...) + the slot cover
 
-import {stage3d, stageRack, el, title, lead, kv} from '../artifact.js';
+import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef,
-        enqueueRebuild} from '../rack.js';
+        enqueueRebuild, build2dElevation} from '../rack.js';
 import {lookCloser} from '../spoke-host.js';
 
 const DEV = 'asr-9006';
@@ -39,6 +44,21 @@ export default function makePopulate() {
   // only has to track how many of ITS OWN seats are still outstanding, for
   // the "Applying…" readout below.
   let inFlight = 0;
+
+  // The 2D picture: the cast on the rails, with the current overrides seated.
+  // Built off-screen and put up only if `ui` is still live, so a redraw that
+  // finishes after the visitor has left paints nothing.
+  async function draw2d(ui) {
+    const svg = await build2dElevation({stack: CAST.filter(e => e.ru != null),
+                                        heightRU: RACK_U, overrides});
+    if (!ui.live()) return false;
+    stage3d.hidden = true;
+    stageRack.hidden = false;
+    stageRack.replaceChildren(svg);
+    const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+    panZoom(svg, () => base);
+    return true;
+  }
 
   function bays() {
     return (baysOf(DEV).front || []).filter(b => b.group === GROUP);
@@ -111,6 +131,11 @@ export default function makePopulate() {
     overrides[DEV] = overrides[DEV] || {};
     overrides[DEV][bay.id] = ref;
 
+    if (ui.mode === '2d') {
+      // In this same queue slot, so the pictures land in click order.
+      if (!await draw2d(ui)) return null;
+      return {message: `seated — ${bay.id}: ${shortRef(ref)}`, refused: false};
+    }
     const sc = scene;
     if (sc) {
       sc.setOverrides(DEV, overrides[DEV]);
@@ -141,22 +166,34 @@ export default function makePopulate() {
     title: 'Populate',
     question: 'What does this bay accept?',
     async enter(ui) {
-      stageRack.hidden = true; stage3d.hidden = false;
+      const is3d = ui.mode === '3d';
+      stageRack.hidden = is3d; stage3d.hidden = !is3d;
       ui.scrim('Mounting the cast…');
       await loadMeta();
       if (!ui.live()) return;
 
-      const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
-      scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (!ui.live()) { scene?.dispose(); scene = null; return; }
-      // Only when a scene actually mounted - R11: the panel is built either
-      // way, so a no-WebGL run still lets the visitor seat cards and see the
-      // refusal, just without the 3D picture.
-      if (scene) ui.unscrim();
+      if (is3d) {
+        const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
+        // Held locally until this entry is known to be live, as stage 1 does.
+        const sc = await mount3d({stack, heightRU: RACK_U, overrides});
+        if (!ui.live()) { sc?.dispose(); return; }
+        scene = sc;
+        // Only when a scene actually mounted - R11: the panel is built either
+        // way, so a no-WebGL run still lets the visitor seat cards and see the
+        // refusal, just without the 3D picture.
+        if (scene) ui.unscrim();
+      } else {
+        if (!await draw2d(ui)) return;
+        ui.unscrim();
+      }
 
       buildPanel(ui);
     },
     exit() {
+      // Both layers, whichever this entry drew: a 2D/3D switch re-enters this
+      // same stage, and the next entry must not find the last one showing.
+      stageRack.hidden = true;
+      stageRack.replaceChildren();
       scene?.dispose();
       scene = null;
       stage3d.hidden = true;

@@ -12,7 +12,9 @@
 //               build2dElevation does - so the button's title says so rather
 //               than implying it shows the seated cards and optics.
 //   GLB/USDZ  - the mounted scene's own exporters, offered only when a scene
-//               exists (R11).
+//               exists (R11). In 2D there is no scene to export, so the two
+//               become one button that switches to 3D (the rail's setMode)
+//               rather than pretending to export something not built.
 //   SVG       - build2dElevation with the current overrides, which DOES
 //               apply them - it is the same call stage 0's rails export
 //               already uses, and it seats each front face through swap.js's
@@ -24,13 +26,21 @@
 //   DCIM      - links built straight off assets/exports/index.json, never a
 //               hand-typed filename; a device missing from the index gets no
 //               links rather than a guessed one.
+//
+// The picture follows the switch (ui.mode): in 2D this stage shows the same
+// elevation it exports, in 3D the mounted scene. Clicking a device here does
+// nothing - Look closer belongs to stages 1-3.
 
-import {stage3d, stageRack, el, title, lead, kv, save, saveSvg, standalone, DIST}
+import {stage3d, stageRack, el, title, lead, kv, save, standalone, panZoom, DIST}
   from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, overrides, mount3d, build2dElevation}
   from '../rack.js';
 import {rackDiagram, loadFace, portsOf} from '../../drawio.js';
 import {rasterize} from '../../raster.js';
+// A circular import (the rail imports this stage); setMode is only read inside
+// a click handler, never while the modules are being evaluated. Stages may use
+// the rail's functions - never its `epoch`.
+import {setMode} from '../stage-rail.js';
 
 const EXPORTS_BASE = 'assets/exports/';
 
@@ -62,6 +72,16 @@ function dcimSection(index) {
 export default function makeTakeaway() {
   let scene = null;
   let elevationSvg = null;
+  let elevationBase = null;   // its viewBox as built, before any pan or zoom
+
+  // The elevation as built, whatever the visitor has panned or zoomed to in
+  // 2D: the file is the rack, not the current view of it.
+  function elevationText() {
+    const vb = elevationSvg.getAttribute('viewBox');
+    elevationSvg.setAttribute('viewBox', elevationBase);
+    try { return standalone(elevationSvg); }
+    finally { elevationSvg.setAttribute('viewBox', vb); }
+  }
 
   // The cast's front faces, straight off disk - the base configuration
   // drawio-page.js itself draws from, not the overridden one.
@@ -88,7 +108,7 @@ export default function makeTakeaway() {
   // rasterize() only takes a URL; the elevation built here is not one, so a
   // blob URL stands in for it and is revoked once the raster is done.
   async function buildPng() {
-    const text = standalone(elevationSvg);
+    const text = elevationText();
     const url = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
     try {
       const bytes = await rasterize(url, 2);
@@ -107,25 +127,40 @@ export default function makeTakeaway() {
     async enter(ui) {
       // The same mount stage 1 does (R6): the cast, with whatever overrides
       // the visitor already made, so the downloads reflect their choices.
-      stageRack.hidden = true; stage3d.hidden = false;
+      const is3d = ui.mode === '3d';
+      stageRack.hidden = is3d; stage3d.hidden = !is3d;
       ui.scrim('Mounting the cast…');
       await loadMeta();
       if (!ui.live()) return;
 
-      const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
-      scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (!ui.live()) { scene?.dispose(); scene = null; return; }
-      // Only when a scene actually mounted - R11: the panel and every
-      // non-3D format are built either way.
-      if (scene) ui.unscrim();
+      if (is3d) {
+        const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
+        // Held locally until this entry is known to be live, as stage 1 does.
+        const sc = await mount3d({stack, heightRU: RACK_U, overrides});
+        if (!ui.live()) { sc?.dispose(); return; }
+        scene = sc;
+        // Only when a scene actually mounted - R11: the panel and every
+        // non-3D format are built either way.
+        if (scene) ui.unscrim();
+      }
 
-      // Built for the SVG/PNG exports, not for display - the 3D scene is
-      // what this stage shows. Kept attached (hidden) to stageRack purely so
-      // standalone() has a document to resolve --pt-* custom properties
-      // against.
-      elevationSvg = await build2dElevation({stack, heightRU: RACK_U, overrides});
-      if (!ui.live()) { scene?.dispose(); scene = null; return; }
-      stageRack.replaceChildren(elevationSvg);
+      // The SVG/PNG exports' source, and in 2D also the picture. In 3D it is
+      // kept attached (hidden) to stageRack purely so standalone() has a
+      // document to resolve --pt-* custom properties against. The same call
+      // stage 1 makes: only the devices whose index loaded.
+      const svg = await build2dElevation({stack: CAST.filter(e => e.ru != null),
+                                          heightRU: RACK_U, overrides});
+      if (!ui.live()) return;
+      elevationSvg = svg;
+      elevationBase = svg.getAttribute('viewBox');
+      stageRack.replaceChildren(svg);
+      if (!is3d) {
+        stage3d.hidden = true;
+        stageRack.hidden = false;
+        const base = elevationBase.split(/\s+/).map(Number);
+        panZoom(svg, () => base);
+        ui.unscrim();
+      }
 
       let exportsIndex = null;
       try {
@@ -133,7 +168,7 @@ export default function makeTakeaway() {
       } catch (err) {
         console.warn('[portrayal] no export index', err);
       }
-      if (!ui.live()) { scene?.dispose(); scene = null; return; }
+      if (!ui.live()) return;
 
       ui.setPanel(
         title('Take it away'),
@@ -141,7 +176,8 @@ export default function makeTakeaway() {
         lead('The cast rack as built here, handed over in the formats a network team uses next.'),
         kv([
           ['draw.io', 'rack diagram, base front configuration - does not reflect seated cards or optics'],
-          ['GLB / USDZ', scene ? 'the mounted rack, as configured, as a 3D model'
+          ['GLB / USDZ', !is3d ? 'the 3D model - switch to 3D to build the scene they export'
+                        : scene ? 'the mounted rack, as configured, as a 3D model'
                                 : 'unavailable - no 3D in this browser'],
           ['SVG', '2D front elevation, with the seated cards and optics'],
           ['PNG', 'a raster of that same elevation'],
@@ -157,12 +193,16 @@ export default function makeTakeaway() {
          run: buildDrawio},
         {label: 'SVG',
          title: 'Download the 2D front elevation, with the seated cards and optics',
-         run: () => saveSvg(elevationSvg, 'cast-rack-elevation.svg')},
+         run: () => save(elevationText(), 'cast-rack-elevation.svg', 'image/svg+xml')},
         {label: 'PNG',
          title: 'Download a PNG raster of the front elevation, with the seated cards and optics',
          run: buildPng},
       ];
-      if (scene) {
+      if (!is3d) {
+        items.push({label: '3D formats (GLB, USDZ) — switch to 3D',
+          title: 'GLB and USDZ export the 3D scene, which 2D does not build - this switches to 3D',
+          run: () => setMode('3d')});
+      } else if (scene) {
         items.push({label: 'GLB', title: 'Download the mounted rack as a GLB, with the current overrides',
           run: async () => save(await scene.toGLB(), 'cast-rack.glb', 'model/gltf-binary')});
         items.push({label: 'USDZ', title: 'Download the mounted rack as a USDZ, with the current overrides',
@@ -174,6 +214,7 @@ export default function makeTakeaway() {
       scene?.dispose();
       scene = null;
       elevationSvg = null;
+      elevationBase = null;
       stage3d.hidden = true;
       stage3d.replaceChildren();
       stageRack.hidden = true;

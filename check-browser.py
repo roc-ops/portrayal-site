@@ -131,6 +131,13 @@ def refused_card(bay_id="slot-0"):
     return next((r for r in offered if r not in bay.get("accepts", [])), None)
 
 
+def accepted_card(bay_id):
+    """A card `bay_id` accepts other than its slot cover, read off the index."""
+    idx = json.loads((HERE / "assets" / "dist" / "asr-9006.configs.json").read_text())
+    bay = next((b for b in idx.get("bays", {}).get("front", []) if b.get("id") == bay_id), None)
+    return next((r for r in (bay or {}).get("accepts", []) if r != bay.get("default")), None)
+
+
 def check_stages(page, base):
     """Walk the stage rail, waiting on each stage's own ready signal, and
     exercise what each stage claims - not only that it loads."""
@@ -155,10 +162,24 @@ def check_stages(page, base):
         page.select_option('#sidePanel select[data-bay="slot-0"]', card, timeout=READY_MS)
         page.click('#sidePanel button[data-bay="slot-0"]', timeout=READY_MS)
         page.wait_for_selector('#sidePanel [data-readout][data-refused]', timeout=READY_MS)
+        # And one the bay DOES accept, so the redraw after a real seat runs.
+        # The readout is painted only after the queued redraw, so the drawing
+        # is there by the time it says "seated".
+        ok = accepted_card("slot-2")
+        if not ok:
+            raise RuntimeError("no card slot-2 accepts")
+        page.select_option('#sidePanel select[data-bay="slot-2"]', ok, timeout=READY_MS)
+        page.click('#sidePanel button[data-bay="slot-2"]', timeout=READY_MS)
+        page.wait_for_selector('#sidePanel [data-readout]:not([data-refused]):not([data-busy])',
+                               timeout=READY_MS)
+        if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"]'):
+            bad.append("stage populate in 2D: the ASR-9006 is not drawn")
 
     def seat_optic():
         page.click('#sidePanel [data-seat]', timeout=READY_MS)
         page.wait_for_selector('#sidePanel [data-readout][data-seated]', timeout=READY_MS)
+        if not page.query_selector('#stageRack svg [data-highlight]'):
+            bad.append("stage optics in 2D: the seated optic's TX bore is not highlighted on the face")
 
     def filter_management():
         # The expected count is the one the management button itself states,
@@ -212,6 +233,16 @@ def check_stages(page, base):
             except Exception as e:
                 bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
 
+    # Which layer is showing: in 2D the rack drawing and no 3D pane; in 3D the
+    # 3D pane and a rack layer that is hidden or empty (stage 6 keeps a
+    # hidden elevation there for its exports).
+    def layers_are(m):
+        return page.evaluate("""m => {
+          const r = document.getElementById('stageRack'), t = document.getElementById('stage3d');
+          return m === '3d' ? (r.hidden || !r.childElementCount) && !t.hidden
+                            : !r.hidden && !!r.querySelector('svg') && t.hidden;
+        }""", m)
+
     # THE SWITCH. 2D is the default; flip stage 1 to 3D, confirm the choice
     # follows to stage 2, then flip back. Each re-entry must reach ready.
     try:
@@ -223,14 +254,27 @@ def check_stages(page, base):
             bad.append("stage mount in 2D draws no devices")
         page.click('#stageMode [data-mode="3d"]')
         page.wait_for_selector('[data-stage-ready="mount"]', timeout=READY_MS)
+        if not layers_are("3d"):
+            bad.append("stage mount: switching to 3D left the 2D drawing showing")
         page.click('.stage-rail button[data-stage="populate"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         if page.get_attribute('#stageMode [data-mode="3d"]', "aria-pressed") != "true":
             bad.append("the 3D choice did not follow to the next stage")
+        if not layers_are("3d"):
+            bad.append("stage populate in 3D: the 2D drawing is showing")
         page.click('#stageMode [data-mode="2d"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        if not layers_are("2d"):
+            bad.append("stage populate: switching back to 2D did not replace the 3D picture")
     except Exception as e:
         bad.append(f"the 2D/3D switch: {e}")
+    finally:
+        # Never leave '3d' stored for the spoke walk below, whatever failed.
+        try:
+            if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
+                page.click('#stageMode [data-mode="2d"]', timeout=READY_MS)
+        except Exception:
+            pass
 
     # A SPOKE IS A RENDERER SWITCH, so open one and come back, from stage 2 -
     # Inspect on the AS7726 (whose drawing the page booted with) and on the

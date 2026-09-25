@@ -41,10 +41,18 @@
 // is the proof that the seated optic is real in 3D. When there is no scene
 // (no WebGL), the panel says so instead of a position - R11: the panel
 // builds either way, only the "loading" scrim depends on 3D.
+//
+// In 2D (ui.mode) there is no room to put a coordinate in. The picture is the
+// cast's front faces through build2dElevation, which seats `overrides` with
+// the same swap.js naming, so the derived tx bore path is an element on the
+// AS7726-32X's face - and it is highlighted there instead. The path is picked
+// from the same derived list, never typed; if it is not on the face, the
+// panel says so.
 
-import {stage3d, stageRack, el, title, lead, kv} from '../artifact.js';
+import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
-        enqueueRebuild, byRef, loadSkin} from '../rack.js';
+        enqueueRebuild, byRef, loadSkin, build2dElevation} from '../rack.js';
+import {highlight, clearHighlights} from '../svg2d.js';
 import {lookCloser} from '../spoke-host.js';
 import {occupantNames} from '../../../vendor/swap.js';
 
@@ -54,8 +62,25 @@ const DEFAULT_CAGE = 'port-1';
 
 export default function makeOptics() {
   let scene = null;
+  let svg = null;      // the 2D picture on stageRack, when this entry is 2D
   let selected = DEFAULT_CAGE;
   const skinCache = new Map();   // ref -> {comp, text} | null, memoized
+
+  // The 2D picture, as stage 2 draws it. Put up only while `ui` is live, and
+  // attached before anything is highlighted on it (svg2d's boxIn needs the
+  // root in the document).
+  async function draw2d(ui) {
+    const out = await build2dElevation({stack: CAST.filter(e => e.ru != null),
+                                        heightRU: RACK_U, overrides});
+    if (!ui.live()) return false;
+    stage3d.hidden = true;
+    stageRack.hidden = false;
+    stageRack.replaceChildren(out);
+    const base = out.getAttribute('viewBox').split(/\s+/).map(Number);
+    panZoom(out, () => base);
+    svg = out;
+    return true;
+  }
 
   function cages() {
     return (cagesOf(DEV).front || []).filter(c => c.group === GROUP);
@@ -98,6 +123,10 @@ export default function makeOptics() {
   // whatever stage is current by the time it finishes.
   async function buildPanel(ui, message) {
     const sc = scene;   // this build's own scene, for the identity check below
+    const pic = svg;    // and its own 2D picture, likewise
+    // The last cage's highlight goes whatever this cage holds; it is redrawn
+    // below, after the skin loads, only if this cage has an optic.
+    if (pic) clearHighlights(pic);
     const all = cages();
     const cage = all.find(c => c.id === selected) || all[0];
 
@@ -147,6 +176,10 @@ export default function makeOptics() {
 
       const paths = await occupantPaths(cage, seatedRef, seatedComp);
       if (!ui.live()) return;
+      // A redraw replaced the picture while the skin loaded: the build that
+      // follows that redraw paints the panel and the highlight, not this one.
+      if (svg !== pic) return;
+      if (pic) clearHighlights(pic);
       if (paths === null) {
         kids.push(lead('The skin could not be loaded, so its paths are unknown.'));
       } else if (!paths.length) {
@@ -154,7 +187,20 @@ export default function makeOptics() {
       } else {
         kids.push(lead(`Newly addressable: ${paths.map(p => `<code>${p.path}</code>`).join(', ')}`));
         const tx = paths.find(p => p.suffix === 'tx');
-        if (sc && tx) {
+        const bore = paths.find(p => p.suffix === 'tx/bore');
+        if (ui.mode === '2d') {
+          const want = bore || tx;
+          const g = pic?.querySelector(`[data-device-ref="${DEV}"]`);
+          const target = (bore && g?.querySelector(`[data-path="${CSS.escape(bore.path)}"]`))
+                      || (tx && g?.querySelector(`[data-path="${CSS.escape(tx.path)}"]`));
+          if (!want) {
+            kids.push(lead('The skin carries no tx path to highlight.'));
+          } else if (target && highlight(pic, target)) {
+            kids.push(kv([[want.path, 'TX bore highlighted on the face', true]]));
+          } else {
+            kids.push(lead(`<code>${want.path}</code> is not on the drawn face, so nothing is highlighted.`));
+          }
+        } else if (sc && tx) {
           const anchor = await sc.portAnchor(DEV, tx.path);
           if (!ui.live() || scene !== sc) return;
           if (anchor) {
@@ -174,7 +220,7 @@ export default function makeOptics() {
       kids.push(lead(`${cage.id} is empty.`));
     }
 
-    if (!ui.live() || scene !== sc) return;
+    if (!ui.live() || scene !== sc || svg !== pic) return;
     ui.setPanel(...kids, lookCloser('optics'));
   }
 
@@ -189,14 +235,20 @@ export default function makeOptics() {
     if (!ui.live()) return null;
     overrides[DEV] = overrides[DEV] || {};
     overrides[DEV][cage.id] = ref;
+    const message = ref ? `seated — ${cage.id}: ${shortRef(ref)}` : `unseated — ${cage.id}`;
 
+    if (ui.mode === '2d') {
+      // In this same queue slot, so the pictures land in click order.
+      if (!await draw2d(ui)) return null;
+      return {message};
+    }
     const sc = scene;
     if (sc) {
       sc.setOverrides(DEV, overrides[DEV]);
       await sc.build();
       if (!ui.live() || scene !== sc) return null;
     }
-    return {message: ref ? `seated — ${cage.id}: ${shortRef(ref)}` : `unseated — ${cage.id}`};
+    return {message};
   }
 
   function seat(ui, cage, ref) {
@@ -210,22 +262,35 @@ export default function makeOptics() {
     title: 'Seat optics',
     question: 'What media, speed and lanes?',
     async enter(ui) {
-      stageRack.hidden = true; stage3d.hidden = false;
+      const is3d = ui.mode === '3d';
+      stageRack.hidden = is3d; stage3d.hidden = !is3d;
       ui.scrim('Mounting the cast…');
       await loadMeta();
       if (!ui.live()) return;
 
-      const stack = CAST.map(e => ({...e}));
-      scene = await mount3d({stack, heightRU: RACK_U, overrides});
-      if (!ui.live()) { scene?.dispose(); scene = null; return; }
-      // Only when a scene actually mounted - R11: the panel is built either
-      // way, so a no-WebGL run still lets the visitor seat an optic and read
-      // its attrs back, just without a 3D position.
-      if (scene) ui.unscrim();
+      if (is3d) {
+        const stack = CAST.map(e => ({...e}));
+        // Held locally until this entry is known to be live, as stage 1 does.
+        const sc = await mount3d({stack, heightRU: RACK_U, overrides});
+        if (!ui.live()) { sc?.dispose(); return; }
+        scene = sc;
+        // Only when a scene actually mounted - R11: the panel is built either
+        // way, so a no-WebGL run still lets the visitor seat an optic and read
+        // its attrs back, just without a 3D position.
+        if (scene) ui.unscrim();
+      } else {
+        if (!await draw2d(ui)) return;
+        ui.unscrim();
+      }
 
       await buildPanel(ui);
     },
     exit() {
+      // Both layers, whichever this entry drew: a 2D/3D switch re-enters this
+      // same stage, and the next entry must not find the last one showing.
+      stageRack.hidden = true;
+      stageRack.replaceChildren();
+      svg = null;
       scene?.dispose();
       scene = null;
       stage3d.hidden = true;
