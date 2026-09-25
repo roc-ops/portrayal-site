@@ -135,8 +135,37 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .show-tabs button:hover { color: var(--pt-ink); }
 .show-tabs button[aria-selected="true"] { color: var(--pt-ink); border-bottom-color: var(--pt-brass); }
 
-.show-body { display: grid; grid-template-columns: minmax(0, 1fr) 330px; }
+.show-body { display: grid; grid-template-columns: 108px minmax(0, 1fr) 330px; }
 @media (max-width: 900px) { .show-body { grid-template-columns: 1fr; min-height: 0; } }
+
+/* The stage ladder: a vertical column, so all seven names are legible at once.
+   The buttons are .show-tabs' buttons turned on their side - the selected
+   marker moves from the bottom edge to the right - so this is a layout change
+   rather than a restyle. Below 900px it lies down again as a scrolling row. */
+.stage-rail {
+  display: flex; flex-direction: column;
+  background: var(--pt-surface-2);
+  border-right: 1px solid var(--pt-line);
+  padding: 0.35rem 0;
+}
+.stage-rail button {
+  flex: none; text-align: left;
+  background: none; border: none; border-right: 2px solid transparent;
+  color: var(--pt-ink-muted); cursor: pointer;
+  font: inherit; font-size: 0.82rem; line-height: 1.25;
+  padding: 0.6rem 0.65rem 0.6rem 0.75rem;
+}
+.stage-rail button:hover { color: var(--pt-ink); }
+.stage-rail button.done { color: var(--pt-ink); }
+.stage-rail button.done::after { content: " \2713"; color: var(--pt-brass); }
+.stage-rail button[aria-selected="true"] { color: var(--pt-ink); border-right-color: var(--pt-brass); }
+.stage-rail button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
+@media (max-width: 900px) {
+  .stage-rail { flex-direction: row; overflow-x: auto; padding: 0 0.5rem;
+                border-right: none; border-bottom: 1px solid var(--pt-line); }
+  .stage-rail button { border-right: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .stage-rail button[aria-selected="true"] { border-bottom-color: var(--pt-brass); }
+}
 
 .show-stage {
   position: relative;

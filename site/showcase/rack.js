@@ -1,0 +1,214 @@
+// The cast rack: which devices, where they sit, how tall the rack is, and the
+// two renderers that draw it. Stages 0-4 all mount this rack, so it lives
+// here rather than in any one of them.
+//
+// ONE stack, two renderers. The 2D elevation and the 3D rack are handed the
+// same array, and a module swapped in either is a swap in both, because both
+// resolve it through swap.js against the same compiled faces. That is the
+// argument the rack makes: one source, several views - not several sources.
+
+import {DIST, stage3d, stageRack, loading, svgEl} from './artifact.js';
+// A circular import: stage-rail.js imports the stages, which import this. It is
+// safe because epoch and stale are only ever read inside mount3d, never while
+// the modules are being evaluated.
+import {epoch, stale} from './stage-rail.js';
+
+export const RU = 44.45;
+export const RAIL = 26;
+export const INNER = 450.85;
+// The rack heights a cabinet is actually sold in. The rack is the smallest of
+// these that holds the cast, so it is a real cabinet and not one sized to fit.
+const RACK_SIZES = [12, 16, 22, 24, 42];
+// One free U between devices, as a rack is racked: it is where the fingers go.
+const GAP = 1;
+
+// The cast, bottom-up, heaviest lowest. Each earns its place: the ASR-9006 is
+// modular and carries data-under, the R740xd is the teardown spoke, the
+// AS7726-32X is the optics story, and the FHD-1UFCE is the fibre path.
+//
+// `cfg` is each device's own `default` in its configs.json, not a guess: a
+// wrong cfg is a silent empty slot rather than an error, so loadMeta warns when
+// one is not in the index. `ru` - the device's bottom U, counted from 1 at the
+// bottom of the rack, which is what rack3d.js and the elevation below both read
+// - and the height `u` are filled in by loadMeta from the chassis each index
+// declares, because a height written here is one that can drift from the model.
+export const CAST = [
+  {ref: 'asr-9006',   cfg: 'base',             label: 'ASR-9006'},
+  {ref: 'r740xd',     cfg: 'sff24-rc5-1b2a3a', label: 'R740xd'},
+  {ref: 'as7726-32x', cfg: 'ac-f2b',           label: 'AS7726-32X'},
+  {ref: 'fhd-1ufce',  cfg: 'base',             label: 'FHD-1UFCE'},
+];
+
+// The rack's height in U, settled by loadMeta. Stage 0 draws exactly this, so
+// the rails stage 1 mounts into are the rails stage 0 showed.
+export let RACK_U = null;
+
+// The cast's choices: {ref: {bayOrCagePath: componentRef}}. Module state on
+// purpose - a card seated in one stage is still seated in the next, which is
+// what makes the ladder cumulative.
+export const overrides = {};
+
+let meta = null;        // ref -> the device's configs.json, from the compiled index
+let components = null;  // the component index, for resolving a bay occupant
+
+// Through jdist, not fetch: the 3D viewer asks for these same two indexes, and
+// its memo is what stopped components.json coming down repeatedly. A bare
+// fetch here would sit outside that memo and put the duplicate straight back.
+//
+// jdist throws where the old code inspected r.ok, so the tolerance is explicit
+// now: a device whose configs.json is missing drops out of the rack rather
+// than taking the stage down with it.
+export async function loadMeta() {
+  if (meta) return;
+  const m = {};
+  const {jdist} = await import('../../vendor/dist.js');
+  for (const e of CAST) {
+    try { m[e.ref] = await jdist(`${DIST}${e.ref}.configs.json`); }
+    catch (err) { console.warn('[portrayal] no config index for', e.ref, err); }
+  }
+  try { components = (await jdist(`${DIST}components.json`)).components; }
+  catch (err) { console.warn('[portrayal] no component index', err); components = []; }
+  meta = m;
+
+  let next = 1;
+  for (const e of CAST) {
+    const idx = meta[e.ref];
+    if (!idx) { e.ru = e.u = null; continue; }
+    if (!(idx.configs || []).some(c => c.name === e.cfg)) {
+      console.warn('[portrayal] cast config not in the index', e.ref, e.cfg);
+    }
+    e.u = unitsOf(e.ref);
+    e.ru = next;
+    next += e.u + GAP;
+  }
+  const top = Math.max(0, ...CAST.filter(e => e.ru).map(e => e.ru + e.u - 1));
+  RACK_U = RACK_SIZES.find(n => n >= top) ?? top;
+}
+
+// The cast as mounted: only the devices whose index loaded, so a missing one
+// is a gap in the rack rather than a device drawn at an unknown height.
+export const placed = () => CAST.filter(e => e.ru != null);
+
+export const chassisOf = ref => meta?.[ref]?.chassis || {};
+// The index's own shape, {view: [{id, accepts, default, group, ...}]}.
+export const baysOf = ref => meta?.[ref]?.bays || {};
+export const cagesOf = ref => meta?.[ref]?.cages || {};
+// A device's height in U. chassis.ru when the index states it; otherwise read
+// off the height in millimeters, which is how the R740xd declares itself.
+export function unitsOf(ref) {
+  const c = chassisOf(ref);
+  return c.ru ?? Math.max(1, Math.round((c.h || RU) / RU));
+}
+
+// Resolve "cisco/a9k-mpa-4x10ge@1" to its compiled standalone skin.
+const byRef = ref => (components || []).find(
+  c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
+async function loadSkin(ref) {
+  const c = byRef(ref);
+  if (!c) return null;
+  const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
+  const url = `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`;
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  return {comp: c, text: await r.text()};
+}
+export const shortRef = ref => (ref || '(empty)').split('/').pop().replace(/@\d+$/, '');
+
+// ── 2D elevation ─────────────────────────────────────────────────────────
+// Rails and RU marks for heightRU units, then each device's compiled front face
+// at its own bottom U. An empty stack is an empty rack - stage 0 draws exactly
+// that.
+export async function build2dElevation({stack, heightRU, overrides: ov = overrides}) {
+  const totalH = heightRU * RU;
+  const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg',
+    viewBox: `${-RAIL - 6} -18 ${INNER + RAIL * 2 + 12} ${totalH + 30}`});
+
+  for (const x of [-RAIL, INNER]) {
+    out.append(svgEl('rect', {x, y: 0, width: RAIL, height: totalH, 'data-rail': '',
+      fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
+  }
+  for (let u = 0; u < heightRU; u++) {
+    const yTop = totalH - (u + 1) * RU;
+    for (const x of [-RAIL, INNER]) {
+      out.append(svgEl('line', {x1: x, y1: yTop, x2: x + RAIL, y2: yTop,
+        stroke: 'var(--pt-line)', 'stroke-width': 0.8}));
+      for (const f of [0.22, 0.5, 0.78]) {
+        out.append(svgEl('rect', {x: x + RAIL * 0.72, y: yTop + RU * f - 2.6,
+          width: 4.2, height: 5.2, rx: 0.8, fill: 'var(--pt-ground)',
+          stroke: 'var(--pt-line)', 'stroke-width': 0.5}));
+      }
+      const t = svgEl('text', {x: x + RAIL * 0.34, y: yTop + RU / 2 + 4,
+        'text-anchor': 'middle', 'font-family': 'IBM Plex Mono, monospace',
+        'font-size': 11, 'font-weight': 500, fill: 'var(--pt-ink-muted)'});
+      t.textContent = String(u + 1);
+      out.append(t);
+    }
+  }
+
+  let styled = false;
+  for (const e of stack) {
+    const url = `${DIST}${e.ref}.${e.cfg}.front.svg`;
+    const text = await fetch(url).then(r => r.ok ? r.text() : null);
+    if (!text) continue;
+    const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    const root = doc.documentElement;
+    const vb = (root.getAttribute('viewBox') || '').split(/\s+/).map(Number);
+    const w = parseFloat(root.getAttribute('width')) || vb[2];
+    const h = parseFloat(root.getAttribute('height')) || vb[3];
+    const ruH = e.u ?? Math.max(1, Math.round(h / RU));
+    const y = totalH - (e.ru - 1 + ruH) * RU + (ruH * RU - h) / 2;
+
+    const g = svgEl('g', {transform: `translate(${(INNER - w) / 2} ${y})`,
+                          'data-device-name': e.label, 'data-device-ref': e.ref});
+    // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
+    // no url(#...) and no href="#...", so there is nothing to collide - and
+    // renaming them would break swap.js, which finds a seated module by the
+    // canonical id the compiler gave it.
+    for (const kid of [...root.childNodes]) {
+      if (kid.nodeName === 'style') { if (styled) continue; styled = true; }
+      g.append(document.importNode(kid, true));
+    }
+    out.append(g);
+    const mine = ov?.[e.ref];
+    if (mine && Object.keys(mine).length) {
+      const {applyOverrides} = await import('../../vendor/swap.js');
+      await applyOverrides(g, baysOf(e.ref).front || [], mine, loadSkin);
+    }
+  }
+  return out;
+}
+
+// ── 3D rack ──────────────────────────────────────────────────────────────
+// Returns the built scene, or null when there is none: WebGL unavailable (the
+// reason is already on the loading scrim), or the stage moved on while it was
+// building. A caller builds its side panel either way - nothing in a panel may
+// depend on the 3D having mounted.
+export async function mount3d({stack, heightRU, overrides: ov = overrides}) {
+  stageRack.hidden = true; stage3d.hidden = false;
+  loading.hidden = false; loading.textContent = 'Building the rack in 3D…';
+  const mine = epoch;
+  // WITHOUT THIS THE SCRIM NEVER COMES DOWN. three.js throws when it cannot
+  // get a context, the exception escaped this handler, and the tab sat on
+  // "Building the rack in 3D…" forever - which reads as a slow build rather
+  // than a browser that has graphics acceleration switched off.
+  const {guard3d} = await import('../webgl.js');
+  const built = await guard3d(async () => {
+    const {createRackScene} = await import('../rack3d.js');
+    if (stale(mine)) return null;
+    const scStack = stack.map(e => ({...e, chassis: chassisOf(e.ref), bays: baysOf(e.ref),
+      cages: cagesOf(e.ref), componentIndex: components,
+      overrides: ov?.[e.ref] ? {...ov[e.ref]} : null}));
+    const sc = createRackScene(stage3d, {dist: DIST, stack: scStack, heightRU,
+                                         background: 0x0E1013});
+    await sc.build();
+    return sc;
+  }, msg => {
+    if (stale(mine)) return;
+    loading.hidden = false;
+    loading.textContent = msg;
+  });
+  if (!built) return null;
+  if (stale(mine)) { built.dispose(); return null; }
+  loading.hidden = true;
+  return built;
+}

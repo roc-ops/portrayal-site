@@ -232,6 +232,26 @@ for s in ("inspect", "callouts", "state", "select"):
               f"spoke {s}.js default-exports a factory",
               "a spoke must take {dev, cfg} so it can serve more than one device")
 
+# ── the stage rail ───────────────────────────────────────────────────────
+# THE RAIL'S STAGE LIST IS NAMED, NOT GLOBBED - the same rule PAGES follows in
+# check-browser.py, and for the same reason: a stage added should be a line in
+# a diff, and a stage that goes away should fail this check rather than quietly
+# stop being reachable. So the list and the directory must agree exactly.
+rail = (HERE / "site" / "showcase" / "stage-rail.js")
+check(rail.is_file(), "site/showcase/stage-rail.js exists")
+if rail.is_file():
+    r = rail.read_text()
+    m = re.search(r"export const STAGES\s*=\s*\[(.*?)\]", r, re.S)
+    check(bool(m), "stage-rail.js declares STAGES", "the rail needs an explicit order")
+    if m:
+        listed = re.findall(r"'([a-z0-9-]+)'", m.group(1))
+        on_disk = sorted(p.stem.split("-", 1)[1]
+                         for p in (HERE / "site" / "showcase" / "stages").glob("*.js"))
+        check(sorted(listed) == on_disk,
+              "the rail's STAGES match the stage modules on disk",
+              f"listed {sorted(listed)} but found {on_disk}")
+        check(len(listed) == 7, "there are seven stages", f"found {len(listed)}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
