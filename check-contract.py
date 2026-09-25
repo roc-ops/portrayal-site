@@ -261,6 +261,19 @@ offenders = [p.name for p in sorted((HERE / "site" / "showcase" / "stages").glob
 check(not offenders, "no stage calls createRackScene directly",
       f"{offenders} - mount through rack.js's mount3d so guard3d still wraps it")
 
+# STAGE 2's WHOLE CLAIM IS THAT THE BAY KNOWS WHAT IT ACCEPTS - so the
+# accepted list has to come from the compiled index, not from a list this page
+# invents. A hardcoded accepts array here would be the page fabricating the
+# answer it is meant to demonstrate.
+pop = (HERE / "site" / "showcase" / "stages" / "02-populate.js")
+if pop.is_file():
+    s = pop.read_text()
+    check("baysOf" in s, "stage 2 reads the bays from the index",
+          "the accepted list must come from the manifest, not from this page")
+    check(not re.search(r"accepts\s*[:=]\s*\[", s),
+          "stage 2 does not hardcode an accepted list",
+          "found an inline accepts array - that is the page fabricating data")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
