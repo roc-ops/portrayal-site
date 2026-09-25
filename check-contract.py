@@ -794,6 +794,96 @@ hot = sorted(str(p.relative_to(HERE)) for p in HERE.glob("*.html")
              if re.search(r"""(src|href)=["']https?://(www\.)?rocnetsupply\.com/hubfs""", p.read_text()))
 check(not hot, "no page hotlinks RocNet's logo", f"hotlinked from {hot}")
 
+# ── the patching plan (stages 4-5) ───────────────────────────────────────
+# An INVENTED plan, labelled as such, whose every end is proven here against
+# the compiled faces - that is what keeps "invented" from becoming "made up".
+PLAN = HERE / "site" / "showcase" / "patching.json"
+plan = None
+try:
+    plan = json.loads(PLAN.read_text())
+except Exception as e:
+    check(False, "patching.json parses", str(e))
+comps = {f"{c['ns']}/{c['name']}@{c['major'][1:]}": c
+         for c in json.loads((DIST / "components.json").read_text())["components"]}
+
+def face_text(dev, view):
+    idx = json.loads((DIST / f"{dev}.configs.json").read_text())
+    cfg = dict(cast).get(dev) or idx.get("default")
+    for name in (f"{dev}.{cfg}.{view}.svg", f"{dev}.{view}.svg"):
+        if (DIST / name).is_file():
+            return (DIST / name).read_text()
+    return ""
+
+def skin_text(ref):
+    ns, rest = ref.split("/")
+    name, major = rest.split("@")
+    hits = sorted((DIST / "components").glob(f"{ns}--{name}--v{major}--*.svg"))
+    return hits[0].read_text() if hits else ""
+
+def port_on(text, path):
+    """A port element with that data-path, carrying a connection point."""
+    m = re.search(r'<g [^>]*data-path="%s"[^>]*data-class="port"[^>]*>' % re.escape(path), text)
+    if not m:
+        return False
+    tail = text[m.end():m.end() + 4000]
+    return "data-cp=" in tail
+
+def resolves(dev, path, view, seats):
+    if "/module/" in path:                       # below a bay: the seated card's skin,
+        bay, rest = path.split("/module/", 1)     # if the plan seats one there -
+        ref = seats.get(dev, {}).get(bay)          # otherwise it's already part of the
+        if ref:                                     # cast config's own compiled face
+            return port_on(skin_text(ref), f"{comps[ref]['name']}/{rest}") or port_on(skin_text(ref), rest)
+        return port_on(face_text(dev, view), path)
+    return port_on(face_text(dev, view), path)
+
+if plan:
+    seats = plan.get("seats", {})
+    cast_refs = [r for r, _ in cast]
+    check(all(d["id"] in cast_refs and d["ref"] == d["id"] for d in plan.get("devices", [])),
+          "every plan device is a cast device", str(plan.get("devices")))
+    links = plan.get("links", [])
+    check(len(links) == 14, "the plan has its fourteen cables", f"{len(links)}")
+    bad_ends = [e for l in links for e in (l["from"], l["to"])
+                if not resolves(e[0], e[1], e[2] if len(e) > 2 else "front", seats)]
+    check(not bad_ends, "every plan end is a drawn port with a connection point", str(bad_ends))
+    check(all(l.get("media") in ("os2", "copper") for l in links),
+          "every link's media is os2 or copper", str({l.get("media") for l in links}))
+    check(all(l.get("purpose") in ("uplink", "core", "server", "management") for l in links),
+          "every link names its purpose", str({l.get("purpose") for l in links}))
+    # A fiber end is a connector the plan seats: an optic with its two plugs,
+    # or a duplex plug in an adapter. Every seat must be one its cage accepts.
+    def cage_accepts(dev, key):
+        idx = json.loads((DIST / f"{dev}.configs.json").read_text())
+        dev_cages = {c["id"]: c for v in (idx.get("cages") or {}).values() for c in v}
+        bays = {b["id"]: b for v in (idx.get("bays") or {}).values() for b in v}
+        if key in dev_cages: return dev_cages[key].get("accepts") or []
+        if key in bays: return bays[key].get("accepts") or []
+        if "-occupant/" in key:                  # a plug in an optic's cage
+            host, bore = key.rsplit("-occupant/", 1)
+            opt = seats.get(dev, {}).get(host)
+            return next((c.get("accepts") or [] for c in comps.get(opt, {}).get("cages") or []
+                         if c.get("id") == bore), [])
+        if "/module/" in key:                    # a card's or cassette's own cage
+            bay, rest = key.split("/module/", 1)
+            card = seats.get(dev, {}).get(bay)
+            if not card:                         # the cast config's own module (the FHD's cassettes)
+                cfg = next(c for c in idx["configs"] if c["name"] == dict(cast)[dev])
+                card = (cfg.get("bays") or {}).get(bay)
+            return next((c.get("accepts") or [] for c in comps.get(card, {}).get("cages") or []
+                         if c.get("id") == rest), [])
+        return []
+    refused = [(d, k, r) for d, ss in seats.items() for k, r in ss.items() if r not in cage_accepts(d, k)]
+    check(not refused, "every plan seat is one its cage or bay accepts", str(refused))
+    fiber_unseated = [e for l in links if l["media"] == "os2" for e in (l["from"], l["to"])
+                      if e[1] not in seats.get(e[0], {})]
+    check(not fiber_unseated, "every fiber end seats a connector", str(fiber_unseated))
+else:
+    for what in ("every plan device is a cast device", "the plan has its fourteen cables",
+                 "every plan end is a drawn port with a connection point",
+                 "every plan seat is one its cage or bay accepts", "every fiber end seats a connector"):
+        check(False, what, "patching.json is missing or unreadable")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

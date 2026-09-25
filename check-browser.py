@@ -815,6 +815,34 @@ def check_stages(page, base):
                 bad.append(f"3D click during load: the page was not left in 2D (stored {stored!r})")
         except Exception as e:
             bad.append(f"3D click during load: could not restore 2D ({str(e).splitlines()[0]})")
+
+    # THE PLAN'S SEATS LAND (patching Task 2): applied to a fresh overrides map,
+    # every fiber end shows its connectors on the 2D elevation - 2 per optic
+    # end, 2 per duplex adapter end - read through relief.js's cablePoints, the
+    # kit's own reading, scoped to each device's group.
+    got = page.evaluate("""async () => {
+        const R = await import('/site/showcase/rack.js');
+        const P = await import('/site/showcase/plan.js');
+        const {cablePoints} = await import('/vendor/relief.js');
+        await R.loadMeta();
+        const plan = await P.loadPlan();
+        const ov = {};
+        const {made, kept} = P.applyPlanSeats(plan, ov);
+        const svg = await R.build2dElevation({stack: R.CAST.filter(e => e.ru != null),
+                                              heightRU: R.RACK_U, overrides: ov});
+        svg.style.cssText = 'position:fixed;left:0;top:0;width:10px;height:10px;opacity:0';
+        document.body.append(svg);
+        const short = [];
+        for (const l of plan.links.filter(P.isFiber)) for (const [dev, path] of [l.from, l.to]) {
+            const g = svg.querySelector(`[data-device-ref="${dev}"]`);
+            const n = g ? cablePoints(g).filter(p => p.path.startsWith(path + '-occupant/')).length : 0;
+            if (n !== 2) short.push(`${dev}:${path}=${n}`);
+        }
+        svg.remove();
+        return {made: made.length, kept: kept.length, short};
+    }""")
+    if got["kept"] or got["short"] or not got["made"]:
+        bad.append(f"plan seats: made {got['made']}, kept {got['kept']}, ends without two connectors {got['short']}")
     return bad
 
 

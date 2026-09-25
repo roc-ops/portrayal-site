@@ -1,0 +1,81 @@
+{
+  "name": "showcase-rack",
+  "title": "Example patching plan for the showcase rack",
+  "description": "Invented for the showcase, not a real lab: fourteen cables through the FHD-1UFCE patch panel and the AS4630-54TE top-of-rack switch. Every end is proven against the compiled faces by check-contract.py.",
+  "devices": [
+    {"id": "asr-9006", "ref": "asr-9006"},
+    {"id": "r740xd", "ref": "r740xd"},
+    {"id": "eps201", "ref": "eps201"},
+    {"id": "as7726-32x", "ref": "as7726-32x"},
+    {"id": "fhd-1ufce", "ref": "fhd-1ufce"}
+  ],
+  "seats": {
+    "asr-9006": {
+      "slot-0": "cisco/a9k-rsp880-se@1",
+      "slot-1": "cisco/a9k-rsp880-se@1",
+      "slot-2": "cisco/a9k-16x100ge-tr@1",
+      "slot-2/module/p0": "generic/qsfp-lc@1",
+      "slot-2/module/p0-occupant/tx": "generic/lc-plug@2",
+      "slot-2/module/p0-occupant/rx": "generic/lc-plug@2",
+      "slot-2/module/p1": "generic/qsfp-lc@1",
+      "slot-2/module/p1-occupant/tx": "generic/lc-plug@2",
+      "slot-2/module/p1-occupant/rx": "generic/lc-plug@2",
+      "slot-2/module/p2": "generic/qsfp-lc@1",
+      "slot-2/module/p2-occupant/tx": "generic/lc-plug@2",
+      "slot-2/module/p2-occupant/rx": "generic/lc-plug@2",
+      "slot-2/module/p3": "generic/qsfp-lc@1",
+      "slot-2/module/p3-occupant/tx": "generic/lc-plug@2",
+      "slot-2/module/p3-occupant/rx": "generic/lc-plug@2"
+    },
+    "eps201": {
+      "port-53": "generic/qsfp-lc@1",
+      "port-53-occupant/tx": "generic/lc-plug@2",
+      "port-53-occupant/rx": "generic/lc-plug@2",
+      "port-54": "generic/qsfp-lc@1",
+      "port-54-occupant/tx": "generic/lc-plug@2",
+      "port-54-occupant/rx": "generic/lc-plug@2"
+    },
+    "as7726-32x": {
+      "port-1": "generic/qsfp-lc@1",
+      "port-1-occupant/tx": "generic/lc-plug@2",
+      "port-1-occupant/rx": "generic/lc-plug@2",
+      "port-2": "generic/qsfp-lc@1",
+      "port-2-occupant/tx": "generic/lc-plug@2",
+      "port-2-occupant/rx": "generic/lc-plug@2",
+      "port-29": "generic/qsfp-lc@1",
+      "port-29-occupant/tx": "generic/lc-plug@2",
+      "port-29-occupant/rx": "generic/lc-plug@2",
+      "port-30": "generic/qsfp-lc@1",
+      "port-30-occupant/tx": "generic/lc-plug@2",
+      "port-30-occupant/rx": "generic/lc-plug@2",
+      "port-31": "generic/qsfp-lc@1",
+      "port-31-occupant/tx": "generic/lc-plug@2",
+      "port-31-occupant/rx": "generic/lc-plug@2",
+      "port-32": "generic/qsfp-lc@1",
+      "port-32-occupant/tx": "generic/lc-plug@2",
+      "port-32-occupant/rx": "generic/lc-plug@2"
+    },
+    "fhd-1ufce": {
+      "bay-1/module/lc1": "generic/lc-duplex-plug@2",
+      "bay-1/module/lc2": "generic/lc-duplex-plug@2",
+      "bay-2/module/lc1": "generic/lc-duplex-plug@2",
+      "bay-2/module/lc2": "generic/lc-duplex-plug@2"
+    }
+  },
+  "links": [
+    {"media": "os2", "purpose": "uplink", "from": ["as7726-32x", "port-1"], "to": ["fhd-1ufce", "bay-1/module/lc1"]},
+    {"media": "os2", "purpose": "uplink", "from": ["as7726-32x", "port-2"], "to": ["fhd-1ufce", "bay-1/module/lc2"]},
+    {"media": "os2", "purpose": "uplink", "from": ["asr-9006", "slot-2/module/p0"], "to": ["fhd-1ufce", "bay-2/module/lc1"]},
+    {"media": "os2", "purpose": "uplink", "from": ["asr-9006", "slot-2/module/p1"], "to": ["fhd-1ufce", "bay-2/module/lc2"]},
+    {"media": "os2", "purpose": "core", "from": ["as7726-32x", "port-31"], "to": ["asr-9006", "slot-2/module/p2"]},
+    {"media": "os2", "purpose": "core", "from": ["as7726-32x", "port-32"], "to": ["asr-9006", "slot-2/module/p3"]},
+    {"media": "os2", "purpose": "core", "from": ["eps201", "port-53"], "to": ["as7726-32x", "port-29"]},
+    {"media": "os2", "purpose": "core", "from": ["eps201", "port-54"], "to": ["as7726-32x", "port-30"]},
+    {"media": "copper", "purpose": "server", "from": ["r740xd", "ndc/module/port-1", "rear"], "to": ["eps201", "port-1"]},
+    {"media": "copper", "purpose": "server", "from": ["r740xd", "ndc/module/port-2", "rear"], "to": ["eps201", "port-2"]},
+    {"media": "copper", "purpose": "management", "from": ["as7726-32x", "mgmt-eth"], "to": ["eps201", "port-45"]},
+    {"media": "copper", "purpose": "management", "from": ["asr-9006", "slot-0/module/mgt-lan-0"], "to": ["eps201", "port-46"]},
+    {"media": "copper", "purpose": "management", "from": ["asr-9006", "slot-1/module/mgt-lan-0"], "to": ["eps201", "port-47"]},
+    {"media": "copper", "purpose": "management", "from": ["r740xd", "idrac9", "rear"], "to": ["eps201", "port-48"]}
+  ]
+}
