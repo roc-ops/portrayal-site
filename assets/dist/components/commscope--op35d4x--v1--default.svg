@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.76mm" height="130.2mm" viewBox="0 0 25.76 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="op35d4x" data-path="op35d4x" data-class="filter" data-behaviour="fills" data-ref="commscope/op35d4x@1:1.0.0" data-body-depth="165.1" data-model="OP35D4X" data-role="passive" transform="translate(0,0)">
+    <title>op35d4x</title>
+    <rect id="op35d4x--body" x="0" y="0" width="25.76" height="130.2" rx="0.8" fill="#1f2124" stroke="#0c0d0e" stroke-width="0.3" />
+    <g id="op35d4x--screw-top" data-path="op35d4x/screw-top" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.4" fill="#0d0e0f" />
+      <circle cx="12.88" cy="5.0" r="2.8" fill="#26282b" />
+    </g>
+    <g id="op35d4x--adapter-tp" data-path="op35d4x/adapter-tp" data-class="port">
+      <rect x="0.0" y="18.80" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="19.70" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--adapter-inp" data-path="op35d4x/adapter-inp" data-class="port">
+      <rect x="0.0" y="40.10" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="41.00" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--adapter-out" data-path="op35d4x/adapter-out" data-class="port">
+      <rect x="0.0" y="51.60" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="52.50" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--adapter-ch-1" data-path="op35d4x/adapter-ch-1" data-class="port">
+      <rect x="0.0" y="71.90" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="72.80" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--adapter-ch-2" data-path="op35d4x/adapter-ch-2" data-class="port">
+      <rect x="0.0" y="83.20" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="84.10" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--adapter-ch-3" data-path="op35d4x/adapter-ch-3" data-class="port">
+      <rect x="0.0" y="94.50" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="95.40" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--adapter-ch-4" data-path="op35d4x/adapter-ch-4" data-class="port">
+      <rect x="0.0" y="105.80" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="106.70" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35d4x--screw-bottom" data-path="op35d4x/screw-bottom" data-class="fastener">
+      <circle cx="12.88" cy="125.2" r="4.4" fill="#0d0e0f" />
+      <circle cx="12.88" cy="125.2" r="2.8" fill="#26282b" />
+    </g>
+    <g id="op35d4x--silkscreen" fill="#e6e8ea" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="12.4" y="13.6" font-size="2.3">DWDM DEMUX</text>
+      <text x="12.4" y="16.9" font-size="2.1" data-from="model">OP35D4X</text>
+      <text x="22.7" y="23.5" font-size="1.5">TP</text>
+      <text x="22.7" y="25.5" font-size="1.5">-20dB</text>
+      <text x="22.7" y="45.8" font-size="1.5">INP</text>
+      <text x="22.7" y="57.3" font-size="1.5">OUT</text>
+      <text x="22.7" y="77.6" font-size="1.5" data-from="ch1" />
+      <text x="22.7" y="88.9" font-size="1.5" data-from="ch2" />
+      <text x="22.7" y="100.2" font-size="1.5" data-from="ch3" />
+      <text x="22.7" y="111.5" font-size="1.5" data-from="ch4" />
+    </g>
+    <g id="op35d4x--tp" data-path="op35d4x/tp" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,19.5) rotate(90 4.195 4.5)">
+      <title>op35d4x--tp</title>
+      <path id="op35d4x--tp--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/tp/bore" data-class="cutout" />
+      <rect id="op35d4x--tp--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--tp--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--tp--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--tp--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--tp--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35d4x--inp" data-path="op35d4x/inp" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,40.8) rotate(90 4.195 4.5)">
+      <title>op35d4x--inp</title>
+      <path id="op35d4x--inp--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/inp/bore" data-class="cutout" />
+      <rect id="op35d4x--inp--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--inp--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--inp--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--inp--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--inp--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35d4x--out" data-path="op35d4x/out" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,52.3) rotate(90 4.195 4.5)">
+      <title>op35d4x--out</title>
+      <path id="op35d4x--out--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/out/bore" data-class="cutout" />
+      <rect id="op35d4x--out--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--out--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--out--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--out--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--out--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35d4x--ch-1" data-path="op35d4x/ch-1" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,72.6) rotate(90 4.195 4.5)">
+      <title>op35d4x--ch-1</title>
+      <path id="op35d4x--ch-1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/ch-1/bore" data-class="cutout" />
+      <rect id="op35d4x--ch-1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--ch-1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--ch-1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--ch-1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--ch-1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35d4x--ch-2" data-path="op35d4x/ch-2" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,83.9) rotate(90 4.195 4.5)">
+      <title>op35d4x--ch-2</title>
+      <path id="op35d4x--ch-2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/ch-2/bore" data-class="cutout" />
+      <rect id="op35d4x--ch-2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--ch-2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--ch-2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--ch-2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--ch-2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35d4x--ch-3" data-path="op35d4x/ch-3" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,95.2) rotate(90 4.195 4.5)">
+      <title>op35d4x--ch-3</title>
+      <path id="op35d4x--ch-3--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/ch-3/bore" data-class="cutout" />
+      <rect id="op35d4x--ch-3--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--ch-3--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--ch-3--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--ch-3--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--ch-3--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35d4x--ch-4" data-path="op35d4x/ch-4" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,106.5) rotate(90 4.195 4.5)">
+      <title>op35d4x--ch-4</title>
+      <path id="op35d4x--ch-4--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35d4x/ch-4/bore" data-class="cutout" />
+      <rect id="op35d4x--ch-4--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35d4x--ch-4--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35d4x--ch-4--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35d4x--ch-4--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35d4x--ch-4--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.88 65.1" data-cp-dir="front" />
+  </g>
+</svg>

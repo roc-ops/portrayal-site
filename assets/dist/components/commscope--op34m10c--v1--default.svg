@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.76mm" height="130.2mm" viewBox="0 0 25.76 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="op34m10c" data-path="op34m10c" data-class="filter" data-behaviour="fills" data-ref="commscope/op34m10c@1:1.0.0" data-body-depth="165.1" data-model="OP34M10C" data-role="passive" transform="translate(0,0)">
+    <title>op34m10c</title>
+    <rect id="op34m10c--body" x="0" y="0" width="25.76" height="130.2" rx="0.8" fill="#1f2124" stroke="#0c0d0e" stroke-width="0.3" />
+    <g id="op34m10c--screw-top" data-path="op34m10c/screw-top" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.4" fill="#0d0e0f" />
+      <circle cx="12.88" cy="5.0" r="2.8" fill="#26282b" />
+    </g>
+    <g id="op34m10c--screw-bottom" data-path="op34m10c/screw-bottom" data-class="fastener">
+      <circle cx="12.88" cy="125.2" r="4.4" fill="#0d0e0f" />
+      <circle cx="12.88" cy="125.2" r="2.8" fill="#26282b" />
+    </g>
+    <g id="op34m10c--silkscreen" fill="#e6e8ea" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="12.4" y="13.6" font-size="2.3">CWDM MUX</text>
+      <text x="12.4" y="16.9" font-size="2.1" data-from="model">OP34M10C</text>
+      <text x="8.6" y="17.9" font-size="1.4">INP</text>
+      <text x="15.6" y="17.9" font-size="1.4">COM</text>
+      <text x="8.6" y="39.9" font-size="1.3">TP</text>
+      <text x="8.6" y="41.5" font-size="1.3">-20dB</text>
+      <text x="15.6" y="40.8" font-size="1.4">1310</text>
+      <text x="8.6" y="46.5" font-size="1.4" data-from="ch1" />
+      <text x="15.6" y="46.5" font-size="1.4" data-from="ch2" />
+      <text x="8.6" y="65.6" font-size="1.4" data-from="ch3" />
+      <text x="15.6" y="65.6" font-size="1.4" data-from="ch4" />
+      <text x="8.6" y="88.3" font-size="1.4" data-from="ch5" />
+      <text x="15.6" y="88.3" font-size="1.4" data-from="ch6" />
+      <text x="8.6" y="93.8" font-size="1.4" data-from="ch7" />
+      <text x="15.6" y="93.8" font-size="1.4" data-from="ch8" />
+      <text x="8.6" y="116.9" font-size="1.4" data-from="ch9" />
+      <text x="15.6" y="116.9" font-size="1.4" data-from="ch10" />
+    </g>
+    <g id="op34m10c--inp-com" data-path="op34m10c/inp-com" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,16.93) rotate(90 4.64 6.875)">
+      <title>op34m10c--inp-com</title>
+      <path id="op34m10c--inp-com--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--inp-com--1" data-path="op34m10c/inp-com/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--inp-com--1</title>
+        <path id="op34m10c--inp-com--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/inp-com/1/bore" data-class="cutout" />
+        <rect id="op34m10c--inp-com--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--inp-com--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--inp-com--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--inp-com--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--inp-com--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--inp-com--2" data-path="op34m10c/inp-com/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--inp-com--2</title>
+        <path id="op34m10c--inp-com--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/inp-com/2/bore" data-class="cutout" />
+        <rect id="op34m10c--inp-com--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--inp-com--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--inp-com--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--inp-com--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--inp-com--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--inp-com--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--tp-1310" data-path="op34m10c/tp-1310" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,26.92) rotate(90 4.64 6.875)">
+      <title>op34m10c--tp-1310</title>
+      <path id="op34m10c--tp-1310--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--tp-1310--1" data-path="op34m10c/tp-1310/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--tp-1310--1</title>
+        <path id="op34m10c--tp-1310--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/tp-1310/1/bore" data-class="cutout" />
+        <rect id="op34m10c--tp-1310--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--tp-1310--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--tp-1310--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--tp-1310--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--tp-1310--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--tp-1310--2" data-path="op34m10c/tp-1310/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--tp-1310--2</title>
+        <path id="op34m10c--tp-1310--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/tp-1310/2/bore" data-class="cutout" />
+        <rect id="op34m10c--tp-1310--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--tp-1310--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--tp-1310--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--tp-1310--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--tp-1310--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--tp-1310--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-1-2" data-path="op34m10c/ch-1-2" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,45.52) rotate(90 4.64 6.875)">
+      <title>op34m10c--ch-1-2</title>
+      <path id="op34m10c--ch-1-2--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--ch-1-2--1" data-path="op34m10c/ch-1-2/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-1-2--1</title>
+        <path id="op34m10c--ch-1-2--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-1-2/1/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-1-2--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-1-2--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-1-2--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-1-2--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-1-2--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--ch-1-2--2" data-path="op34m10c/ch-1-2/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-1-2--2</title>
+        <path id="op34m10c--ch-1-2--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-1-2/2/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-1-2--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-1-2--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-1-2--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-1-2--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-1-2--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--ch-1-2--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-3-4" data-path="op34m10c/ch-3-4" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,64.62) rotate(90 4.64 6.875)">
+      <title>op34m10c--ch-3-4</title>
+      <path id="op34m10c--ch-3-4--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--ch-3-4--1" data-path="op34m10c/ch-3-4/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-3-4--1</title>
+        <path id="op34m10c--ch-3-4--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-3-4/1/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-3-4--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-3-4--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-3-4--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-3-4--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-3-4--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--ch-3-4--2" data-path="op34m10c/ch-3-4/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-3-4--2</title>
+        <path id="op34m10c--ch-3-4--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-3-4/2/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-3-4--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-3-4--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-3-4--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-3-4--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-3-4--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--ch-3-4--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-5-6" data-path="op34m10c/ch-5-6" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,74.42) rotate(90 4.64 6.875)">
+      <title>op34m10c--ch-5-6</title>
+      <path id="op34m10c--ch-5-6--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--ch-5-6--1" data-path="op34m10c/ch-5-6/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-5-6--1</title>
+        <path id="op34m10c--ch-5-6--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-5-6/1/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-5-6--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-5-6--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-5-6--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-5-6--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-5-6--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--ch-5-6--2" data-path="op34m10c/ch-5-6/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-5-6--2</title>
+        <path id="op34m10c--ch-5-6--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-5-6/2/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-5-6--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-5-6--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-5-6--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-5-6--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-5-6--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--ch-5-6--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-7-8" data-path="op34m10c/ch-7-8" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,92.83) rotate(90 4.64 6.875)">
+      <title>op34m10c--ch-7-8</title>
+      <path id="op34m10c--ch-7-8--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--ch-7-8--1" data-path="op34m10c/ch-7-8/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-7-8--1</title>
+        <path id="op34m10c--ch-7-8--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-7-8/1/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-7-8--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-7-8--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-7-8--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-7-8--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-7-8--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--ch-7-8--2" data-path="op34m10c/ch-7-8/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-7-8--2</title>
+        <path id="op34m10c--ch-7-8--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-7-8/2/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-7-8--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-7-8--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-7-8--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-7-8--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-7-8--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--ch-7-8--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-9-10" data-path="op34m10c/ch-9-10" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="LC/APC" data-housing-finish="#2fa84f" data-media="fiber" transform="translate(7.36,103.03) rotate(90 4.64 6.875)">
+      <title>op34m10c--ch-9-10</title>
+      <path id="op34m10c--ch-9-10--bezel" fill-rule="evenodd" fill="#2fa84f" stroke="#1d6630" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+      <g id="op34m10c--ch-9-10--1" data-path="op34m10c/ch-9-10/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-9-10--1</title>
+        <path id="op34m10c--ch-9-10--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-9-10/1/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-9-10--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-9-10--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-9-10--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-9-10--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-9-10--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g id="op34m10c--ch-9-10--2" data-path="op34m10c/ch-9-10/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+        <title>op34m10c--ch-9-10--2</title>
+        <path id="op34m10c--ch-9-10--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="op34m10c/ch-9-10/2/bore" data-class="cutout" />
+        <rect id="op34m10c--ch-9-10--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+        <rect id="op34m10c--ch-9-10--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+        <rect id="op34m10c--ch-9-10--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+        <circle id="op34m10c--ch-9-10--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+        <circle id="op34m10c--ch-9-10--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="op34m10c--ch-9-10--bezel" />
+      <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--inp-com-occupant" data-path="op34m10c/inp-com-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,22.09)" data-z-lift="1.2" data-for="op34m10c/inp-com">
+      <title>op34m10c--inp-com-occupant</title>
+      <g id="op34m10c--inp-com-occupant--body" class="cap" data-path="op34m10c/inp-com-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--inp-com-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--inp-com-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--tp-1310-occupant" data-path="op34m10c/tp-1310-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,32.08)" data-z-lift="1.2" data-for="op34m10c/tp-1310">
+      <title>op34m10c--tp-1310-occupant</title>
+      <g id="op34m10c--tp-1310-occupant--body" class="cap" data-path="op34m10c/tp-1310-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--tp-1310-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--tp-1310-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-1-2-occupant" data-path="op34m10c/ch-1-2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,50.68)" data-z-lift="1.2" data-for="op34m10c/ch-1-2">
+      <title>op34m10c--ch-1-2-occupant</title>
+      <g id="op34m10c--ch-1-2-occupant--body" class="cap" data-path="op34m10c/ch-1-2-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--ch-1-2-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--ch-1-2-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-3-4-occupant" data-path="op34m10c/ch-3-4-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,69.78)" data-z-lift="1.2" data-for="op34m10c/ch-3-4">
+      <title>op34m10c--ch-3-4-occupant</title>
+      <g id="op34m10c--ch-3-4-occupant--body" class="cap" data-path="op34m10c/ch-3-4-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--ch-3-4-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--ch-3-4-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-5-6-occupant" data-path="op34m10c/ch-5-6-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,79.58)" data-z-lift="1.2" data-for="op34m10c/ch-5-6">
+      <title>op34m10c--ch-5-6-occupant</title>
+      <g id="op34m10c--ch-5-6-occupant--body" class="cap" data-path="op34m10c/ch-5-6-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--ch-5-6-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--ch-5-6-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-7-8-occupant" data-path="op34m10c/ch-7-8-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,97.99)" data-z-lift="1.2" data-for="op34m10c/ch-7-8">
+      <title>op34m10c--ch-7-8-occupant</title>
+      <g id="op34m10c--ch-7-8-occupant--body" class="cap" data-path="op34m10c/ch-7-8-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--ch-7-8-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--ch-7-8-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g id="op34m10c--ch-9-10-occupant" data-path="op34m10c/ch-9-10-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(5.875,108.19)" data-z-lift="1.2" data-for="op34m10c/ch-9-10">
+      <title>op34m10c--ch-9-10-occupant</title>
+      <g id="op34m10c--ch-9-10-occupant--body" class="cap" data-path="op34m10c/ch-9-10-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+        <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+        <rect id="op34m10c--ch-9-10-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        <rect id="op34m10c--ch-9-10-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.88 65.1" data-cp-dir="front" />
+  </g>
+</svg>

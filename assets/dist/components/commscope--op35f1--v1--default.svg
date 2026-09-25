@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="25.76mm" height="130.2mm" viewBox="0 0 25.76 130.2">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="op35f1" data-path="op35f1" data-class="filter" data-behaviour="fills" data-ref="commscope/op35f1@1:1.0.0" data-body-depth="165.1" data-model="OP35F1" data-role="passive" transform="translate(0,0)">
+    <title>op35f1</title>
+    <rect id="op35f1--body" x="0" y="0" width="25.76" height="130.2" rx="0.8" fill="#1f2124" stroke="#0c0d0e" stroke-width="0.3" />
+    <g id="op35f1--screw-top" data-path="op35f1/screw-top" data-class="fastener">
+      <circle cx="12.88" cy="5.0" r="4.4" fill="#0d0e0f" />
+      <circle cx="12.88" cy="5.0" r="2.8" fill="#26282b" />
+    </g>
+    <g id="op35f1--adapter-ch" data-path="op35f1/adapter-ch" data-class="port">
+      <rect x="0.0" y="18.20" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="19.10" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35f1--adapter-dwdm" data-path="op35f1/adapter-dwdm" data-class="port">
+      <rect x="0.0" y="29.10" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="30.00" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35f1--adapter-com" data-path="op35f1/adapter-com" data-class="port">
+      <rect x="0.0" y="50.30" width="19.5" height="10.4" rx="0.4" fill="#2fa84f" stroke="#1d7a36" stroke-width="0.3" />
+      <rect x="5.1" y="51.20" width="10.2" height="8.6" rx="0.3" fill="#f2d41c" stroke="#8a7a10" stroke-width="0.2" />
+    </g>
+    <g id="op35f1--screw-bottom" data-path="op35f1/screw-bottom" data-class="fastener">
+      <circle cx="12.88" cy="125.2" r="4.4" fill="#0d0e0f" />
+      <circle cx="12.88" cy="125.2" r="2.8" fill="#26282b" />
+    </g>
+    <g id="op35f1--silkscreen" fill="#e6e8ea" font-family="Helvetica, Arial, sans-serif" text-anchor="middle">
+      <text x="12.4" y="13.6" font-size="2.3">DWDM</text>
+      <text x="12.4" y="16.9" font-size="2.1" data-from="model">OP35F1</text>
+      <text x="22.7" y="22.9" font-size="1.5">Ch.</text>
+      <text x="22.7" y="24.9" font-size="1.5" data-from="channel" />
+      <text x="22.7" y="34.3" font-size="1.5" transform="rotate(90 22.7 34.3)">DWDM</text>
+      <text x="22.7" y="56.0" font-size="1.5">COM</text>
+    </g>
+    <g id="op35f1--ch" data-path="op35f1/ch" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,18.9) rotate(90 4.195 4.5)">
+      <title>op35f1--ch</title>
+      <path id="op35f1--ch--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35f1/ch/bore" data-class="cutout" />
+      <rect id="op35f1--ch--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35f1--ch--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35f1--ch--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35f1--ch--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35f1--ch--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35f1--dwdm" data-path="op35f1/dwdm" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,29.8) rotate(90 4.195 4.5)">
+      <title>op35f1--dwdm</title>
+      <path id="op35f1--dwdm--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35f1/dwdm/bore" data-class="cutout" />
+      <rect id="op35f1--dwdm--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35f1--dwdm--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35f1--dwdm--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35f1--dwdm--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35f1--dwdm--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g id="op35f1--com" data-path="op35f1/com" data-class="port" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="SC/APC" data-media="fiber" transform="translate(6.0,51.0) rotate(90 4.195 4.5)">
+      <title>op35f1--com</title>
+      <path id="op35f1--com--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="op35f1/com/bore" data-class="cutout" />
+      <rect id="op35f1--com--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <rect id="op35f1--com--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+      <circle id="op35f1--com--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+      <circle id="op35f1--com--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+      <circle id="op35f1--com--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+      <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="12.88 65.1" data-cp-dir="front" />
+  </g>
+</svg>

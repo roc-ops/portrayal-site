@@ -23,10 +23,10 @@
   ]
  },
  "by-kind": {
-  "declared": 767,
-  "derived": 521
+  "declared": 792,
+  "derived": 539
  },
- "devices": 144,
+ "devices": 150,
  "gaps": [
   {
    "because": "vendor-silent",
@@ -1823,13 +1823,27 @@
    "device": "ch3000",
    "kind": "declared",
    "manufacturer": "CommScope",
-   "note": "the chassis data sheets state the arrangement - \"32 half-depth slots (16 front-loaded and 16 rear-loaded)\" and \"32 midplane electrical interconnects (16 front and 16 rear)\", and the OR3144H sheet says a half-depth module can be plugged in from either side - so a half-depth module seats in a slot's front bay or in its rear bay, where a full-depth module's back plate would go, and that is how the half-depth modules modelled here seat. No photograph held shows one installed, front or rear, to confirm its face against the slot, and most of the half-depth passives - and the DT3550N transmitter, whose data sheet has no face image - are not modelled yet.",
+   "note": "the chassis data sheets state the arrangement - \"32 half-depth slots (16 front-loaded and 16 rear-loaded)\" and \"32 midplane electrical interconnects (16 front and 16 rear)\", and the OR3144H sheet says a half-depth module can be plugged in from either side - so a half-depth module seats in a slot's front bay or in its rear bay, where a full-depth module's back plate would go, and that is how the half-depth modules modelled here seat. No photograph held shows one installed, front or rear, to confirm its face against the slot. Not modelled: the DT3550N transmitter, whose data sheet has no face image; the 8- and 10-channel CWDM demultiplexers (NP34D08, NP34D10, OP34D8C, OP34D10C), whose data-sheet photographs are the multiplexer's artwork relabelled - they print \"CWDM MUX\" where the photographed 5-channel demux prints \"CWDM DEMUX\", and the OP34D10C sheet's image is labelled OP34M10C; the OP3168P and OP3178P octal PON filters, whose faces are a dense grid of LC adapters with legends the data-sheet photographs do not resolve; the NP31F08S06 RFoG filter, which has no face image; and the 8x8 splitters (NP38S08, OP38S8S), which are two slots wide and only drawn.",
    "scope": [
     "front",
     "rear"
    ],
    "wanted": "a photograph of a CH3000 with half-depth modules seated, front and rear",
    "what": "half-depth-slots"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "ch3000",
+   "kind": "declared",
+   "manufacturer": "CommScope",
+   "note": "several half-depth families are modelled as the one variant their data sheet photographs, and the others would present a different port set: OP33F1x as the single OP33F1S (the dual OP33F1D has six ports); NP35C0x as the NP35C01D03 red/blue split (the family also takes CWDM/DWDM and DWDM-group splits, single or dual, with an optional test port, each legended differently); and OP35F4S as the variant with a -20 dB test port (the test port is optional). Each would need its own photograph.",
+   "scope": [
+    "front",
+    "rear"
+   ],
+   "wanted": "face photographs of the OP33F1D, the other NP35C0x variants and an OP35F4S without a test port",
+   "what": "half-depth-variants"
   },
   {
    "because": "CAP",
@@ -9052,6 +9066,160 @@
   {
    "because": "vendor-silent",
    "blocks": [],
+   "device": "tm-280",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; hardware documentation is on a support portal behind a login, whose contact is on telco.com/support. Searched: the telco.com media library, every product and knowledge-centre page, and the Wayback index of telco.com PDFs.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the TM-280 / T-Marc 280 installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-280",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The left third of the face (wordmark plate, model name, CON, STS/PWR, pinhole, laser label) is drawn from the stencil master alone; the three-quarter renders cannot be rectified there with confidence, and the stencil was shown wrong elsewhere on this face by 2-2.5 mm.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a square-on photograph of the front.",
+   "what": "left-group"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-280",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The stencil master TMC-280-x (R) draws a plain rear; no photograph is held.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph of the rear.",
+   "what": "rear"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "tm-280",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "tm-280",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on port groups access, combo, uplink - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "tm-280",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-3308h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; hardware documentation is on a support portal behind a login, whose contact is on telco.com/support. Searched: the telco.com media library, every product and knowledge-centre page, and the Wayback index of telco.com PDFs.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the TM-3308H / T-Marc 3308 hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-3308h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The internal supply's inlet (AC, or the DC build's dual feed) and the external redundant supply's connector are not on the front, so they are presumably at the rear, which nothing held shows.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph of the rear of an AC and of a DC unit.",
+   "what": "rear"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-3308h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No edition states the ETH port's rate; 1g is carried as a BORROWED value (see provenance.eth-speed), not as a finding.",
+   "scope": [
+    "eth"
+   ],
+   "wanted": "the installation guide's interface table.",
+   "what": "eth-speed"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "tm-3308h",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "tm-3308h",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on port groups copper, sfp - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "tm-3308h",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
    "device": "tm-3312",
    "kind": "declared",
    "manufacturer": "Telco Systems",
@@ -9147,6 +9315,199 @@
     "templated"
    ],
    "device": "tm-3312",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-3348",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; hardware documentation is on a support portal behind a login, whose contact is on telco.com/support. Searched: the telco.com media library, every product and knowledge-centre page, and the Wayback index of telco.com PDFs.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the TM-3348 / T-Marc 3348S hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-3348",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The two internal supplies' inlets are not on the front, so they are presumably at the rear, which nothing held shows (no stencil rear master for this model).",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph of the rear of an AC and of a DC unit.",
+   "what": "rear"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-3348",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The hardened TM-3348SH adds \"BITS in/out clock interfaces\"; where they appear on the face is not shown by anything held, so only the S face is drawn.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a photograph or render of the TM-3348SH front.",
+   "what": "sh-variant"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-3348",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "A dark 26 x 3.5 mm slot under the lamp row in the render, absent from the stencil - the same slot, in the same place, as on the TM-3312, whose data sheets list an SD card under Management; the TM-3348's editions do not mention one. Probably the SD card slot, drawn as panel decor, not as a part.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a close photograph of the lamp area with and without a card.",
+   "what": "sd-slot"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-3348",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No edition states the ETH port's rate; 1g is carried as a BORROWED value (see provenance.eth-speed), not as a finding.",
+   "scope": [
+    "eth"
+   ],
+   "wanted": "the installation guide's interface table.",
+   "what": "eth-speed"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "tm-3348",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "an `attrs.performance` section; `cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "tm-3348",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on port groups copper, sfp, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "tm-3348",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-340",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; hardware documentation is on a support portal behind a login, whose contact is on telco.com/support. Searched: the telco.com media library, every product and knowledge-centre page, and the Wayback index of telco.com PDFs.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the TM-340 / T-Marc 340 hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-340",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The inlet (AC, or the DC build's dual feed) is not on the front, so it is presumably at the rear, which nothing held shows.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph of the rear of an AC and of a DC unit.",
+   "what": "rear"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "tm-340",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "TMC-340-x-F / DC-F is \"2 x Copper + 4 x Fiber, Mixed port model option\" - a different port set from the six combo ports drawn here, whose face nothing held shows.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a photograph or render of the TMC-340-x-F front.",
+   "what": "f-variant"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "tm-340",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The face has PS-I and PS-E lamps, which read as an internal and an external supply, but the data sheet names no external supply for this model (the TM-3308's is TMC-3X0-EXTPS-x, a name that may cover the 340 too).",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the installation guide's power section.",
+   "what": "ps-e"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "tm-340",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`cpu`, `memory` in a missing `attrs.platform` section (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "tm-340",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on port groups access, network - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "tm-340",
    "kind": "derived",
    "manufacturer": "Telco Systems",
    "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
@@ -9717,6 +10078,199 @@
     "templated"
    ],
    "device": "tm-8106",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "xm-8102",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; hardware documentation is on a support portal behind a login, whose contact is on telco.com/support.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the XM-8102 hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "xm-8102",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "Each SFP+ column is legended with one pair of numbers (\"2/1\" ... \"24/23\") and nothing held says which cage is which; the upper cage is drawn as the first number.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the installation guide's port-numbering figure.",
+   "what": "port-order"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "xm-8102",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The two hot-swappable supplies are not on the front, so they (and presumably the fans) are at the rear, which nothing held shows; the configurations record the supply mix as power only.",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph of the rear.",
+   "what": "rear"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "xm-8102",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No rate is stated for the SNMP out-of-band port; 1g is carried as a BORROWED value (see provenance.snmp-speed), not as a finding.",
+   "scope": [
+    "snmp"
+   ],
+   "wanted": "the installation guide's interface table.",
+   "what": "snmp-speed"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "xm-8102",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "xm-8102",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on port groups qsfp, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "xm-8102",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
+   "what": "templated"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "xm-8424h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "telco.com publishes data sheets only; hardware documentation is on a support portal behind a login, whose contact is on telco.com/support.",
+   "scope": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "top",
+    "bottom"
+   ],
+   "wanted": "the XM-8424H hardware installation guide, from the BATM support portal.",
+   "what": "install-guide"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "xm-8424h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "Each SFP28 column is legended with one pair of numbers (\"2/1\" ... \"24/23\") and nothing held says which cage is which; the upper cage is drawn as the first number. The two lamp pairs in the strip below do not settle it either.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "the installation guide's port-numbering figure.",
+   "what": "port-order"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "xm-8424h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "The single-supply builds (XM-8424H-AC-x, -DC) leave the second bay without a supply; whether it ships with a blank cover, and what one looks like, nothing held shows, so those configurations draw the bay empty.",
+   "scope": [
+    "front"
+   ],
+   "wanted": "a photograph of a single-supply unit's front.",
+   "what": "single-supply-blank"
+  },
+  {
+   "because": "needs-photo",
+   "blocks": [],
+   "device": "xm-8424h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "Nothing held shows the rear, where the fans presumably are (the front has none).",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "a photograph of the rear.",
+   "what": "rear"
+  },
+  {
+   "because": "vendor-silent",
+   "blocks": [],
+   "device": "xm-8424h",
+   "kind": "declared",
+   "manufacturer": "Telco Systems",
+   "note": "No rate is stated for the SNMP out-of-band port; 1g is carried as a BORROWED value (see provenance.snmp-speed), not as a finding.",
+   "scope": [
+    "snmp"
+   ],
+   "wanted": "the installation guide's interface table.",
+   "what": "snmp-speed"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "specified"
+   ],
+   "device": "xm-8424h",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`cpu`, `memory` in a missing `attrs.platform` section; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+   "what": "specified"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "wired"
+   ],
+   "device": "xm-8424h",
+   "kind": "derived",
+   "manufacturer": "Telco Systems",
+   "wanted": "`physical-context` on 2 bays (front 2); `physical-context` on port groups qsfp, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+   "what": "wired"
+  },
+  {
+   "because": "CAP",
+   "blocks": [
+    "templated"
+   ],
+   "device": "xm-8424h",
    "kind": "derived",
    "manufacturer": "Telco Systems",
    "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",

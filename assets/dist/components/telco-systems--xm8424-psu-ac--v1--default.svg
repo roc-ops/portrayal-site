@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="50.2mm" height="42.6mm" viewBox="0 0 50.2 42.6">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="xm8424-psu-ac" data-path="xm8424-psu-ac" data-class="psu" data-behaviour="fills" data-ref="telco-systems/xm8424-psu-ac@1:1.0.0" data-inlet="c14" data-input="ac" data-input-voltage="100-240 VAC 50-60 Hz, or 240 VDC 2 A (stencil label text; the AC current is unconfirmed)" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>xm8424-psu-ac</title>
+    <rect id="xm8424-psu-ac--plate" x="0.1" y="0.1" width="50.0" height="42.4" rx="0.4" fill="#d9dbdc" stroke="#8d9298" stroke-width="0.25" />
+    <g id="xm8424-psu-ac--handle">
+      <rect x="0.7" y="0.4" width="17.2" height="41.8" rx="3.2" fill="#e8eaeb" stroke="#9aa0a6" stroke-width="0.35" />
+      <rect x="3.2" y="3.2" width="12.0" height="36.2" rx="2.4" fill="#d3d6d8" stroke="#b0b5ba" stroke-width="0.25" />
+    </g>
+    <rect x="18.2" y="1.0" width="25.5" height="33.2" rx="1.0" fill="#2b2e32" />
+    <g id="xm8424-psu-ac--thumbscrew" data-path="xm8424-psu-ac/thumbscrew" data-class="fastener">
+      <circle cx="45.6" cy="24.9" r="2.4" fill="#3b5f9a" stroke="#22375a" stroke-width="0.3" />
+      <circle cx="45.6" cy="24.9" r="1.4" fill="#4d74b3" />
+    </g>
+    <path d="M 47.2 4.8 L 49.4 8.8 L 45.0 8.8 Z" fill="#f2b233" stroke="#6b4a10" stroke-width="0.2" />
+    <g id="xm8424-psu-ac--silkscreen" font-family="Helvetica, Arial, sans-serif" fill="#3a3d41">
+      <text x="9.3" y="23.2" font-size="1.4" text-anchor="middle">PWR</text>
+      <text x="31.2" y="35.4" font-size="1.2" text-anchor="middle">100-240V, 50-60Hz</text>
+      <text x="32.7" y="38.0" font-size="1.2" text-anchor="middle">240V, 2A</text>
+      <text x="42.3" y="37.8" font-size="1.2">STAT</text>
+    </g>
+    <g id="xm8424-psu-ac--inlet" data-path="xm8424-psu-ac/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(16.95,7.6) rotate(90 14.0 10.0)">
+      <title>xm8424-psu-ac--inlet</title>
+      <rect id="xm8424-psu-ac--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="xm8424-psu-ac/inlet/opening" data-class="cutout" />
+      <path id="xm8424-psu-ac--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="xm8424-psu-ac--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="xm8424-psu-ac--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="xm8424-psu-ac--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+    <g id="xm8424-psu-ac--led-stat" data-path="xm8424-psu-ac/led-stat" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(39.9,36.2)">
+      <title>xm8424-psu-ac--led-stat</title>
+      <circle id="xm8424-psu-ac--led-stat--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="xm8424-psu-ac--led-stat--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="xm8424-psu-ac/led-stat/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>
