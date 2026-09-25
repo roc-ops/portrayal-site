@@ -759,6 +759,30 @@ for k in ("ready", "setMode", "current"):
           f"explorer.html's frozen portrayalEmbed has a {k} property",
           "the embed block is missing" if not emb else f"no `{k}:` in the frozen object")
 
+# ── the sponsor credit ───────────────────────────────────────────────────
+# RocNet Supply's one ask for Portrayal going open source (roc-ops/Portrayal#446)
+# is a visible credit: the text, linked, with its logo - both variants, served
+# from here rather than hotlinked (roc-ops/portrayal-site#25).
+SPONSOR = "https://www.rocnetsupply.com/"
+LOGOS = ["brand/sponsor/RocNet-Primary-Logo.svg", "brand/sponsor/RocNet-Primary-Logo-white.svg"]
+for logo in LOGOS:
+    lp = HERE / logo
+    check(lp.is_file() and b"<script" not in lp.read_bytes(),
+          f"the sponsor logo {logo} is served locally and carries no script",
+          "missing, or it grew a <script>")
+for page in ("index.html", "schema.html"):
+    s = (HERE / page).read_text()
+    foot = re.search(r"<footer[\s\S]*?</footer>", s)
+    f = foot.group(0) if foot else ""
+    link = re.search(r'<a class="footer-sponsor" href="([^"]+)">([\s\S]*?)</a>', f)
+    check(bool(link) and link.group(1) == SPONSOR and "Sponsored by RocNet Supply" in link.group(2)
+          and all(f'src="{l}"' in link.group(2) for l in LOGOS),
+          f"{page}'s footer credits RocNet Supply, linked, with both local logos",
+          "the credit, its link or a logo variant is missing from the footer")
+hot = sorted(str(p.relative_to(HERE)) for p in HERE.glob("*.html")
+             if re.search(r"""(src|href)=["']https?://(www\.)?rocnetsupply\.com/hubfs""", p.read_text()))
+check(not hot, "no page hotlinks RocNet's logo", f"hotlinked from {hot}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
