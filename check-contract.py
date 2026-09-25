@@ -571,6 +571,13 @@ check("function readMode" in sr
       and re.search(r"catch\s*\{\s*return\s+'2d'", sr) is not None,
       "the mode defaults to 2D, including when storage is unreadable",
       "readMode must return '2d' unless storage says '3d', and '2d' when it throws")
+# R11: a stage whose enter() throws gets its scrim cleared and a one-line
+# panel message, and is never marked ready.
+es = sr[sr.find("async function enterStage"):sr.find("export async function setMode")]
+check(re.search(r"try\s*\{\s*await MODULES\[name\]\.enter\(", es) is not None
+      and "loading.hidden = true" in es[es.find("catch"):]
+      and "This stage could not be drawn." in es,
+      "enterStage catches a throwing enter(): clears the scrim and says so in the panel")
 idx_html = (HERE / "index.html").read_text()
 check('id="stageMode"' in idx_html, "index.html carries the 2D/3D switch")
 

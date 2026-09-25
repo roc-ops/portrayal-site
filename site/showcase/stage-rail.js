@@ -4,7 +4,7 @@
 // different control model rather than more tabs: a rung below the current one
 // is a stage already passed, and the ladder shows it.
 
-import {stage2d, loading, panel, hint, srcLine, exportSlot, setHost, setPanel, setExports}
+import {stage2d, loading, panel, hint, srcLine, exportSlot, setHost, setPanel, setExports, el}
   from './artifact.js';
 import makeRails    from './stages/00-rails.js';
 import makeMount    from './stages/01-mount.js';
@@ -152,7 +152,9 @@ async function enterStage(name) {
   epoch++;
   const mine = epoch;
   vacate();
-  if (current) await MODULES[current].exit?.();
+  // An exit that throws must not stop the next stage entering (R11).
+  try { if (current) await MODULES[current].exit?.(); }
+  catch (err) { console.warn(`[portrayal] stage ${current} exit`, err); }
   // Overtaken during that exit (another rung, or a spoke suspending): that
   // caller owns the stage now, so do not start entering this one under it.
   if (stale(mine)) return;
@@ -161,7 +163,25 @@ async function enterStage(name) {
   paintRail(name);
   hint.textContent = MODULES[name].hint || '';
   srcLine.textContent = '';
-  await MODULES[name].enter(lease(mine, name));
+  // A STAGE THAT THROWS DOES NOT STRAND THE VISITOR (R11). Without this the
+  // rejection escaped to activate()'s callers - rung clicks, the switch -
+  // as an unhandled rejection, and the scrim the stage had put up stayed up
+  // over nothing. Now, if the entry is still the live one: the scrim comes
+  // down, the panel says in one line that the stage could not be drawn and
+  // why, and the console has the error. data-stage-ready is still NOT set,
+  // so a checker waiting on it fails loudly rather than passing quietly. An
+  // entry that was already overtaken writes nothing - the stage that
+  // replaced it owns the screen.
+  try {
+    await MODULES[name].enter(lease(mine, name));
+  } catch (err) {
+    console.warn(`[portrayal] stage ${name} could not be drawn`, err);
+    if (stale(mine)) return;
+    loading.hidden = true;
+    setPanel(el('p', {class: 'panel-lead', 'data-stage-error': name,
+      text: `This stage could not be drawn. ${err?.message || err}`}));
+    return;
+  }
   // Only for a stage that is still current, and never for one whose enter()
   // threw: a checker waiting on this must fail loudly, not pass quietly.
   if (!stale(mine)) stageHost.setAttribute('data-stage-ready', name);
@@ -205,17 +225,22 @@ function onKey(ev) {
   ev.preventDefault();
   const b = list[(to + list.length) % list.length];
   b.focus();
-  activate(b.dataset.stage);
+  activate(b.dataset.stage).catch(warnSwitch);
 }
+
+// enterStage already turns a stage's own failure into a panel message; this
+// is the last net under the UI's own calls (a spoke that fails to close, say),
+// so a click never ends in an unhandled rejection.
+const warnSwitch = err => console.warn('[portrayal] stage switch', err);
 
 export async function boot() {
   // Stages draw into the rack and 3D layers, never the inlined 2D drawing, so
   // no stage is its host: a stray setDrawing must not exit and re-enter one.
   setHost(null);
   stage2d.hidden = true;
-  for (const b of rungs()) b.onclick = () => activate(b.dataset.stage);
+  for (const b of rungs()) b.onclick = () => activate(b.dataset.stage).catch(warnSwitch);
   paintMode();
-  for (const b of modeButtons()) b.onclick = () => setMode(b.dataset.mode);
+  for (const b of modeButtons()) b.onclick = () => setMode(b.dataset.mode).catch(warnSwitch);
   document.querySelector('.stage-rail')?.addEventListener('keydown', onKey);
   await activate(STAGES[0]);
 }
