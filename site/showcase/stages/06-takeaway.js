@@ -31,7 +31,7 @@
 // elevation it exports, in 3D the mounted scene. Clicking a device here does
 // nothing - Look closer belongs to stages 1-3.
 
-import {stage3d, stageRack, el, title, lead, kv, save, standalone, panZoom, DIST}
+import {stage3d, stageRack, el, title, lead, kv, save, saveSvg, standalone, panZoom, DIST}
   from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, overrides, mount3d, build2dElevation}
   from '../rack.js';
@@ -71,17 +71,10 @@ function dcimSection(index) {
 
 export default function makeTakeaway() {
   let scene = null;
+  // The SVG/PNG source. Exported through artifact.js's standalone(), which
+  // writes the frame panZoom recorded onto the copy, so the file is the rack
+  // as built, not whatever the visitor has panned or zoomed to in 2D.
   let elevationSvg = null;
-  let elevationBase = null;   // its viewBox as built, before any pan or zoom
-
-  // The elevation as built, whatever the visitor has panned or zoomed to in
-  // 2D: the file is the rack, not the current view of it.
-  function elevationText() {
-    const vb = elevationSvg.getAttribute('viewBox');
-    elevationSvg.setAttribute('viewBox', elevationBase);
-    try { return standalone(elevationSvg); }
-    finally { elevationSvg.setAttribute('viewBox', vb); }
-  }
 
   // The cast's front faces, straight off disk - the base configuration
   // drawio-page.js itself draws from, not the overridden one.
@@ -108,7 +101,7 @@ export default function makeTakeaway() {
   // rasterize() only takes a URL; the elevation built here is not one, so a
   // blob URL stands in for it and is revoked once the raster is done.
   async function buildPng() {
-    const text = elevationText();
+    const text = standalone(elevationSvg);
     const url = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
     try {
       const bytes = await rasterize(url, 2);
@@ -152,12 +145,11 @@ export default function makeTakeaway() {
                                           heightRU: RACK_U, overrides});
       if (!ui.live()) return;
       elevationSvg = svg;
-      elevationBase = svg.getAttribute('viewBox');
       stageRack.replaceChildren(svg);
       if (!is3d) {
         stage3d.hidden = true;
         stageRack.hidden = false;
-        const base = elevationBase.split(/\s+/).map(Number);
+        const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
         panZoom(svg, () => base);
         ui.unscrim();
       }
@@ -193,7 +185,7 @@ export default function makeTakeaway() {
          run: buildDrawio},
         {label: 'SVG',
          title: 'Download the 2D front elevation, with the seated cards and optics',
-         run: () => save(elevationText(), 'cast-rack-elevation.svg', 'image/svg+xml')},
+         run: () => saveSvg(elevationSvg, 'cast-rack-elevation.svg')},
         {label: 'PNG',
          title: 'Download a PNG raster of the front elevation, with the seated cards and optics',
          run: buildPng},
@@ -214,7 +206,6 @@ export default function makeTakeaway() {
       scene?.dispose();
       scene = null;
       elevationSvg = null;
-      elevationBase = null;
       stage3d.hidden = true;
       stage3d.replaceChildren();
       stageRack.hidden = true;

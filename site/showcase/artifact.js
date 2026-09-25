@@ -176,7 +176,12 @@ export const resetFrame = () => setFrame(...BASE_FRAME);
 // getBBox-derived overlays keep working unchanged. `show(frame)` puts up a
 // view other than the base - an opening close-up - without changing what
 // double-click fits back to.
+//
+// The base frame is also left on the node (__ptBase, the function, so a tab
+// that changes its frame is read at the time of asking): standalone() exports
+// THAT, never the crop the visitor has panned or zoomed to.
 export function panZoom(node, baseFrame) {
+  node.__ptBase = baseFrame;
   let view = [...baseFrame()];
   let drag = null, moved = false;
   const apply = () => node.setAttribute('viewBox', view.join(' '));
@@ -311,8 +316,19 @@ export function save(data, filename, type) {
 // come off the clone here, the class BEFORE the baking pass below (pt-device
 // would otherwise match its /pt-/ test and bake computed paint onto every
 // device group), the nodes after it, so the two lists stay index-aligned.
+//
+// NOR THE VISITOR'S VIEW OF IT. panZoom works by rewriting the live viewBox
+// and sets touch-action and cursor inline; a copy of those is whatever crop
+// the visitor last zoomed to, under a title that promises the whole drawing.
+// So the clone - never the live node - gets back the base frame panZoom
+// recorded, and loses panZoom's inline style.
 export function standalone(node) {
   const clone = node.cloneNode(true);
+  const base = node.__ptBase?.();
+  if (base) clone.setAttribute('viewBox', base.join(' '));
+  clone.style?.removeProperty('touch-action');
+  clone.style?.removeProperty('cursor');
+  if (clone.getAttribute('style')?.trim() === '') clone.removeAttribute('style');
   const orig = [node, ...node.querySelectorAll('*')];
   const copy = [clone, ...clone.querySelectorAll('*')];
   for (const ce of copy) {

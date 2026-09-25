@@ -570,6 +570,18 @@ check(not own, "wireDevices and the ring stubs both click through wireClicks",
       f"{own} keep their own pointer handling")
 check("lookCloser(" not in stage_txt, "no stage puts Look closer in its side panel")
 
+# ── a download is what its title says ────────────────────────────────────
+# panZoom rewrites the live viewBox, so a copy of the live node is the crop
+# the visitor last zoomed to. standalone() writes panZoom's recorded base
+# frame onto the clone instead, for every export at once; no stage keeps a
+# private workaround (stage 6's elevationText swapped the live viewBox).
+art = (HERE / "site" / "showcase" / "artifact.js").read_text()
+check("node.__ptBase = baseFrame" in art and "__ptBase?.()" in art,
+      "exports use panZoom's base frame, not the current crop",
+      "panZoom must record its base frame and standalone() must apply it to the clone")
+check("elevationText" not in stage_txt,
+      "no stage keeps its own un-zoom workaround for exports")
+
 # ── the ring in 2D, by site ─────────────────────────────────────────────────
 # Sites are the connected components left when the span links are dropped:
 # structural, so they survive renamed devices. Parsing "site-a-" out of an id
