@@ -40,6 +40,9 @@ export default function makeFilter() {
 
       const kids = [title('Stage 5 · Filter'), lead('<strong>Show me just management.</strong>')];
       if (!lab) {
+        // No lab means mountRing never got as far as mount3d, so nothing
+        // else will ever take "Racking the ROADM ring…" down: say why here.
+        ui.scrim('labs.json could not be loaded, so there is no topology to draw.');
         kids.push(lead('labs.json could not be loaded, so there is nothing to filter.'));
         ui.setPanel(...kids);
         return;

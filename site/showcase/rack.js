@@ -1,6 +1,7 @@
 // The cast rack: which devices, where they sit, how tall the rack is, and the
-// two renderers that draw it. Stages 0-4 all mount this rack, so it lives
-// here rather than in any one of them.
+// two renderers that draw it. Stage 0 draws its rails, and stages 1-3 and 6
+// mount it (stages 4 and 5 rack the ROADM ring instead, through ring.js), so
+// it lives here rather than in any one of them.
 //
 // ONE stack, two renderers. The 2D elevation and the 3D rack are handed the
 // same array, and a module swapped in either is a swap in both, because both
@@ -22,9 +23,13 @@ const RACK_SIZES = [12, 16, 22, 24, 42];
 // One free U between devices, as a rack is racked: it is where the fingers go.
 const GAP = 1;
 
-// The cast, bottom-up, heaviest lowest. Each earns its place: the ASR-9006 is
-// modular and carries data-under, the R740xd is the teardown spoke, the
-// AS7726-32X is the optics story, and the FHD-1UFCE is the fibre path.
+// The cast, bottom-up, heaviest lowest. What each demonstrates HERE: the
+// ASR-9006 is modular - stage 2 seats its slots and refuses a card a slot
+// does not accept; the AS7726-32X is the optics story in stage 3, and the one
+// device every lens is written against; the R740xd and the FHD-1UFCE are
+// mounted, sized from their own chassis, and open under Inspect. The spec
+// casts two more roles that are NOT built yet: the R740xd as a teardown spoke
+// (data-under, R24) and the FHD-1UFCE as a fibre path (R28).
 //
 // `cfg` is each device's own `default` in its configs.json, not a guess: a
 // wrong cfg is a silent empty slot rather than an error, so loadMeta warns when

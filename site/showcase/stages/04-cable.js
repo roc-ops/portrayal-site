@@ -33,7 +33,7 @@ export default function makeCable() {
       ui.scrim('Racking the ROADM ring…');
 
       // Adopted as soon as the scene exists, so exit() can dispose it even
-      // while mountRing is still waiting on the relief pass or the anchors.
+      // while mountRing is still taking the anchors.
       const got = await mountRing({mine, onScene: r => { if (ui.live()) ring = r; }});
       if (!ui.live()) { disposeRing(got); return; }
       const lab = got?.lab;
@@ -44,6 +44,9 @@ export default function makeCable() {
 
       const kids = [title('Stage 4 · Cable'), lead('<strong>What is connected to what?</strong>')];
       if (!lab) {
+        // No lab means mountRing never got as far as mount3d, so nothing
+        // else will ever take "Racking the ROADM ring…" down: say why here.
+        ui.scrim('labs.json could not be loaded, so there is no topology to draw.');
         kids.push(lead('labs.json could not be loaded, so there is no topology to draw.'));
         ui.setPanel(...kids);
         return;
