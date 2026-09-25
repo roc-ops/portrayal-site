@@ -93,12 +93,14 @@ function paintMode() {
 // What leaving a stage takes off the screen, at once: its panel (so none of
 // its controls can be clicked while the next one loads), its downloads, its
 // "Look closer" strip (a rung click or a 2D/3D switch leaves none behind; the
-// next stage puts its own up if it has one), and the ready signal a checker
-// waits on.
+// next stage puts its own up if it has one), the ring's site tabs (a stage
+// that has sites draws its own, under its lease), and the ready signal a
+// checker waits on.
 function vacate() {
   panel.replaceChildren();
   exportSlot.replaceChildren();
   hideStrip();
+  document.getElementById('stageTabs')?.replaceChildren();
   stageHost.removeAttribute('data-stage-ready');
 }
 

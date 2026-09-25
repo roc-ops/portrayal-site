@@ -559,6 +559,59 @@ check('id="lookStrip"' in (HERE / "index.html").read_text(), "index.html carries
 stage_txt = "".join(p.read_text() for p in (HERE / "site" / "showcase" / "stages").glob("*.js"))
 check("lookCloser(" not in stage_txt, "no stage puts Look closer in its side panel")
 
+# ── the ring in 2D, by site ─────────────────────────────────────────────────
+# Sites are the connected components left when the span links are dropped:
+# structural, so they survive renamed devices. Parsing "site-a-" out of an id
+# is the naming-convention guess this project keeps refusing.
+ring_js = (HERE / "site" / "showcase" / "ring.js").read_text()
+ring2d = HERE / "site" / "showcase" / "ring2d.js"
+r2 = ring2d.read_text() if ring2d.is_file() else ""
+check("export function sitesOf" in ring_js, "ring.js exports sitesOf")
+check(bool(r2), "site/showcase/ring2d.js exists")
+src_ring = ring_js + r2 + "".join((HERE / "site" / "showcase" / "stages" / f).read_text()
+                                  for f in ("04-cable.js", "05-filter.js"))
+check(not re.search(r"""['"`]site-|\bsite-[a-z]\b|split\(\s*['"]-['"]\s*\)""", src_ring),
+      "the ring code parses no site out of device ids", "derive sites from the topology")
+# The stage-4 section assigns `ring` inside a conditional block, so it may
+# not exist at all when labs.json is missing. Read it defensively; a
+# NameError here would crash the contract instead of recording a FAIL.
+lab_ring = globals().get("ring")
+if lab_ring is not None:
+    ring = lab_ring
+    ids = [d["id"] for d in ring["devices"]]
+    par = {i: i for i in ids}
+    def root(x):
+        while par[x] != x:
+            x = par[x]
+        return x
+    for l in ring["links"]:
+        if not l.get("span"):
+            par[root(l["from"][0])] = root(l["to"][0])
+    comps = {}
+    for i in ids:
+        comps.setdefault(root(i), []).append(i)
+    check(len(comps) == 3 and sum(map(len, comps.values())) == len(ids),
+          "dropping span links splits the ring into 3 sites covering every device",
+          f"got {len(comps)} components")
+    # sitesOf takes every ring device as 1 U (a site's top is its highest
+    # device's bottom U). That holds only while every ref the ring uses says
+    # so in its own index; if one stops, this fails rather than the 2D view
+    # quietly clipping a taller device.
+    ring_refs = sorted({d.get("ref") for d in ring["devices"]})
+    tall = []
+    for ref in ring_refs:
+        idx = jload(f"{ref}.configs.json")
+        ru = ((idx or {}).get("chassis") or {}).get("ru")
+        if ru != 1:
+            tall.append(f"{ref}: {ru}")
+    check(bool(ring_refs) and not tall,
+          f"every ring device ref is 1 U ({len(ring_refs) - len(tall)}/{len(ring_refs)})",
+          f"not 1 U: {tall} - sitesOf's ruMax assumes 1 U")
+else:
+    check(False, "dropping span links splits the ring into 3 sites covering every device",
+          "labs.json is unusable")
+    check(False, "every ring device ref is 1 U", "labs.json is unusable")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

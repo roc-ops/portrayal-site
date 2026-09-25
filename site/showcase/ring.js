@@ -159,6 +159,46 @@ export function colorOf(link, lab) {
   return MEDIA_COLORS[link.media] ?? OTHER_MEDIA;
 }
 
+// As a CSS colour, for the 2D drawing: the same colour the 3D tube gets.
+export const cssColor = (link, lab) => '#' + colorOf(link, lab).toString(16).padStart(6, '0');
+
+// THE SITES, FROM THE TOPOLOGY. Drop every span link and what stays
+// connected is a site: its controller and its ROADMs, joined by management,
+// cross-connect and OSC links. Structural on purpose: nothing reads a site
+// out of a device id's prefix. (Do not quote an example id in a comment
+// here either; the contract's no-prefix-parsing check scans comments too.)
+// Ordered top to bottom by U, and each is labelled by its highest-U device,
+// exactly as the data spells it.
+//
+// ruMax is a device's BOTTOM U, which is its top only because every ring
+// device is 1 U: check-contract.py holds both ring refs to chassis.ru 1, so
+// this fails there rather than clipping a taller device here.
+export function sitesOf(lab) {
+  const parent = new Map(lab.devices.map(d => [d.id, d.id]));
+  const root = x => { while (parent.get(x) !== x) x = parent.get(x); return x; };
+  for (const l of lab.links || []) {
+    if (l.span) continue;
+    const a = root(l.from[0]), b = root(l.to[0]);
+    if (a !== b) parent.set(a, b);
+  }
+  const groups = new Map();
+  for (const d of lab.devices) {
+    const r = root(d.id);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r).push(d);
+  }
+  return [...groups.values()]
+    .map(devs => devs.slice().sort((a, b) => b.ru - a.ru))
+    .sort((a, b) => b[0].ru - a[0].ru)
+    .map(devs => ({
+      devices: devs,
+      ids: new Set(devs.map(d => d.id)),
+      label: devs[0].label,
+      ruMin: Math.min(...devs.map(d => d.ru)),
+      ruMax: Math.max(...devs.map(d => d.ru)),   // every ring device is 1 U
+    }));
+}
+
 // The lab's devices as a rack3d stack. cfg is each ref's own configs.json
 // `default`, and chassis/bays/cages come from the same index, so mount3d has
 // nothing to guess. label is the lab's id - unique, which is what lets

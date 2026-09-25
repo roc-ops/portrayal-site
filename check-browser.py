@@ -231,6 +231,21 @@ def check_stages(page, base):
                   and geo["right"]["num"] > geo["right"]["hole"])   # and to its right on the right rail
             if not ok:
                 bad.append(f"stage rails: rail numbers are not outboard of the holes on both rails: {geo}")
+        if name == "cable":
+            try:
+                tabs = page.query_selector_all('#stageTabs [role="tab"]')
+                if len(tabs) != 3:
+                    bad.append(f"stage cable in 2D: expected 3 site tabs, got {len(tabs)}")
+                before = page.inner_text('#stageTabs [aria-selected="true"]')
+                page.click('#stageRack [data-stub]')
+                page.wait_for_selector('#stageRack [data-stub][data-highlight]', timeout=READY_MS)
+                after = page.inner_text('#stageTabs [aria-selected="true"]')
+                if after == before:
+                    bad.append("stage cable in 2D: clicking a stub did not switch site")
+                if not page.query_selector('#stageRack [data-cable]'):
+                    bad.append("stage cable in 2D: no cables drawn in the site")
+            except Exception as e:
+                bad.append(f"stage cable in 2D: {e}")
         if name in CLAIMS:
             what, run = CLAIMS[name]
             try:
