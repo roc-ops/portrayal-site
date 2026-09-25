@@ -20,7 +20,7 @@
 
 import {stage3d, stageRack, el, title, lead, kv, save, saveSvg} from '../artifact.js';
 import {mountRing, disposeRing, summarize, colorOf, loadLab, sitesOf} from '../ring.js';
-import {siteView} from '../ring2d.js';
+import {siteView, siteCaption} from '../ring2d.js';
 // A circular import (the rail imports this stage); setMode is only read inside
 // a click handler, never while the modules are being evaluated.
 import {setMode} from '../stage-rail.js';
@@ -62,9 +62,6 @@ function summaryKids(lab) {
   return kids;
 }
 
-const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-const count = n => (n >= 2 && n <= 9 ? WORDS[n] : String(n));
-
 export default function makeCable() {
   let ring = null;
 
@@ -84,10 +81,9 @@ export default function makeCable() {
       return;
     }
     const sites = sitesOf(lab);
-    const lo = Math.min(...lab.devices.map(d => d.ru)), hi = Math.max(...lab.devices.map(d => d.ru));
     const view = siteView({ui, lab, sites});
     kids.push(
-      lead(`Grouped by site, as the ring's topology divides it. Physically all ${count(sites.length)} share one lab rack (U${lo}–${hi}).`),
+      el('p', {class: 'panel-lead', 'data-site-caption': 'true', text: siteCaption(lab, sites)}),
       view.back,
       view.status,
       lead(`<strong>${esc(lab.title || lab.name)}</strong>, from the lab file Portrayal ships. The cast has no links in the data, so this stage cables a topology that does.`),

@@ -13,7 +13,7 @@
 
 import {stage3d, stageRack, el, title, lead, kv, controls, panel} from '../artifact.js';
 import {mountRing, disposeRing, purpose, MEDIA_COLORS, OTHER_MEDIA, sitesOf, loadLab} from '../ring.js';
-import {siteView} from '../ring2d.js';
+import {siteView, siteCaption} from '../ring2d.js';
 
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const hex = n => `#${n.toString(16).padStart(6, '0')}`;
@@ -122,6 +122,8 @@ export default function makeFilter() {
     }
 
     kids.push(
+      // The same caption stage 4 leads with (spec §5.2): always, in 2D.
+      el('p', {class: 'panel-lead', 'data-site-caption': 'true', text: siteCaption(lab, sites)}),
       view.back,
       view.status,
       lead(`Filtering the same ${links.length}-link ring stage 4 cabled, on two independent axes: media, straight off each link, and purpose, the group of the ports it connects - read off the compiled face, the same way stage 4's labels are.`),

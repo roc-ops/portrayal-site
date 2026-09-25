@@ -595,6 +595,11 @@ src_ring = ring_js + r2 + "".join((HERE / "site" / "showcase" / "stages" / f).re
                                   for f in ("04-cable.js", "05-filter.js"))
 check(not re.search(r"""['"`]site-|\bsite-[a-z]\b|split\(\s*['"]-['"]\s*\)""", src_ring),
       "the ring code parses no site out of device ids", "derive sites from the topology")
+# Spec §5.2: every 2D ring stage leads with the one caption, built once.
+check("export function siteCaption" in r2
+      and all("siteCaption(lab, sites)" in (HERE / "site" / "showcase" / "stages" / f).read_text()
+              for f in ("04-cable.js", "05-filter.js")),
+      "stages 4 and 5 both caption the 2D ring through ring2d.js's siteCaption")
 # The stage-4 section assigns `ring` inside a conditional block, so it may
 # not exist at all when labs.json is missing. Read it defensively; a
 # NameError here would crash the contract instead of recording a FAIL.

@@ -7,7 +7,9 @@
 // ports the compiled faces put it on; a span link, whose far end is in
 // another site, ends in a stub that names that end and takes you there.
 //
-// Two exports:
+// Exports:
+//   siteCaption - the sentence every 2D ring stage leads with: sites are the
+//                topology's, the rack is one.
 //   drawSite2d - the picture of one site, composed and attached.
 //   siteView   - the site tabs, the stub jumps and the way back, for any
 //                stage that shows the ring in 2D (stage 4 cables it, stage 5
@@ -40,6 +42,18 @@ const ESC = v => (window.CSS?.escape ? CSS.escape(v) : String(v).replace(/"/g, '
 // What a stub says, in the one form the drawing's tooltip and the panel's
 // button both use: far site, far device, far port.
 const stubText = (farSite, there) => `→ ${farSite.label} · ${there[0]} · ${there[1]}`;
+
+// THE CAPTION, for every stage that shows the ring by site (spec §5.2). A
+// 2D site looks like a rack of its own, and it is not one: the sites are
+// the topology's, and physically every device shares the one lab rack. The
+// count comes from the sites, the U range from the lab.
+const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+const countWord = n => (n >= 2 && n <= 9 ? WORDS[n] : String(n));
+export function siteCaption(lab, sites) {
+  const us = (lab.devices || []).map(d => d.ru);
+  const lo = Math.min(...us), hi = Math.max(...us);
+  return `Grouped by site, as the ring's topology divides it. Physically all ${countWord(sites.length)} share one lab rack (U${lo}–${hi}).`;
+}
 
 const indexMemo = new Map();   // ref -> its configs.json, or null when it failed
 async function indexOf(ref) {

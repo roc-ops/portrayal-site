@@ -266,6 +266,15 @@ def check_stages(page, base):
                 run()
             except Exception as e:
                 bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
+        if name in ("cable", "filter"):
+            # Spec §5.2: in 2D a site looks like a rack of its own, so every
+            # stage that draws the ring by site says it is not one.
+            try:
+                cap = page.inner_text('#sidePanel [data-site-caption]', timeout=READY_MS)
+                if "Physically" not in cap:
+                    bad.append(f"stage {name} in 2D: the site caption does not say the rack is shared: {cap!r}")
+            except Exception as e:
+                bad.append(f"stage {name} in 2D: no site caption in the panel ({str(e).splitlines()[0]})")
         if name == "filter":
             try:
                 vis = page.evaluate("""() => [...document.querySelectorAll(
