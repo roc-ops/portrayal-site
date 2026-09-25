@@ -131,7 +131,7 @@ else:
 WANT = {
     "dist.js": ["jdist"],
     "devsel.js": ["createDevicePicker"],
-    "swap.js": ["applyOverrides"],
+    "swap.js": ["applyOverrides", "applyFaceOverrides"],
     "share.js": ["toGLB", "toUSDZ"],
     "relief.js": ["configureRelief", "buildFaceRelief", "canvasTex", "svgCanvas",
                   "svgSource", "setSvgOverride", "clearSvgOverrides",

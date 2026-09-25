@@ -146,6 +146,12 @@ export const shortRef = ref => (ref || '(empty)').split('/').pop().replace(/@\d+
 // Rails and RU marks for heightRU units, then each device's compiled front face
 // at its own bottom U. An empty stack is an empty rack - stage 0 draws exactly
 // that.
+//
+// A device's overrides are seated the way the 3D rack seats them: through
+// swap.js's face-level pass, bays AND cages, never a bays-only call. Seating
+// the bays alone is how stage 3's optics went missing from stage 6's SVG and
+// PNG - the AS7726-32X has no front bays at all, and its 34 cages are in
+// `cages.front`.
 export async function build2dElevation({stack, heightRU, overrides: ov = overrides}) {
   const totalH = heightRU * RU;
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg',
@@ -199,8 +205,9 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
     out.append(g);
     const mine = ov?.[e.ref];
     if (mine && Object.keys(mine).length) {
-      const {applyOverrides} = await import('../../vendor/swap.js');
-      await applyOverrides(g, baysOf(e.ref).front || [], mine, loadSkin);
+      const {applyFaceOverrides} = await import('../../vendor/swap.js');
+      await applyFaceOverrides(g, {bays: baysOf(e.ref).front || [], cages: cagesOf(e.ref).front || []},
+                               mine, loadSkin, byRef);
     }
   }
   return out;

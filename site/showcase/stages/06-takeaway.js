@@ -15,9 +15,9 @@
 //               exists (R11).
 //   SVG       - build2dElevation with the current overrides, which DOES
 //               apply them - it is the same call stage 0's rails export
-//               already uses. It draws front bays only, same as every other
-//               2D elevation on this site (Task 3's ruling), so the label
-//               says so.
+//               already uses, and it seats each front face through swap.js's
+//               face-level pass, so stage 2's cards AND stage 3's optics are
+//               in the file (R26).
 //   PNG       - raster.js's rasterize, which only takes a URL: the SVG built
 //               above is not one, so it is turned into an object URL first
 //               and the URL is revoked once the raster is done.
@@ -137,7 +137,7 @@ export default function makeTakeaway() {
           ['draw.io', 'rack diagram, base front configuration - does not reflect seated cards or optics'],
           ['GLB / USDZ', scene ? 'the mounted rack, as configured, as a 3D model'
                                 : 'unavailable - no 3D in this browser'],
-          ['SVG', '2D front elevation, with the seated cards and optics (front bays only)'],
+          ['SVG', '2D front elevation, with the seated cards and optics'],
           ['PNG', 'a raster of that same elevation'],
           ['DCIM', 'NetBox and Nautobot device-type YAMLs for each cast device, linked below'],
         ]),
@@ -150,10 +150,10 @@ export default function makeTakeaway() {
          title: 'Download a draw.io rack diagram - base front configuration only; does not show seated cards or optics',
          run: buildDrawio},
         {label: 'SVG',
-         title: 'Download the 2D front elevation, with the current overrides (front bays only)',
+         title: 'Download the 2D front elevation, with the seated cards and optics',
          run: () => saveSvg(elevationSvg, 'cast-rack-elevation.svg')},
         {label: 'PNG',
-         title: 'Download a PNG raster of the front elevation, with the current overrides (front bays only)',
+         title: 'Download a PNG raster of the front elevation, with the seated cards and optics',
          run: buildPng},
       ];
       if (scene) {
