@@ -431,6 +431,16 @@ if pop.is_file():
     check(not re.search(r"accepts\s*[:=]\s*\[", s),
           "stage 2 does not hardcode an accepted list",
           "found an inline accepts array - that is the page fabricating data")
+    # Each slot offers its OWN accepts: pooling the group's lists back into
+    # one menu is the old refusal demo, which read as a broken dropdown.
+    check(not re.search(r"flatMap\(\s*\w+\s*=>\s*\w+\.accepts", s),
+          "stage 2 offers each slot only its own accepts",
+          "found accepts pooled across bays - a slot would offer cards it refuses")
+    # The set headings are the cards' roles from the component index, not
+    # names written here.
+    check("attrs?.role" in s and not re.search(r"['\"](Route switch processors|Line cards)['\"]", s),
+          "stage 2 heads each slot set with its cards' role from the index",
+          "a hardcoded heading would be the page naming hardware it should read")
 
 # STAGE 3'S WHOLE CLAIM IS THAT SPEED AND LANES ARE NOT ON THE GENERIC OPTIC -
 # a speed table here would be the page inferring the one fact the component

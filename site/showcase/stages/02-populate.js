@@ -1,20 +1,20 @@
 // Stage 2 - Populate. "What does this bay accept?"
 //
-// The refusal is the whole point of the stage. A bay's accepted list comes
-// from the compiled index (rack.js's baysOf), never from an array written in
-// this file - a hardcoded list here would be the page inventing the answer it
-// is meant to demonstrate. check-contract.py enforces both halves of that:
-// baysOf must be read, and no inline accepted-list array may appear below.
+// Every slot offers exactly what it accepts, and choosing one seats it. The
+// list comes from the compiled index (rack.js's baysOf), never from an array
+// written in this file - a hardcoded list here would be the page inventing
+// the answer it is meant to demonstrate. check-contract.py enforces both
+// halves of that: baysOf must be read, and no inline accepted-list array may
+// appear below.
 //
-// The candidates offered for a bay are the UNION of `accepts` over every bay
-// in the same group (`slots`) on the ASR-9006, not a hand-picked incompatible
-// part. slot-0 and slot-1 (route processors) and slot-2 through slot-5 (line
-// cards) share one group, so offering a line card to slot-0 - or an RSP to
-// slot-3 - is a real refusal: the candidate is real hardware for THIS device,
-// just not for that bay. Acceptance is enforced by testing membership in the
-// bay's own `accepts` array below; setState is not involved in that decision
-// (R5) - it only marks a declared visual state on a 2D element, and nothing
-// here uses it.
+// The device knowing its slots IS the demonstration, so it is shown rather
+// than staged: the ASR-9006's `slots` group splits into bays with the same
+// `accepts`, and each set is headed by what its cards are - the `role` the
+// component index gives them (route-switch-processor, line-card), never a
+// label written here. slot-0 and slot-1 list route processors; slot-2 through
+// slot-5 list line cards. (It used to offer every slot the union of both, so
+// that picking a line card for slot-0 would be refused. That read as a broken
+// dropdown, not a demonstration, and it went.)
 //
 // The picture follows the switch (ui.mode): in 2D the cast's front faces on
 // the rails, through build2dElevation, which seats `overrides` through
@@ -26,8 +26,8 @@
 //   slot-2..slot-5 accept only line cards (a9k-16x100ge-tr, a9k-4x100ge-se,
 //   a9k-8x100ge-se, ...) + the slot cover
 
-import {stage3d, stageRack, el, title, lead, kv, panZoom} from '../artifact.js';
-import {CAST, RACK_U, loadMeta, chassisOf, baysOf, overrides, mount3d, shortRef,
+import {stage3d, stageRack, el, title, lead, panZoom} from '../artifact.js';
+import {CAST, RACK_U, loadMeta, chassisOf, baysOf, byRef, overrides, mount3d, shortRef,
         enqueueRebuild, build2dElevation} from '../rack.js';
 import {wireDevices} from '../spoke-host.js';
 
@@ -63,86 +63,109 @@ export default function makePopulate() {
     return true;
   }
 
+  // In slot order - slot-0 first - rather than the index's, which lists them
+  // top of the chassis down.
   function bays() {
-    return (baysOf(DEV).front || []).filter(b => b.group === GROUP);
+    return (baysOf(DEV).front || []).filter(b => b.group === GROUP)
+      .sort((a, b) => a.id.localeCompare(b.id, 'en', {numeric: true}));
   }
 
-  // The group's full range, minus the slot cover every bay already defaults
-  // to and isn't interesting to offer back.
-  function union(all) {
-    return [...new Set(all.flatMap(b => b.accepts || []))]
-      .filter(ref => ref !== COVER)
-      .sort();
+  // What a bay holds now: its override when there is one - null meaning it
+  // was deliberately emptied, which is how Explorer reports a bay emptied in
+  // the Inspect lens - and otherwise what the configuration gives it.
+  function holding(b) {
+    const ov = overrides[DEV] || {};
+    return Object.hasOwn(ov, b.id) ? (ov[b.id] || null) : b.default;
+  }
+
+  // Bays with the same `accepts`, in slot order, each set headed by the role
+  // its cards declare in the component index. Cards that disagree (or carry
+  // no role) get a neutral heading rather than a guessed one.
+  function sets(all) {
+    const out = new Map();
+    for (const b of all) {
+      const key = [...(b.accepts || [])].sort().join(' ');
+      if (!out.has(key)) out.set(key, []);
+      out.get(key).push(b);
+    }
+    return [...out.values()].map(bays => {
+      const roles = new Set((bays[0].accepts || []).filter(r => r !== COVER)
+        .map(r => byRef(r)?.attrs?.role));
+      const [role] = roles;
+      const name = roles.size === 1 && role
+        ? role.charAt(0).toUpperCase() + role.slice(1).replace(/-/g, ' ') + 's'
+        : 'Modules';
+      return {name, bays};
+    });
   }
 
   // `ui` is the lease of the entry this panel belongs to (stage-rail.js).
   // Every control below closes over THAT lease, never the rail's global
-  // epoch - so a click can only act for the entry that drew its button.
-  function buildPanel(ui, message, refused) {
+  // epoch - so a change can only act for the entry that drew its control.
+  function buildPanel(ui, message) {
     const all = bays();
-    const candidates = union(all);
     const busy = inFlight > 0;
+    const had = document.activeElement?.closest?.('#sidePanel select[data-bay]')?.dataset.bay;
     readout = el('p', {class: 'panel-lead', 'data-readout': 'true',
-      text: message || (busy ? 'Applying…' : 'Pick a bay and a card, then seat it.')});
-    if (refused) readout.dataset.refused = 'true';
+      text: message || (busy ? 'Applying…' : 'Choose a card for any slot and it seats.')});
     if (busy) readout.dataset.busy = 'true';
 
-    const bayRows = all.map(b => {
-      const sel = el('select', {'data-bay': b.id});
-      for (const ref of candidates) sel.append(el('option', {value: ref, text: shortRef(ref)}));
-      const btn = el('button', {type: 'button', 'data-bay': b.id, text: `Seat in ${b.id}`});
-      btn.onclick = () => seat(ui, b, sel.value);
-      return el('div', {class: 'ctl-row', 'data-bay-row': b.id},
-        [el('span', {class: 'mono', text: b.id}), sel, btn]);
-    });
-
-    // PRESENT BUT NULL IS EMPTY, not "the default". An override is a delta:
-    // no key means the bay holds what the configuration gives it; a key whose
-    // value is null (or '') means it was deliberately emptied - which is how
-    // Explorer reports a bay opened in the Inspect lens, and how swap.js
-    // draws it. Listing the default there contradicted the picture.
-    const seatedRows = all.map(b => {
-      const mine = overrides[DEV]?.[b.id];
-      const has = Object.hasOwn(overrides[DEV] || {}, b.id);
-      return [b.id, has ? (mine ? shortRef(mine) : 'empty') : shortRef(b.default)];
-    });
+    const groups = sets(all).map(({name, bays}) => el('div', {class: 'bay-set'}, [
+      el('p', {class: 'bay-set-name', text: `${name} · ${bays.map(b => b.id).join(', ')}`}),
+      ...bays.map(b => {
+        const now = holding(b);
+        const sel = el('select', {'data-bay': b.id, 'aria-label': `${b.id} holds`});
+        const refs = (b.accepts || []).filter(r => r !== COVER);
+        for (const ref of refs) sel.append(el('option', {value: ref, text: shortRef(ref)}));
+        if ((b.accepts || []).includes(COVER)) {
+          sel.append(el('option', {value: COVER, text: 'slot cover (no card)'}));
+        }
+        // Emptied in the lens: not a choice this stage offers, but the truth.
+        if (now === null) sel.append(el('option', {value: '', text: 'empty'}));
+        sel.value = now ?? '';
+        sel.onchange = () => { if (sel.value) seat(ui, b, sel.value); };
+        return el('label', {class: 'ctl-row', 'data-bay-row': b.id},
+          [el('span', {class: 'mono', text: b.id}), sel]);
+      }),
+    ]));
 
     ui.setPanel(
       title('Stage 2 · Populate'),
       lead('<strong>What does this bay accept?</strong>'),
-      lead('slot-0 and slot-1 take route processors; slot-2 through slot-5 take line cards. The list below is each bay’s own `accepts`, read off the compiled index - choose a card and the bay either seats it or refuses it on that basis.'),
-      kv(all.map(b => [b.id, `accepts: ${(b.accepts || []).filter(r => r !== COVER).map(shortRef).join(', ')}`])),
-      ...bayRows,
+      lead('Each slot lists only the cards it accepts, read off the compiled index: the ASR-9006 knows its route processor slots from its line card slots.'),
       readout,
-      kv(seatedRows),
+      ...groups,
     );
+    if (had) panelSelect(had)?.focus();
   }
+  const panelSelect = id => document.querySelector(`#sidePanel select[data-bay="${id}"]`);
 
   // The queued unit of work. `ui` is the lease of the panel the visitor
-  // CLICKED (handed down by seat(), below), so it is judged by the entry that
-  // drew the button - not by whatever is current when this runs, which can be
+  // CHANGED (handed down by seat(), below), so it is judged by the entry that
+  // drew the control - not by whatever is current when this runs, which can be
   // much later if it was queued behind another bay's rebuild. R18: the very
   // first thing this does is check whether that entry has already gone
   // stale, and if so it drops the seat entirely - no `overrides` write, no
   // rebuild, no panel update - on both the scene and no-scene paths, because
   // a queued item that survives exit() and paints anyway would setPanel()
   // over whatever stage is current by the time it runs. Returns what to
-  // paint, or null when there is nothing worth painting. Never touches
-  // `overrides` on the refusal path.
+  // paint, or null when there is nothing worth painting. A ref the bay does
+  // not accept is never written: the menu only offers accepted ones, so that
+  // can only be a stale or forged value, and it is dropped.
   async function doSeat(bay, ref, ui) {
     if (!ui.live()) return null;
     if (!(bay.accepts || []).includes(ref)) {
-      const accepts = (bay.accepts || []).filter(r => r !== COVER).map(shortRef).join(', ');
-      return {message: `refused — ${bay.id} accepts: ${accepts}. ${shortRef(ref)} is not in that list.`,
-              refused: true};
+      console.warn('[portrayal] stage 2: not accepted by', bay.id, ref);
+      return null;
     }
     overrides[DEV] = overrides[DEV] || {};
     overrides[DEV][bay.id] = ref;
+    const said = `seated — ${bay.id}: ${ref === COVER ? 'slot cover' : shortRef(ref)}`;
 
     if (ui.mode === '2d') {
-      // In this same queue slot, so the pictures land in click order.
+      // In this same queue slot, so the pictures land in change order.
       if (!await draw2d(ui)) return null;
-      return {message: `seated — ${bay.id}: ${shortRef(ref)}`, refused: false};
+      return {message: said};
     }
     const sc = scene;
     if (sc) {
@@ -150,23 +173,24 @@ export default function makePopulate() {
       await sc.build();
       if (!ui.live() || scene !== sc) return null;
     }
-    return {message: `seated — ${bay.id}: ${shortRef(ref)}`, refused: false};
+    return {message: said};
   }
 
-  // Every click enqueues rather than runs, through rack.js's shared rebuild
+  // Every change enqueues rather than runs, through rack.js's shared rebuild
   // queue - that is what keeps two sc.build() calls from ever overlapping,
   // including one started by a DIFFERENT stage (stage 3 rebuilds the same
   // scene). buildPanel() only runs after inFlight has been decremented, so
   // whichever seat was queued LAST is also painted last, and once the queue
   // drains the panel reflects the final `overrides` no matter how the clicks
-  // landed.
+  // landed. A seat that is dropped still repaints, so the menus never keep
+  // showing a choice that did not happen.
   function seat(ui, bay, ref) {
     inFlight++;
     enqueueRebuild(() => doSeat(bay, ref, ui))
       .catch(err => { console.warn('[portrayal] stage 2 seat failed', err); return null; })
       .then(result => {
         inFlight--;
-        if (result && ui.live()) buildPanel(ui, result.message, result.refused);
+        if (ui.live()) buildPanel(ui, result?.message);
       });
   }
 
@@ -187,8 +211,8 @@ export default function makePopulate() {
         if (!ui.live()) { sc?.dispose(); return; }
         scene = sc;
         // Only when a scene actually mounted - R11: the panel is built either
-        // way, so a no-WebGL run still lets the visitor seat cards and see the
-        // refusal, just without the 3D picture.
+        // way, so a no-WebGL run still lets the visitor seat cards and read
+        // what each slot accepts, just without the 3D picture.
         if (scene) ui.unscrim();
       } else {
         if (!await draw2d(ui)) return;

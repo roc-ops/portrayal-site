@@ -136,20 +136,10 @@ def check(page, base, name):
 STAGES = ["rails", "mount", "populate", "optics", "cable", "filter", "takeaway"]
 
 
-def refused_card(bay_id="slot-0"):
-    """A card stage 2 offers that `bay_id` does NOT accept, read off the index.
-
-    Stage 2 offers the union of `accepts` over the ASR-9006's `slots` group,
-    so a line card is on slot-0's list and slot-0 refuses it. Picked from the
-    same data the stage reads, so the walk never names a card by hand.
-    """
+def slot_bays():
+    """The ASR-9006's `slots` group, read off the index stage 2 reads."""
     idx = json.loads((HERE / "assets" / "dist" / "asr-9006.configs.json").read_text())
-    bays = [b for b in idx.get("bays", {}).get("front", []) if b.get("group") == "slots"]
-    bay = next((b for b in bays if b.get("id") == bay_id), None)
-    if not bay:
-        return None
-    offered = sorted({r for b in bays for r in b.get("accepts", [])})
-    return next((r for r in offered if r not in bay.get("accepts", [])), None)
+    return [b for b in idx.get("bays", {}).get("front", []) if b.get("group") == "slots"]
 
 
 def accepted_card(bay_id):
@@ -251,25 +241,39 @@ def check_stages(page, base):
     # on the same page as the walk, so a 404 it causes - stage 3's skin fetch,
     # say - lands in the same listener. Without WebGL these still run: the
     # panel is built either way (R11), and it is the panel that answers.
-    def refuse():
-        card = refused_card()
-        if not card:
-            raise RuntimeError("no card in the slots group that slot-0 refuses")
-        page.select_option('#sidePanel select[data-bay="slot-0"]', card, timeout=READY_MS)
-        page.click('#sidePanel button[data-bay="slot-0"]', timeout=READY_MS)
-        page.wait_for_selector('#sidePanel [data-readout][data-refused]', timeout=READY_MS)
-        # And one the bay DOES accept, so the redraw after a real seat runs.
-        # The readout is painted only after the queued redraw, so the drawing
-        # is there by the time it says "seated".
-        ok = accepted_card("slot-2")
-        if not ok:
-            raise RuntimeError("no card slot-2 accepts")
-        page.select_option('#sidePanel select[data-bay="slot-2"]', ok, timeout=READY_MS)
-        page.click('#sidePanel button[data-bay="slot-2"]', timeout=READY_MS)
-        page.wait_for_selector('#sidePanel [data-readout]:not([data-refused]):not([data-busy])',
-                               timeout=READY_MS)
-        if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"]'):
-            bad.append("stage populate in 2D: the ASR-9006 is not drawn")
+    def populate():
+        # EACH SLOT OFFERS EXACTLY WHAT IT ACCEPTS - the index's own list, the
+        # slot cover included - and nothing another slot takes. The empty
+        # option appears only for a bay emptied in the Inspect lens, which
+        # has not happened yet on this walk.
+        for b in slot_bays():
+            want = sorted(b.get("accepts", []))
+            got = sorted(page.eval_on_selector_all(
+                f'#sidePanel select[data-bay="{b["id"]}"] option', "os => os.map(o => o.value)"))
+            if got != want:
+                bad.append(f"stage populate: {b['id']} offers {got}, but accepts {want}")
+        # Headed by what the cards are, per the component index's roles.
+        names = page.eval_on_selector_all('#sidePanel .bay-set-name', "ns => ns.map(n => n.textContent)")
+        if not any(n.startswith("Route switch processors") for n in names) \
+                or not any(n.startswith("Line cards") for n in names):
+            bad.append(f"stage populate: the slot sets are not headed by their cards' roles ({names})")
+        # Choosing seats: a route processor in slot-0, the slot a line card
+        # could never be offered for, and a line card in slot-2. The readout
+        # is painted only after the queued redraw, so the drawing is there by
+        # the time it says "seated".
+        for bay, ref in (("slot-0", accepted_card("slot-0")), ("slot-2", accepted_card("slot-2"))):
+            if not ref:
+                raise RuntimeError(f"no card {bay} accepts")
+            page.select_option(f'#sidePanel select[data-bay="{bay}"]', ref, timeout=READY_MS)
+            page.wait_for_function(
+                """(b) => { const r = document.querySelector('#sidePanel [data-readout]:not([data-busy])');
+                    return !!r && r.textContent.startsWith('seated — ' + b + ':'); }""",
+                arg=bay, timeout=READY_MS)
+            if not page.query_selector(f'#stageRack svg [data-device-ref="asr-9006"] '
+                                       f'[data-path="{bay}/module"][data-ref^="{ref}"]'):
+                bad.append(f"stage populate in 2D: {ref} chosen for {bay} is not drawn there")
+            if page.eval_on_selector(f'#sidePanel select[data-bay="{bay}"]', "s => s.value") != ref:
+                bad.append(f"stage populate: {bay}'s menu does not show the card it now holds")
 
     def seat_optic():
         page.click('#sidePanel [data-seat]', timeout=READY_MS)
@@ -296,7 +300,7 @@ def check_stages(page, base):
             arg=[want, total], timeout=READY_MS)
 
     CLAIMS = {
-        "populate": ("slot-0 refuses a line card", refuse),
+        "populate": ("every slot offers only what it accepts, and a choice seats", populate),
         "optics": ("an optic seats and reads back", seat_optic),
         "filter": ("management filters the count", filter_management),
     }
@@ -580,20 +584,17 @@ def check_stages(page, base):
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         if page.query_selector('#lensFrame iframe') or page.is_visible('#lensFrame'):
             bad.append("inspect frame: the frame outlived the lens")
-        # PROVEN ON THE RACK, NOT ON ANY TEXT. The card's short name is also in
-        # stage 2's accepts list, so finding it in the panel proves nothing:
-        # the seated list must say slot-3 holds it, and the drawing must seat it.
-        row = lambda slot: page.evaluate("""(slot) => {
-            const dts = [...document.querySelectorAll('#sidePanel dl.kv dt')]
-              .filter(dt => dt.textContent === slot);
-            return dts.map(dt => dt.nextElementSibling?.textContent || '');
-        }""", slot)
+        # PROVEN ON THE RACK, NOT ON ANY TEXT: slot-3's own menu must hold
+        # the card, and the drawing must seat it.
+        row = lambda slot: page.eval_on_selector(
+            f'#sidePanel select[data-bay="{slot}"]',
+            "s => s.selectedOptions[0]?.textContent || ''")
         seated = row("slot-3")
         if "a9k-4x100ge-se" not in seated:
-            bad.append(f"inspect frame: stage 2's seated list does not show slot-3 holding the card ({seated})")
+            bad.append(f"inspect frame: stage 2's slot-3 menu does not show the card ({seated})")
         # The emptied bay: listed as empty, and drawn empty - not its default.
         if "empty" not in row("slot-2"):
-            bad.append(f"inspect frame: a bay emptied in Explorer is not listed as empty ({row('slot-2')})")
+            bad.append(f"inspect frame: a bay emptied in Explorer is not shown as empty ({row('slot-2')})")
         if page.query_selector('#stageRack svg [data-device-ref="asr-9006"] [data-path="slot-2/module"]'):
             bad.append("inspect frame: a bay emptied in Explorer is still drawn filled")
         if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '

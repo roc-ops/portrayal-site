@@ -22,8 +22,8 @@ const RACK_SIZES = [12, 16, 22, 24, 42];
 const GAP = 1;
 
 // The cast, bottom-up, heaviest lowest. What each demonstrates HERE: the
-// ASR-9006 is modular - stage 2 seats its slots and refuses a card a slot
-// does not accept; the AS7726-32X is the optics story in stage 3, and the one
+// ASR-9006 is modular - stage 2 seats its slots, each offering only what it
+// accepts; the AS7726-32X is the optics story in stage 3, and the one
 // device every lens is written against; the R740xd and the FHD-1UFCE are
 // mounted, sized from their own chassis, and open under Inspect. The R740xd's
 // teardown (data-under, R24) is half there: inside the Inspect lens, which is
