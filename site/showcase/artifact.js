@@ -66,19 +66,33 @@ export let BASE_FRAME = null;
 // tears the host down and rebuilds it around the new drawing, exactly as a
 // tab's own view/config controls expect.
 let host = null;
-export function setHost(h) { host = h; }
+export function setHost(h) { host = h; gen++; }
+
+// THE LOAD GENERATION - the one guard every redraw goes through. Bumped by
+// every loadDrawing/setDrawing and by every setHost, and captured before the
+// fetch. A fetch that lands after it moved has been overtaken - by another
+// redraw, by a spoke closing, by a rung click that closed the spoke - and it
+// touches nothing: not #stage2d, not svg, not DEVICE/VIEW/CONFIG, not srcLine,
+// not the scrim. It lives HERE, at the choke point, because a lens's own
+// view/config buttons call setDrawing with no epoch of their own, and a guard
+// each caller must remember is one the next caller forgets.
+let gen = 0;
 
 // ── Loading the artifact ───────────────────────────────────────────────
-// `isStale`, when given, is asked once the file has arrived: a caller that has
-// been overtaken (a spoke whose open lost to a rung click) gets false back and
-// the stage is left exactly as it was - no drawing swapped, no scrim hidden.
+// `isStale`, when given, is asked as well once the file has arrived: a caller
+// with its own notion of being overtaken (a spoke whose open lost to a rung
+// click) gets false back and the stage is left exactly as it was.
 export async function loadDrawing(dev = DEVICE, view = VIEW, config = CONFIG, isStale = null) {
+  return load(dev, view, config, isStale, ++gen);
+}
+
+async function load(dev, view, config, isStale, mine) {
   const url = DIST + file(dev, config, view);
   const text = await fetch(url).then(r => {
     if (!r.ok) throw new Error(`${url} — ${r.status}`);
     return r.text();
   });
-  if (isStale?.()) return false;
+  if (mine !== gen || isStale?.()) return false;
   DEVICE = dev; VIEW = view; CONFIG = config;
   stage2d.innerHTML = text;
   svg = stage2d.querySelector('svg');
@@ -104,11 +118,18 @@ export async function loadDrawing(dev = DEVICE, view = VIEW, config = CONFIG, is
 //
 // `dev` defaults to the device already on the stage, not to DEV: a caller that
 // only asks for another view must not silently change device underneath it.
+//
+// The host is captured once, at entry. It is re-entered only if it is still
+// the host and nothing has redrawn since - otherwise a late fetch would enter
+// a lens a second time, or enter one that has already been closed.
 export async function setDrawing(view, config, dev = DEVICE, isStale = null) {
   if (dev === DEVICE && view === VIEW && config === CONFIG) return true;
-  await host?.exit?.();
-  const ok = await loadDrawing(dev, view, config, isStale);
-  if (ok) await host?.enter?.();
+  const h = host;
+  const mine = ++gen;
+  await h?.exit?.();
+  if (mine !== gen || isStale?.()) return false;
+  const ok = await load(dev, view, config, isStale, mine);
+  if (ok && host === h && mine === gen) await h?.enter?.();
   return ok;
 }
 
