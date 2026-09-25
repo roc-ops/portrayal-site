@@ -151,11 +151,12 @@ export async function activate(name) {
 async function enterStage(name) {
   epoch++;
   const mine = epoch;
-  // THE NOTICE IS THIS ENTRY'S, OR NOBODY'S. It was raised for the stage being
-  // entered now (closeSpoke raises it just before re-entering), so this entry
-  // claims it at once: shown if the entry finishes as the live one, dropped if
-  // its enter() throws or it is overtaken - never left to surface on some
-  // later, unrelated entry.
+  // THE NOTICE IS THIS ENTRY'S, OR NOBODY'S. closeSpoke raises it on the way
+  // out of a lens - usually just before re-entering the stage, though a lens
+  // switch leaves it waiting through the next lens - and the first entry after
+  // that claims it at once: shown if the entry finishes as the live one,
+  // dropped if its enter() throws or it is overtaken - never left to surface
+  // on some later entry.
   const note = pending;
   pending = null;
   vacate();
