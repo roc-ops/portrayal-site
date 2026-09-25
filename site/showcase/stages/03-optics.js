@@ -87,7 +87,7 @@ export default function makeOptics() {
     if (b) pz.show([b.x - 20, b.y - 40, b.width + 40, b.height + 80]);
     // Every draw, the first and each seat's redraw: the devices on THIS
     // picture open their Inspect lens (spoke-host.js), in this framing too.
-    wireDevices(out, 'optics');
+    wireDevices(out, 'optics', ui);
     svg = out;
     return true;
   }

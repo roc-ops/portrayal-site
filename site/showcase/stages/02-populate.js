@@ -59,7 +59,7 @@ export default function makePopulate() {
     panZoom(svg, () => base);
     // Every draw, the first and each seat's redraw: the devices on THIS
     // picture open their Inspect lens (spoke-host.js).
-    wireDevices(svg, 'populate');
+    wireDevices(svg, 'populate', ui);
     return true;
   }
 

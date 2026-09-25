@@ -68,7 +68,7 @@ export default function makeMount() {
         const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
         panZoom(svg, () => base);
         // Each device on it opens its Inspect lens (spoke-host.js).
-        wireDevices(svg, 'mount');
+        wireDevices(svg, 'mount', ui);
         ui.unscrim();
         exports = [{label: 'SVG', title: 'Download the mounted rack as drawn',
           run: () => saveSvg(svg, 'rack-mounted.svg')}];

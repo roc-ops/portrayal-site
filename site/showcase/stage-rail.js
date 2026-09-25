@@ -47,7 +47,8 @@ export const stale = mine => mine !== epoch;
 //      global epoch, so a click can only ever act for the entry that drew its
 //      button.
 //
-// The lease is the ONLY way a stage reaches those three writes:
+// The lease is the ONLY way a stage reaches those writes (panel, exports,
+// scrim, and the "Look closer" strip):
 // check-contract.py fails any file under stages/ that imports setPanel,
 // setExports or loading from artifact.js, or reads the rail's `epoch`. mount3d
 // (rack.js) and artifact.js's load keep their own guards; they are shared

@@ -303,10 +303,28 @@ export function save(data, filename, type) {
 // with our own classes are touched. Resolving every element would multiply the
 // file size, and the compiled stylesheet's own custom properties - --led-color
 // and the rest - must be left alone or a lit LED exports unlit.
+//
+// Nor does the page's UI. spoke-host.js's wireDevices makes each device on a
+// 2D elevation a button - tabindex, role, aria-label, the pt-device class and
+// a hover <title> - and marks all of it with data-pt-ui: on an element, the
+// attribute names (and `.class`es) it added; on a node it added, "*". Those
+// come off the clone here, the class BEFORE the baking pass below (pt-device
+// would otherwise match its /pt-/ test and bake computed paint onto every
+// device group), the nodes after it, so the two lists stay index-aligned.
 export function standalone(node) {
   const clone = node.cloneNode(true);
   const orig = [node, ...node.querySelectorAll('*')];
   const copy = [clone, ...clone.querySelectorAll('*')];
+  for (const ce of copy) {
+    const ui = ce.getAttribute?.('data-pt-ui');
+    if (ui == null || ui === '*') continue;
+    for (const t of ui.split(/\s+/).filter(Boolean)) {
+      if (t.startsWith('.')) ce.classList.remove(t.slice(1));
+      else ce.removeAttribute(t);
+    }
+    if (ce.getAttribute('class') === '') ce.removeAttribute('class');
+    ce.removeAttribute('data-pt-ui');
+  }
   const PROPS = ['fill', 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap',
                  'opacity', 'font-family', 'font-size', 'font-weight', 'paint-order'];
   for (let i = 0; i < orig.length; i++) {
@@ -321,6 +339,7 @@ export function standalone(node) {
       if (v) ce.setAttribute(prop, v.trim());
     }
   }
+  clone.querySelectorAll('[data-pt-ui="*"]').forEach(n => n.remove());
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   return '<?xml version="1.0" encoding="UTF-8"?>\n' +
          new XMLSerializer().serializeToString(clone);
