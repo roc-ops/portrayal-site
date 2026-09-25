@@ -530,6 +530,11 @@ check(not re.search(r"const\s+(RAIL|INNER)\s*=", rack_js),
 check("0.22" not in rack_js and "0.78" not in rack_js,
       "rack.js has no non-EIA hole fractions", "holes must come from HOLE_DY")
 
+r3d = (HERE / "site" / "rack3d.js").read_text()
+check("from './showcase/rails.js'" in r3d, "rack3d.js draws its rails from rails.js")
+check(not re.search(r"\[\s*6\.35\s*,\s*22\.22", r3d),
+      "rack3d.js keeps no hole positions of its own", "HOLE_DY belongs to rails.js")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

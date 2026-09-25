@@ -19,8 +19,9 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
+import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from './showcase/rails.js';
 
-export const RU = 44.45;            // EIA-310 rack unit
+export { RU };                      // EIA-310 rack unit; rails.js is the one source
 const RACK_W = 482.6;               // 19in rail-to-rail outer width
 const RACK_FACE_Z = 11;             // front plane of the mounting posts
 const RECESS_DEFAULT = 30;          // how far back the faceplate sits from the rails
@@ -330,25 +331,26 @@ export function createRackScene(container, opts = {}) {
     disposeTree(rack);                       // dispose BEFORE detaching, or
     for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
     const H = UNITS * RU;
-    for (const side of [-1, 1]) {
-      const x = side * (RACK_W / 2 - 8);
-      const post = new THREE.Mesh(new THREE.BoxGeometry(16, H, 34), railMat);
-      post.position.set(x, H / 2, RACK_FACE_Z - 17);
+    for (const s of SIDES) {
+      // The post is the rail's full face, with its inner edge on the opening,
+      // exactly as the 2D elevation draws it.
+      const cx = (s.inner + s.outer) / 2;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(RAIL_W, H, 34), railMat);
+      post.position.set(cx, H / 2, RACK_FACE_Z - 17);
       rack.add(post);
-      // three mounting holes per U, on the EIA-310 0.5/0.625/0.625in spacing
       for (let u = 0; u < UNITS; u++) {
-        for (const dy of [6.35, 22.22, 38.10]) {
-          const h = new THREE.Mesh(new THREE.BoxGeometry(6.5, 6.5, 1), holeMat);
-          h.position.set(x, u * RU + dy, RACK_FACE_Z + 0.3);
+        for (const dy of HOLE_DY) {
+          const h = new THREE.Mesh(new THREE.BoxGeometry(HOLE_SIZE, HOLE_SIZE, 1), holeMat);
+          h.position.set(s.hole, u * RU + dy, RACK_FACE_Z + 0.3);
           rack.add(h);
         }
+        // U numbers ON the rail, on its outboard half, on BOTH rails. They
+        // used to float off the left side only.
+        const n = labelSprite(String(u + 1), 30, (u + 1) % 5 === 0 ? LABEL_EMPH : LABEL_UNIT);
+        n.scale.multiplyScalar(0.45);   // sized to sit inside a 26 mm face; adjust by eye
+        n.position.set(s.number, u * RU + RU / 2, RACK_FACE_Z + 0.6);
+        rack.add(n);
       }
-    }
-    // U numbering up the left rail, counted from the floor as racks are
-    for (let u = 1; u <= UNITS; u++) {
-      const s = labelSprite(String(u), 30, u % 5 === 0 ? LABEL_EMPH : LABEL_UNIT);
-      s.position.set(-(RACK_W / 2 + 34), (u - 1) * RU + RU / 2, 46);
-      rack.add(s);
     }
   }
   buildRack();
