@@ -675,11 +675,24 @@ def check_stages(page, base):
         if ".svg" not in page.inner_text("#showSrc"):
             bad.append("callouts -> inspect: Callouts did not name its face under the stage, "
                        "so the check below proves nothing")
-        page.click('#spokeLenses button:has-text("Inspect")')
-        page.wait_for_selector('#lensFrame iframe', state="attached", timeout=READY_MS)
-        if re.search(r"\.svg\b", page.inner_text("#showSrc")):
-            bad.append(f"callouts -> inspect: the loading frame sits over a stale source line "
-                       f"({page.inner_text('#showSrc')!r})")
+        # Read in the same task the frame is put in the page, so this is the
+        # PENDING path - the cover still up - not the open one.
+        at = page.evaluate("""() => new Promise(res => {
+            const host = document.getElementById('lensFrame');
+            const mo = new MutationObserver(() => {
+              if (!host.querySelector('iframe')) return;
+              mo.disconnect();
+              res({cover: !!host.querySelector('.lens-cover'),
+                   src: document.getElementById('showSrc').textContent});
+            });
+            mo.observe(host, {childList: true});
+            [...document.querySelectorAll('#spokeLenses button')]
+              .find(b => b.textContent === 'Inspect').click();
+        })""")
+        if not at["cover"]:
+            bad.append("callouts -> inspect: the frame was not loading when read, so this proves nothing")
+        if re.search(r"\.svg\b", at["src"]):
+            bad.append(f"callouts -> inspect: the loading frame sits over a stale source line ({at['src']!r})")
         explorer_frame("as7726-32x")
         page.wait_for_selector('#spokeCrumb:not([hidden])', timeout=READY_MS)
         if re.search(r"\.svg\b", page.inner_text("#showSrc")):
