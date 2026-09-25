@@ -209,6 +209,29 @@ if art.is_file():
               f"artifact.js exports {name}",
               f"{name} is still private to showcase.js")
 
+# ── the Runbook is retired, and the four 2D lenses are spokes ────────────
+# THE RUNBOOK IS RETIRED. Its content was hand-written, AS7726-specific MOP
+# prose rather than a lens over compiled data, so no stage regenerates it. A
+# half-retirement - the module gone and the button still shipping, or the
+# reverse - is the failure worth guarding, so both sides are asserted.
+idx = (HERE / "index.html").read_text()
+check('data-tab="runbook"' not in idx, "index.html has no Runbook tab button")
+for f in sorted((HERE / "site" / "showcase").rglob("*.js")) + [HERE / "site" / "showcase.js"]:
+    check("runbook" not in f.read_text().lower(),
+          f"{f.relative_to(HERE)} has no Runbook reference",
+          "the tab is retired; a dangling reference is a half-retirement")
+
+# The four 2D lenses are spokes now - reached from a device in the rack, not
+# siblings in a tab strip. Each is its own file and takes the device as an
+# argument, because the same lens is used on four different devices.
+for s in ("inspect", "callouts", "state", "select"):
+    p = HERE / "site" / "showcase" / "spokes" / f"{s}.js"
+    check(p.is_file(), f"spoke {s}.js exists", "not re-homed yet")
+    if p.is_file():
+        check("export default function" in p.read_text(),
+              f"spoke {s}.js default-exports a factory",
+              "a spoke must take {dev, cfg} so it can serve more than one device")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

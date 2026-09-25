@@ -1,6 +1,6 @@
 // portrayal.dev — the showcase.
 //
-// One compiled artifact, seven lenses. Every tab drives the *same* inlined SVG
+// One compiled artifact, six lenses. Every tab drives the *same* inlined SVG
 // (except 3D and Rack, which mount their own stage), because that is the claim
 // the page is making: the drawing is addressable, so you do not need a
 // different picture for a different job.
@@ -10,405 +10,23 @@
 // to an element that declares it in data-states.
 
 import {
-  svg, overlay, BASE_FRAME, VIEW, CONFIG, DEV, CFG, DIST, VIEWS, CONFIGS,
+  svg, VIEW, CONFIG, DEV, CFG, DIST,
   stage2d, stage3d, stageRack, loading, panel, hint, srcLine, exportSlot,
-  el, svgEl, loadDrawing, setDrawing, node, box,
-  setFrame, resetFrame, panZoom, ring, clearOverlay,
-  declared, setState, clearStates,
+  el, svgEl, loadDrawing, setDrawing, box,
+  panZoom,
   setExports, save, saveSvg, standalone,
   title, lead, kv, controls, setPanel,
   setHost,
 } from './showcase/artifact.js';
+import makeInspect  from './showcase/spokes/inspect.js';
+import makeCallouts from './showcase/spokes/callouts.js';
+import makeState    from './showcase/spokes/state.js';
+import makeSelect   from './showcase/spokes/select.js';
 
-// ── Tab: Inspect ───────────────────────────────────────────────────────
-const inspect = (() => {
-  let readout, onMove, onLeave, hoverRing;
-  const FIELDS = [
-    ['data-class', 'class'], ['data-ref', 'contract'], ['data-media', 'media'],
-    ['data-speed', 'speed'], ['data-lanes', 'lanes'], ['data-group', 'group'],
-    ['data-role', 'role'], ['data-model', 'model'], ['data-sku', 'sku'],
-    ['data-part-number', 'part'], ['data-members', 'members'], ['data-states', 'states'],
-    ['data-for', 'belongs to'],
-  ];
-  function show(target) {
-    clearOverlay();
-    if (!target) {
-      readout.replaceChildren(el('p', {class: 'panel-lead', text: 'Move over the drawing.'}));
-      return;
-    }
-    const path = target.getAttribute('data-path');
-    hoverRing = ring(path, 'pt-ring');
-    const rows = [['path', path, true]];
-    for (const [attr, label] of FIELDS) {
-      const v = target.getAttribute(attr);
-      if (v) rows.push([label, v]);
-    }
-    readout.replaceChildren(kv(rows));
-  }
-  return {
-    hint: 'Hover any element; everything shown is read off its own attributes. Switch to the rear and try AC against DC — the PSU modules and the airflow stripe both change, because a configuration is a different compile.',
-    enter() {
-      resetFrame();
-      readout = el('div', {class: 'readout'});
-      const viewRow = controls(VIEWS.map(v => ({
-        label: v, run: () => setDrawing(v, CONFIG),
-      })));
-      const cfgRow = controls(CONFIGS.map(c => ({
-        label: c.label, run: () => setDrawing(VIEW, c.id),
-      })));
-      const mark = () => {
-        [...viewRow.children].forEach(b => b.setAttribute('aria-pressed', String(b.textContent === VIEW)));
-        [...cfgRow.children].forEach((b, i) => b.setAttribute('aria-pressed', String(CONFIGS[i].id === CONFIG)));
-      };
-      mark();
-      // The readout goes first. It is the only thing here that changes while you
-      // move the mouse, and putting the view and config rows above it pushed it
-      // below the fold of the panel.
-      setPanel(
-        title('Inspect'),
-        el('p', {class: 'panel-title', text: 'element'}),
-        readout,
-        el('p', {class: 'panel-title', text: 'view'}), viewRow,
-        el('p', {class: 'panel-title', text: 'configuration'}), cfgRow,
-        el('p', {class: 'panel-lead', html: 'A configuration populates the bays. Swapping AC for DC swaps the <em>modules</em> — the drawing is recompiled per configuration, not recolored.'}),
-      );
-      show(null);
-      setExports([{label: 'SVG', title: 'Download this view as SVG',
-        run: () => saveSvg(svg, `${DEV}.${CONFIG}.${VIEW}.svg`)}]);
-      onMove = ev => {
-        const t = ev.target.closest?.('[data-path]');
-        show(t && t !== svg ? t : null);
-      };
-      onLeave = () => show(null);
-      svg.addEventListener('pointermove', onMove);
-      svg.addEventListener('pointerleave', onLeave);
-    },
-    exit() {
-      svg.removeEventListener('pointermove', onMove);
-      svg.removeEventListener('pointerleave', onLeave);
-      clearOverlay();
-    },
-  };
-})();
-
-// ── Tab: Callouts ──────────────────────────────────────────────────────
-const callouts = (() => {
-  // Datasheet-style annotation. What is authored is only *which* elements are
-  // worth pointing at and which side they leave from; every coordinate, and
-  // most of the label text, is derived from the drawing.
-  //
-  // Leaders never cross because anchors and label slots are both laid out in
-  // ascending x within a side, so their order is preserved by construction.
-  const TARGETS = [
-    {path: 'port-1',             side: 'up'},
-    {path: 'port-32',            side: 'up'},
-    {path: 'region:mgmt-block',  side: 'up'},
-    {path: 'region:status-leds', side: 'down'},
-    {path: 'region:intake',      side: 'down', note: 'front-to-back airflow'},
-    {path: 'mgmt-eth',           side: 'down'},
-  ];
-
-  const LABEL = 7;      // mm — ~12px once the 438mm drawing is laid out
-  const SUB = 5;
-  const CH = 0.6;       // IBM Plex Mono advance, as a fraction of the em
-  const width = (text, size) => text.length * size * CH;
-
-  // A sub-label built from the element's own attributes wherever it has them.
-  function describe(n, fallback) {
-    const a = k => n.getAttribute(k);
-    if (a('data-class') === 'port') {
-      return [a('data-media'), a('data-speed'), a('data-lanes') && `${a('data-lanes')} lanes`]
-        .filter(Boolean).join(' · ');
-    }
-    if (a('data-class') === 'region') {
-      const m = (a('data-members') || '').split(/\s+/).filter(Boolean);
-      if (m.length) return `${m.length} members`;
-    }
-    if (a('data-model')) return [a('data-model'), a('data-sku')].filter(Boolean).join(' · ');
-    return fallback || a('data-class') || '';
-  }
-
-  function layout(side, W) {
-    const rows = TARGETS.filter(t => t.side === side)
-      .map(t => {
-        const n = node(t.path), b = box(t.path);
-        if (!n || !b) return null;
-        const label = t.path;
-        const sub = describe(n, t.note);
-        return {...t, n, b, label, sub, w: Math.max(width(label, LABEL), width(sub, SUB))};
-      })
-      .filter(Boolean)
-      .sort((a, r) => (a.b.x + a.b.width / 2) - (r.b.x + r.b.width / 2));
-
-    // Three passes. Forward: sit each block under its own anchor, pushed right
-    // only as far as the previous block requires. Backward: pull anything that
-    // overhangs the right edge back in, carrying its neighbors with it.
-    // Forward again: nothing may end up left of the frame.
-    //
-    // Shifting the whole row by the right-hand overflow - the obvious fix - is
-    // wrong: it drags the left-most label off the other edge.
-    const GAP = 22, MIN = 8;
-    let prev = MIN;
-    for (const r of rows) {
-      r.tx = Math.max(r.b.x + r.b.width / 2 - 10, prev);
-      prev = r.tx + r.w + GAP;
-    }
-    for (let i = rows.length - 1; i >= 0; i--) {
-      const limit = i === rows.length - 1 ? W - rows[i].w : rows[i + 1].tx - rows[i].w - GAP;
-      rows[i].tx = Math.min(rows[i].tx, limit);
-    }
-    prev = MIN;
-    for (const r of rows) {
-      r.tx = Math.max(r.tx, prev);
-      prev = r.tx + r.w + GAP;
-    }
-    return rows;
-  }
-
-  return {
-    hint: 'Anchors, routing and most of the label text are derived from the drawing. Only the choice of what to point at is authored.',
-    enter() {
-      const W = BASE_FRAME[2], H = BASE_FRAME[3];
-      setFrame(-14, -46, W + 34, H + 46 + 52);
-      clearOverlay();
-
-      for (const side of ['up', 'down']) {
-        const up = side === 'up';
-        const ty = up ? -30 : H + 26;
-        for (const r of layout(side, W)) {
-          const ax = r.b.x + r.b.width / 2;
-          const ay = up ? r.b.y : r.b.y + r.b.height;
-          const stub = up ? ay - 7 : ay + 7;
-          overlay.append(
-            svgEl('path', {class: 'pt-leader', d:
-              `M ${ax} ${ay} L ${ax} ${stub} L ${r.tx - 9} ${ty} L ${r.tx - 2} ${ty}`}),
-            svgEl('circle', {class: 'pt-dot', cx: ax, cy: ay, r: 0.9}));
-
-          const t1 = svgEl('text', {class: 'pt-label', x: r.tx, y: ty + LABEL * 0.34});
-          t1.textContent = r.label;
-          const t2 = svgEl('text', {class: 'pt-label-sub', x: r.tx, y: ty + LABEL * 0.34 + SUB + 1.6});
-          t2.textContent = r.sub;
-          overlay.append(t1, t2);
-          ring(r.path, 'pt-ring-soft', 1.1);
-        }
-      }
-
-      // A real dimension, off the file's own frame, clear of the labels.
-      const dy = H + 44;
-      overlay.append(svgEl('path', {class: 'pt-dim',
-        d: `M 0 ${dy - 2.5} V ${dy + 2.5} M 0 ${dy} H ${W} M ${W} ${dy - 2.5} V ${dy + 2.5}`}));
-      const dt = svgEl('text', {class: 'pt-label-sub', x: W / 2, y: dy - 2.5, 'text-anchor': 'middle'});
-      dt.textContent = `${W} × ${H} mm`;
-      overlay.append(dt);
-
-      setExports([{label: 'SVG', title: 'Download the annotated figure',
-        run: () => saveSvg(svg, `${DEV}.${CONFIG}.${VIEW}.callouts.svg`)}]);
-      setPanel(
-        title('Callouts'),
-        lead('The annotated figure a datasheet or an install guide needs — generated, not drawn. Because the anchors are real geometry, the figure cannot drift from the hardware.'),
-        kv([
-          ['anchors', 'getBBox()', true],
-          ['routing', 'sorted, so leaders cannot cross'],
-          ['sub-labels', 'from data-media / speed / lanes / members'],
-          ['authored', 'which element, which side'],
-        ]),
-      );
-    },
-    exit() { clearOverlay(); resetFrame(); },
-  };
-})();
-
-// ── Tab: Live state ────────────────────────────────────────────────────
-const state = (() => {
-  const PORT_LEDS = n => [1, 2, 3, 4].map(i => `port-${n}/led-${i}`);
-  const CHASSIS = ['led-loc/lamp', 'led-psu1/lamp', 'led-diag/lamp', 'led-psu2/lamp', 'led-fan/lamp'];
-  let note;
-
-  // Speed bands, stated once. Every one of the 32 cages belongs to exactly one
-  // band: an earlier version ran 1-12, 13-20 and then 25-32, which left ports
-  // 21 to 24 unlit for no reason a reader could work out from the drawing.
-  const BANDS = [
-    {from: 1,  to: 12, state: 'link-100g', label: '100G'},
-    {from: 13, to: 20, state: 'link-40g',  label: '40G'},
-    {from: 21, to: 24, state: 'link-10g',  label: '10G'},
-    {from: 25, to: 32, state: 'link-25g',  label: '25G'},
-  ];
-  const PORTS = 32;
-  const allPorts = st => { for (let n = 1; n <= PORTS; n++) PORT_LEDS(n).forEach(p => setState(p, st)); };
-
-  const scenarios = {
-    healthy() {
-      clearStates(); clearOverlay();
-      CHASSIS.forEach(p => setState(p, 'on'));
-      allPorts('link-100g');
-      setState('mgmt-eth/led-left', 'up');
-      setState('sfp-leds/lamp-1', 'link-10g');
-      return `All ${PORTS} cages up at 100G, management link up, both PSU lamps on.`;
-    },
-    mixed() {
-      clearStates(); clearOverlay();
-      CHASSIS.forEach(p => setState(p, 'on'));
-      for (const b of BANDS) {
-        for (let n = b.from; n <= b.to; n++) PORT_LEDS(n).forEach(p => setState(p, b.state));
-      }
-      setState('mgmt-eth/led-left', 'up');
-      setState('sfp-leds/lamp-1', 'link-10g');
-      setState('sfp-leds/lamp-2', 'link-1g');
-      return 'Four speeds at once — ' +
-        BANDS.map(b => `${b.from}-${b.to} at ${b.label}`).join(', ') +
-        '. The colors are the vendor\'s own convention, carried in the compiled stylesheet, not chosen here.';
-    },
-    fault() {
-      clearStates(); clearOverlay();
-      CHASSIS.forEach(p => setState(p, 'on'));
-      allPorts('link-100g');
-      PORT_LEDS(14).forEach(p => setState(p, 'fault'));
-      setState('mgmt-eth/led-left', 'up');
-      ring('port-14');
-      return 'port-14 in fault. Note what did NOT happen: the front PSU lamps declare only off and on, so this drawing cannot show a PSU fault — that fact lives on the rear view. A state the model does not declare is refused rather than faked.';
-    },
-    off() { clearStates(); clearOverlay(); return 'Everything dark.'; },
-  };
-
-  return {
-    hint: 'The .state-* stylesheet is compiled into the file. Driving it is a class toggle — no redraw, no image swap.',
-    enter() {
-      resetFrame();
-      note = el('p', {class: 'panel-lead', text: 'Pick a scenario.'});
-      setPanel(
-        title('Live state'),
-        lead('Bind these classes to telemetry and the drawing becomes the dashboard.'),
-        controls([
-          {label: 'Healthy', run: () => note.textContent = scenarios.healthy()},
-          {label: 'Mixed speeds', run: () => note.textContent = scenarios.mixed()},
-          {label: 'Fault', run: () => note.textContent = scenarios.fault()},
-          {label: 'All off', run: () => note.textContent = scenarios.off()},
-        ]),
-        note,
-        el('div', {class: 'legend'}, [
-          el('span', {html: '<i style="background:#3b82f6"></i> 100G'}),
-          el('span', {html: '<i style="background:#f97316"></i> 40G'}),
-          el('span', {html: '<i style="background:#f5f7fa"></i> 25G'}),
-          el('span', {html: '<i style="background:#22c55e"></i> 10G / up'}),
-          el('span', {html: '<i style="background:#ef4444"></i> fault'}),
-        ]),
-      );
-      note.textContent = scenarios.mixed();
-      setExports([{label: 'SVG', title: 'Download with the current states applied',
-        run: () => saveSvg(svg, `${DEV}.${CONFIG}.${VIEW}.state.svg`)}]);
-    },
-    exit() { clearStates(); clearOverlay(); },
-  };
-})();
-
-// ── Tab: Select & regions ──────────────────────────────────────────────
-const select = (() => {
-  let picked = new Set(), listEl, selEl, onClick;
-
-  function paint() {
-    clearOverlay();
-    picked.forEach(p => ring(p));
-    listEl.textContent = picked.size
-      ? [...picked].join('\n')
-      : 'nothing selected';
-    selEl.textContent = picked.size
-      ? `[data-path="${[...picked][0]}"]${picked.size > 1 ? `, … (${picked.size} total)` : ''}`
-      : '—';
-  }
-  const pick = paths => { picked = new Set(paths); paint(); };
-
-  return {
-    hint: 'Click any element to select it. Selection is a set of data-paths — the same strings a DCIM, a ticket or a query would use.',
-    enter() {
-      resetFrame();
-      listEl = el('pre', {class: 'mono', style: 'margin:0;max-height:150px;overflow:auto;font-size:0.72rem;color:var(--pt-ink-muted)'});
-      selEl = el('code', {style: 'font-size:0.72rem;color:var(--pt-brass);overflow-wrap:anywhere'});
-      setPanel(
-        title('Select & regions'),
-        lead('Regions are addressable areas, not just decoration: a region can declare its members and be targeted by a NOS entity-map rule.'),
-        controls([
-          {label: 'All QSFP28', run: () => pick([...svg.querySelectorAll('[data-group="qsfp28"]')].map(n => n.getAttribute('data-path')))},
-          {label: 'Odd ports', run: () => pick(Array.from({length: 16}, (_, i) => `port-${i * 2 + 1}`))},
-          {label: 'mgmt-block', run: () => pick(['region:mgmt-block'])},
-          {label: 'status-leds', run: () => pick(['region:status-leds'])},
-          {label: 'Clear', run: () => pick([])},
-        ]),
-        el('p', {class: 'panel-title', text: 'selection'}),
-        listEl,
-        el('p', {class: 'panel-title', text: 'as a selector'}),
-        selEl,
-      );
-      onClick = ev => {
-        const t = ev.target.closest?.('[data-path]');
-        if (!t || t === svg) return;
-        const p = t.getAttribute('data-path');
-        picked.has(p) ? picked.delete(p) : picked.add(p);
-        paint();
-      };
-      svg.addEventListener('click', onClick);
-      setExports([{label: 'SVG', title: 'Download with the selection marked',
-        run: () => saveSvg(svg, `${DEV}.${CONFIG}.${VIEW}.selection.svg`)}]);
-      pick(['region:mgmt-block']);
-    },
-    exit() { svg.removeEventListener('click', onClick); picked.clear(); clearOverlay(); },
-  };
-})();
-
-// ── Tab: Runbook ───────────────────────────────────────────────────────
-const runbook = (() => {
-  // An example method of procedure. The prose is authored; every highlight is
-  // resolved against the drawing, so a step cannot reference a port that is not
-  // on the device.
-  const STEPS = [
-    {t: 'Confirm chassis health before touching anything — <code>DIAG</code>, <code>PS1</code>, <code>PS2</code>, <code>FAN</code> all lit.',
-     paths: ['region:status-leds'], run: () => { ['led-diag/lamp','led-psu1/lamp','led-psu2/lamp','led-fan/lamp'].forEach(p => setState(p, 'on')); }},
-    {t: 'Connect to <code>console</code> at 115200 8N1 and confirm you are on the right unit.',
-     paths: ['console']},
-    {t: 'Shut the existing uplink on <code>port-31</code> and confirm the peer has failed over.',
-     paths: ['port-31'], run: () => [1,2,3,4].forEach(i => setState(`port-31/led-${i}`, 'off'))},
-    {t: 'Remove the 100G DAC from <code>port-31</code>. Cap the cage.',
-     paths: ['port-31']},
-    {t: 'Fit the QSFP28-LR4 into <code>port-32</code> and dress the fibre to the left-hand manager.',
-     paths: ['port-32']},
-    {t: 'Confirm the link comes up at 100G — all four lane lamps on <code>port-32</code>.',
-     paths: ['port-32'], run: () => [1,2,3,4].forEach(i => setState(`port-32/led-${i}`, 'link-100g'))},
-    {t: 'Verify management is still reachable on <code>mgmt-eth</code> before you close the window.',
-     paths: ['mgmt-eth'], run: () => setState('mgmt-eth/led-left', 'up')},
-  ];
-  let list;
-
-  function go(i) {
-    clearOverlay();
-    clearStates();
-    [...list.children].forEach((li, k) => li.setAttribute('aria-current', k === i ? 'step' : 'false'));
-    for (let k = 0; k <= i; k++) STEPS[k].run?.();
-    STEPS[i].paths.forEach(p => ring(p));
-    list.children[i].scrollIntoView({block: 'nearest'});
-  }
-
-  return {
-    hint: 'A method of procedure where each step highlights the hardware it names. The steps are an example; the highlighting is real.',
-    enter() {
-      resetFrame();
-      list = el('ol', {class: 'steps'});
-      STEPS.forEach((s, i) => {
-        const li = el('li', {tabindex: '0'}, [el('span', {html: s.t})]);
-        li.onclick = () => go(i);
-        li.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(i); } };
-        list.append(li);
-      });
-      setPanel(
-        title('Runbook — example MOP'),
-        lead('<strong>Migrate the uplink from port-31 to port-32.</strong> Click a step.'),
-        list,
-      );
-      setExports([{label: 'SVG', title: 'Download this step as a figure',
-        run: () => saveSvg(svg, `${DEV}.runbook-step.svg`)}]);
-      go(0);
-    },
-    exit() { clearOverlay(); clearStates(); },
-  };
-})();
+const inspect  = makeInspect({dev: DEV, cfg: CFG});
+const callouts = makeCallouts({dev: DEV, cfg: CFG});
+const state    = makeState({dev: DEV, cfg: CFG});
+const select   = makeSelect({dev: DEV, cfg: CFG});
 
 // ── Tab: 3D ────────────────────────────────────────────────────────────
 const three = (() => {
@@ -882,7 +500,7 @@ const rack = (() => {
 })();
 
 // ── Wiring ─────────────────────────────────────────────────────────────
-const TABS = {inspect, callouts, state, select, runbook, three, rack};
+const TABS = {inspect, callouts, state, select, three, rack};
 let current = null;
 // Bumped on every switch. An enter() that awaits - 3D and Rack both do - checks
 // it after each await and gives up if the stage has moved on, so a slow build
@@ -890,10 +508,10 @@ let current = null;
 let epoch = 0;
 const stale = mine => mine !== epoch;
 
-// Callouts, state, select and runbook all name elements that exist on the front
+// Callouts, state and select all name elements that exist on the front
 // face of the default configuration. Entering one from a rear or DC view would
 // silently resolve nothing, so reset the drawing first.
-const NEEDS_DEFAULT = new Set(['callouts', 'state', 'select', 'runbook']);
+const NEEDS_DEFAULT = new Set(['callouts', 'state', 'select']);
 
 async function activate(name) {
   if (current === name) return;
