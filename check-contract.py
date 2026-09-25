@@ -252,6 +252,16 @@ if rail.is_file():
               f"listed {sorted(listed)} but found {on_disk}")
         check(len(listed) == 7, "there are seven stages", f"found {len(listed)}")
 
+# Every stage is real now, so no stage file - nor the rail itself - may still
+# carry the "not built yet" placeholder. A fallback that outlives its purpose
+# turns a missing stage into a blank panel instead of an error.
+unbuilt = [p.name for p in sorted((HERE / "site" / "showcase" / "stages").glob("*.js"))
+           if "not built yet" in p.read_text()]
+if rail.is_file() and "not built yet" in rail.read_text():
+    unbuilt.append(rail.name)
+check(not unbuilt, "no stage file has an unbuilt-stage fallback",
+      f"found the placeholder in {unbuilt} - all seven stages exist now")
+
 # STAGES THAT MOUNT THE RACK GO THROUGH rack.js's mount3d, which wraps
 # guard3d. A stage that calls createRackScene directly loses the WebGL guard,
 # and the symptom is the scrim never coming down - which reads as a slow build
