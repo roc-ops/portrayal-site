@@ -194,6 +194,21 @@ check(not re.search(r"\bapplyOccupantOverrides\s*\(", rack),
       "applyOccupantOverrides called directly means the cage list is the "
       "device's own, not faceCages' - nested cages are silently dropped")
 
+# ── the showcase is modules, not one file ────────────────────────────────
+# showcase.js was 1213 lines holding seven tabs over shared globals. A stage
+# or a spoke that needs the drawing imports it; it does not reach for a global
+# that happens to be in scope. Asserted on the file layout because the
+# behaviour needs a browser and this check must stay under a second.
+art = HERE / "site" / "showcase" / "artifact.js"
+check(art.is_file(), "site/showcase/artifact.js exists",
+      "the artifact layer has not been extracted yet")
+if art.is_file():
+    a = art.read_text()
+    for name in ("loadDrawing", "setDrawing", "panZoom", "setExports", "setPanel", "setHost"):
+        check(f"export function {name}" in a or f"export async function {name}" in a,
+              f"artifact.js exports {name}",
+              f"{name} is still private to showcase.js")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
