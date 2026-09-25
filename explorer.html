@@ -30,6 +30,7 @@
 
   /* The shell brings its own stylesheet. Everything here is the Explorer's own:
      the stage toggle, the state chips, and the About panel. */
+  body.embed .site-bar, body.embed #mode { display: none; }
   #mode { display:flex; gap:0.2rem; }
   #mode button { border-radius:0; }
   #mode button:first-child { border-radius:6px 0 0 6px; }
@@ -177,6 +178,14 @@ const shell = createShell({
   mount: document.getElementById('shell'),
 });
 const state = shell.state;
+
+// EMBED MODE. The showcase's Inspect lens is this page in a frame. There the
+// site bar is the outer page's, the device is the lens's, and the 2D/3D switch
+// is the showcase's - so all three step aside, and the outer page talks to
+// this one only through window.portrayalEmbed. Without ?embed=1 nothing here
+// changes. (The shell already hides its own device picker inside a frame.)
+const EMBED = new URLSearchParams(location.search).get('embed') === '1';
+document.body.classList.toggle('embed', EMBED);
 
 // ---------------------------------------------------------------- state chips
 
@@ -866,6 +875,18 @@ addEventListener('resize', () => { if (mode === '3d' && viewer) viewer.resize();
 
 await shell.ready;
 applyPendingFields();
+
+if (EMBED) {
+  window.portrayalEmbed = Object.freeze({
+    ready: shell.ready,
+    setMode: m => setMode(m),
+    current: () => ({
+      device: state.device, config: state.cfg, view: state.view, mode,
+      swaps: {...swapsNow(shell)},
+      pulled: typeof shell.pulledPaths === 'function' ? shell.pulledPaths() : [],
+    }),
+  });
+}
 </script>
 <script>
 // Close the export menu on Escape or on a click outside it. <details> handles

@@ -701,6 +701,15 @@ else:
           "labs.json is unusable")
     check(False, "every ring device ref is 1 U", "labs.json is unusable")
 
+# ── explorer's embed mode ────────────────────────────────────────────────
+# EXPLORER'S EMBED MODE. The showcase's Inspect lens is Explorer in a frame;
+# it talks to the frame only through window.portrayalEmbed.
+ex = (HERE / "explorer.html").read_text()
+check("get('embed') === '1'" in ex or 'get("embed") === "1"' in ex,
+      "explorer.html reads ?embed=1")
+for k in ("portrayalEmbed", "ready", "setMode", "current"):
+    check(k in ex, f"explorer.html's embed API carries {k}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

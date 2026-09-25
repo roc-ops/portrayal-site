@@ -195,6 +195,24 @@ def management_by_site():
             for ids in sites]
 
 
+def check_embed(page, base):
+    """explorer.html?embed=1: the site bar and mode buttons hidden, the API live."""
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?embed=1&device=r740xd&view=front", wait_until="load")
+    try:
+        page.wait_for_function("() => window.portrayalEmbed", timeout=READY_MS)
+        cur = page.evaluate("async () => { await window.portrayalEmbed.ready; return window.portrayalEmbed.current(); }")
+        if cur.get("device") != "r740xd":
+            bad.append(f"embed: current().device is {cur.get('device')!r}")
+        for sel in (".site-bar", "#mode"):
+            if page.is_visible(sel):
+                bad.append(f"embed: {sel} is visible")
+    except Exception as e:
+        bad.append(f"embed: {e}")
+    return bad
+
+
 def check_stages(page, base):
     """Walk the stage rail, waiting on each stage's own ready signal, and
     exercise what each stage claims - not only that it loads."""
@@ -524,6 +542,9 @@ def main():
                 page = browser.new_page()
                 try:
                     bad = check(page, base, name)
+                    if name == "explorer.html":
+                        if not page.is_visible(".site-bar"): bad.append("explorer: .site-bar not visible without embed")
+                        if not page.is_visible("#mode"): bad.append("explorer: #mode not visible without embed")
                 finally:
                     page.close()
                 if bad:
@@ -544,6 +565,18 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    the stage rail: 7 stages")
+
+            page = browser.new_page()
+            try:
+                bad = check_embed(page, base)
+            finally:
+                page.close()
+            if bad:
+                failed_things += 1
+                problems.append(f"FAIL  explorer embed mode")
+                problems += [f"        {b}" for b in dict.fromkeys(bad)]
+            else:
+                notes.append(f"ok    explorer embed mode")
 
             page = browser.new_page()
             try:
