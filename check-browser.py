@@ -595,6 +595,23 @@ def check_stages(page, base):
         if len(cast_cassettes) != 4 or page.query_selector(f'{fhd} [data-ref^="fs/fhd-splice-12-lc@3"]'):
             bad.append(f"inspect frame: the FHD is not drawn as the cast's populated tray after a "
                        f"swap on another configuration ({len(cast_cassettes)} cast cassettes)")
+        # A REMOVABLE PART COMES OFF THROUGH EXPLORER'S OWN CONTROL: the pull
+        # handle a tree row grows next to its label whenever the part underneath
+        # carries `data-behaviour` (shell.js's "◉" span, title "take off this
+        # cover to see behind it" for a mounted cover like the bezel). Not a
+        # guessed dialog button - the same click a person uses in Explorer itself.
+        page.click('[data-spoke-device="r740xd"][data-spoke-lens="inspect"]')
+        page.wait_for_selector('#lensFrame iframe', state="visible", timeout=READY_3D_MS)
+        fr = explorer_frame()
+        before = fr.evaluate("() => window.portrayalEmbed.current().pulled.length")
+        fr.click('#tree .node[data-path="bezel"] .pull')
+        fr.wait_for_function(
+            f"() => window.portrayalEmbed.current().pulled.length > {before}",
+            timeout=READY_MS)
+        if not any("bezel" in p.lower() for p in fr.evaluate("() => window.portrayalEmbed.current().pulled")):
+            bad.append("inspect frame: the R740xd bezel did not come off")
+        page.click('#spokeBack')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
     except Exception as e:
         bad.append(f"inspect frame: {str(e).splitlines()[0]}")
     return bad
