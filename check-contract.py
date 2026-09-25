@@ -522,6 +522,31 @@ check(bool(rtxt), "site/showcase/rails.js exists", "the rail has no single descr
 for name in ("RU", "RAIL_W", "OPENING", "HOLE_CC", "HOLE_DY", "HOLE_SIZE", "SIDES"):
     check(re.search(rf"export const {name}\b", rtxt) is not None,
           f"rails.js exports {name}", "missing")
+# THE MIRROR, STRUCTURALLY (spec §6). SIDES is computed from the constants
+# above; recompute it here from the same numbers and hold its shape, so a
+# right rail that copies the left instead of mirroring it fails here. On
+# each side, outward from the opening: inner edge, hole centres, number
+# centres, outer edge - |inner| < |hole| < |number| < |outer|.
+def rails_num(name):
+    m = re.search(rf"export const {name}\s*=\s*([0-9.]+)", rtxt)
+    return float(m.group(1)) if m else None
+r_open, r_w, r_cc = rails_num("OPENING"), rails_num("RAIL_W"), rails_num("HOLE_CC")
+fac = re.search(r"number:\s*s\s*\*\s*\(OPENING / 2 \+ RAIL_W \* ([0-9.]+)\)", rtxt)
+mirror_bad = []
+if None in (r_open, r_w, r_cc) or not fac:
+    mirror_bad.append("could not read OPENING/RAIL_W/HOLE_CC or the number factor from rails.js")
+else:
+    for side, sgn in (("left", -1), ("right", 1)):
+        g = {"inner": sgn * r_open / 2, "outer": sgn * (r_open / 2 + r_w),
+             "hole": sgn * r_cc / 2, "number": sgn * (r_open / 2 + r_w * float(fac.group(1)))}
+        a = {k: abs(v) for k, v in g.items()}
+        if not (a["number"] > a["hole"] > a["inner"] and a["number"] < a["outer"]):
+            mirror_bad.append(f"{side}: {g}")
+        if any((v > 0) != (sgn > 0) for v in g.values()):
+            mirror_bad.append(f"{side} is not on its own side of the centre line: {g}")
+check(not mirror_bad,
+      "rails.js SIDES mirror: on each side |number| > |hole| > |inner| and |number| < |outer|",
+      "; ".join(mirror_bad))
 rack_js = (HERE / "site" / "showcase" / "rack.js").read_text()
 check("from './rails.js'" in rack_js, "rack.js draws its rails from rails.js")
 check(not re.search(r"const\s+(RAIL|INNER)\s*=", rack_js),
@@ -610,6 +635,13 @@ check("export function siteCaption" in r2
       and all("siteCaption(lab, sites)" in (HERE / "site" / "showcase" / "stages" / f).read_text()
               for f in ("04-cable.js", "05-filter.js")),
       "stages 4 and 5 both caption the 2D ring through ring2d.js's siteCaption")
+# One legend per colour drawn: a span strand is drawn in its span's colour,
+# so it is counted there and not under its media. Built once, in ring.js.
+st45 = [(HERE / "site" / "showcase" / "stages" / f).read_text() for f in ("04-cable.js", "05-filter.js")]
+check("export function legendOf" in ring_js
+      and re.search(r"l\.media === m && !l\.span", ring_js) is not None
+      and all("legendEl(lab)" in t and "MEDIA_COLORS" not in t for t in st45),
+      "stages 4 and 5 share ring.js's legend, which counts span strands under their span")
 # The stage-4 section assigns `ring` inside a conditional block, so it may
 # not exist at all when labs.json is missing. Read it defensively; a
 # NameError here would crash the contract instead of recording a FAIL.
