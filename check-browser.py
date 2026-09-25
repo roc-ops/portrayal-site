@@ -244,6 +244,20 @@ def check_stages(page, base):
                     bad.append("stage cable in 2D: clicking a stub did not switch site")
                 if not page.query_selector('#stageRack [data-cable]'):
                     bad.append("stage cable in 2D: no cables drawn in the site")
+                # The same jump from the panel: each span end is also a real
+                # button, legible at any zoom. It must switch the site and
+                # highlight the partner stub exactly as the drawing's stub does.
+                btn = page.query_selector('#sidePanel [data-span-end]')
+                if not btn:
+                    bad.append("stage cable in 2D: the panel lists no span-end buttons")
+                else:
+                    li = btn.get_attribute("data-link-index")
+                    before = page.inner_text('#stageTabs [aria-selected="true"]')
+                    btn.click()
+                    page.wait_for_selector(f'#stageRack [data-stub][data-link-index="{li}"][data-highlight]',
+                                           timeout=READY_MS)
+                    if page.inner_text('#stageTabs [aria-selected="true"]') == before:
+                        bad.append("stage cable in 2D: a span-end button did not switch site")
             except Exception as e:
                 bad.append(f"stage cable in 2D: {e}")
         if name in CLAIMS:
