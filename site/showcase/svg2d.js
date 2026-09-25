@@ -33,3 +33,68 @@ export function clearHighlights(root, tag = 'hl') {
   root.querySelectorAll(`[data-highlight-box="${tag}"]`).forEach(n => n.remove());
   root.querySelectorAll(`[data-highlight="${tag}"]`).forEach(n => n.removeAttribute('data-highlight'));
 }
+
+// ONE WAY TO CLICK ON A DRAWING. A cast device on a 2D elevation (spoke-host's
+// wireDevices) and a span stub on a ring site (ring2d's siteView) are both
+// buttons inside a pan/zoom <svg>, and both used to carry their own copy of
+// this. They drifted: the stubs lost the double-click window, so a
+// double-click over a stub jumped sites instead of fitting the drawing.
+//
+//   wireClicks(root, {targetAt, open, ui = null, dblMs = 300})
+//
+// `targetAt(node)` names the target an event node belongs to, or null;
+// `open(target, {keyboard})` acts on it. `ui` is the entry's lease, when
+// there is one.
+//
+// A drag that pans is not a click. panZoom (artifact.js) captures the pointer
+// on the <svg> at pointerdown, so in Chromium the click that ends a gesture
+// is aimed at the <svg>, not the element under it. So the press is recorded
+// on the root, in the capture phase (before panZoom takes the pointer), and
+// the target is the one the pointer went DOWN on; a pointer that moved more
+// than panZoom's own 3 px since then panned, and opens nothing. A
+// pointercancel forgets the press.
+//
+// Nor is a double-click: panZoom fits the drawing on dblclick, and that has
+// to survive over a target. A pointer click therefore opens after `dblMs`; a
+// second press inside that window cancels it and the fit runs, and a click
+// with detail > 1 is ignored. When the timer comes due it does nothing if
+// the drawing is off the page (redrawn, or the stage left) or the lease has
+// gone stale, so a timer never acts after the visitor has moved on.
+//
+// Enter or Space on a focused target opens it at once (a held key's repeats
+// are ignored). A click with no press before it - element.click(), assistive
+// tech - has no drag or double-click to rule out, and opens at once too.
+export function wireClicks(root, {targetAt, open, ui = null, dblMs = 300}) {
+  const alive = () => root.isConnected && !(ui && !ui.live());
+  let down = null;
+  let pending = null;
+  const cancel = () => { clearTimeout(pending); pending = null; };
+  root.addEventListener('pointerdown', ev => {
+    cancel();
+    down = ev.button === 0 ? {t: targetAt(ev.target), x: ev.clientX, y: ev.clientY} : null;
+  }, true);
+  root.addEventListener('pointercancel', () => { down = null; }, true);
+  root.addEventListener('click', ev => {
+    const d = down;
+    down = null;
+    if (!d) {
+      const t = targetAt(ev.target);
+      if (t && alive()) open(t, {keyboard: false});
+      return;
+    }
+    if (!d.t || ev.detail > 1) return;
+    if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 3) return;
+    const t = d.t;
+    pending = setTimeout(() => {
+      pending = null;
+      if (alive()) open(t, {keyboard: false});
+    }, dblMs);
+  });
+  root.addEventListener('keydown', ev => {
+    if (ev.repeat || (ev.key !== 'Enter' && ev.key !== ' ')) return;
+    const t = targetAt(ev.target);
+    if (!t) return;
+    ev.preventDefault();
+    if (alive()) open(t, {keyboard: true});
+  });
+}

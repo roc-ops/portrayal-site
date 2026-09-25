@@ -17,6 +17,7 @@
 import {stage2d, stage3d, stageRack, panel, hint, srcLine, exportSlot, el,
         setDrawing, setHost, isHost, srcName} from './artifact.js';
 import {CAST} from './rack.js';
+import {wireClicks} from './svg2d.js';
 // A circular import: stage-rail.js imports this (a rung click closes an open
 // spoke), and this imports the rail. Safe for the same reason rack.js's is -
 // every binding from the rail is read inside a function, never while the
@@ -208,26 +209,14 @@ export function hideStrip() {
 // THIS picture are wired, and only by stages 1-3: stage 6's elevation is not
 // an entry point.
 //
-// A drag that pans the drawing is not a click. panZoom (artifact.js) captures
-// the pointer on the <svg> at pointerdown, so in Chromium the click that ends
-// a gesture is aimed at the <svg>, not the group under it. So the click is
-// listened for on the root, and the device is the one the pointer went DOWN
-// on; a pointer that moved more than panZoom's own 3 px since then panned,
-// and opens nothing.
-//
-// Nor is a double-click: panZoom fits the drawing on dblclick, and stage 3
-// opens zoomed in, so that gesture has to survive over a device. A pointer
-// click therefore opens after DBL_MS; a second press inside that window
-// cancels it and the fit runs. Enter/Space stay instant. The pending open is
-// dropped if, when it comes due, this drawing is off the page (redrawn, or
-// the stage left) or the entry's lease `ui` has gone stale - so a timer never
-// opens a spoke after the visitor has moved on.
+// Clicking, and what is not a click (a drag that pans, a double-click that
+// fits), is svg2d.js's wireClicks - the same helper ring2d.js's stubs use, so
+// the two cannot drift apart again.
 //
 // EVERYTHING ADDED HERE IS UI, NOT DRAWING. The group lists what was added in
 // data-pt-ui (attribute names, and `.class` for a class), and the <title> is
 // marked data-pt-ui="*". artifact.js's standalone() strips both, so an SVG
 // export of a wired drawing is the drawing, not the page's controls.
-const DBL_MS = 300;
 const wired = new WeakSet();
 export function wireDevices(root, returnTo, ui = null) {
   if (!root || wired.has(root)) return;
@@ -254,38 +243,11 @@ export function wireDevices(root, returnTo, ui = null) {
     tip.setAttribute('data-pt-ui', '*');
     tip.textContent = `${e.label} · ${lenses.join(', ')}`;
     g.prepend(tip);
-    g.addEventListener('keydown', ev => {
-      if (ev.repeat) return;
-      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); open(ref); }
-    });
     devices.push(g);
   }
-  const deviceAt = t => devices.find(g => g.contains(t)) || null;
-  let down = null;
-  let pending = null;   // the timer of a click waiting out the double-click window
-  const cancel = () => { clearTimeout(pending); pending = null; };
-  // Capture phase, so it is recorded before panZoom's own pointerdown takes
-  // the pointer. A new press cancels a click still waiting: it is either the
-  // second half of a double-click or the start of a drag.
-  root.addEventListener('pointerdown', ev => {
-    cancel();
-    down = ev.button === 0 ? {g: deviceAt(ev.target), x: ev.clientX, y: ev.clientY} : null;
-  }, true);
-  root.addEventListener('pointercancel', () => { down = null; }, true);
-  root.addEventListener('click', ev => {
-    const d = down;
-    down = null;
-    // A click with no pointerdown before it (element.click(), assistive
-    // tech) has no drag or double-click to rule out: open now, on the target
-    // it names.
-    if (!d) { const g = deviceAt(ev.target); if (g) open(g.dataset.deviceRef); return; }
-    if (!d.g || ev.detail > 1) return;
-    if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 3) return;
-    const ref = d.g.dataset.deviceRef;
-    pending = setTimeout(() => {
-      pending = null;
-      if (!root.isConnected || (ui && !ui.live())) return;
-      open(ref);
-    }, DBL_MS);
+  wireClicks(root, {
+    targetAt: t => devices.find(g => g.contains(t)) || null,
+    open: g => open(g.dataset.deviceRef),
+    ui,
   });
 }

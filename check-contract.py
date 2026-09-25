@@ -557,6 +557,17 @@ check("export function renderStrip" in sh, "spoke-host.js exports renderStrip")
 check("export function wireDevices" in sh, "spoke-host.js exports wireDevices")
 check('id="lookStrip"' in (HERE / "index.html").read_text(), "index.html carries the look strip")
 stage_txt = "".join(p.read_text() for p in (HERE / "site" / "showcase" / "stages").glob("*.js"))
+# ONE CLICK HELPER. The cast devices and the ring's stubs used to carry two
+# copies of the pointer logic, and the stubs' copy lost the double-click
+# window. Both now go through svg2d.js's wireClicks; neither keeps its own.
+s2d = (HERE / "site" / "showcase" / "svg2d.js").read_text()
+r2d_src = (HERE / "site" / "showcase" / "ring2d.js").read_text()
+check("export function wireClicks" in s2d and "dblMs" in s2d,
+      "svg2d.js exports wireClicks, with a double-click window")
+own = [n for n, t in (("spoke-host.js", sh), ("ring2d.js", r2d_src))
+       if "wireClicks(" not in t or "'pointerdown'" in t]
+check(not own, "wireDevices and the ring stubs both click through wireClicks",
+      f"{own} keep their own pointer handling")
 check("lookCloser(" not in stage_txt, "no stage puts Look closer in its side panel")
 
 # ── the ring in 2D, by site ─────────────────────────────────────────────────

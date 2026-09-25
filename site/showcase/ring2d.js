@@ -15,7 +15,7 @@
 
 import {DIST, stageRack, svgEl, panZoom} from './artifact.js';
 import {build2dElevation} from './rack.js';
-import {boxIn, highlight, clearHighlights} from './svg2d.js';
+import {boxIn, highlight, clearHighlights, wireClicks} from './svg2d.js';
 import {cssColor} from './ring.js';
 
 // Millimetres, like everything else in the drawing.
@@ -274,11 +274,11 @@ export async function drawSite2d({lab, sites, index, host = stageRack, live = ()
 // `onDraw(drawn, {index, site})` runs after each picture is up and wired,
 // for a stage that marks it further (stage 5's filter).
 //
-// A stub is a button, but panZoom captures the pointer on the <svg>, so a
-// click listener on the stub never sees the click. The press is recorded on
-// the root in the capture phase instead (as spoke-host.js's wireDevices
-// does); the click opens that stub only if the pointer moved 3 px or less -
-// more than that was a pan. Enter or Space on a focused stub opens it too.
+// A stub is a button inside a pan/zoom drawing, wired by svg2d.js's
+// wireClicks exactly as a cast device is (spoke-host.js's wireDevices): a
+// drag that pans is not a click, a double-click fits the drawing rather than
+// jumping, a pointer click jumps after the double-click window, and Enter or
+// Space on a focused stub jumps at once, taking focus to the partner stub.
 // The stub's tabindex, role, aria-label and <title>, and the highlight, are
 // marked data-pt-ui, so an SVG export is the drawing, not the controls.
 export function siteView({ui, lab, sites, host = stageRack,
@@ -341,29 +341,11 @@ export function siteView({ui, lab, sites, host = stageRack,
 
   function wire(drawn, index) {
     const {svg, stubs} = drawn;
-    const jump = (stub, focus) => jumpFrom(drawn, index, stub, focus);
-    const stubAt = t => stubs.find(s => s.el.contains(t)) || null;
-    let down = null;
-    svg.addEventListener('pointerdown', ev => {
-      down = ev.button === 0 ? {s: stubAt(ev.target), x: ev.clientX, y: ev.clientY} : null;
-    }, true);
-    svg.addEventListener('pointercancel', () => { down = null; }, true);
-    svg.addEventListener('click', ev => {
-      const d = down;
-      down = null;
-      // No press before it (element.click(), assistive tech): nothing was
-      // dragged, so open what the click names.
-      if (!d) { const s = stubAt(ev.target); if (s) jump(s, false); return; }
-      if (!d.s || ev.detail > 1) return;
-      if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 3) return;
-      jump(d.s, false);
+    wireClicks(svg, {
+      targetAt: t => stubs.find(s => s.el.contains(t)) || null,
+      open: (stub, {keyboard}) => jumpFrom(drawn, index, stub, keyboard),
+      ui,
     });
-    for (const s of stubs) {
-      s.el.addEventListener('keydown', ev => {
-        if (ev.repeat) return;
-        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); jump(s, true); }
-      });
-    }
   }
 
   async function show(index, {highlightLink = null, from = null, focus = false} = {}) {
