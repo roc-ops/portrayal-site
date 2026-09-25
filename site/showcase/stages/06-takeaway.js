@@ -71,7 +71,13 @@ export default function makeTakeaway() {
       if (e.ru == null) continue;   // dropped from the rack - no compiled index
       const face = await loadFace(`${DIST}${e.ref}.${e.cfg}.front.svg`).catch(() => null);
       if (!face) continue;
-      mounted.push({name: e.label, u: e.ru, ru: e.u,
+      // TWO NUMBERINGS. The cast counts U from 1 at the BOTTOM (e.ru is the
+      // device's bottom U, as rack3d and the elevation read it); rackDiagram
+      // counts from 1 at the TOP (numDisp=ascend, as drawio-page.js packs
+      // it), and its `u` is where the device's top edge sits. So the device's
+      // top U, e.ru + e.u - 1, is flipped: top U 22 of 22 is draw.io's u 1.
+      // Passed as-is, the 10U ASR-9006 at the bottom drew at the top.
+      mounted.push({name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u,
         faces: {front: {svg: face.text, vb: face.vb, ports: portsOf(face.zones)}}});
     }
     const groups = [{label: 'Cast rack', racks: [{label: '', units: RACK_U, mounted}]}];
