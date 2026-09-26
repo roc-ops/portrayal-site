@@ -37,7 +37,13 @@ export function components() {
   if (!COMPONENTS) {
     COMPONENTS = jdist(`${DIST}components.json`)
       .then(j => j.components || [])
-      .catch(err => { console.warn('[portrayal] no component index', err); return []; });
+      .catch(err => {
+        // Not remembered: the next ask fetches again. A cached [] meant one
+        // hiccup left every card and optic unseatable until a reload.
+        console.warn('[portrayal] no component index', err);
+        COMPONENTS = null;
+        return [];
+      });
   }
   return COMPONENTS;
 }
@@ -68,23 +74,36 @@ const canon = v => v && typeof v === 'object' && !Array.isArray(v)
   ? Object.fromEntries(Object.keys(v).sort().map(k => [k, canon(v[k])]))
   : v;
 
+// BOUNDED, least recently asked-for out first. The Rack Builder asks for any
+// device in any configuration for as long as the page stays open; each entry
+// holds a whole face's SVG text.
+export const FACE_MEMO_LIMIT = 200;
+let limit = FACE_MEMO_LIMIT;
 const MEMO = new Map();
+export const setFaceMemoLimit = n => { limit = Math.max(1, n); while (MEMO.size > limit) MEMO.delete(MEMO.keys().next().value); };
+export const faceMemoSize = () => MEMO.size;
+
 export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {}, turned = false}) {
   const args = {ref, cfg, view, swaps: swaps || {}, fields: fields || {}, turned: !!turned};
   const key = JSON.stringify(canon(args));
-  if (!MEMO.has(key)) {
-    // `build` awaits several times (fetch, jdist, components) and, in the
-    // showcase, the caller's `swaps`/`fields` are the SAME object it goes on
-    // mutating in place afterward (applyPlanSeats, dropBelow, stage 2/3
-    // doSeat all write into overrides[dev] rather than replacing it). Holding
-    // onto `args` itself would let a build in flight read the mutated object
-    // after an await and cache a wrong face under the key computed before the
-    // mutation - a sticky wrong face for the rest of the session. `key` is
-    // already a canonical JSON string of a plain deep copy, so parsing it
-    // back gives `build` its own snapshot, immune to later mutation.
-    MEMO.set(key, build(JSON.parse(key)).catch(err => { MEMO.delete(key); throw err; }));
+  // `build` awaits several times (fetch, jdist, components) and, in the
+  // showcase, the caller's `swaps`/`fields` are the SAME object it goes on
+  // mutating in place afterward (applyPlanSeats, dropBelow, stage 2/3
+  // doSeat all write into overrides[dev] rather than replacing it). Holding
+  // onto `args` itself would let a build in flight read the mutated object
+  // after an await and cache a wrong face under the key computed before the
+  // mutation - a sticky wrong face for the rest of the session. `key` is
+  // already a canonical JSON string of a plain deep copy, so parsing it
+  // back gives `build` its own snapshot, immune to later mutation.
+  let hit = MEMO.get(key);
+  if (hit) {
+    MEMO.delete(key);            // re-insert: Map order is recency
+  } else {
+    hit = build(JSON.parse(key)).catch(err => { MEMO.delete(key); throw err; });
   }
-  return MEMO.get(key);
+  MEMO.set(key, hit);
+  while (MEMO.size > limit) MEMO.delete(MEMO.keys().next().value);
+  return hit;
 }
 
 async function build({ref, cfg, view, swaps, fields, turned}) {

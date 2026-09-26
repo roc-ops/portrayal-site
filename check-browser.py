@@ -2458,6 +2458,62 @@ def check_configured_face_snapshot(page, base):
     return bad
 
 
+@extra("configuredFace's memo is bounded, least recently asked-for first out")
+def check_face_memo_bound(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    # A blank page on the site's origin: the showcase on index.html can call
+    # configuredFace itself, which would throw off the size/eviction counts.
+    page.route(f"{base}/__blank.html",
+               lambda r: r.fulfill(body="<!doctype html><title>blank</title>", content_type="text/html"))
+    page.goto(f"{base}/__blank.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const F = await import('/site/rack/face.js');
+      F.setFaceMemoLimit(3);
+      const ask = i => F.configuredFace({ref: 'as7726-32x', cfg: 'ac-f2b', view: 'front',
+                                         fields: {'port-1-occupant': {label: `M${i}`}}});
+      const a = ask(1); await a; await ask(2); await ask(3);
+      const again = ask(1) === a;          // a hit refreshes it
+      await ask(4);                        // evicts 2, the least recently asked-for
+      const size = F.faceMemoSize();
+      const oneKept = ask(1) === a;
+      F.setFaceMemoLimit(F.FACE_MEMO_LIMIT);
+      return {again, size, oneKept};
+    }""")
+    if r != {"again": True, "size": 3, "oneKept": True}:
+        bad.append(f"face memo: {r}")
+    return bad
+
+
+@extra("the component index is fetched again after a failure")
+def check_components_retry(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    failed = {"n": 0}
+
+    def fail_once(route):
+        if failed["n"] == 0:
+            failed["n"] += 1
+            route.abort()
+        else:
+            route.continue_()
+    # A blank page on the site's origin, so nothing but this check asks for
+    # the component index - the first ask is the one the route fails.
+    page.route(f"{base}/__blank.html",
+               lambda r: r.fulfill(body="<!doctype html><title>blank</title>", content_type="text/html"))
+    page.route("**/assets/dist/components.json", fail_once)
+    page.goto(f"{base}/__blank.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const F = await import('/site/rack/face.js');
+      const first = (await F.components()).length;
+      const second = (await F.components()).length;
+      return {first, second};
+    }""")
+    if r["first"] != 0 or r["second"] == 0:
+        bad.append(f"components retry: {r} (expected the first to fail empty, the second to load)")
+    return bad
+
+
 @extra("the rear elevation seats a swapped rear bay")
 def check_rear_elevation(page, base):
     bad = []
