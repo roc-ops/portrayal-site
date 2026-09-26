@@ -7,6 +7,12 @@
 // exists elsewhere on this site; this stage only wires them to the rack that
 // got built here (R6). No new export code.
 //
+// Stage 6 is stage 4's cabled rack (enterPatched, patch-view.js) under its
+// own panel: it applies the plan's seats itself, so a visitor who jumps
+// straight here still sees the rack cabled, and its SVG, PNG and 3D exports
+// carry the cables (patch-view.js's cableFace/cabledElevationSvg; the tags
+// and hover/focus state stay screen UI and never reach a file).
+//
 //   draw.io   - a rack diagram through drawio.js's rackDiagram, fed each
 //               device's configured face (site/rack/face.js) on front and
 //               rear, so the cards, optics and plugs seated here are in it
@@ -18,11 +24,9 @@
 //               await scene.complete() first, so the deferred relief pass
 //               that extrudes optics and plugs has landed before the export
 //               is built.
-//   SVG       - build2dElevation with the current overrides, which DOES
-//               apply them - it is the same call stage 0's rails export
-//               already uses, and it seats each front face through swap.js's
-//               face-level pass, so stage 2's cards, stage 3's optics AND
-//               the seats stage 4's plan filled in are in the file (R26).
+//   SVG       - cabledElevationSvg: a freshly built, cabled elevation of the
+//               face shown, standing alone from the one on screen so a
+//               visitor's pan/zoom or hover never reaches the file.
 //   PNG       - raster.js's rasterize, which only takes a URL: the SVG built
 //               above is not one, so it is turned into an object URL first
 //               and the URL is revoked once the raster is done.
@@ -34,10 +38,9 @@
 // elevation it exports, in 3D the mounted scene. Clicking a device here does
 // nothing - Look closer belongs to stages 1-3.
 
-import {stage3d, stageRack, el, title, lead, kv, save, saveSvg, standalone, panZoom}
-  from '../artifact.js';
-import {CAST, RACK_U, loadMeta, chassisOf, overrides, mount3d, build2dElevation}
-  from '../rack.js';
+import {stage3d, stageRack, el, title, lead, kv, save} from '../artifact.js';
+import {CAST, RACK_U, overrides} from '../rack.js';
+import {enterPatched, cabledElevationSvg} from '../patch-view.js';
 import {rackDiagram} from '../../drawio.js';
 import {configuredFace} from '../../rack/face.js';
 import {rasterize} from '../../raster.js';
@@ -73,51 +76,53 @@ function dcimSection(index) {
   return wrap;
 }
 
-export default function makeTakeaway() {
-  let scene = null;
-  // The SVG/PNG source. Exported through artifact.js's standalone(), which
-  // writes the frame panZoom recorded onto the copy, so the file is the rack
-  // as built, not whatever the visitor has panned or zoomed to in 2D.
-  let elevationSvg = null;
-
-  // The cast AS BUILT, both sides: each device's configured face - the cards,
-  // optics and plugs stages 2-4 seated - so the diagram's port cells include
-  // the ports on those cards. A side a device was never drawn for is left
-  // out, and rackDiagram says "no rear drawing" there rather than borrowing
-  // the other side.
-  async function buildDrawio() {
-    const mounted = [];
-    for (const e of CAST) {
-      if (e.ru == null) continue;   // dropped from the rack - no compiled index
-      const faces = {};
-      for (const view of ['front', 'rear']) {
-        const f = await configuredFace({ref: e.ref, cfg: e.cfg, view,
-                                        swaps: overrides[e.ref] || {}}).catch(() => null);
-        if (f) faces[view] = {svg: f.text, vb: f.vb, ports: f.ports};
-      }
-      if (!faces.front && !faces.rear) continue;
-      // TWO NUMBERINGS. The cast counts U from 1 at the BOTTOM (e.ru is the
-      // device's bottom U, as rack3d and the elevation read it); rackDiagram
-      // counts from 1 at the TOP (numDisp=ascend, as drawio-page.js packs
-      // it), and its `u` is where the device's top edge sits. So the device's
-      // top U, e.ru + e.u - 1, is flipped: top U 22 of 22 is draw.io's u 1.
-      // Passed as-is, the 10U ASR-9006 at the bottom drew at the top.
-      mounted.push({name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u, faces});
+// The cast AS BUILT, both sides: each device's configured face - the cards,
+// optics and plugs stages 2-4 seated - so the diagram's port cells include
+// the ports on those cards. A side a device was never drawn for is left
+// out, and rackDiagram says "no rear drawing" there rather than borrowing
+// the other side.
+async function buildDrawio() {
+  const mounted = [];
+  for (const e of CAST) {
+    if (e.ru == null) continue;   // dropped from the rack - no compiled index
+    const faces = {};
+    for (const view of ['front', 'rear']) {
+      const f = await configuredFace({ref: e.ref, cfg: e.cfg, view,
+                                      swaps: overrides[e.ref] || {}}).catch(() => null);
+      if (f) faces[view] = {svg: f.text, vb: f.vb, ports: f.ports};
     }
-    const groups = [{label: 'Cast rack', racks: [{label: '', units: RACK_U, mounted}]}];
-    save(rackDiagram(groups, {faces: ['front', 'rear'], labels: true}),
-         'cast-rack.drawio', 'application/xml');
+    if (!faces.front && !faces.rear) continue;
+    // TWO NUMBERINGS. The cast counts U from 1 at the BOTTOM (e.ru is the
+    // device's bottom U, as rack3d and the elevation read it); rackDiagram
+    // counts from 1 at the TOP (numDisp=ascend, as drawio-page.js packs
+    // it), and its `u` is where the device's top edge sits. So the device's
+    // top U, e.ru + e.u - 1, is flipped: top U 22 of 22 is draw.io's u 1.
+    // Passed as-is, the 10U ASR-9006 at the bottom drew at the top.
+    mounted.push({name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u, faces});
+  }
+  const groups = [{label: 'Cast rack', racks: [{label: '', units: RACK_U, mounted}]}];
+  save(rackDiagram(groups, {faces: ['front', 'rear'], labels: true}),
+       'cast-rack.drawio', 'application/xml');
+}
+
+export default function makeTakeaway() {
+  let handle = null;
+
+  // The face the visitor is looking at in 2D; the front in 3D, which has none.
+  const face = () => (handle?.mode === '2d' && handle.view) || 'front';
+
+  async function buildSvg() {
+    save(await cabledElevationSvg(handle, face()), `cast-rack-${face()}.svg`, 'image/svg+xml');
   }
 
-  // rasterize() only takes a URL; the elevation built here is not one, so a
-  // blob URL stands in for it and is revoked once the raster is done.
+  // rasterize() only takes a URL, so the cabled SVG goes through a blob URL.
   async function buildPng() {
-    const text = standalone(elevationSvg);
+    const text = await cabledElevationSvg(handle, face());
     const url = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
     try {
       const bytes = await rasterize(url, 2);
       if (!bytes) throw new Error('could not rasterize the elevation');
-      save(bytes, 'cast-rack-elevation.png', 'image/png');
+      save(bytes, `cast-rack-${face()}.png`, 'image/png');
     } finally {
       URL.revokeObjectURL(url);
     }
@@ -126,45 +131,7 @@ export default function makeTakeaway() {
   return {
     title: 'Take it away',
     question: 'Where can it go from here?',
-    // `ui` is the rail's lease on this entry (stage-rail.js): every panel,
-    // export and scrim write goes through it and is a no-op once stale.
     async enter(ui) {
-      // The same mount stage 1 does (R6): the cast, with whatever overrides
-      // the visitor already made, so the downloads reflect their choices.
-      const is3d = ui.mode === '3d';
-      stageRack.hidden = is3d; stage3d.hidden = !is3d;
-      ui.scrim('Mounting the cast…');
-      await loadMeta();
-      if (!ui.live()) return;
-
-      if (is3d) {
-        const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
-        // Held locally until this entry is known to be live, as stage 1 does.
-        const sc = await mount3d({stack, heightRU: RACK_U, overrides});
-        if (!ui.live()) { sc?.dispose(); return; }
-        scene = sc;
-        // Only when a scene actually mounted - R11: the panel and every
-        // non-3D format are built either way.
-        if (scene) ui.unscrim();
-      }
-
-      // The SVG/PNG exports' source, and in 2D also the picture. In 3D it is
-      // kept attached (hidden) to stageRack purely so standalone() has a
-      // document to resolve --pt-* custom properties against. The same call
-      // stage 1 makes: only the devices whose index loaded.
-      const svg = await build2dElevation({stack: CAST.filter(e => e.ru != null),
-                                          heightRU: RACK_U, overrides});
-      if (!ui.live()) return;
-      elevationSvg = svg;
-      stageRack.replaceChildren(svg);
-      if (!is3d) {
-        stage3d.hidden = true;
-        stageRack.hidden = false;
-        const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
-        panZoom(svg, () => base);
-        ui.unscrim();
-      }
-
       let exportsIndex = null;
       try {
         exportsIndex = await fetch(`${EXPORTS_BASE}index.json`).then(r => r.ok ? r.json() : null);
@@ -172,57 +139,60 @@ export default function makeTakeaway() {
         console.warn('[portrayal] no export index', err);
       }
       if (!ui.live()) return;
-
-      ui.setPanel(
-        title('Take it away'),
-        lead('<strong>Where can it go from here?</strong>'),
-        lead('The cast rack as built here, handed over in the formats a network team uses next.'),
-        kv([
-          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
-          ['GLB / USDZ', !is3d ? 'the 3D model - switch to 3D to build the scene they export'
-                        : scene ? 'the mounted rack, as configured, as a 3D model'
-                                : 'unavailable - no 3D in this browser'],
-          ['SVG', '2D front elevation, with the seated cards and optics'],
-          ['PNG', 'a raster of that same elevation'],
-          ['DCIM', 'NetBox and Nautobot device-type YAMLs for each cast device, linked below'],
-        ]),
-        lead('<strong>DCIM device types</strong>'),
-        dcimSection(exportsIndex),
-      );
+      const is3d = ui.mode === '3d';
+      // Stage 4's cabled rack - the plan's seats applied here too, so a
+      // visitor who jumps straight to this stage still sees it cabled - under
+      // this stage's own panel. The plan list stays: a row still lights its
+      // cable.
+      const h = await enterPatched(ui, {
+        counts: false,
+        head: [
+          title('Take it away'),
+          lead('<strong>Where can it go from here?</strong>'),
+          lead('The cast rack as built and cabled here, handed over in the formats a network team uses next.'),
+          kv([
+            ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
+            ['GLB / USDZ', !is3d ? 'the 3D model with its cables - switch to 3D to build the scene they export'
+                                 : 'the mounted, cabled rack as a 3D model'],
+            ['SVG', 'the face shown, with its cards, optics and cables'],
+            ['PNG', 'a raster of that same face'],
+            ['DCIM', 'NetBox and Nautobot device-type YAMLs for each cast device, linked below'],
+          ]),
+        ],
+        extraPanel: () => [lead('<strong>DCIM device types</strong>'), dcimSection(exportsIndex)],
+      });
+      if (!ui.live()) { h?.dispose(); return; }
+      handle = h;
 
       const items = [
         {label: 'draw.io',
          title: 'Download a draw.io rack diagram - front and rear, as built, with a connection point on every port',
          run: buildDrawio},
-        {label: 'SVG',
-         title: 'Download the 2D front elevation, with the seated cards and optics',
-         run: () => saveSvg(elevationSvg, 'cast-rack-elevation.svg')},
-        {label: 'PNG',
-         title: 'Download a PNG raster of the front elevation, with the seated cards and optics',
+        {label: 'SVG', title: 'Download the face shown as an SVG, with its cards, optics and cables',
+         run: buildSvg},
+        {label: 'PNG', title: 'Download a PNG raster of the face shown, with its cables',
          run: buildPng},
       ];
       if (!is3d) {
         items.push({label: '3D formats (GLB, USDZ) — switch to 3D',
           title: 'GLB and USDZ export the 3D scene, which 2D does not build - this switches to 3D',
           run: () => setMode('3d')});
-      } else if (scene) {
+      } else if (handle.scene) {
+        const sc = handle.scene;
         // complete() first: optics and plugs are extruded by the deferred
         // relief pass, and an export taken before it lands has them flat.
-        items.push({label: 'GLB', title: 'Download the mounted rack as a GLB, with the current overrides',
-          run: async () => { await scene.complete(); save(await scene.toGLB(), 'cast-rack.glb', 'model/gltf-binary'); }});
-        items.push({label: 'USDZ', title: 'Download the mounted rack as a USDZ, with the current overrides',
-          run: async () => { await scene.complete(); save(await scene.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip'); }});
+        items.push({label: 'GLB', title: 'Download the mounted, cabled rack as a GLB',
+          run: async () => { await sc.complete(); save(await sc.toGLB(), 'cast-rack.glb', 'model/gltf-binary'); }});
+        items.push({label: 'USDZ', title: 'Download the mounted, cabled rack as a USDZ',
+          run: async () => { await sc.complete(); save(await sc.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip'); }});
       }
       ui.setExports(items);
     },
     exit() {
-      scene?.dispose();
-      scene = null;
-      elevationSvg = null;
-      stage3d.hidden = true;
-      stage3d.replaceChildren();
-      stageRack.hidden = true;
-      stageRack.replaceChildren();
+      handle?.dispose(); handle = null;
+      stage3d.hidden = true; stage3d.replaceChildren();
+      // The 2D picture. #stageTabs is the rail's to empty (vacate), not this.
+      stageRack.hidden = true; stageRack.replaceChildren();
     },
   };
 }
