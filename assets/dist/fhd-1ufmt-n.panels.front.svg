@@ -1,0 +1,1271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="44.0mm" viewBox="0 0 482.6 44.0" data-device="fhd-1ufmt-n" data-view="front" data-config="panels" data-airflow="passive">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"config":"panels","device":"FS.com FHD-1UFMT-N","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/lc-duplex-dust-cap@2":"2.0.1","common/lc-duplex-v-adapter@6":"6.0.0","common/mpo-adapter@2":"2.1.1","common/mpo-dust-cap@2":"2.0.4","common/sc-duplex-adapter@5":"5.2.0","common/sc-dust-cap@1":"1.0.1","fs/fhd-fap12lcd-os2@1":"1.0.0","fs/fhd-fap12mtp-a@1":"1.0.0","fs/fhd-fap6scd-apc-os2@1":"1.0.0","fs/fhd-fapb@1":"1.0.0","std/lc-bulkhead-bore@1":"1.0.1","std/mpo@2":"2.0.3","std/sc-bore@1":"1.0.0"},"source":{"chassis":{"airflow":"passive","color":"#1b1e21","depth":283.6,"height":44.0,"ru":1,"width":430.0},"configurations":{"base":{"default":true,"description":"The enclosure as FS ships 96427: an empty tray, all four slots open. Panels and cassettes are separate SKUs from the datasheet's loading list.","kind":"base"},"panels":{"bays":{"bay-1":"fs/fhd-fap12lcd-os2@1","bay-2":"fs/fhd-fap12mtp-a@1","bay-3":"fs/fhd-fap6scd-apc-os2@1","bay-4":"fs/fhd-fapb@1"},"description":"Three FHD adapter panels and a blank - LC, MTP Type A and SC APC - an illustrative load: FS ships the enclosure empty and every module is a separate SKU.","kind":"example"}},"datasheet":{"sha256":"43d446b6afa74a455f76631630aa806b5cf4b79d705a51e021c248ac67684e12","title":"FS FHD-1UFMT-N Rack Mount Fiber Enclosure datasheet"},"description":"1U 19in fixed fiber enclosure. FS SKU 96427 - a steel tray with a tool-less removable top cover and no drawer, holding up to four FHD adapter panels, MTP/MPO cassettes or splice trays for up to 144 fibres (LC) in 1U; the modules mount on its front plate.","format":1,"gaps":[{"note":"the drawing locates the openings and nothing else a face carries - no rear grommet positions, no cover fixings, no printing. FS's gallery for 96427 is three-quarter renders only.","reason":"needs-photo","scope":["front","rear","top","bottom","left","right"],"wanted":"a square-on photograph of the front and rear, or a dimensioned rear view.","what":"face-detail"}],"groups":{"slots":{"description":"four slots, each taking one FHD module - an adapter panel or an MTP/MPO cassette - numbered left to right. The datasheet's capacity row reads 4 ports, 144 fibres (LC).","index-origin":1,"role":"service","term":"Slot"}},"kind":"device","manufacturer":"FS.com","maturity":"modelled","model":"FHD-1UFMT-N","name":"fhd-1ufmt-n","profile":"optical","provenance":{"bays":{"confidence":"drawing","note":"THE MODULES MOUNT ON THE FRONT PLATE, NOT INSIDE IT. The front view punches four openings 3.54in [90] across and 1.42in [36] tall; a module's 108.97 plate covers its opening, its thumb-knobs landing in the pair of holes either side (3.91in, 99.4 apart on the panel drawings), and only the adapter block behind passes through. So each bay is the module plate's 108.97 x 35.05, centred on its opening, and `opening` is the hole an empty slot shows. Adjacent plates stand about 1.0 apart. FOUR MODULES SPAN 440 ACROSS A 430 BODY: the outer plates overhang the body line by 5.0 onto the flat flange - the plate is one flat sheet, so nothing stops them - which is why this front view is the whole plate, 482.6, and lint L43's warning that a rack-wide face still has its ears in it is true and left standing: here the ears are the same flat sheet the modules overlap. Bays are in the plate's own frame, 0 at its left end. every FHD cassette and adapter panel this library models is in every bay's `accepts`. FS states it on this datasheet's features list ('Compatible with all FHD cassettes and panels') and prints the same loading list with every one of them as fs/fhd-1ufce does; the module face is one 4.29 x 1.38in (108.97 x 35.05) envelope."},"chassis":{"confidence":"drawing","note":"spec table: 1.73 x 19.00 x 11.17in (44.0 x 482.6 x 283.6). The top view dimensions the body behind the front plate 16.93in [430] across - the figure the 2026-09-11 intake could not place, and which is this width: the plate's small edge notches in the front view sit 26.3 in from each end, (482.6 - 430) / 2. Depth 283.6 is the top view's body line; the side view's 11.6in [295.1] includes the front plate and knobs."},"cutouts":{"confidence":"drawing","note":"front view at 2400 dpi, 19.47 px/mm on the 482.6 plate (the plate then reads 44.34 against 44.0, 0.8%), taken on stroke centres: openings 89.74 x 36.26, centres at 75.81 186.29 296.57 406.85 of the plate (pitches 110.48 110.28 110.28), top edge 4.26. FS prints 3.54in [89.8] across; 1.42in on the tilt-down sibling. The front view is the plate, so these are its own coordinates."},"ears":{"confidence":"drawing","note":"NOT A SEPARATE PART HERE: the plate's own ends, 26.3 each side of the 430 body (the notches in the front view), carry the rack holes. The front view includes them and no common/rack-ear@1 is placed; the other five faces are the 430 body."},"envelope-faces":{"confidence":"drawing","note":"rear, top, bottom, left and right are the envelope from `chassis`; the rear cable entries and grommets the datasheet lists are not dimensioned. See `gaps`."},"interior":{"confidence":"drawing","note":"the two slack spools drawn behind openings 1 and 4 in the front view are inside the tray, seen through an empty slot; a seated module hides them. Not drawn."},"method":{"confidence":"drawing","note":"FROM THE VENDOR'S VECTOR DRAWING. Every figure is read off p4 of fhd-1ufmt-n-fiber- enclosure-datasheet.pdf (front, side and top views, inches with millimetres), rendered at 2400 dpi where it needs measuring; what the drawing does not show is estimated below or left undrawn."}},"version":"1.0.0","views":{"bottom":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[430.0,283.6]}]},"size":{"h":283.6,"w":430.0}},"front":{"components":{"bays":[{"accepts":["fs/fhd-1mtp6lcd-os2-a@4","fs/fhd-splice-12-lc@3","fs/fhd-2mtp12-lc-os2-a@4","fs/fhd-1mtp12-sc-os2-a@3","fs/fhd-1mtp24-lc-os2-a@4","fs/fhd-1mtp6lcd-os2-af@3","fs/fhd-1mtp6lcd-os2-u@3","fs/fhd-2mtp12-lc-os2-af@4","fs/fhd-2mtp12-lc-os2-u@4","fs/fhd-1mtp24-lc-os2-af@4","fs/fhd-1mtp6lcd-om4-a@2","fs/fhd-2mtp12-lc-om4-a@2","fs/fhd-1mtp24-lc-om4-a@2","fs/fhd-1mtp6lcd-om5-a@2","fs/fhd-2mtp12-lc-om5-a@2","fs/fhd-1mtp24-lc-om5-a@2","fs/fhd-1mtp6lcd-om4-u@2","fs/fhd-2mtp12-lc-om4-u@2","fs/fhd-2mtp12-lc-om3-a@2","fs/fhd-1mtp24-lc-om3-a@2","fs/fhd-3mtp18-lc-os2-a@1","fs/fhd-3mtp18-lc-om4-a@1","fs/fhd-fap12lcd-os2@1","fs/fhd-fap18lcd-os2@1","fs/fhd-fap6scd-apc-os2@1","fs/fhd-fap12mtp-a@1","fs/fhd-fap12mtp-b@1","fs/fhd-fap8mtp-b@1","fs/fhd-fap12mtp16-a@1","fs/fhd-fapm6@1","fs/fhd-fapb@1","fs/fhd-fap12lcd-apc-os2@1","fs/fhd-fap12lcd-om4@1","fs/fhd-fap12lcd-om5@1","fs/fhd-fap18lcd-om4@1","fs/fhd-fap6scd-os2@1","fs/fhd-fap6scd-om4@1"],"at":[21.325,4.475],"group":"slots","id":"bay-1","opening":{"h":36.26,"w":89.74},"rel-pos":1,"size":{"h":35.05,"w":108.97}},{"accepts":["fs/fhd-1mtp6lcd-os2-a@4","fs/fhd-splice-12-lc@3","fs/fhd-2mtp12-lc-os2-a@4","fs/fhd-1mtp12-sc-os2-a@3","fs/fhd-1mtp24-lc-os2-a@4","fs/fhd-1mtp6lcd-os2-af@3","fs/fhd-1mtp6lcd-os2-u@3","fs/fhd-2mtp12-lc-os2-af@4","fs/fhd-2mtp12-lc-os2-u@4","fs/fhd-1mtp24-lc-os2-af@4","fs/fhd-1mtp6lcd-om4-a@2","fs/fhd-2mtp12-lc-om4-a@2","fs/fhd-1mtp24-lc-om4-a@2","fs/fhd-1mtp6lcd-om5-a@2","fs/fhd-2mtp12-lc-om5-a@2","fs/fhd-1mtp24-lc-om5-a@2","fs/fhd-1mtp6lcd-om4-u@2","fs/fhd-2mtp12-lc-om4-u@2","fs/fhd-2mtp12-lc-om3-a@2","fs/fhd-1mtp24-lc-om3-a@2","fs/fhd-3mtp18-lc-os2-a@1","fs/fhd-3mtp18-lc-om4-a@1","fs/fhd-fap12lcd-os2@1","fs/fhd-fap18lcd-os2@1","fs/fhd-fap6scd-apc-os2@1","fs/fhd-fap12mtp-a@1","fs/fhd-fap12mtp-b@1","fs/fhd-fap8mtp-b@1","fs/fhd-fap12mtp16-a@1","fs/fhd-fapm6@1","fs/fhd-fapb@1","fs/fhd-fap12lcd-apc-os2@1","fs/fhd-fap12lcd-om4@1","fs/fhd-fap12lcd-om5@1","fs/fhd-fap18lcd-om4@1","fs/fhd-fap6scd-os2@1","fs/fhd-fap6scd-om4@1"],"at":[131.805,4.475],"group":"slots","id":"bay-2","opening":{"h":36.26,"w":89.74},"rel-pos":2,"size":{"h":35.05,"w":108.97}},{"accepts":["fs/fhd-1mtp6lcd-os2-a@4","fs/fhd-splice-12-lc@3","fs/fhd-2mtp12-lc-os2-a@4","fs/fhd-1mtp12-sc-os2-a@3","fs/fhd-1mtp24-lc-os2-a@4","fs/fhd-1mtp6lcd-os2-af@3","fs/fhd-1mtp6lcd-os2-u@3","fs/fhd-2mtp12-lc-os2-af@4","fs/fhd-2mtp12-lc-os2-u@4","fs/fhd-1mtp24-lc-os2-af@4","fs/fhd-1mtp6lcd-om4-a@2","fs/fhd-2mtp12-lc-om4-a@2","fs/fhd-1mtp24-lc-om4-a@2","fs/fhd-1mtp6lcd-om5-a@2","fs/fhd-2mtp12-lc-om5-a@2","fs/fhd-1mtp24-lc-om5-a@2","fs/fhd-1mtp6lcd-om4-u@2","fs/fhd-2mtp12-lc-om4-u@2","fs/fhd-2mtp12-lc-om3-a@2","fs/fhd-1mtp24-lc-om3-a@2","fs/fhd-3mtp18-lc-os2-a@1","fs/fhd-3mtp18-lc-om4-a@1","fs/fhd-fap12lcd-os2@1","fs/fhd-fap18lcd-os2@1","fs/fhd-fap6scd-apc-os2@1","fs/fhd-fap12mtp-a@1","fs/fhd-fap12mtp-b@1","fs/fhd-fap8mtp-b@1","fs/fhd-fap12mtp16-a@1","fs/fhd-fapm6@1","fs/fhd-fapb@1","fs/fhd-fap12lcd-apc-os2@1","fs/fhd-fap12lcd-om4@1","fs/fhd-fap12lcd-om5@1","fs/fhd-fap18lcd-om4@1","fs/fhd-fap6scd-os2@1","fs/fhd-fap6scd-om4@1"],"at":[242.085,4.475],"group":"slots","id":"bay-3","opening":{"h":36.26,"w":89.74},"rel-pos":3,"size":{"h":35.05,"w":108.97}},{"accepts":["fs/fhd-1mtp6lcd-os2-a@4","fs/fhd-splice-12-lc@3","fs/fhd-2mtp12-lc-os2-a@4","fs/fhd-1mtp12-sc-os2-a@3","fs/fhd-1mtp24-lc-os2-a@4","fs/fhd-1mtp6lcd-os2-af@3","fs/fhd-1mtp6lcd-os2-u@3","fs/fhd-2mtp12-lc-os2-af@4","fs/fhd-2mtp12-lc-os2-u@4","fs/fhd-1mtp24-lc-os2-af@4","fs/fhd-1mtp6lcd-om4-a@2","fs/fhd-2mtp12-lc-om4-a@2","fs/fhd-1mtp24-lc-om4-a@2","fs/fhd-1mtp6lcd-om5-a@2","fs/fhd-2mtp12-lc-om5-a@2","fs/fhd-1mtp24-lc-om5-a@2","fs/fhd-1mtp6lcd-om4-u@2","fs/fhd-2mtp12-lc-om4-u@2","fs/fhd-2mtp12-lc-om3-a@2","fs/fhd-1mtp24-lc-om3-a@2","fs/fhd-3mtp18-lc-os2-a@1","fs/fhd-3mtp18-lc-om4-a@1","fs/fhd-fap12lcd-os2@1","fs/fhd-fap18lcd-os2@1","fs/fhd-fap6scd-apc-os2@1","fs/fhd-fap12mtp-a@1","fs/fhd-fap12mtp-b@1","fs/fhd-fap8mtp-b@1","fs/fhd-fap12mtp16-a@1","fs/fhd-fapm6@1","fs/fhd-fapb@1","fs/fhd-fap12lcd-apc-os2@1","fs/fhd-fap12lcd-om4@1","fs/fhd-fap12lcd-om5@1","fs/fhd-fap18lcd-om4@1","fs/fhd-fap6scd-os2@1","fs/fhd-fap6scd-om4@1"],"at":[352.365,4.475],"group":"slots","id":"bay-4","opening":{"h":36.26,"w":89.74},"rel-pos":4,"size":{"h":35.05,"w":108.97}}]},"panel":{"decor":[{"at":[0,0],"fill":"#1b1e21","size":[482.6,44.0]}]},"size":{"h":44.0,"w":482.6}},"left":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[283.6,44.0]}]},"size":{"h":44.0,"w":283.6}},"rear":{"panel":{"decor":[{"at":[0,0],"fill":"#1b1e21","size":[430.0,44.0]}]},"size":{"h":44.0,"w":430.0}},"right":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[283.6,44.0]}]},"size":{"h":44.0,"w":283.6}},"top":{"panel":{"decor":[{"at":[0,0],"fill":"#b9bec4","size":[430.0,283.6]}]},"size":{"h":283.6,"w":430.0}}}},"view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="FHD-1UFMT-N" x="0" y="0" width="482.6" height="44" rx="1.2" fill="#1b1e21" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="482.6" height="44" rx="0.6" fill="#1b1e21" />
+  </g>
+  <g id="bay-1" data-path="bay-1" data-class="bay" data-group="slots" data-group-role="service" data-rel-pos="1">
+    <title>bay-1</title>
+    <rect id="bay-1--opening" x="30.94" y="3.87" width="89.74" height="36.26" fill="#101214" />
+    <g id="bay-1--module" data-path="bay-1/module" data-class="adapter-panel" data-behaviour="fills" data-ref="fs/fhd-fap12lcd-os2@1:1.0.0" data-body-depth="29.5" data-media="fiber" data-model="FHD-FAP12LCDXSMF" data-vendor-sku="35488" transform="translate(75.81,22) translate(-54.485,-17.525)">
+      <title>bay-1--module</title>
+      <defs>
+        <linearGradient id="bay-1--module--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+        <radialGradient id="bay-1--module--knob" cx="0.35" cy="0.35" r="0.75">
+          <stop offset="0" stop-color="#4a5056" />
+          <stop offset="1" stop-color="#1c1f22" />
+        </radialGradient>
+      </defs>
+      <rect id="bay-1--module--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#bay-1--module--bez)" stroke="#15181a" stroke-width="0.3" />
+      <circle id="bay-1--module--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#bay-1--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <circle id="bay-1--module--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#bay-1--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <rect id="bay-1--module--logo-zone" x="1.6" y="3.2" width="5.3" height="5.0" fill="none" data-path="bay-1/module/logo-zone" data-class="label" />
+      <g id="bay-1--module--silkscreen">
+        <text id="bay-1--module--port-14" x="13.33" y="6.54" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">14</text>
+        <text id="bay-1--module--port-13" x="13.33" y="15.05" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">13</text>
+        <text id="bay-1--module--port-2" x="13.33" y="22.54" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">2</text>
+        <text id="bay-1--module--port-1" x="13.33" y="31.01" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+        <text id="bay-1--module--port-24" x="95.67" y="6.54" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">24</text>
+        <text id="bay-1--module--port-23" x="95.67" y="15.05" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">23</text>
+        <text id="bay-1--module--port-12" x="95.67" y="22.54" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">12</text>
+        <text id="bay-1--module--port-11" x="95.67" y="31.01" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">11</text>
+      </g>
+      <g id="bay-1--module--lc01" data-path="bay-1/module/lc01" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(14.91,18.615)">
+        <title>bay-1--module--lc01</title>
+        <path id="bay-1--module--lc01--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc01--1" data-path="bay-1/module/lc01/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc01--1</title>
+          <path id="bay-1--module--lc01--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc01/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc01--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc01--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc01--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc01--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc01--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc01--2" data-path="bay-1/module/lc01/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc01--2</title>
+          <path id="bay-1--module--lc01--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc01/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc01--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc01--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc01--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc01--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc01--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc01--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc02" data-path="bay-1/module/lc02" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(28.89,18.615)">
+        <title>bay-1--module--lc02</title>
+        <path id="bay-1--module--lc02--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc02--1" data-path="bay-1/module/lc02/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc02--1</title>
+          <path id="bay-1--module--lc02--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc02/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc02--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc02--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc02--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc02--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc02--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc02--2" data-path="bay-1/module/lc02/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc02--2</title>
+          <path id="bay-1--module--lc02--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc02/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc02--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc02--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc02--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc02--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc02--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc02--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc03" data-path="bay-1/module/lc03" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(42.87,18.615)">
+        <title>bay-1--module--lc03</title>
+        <path id="bay-1--module--lc03--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc03--1" data-path="bay-1/module/lc03/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc03--1</title>
+          <path id="bay-1--module--lc03--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc03/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc03--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc03--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc03--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc03--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc03--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc03--2" data-path="bay-1/module/lc03/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc03--2</title>
+          <path id="bay-1--module--lc03--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc03/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc03--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc03--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc03--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc03--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc03--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc03--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc04" data-path="bay-1/module/lc04" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(56.85,18.615)">
+        <title>bay-1--module--lc04</title>
+        <path id="bay-1--module--lc04--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc04--1" data-path="bay-1/module/lc04/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc04--1</title>
+          <path id="bay-1--module--lc04--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc04/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc04--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc04--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc04--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc04--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc04--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc04--2" data-path="bay-1/module/lc04/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc04--2</title>
+          <path id="bay-1--module--lc04--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc04/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc04--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc04--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc04--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc04--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc04--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc04--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc05" data-path="bay-1/module/lc05" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(70.85,18.615)">
+        <title>bay-1--module--lc05</title>
+        <path id="bay-1--module--lc05--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc05--1" data-path="bay-1/module/lc05/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc05--1</title>
+          <path id="bay-1--module--lc05--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc05/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc05--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc05--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc05--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc05--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc05--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc05--2" data-path="bay-1/module/lc05/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc05--2</title>
+          <path id="bay-1--module--lc05--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc05/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc05--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc05--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc05--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc05--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc05--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc05--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc06" data-path="bay-1/module/lc06" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(84.83,18.615)">
+        <title>bay-1--module--lc06</title>
+        <path id="bay-1--module--lc06--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc06--1" data-path="bay-1/module/lc06/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc06--1</title>
+          <path id="bay-1--module--lc06--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc06/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc06--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc06--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc06--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc06--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc06--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc06--2" data-path="bay-1/module/lc06/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc06--2</title>
+          <path id="bay-1--module--lc06--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc06/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc06--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc06--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc06--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc06--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc06--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc06--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc07" data-path="bay-1/module/lc07" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(14.91,2.635)">
+        <title>bay-1--module--lc07</title>
+        <path id="bay-1--module--lc07--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc07--1" data-path="bay-1/module/lc07/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc07--1</title>
+          <path id="bay-1--module--lc07--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc07/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc07--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc07--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc07--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc07--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc07--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc07--2" data-path="bay-1/module/lc07/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc07--2</title>
+          <path id="bay-1--module--lc07--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc07/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc07--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc07--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc07--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc07--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc07--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc07--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc08" data-path="bay-1/module/lc08" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(28.89,2.635)">
+        <title>bay-1--module--lc08</title>
+        <path id="bay-1--module--lc08--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc08--1" data-path="bay-1/module/lc08/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc08--1</title>
+          <path id="bay-1--module--lc08--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc08/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc08--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc08--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc08--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc08--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc08--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc08--2" data-path="bay-1/module/lc08/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc08--2</title>
+          <path id="bay-1--module--lc08--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc08/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc08--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc08--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc08--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc08--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc08--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc08--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc09" data-path="bay-1/module/lc09" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(42.87,2.635)">
+        <title>bay-1--module--lc09</title>
+        <path id="bay-1--module--lc09--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc09--1" data-path="bay-1/module/lc09/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc09--1</title>
+          <path id="bay-1--module--lc09--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc09/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc09--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc09--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc09--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc09--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc09--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc09--2" data-path="bay-1/module/lc09/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc09--2</title>
+          <path id="bay-1--module--lc09--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc09/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc09--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc09--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc09--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc09--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc09--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc09--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc10" data-path="bay-1/module/lc10" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(56.85,2.635)">
+        <title>bay-1--module--lc10</title>
+        <path id="bay-1--module--lc10--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc10--1" data-path="bay-1/module/lc10/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc10--1</title>
+          <path id="bay-1--module--lc10--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc10/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc10--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc10--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc10--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc10--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc10--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc10--2" data-path="bay-1/module/lc10/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc10--2</title>
+          <path id="bay-1--module--lc10--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc10/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc10--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc10--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc10--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc10--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc10--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc10--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc11" data-path="bay-1/module/lc11" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(70.85,2.635)">
+        <title>bay-1--module--lc11</title>
+        <path id="bay-1--module--lc11--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc11--1" data-path="bay-1/module/lc11/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc11--1</title>
+          <path id="bay-1--module--lc11--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc11/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc11--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc11--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc11--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc11--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc11--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc11--2" data-path="bay-1/module/lc11/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc11--2</title>
+          <path id="bay-1--module--lc11--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc11/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc11--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc11--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc11--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc11--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc11--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc11--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc12" data-path="bay-1/module/lc12" data-class="port" data-ref="common/lc-duplex-v-adapter@6:6.0.0" data-connector="lc" data-media="fiber" transform="translate(84.83,2.635)">
+        <title>bay-1--module--lc12</title>
+        <path id="bay-1--module--lc12--bezel" fill-rule="evenodd" fill="#2d91d8" stroke="#1b5884" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.4 0 H 8.88 Q 9.28 0 9.28 0.4 V 13.35 Q 9.28 13.75 8.88 13.75 H 0.4 Q 0 13.75 0 13.35 V 0.4 Q 0 0 0.4 0 Z            M 0.14 2.43 H 1.56 V 1.40 H 2.75 V 2.02 H 3.50 V 1.40 H 8.20 V 6.10              H 3.50 V 5.48 H 2.75 V 6.10 H 1.56 V 5.07 H 0.14 Z            M 0.14 8.68 H 1.56 V 7.65 H 2.75 V 8.27 H 3.50 V 7.65 H 8.20 V 12.35              H 3.50 V 11.73 H 2.75 V 12.35 H 1.56 V 11.32 H 0.14 Z" data-z-out="1.2" />
+        <g id="bay-1--module--lc12--1" data-path="bay-1/module/lc12/1" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,5.97) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc12--1</title>
+          <path id="bay-1--module--lc12--1--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc12/1/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc12--1--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc12--1--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc12--1--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc12--1--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc12--1--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g id="bay-1--module--lc12--2" data-path="bay-1/module/lc12/2" data-class="port" data-inner="1" data-ref="std/lc-bulkhead-bore@1:1.0.1" data-depth="4.5" data-wall="#4a4f55" data-cavity="bore" data-connector="lc" data-media="fiber" transform="translate(1.82,-0.28) rotate(90 2.35 4.03)" data-z-lift="1.2">
+          <title>bay-1--module--lc12--2</title>
+          <path id="bay-1--module--lc12--2--bore" fill="#15181b" d="     M 0 0 h 4.7 v 4.70     h -0.62 v 0.75 h 0.62 v 1.19     h -1.03 v 1.42 h -2.64 v -1.42     h -1.03 v -1.19 h 0.62 v -0.75 h -0.62 z" data-path="bay-1/module/lc12/2/bore" data-class="cutout" />
+          <rect id="bay-1--module--lc12--2--key-neck" x="0.62" y="4.70" width="3.46" height="0.75" fill="#15181b" data-z-top="3.6" />
+          <rect id="bay-1--module--lc12--2--key-shoulder" x="0" y="5.45" width="4.7" height="1.19" fill="#15181b" data-z-top="2.9" />
+          <rect id="bay-1--module--lc12--2--key-tongue" x="1.03" y="6.64" width="2.64" height="1.42" fill="#15181b" data-z-top="2.2" />
+          <circle id="bay-1--module--lc12--2--sleeve" cx="2.35" cy="2.35" r="1.2" fill="#22262a" stroke="#3a4046" stroke-width="0.12" />
+          <circle id="bay-1--module--lc12--2--ferrule" cx="2.35" cy="2.35" r="0.625" fill="#e8ecef" data-z-top="3.6" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="2.35 2.35" data-cp-dir="front" />
+        </g>
+        <g data-cp="mate" data-cp-at="5.85 6.875" data-cp-dir="front" data-cp-on="bay-1--module--lc12--bezel" />
+        <g data-cp="optical" data-cp-at="4.64 6.875" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc01-occupant" data-path="bay-1/module/lc01-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(14.635,22.565) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc01">
+        <title>bay-1--module--lc01-occupant</title>
+        <g id="bay-1--module--lc01-occupant--body" class="cap" data-path="bay-1/module/lc01-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc01-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc01-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc02-occupant" data-path="bay-1/module/lc02-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(28.615,22.565) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc02">
+        <title>bay-1--module--lc02-occupant</title>
+        <g id="bay-1--module--lc02-occupant--body" class="cap" data-path="bay-1/module/lc02-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc02-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc02-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc03-occupant" data-path="bay-1/module/lc03-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(42.595,22.565) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc03">
+        <title>bay-1--module--lc03-occupant</title>
+        <g id="bay-1--module--lc03-occupant--body" class="cap" data-path="bay-1/module/lc03-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc03-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc03-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc04-occupant" data-path="bay-1/module/lc04-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(56.575,22.565) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc04">
+        <title>bay-1--module--lc04-occupant</title>
+        <g id="bay-1--module--lc04-occupant--body" class="cap" data-path="bay-1/module/lc04-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc04-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc04-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc05-occupant" data-path="bay-1/module/lc05-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(70.575,22.565) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc05">
+        <title>bay-1--module--lc05-occupant</title>
+        <g id="bay-1--module--lc05-occupant--body" class="cap" data-path="bay-1/module/lc05-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc05-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc05-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc06-occupant" data-path="bay-1/module/lc06-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(84.555,22.565) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc06">
+        <title>bay-1--module--lc06-occupant</title>
+        <g id="bay-1--module--lc06-occupant--body" class="cap" data-path="bay-1/module/lc06-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc06-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc06-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc07-occupant" data-path="bay-1/module/lc07-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(14.635,6.585) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc07">
+        <title>bay-1--module--lc07-occupant</title>
+        <g id="bay-1--module--lc07-occupant--body" class="cap" data-path="bay-1/module/lc07-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc07-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc07-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc08-occupant" data-path="bay-1/module/lc08-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(28.615,6.585) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc08">
+        <title>bay-1--module--lc08-occupant</title>
+        <g id="bay-1--module--lc08-occupant--body" class="cap" data-path="bay-1/module/lc08-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc08-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc08-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc09-occupant" data-path="bay-1/module/lc09-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(42.595,6.585) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc09">
+        <title>bay-1--module--lc09-occupant</title>
+        <g id="bay-1--module--lc09-occupant--body" class="cap" data-path="bay-1/module/lc09-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc09-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc09-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc10-occupant" data-path="bay-1/module/lc10-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(56.575,6.585) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc10">
+        <title>bay-1--module--lc10-occupant</title>
+        <g id="bay-1--module--lc10-occupant--body" class="cap" data-path="bay-1/module/lc10-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc10-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc10-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc11-occupant" data-path="bay-1/module/lc11-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(70.575,6.585) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc11">
+        <title>bay-1--module--lc11-occupant</title>
+        <g id="bay-1--module--lc11-occupant--body" class="cap" data-path="bay-1/module/lc11-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc11-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc11-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+      <g id="bay-1--module--lc12-occupant" data-path="bay-1/module/lc12-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/lc-duplex-dust-cap@2:2.0.1" transform="translate(84.555,6.585) rotate(270 6.125 2.925)" data-z-lift="1.2" data-for="bay-1/module/lc12">
+        <title>bay-1--module--lc12-occupant</title>
+        <g id="bay-1--module--lc12-occupant--body" class="cap" data-path="bay-1/module/lc12-occupant/body" data-class="cap" data-z-out="5.5" data-z-color="#e7e9ec">
+          <rect x="0.0" y="0.0" width="12.25" height="5.85" rx="0.6" fill="#e7e9ec" stroke="#b6bcc2" stroke-width="0.12" />
+          <rect id="bay-1--module--lc12-occupant--inset-tx" x="0.80" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+          <rect id="bay-1--module--lc12-occupant--inset-rx" x="7.05" y="1.125" width="4.4" height="3.6" rx="0.6" fill="#d5dade" data-z-lift="4.3" data-depth="0.6" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.125 2.925" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="bay-2" data-path="bay-2" data-class="bay" data-group="slots" data-group-role="service" data-rel-pos="2">
+    <title>bay-2</title>
+    <rect id="bay-2--opening" x="141.42" y="3.87" width="89.74" height="36.26" fill="#101214" />
+    <g id="bay-2--module" data-path="bay-2/module" data-class="adapter-panel" data-behaviour="fills" data-ref="fs/fhd-fap12mtp-a@1:1.0.0" data-body-depth="32.1" data-media="fiber" data-model="FHD-FAP12MTPHA" data-vendor-sku="35510" transform="translate(186.29,22) translate(-54.485,-17.525)">
+      <title>bay-2--module</title>
+      <defs>
+        <linearGradient id="bay-2--module--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+        <radialGradient id="bay-2--module--knob" cx="0.35" cy="0.35" r="0.75">
+          <stop offset="0" stop-color="#4a5056" />
+          <stop offset="1" stop-color="#1c1f22" />
+        </radialGradient>
+      </defs>
+      <rect id="bay-2--module--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#bay-2--module--bez)" stroke="#15181a" stroke-width="0.3" />
+      <circle id="bay-2--module--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#bay-2--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <circle id="bay-2--module--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#bay-2--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <rect id="bay-2--module--logo-zone" x="1.6" y="3.2" width="5.3" height="5.0" fill="none" data-path="bay-2/module/logo-zone" data-class="label" />
+      <g id="bay-2--module--silkscreen">
+        <text id="bay-2--module--port-7" x="13.21" y="11.76" font-size="4.1" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">7</text>
+        <text id="bay-2--module--port-1" x="13.21" y="26.33" font-size="4.1" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+        <text id="bay-2--module--port-12" x="95.79" y="11.76" font-size="4.1" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">12</text>
+        <text id="bay-2--module--port-6" x="95.79" y="26.33" font-size="4.1" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">6</text>
+      </g>
+      <g id="bay-2--module--mtp01" data-path="bay-2/module/mtp01" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(12.63,20.82) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp01</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp01--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp01--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp01--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp01--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp01--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp01/12" data-class="fibre" />
+        <g id="bay-2--module--mtp01--bore" data-path="bay-2/module/mtp01/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp01--bore</title>
+          <rect id="bay-2--module--mtp01--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp01/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp01--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp02" data-path="bay-2/module/mtp02" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(26.6,20.82) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp02</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp02--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp02--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp02--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp02--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp02--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp02/12" data-class="fibre" />
+        <g id="bay-2--module--mtp02--bore" data-path="bay-2/module/mtp02/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp02--bore</title>
+          <rect id="bay-2--module--mtp02--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp02/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp02--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp03" data-path="bay-2/module/mtp03" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(40.61,20.82) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp03</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp03--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp03--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp03--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp03--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp03--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp03/12" data-class="fibre" />
+        <g id="bay-2--module--mtp03--bore" data-path="bay-2/module/mtp03/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp03--bore</title>
+          <rect id="bay-2--module--mtp03--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp03/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp03--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp04" data-path="bay-2/module/mtp04" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(54.59,20.82) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp04</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp04--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp04--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp04--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp04--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp04--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp04/12" data-class="fibre" />
+        <g id="bay-2--module--mtp04--bore" data-path="bay-2/module/mtp04/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp04--bore</title>
+          <rect id="bay-2--module--mtp04--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp04/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp04--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp05" data-path="bay-2/module/mtp05" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(68.6,20.82) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp05</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp05--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp05--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp05--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp05--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp05--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp05/12" data-class="fibre" />
+        <g id="bay-2--module--mtp05--bore" data-path="bay-2/module/mtp05/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp05--bore</title>
+          <rect id="bay-2--module--mtp05--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp05/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp05--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp06" data-path="bay-2/module/mtp06" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(82.57,20.82) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp06</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp06--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp06--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp06--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp06--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp06--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp06/12" data-class="fibre" />
+        <g id="bay-2--module--mtp06--bore" data-path="bay-2/module/mtp06/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp06--bore</title>
+          <rect id="bay-2--module--mtp06--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp06/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp06--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp07" data-path="bay-2/module/mtp07" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(12.63,4.81) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp07</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp07--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp07--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp07--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp07--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp07--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp07/12" data-class="fibre" />
+        <g id="bay-2--module--mtp07--bore" data-path="bay-2/module/mtp07/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp07--bore</title>
+          <rect id="bay-2--module--mtp07--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp07/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp07--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp08" data-path="bay-2/module/mtp08" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(26.6,4.81) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp08</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp08--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp08--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp08--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp08--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp08--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp08/12" data-class="fibre" />
+        <g id="bay-2--module--mtp08--bore" data-path="bay-2/module/mtp08/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp08--bore</title>
+          <rect id="bay-2--module--mtp08--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp08/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp08--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp09" data-path="bay-2/module/mtp09" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(40.61,4.81) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp09</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp09--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp09--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp09--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp09--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp09--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp09/12" data-class="fibre" />
+        <g id="bay-2--module--mtp09--bore" data-path="bay-2/module/mtp09/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp09--bore</title>
+          <rect id="bay-2--module--mtp09--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp09/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp09--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp10" data-path="bay-2/module/mtp10" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(54.59,4.81) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp10</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp10--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp10--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp10--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp10--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp10--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp10/12" data-class="fibre" />
+        <g id="bay-2--module--mtp10--bore" data-path="bay-2/module/mtp10/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp10--bore</title>
+          <rect id="bay-2--module--mtp10--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp10/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp10--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp11" data-path="bay-2/module/mtp11" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(68.6,4.81) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp11</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp11--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp11--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp11--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp11--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp11--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp11/12" data-class="fibre" />
+        <g id="bay-2--module--mtp11--bore" data-path="bay-2/module/mtp11/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp11--bore</title>
+          <rect id="bay-2--module--mtp11--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp11/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp11--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp12" data-path="bay-2/module/mtp12" data-class="port" data-ref="common/mpo-adapter@2:2.1.1" data-wall="#22262a" data-connector="mpo" data-media="fiber" transform="translate(82.57,4.81) rotate(90 6.9 4.7)">
+        <title>bay-2--module--mtp12</title>
+        <defs>
+          <linearGradient id="bay-2--module--mtp12--bez" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3c4248" />
+            <stop offset="1" stop-color="#23272c" />
+          </linearGradient>
+        </defs>
+        <rect id="bay-2--module--mtp12--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#bay-2--module--mtp12--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+        <rect id="bay-2--module--mtp12--1" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/1" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--2" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/2" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--3" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/3" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--4" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/4" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--5" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/5" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--6" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/6" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--7" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/7" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--8" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/8" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--9" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/9" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--10" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/10" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--11" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/11" data-class="fibre" />
+        <rect id="bay-2--module--mtp12--12" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="bay-2/module/mtp12/12" data-class="fibre" />
+        <g id="bay-2--module--mtp12--bore" data-path="bay-2/module/mtp12/bore" data-class="port" data-inner="1" data-ref="std/mpo@2:2.0.3" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo" data-media="fiber" transform="translate(0.45,0.7)">
+          <title>bay-2--module--mtp12--bore</title>
+          <rect id="bay-2--module--mtp12--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="bay-2/module/mtp12/bore/opening" data-class="cutout" />
+          <rect id="bay-2--module--mtp12--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+          <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp01-occupant" data-path="bay-2/module/mtp01-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(13.13,21.47) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp01">
+        <title>bay-2--module--mtp01-occupant</title>
+        <g id="bay-2--module--mtp01-occupant--body" class="cap" data-path="bay-2/module/mtp01-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp01-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp01-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp02-occupant" data-path="bay-2/module/mtp02-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(27.1,21.47) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp02">
+        <title>bay-2--module--mtp02-occupant</title>
+        <g id="bay-2--module--mtp02-occupant--body" class="cap" data-path="bay-2/module/mtp02-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp02-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp02-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp03-occupant" data-path="bay-2/module/mtp03-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(41.11,21.47) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp03">
+        <title>bay-2--module--mtp03-occupant</title>
+        <g id="bay-2--module--mtp03-occupant--body" class="cap" data-path="bay-2/module/mtp03-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp03-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp03-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp04-occupant" data-path="bay-2/module/mtp04-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(55.09,21.47) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp04">
+        <title>bay-2--module--mtp04-occupant</title>
+        <g id="bay-2--module--mtp04-occupant--body" class="cap" data-path="bay-2/module/mtp04-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp04-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp04-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp05-occupant" data-path="bay-2/module/mtp05-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(69.1,21.47) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp05">
+        <title>bay-2--module--mtp05-occupant</title>
+        <g id="bay-2--module--mtp05-occupant--body" class="cap" data-path="bay-2/module/mtp05-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp05-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp05-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp06-occupant" data-path="bay-2/module/mtp06-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(83.07,21.47) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp06">
+        <title>bay-2--module--mtp06-occupant</title>
+        <g id="bay-2--module--mtp06-occupant--body" class="cap" data-path="bay-2/module/mtp06-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp06-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp06-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp07-occupant" data-path="bay-2/module/mtp07-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(13.13,5.46) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp07">
+        <title>bay-2--module--mtp07-occupant</title>
+        <g id="bay-2--module--mtp07-occupant--body" class="cap" data-path="bay-2/module/mtp07-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp07-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp07-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp08-occupant" data-path="bay-2/module/mtp08-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(27.1,5.46) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp08">
+        <title>bay-2--module--mtp08-occupant</title>
+        <g id="bay-2--module--mtp08-occupant--body" class="cap" data-path="bay-2/module/mtp08-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp08-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp08-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp09-occupant" data-path="bay-2/module/mtp09-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(41.11,5.46) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp09">
+        <title>bay-2--module--mtp09-occupant</title>
+        <g id="bay-2--module--mtp09-occupant--body" class="cap" data-path="bay-2/module/mtp09-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp09-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp09-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp10-occupant" data-path="bay-2/module/mtp10-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(55.09,5.46) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp10">
+        <title>bay-2--module--mtp10-occupant</title>
+        <g id="bay-2--module--mtp10-occupant--body" class="cap" data-path="bay-2/module/mtp10-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp10-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp10-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp11-occupant" data-path="bay-2/module/mtp11-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(69.1,5.46) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp11">
+        <title>bay-2--module--mtp11-occupant</title>
+        <g id="bay-2--module--mtp11-occupant--body" class="cap" data-path="bay-2/module/mtp11-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp11-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp11-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+      <g id="bay-2--module--mtp12-occupant" data-path="bay-2/module/mtp12-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo-dust-cap@2:2.0.4" transform="translate(83.07,5.46) rotate(90 6.4 4.05)" data-for="bay-2/module/mtp12">
+        <title>bay-2--module--mtp12-occupant</title>
+        <g id="bay-2--module--mtp12-occupant--body" class="cap" data-path="bay-2/module/mtp12-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+          <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+          <rect id="bay-2--module--mtp12-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+          <rect id="bay-2--module--mtp12-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="bay-3" data-path="bay-3" data-class="bay" data-group="slots" data-group-role="service" data-rel-pos="3">
+    <title>bay-3</title>
+    <rect id="bay-3--opening" x="251.7" y="3.87" width="89.74" height="36.26" fill="#101214" />
+    <g id="bay-3--module" data-path="bay-3/module" data-class="adapter-panel" data-behaviour="fills" data-ref="fs/fhd-fap6scd-apc-os2@1:1.0.0" data-body-depth="29.5" data-media="fiber" data-model="FHD-FAP6SCADXSMF" data-vendor-sku="41986" transform="translate(296.57,22) translate(-54.485,-17.525)">
+      <title>bay-3--module</title>
+      <defs>
+        <linearGradient id="bay-3--module--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+        <radialGradient id="bay-3--module--knob" cx="0.35" cy="0.35" r="0.75">
+          <stop offset="0" stop-color="#4a5056" />
+          <stop offset="1" stop-color="#1c1f22" />
+        </radialGradient>
+      </defs>
+      <rect id="bay-3--module--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#bay-3--module--bez)" stroke="#15181a" stroke-width="0.3" />
+      <circle id="bay-3--module--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#bay-3--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <circle id="bay-3--module--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#bay-3--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <rect id="bay-3--module--logo-zone" x="1.6" y="3.2" width="5.3" height="5.0" fill="none" data-path="bay-3/module/logo-zone" data-class="label" />
+      <g id="bay-3--module--silkscreen">
+        <text id="bay-3--module--port-2" x="13.4" y="12.47" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">2</text>
+        <text id="bay-3--module--port-1" x="13.4" y="25.17" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+        <text id="bay-3--module--port-12" x="95.6" y="12.47" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">12</text>
+        <text id="bay-3--module--port-11" x="95.6" y="25.17" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">11</text>
+      </g>
+      <g id="bay-3--module--sc01" data-path="bay-3/module/sc01" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#56c75e" data-media="fiber" transform="translate(14.85,4.825)">
+        <title>bay-3--module--sc01</title>
+        <path id="bay-3--module--sc01--bezel" fill-rule="evenodd" fill="#56c75e" stroke="#347939" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+        <g id="bay-3--module--sc01--1" data-path="bay-3/module/sc01/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+          <title>bay-3--module--sc01--1</title>
+          <path id="bay-3--module--sc01--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc01/1/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc01--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc01--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc01--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc01--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc01--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc01--2" data-path="bay-3/module/sc01/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+          <title>bay-3--module--sc01--2</title>
+          <path id="bay-3--module--sc01--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc01/2/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc01--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc01--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc01--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc01--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc01--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc01--1-occupant" data-path="bay-3/module/sc01/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="bay-3/module/sc01/1">
+          <title>bay-3--module--sc01--1-occupant</title>
+          <g id="bay-3--module--sc01--1-occupant--body" class="cap" data-path="bay-3/module/sc01/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc01--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc01--2-occupant" data-path="bay-3/module/sc01/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="bay-3/module/sc01/2">
+          <title>bay-3--module--sc01--2-occupant</title>
+          <g id="bay-3--module--sc01--2-occupant--body" class="cap" data-path="bay-3/module/sc01/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc01--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-3--module--sc02" data-path="bay-3/module/sc02" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#56c75e" data-media="fiber" transform="translate(28.83,4.825)">
+        <title>bay-3--module--sc02</title>
+        <path id="bay-3--module--sc02--bezel" fill-rule="evenodd" fill="#56c75e" stroke="#347939" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+        <g id="bay-3--module--sc02--1" data-path="bay-3/module/sc02/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+          <title>bay-3--module--sc02--1</title>
+          <path id="bay-3--module--sc02--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc02/1/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc02--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc02--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc02--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc02--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc02--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc02--2" data-path="bay-3/module/sc02/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+          <title>bay-3--module--sc02--2</title>
+          <path id="bay-3--module--sc02--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc02/2/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc02--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc02--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc02--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc02--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc02--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc02--1-occupant" data-path="bay-3/module/sc02/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="bay-3/module/sc02/1">
+          <title>bay-3--module--sc02--1-occupant</title>
+          <g id="bay-3--module--sc02--1-occupant--body" class="cap" data-path="bay-3/module/sc02/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc02--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc02--2-occupant" data-path="bay-3/module/sc02/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="bay-3/module/sc02/2">
+          <title>bay-3--module--sc02--2-occupant</title>
+          <g id="bay-3--module--sc02--2-occupant--body" class="cap" data-path="bay-3/module/sc02/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc02--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-3--module--sc03" data-path="bay-3/module/sc03" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#56c75e" data-media="fiber" transform="translate(42.81,4.825)">
+        <title>bay-3--module--sc03</title>
+        <path id="bay-3--module--sc03--bezel" fill-rule="evenodd" fill="#56c75e" stroke="#347939" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+        <g id="bay-3--module--sc03--1" data-path="bay-3/module/sc03/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+          <title>bay-3--module--sc03--1</title>
+          <path id="bay-3--module--sc03--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc03/1/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc03--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc03--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc03--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc03--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc03--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc03--2" data-path="bay-3/module/sc03/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+          <title>bay-3--module--sc03--2</title>
+          <path id="bay-3--module--sc03--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc03/2/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc03--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc03--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc03--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc03--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc03--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc03--1-occupant" data-path="bay-3/module/sc03/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="bay-3/module/sc03/1">
+          <title>bay-3--module--sc03--1-occupant</title>
+          <g id="bay-3--module--sc03--1-occupant--body" class="cap" data-path="bay-3/module/sc03/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc03--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc03--2-occupant" data-path="bay-3/module/sc03/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="bay-3/module/sc03/2">
+          <title>bay-3--module--sc03--2-occupant</title>
+          <g id="bay-3--module--sc03--2-occupant--body" class="cap" data-path="bay-3/module/sc03/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc03--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-3--module--sc04" data-path="bay-3/module/sc04" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#56c75e" data-media="fiber" transform="translate(56.79,4.825)">
+        <title>bay-3--module--sc04</title>
+        <path id="bay-3--module--sc04--bezel" fill-rule="evenodd" fill="#56c75e" stroke="#347939" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+        <g id="bay-3--module--sc04--1" data-path="bay-3/module/sc04/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+          <title>bay-3--module--sc04--1</title>
+          <path id="bay-3--module--sc04--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc04/1/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc04--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc04--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc04--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc04--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc04--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc04--2" data-path="bay-3/module/sc04/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+          <title>bay-3--module--sc04--2</title>
+          <path id="bay-3--module--sc04--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc04/2/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc04--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc04--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc04--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc04--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc04--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc04--1-occupant" data-path="bay-3/module/sc04/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="bay-3/module/sc04/1">
+          <title>bay-3--module--sc04--1-occupant</title>
+          <g id="bay-3--module--sc04--1-occupant--body" class="cap" data-path="bay-3/module/sc04/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc04--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc04--2-occupant" data-path="bay-3/module/sc04/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="bay-3/module/sc04/2">
+          <title>bay-3--module--sc04--2-occupant</title>
+          <g id="bay-3--module--sc04--2-occupant--body" class="cap" data-path="bay-3/module/sc04/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc04--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-3--module--sc05" data-path="bay-3/module/sc05" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#56c75e" data-media="fiber" transform="translate(70.79,4.825)">
+        <title>bay-3--module--sc05</title>
+        <path id="bay-3--module--sc05--bezel" fill-rule="evenodd" fill="#56c75e" stroke="#347939" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+        <g id="bay-3--module--sc05--1" data-path="bay-3/module/sc05/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+          <title>bay-3--module--sc05--1</title>
+          <path id="bay-3--module--sc05--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc05/1/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc05--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc05--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc05--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc05--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc05--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc05--2" data-path="bay-3/module/sc05/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+          <title>bay-3--module--sc05--2</title>
+          <path id="bay-3--module--sc05--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc05/2/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc05--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc05--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc05--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc05--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc05--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc05--1-occupant" data-path="bay-3/module/sc05/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="bay-3/module/sc05/1">
+          <title>bay-3--module--sc05--1-occupant</title>
+          <g id="bay-3--module--sc05--1-occupant--body" class="cap" data-path="bay-3/module/sc05/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc05--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc05--2-occupant" data-path="bay-3/module/sc05/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="bay-3/module/sc05/2">
+          <title>bay-3--module--sc05--2-occupant</title>
+          <g id="bay-3--module--sc05--2-occupant--body" class="cap" data-path="bay-3/module/sc05/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc05--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+      </g>
+      <g id="bay-3--module--sc06" data-path="bay-3/module/sc06" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#56c75e" data-media="fiber" transform="translate(84.77,4.825)">
+        <title>bay-3--module--sc06</title>
+        <path id="bay-3--module--sc06--bezel" fill-rule="evenodd" fill="#56c75e" stroke="#347939" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+        <g id="bay-3--module--sc06--1" data-path="bay-3/module/sc06/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+          <title>bay-3--module--sc06--1</title>
+          <path id="bay-3--module--sc06--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc06/1/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc06--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc06--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc06--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc06--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc06--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc06--2" data-path="bay-3/module/sc06/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+          <title>bay-3--module--sc06--2</title>
+          <path id="bay-3--module--sc06--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="bay-3/module/sc06/2/bore" data-class="cutout" />
+          <rect id="bay-3--module--sc06--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <rect id="bay-3--module--sc06--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+          <circle id="bay-3--module--sc06--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+          <circle id="bay-3--module--sc06--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+          <circle id="bay-3--module--sc06--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+          <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc06--1-occupant" data-path="bay-3/module/sc06/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="bay-3/module/sc06/1">
+          <title>bay-3--module--sc06--1-occupant</title>
+          <g id="bay-3--module--sc06--1-occupant--body" class="cap" data-path="bay-3/module/sc06/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc06--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g id="bay-3--module--sc06--2-occupant" data-path="bay-3/module/sc06/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="bay-3/module/sc06/2">
+          <title>bay-3--module--sc06--2-occupant</title>
+          <g id="bay-3--module--sc06--2-occupant--body" class="cap" data-path="bay-3/module/sc06/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+            <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+            <rect id="bay-3--module--sc06--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+          </g>
+          <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+        </g>
+        <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+      </g>
+    </g>
+  </g>
+  <g id="bay-4" data-path="bay-4" data-class="bay" data-group="slots" data-group-role="service" data-rel-pos="4">
+    <title>bay-4</title>
+    <rect id="bay-4--opening" x="361.98" y="3.87" width="89.74" height="36.26" fill="#101214" />
+    <g id="bay-4--module" data-path="bay-4/module" data-class="blank" data-behaviour="fills" data-ref="fs/fhd-fapb@1:1.0.0" data-body-depth="1.7" data-model="FHD-FAPB" data-vendor-sku="35526" transform="translate(406.85,22) translate(-54.485,-17.525)">
+      <title>bay-4--module</title>
+      <defs>
+        <linearGradient id="bay-4--module--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+        <radialGradient id="bay-4--module--knob" cx="0.35" cy="0.35" r="0.75">
+          <stop offset="0" stop-color="#4a5056" />
+          <stop offset="1" stop-color="#1c1f22" />
+        </radialGradient>
+      </defs>
+      <rect id="bay-4--module--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#bay-4--module--bez)" stroke="#15181a" stroke-width="0.3" />
+      <circle id="bay-4--module--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#bay-4--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <circle id="bay-4--module--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#bay-4--module--knob)" stroke="#0e1012" stroke-width="0.25" />
+      <g id="bay-4--module--silkscreen">
+  </g>
+    </g>
+  </g>
+</svg>

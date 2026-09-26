@@ -717,7 +717,7 @@ if plan:
     # the LC-faced QSFP (on the device, or on the card the plan seats), or an
     # FHD adapter that takes the LC duplex plug; a copper end is a port the
     # compiled face or card skin marks data-media="rj45".
-    FIBER_TAKES = ("generic/qsfp-lc@1", "generic/lc-duplex-plug@2")
+    FIBER_TAKES = ("generic/qsfp-lc@1", "generic/qsfp-lc@2", "generic/lc-duplex-plug@2")
     def media_ok(media, end):
         dev, path = end[0], end[1]
         if media == "os2":

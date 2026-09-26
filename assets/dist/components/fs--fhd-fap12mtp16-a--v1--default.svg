@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108.97mm" height="35.05mm" viewBox="0 0 108.97 35.05">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fhd-fap12mtp16-a" data-path="fhd-fap12mtp16-a" data-class="adapter-panel" data-behaviour="fills" data-ref="fs/fhd-fap12mtp16-a@1:1.0.0" data-body-depth="32.1" data-media="fiber" data-vendor-sku="382885" transform="translate(0,0)">
+    <title>fhd-fap12mtp16-a</title>
+    <defs>
+      <linearGradient id="fhd-fap12mtp16-a--bez" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3c4248" />
+        <stop offset="1" stop-color="#23272c" />
+      </linearGradient>
+      <radialGradient id="fhd-fap12mtp16-a--knob" cx="0.35" cy="0.35" r="0.75">
+        <stop offset="0" stop-color="#4a5056" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </radialGradient>
+    </defs>
+    <rect id="fhd-fap12mtp16-a--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#fhd-fap12mtp16-a--bez)" stroke="#15181a" stroke-width="0.3" />
+    <circle id="fhd-fap12mtp16-a--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#fhd-fap12mtp16-a--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <circle id="fhd-fap12mtp16-a--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#fhd-fap12mtp16-a--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <rect id="fhd-fap12mtp16-a--logo-zone" x="1.6" y="3.2" width="5.3" height="5.0" fill="none" data-path="fhd-fap12mtp16-a/logo-zone" data-class="label" />
+    <g id="fhd-fap12mtp16-a--silkscreen">
+      <text id="fhd-fap12mtp16-a--port-7" x="13.21" y="11.76" font-size="4.1" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">7</text>
+      <text id="fhd-fap12mtp16-a--port-1" x="13.21" y="26.33" font-size="4.1" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+      <text id="fhd-fap12mtp16-a--port-12" x="95.79" y="11.76" font-size="4.1" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">12</text>
+      <text id="fhd-fap12mtp16-a--port-6" x="95.79" y="26.33" font-size="4.1" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">6</text>
+      <text id="fhd-fap12mtp16-a--wordmark" x="2.2" y="29.3" font-size="2.9" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">FHD</text>
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp01" data-path="fhd-fap12mtp16-a/mtp01" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(12.63,20.82) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp01</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp01--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp01--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp01--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp01--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp01--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp01/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp01--bore" data-path="fhd-fap12mtp16-a/mtp01/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp01--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp01--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp01/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp01--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp02" data-path="fhd-fap12mtp16-a/mtp02" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(26.6,20.82) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp02</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp02--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp02--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp02--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp02--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp02--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp02/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp02--bore" data-path="fhd-fap12mtp16-a/mtp02/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp02--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp02--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp02/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp02--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp03" data-path="fhd-fap12mtp16-a/mtp03" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(40.61,20.82) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp03</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp03--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp03--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp03--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp03--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp03--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp03/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp03--bore" data-path="fhd-fap12mtp16-a/mtp03/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp03--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp03--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp03/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp03--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp04" data-path="fhd-fap12mtp16-a/mtp04" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(54.59,20.82) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp04</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp04--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp04--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp04--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp04--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp04--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp04/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp04--bore" data-path="fhd-fap12mtp16-a/mtp04/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp04--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp04--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp04/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp04--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp05" data-path="fhd-fap12mtp16-a/mtp05" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(68.6,20.82) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp05</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp05--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp05--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp05--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp05--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp05--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp05/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp05--bore" data-path="fhd-fap12mtp16-a/mtp05/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp05--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp05--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp05/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp05--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp06" data-path="fhd-fap12mtp16-a/mtp06" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(82.57,20.82) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp06</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp06--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp06--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp06--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp06--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp06--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp06/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp06--bore" data-path="fhd-fap12mtp16-a/mtp06/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp06--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp06--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp06/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp06--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp07" data-path="fhd-fap12mtp16-a/mtp07" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(12.63,4.81) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp07</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp07--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp07--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp07--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp07--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp07--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp07/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp07--bore" data-path="fhd-fap12mtp16-a/mtp07/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp07--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp07--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp07/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp07--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp08" data-path="fhd-fap12mtp16-a/mtp08" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(26.6,4.81) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp08</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp08--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp08--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp08--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp08--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp08--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp08/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp08--bore" data-path="fhd-fap12mtp16-a/mtp08/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp08--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp08--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp08/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp08--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp09" data-path="fhd-fap12mtp16-a/mtp09" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(40.61,4.81) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp09</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp09--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp09--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp09--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp09--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp09--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp09/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp09--bore" data-path="fhd-fap12mtp16-a/mtp09/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp09--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp09--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp09/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp09--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp10" data-path="fhd-fap12mtp16-a/mtp10" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(54.59,4.81) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp10</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp10--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp10--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp10--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp10--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp10--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp10/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp10--bore" data-path="fhd-fap12mtp16-a/mtp10/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp10--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp10--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp10/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp10--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp11" data-path="fhd-fap12mtp16-a/mtp11" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(68.6,4.81) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp11</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp11--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp11--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp11--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp11--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp11--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp11/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp11--bore" data-path="fhd-fap12mtp16-a/mtp11/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp11--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp11--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp11/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp11--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp12" data-path="fhd-fap12mtp16-a/mtp12" data-class="port" data-ref="common/mpo16-adapter@1:1.0.0" data-wall="#22262a" data-connector="mpo16" data-media="fiber" transform="translate(82.57,4.81) rotate(90 6.9 4.7)">
+      <title>fhd-fap12mtp16-a--mtp12</title>
+      <defs>
+        <linearGradient id="fhd-fap12mtp16-a--mtp12--bez" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3c4248" />
+          <stop offset="1" stop-color="#23272c" />
+        </linearGradient>
+      </defs>
+      <rect id="fhd-fap12mtp16-a--mtp12--bezel" x="0" y="0" width="13.8" height="9.4" rx="0.5" fill="url(#fhd-fap12mtp16-a--mtp12--bez)" stroke="#15181a" stroke-width="0.2" data-z-out="1.2" />
+      <rect id="fhd-fap12mtp16-a--mtp12--1" x="8.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/1" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--2" x="8.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/2" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--3" x="8.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/3" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--4" x="7.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/4" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--5" x="7.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/5" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--6" x="7.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/6" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--7" x="7.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/7" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--8" x="6.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/8" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--9" x="6.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/9" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--10" x="6.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/10" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--11" x="6.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/11" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--12" x="5.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/12" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--13" x="5.7" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/13" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--14" x="5.45" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/14" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--15" x="5.2" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/15" data-class="fibre" />
+      <rect id="fhd-fap12mtp16-a--mtp12--16" x="4.95" y="4.625" width="0.15" height="0.15" fill="none" data-path="fhd-fap12mtp16-a/mtp12/16" data-class="fibre" />
+      <g id="fhd-fap12mtp16-a--mtp12--bore" data-path="fhd-fap12mtp16-a/mtp12/bore" data-class="port" data-inner="1" data-ref="std/mpo16@1:1.0.0" data-depth="9.0" data-wall="#2a2f35" data-cavity="opening" data-connector="mpo16" data-media="fiber" transform="translate(0.45,0.7)">
+        <title>fhd-fap12mtp16-a--mtp12--bore</title>
+        <rect id="fhd-fap12mtp16-a--mtp12--bore--opening" x="0" y="0" width="12.9" height="8.0" rx="0.6" fill="#8e97a4" stroke="#1b1e22" stroke-width="0.25" data-path="fhd-fap12mtp16-a/mtp12/bore/opening" data-class="cutout" />
+        <rect id="fhd-fap12mtp16-a--mtp12--bore--bevel" x="0.55" y="0.5" width="11.8" height="7.0" rx="0.4" fill="#aab3bf" />
+        <g data-cp="mate" data-cp-at="6.45 4" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="6.9 4.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp01-occupant" data-path="fhd-fap12mtp16-a/mtp01-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(13.13,21.47) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp01">
+      <title>fhd-fap12mtp16-a--mtp01-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp01-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp01-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp01-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp01-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp02-occupant" data-path="fhd-fap12mtp16-a/mtp02-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(27.1,21.47) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp02">
+      <title>fhd-fap12mtp16-a--mtp02-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp02-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp02-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp02-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp02-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp03-occupant" data-path="fhd-fap12mtp16-a/mtp03-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(41.11,21.47) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp03">
+      <title>fhd-fap12mtp16-a--mtp03-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp03-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp03-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp03-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp03-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp04-occupant" data-path="fhd-fap12mtp16-a/mtp04-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(55.09,21.47) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp04">
+      <title>fhd-fap12mtp16-a--mtp04-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp04-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp04-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp04-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp04-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp05-occupant" data-path="fhd-fap12mtp16-a/mtp05-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(69.1,21.47) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp05">
+      <title>fhd-fap12mtp16-a--mtp05-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp05-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp05-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp05-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp05-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp06-occupant" data-path="fhd-fap12mtp16-a/mtp06-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(83.07,21.47) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp06">
+      <title>fhd-fap12mtp16-a--mtp06-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp06-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp06-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp06-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp06-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp07-occupant" data-path="fhd-fap12mtp16-a/mtp07-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(13.13,5.46) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp07">
+      <title>fhd-fap12mtp16-a--mtp07-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp07-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp07-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp07-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp07-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp08-occupant" data-path="fhd-fap12mtp16-a/mtp08-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(27.1,5.46) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp08">
+      <title>fhd-fap12mtp16-a--mtp08-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp08-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp08-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp08-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp08-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp09-occupant" data-path="fhd-fap12mtp16-a/mtp09-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(41.11,5.46) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp09">
+      <title>fhd-fap12mtp16-a--mtp09-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp09-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp09-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp09-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp09-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp10-occupant" data-path="fhd-fap12mtp16-a/mtp10-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(55.09,5.46) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp10">
+      <title>fhd-fap12mtp16-a--mtp10-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp10-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp10-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp10-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp10-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp11-occupant" data-path="fhd-fap12mtp16-a/mtp11-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(69.1,5.46) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp11">
+      <title>fhd-fap12mtp16-a--mtp11-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp11-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp11-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp11-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp11-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap12mtp16-a--mtp12-occupant" data-path="fhd-fap12mtp16-a/mtp12-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/mpo16-dust-cap@1:1.0.0" transform="translate(83.07,5.46) rotate(90 6.4 4.05)" data-for="fhd-fap12mtp16-a/mtp12">
+      <title>fhd-fap12mtp16-a--mtp12-occupant</title>
+      <g id="fhd-fap12mtp16-a--mtp12-occupant--body" class="cap" data-path="fhd-fap12mtp16-a/mtp12-occupant/body" data-class="cap" data-z-out="2.5" data-z-color="#808692">
+        <rect x="0.0" y="0.0" width="12.8" height="8.1" rx="0.5" fill="#808692" stroke="#5f646e" stroke-width="0.12" />
+        <rect id="fhd-fap12mtp16-a--mtp12-occupant--saddle" x="2.4" y="2.25" width="8.0" height="3.6" rx="0.3" fill="#9a9ea6" data-z-out="5.5" data-z-lift="2.5" data-z-color="#808692" />
+        <rect id="fhd-fap12mtp16-a--mtp12-occupant--grip" x="1.3" y="2.25" width="10.2" height="3.6" rx="0.4" fill="#b3b6bc" data-z-out="5.9" data-z-lift="5.5" data-z-color="#b3b6bc" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.4 4.05" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

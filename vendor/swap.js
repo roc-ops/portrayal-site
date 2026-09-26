@@ -245,6 +245,36 @@ function backProjection(rootEl, modulePath) {
   return backsIn(rootEl, `[data-projection][data-of="${CSS.escape(modulePath)}"]`)[0] || null;
 }
 
+// WHERE A BACK LANDS IN ITS HOLE - render.py's faces.rear_at, for the module
+// the swap seated. A back is the back of the module's BODY, and the body stands
+// where its own `body.footprint` says, so a cassette and an adapter panel in
+// the same bay put their backs in different places. Seen from behind, left and
+// right swap: the footprint is mirrored across the bay (`data-rear-bay`, the
+// bay's own box as seen through the hole). No footprint: the body fills the face.
+//
+// A TURNED BAY (render.py's faces.rear_place): `turn` is the hole's
+// `data-rear-rotate`, the bay's own rotate negated - seen from behind, a
+// clockwise turn reads anticlockwise. The footprint is found in the bay with
+// its axes swapped back, centred on the same hole, and the back's centre is
+// turned about the hole's centre; the result is the unturned top-left of a
+// drawing `back` ({w, h}) big, which the caller then turns about its own
+// centre, as a placement is drawn.
+export function rearAt(bayBox, comp, turn = 0, back = null) {
+  const [bx, by, bw, bh] = String(bayBox).split(',').map(Number);
+  const fp = comp?.body?.footprint || {at: [0, 0], size: [comp?.size?.w || 0, comp?.size?.h || 0]};
+  const r = v => Math.round(v * 1e4) / 1e4;
+  const t = (((+turn || 0) % 360) + 360) % 360;
+  if (!t) return [r(bx + (bw - fp.at[0] - fp.size[0])), r(by + fp.at[1])];
+  const cx = bx + bw / 2, cy = by + bh / 2;
+  const [uw, uh] = t === 90 || t === 270 ? [bh, bw] : [bw, bh];
+  const [tx, ty] = rearAt(`${cx - uw / 2},${cy - uh / 2},${uw},${uh}`, comp);
+  const dw = +(back?.w || fp.size[0]), dh = +(back?.h || fp.size[1]);
+  const vx = tx + dw / 2 - cx, vy = ty + dh / 2 - cy;
+  const [c, s] = {90: [0, 1], 180: [-1, 0], 270: [0, -1]}[t]
+    || [Math.cos(t * Math.PI / 180), Math.sin(t * Math.PI / 180)];
+  return [r(cx + vx * c - vy * s - dw / 2), r(cy + vx * s + vy * c - dh / 2)];
+}
+
 // A BAY SEEN FROM BEHIND. render.py draws a seated module's back (`faces.rear`)
 // inside the rear-panel hole its bay names, as a projection, and deepens the
 // hole to the back of that module. A swap changes the front bay only - there is
@@ -252,7 +282,7 @@ function backProjection(rootEl, modulePath) {
 // kept showing the module the BUILD seated: a 24-fibre cassette swapped in still
 // showed a 1-12 MTP from behind.
 //
-// The hole carries what a swap needs (`data-rear-of`, `data-rear-at`); the new
+// The hole carries what a swap needs (`data-rear-of`, `data-rear-bay`); the new
 // module's rear face comes from its components.json entry. Built the way
 // render.py builds a projection: `data-of` in place of `data-path`, and nothing
 // the kit would extract as relief. In 3D the back is the module body's own.
@@ -276,12 +306,19 @@ export async function applyRearOverrides(rootEl, overrides, loadSkin, compByRef)
     for (const old of hole.querySelectorAll(':scope > [data-projection]')) old.remove();
     applied++;
     if (ref) hole.setAttribute('data-rear-ref', ref); else hole.removeAttribute('data-rear-ref');
+    hole.removeAttribute('data-rear-at');
     if (!loaded) continue;            // emptied, or a module with no back to show
     const doc = new DOMParser().parseFromString(loaded.text, 'image/svg+xml');
-    const [x, y] = hole.getAttribute('data-rear-at').split(',').map(Number);
+    const turn = +hole.getAttribute('data-rear-rotate') || 0;
+    const back = loaded.comp?.size || null;
+    const [x, y] = rearAt(hole.getAttribute('data-rear-bay'), comp, turn, back);
+    hole.setAttribute('data-rear-at', `${x},${y}`);
     const wrap = rootEl.ownerDocument.createElementNS(NSX, 'g');
     wrap.setAttribute('id', `${bayId}-rear`);
-    wrap.setAttribute('transform', `translate(${x},${y})`);
+    // turned about the drawing's own centre, as render.py draws a placement
+    const dw = +(back?.w || 0), dh = +(back?.h || 0);
+    wrap.setAttribute('transform', `translate(${x},${y})`
+      + (turn ? ` rotate(${turn} ${dw / 2} ${dh / 2})` : ''));
     const name = loaded.comp.name;
     const root = doc.getElementById(name);
     // THE ROOT'S OWN ATTRIBUTES COME ALONG, as render.py's projection keeps

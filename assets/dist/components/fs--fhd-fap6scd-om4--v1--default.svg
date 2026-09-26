@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108.97mm" height="35.05mm" viewBox="0 0 108.97 35.05">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fhd-fap6scd-om4" data-path="fhd-fap6scd-om4" data-class="adapter-panel" data-behaviour="fills" data-ref="fs/fhd-fap6scd-om4@1:1.0.0" data-body-depth="29.5" data-media="fiber" data-model="FHD-FAP6SCDZ10GMM" data-vendor-sku="51284" transform="translate(0,0)">
+    <title>fhd-fap6scd-om4</title>
+    <defs>
+      <linearGradient id="fhd-fap6scd-om4--bez" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3c4248" />
+        <stop offset="1" stop-color="#23272c" />
+      </linearGradient>
+      <radialGradient id="fhd-fap6scd-om4--knob" cx="0.35" cy="0.35" r="0.75">
+        <stop offset="0" stop-color="#4a5056" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </radialGradient>
+    </defs>
+    <rect id="fhd-fap6scd-om4--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#fhd-fap6scd-om4--bez)" stroke="#15181a" stroke-width="0.3" />
+    <circle id="fhd-fap6scd-om4--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#fhd-fap6scd-om4--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <circle id="fhd-fap6scd-om4--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#fhd-fap6scd-om4--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <rect id="fhd-fap6scd-om4--logo-zone" x="1.6" y="3.2" width="5.3" height="5.0" fill="none" data-path="fhd-fap6scd-om4/logo-zone" data-class="label" />
+    <g id="fhd-fap6scd-om4--silkscreen">
+      <text id="fhd-fap6scd-om4--port-2" x="13.4" y="12.47" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">2</text>
+      <text id="fhd-fap6scd-om4--port-1" x="13.4" y="25.17" font-size="3.5" text-anchor="end" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+      <text id="fhd-fap6scd-om4--port-12" x="95.6" y="12.47" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">12</text>
+      <text id="fhd-fap6scd-om4--port-11" x="95.6" y="25.17" font-size="3.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">11</text>
+    </g>
+    <g id="fhd-fap6scd-om4--sc01" data-path="fhd-fap6scd-om4/sc01" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#54ccde" data-media="fiber" transform="translate(14.85,4.825)">
+      <title>fhd-fap6scd-om4--sc01</title>
+      <path id="fhd-fap6scd-om4--sc01--bezel" fill-rule="evenodd" fill="#54ccde" stroke="#337c87" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+      <g id="fhd-fap6scd-om4--sc01--1" data-path="fhd-fap6scd-om4/sc01/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc01--1</title>
+        <path id="fhd-fap6scd-om4--sc01--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc01/1/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc01--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc01--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc01--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc01--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc01--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc01--2" data-path="fhd-fap6scd-om4/sc01/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc01--2</title>
+        <path id="fhd-fap6scd-om4--sc01--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc01/2/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc01--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc01--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc01--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc01--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc01--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc01--1-occupant" data-path="fhd-fap6scd-om4/sc01/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc01/1">
+        <title>fhd-fap6scd-om4--sc01--1-occupant</title>
+        <g id="fhd-fap6scd-om4--sc01--1-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc01/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc01--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc01--2-occupant" data-path="fhd-fap6scd-om4/sc01/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc01/2">
+        <title>fhd-fap6scd-om4--sc01--2-occupant</title>
+        <g id="fhd-fap6scd-om4--sc01--2-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc01/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc01--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap6scd-om4--sc02" data-path="fhd-fap6scd-om4/sc02" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#54ccde" data-media="fiber" transform="translate(28.83,4.825)">
+      <title>fhd-fap6scd-om4--sc02</title>
+      <path id="fhd-fap6scd-om4--sc02--bezel" fill-rule="evenodd" fill="#54ccde" stroke="#337c87" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+      <g id="fhd-fap6scd-om4--sc02--1" data-path="fhd-fap6scd-om4/sc02/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc02--1</title>
+        <path id="fhd-fap6scd-om4--sc02--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc02/1/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc02--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc02--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc02--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc02--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc02--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc02--2" data-path="fhd-fap6scd-om4/sc02/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc02--2</title>
+        <path id="fhd-fap6scd-om4--sc02--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc02/2/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc02--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc02--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc02--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc02--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc02--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc02--1-occupant" data-path="fhd-fap6scd-om4/sc02/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc02/1">
+        <title>fhd-fap6scd-om4--sc02--1-occupant</title>
+        <g id="fhd-fap6scd-om4--sc02--1-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc02/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc02--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc02--2-occupant" data-path="fhd-fap6scd-om4/sc02/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc02/2">
+        <title>fhd-fap6scd-om4--sc02--2-occupant</title>
+        <g id="fhd-fap6scd-om4--sc02--2-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc02/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc02--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap6scd-om4--sc03" data-path="fhd-fap6scd-om4/sc03" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#54ccde" data-media="fiber" transform="translate(42.81,4.825)">
+      <title>fhd-fap6scd-om4--sc03</title>
+      <path id="fhd-fap6scd-om4--sc03--bezel" fill-rule="evenodd" fill="#54ccde" stroke="#337c87" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+      <g id="fhd-fap6scd-om4--sc03--1" data-path="fhd-fap6scd-om4/sc03/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc03--1</title>
+        <path id="fhd-fap6scd-om4--sc03--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc03/1/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc03--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc03--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc03--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc03--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc03--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc03--2" data-path="fhd-fap6scd-om4/sc03/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc03--2</title>
+        <path id="fhd-fap6scd-om4--sc03--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc03/2/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc03--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc03--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc03--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc03--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc03--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc03--1-occupant" data-path="fhd-fap6scd-om4/sc03/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc03/1">
+        <title>fhd-fap6scd-om4--sc03--1-occupant</title>
+        <g id="fhd-fap6scd-om4--sc03--1-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc03/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc03--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc03--2-occupant" data-path="fhd-fap6scd-om4/sc03/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc03/2">
+        <title>fhd-fap6scd-om4--sc03--2-occupant</title>
+        <g id="fhd-fap6scd-om4--sc03--2-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc03/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc03--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap6scd-om4--sc04" data-path="fhd-fap6scd-om4/sc04" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#54ccde" data-media="fiber" transform="translate(56.79,4.825)">
+      <title>fhd-fap6scd-om4--sc04</title>
+      <path id="fhd-fap6scd-om4--sc04--bezel" fill-rule="evenodd" fill="#54ccde" stroke="#337c87" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+      <g id="fhd-fap6scd-om4--sc04--1" data-path="fhd-fap6scd-om4/sc04/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc04--1</title>
+        <path id="fhd-fap6scd-om4--sc04--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc04/1/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc04--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc04--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc04--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc04--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc04--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc04--2" data-path="fhd-fap6scd-om4/sc04/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc04--2</title>
+        <path id="fhd-fap6scd-om4--sc04--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc04/2/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc04--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc04--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc04--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc04--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc04--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc04--1-occupant" data-path="fhd-fap6scd-om4/sc04/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc04/1">
+        <title>fhd-fap6scd-om4--sc04--1-occupant</title>
+        <g id="fhd-fap6scd-om4--sc04--1-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc04/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc04--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc04--2-occupant" data-path="fhd-fap6scd-om4/sc04/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc04/2">
+        <title>fhd-fap6scd-om4--sc04--2-occupant</title>
+        <g id="fhd-fap6scd-om4--sc04--2-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc04/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc04--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap6scd-om4--sc05" data-path="fhd-fap6scd-om4/sc05" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#54ccde" data-media="fiber" transform="translate(70.79,4.825)">
+      <title>fhd-fap6scd-om4--sc05</title>
+      <path id="fhd-fap6scd-om4--sc05--bezel" fill-rule="evenodd" fill="#54ccde" stroke="#337c87" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+      <g id="fhd-fap6scd-om4--sc05--1" data-path="fhd-fap6scd-om4/sc05/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc05--1</title>
+        <path id="fhd-fap6scd-om4--sc05--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc05/1/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc05--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc05--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc05--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc05--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc05--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc05--2" data-path="fhd-fap6scd-om4/sc05/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc05--2</title>
+        <path id="fhd-fap6scd-om4--sc05--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc05/2/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc05--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc05--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc05--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc05--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc05--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc05--1-occupant" data-path="fhd-fap6scd-om4/sc05/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc05/1">
+        <title>fhd-fap6scd-om4--sc05--1-occupant</title>
+        <g id="fhd-fap6scd-om4--sc05--1-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc05/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc05--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc05--2-occupant" data-path="fhd-fap6scd-om4/sc05/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc05/2">
+        <title>fhd-fap6scd-om4--sc05--2-occupant</title>
+        <g id="fhd-fap6scd-om4--sc05--2-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc05/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc05--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fap6scd-om4--sc06" data-path="fhd-fap6scd-om4/sc06" data-class="port" data-ref="common/sc-duplex-adapter@5:5.2.0" data-connector="sc" data-housing-finish="#54ccde" data-media="fiber" transform="translate(84.77,4.825)">
+      <title>fhd-fap6scd-om4--sc06</title>
+      <path id="fhd-fap6scd-om4--sc06--bezel" fill-rule="evenodd" fill="#54ccde" stroke="#337c87" stroke-width="0.15" data-fill-from="housing-finish" data-stroke-derive="housing-finish" d="M 0.3 0 H 9.1 Q 9.4 0 9.4 0.3 V 25.1 Q 9.4 25.4 9.1 25.4 H 0.3 Q 0 25.4 0 25.1 V 0.3 Q 0 0 0.3 0 Z            M 0.95 1.85 H 8.45 V 10.85 H 0.95 V 7.40 H 0.06 V 5.30 H 0.95 Z            M 0.95 14.55 H 8.45 V 23.55 H 0.95 V 20.10 H 0.06 V 18.00 H 0.95 Z" data-z-out="1.0" />
+      <g id="fhd-fap6scd-om4--sc06--1" data-path="fhd-fap6scd-om4/sc06/1" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,14.55)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc06--1</title>
+        <path id="fhd-fap6scd-om4--sc06--1--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc06/1/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc06--1--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc06--1--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc06--1--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc06--1--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc06--1--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc06--2" data-path="fhd-fap6scd-om4/sc06/2" data-class="port" data-inner="1" data-ref="std/sc-bore@1:1.0.0" data-depth="6.0" data-wall="#4a4f55" data-cavity="bore" data-connector="sc" data-media="fiber" transform="translate(0.06,1.85)" data-z-lift="1.0">
+        <title>fhd-fap6scd-om4--sc06--2</title>
+        <path id="fhd-fap6scd-om4--sc06--2--bore" fill="#15181b" d="     M 0.89 0 H 8.39 V 9 H 0.89 V 5.55 H 0 V 3.45 H 0.89 Z" data-path="fhd-fap6scd-om4/sc06/2/bore" data-class="cutout" />
+        <rect id="fhd-fap6scd-om4--sc06--2--hook-upper" x="1.9" y="0.9" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <rect id="fhd-fap6scd-om4--sc06--2--hook-lower" x="1.9" y="7.2" width="5.48" height="0.9" fill="#23272b" data-z-top="5.2" />
+        <circle id="fhd-fap6scd-om4--sc06--2--collar" cx="4.64" cy="4.5" r="2.34" fill="#262a2f" stroke="#3a4046" stroke-width="0.12" data-z-top="3.8" />
+        <circle id="fhd-fap6scd-om4--sc06--2--sleeve" cx="4.64" cy="4.5" r="1.65" fill="#1e2226" />
+        <circle id="fhd-fap6scd-om4--sc06--2--ferrule" cx="4.64" cy="4.5" r="1.25" fill="#e8ecef" data-z-top="4.8" data-z-color="#e8ecef" />
+        <g data-cp="mate" data-cp-at="4.64 4.5" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc06--1-occupant" data-path="fhd-fap6scd-om4/sc06/1-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,13.6)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc06/1">
+        <title>fhd-fap6scd-om4--sc06--1-occupant</title>
+        <g id="fhd-fap6scd-om4--sc06--1-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc06/1-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc06--1-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g id="fhd-fap6scd-om4--sc06--2-occupant" data-path="fhd-fap6scd-om4/sc06/2-occupant" data-class="cap" data-behaviour="occupies" data-ref="common/sc-dust-cap@1:1.0.1" transform="translate(0.3,0.9)" data-z-lift="1" data-for="fhd-fap6scd-om4/sc06/2">
+        <title>fhd-fap6scd-om4--sc06--2-occupant</title>
+        <g id="fhd-fap6scd-om4--sc06--2-occupant--body" class="cap" data-path="fhd-fap6scd-om4/sc06/2-occupant/body" data-class="cap" data-z-out="3.3" data-z-color="#2b2c2e">
+          <rect x="0.0" y="0.0" width="8.8" height="11.45" rx="0.5" fill="#2b2c2e" stroke="#19191a" stroke-width="0.12" />
+          <rect id="fhd-fap6scd-om4--sc06--2-occupant--grip" x="2.45" y="2.225" width="3.9" height="7.0" rx="0.45" fill="#46484b" data-z-out="3.8" data-z-lift="2.3" data-z-color="#46484b" />
+        </g>
+        <g data-cp="mate" data-cp-at="4.4 5.45" data-cp-dir="front" />
+      </g>
+      <g data-cp="optical" data-cp-at="4.7 12.7" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

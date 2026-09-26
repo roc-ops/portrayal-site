@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="108.97mm" height="35.05mm" viewBox="0 0 108.97 35.05">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="fhd-fapm6" data-path="fhd-fapm6" data-class="adapter-panel" data-behaviour="fills" data-ref="fs/fhd-fapm6@1:1.0.0" data-body-depth="9.6" data-media="multimedia" data-model="FHD-FAPM6" data-vendor-sku="143239" transform="translate(0,0)">
+    <title>fhd-fapm6</title>
+    <defs>
+      <linearGradient id="fhd-fapm6--bez" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3c4248" />
+        <stop offset="1" stop-color="#23272c" />
+      </linearGradient>
+      <radialGradient id="fhd-fapm6--knob" cx="0.35" cy="0.35" r="0.75">
+        <stop offset="0" stop-color="#4a5056" />
+        <stop offset="1" stop-color="#1c1f22" />
+      </radialGradient>
+    </defs>
+    <rect id="fhd-fapm6--bezel" x="0" y="0" width="108.97" height="35.05" rx="1.5" fill="url(#fhd-fapm6--bez)" stroke="#15181a" stroke-width="0.3" />
+    <rect id="fhd-fapm6--opening-1" x="20.125" y="18.5" width="16.54" height="14.94" fill="#0c0d0f" />
+    <rect id="fhd-fapm6--opening-2" x="20.125" y="1.6" width="16.54" height="14.94" fill="#0c0d0f" />
+    <rect id="fhd-fapm6--opening-3" x="46.215" y="18.5" width="16.54" height="14.94" fill="#0c0d0f" />
+    <rect id="fhd-fapm6--opening-4" x="46.215" y="1.6" width="16.54" height="14.94" fill="#0c0d0f" />
+    <rect id="fhd-fapm6--opening-5" x="72.305" y="18.5" width="16.54" height="14.94" fill="#0c0d0f" />
+    <rect id="fhd-fapm6--opening-6" x="72.305" y="1.6" width="16.54" height="14.94" fill="#0c0d0f" />
+    <circle id="fhd-fapm6--thumb-knob-left" cx="4.785" cy="17.525" r="4.24" fill="url(#fhd-fapm6--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <circle id="fhd-fapm6--thumb-knob-right" cx="104.185" cy="17.525" r="4.24" fill="url(#fhd-fapm6--knob)" stroke="#0e1012" stroke-width="0.25" />
+    <rect id="fhd-fapm6--logo-zone" x="1.6" y="3.2" width="5.3" height="5.0" fill="none" data-path="fhd-fapm6/logo-zone" data-class="label" />
+    <g id="fhd-fapm6--silkscreen">
+      <text id="fhd-fapm6--port-2" x="17.2" y="10.37" font-size="3.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">2</text>
+      <text id="fhd-fapm6--port-1" x="17.2" y="27.27" font-size="3.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">1</text>
+      <text id="fhd-fapm6--port-6" x="91.77" y="10.37" font-size="3.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">6</text>
+      <text id="fhd-fapm6--port-5" x="91.77" y="27.27" font-size="3.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" fill="#e8ebee">5</text>
+    </g>
+    <g id="fhd-fapm6--clip1" data-path="fhd-fapm6/clip1" data-class="mechanical" data-ref="common/keystone-clip@2:2.0.0" data-opening="keystone" transform="translate(20.145,18.52)">
+      <title>fhd-fapm6--clip1</title>
+      <path id="fhd-fapm6--clip1--bezel" fill-rule="evenodd" fill="#ece9e2" stroke="#9f9d98" stroke-width="0.2" d="M 0.6 0 H 15.9 Q 16.5 0 16.5 0.6 V 14.3 Q 16.5 14.9 15.9 14.9 H 0.6 Q 0 14.9 0 14.3 V 0.6 Q 0 0 0.6 0 Z            M 2.0 2.45 V 12.45 H 14.5 V 2.45 Z" data-z-out="0.8" />
+      <rect id="fhd-fapm6--clip1--window" x="2.0" y="2.45" width="12.5" height="10.0" fill="#1c1f22" data-path="fhd-fapm6/clip1/window" data-class="cutout" />
+      <g data-cp="mate" data-cp-at="8.25 7.45" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fapm6--clip2" data-path="fhd-fapm6/clip2" data-class="mechanical" data-ref="common/keystone-clip@2:2.0.0" data-opening="keystone" transform="translate(20.145,1.62)">
+      <title>fhd-fapm6--clip2</title>
+      <path id="fhd-fapm6--clip2--bezel" fill-rule="evenodd" fill="#ece9e2" stroke="#9f9d98" stroke-width="0.2" d="M 0.6 0 H 15.9 Q 16.5 0 16.5 0.6 V 14.3 Q 16.5 14.9 15.9 14.9 H 0.6 Q 0 14.9 0 14.3 V 0.6 Q 0 0 0.6 0 Z            M 2.0 2.45 V 12.45 H 14.5 V 2.45 Z" data-z-out="0.8" />
+      <rect id="fhd-fapm6--clip2--window" x="2.0" y="2.45" width="12.5" height="10.0" fill="#1c1f22" data-path="fhd-fapm6/clip2/window" data-class="cutout" />
+      <g data-cp="mate" data-cp-at="8.25 7.45" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fapm6--clip3" data-path="fhd-fapm6/clip3" data-class="mechanical" data-ref="common/keystone-clip@2:2.0.0" data-opening="keystone" transform="translate(46.235,18.52)">
+      <title>fhd-fapm6--clip3</title>
+      <path id="fhd-fapm6--clip3--bezel" fill-rule="evenodd" fill="#ece9e2" stroke="#9f9d98" stroke-width="0.2" d="M 0.6 0 H 15.9 Q 16.5 0 16.5 0.6 V 14.3 Q 16.5 14.9 15.9 14.9 H 0.6 Q 0 14.9 0 14.3 V 0.6 Q 0 0 0.6 0 Z            M 2.0 2.45 V 12.45 H 14.5 V 2.45 Z" data-z-out="0.8" />
+      <rect id="fhd-fapm6--clip3--window" x="2.0" y="2.45" width="12.5" height="10.0" fill="#1c1f22" data-path="fhd-fapm6/clip3/window" data-class="cutout" />
+      <g data-cp="mate" data-cp-at="8.25 7.45" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fapm6--clip4" data-path="fhd-fapm6/clip4" data-class="mechanical" data-ref="common/keystone-clip@2:2.0.0" data-opening="keystone" transform="translate(46.235,1.62)">
+      <title>fhd-fapm6--clip4</title>
+      <path id="fhd-fapm6--clip4--bezel" fill-rule="evenodd" fill="#ece9e2" stroke="#9f9d98" stroke-width="0.2" d="M 0.6 0 H 15.9 Q 16.5 0 16.5 0.6 V 14.3 Q 16.5 14.9 15.9 14.9 H 0.6 Q 0 14.9 0 14.3 V 0.6 Q 0 0 0.6 0 Z            M 2.0 2.45 V 12.45 H 14.5 V 2.45 Z" data-z-out="0.8" />
+      <rect id="fhd-fapm6--clip4--window" x="2.0" y="2.45" width="12.5" height="10.0" fill="#1c1f22" data-path="fhd-fapm6/clip4/window" data-class="cutout" />
+      <g data-cp="mate" data-cp-at="8.25 7.45" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fapm6--clip5" data-path="fhd-fapm6/clip5" data-class="mechanical" data-ref="common/keystone-clip@2:2.0.0" data-opening="keystone" transform="translate(72.325,18.52)">
+      <title>fhd-fapm6--clip5</title>
+      <path id="fhd-fapm6--clip5--bezel" fill-rule="evenodd" fill="#ece9e2" stroke="#9f9d98" stroke-width="0.2" d="M 0.6 0 H 15.9 Q 16.5 0 16.5 0.6 V 14.3 Q 16.5 14.9 15.9 14.9 H 0.6 Q 0 14.9 0 14.3 V 0.6 Q 0 0 0.6 0 Z            M 2.0 2.45 V 12.45 H 14.5 V 2.45 Z" data-z-out="0.8" />
+      <rect id="fhd-fapm6--clip5--window" x="2.0" y="2.45" width="12.5" height="10.0" fill="#1c1f22" data-path="fhd-fapm6/clip5/window" data-class="cutout" />
+      <g data-cp="mate" data-cp-at="8.25 7.45" data-cp-dir="front" />
+    </g>
+    <g id="fhd-fapm6--clip6" data-path="fhd-fapm6/clip6" data-class="mechanical" data-ref="common/keystone-clip@2:2.0.0" data-opening="keystone" transform="translate(72.325,1.62)">
+      <title>fhd-fapm6--clip6</title>
+      <path id="fhd-fapm6--clip6--bezel" fill-rule="evenodd" fill="#ece9e2" stroke="#9f9d98" stroke-width="0.2" d="M 0.6 0 H 15.9 Q 16.5 0 16.5 0.6 V 14.3 Q 16.5 14.9 15.9 14.9 H 0.6 Q 0 14.9 0 14.3 V 0.6 Q 0 0 0.6 0 Z            M 2.0 2.45 V 12.45 H 14.5 V 2.45 Z" data-z-out="0.8" />
+      <rect id="fhd-fapm6--clip6--window" x="2.0" y="2.45" width="12.5" height="10.0" fill="#1c1f22" data-path="fhd-fapm6/clip6/window" data-class="cutout" />
+      <g data-cp="mate" data-cp-at="8.25 7.45" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>
