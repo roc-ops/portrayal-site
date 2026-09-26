@@ -89,7 +89,8 @@ async function buildDrawio() {
     const faces = {};
     for (const view of ['front', 'rear']) {
       const f = await configuredFace({ref: e.ref, cfg: e.cfg, view,
-                                      swaps: overrides[e.ref] || {}}).catch(() => null);
+                                      swaps: overrides[e.ref] || {},
+                                      turned: !!e.turned}).catch(() => null);
       if (f) faces[view] = {svg: f.text, vb: f.vb, ports: f.ports};
     }
     if (!faces.front && !faces.rear) continue;

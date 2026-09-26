@@ -17,7 +17,11 @@
 //
 // `turned` means the device's other panel faces out, so front and rear swap.
 // Resolves to null when the face was never compiled. Results are memoized on
-// the whole argument and frozen: treat them as read-only.
+// the whole argument and DEEP-frozen - the top-level object, `vb`, `seat` and
+// its arrays, and `zones`/`ports` themselves plus every zone/port object they
+// hold - because the same result is handed to every caller that asked for the
+// same key: one caller mutating a zone or pushing onto `ports` would corrupt
+// what every other caller sees. Treat all of it as read-only.
 
 import {jdist} from '../../vendor/dist.js';
 import {seatFace} from '../../vendor/swap.js';
@@ -68,7 +72,16 @@ export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {
   const args = {ref, cfg, view, swaps: swaps || {}, fields: fields || {}, turned: !!turned};
   const key = JSON.stringify(canon(args));
   if (!MEMO.has(key)) {
-    MEMO.set(key, build(args).catch(err => { MEMO.delete(key); throw err; }));
+    // `build` awaits several times (fetch, jdist, components) and, in the
+    // showcase, the caller's `swaps`/`fields` are the SAME object it goes on
+    // mutating in place afterward (applyPlanSeats, dropBelow, stage 2/3
+    // doSeat all write into overrides[dev] rather than replacing it). Holding
+    // onto `args` itself would let a build in flight read the mutated object
+    // after an await and cache a wrong face under the key computed before the
+    // mutation - a sticky wrong face for the rest of the session. `key` is
+    // already a canonical JSON string of a plain deep copy, so parsing it
+    // back gives `build` its own snapshot, immune to later mutation.
+    MEMO.set(key, build(JSON.parse(key)).catch(err => { MEMO.delete(key); throw err; }));
   }
   return MEMO.get(key);
 }
@@ -95,6 +108,19 @@ async function build({ref, cfg, view, swaps, fields, turned}) {
     text = new XMLSerializer().serializeToString(root);
   }
   const {vb, zones} = readSvg(text);
-  return Object.freeze({ref, cfg, view: shown, text, vb, zones,
-                        ports: portsOf(zones, {bays: true}), seat});
+  const ports = portsOf(zones, {bays: true});
+  return deepFreeze({ref, cfg, view: shown, text, vb, zones, ports, seat});
+}
+
+// Freezes the result AND everything reachable inside it - `vb` (an array of
+// numbers), `seat` and its `refused`/`failed` arrays, and `zones`/`ports`
+// (two arrays that share the same zone objects) plus every zone/port object
+// they hold. `ports` and `zones` overlap, so a zone is frozen once and the
+// second freeze is a cheap no-op.
+function deepFreeze(v) {
+  if (v && typeof v === 'object' && !Object.isFrozen(v)) {
+    for (const k of Object.keys(v)) deepFreeze(v[k]);
+    Object.freeze(v);
+  }
+  return v;
 }
