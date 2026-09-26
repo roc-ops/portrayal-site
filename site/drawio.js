@@ -258,17 +258,22 @@ export function svgDataUri(text) {
 // A COVER COMES OFF IN THE DIAGRAM TOO. The R740xd's bezel is drawn by default
 // and hides the drives behind it; Explorer takes it off with a pull handle, and
 // a diagram needs the same. So a cover is lifted out of the face into its own
-// image cell, stacked over a face drawn without it, and tagged - draw.io's View
-// > Tags hides every `bezel` at once, and a single one can simply be deleted.
+// image cell, stacked over a face drawn without it, and tagged with its kind -
+// draw.io's View > Tags hides every `bezel` at once, and a single one can
+// simply be deleted. ONE TAG, deliberately: draw.io hides a cell only when ALL
+// of its tags are hidden, so a second tag (`cover bezel`) meant hiding `bezel`
+// alone did nothing.
 // The cell stays inside its device's group, so it moves with the device; a
 // layer would have left it behind when the device was dragged.
 //
 // BEZELS ONLY, for now. The drawings have no single marker meaning "this part
 // hides those parts": `behaviour: mounts` is on screws and studs too, and
 // covers are grouped under `covers`, `filters` or `furniture` by device. Rather
-// than guess from group names, this takes the one unambiguous class until
-// Portrayal names covers explicitly.
-export const COVER_SELECTOR = '[data-class="bezel"][data-path]';
+// than guess from group names, this takes a bezel that is itself removable
+// until Portrayal names covers explicitly. `data-class="bezel"` alone is not
+// enough: the R740xd's riser shrouds and trims carry it on plates deep inside
+// parts that do not come off.
+export const COVER_SELECTOR = '[data-class="bezel"][data-behaviour="mounts"][data-path]';
 
 /** The face split into a drawing without its covers, and each cover alone on
  *  the same canvas (so it lands exactly where it was). Outermost covers only. */
@@ -323,7 +328,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
   // Over the face, under the ports: a hidden bezel must not take the drive
   // bays' connection points with it, and a shown one must not bury them.
   for (const c of split.covers) {
-    out.push(`<object label="" tags="cover ${esc(c.cls)}" portrayal-cover="${esc(c.path)}" ` +
+    out.push(`<object label="" tags="${esc(c.cls)}" portrayal-cover="${esc(c.path)}" ` +
       `id="${esc(`${id}-cover-${slug(c.path)}`)}"><mxCell style="shape=image;imageAspect=0;` +
       `editableCssRules=.*;connectable=0;image=${svgDataUri(c.text)};" vertex="1" ` +
       `parent="${esc(id)}"><mxGeometry x="0" y="0" width="${w.toFixed(2)}" ` +
