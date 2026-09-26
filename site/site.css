@@ -704,8 +704,15 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .reveal-frame { position: relative; }
 .reveal-stage * { user-select: none; -webkit-user-select: none; }
 .reveal-png { -webkit-user-drag: none; user-drag: none; }
-.reveal-media { position: relative; aspect-ratio: 436 / 87.7; }
-.reveal-png { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* THE FRAME IS THE FACE PLUS ROOM FOR ITS CABLES: 44 mm each side, where
+   they fade out, and 48 below, where they hang (hero-reveal.js FACE, SIDE,
+   BELOW). The rich SVG's viewBox is that frame; the PNG gets the same room as
+   padding - a padding percentage is of the WIDTH, so 44/524 each side and
+   48/524 below - which keeps the face at the same place in both, and the
+   split on the same millimeter of it. */
+.reveal-media { position: relative; aspect-ratio: 524 / 135.7; }
+.reveal-png { display: block; width: 100%; height: 100%; object-fit: contain;
+              box-sizing: border-box; padding: 0 calc(100% * 44 / 524) calc(100% * 48 / 524); }
 .reveal-rich { position: absolute; inset: 0;
                clip-path: inset(0 0 0 var(--split)); }
 .reveal-rich svg { display: block; width: 100%; height: 100%; }
@@ -746,6 +753,14 @@ code { font-size: 0.875em; color: var(--pt-ink); }
   font-family: ui-monospace, monospace; }
 .reveal-tag.left { color: var(--pt-ink-faint); }
 .reveal-tag.right { color: var(--pt-brass); }
+
+/* The hero's cables (hero-reveal.js): hovering, focusing or tapping one
+   lights it and dims the rest, and the caption line under the frame names
+   it. The cables sit in the SVG, under the divider's handle. */
+#hero-reveal [data-hero-cable] { cursor: pointer; transition: opacity 120ms; outline: none; }
+#hero-reveal .cables-focus [data-hero-cable]:not(.cable-on) { opacity: .22; }
+.hero-caption { font: 500 .8rem/1.4 var(--pt-font-mono); color: var(--pt-ink-muted);
+                margin: -.4rem 0 1.1rem; min-height: 1.4em; letter-spacing: .01em; }
 
 /* Stages 4-5: cables that hang (patch-view.js / cables.js). Hover or a plan
  * row lights one cable and dims the rest; stage 5 ghosts what its filters

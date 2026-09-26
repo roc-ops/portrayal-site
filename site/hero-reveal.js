@@ -12,7 +12,8 @@
 // is not one - no hostname from anybody's network appears on this page.
 import {applyFaceOverrides} from '../vendor/swap.js';
 import {jdist} from '../vendor/dist.js';
-import {COLORS} from './showcase/cables.js';
+import {cablePoints} from '../vendor/relief.js';
+import {COLORS, WIDTH, sag2d, plugAt} from './showcase/cables.js';
 
 const SVG = 'assets/dist/s9600-72xc.front.svg';
 const PNG = 'assets/exports/netbox/elevation-images/UfiSpace/'
@@ -175,8 +176,15 @@ export function jacketColor(j) {
   }
 }
 
-// The port the caption names when nothing is hovered (Task 3).
+// The port the caption names when nothing is hovered, focused or tapped, so
+// the caption line is never empty.
 export const DEFAULT_PORT = 'port-67';
+
+// One line of caption per link: `port-67 · 100G LR4 · vni 110100 · to border-2`.
+export const captionOf = port => {
+  const p = PORTS[port];
+  return p ? `${port} · ${p.speed} ${p.label} · ${p.note}` : '';
+};
 
 // LAMPS ARE SET BY STATE, NOT BY COLOR.
 // This faceplate declares what each lamp can be - `off ok fail` on the PSUs,
@@ -293,6 +301,180 @@ function lightPorts(svg) {
   }
 }
 
+// ── the cables ──────────────────────────────────────────────────────────────
+// THE FRAME AROUND THE FACE. The face is 436 x 87.7 mm; the cables need room
+// beside it to sweep out and fade, and below it to hang. Both sides of the
+// slider get the same frame - the PNG as padding - so the split still lands on
+// the same millimeter of the face on both.
+export const FACE = {w: 436, h: 87.7};
+export const SIDE = 44;          // mm beside the face, each side, for the fade
+export const BELOW = 48;         // mm below the face, for the hang (the lowest tail runs out at ~130)
+const JOIN = 6;                  // mm below an optic's two plugs where the strands join
+
+const SVGNS = 'http://www.w3.org/2000/svg';
+const node = (tag, attrs = {}) => {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+  return n;
+};
+const r2 = v => Math.round(v * 100) / 100;
+
+// A link's connector points in the SVG's user space, left to right: an
+// optic's two LC plugs, or a cable end's one point (at the stub's far end), or
+// the RJ45 plug's. Mapped through each marker's CTM, as cables.js's ends2d
+// does - so the SVG must be in the document and laid out.
+function pointsOf(svg, all, port) {
+  const inv = svg.getScreenCTM().inverse();
+  return all.filter(p => p.at && plugAt(p.path, port)).map(p => {
+    const q = new DOMPoint(p.at[0], p.at[1]).matrixTransform(inv.multiply(p.el.getScreenCTM()));
+    return [q.x, q.y];
+  }).sort((a, b) => a[0] - b[0]);
+}
+
+// An optic's two strands meet JOIN below the lower plug, and the cable proper
+// starts there. One point is the cable's own start. Returns [start, strands].
+function join(pts) {
+  if (pts.length < 2) return [pts[0], []];
+  const x = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+  const m = [x, Math.max(...pts.map(p => p[1])) + JOIN];
+  return [m, pts.map(p => `M${r2(p[0])} ${r2(p[1])} C${r2(p[0])} ${r2(p[1] + JOIN * 0.6)} `
+                          + `${r2(m[0])} ${r2(m[1] - JOIN * 0.6)} ${r2(m[0])} ${r2(m[1])}`)];
+}
+
+// THE HANG. Down from the start with the showcase's sag, then a sweep to the
+// nearer side and on past the frame's edge, where the fade takes it.
+//
+// SHORT: the showcase's sag2d is for a run between two devices; here it is
+// scaled to SAG_SCALE of that, which is the short drop of the approved
+// mockup (the v2 "fading at the sides"). A full sag2d loop swung most tails
+// to the bottom of the frame.
+//
+// NESTED: `rank` is the cable's place on its side, nearest the edge first.
+// The nearer a cable starts to the edge, the higher its tail runs out, so a
+// cable from further in loops outside it rather than across it.
+const SAG_SCALE = 0.55;
+const TAIL_Y = 104, TAIL_STEP = 1.8;
+function sweep(a, rank) {
+  const left = a[0] < FACE.w / 2, ex = left ? -SIDE : FACE.w + SIDE;
+  const ey = Math.min(TAIL_Y + rank * TAIL_STEP, FACE.h + BELOW - 6);
+  const s = sag2d(Math.abs(ex - a[0])) * SAG_SCALE;
+  return `M${r2(a[0])} ${r2(a[1])} C${r2(a[0])} ${r2(Math.max(a[1] + s, ey - 6))} `
+       + `${r2(left ? ex + 60 : ex - 60)} ${r2(ey)} ${r2(ex)} ${r2(ey)}`;
+}
+
+// The side fade: opaque over the face's width, to nothing over the outer SIDE
+// on each side. One mask over every cable.
+function sideFade(svg) {
+  const w = FACE.w + 2 * SIDE, h = FACE.h + BELOW;
+  let defs = svg.querySelector(':scope > defs');
+  if (!defs) { defs = node('defs'); svg.prepend(defs); }
+  const grad = node('linearGradient', {id: 'hero-side-fade-ramp', gradientUnits: 'userSpaceOnUse',
+                                       x1: -SIDE, y1: 0, x2: FACE.w + SIDE, y2: 0});
+  for (const [o, a] of [[0, 0], [SIDE / w, 1], [(SIDE + FACE.w) / w, 1], [1, 0]]) {
+    grad.append(node('stop', {offset: r2(o * 1e4) / 1e4, 'stop-color': '#fff', 'stop-opacity': a}));
+  }
+  const mask = node('mask', {id: 'hero-side-fade', maskUnits: 'userSpaceOnUse',
+                             x: -SIDE, y: 0, width: w, height: h});
+  mask.append(node('rect', {x: -SIDE, y: 0, width: w, height: h, fill: 'url(#hero-side-fade-ramp)'}));
+  defs.append(grad, mask);
+}
+
+function stroke(g, d, color, w, main = false) {
+  g.append(node('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.5,
+                         'stroke-width': r2(w + 0.9), 'stroke-linecap': 'round'}));
+  const p = node('path', {d, fill: 'none', stroke: color, 'stroke-width': r2(w), 'stroke-linecap': 'round'});
+  if (main) p.setAttribute('data-main', '');
+  g.append(p);
+}
+
+// ONE CABLE PER LINK, hung from its seated part. Painted lowest-top first -
+// a group's `data-top` is its highest connector - so a cable from a higher
+// port hangs in front of the ones below it, as in the showcase. Returns the
+// layer, or null when no connector could be read.
+export function drawHeroCables(svg) {
+  const all = cablePoints(svg);
+  const layer = node('g', {'data-hero-cables': '', mask: 'url(#hero-side-fade)'});
+  const drawn = [];
+  const found = Object.entries(PORTS).map(([port, row]) => {
+    const pts = pointsOf(svg, all, port);
+    if (!pts.length) console.warn(`hero: no cable point for ${port}`);
+    return {port, row, pts, start: pts.length ? join(pts)[0] : null};
+  }).filter(f => f.start);
+  // Each side's cables, nearest their edge first; between two at the same
+  // distance, the higher one first, since it hangs in front.
+  const edgeDist = f => (f.start[0] < FACE.w / 2 ? f.start[0] : FACE.w - f.start[0]);
+  const rank = new Map();
+  for (const left of [true, false]) {
+    found.filter(f => (f.start[0] < FACE.w / 2) === left)
+      .sort((a, b) => edgeDist(a) - edgeDist(b) || a.start[1] - b.start[1])
+      .forEach((f, k) => rank.set(f.port, k));
+  }
+  found.forEach(({port, row, pts}) => {
+    const g = node('g', {'data-hero-cable': port, 'data-jacket': row.jacket, tabindex: 0,
+                         id: `hero-cable-${port}`, role: 'button', 'aria-label': captionOf(port)});
+    const t = node('title'); t.textContent = captionOf(port); g.append(t);
+    const color = jacketColor(row.jacket);
+    const [start, strands] = join(pts);
+    for (const d of strands) stroke(g, d, color, WIDTH * 0.4);
+    stroke(g, sweep(start, rank.get(port)), color, WIDTH * 0.6, true);
+    const top = Math.min(...pts.map(p => p[1]));
+    g.setAttribute('data-top', r2(top));
+    drawn.push({g, top});
+  });
+  if (!drawn.length) return null;
+  sideFade(svg);
+  drawn.sort((a, b) => b.top - a.top);
+  for (const {g} of drawn) layer.append(g);
+  // The hovered cable, drawn once more over all of them: a <use> of it, so
+  // the group itself never moves in the DOM (moving a focused node blurs it).
+  layer.append(node('use', {'data-hero-front': '', 'pointer-events': 'none', visibility: 'hidden'}));
+  svg.append(layer);
+  return layer;
+}
+
+// HOVER, FOCUS AND TAP name a cable in the caption line, light it and dim the
+// rest. Nothing named: the default port. A tap pins a cable until a tap
+// lands anywhere else. The pointer on a cable never moves the divider - the
+// stage's drag starts only off a cable (see heroReveal).
+function wireCaption(layer, caption) {
+  const front = layer.querySelector('[data-hero-front]');
+  let pinned = null, shown;       // undefined, so the first show(null) writes the default
+  const show = g => {
+    if (shown === g) return;
+    if (shown) shown.classList.remove('cable-on');
+    shown = g;
+    if (g) {
+      g.classList.add('cable-on');
+      layer.classList.add('cables-focus');
+      front.setAttribute('href', `#${g.id}`);
+      front.setAttribute('visibility', 'visible');
+    } else {
+      layer.classList.remove('cables-focus');
+      front.removeAttribute('href');
+      front.setAttribute('visibility', 'hidden');
+    }
+    if (caption) caption.textContent = captionOf(g ? g.dataset.heroCable : DEFAULT_PORT);
+  };
+  // Back to what is pinned, else to what has the keyboard, else the default.
+  const rest = () => show(pinned || document.activeElement?.closest?.('#hero-reveal [data-hero-cable]') || null);
+  for (const g of layer.querySelectorAll('[data-hero-cable]')) {
+    g.addEventListener('pointerenter', ev => { if (ev.pointerType !== 'touch' && !ev.buttons) show(g); });
+    g.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') rest(); });
+    g.addEventListener('focus', () => show(g));
+    g.addEventListener('blur', rest);
+    g.addEventListener('pointerdown', ev => {
+      if (ev.pointerType === 'touch' || ev.pointerType === 'pen') { pinned = g; show(g); }
+    });
+  }
+  // A tap anywhere off a cable lets the pinned one go.
+  document.addEventListener('pointerdown', ev => {
+    if (!pinned || ev.target.closest?.('[data-hero-cable]')) return;
+    pinned = null;
+    rest();
+  });
+  show(null);
+}
+
 export async function heroReveal(host) {
   const r = await fetch(SVG);
   if (!r.ok) return;                       // the hero still reads without it
@@ -301,6 +483,9 @@ export async function heroReveal(host) {
   const svg = doc.documentElement;
   svg.removeAttribute('width');
   svg.removeAttribute('height');
+  // The frame: SIDE beside the face and BELOW under it, for the cables.
+  svg.setAttribute('viewBox', `${-SIDE} 0 ${FACE.w + 2 * SIDE} ${FACE.h + BELOW}`);
+  svg.setAttribute('overflow', 'hidden');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
   const stage = el('div', 'reveal-stage');
@@ -345,6 +530,15 @@ export async function heroReveal(host) {
     console.error('hero: seating failed', err);
   }
 
+  // THE CABLES, from the parts just seated, and the caption line that names
+  // them. A failure leaves the parts, the lamps and the slider working.
+  try {
+    const layer = drawHeroCables(svg);
+    if (layer) wireCaption(layer, document.getElementById('hero-caption-2d'));
+  } catch (err) {
+    console.error('hero: cables failed', err);
+  }
+
   // ── the divider ───────────────────────────────────────────────────────────
   const range = el('input', 'reveal-range');
   range.type = 'range'; range.min = '0'; range.max = '100'; range.value = '50';
@@ -370,6 +564,9 @@ export async function heroReveal(host) {
     split(Math.max(0, Math.min(100, (x / box.width) * 100)));
   };
   stage.addEventListener('pointerdown', ev => {
+    // A pointer on a cable is asking about the cable, not moving the divider.
+    // The drag still starts anywhere else, the handle included.
+    if (ev.target.closest?.('[data-hero-cable]')) return;
     dragging = true; at(ev);
     // Stops the drag becoming a text selection across the silkscreen.
     ev.preventDefault();

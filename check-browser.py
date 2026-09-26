@@ -337,6 +337,135 @@ def check_hero(page):
     return bad
 
 
+# Samples a point on a hero cable's main path where the pointer really lands on
+# that cable (a higher cable hangs in front of the ones below it, so the start
+# of a lower cable is often covered), in page coordinates. null if none is.
+HERO_CABLE_POINT_JS = """port => {
+    const g = document.querySelector(`#hero-reveal [data-hero-cable="${port}"]`);
+    const p = g && g.querySelector('path[data-main]');
+    if (!p) return null;
+    const svg = p.ownerSVGElement, m = p.getScreenCTM(), n = p.getTotalLength();
+    for (let i = 1; i < 60; i++) {
+        const q = p.getPointAtLength(n * i / 60);
+        const s = new DOMPoint(q.x, q.y).matrixTransform(m);
+        const hit = document.elementFromPoint(s.x, s.y);
+        if (hit && hit.closest('[data-hero-cable]') === g) return [s.x, s.y];
+    }
+    return null; }"""
+
+HERO_CAPTION = '#hero-caption-2d'
+
+
+def check_hero_cables(page):
+    """The hero's cables (spec 2026-09-26-hero-cabled-switch §4): one per link,
+    each starting at its own seated part's cable point, painted higher-in-
+    front, and one caption line that names port-67 until a cable is hovered,
+    focused or tapped. Every assertion below records on every run: a failure
+    to draw the cables fails each of them by name rather than skipping them.
+    Runs on index.html as the page walk already loaded it."""
+    bad = []
+    try:
+        page.wait_for_selector('#hero-reveal [data-hero-cable]', state="attached", timeout=READY_MS)
+    except Exception:
+        pass
+    def step(name, fn):
+        try:
+            fn()
+        except Exception as e:
+            bad.append(f"hero: {name} - {str(e).splitlines()[0]}")
+    caption = lambda: page.inner_text(HERO_CAPTION, timeout=5000)
+
+    def starts():
+        rows = page.evaluate("""async () => {
+            const {cablePoints} = await import('/vendor/relief.js');
+            const svg = document.querySelector('#hero-reveal .reveal-rich svg');
+            const inv = svg.getScreenCTM().inverse();
+            const pts = cablePoints(svg).filter(p => p.at).map(p => { const q = new DOMPoint(p.at[0], p.at[1])
+                .matrixTransform(inv.multiply(p.el.getScreenCTM())); return {path: p.path, x: q.x, y: q.y}; });
+            return [...svg.querySelectorAll('[data-hero-cable]')].map(g => {
+                const port = g.dataset.heroCable;
+                const d = g.querySelector('path[data-main]')?.getAttribute('d') || '';
+                const m = d.match(/^M\\s*([-\\d.]+)[ ,]([-\\d.]+)/);
+                const mine = pts.filter(p => p.path === port + '-occupant' || p.path.startsWith(port + '-occupant/'));
+                return {port, near: mine.some(p => m && Math.hypot(p.x - +m[1], p.y - +m[2]) < 12)};
+            }); }""")
+        if len(rows) < 21: bad.append(f"hero: {len(rows)} cables, expected one per link (21)")
+        off = [r["port"] for r in rows if not r["near"]]
+        if off: bad.append(f"hero: cables not starting at their connector {off}")
+    step("cable starts", starts)
+
+    def order():
+        # Painting order: a cable whose top connector is higher comes later in the DOM.
+        tops = page.evaluate("() => [...document.querySelectorAll('#hero-reveal [data-hero-cable]')].map(g => +g.dataset.top)")
+        if not tops or tops != sorted(tops, reverse=True):
+            bad.append(f"hero: cables are not painted higher-in-front ({tops})")
+    step("painting order", order)
+
+    def faded():
+        # Every cable is inside the one side-fade mask, and runs past the
+        # device's edge into the fade.
+        got = page.evaluate("""() => {
+            const all = [...document.querySelectorAll('#hero-reveal [data-hero-cable]')];
+            const out = all.filter(g => !g.closest('[mask="url(#hero-side-fade)"]')).map(g => g.dataset.heroCable);
+            const short = all.filter(g => { const b = g.querySelector('path[data-main]').getBBox();
+                return !(b.x < -30 || b.x + b.width > 466); }).map(g => g.dataset.heroCable);
+            return {mask: !!document.querySelector('#hero-reveal mask#hero-side-fade'), out, short}; }""")
+        if not got["mask"] or got["out"]: bad.append(f"hero: cables outside the side fade {got}")
+        if got["short"]: bad.append(f"hero: cables that stop short of the frame's edge {got['short']}")
+    step("side fade", faded)
+
+    def default_caption():
+        if "port-67" not in caption():
+            bad.append(f"hero: the caption's default is not port-67 ({caption()!r})")
+    step("default caption", default_caption)
+
+    def hover():
+        # The whole rich side shown, so the pointer can reach port-13's cable.
+        page.evaluate("""() => { const r = document.querySelector('#hero-reveal .reveal-range');
+            r.value = '0'; r.dispatchEvent(new Event('input')); }""")
+        at = page.evaluate(HERO_CABLE_POINT_JS, "port-13")
+        if not at:
+            bad.append("hero: nowhere on port-13's cable can the pointer reach it"); return
+        page.mouse.move(at[0], at[1])
+        cap = caption()
+        if "port-13" not in cap or "25G DAC" not in cap:
+            bad.append(f"hero: hovering port-13's cable did not name it in the caption ({cap!r})")
+        page.mouse.move(0, 0)
+        if "port-67" not in caption():
+            bad.append(f"hero: leaving the cable did not restore the caption ({caption()!r})")
+    step("hover", hover)
+
+    def keyboard():
+        page.focus('#hero-reveal [data-hero-cable="port-4"]', timeout=5000)
+        if "port-4 " not in caption() + " ":
+            bad.append(f"hero: focusing port-4's cable did not name it ({caption()!r})")
+        page.evaluate("() => document.activeElement.blur()")
+        if "port-67" not in caption():
+            bad.append(f"hero: blurring the cable did not restore the caption ({caption()!r})")
+    step("keyboard", keyboard)
+
+    def tap():
+        # A tap on a cable selects it and leaves the divider where it was;
+        # a tap outside restores the default.
+        got = page.evaluate("""() => {
+            const stage = document.querySelector('#hero-reveal .reveal-stage');
+            const before = stage.style.getPropertyValue('--split');
+            const g = document.querySelector('#hero-reveal [data-hero-cable="port-44"] path[data-main]');
+            const o = {bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: 5, clientY: 5};
+            g.dispatchEvent(new PointerEvent('pointerdown', o));
+            g.dispatchEvent(new PointerEvent('pointerup', o));
+            g.dispatchEvent(new PointerEvent('pointerleave', o));
+            const cap = document.querySelector('#hero-caption-2d').textContent;
+            const after = stage.style.getPropertyValue('--split');
+            document.body.dispatchEvent(new PointerEvent('pointerdown', o));
+            return {cap, before, after, restored: document.querySelector('#hero-caption-2d').textContent}; }""")
+        if "port-44" not in got["cap"]: bad.append(f"hero: tapping port-44's cable did not select it {got}")
+        if got["before"] != got["after"]: bad.append(f"hero: tapping a cable moved the divider {got}")
+        if "port-67" not in got["restored"]: bad.append(f"hero: tapping outside did not restore the caption {got}")
+    step("tap", tap)
+    return bad
+
+
 def check_embed(page, base):
     """explorer.html?embed=1: the site bar and mode buttons hidden, the API live."""
     bad = []
@@ -1707,6 +1836,7 @@ def main():
                                    "--bind", "127.0.0.1"],
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     problems, notes, failed_things = [], [], 0
+    hero_cables = ["hero: the index.html walk never reached the hero's cables"]
     try:
         if not wait_for(f"{base}/index.html"):
             print("check-browser: no server answering at", base, file=sys.stderr)
@@ -1726,6 +1856,7 @@ def main():
                     bad = check(page, base, name)
                     if name == "index.html":
                         bad += check_hero(page)
+                        hero_cables = check_hero_cables(page)
                     if name == "explorer.html":
                         if not page.is_visible(".site-bar"): bad.append("explorer: .site-bar not visible without embed")
                         if not page.is_visible("#mode"): bad.append("explorer: #mode not visible without embed")
@@ -1737,6 +1868,13 @@ def main():
                     problems += [f"        {b}" for b in dict.fromkeys(bad)]
                 else:
                     notes.append(f"ok    {name}")
+
+            if hero_cables:
+                failed_things += 1
+                problems.append("FAIL  the hero's cables and caption")
+                problems += [f"        {b}" for b in dict.fromkeys(hero_cables)]
+            else:
+                notes.append("ok    the hero's cables and caption")
 
             page = browser.new_page()
             try:
