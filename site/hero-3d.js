@@ -30,8 +30,11 @@ const ROW = 2;                    // mm: connectors this close in height are one
 // half-width, and below the device - nested as in 2D, the cable starting
 // nearest its edge running out highest, TAIL_STEP above the next.
 const RACK_HALF = 482.6 / 2;
-const SIDE_OUT = 160;
-const TAIL_Y = -30, TAIL_STEP = 6;
+// Kept short and high: a shorter run hangs shallower (cables.js's sag3d grows
+// with the run), and a shallow hang is what lets the fitted camera come in
+// close enough for the switch to read large in a 3.86:1 panel.
+const SIDE_OUT = 40;
+const TAIL_Y = -4, TAIL_STEP = 3;
 
 // THE FADE: a tube is opaque over its first FADE_FROM of its length and fades
 // to nothing over the rest, by a per-vertex alpha ramp (the color attribute's
@@ -40,6 +43,7 @@ const FADE_FROM = 2 / 3;
 const DIM = 0.22;                 // the other cables' opacity while one is picked
 
 const FLOOR_Y = -210;             // the studio floor, below the lowest hang
+const STUDIO = 0x181B20;          // the studio: one even dark
 
 const el = (tag, cls, attrs = {}) => {
   const n = document.createElement(tag);
@@ -51,6 +55,8 @@ const el = (tag, cls, attrs = {}) => {
 export async function heroThree(host) {
   const probe = new URLSearchParams(location.search).has('heroprobe');
   const caption = document.getElementById('hero-caption-3d');
+  // The default names port-67 from the start - with no WebGL too - as in 2D.
+  if (caption) caption.textContent = captionOf(DEFAULT_PORT);
 
   // The still image: the compiled front face, which the 2D panel has already
   // fetched, so it costs nothing and always matches the device.
@@ -81,7 +87,7 @@ export async function heroThree(host) {
       const s = createRackScene(stage, {
         dist: 'assets/dist/',
         stack: [{ref: REF, cfg: 'base', ru: 1, label: 'S9600-72XC', overrides}],
-        heightRU: 2, rails: false, recess: 0, background: 0x0E1013,
+        heightRU: 2, rails: false, recess: 0, background: STUDIO,
       });
       try {
         s.three.renderer.shadowMap.enabled = true;     // before anything compiles
@@ -114,21 +120,10 @@ export async function heroThree(host) {
     const center = box.getCenter(new THREE.Vector3());
     const faceZ = box.max.z;
 
-    // THE STUDIO. A gradient from a lit center out to the page's own ground,
-    // so the panel's edges are the page and the fading tubes read as meant.
-    const ground = getComputedStyle(document.documentElement)
-      .getPropertyValue('--pt-ground').trim() || '#0E1013';
-    const cv = document.createElement('canvas');
-    cv.width = 512; cv.height = 128;
-    const c = cv.getContext('2d');
-    const g = c.createRadialGradient(256, 58, 8, 256, 64, 300);
-    g.addColorStop(0, '#2a2f36');
-    g.addColorStop(0.55, '#171a1f');
-    g.addColorStop(1, ground);
-    c.fillStyle = g; c.fillRect(0, 0, 512, 128);
-    const bg = new THREE.CanvasTexture(cv);
-    bg.colorSpace = THREE.SRGBColorSpace;
-    scene.background = bg;
+    // THE STUDIO: one even dark. Where the panel meets the page is the
+    // stage's CSS mask's job (site.css), so the page's own ground shows
+    // through in either theme and nothing here reads a color.
+    scene.background = new THREE.Color(STUDIO);
 
     // A soft shadow on a floor that shows nothing else.
     renderer.shadowMap.type = THREE.VSMShadowMap;
@@ -151,7 +146,8 @@ export async function heroThree(host) {
       if (o.isMesh && o !== floor && !o.userData.heroCable) o.castShadow = true;
     });
     casts();
-    s.complete().then(casts);      // the relief pass, when it lands
+    s.complete().then(casts)       // the relief pass, when it lands
+      .catch(err => console.warn('hero 3D: relief pass', err));
 
     // THE CABLES. Every row's connector points first: how far a lead reaches
     // depends on how many rows of cabled connectors are below it.
@@ -217,20 +213,89 @@ export async function heroThree(host) {
     }
     scene.add(group);
 
-    // THE CAMERA: a little above and to the right, the whole hang in frame.
-    const target = new THREE.Vector3(center.x, box.min.y - 75, faceZ - 120);
-    const dir = new THREE.Vector3(0.32, 0.30, 1).normalize();
+    // THE CAMERA: fitted, not guessed. The device and every tube's OPAQUE
+    // stretch (its first FADE_FROM) must land inside the canvas - inside the
+    // unmasked middle, across, since the stage's CSS mask fades the sides -
+    // at the opening view AND at both ends of the sway, so a cable never
+    // reaches the panel's edge before it has faded. The distance is the
+    // smallest that does that, which is also what makes the switch read large.
+    const SWAY = 0.55;
+    const LIMIT_X = 0.84, LIMIT_Y = 0.94;    // of the canvas, in NDC
+    const samples = [];
+    for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y])
+      for (const z of [box.min.z, box.max.z]) samples.push(new THREE.Vector3(x, y, z));
+    for (const t of tubes) for (let i = 0; i <= 40; i++) samples.push(t.curve.getPointAt(i / 40 * FADE_FROM));
+    const bounds = new THREE.Box3().setFromPoints(samples);
+    // Aimed at the middle of the front and the hang, a little into the box.
+    const target = new THREE.Vector3((bounds.min.x + bounds.max.x) / 2, (bounds.min.y + bounds.max.y) / 2,
+                                     faceZ - 60);
+    const dir = new THREE.Vector3(0.30, 0.10, 1).normalize();
+    // A long lens: at rack3d's 42 degrees the cables swinging toward the camera
+    // at the sway's ends grew with perspective and set the whole fit. At 24
+    // the fit is set by the hang itself, and the switch reads larger.
+    camera.fov = 24;
+    camera.updateProjectionMatrix();
+    const openSph = new THREE.Spherical().setFromVector3(dir);
+    const probeCam = camera.clone();
+    const fits = (az, dist) => {
+      const sph = openSph.clone(); sph.theta = az;
+      probeCam.aspect = (stage.clientWidth || 1) / (stage.clientHeight || 1);
+      probeCam.updateProjectionMatrix();
+      probeCam.position.copy(target).add(new THREE.Vector3().setFromSpherical(sph).multiplyScalar(dist));
+      probeCam.lookAt(target);
+      probeCam.updateMatrixWorld();
+      for (const p of samples) {
+        const v = p.clone().project(probeCam);
+        if (v.z > 1 || Math.abs(v.x) > LIMIT_X || Math.abs(v.y) > LIMIT_Y) return false;
+      }
+      return true;
+    };
+    const fitDistance = () => {
+      let need = 0;
+      // The sway overshoots its turn-back angle by a frame's step; allow it.
+      for (const az of [openSph.theta, -SWAY - 0.02, -SWAY / 2, 0, SWAY / 2, SWAY + 0.02]) {
+        let lo = 100, hi = 6000;
+        for (let i = 0; i < 32; i++) { const mid = (lo + hi) / 2; if (fits(az, mid)) hi = mid; else lo = mid; }
+        need = Math.max(need, hi);
+      }
+      return need;
+    };
+    // Centered on what the fit is limited by, not on a box: the target is
+    // moved up or down until the worst top and the worst bottom, across the
+    // sway, sit the same distance in from the canvas's edges.
+    const extentY = dist => {
+      let lo = Infinity, hi = -Infinity;
+      for (const az of [openSph.theta, -SWAY - 0.02, SWAY + 0.02]) {
+        fits(az, dist);                    // places probeCam
+        for (const p of samples) {
+          const v = p.clone().project(probeCam);
+          lo = Math.min(lo, v.y); hi = Math.max(hi, v.y);
+        }
+      }
+      return [lo, hi];
+    };
+    for (let k = 0; k < 4; k++) {
+      const d = fitDistance();
+      const [lo, hi] = extentY(d);
+      // NDC to millimeters at the target, near enough to converge.
+      const mmPerNdc = d * Math.tan(camera.fov * Math.PI / 360);
+      target.y += (hi + lo) / 2 * mmPerNdc;
+    }
+    let openDist = fitDistance();
     const frame = () => {
-      const cw = stage.clientWidth || 1, ch = stage.clientHeight || 1;
-      const half = Math.tan(camera.fov * Math.PI / 360);
-      const need = Math.max(470 / (2 * half), 2.3 * (RACK_HALF + SIDE_OUT) / (2 * half * cw / ch));
+      openDist = fitDistance();
       controls.target.copy(target);
-      camera.position.copy(target).addScaledVector(dir, need);
-      controls.minDistance = need * 0.45;
-      controls.maxDistance = need * 1.4;
+      camera.position.copy(target).addScaledVector(dir, openDist);
+      // Zooming in is the visitor's choice, and crops as a zoom does; zooming
+      // out stops before the switch is lost.
+      controls.minDistance = openDist * 0.45;
+      controls.maxDistance = openDist * 1.5;
       controls.update();
     };
     frame();
+    // The opening frame, as the test hook measures it.
+    const openTarget = target.clone();
+    const openDir = dir.clone();
     // Never underneath, and never round the back far enough to lose the front.
     controls.minPolarAngle = 0.25;
     controls.maxPolarAngle = Math.PI / 2 - 0.08;
@@ -242,7 +307,6 @@ export async function heroThree(host) {
 
     // THE TURN: slow, back and forth across the front, until the visitor
     // takes hold - a full turn would spend half its time on the rear.
-    const SWAY = 0.55;
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.5;
     controls.addEventListener('change', () => {
@@ -252,8 +316,32 @@ export async function heroThree(host) {
       else if (az < -SWAY) controls.autoRotateSpeed = -Math.abs(controls.autoRotateSpeed);
     });
     const stop = () => { controls.autoRotate = false; };
-    renderer.domElement.addEventListener('pointerdown', stop, {once: true});
-    renderer.domElement.addEventListener('wheel', stop, {once: true, passive: true});
+
+    // THE PAGE KEEPS ITS SCROLL (ruling R4). Until a click or tap on the
+    // panel, OrbitControls is off - so the wheel and a swipe scroll the page
+    // as they would anywhere else (it only takes the wheel when enabled) -
+    // and a quiet hint says how to take hold. A click takes hold: orbit, zoom
+    // and pinch work and the sway stops. Leaving the panel, a press outside
+    // it, or Escape lets go. Hover naming works either way.
+    const canvas = renderer.domElement;
+    const hint = el('p', 'hero-3d-hint', {'data-hero-hint': ''});
+    hint.textContent = 'Click to turn it';
+    host.append(hint);
+    let active = false;
+    const setActive = on => {
+      active = on;
+      controls.enabled = on;
+      canvas.style.touchAction = on ? 'none' : 'pan-y';
+      stage.style.touchAction = on ? 'none' : 'pan-y';
+      hint.hidden = on;
+      host.toggleAttribute('data-hero-active', on);
+      if (on) stop();
+    };
+    setActive(false);
+    canvas.addEventListener('pointerdown', () => { if (!active) setActive(true); });
+    canvas.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && active) setActive(false); });
+    document.addEventListener('pointerdown', e => { if (active && !host.contains(e.target)) setActive(false); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && active) setActive(false); });
 
     // PICKING: the pointer over a tube lights it, dims the rest and names it
     // in this panel's caption; a miss restores port-67, as in 2D.
@@ -278,7 +366,6 @@ export async function heroThree(host) {
       return text;
     }
     show(null);
-    const canvas = renderer.domElement;
     canvas.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse' || e.buttons) return;
       const port = hitAt(e.clientX, e.clientY);
@@ -302,6 +389,47 @@ export async function heroThree(host) {
         stop,
         devices: () => s.deviceBoxes().length,
         running: () => s.running(),
+        distance: () => camera.position.distanceTo(controls.target),
+        // Where every tube's OPAQUE stretch lands on the canvas (NDC, -1..1
+        // is inside) at the opening distance and elevation, turned to azimuth
+        // `az` (null: the opening azimuth). {minX, maxX, minY, maxY}.
+        opaqueNdc(az = null) {
+          const cam = camera.clone();
+          const off = openDir.clone();
+          if (az != null) {
+            const sph = new THREE.Spherical().setFromVector3(off);
+            sph.theta = az;
+            off.setFromSpherical(sph);
+          }
+          cam.position.copy(openTarget).addScaledVector(off.normalize(), openDist);
+          cam.lookAt(openTarget);
+          cam.updateMatrixWorld();
+          const e = {minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity};
+          for (const t of tubes) for (let i = 0; i <= 40; i++) {
+            const v = t.curve.getPointAt(i / 40 * FADE_FROM).project(cam);
+            e.minX = Math.min(e.minX, v.x); e.maxX = Math.max(e.maxX, v.x);
+            e.minY = Math.min(e.minY, v.y); e.maxY = Math.max(e.maxY, v.y);
+          }
+          return e;
+        },
+        sway: SWAY,
+        // The device's front face's share of the canvas width at the opening.
+        deviceShare() {
+          const cam = camera.clone();
+          cam.position.copy(openTarget).addScaledVector(openDir, openDist);
+          cam.lookAt(openTarget); cam.updateMatrixWorld();
+          const xs = [box.min.x, box.max.x].map(x => new THREE.Vector3(x, center.y, faceZ).project(cam).x);
+          return Math.abs(xs[1] - xs[0]) / 2;
+        },
+        // Put the camera at the opening frame turned to azimuth `az`.
+        view(az) {
+          stop();
+          const sph = new THREE.Spherical().setFromVector3(openDir.clone());
+          if (az != null) sph.theta = az;
+          camera.position.copy(openTarget).add(new THREE.Vector3().setFromSpherical(sph).multiplyScalar(openDist));
+          controls.target.copy(openTarget);
+          controls.update();
+        },
         // A client point on `port`'s tube that the ray reaches before any
         // other cable, along its unfaded length; null if there is none.
         pointAt(port) {

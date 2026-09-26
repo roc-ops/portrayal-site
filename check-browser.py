@@ -642,6 +642,9 @@ def check_hero_3d(browser, base):
             bad.append(f"hero 3D without WebGL ({why}): no still image and note")
         if page.query_selector('#hero-3d canvas'):
             bad.append(f"hero 3D without WebGL ({why}): a canvas was left in the panel")
+        cap = page.inner_text(HERO_3D_CAPTION)
+        if "port-67" not in cap:
+            bad.append(f"hero 3D without WebGL ({why}): the caption does not show the port-67 default ({cap!r})")
 
     page = browser.new_page(viewport={"width": 1280, "height": 900})
     errors = []
@@ -698,6 +701,59 @@ def check_hero_3d(browser, base):
                 cap = page.inner_text(HERO_3D_CAPTION)
                 if "port-67" not in cap: bad.append(f"hero 3D: a miss did not restore port-67 ({cap!r})")
             step("pointer", pointer)
+
+            def framed():
+                # Every tube's opaque stretch inside the canvas at the opening
+                # frame and at both ends of the sway (spec §5: each tube fades
+                # out before the frame's edge).
+                if not ready[0]: bad.append("hero 3D: framing - the scene never built"); return
+                sway = page.evaluate("() => window.__hero3d.sway")
+                for name, az in (("the opening frame", None), ("the sway's left end", -sway),
+                                 ("the sway's right end", sway)):
+                    e = page.evaluate("az => window.__hero3d.opaqueNdc(az)", az)
+                    if not (e["minX"] >= -1 and e["maxX"] <= 1 and e["minY"] >= -1 and e["maxY"] <= 1):
+                        bad.append(f"hero 3D: at {name} a tube's opaque stretch leaves the canvas "
+                                   f"(NDC x {e['minX']:.2f}..{e['maxX']:.2f}, y {e['minY']:.2f}..{e['maxY']:.2f})")
+            step("framing", framed)
+
+            def scroll_capture():
+                # R4: until a click on the panel, the wheel scrolls the page and
+                # the camera stays put; after one, the wheel zooms.
+                if not ready[0]: bad.append("hero 3D: scroll capture - the scene never built"); return
+                def center():
+                    page.locator('#hero-3d').scroll_into_view_if_needed()
+                    page.evaluate("() => document.querySelector('#hero-3d').scrollIntoView({block: 'center'})")
+                    b = page.locator('#hero-3d canvas').bounding_box()
+                    return b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
+                x, y = center()
+                page.mouse.move(x, y)
+                if not page.is_visible('#hero-3d [data-hero-hint]'):
+                    bad.append("hero 3D: no hint on the panel before it is activated")
+                d0 = page.evaluate("() => window.__hero3d.distance()")
+                y0 = page.evaluate("() => scrollY")
+                page.mouse.wheel(0, 240)
+                page.wait_for_timeout(500)
+                d1 = page.evaluate("() => window.__hero3d.distance()")
+                y1 = page.evaluate("() => scrollY")
+                if y1 == y0: bad.append("hero 3D: before activation, the wheel over the panel did not scroll the page")
+                if abs(d1 - d0) > 0.5: bad.append(f"hero 3D: before activation, the wheel zoomed ({d0:.0f} -> {d1:.0f})")
+                x, y = center()
+                page.mouse.click(x, y)
+                page.wait_for_timeout(200)
+                if page.is_visible('#hero-3d [data-hero-hint]'):
+                    bad.append("hero 3D: the hint is still showing after a click activated the panel")
+                d2 = page.evaluate("() => window.__hero3d.distance()")
+                y2 = page.evaluate("() => scrollY")
+                page.mouse.wheel(0, -240)
+                page.wait_for_timeout(800)
+                d3 = page.evaluate("() => window.__hero3d.distance()")
+                if abs(d3 - d2) < 1: bad.append(f"hero 3D: after a click, the wheel did not zoom ({d2:.0f} -> {d3:.0f})")
+                if page.evaluate("() => scrollY") != y2: bad.append("hero 3D: after a click, the wheel scrolled the page too")
+                page.keyboard.press("Escape")
+                page.wait_for_timeout(200)
+                if not page.is_visible('#hero-3d [data-hero-hint]'):
+                    bad.append("hero 3D: Escape did not let the panel go (no hint back)")
+            step("scroll capture", scroll_capture)
 
             def pause():
                 if not ready[0]: bad.append("hero 3D: pause - the scene never built"); return
