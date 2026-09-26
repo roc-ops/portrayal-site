@@ -70,7 +70,7 @@
 **Files:**
 - Create: `site/rack/face.js`
 - Modify: `check-browser.py`:
-  - add the registry, `run_extra`, and `check_configured_face` just above `def main():` (line 1140);
+  - add the registry, `run_extra`, and `check_configured_face` just above `def main():` (line 1355 after the 2026-09-26 rebase);
   - in `main()`, add the `--only` argument, the early branch and the full-run call.
 
 **Interfaces:**
@@ -333,7 +333,14 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Modify: `site/showcase/rack.js`:
   - `loadMeta` at lines 94-104;
   - `loadSkin` at lines 145-153;
-  - `build2dElevation` at lines 197-238.
+  - `build2dElevation` at lines 197-234.
+
+**Context (main, commit `1f686179`):**
+- `build2dElevation` already seats every view, via `applyFaceOverrides` against `baysOf(e.ref)[view]` / `cagesOf(e.ref)[view]`.
+- Two gaps remain, and this task closes them:
+  - (a) it skips `applyRearOverrides`, the rear-hole pass that `seatFace` adds;
+  - (b) `baysOf` / `cagesOf` read `loadMeta`'s index, which only loads `CAST`. A device outside the cast, which is every Rack Builder device, seats nothing.
+- `configuredFace` loads each device's own `configs.json`, so it fixes both.
 - Modify: `check-browser.py`, to add `check_rear_elevation`.
 
 **Interfaces:**
@@ -367,7 +374,7 @@ def check_rear_elevation(page, base):
 - [ ] **Step 2: Run it and confirm it fails**
 
 Run: `python3 check-browser.py --only check_rear_elevation`
-Expected: FAIL with `psu-2 swap … not seated`. Today's elevation seats the front face only.
+Expected: FAIL with `psu-2 swap … not seated`. The check never calls `loadMeta`, so `baysOf('as7726-32x')` is `{}` and today's elevation has no bays to seat against. That is gap (b) above.
 
 - [ ] **Step 3: Route rack.js through face.js**
 
@@ -419,7 +426,7 @@ with:
     const doc = new DOMParser().parseFromString(face.text, 'image/svg+xml');
 ```
 
-Delete everything from `const mine = ov?.[e.ref];` through the closing `}` of the `if (view === 'front' && mine …)` block, including its comment. Also update the comment block above `build2dElevation` so it says that devices are drawn through `configuredFace`, which seats bays, cages and rear holes on any view.
+Delete everything from `const mine = ov?.[e.ref];` through the closing `}` of the `if (mine && Object.keys(mine).length) { … applyFaceOverrides … }` block, including its "Each face is seated against ITS OWN bays and cages" comment. Move that comment's substance (per-view keys; the R740xd's rear RJ45 plugs; rear swaps from the Inspect lens) into the comment above `configuredFace(...)` in the loop, because it still explains why the view matters. Also update the comment block above `build2dElevation` so it says that devices are drawn through `configuredFace`, which seats bays, cages and rear holes on any view.
 
 - [ ] **Step 4: Run the new check and the showcase regression**
 
