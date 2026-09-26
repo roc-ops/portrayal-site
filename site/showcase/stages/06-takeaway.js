@@ -7,16 +7,17 @@
 // exists elsewhere on this site; this stage only wires them to the rack that
 // got built here (R6). No new export code.
 //
-//   draw.io   - a rack diagram through drawio.js's rackDiagram, fed the
-//               compiled FRONT face straight off disk, the way drawio-page.js
-//               feeds it. That face is the base configuration, not the
-//               overridden one - rackDiagram never runs applyOverrides, only
-//               build2dElevation does - so the button's title says so rather
-//               than implying it shows the seated cards and optics.
+//   draw.io   - a rack diagram through drawio.js's rackDiagram, fed each
+//               device's configured face (site/rack/face.js) on front and
+//               rear, so the cards, optics and plugs seated here are in it
+//               and their ports are connection points.
 //   GLB/USDZ  - the mounted scene's own exporters, offered only when a scene
 //               exists (R11). In 2D there is no scene to export, so the two
 //               become one button that switches to 3D (the rail's setMode)
-//               rather than pretending to export something not built.
+//               rather than pretending to export something not built. Both
+//               await scene.complete() first, so the deferred relief pass
+//               that extrudes optics and plugs has landed before the export
+//               is built.
 //   SVG       - build2dElevation with the current overrides, which DOES
 //               apply them - it is the same call stage 0's rails export
 //               already uses, and it seats each front face through swap.js's
@@ -33,11 +34,12 @@
 // elevation it exports, in 3D the mounted scene. Clicking a device here does
 // nothing - Look closer belongs to stages 1-3.
 
-import {stage3d, stageRack, el, title, lead, kv, save, saveSvg, standalone, panZoom, DIST}
+import {stage3d, stageRack, el, title, lead, kv, save, saveSvg, standalone, panZoom}
   from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, overrides, mount3d, build2dElevation}
   from '../rack.js';
-import {rackDiagram, loadFace, portsOf} from '../../drawio.js';
+import {rackDiagram} from '../../drawio.js';
+import {configuredFace} from '../../rack/face.js';
 import {rasterize} from '../../raster.js';
 // A circular import (the rail imports this stage); setMode is only read inside
 // a click handler, never while the modules are being evaluated. Stages may use
@@ -78,25 +80,32 @@ export default function makeTakeaway() {
   // as built, not whatever the visitor has panned or zoomed to in 2D.
   let elevationSvg = null;
 
-  // The cast's front faces, straight off disk - the base configuration
-  // drawio-page.js itself draws from, not the overridden one.
+  // The cast AS BUILT, both sides: each device's configured face - the cards,
+  // optics and plugs stages 2-4 seated - so the diagram's port cells include
+  // the ports on those cards. A side a device was never drawn for is left
+  // out, and rackDiagram says "no rear drawing" there rather than borrowing
+  // the other side.
   async function buildDrawio() {
     const mounted = [];
     for (const e of CAST) {
       if (e.ru == null) continue;   // dropped from the rack - no compiled index
-      const face = await loadFace(`${DIST}${e.ref}.${e.cfg}.front.svg`).catch(() => null);
-      if (!face) continue;
+      const faces = {};
+      for (const view of ['front', 'rear']) {
+        const f = await configuredFace({ref: e.ref, cfg: e.cfg, view,
+                                        swaps: overrides[e.ref] || {}}).catch(() => null);
+        if (f) faces[view] = {svg: f.text, vb: f.vb, ports: f.ports};
+      }
+      if (!faces.front && !faces.rear) continue;
       // TWO NUMBERINGS. The cast counts U from 1 at the BOTTOM (e.ru is the
       // device's bottom U, as rack3d and the elevation read it); rackDiagram
       // counts from 1 at the TOP (numDisp=ascend, as drawio-page.js packs
       // it), and its `u` is where the device's top edge sits. So the device's
       // top U, e.ru + e.u - 1, is flipped: top U 22 of 22 is draw.io's u 1.
       // Passed as-is, the 10U ASR-9006 at the bottom drew at the top.
-      mounted.push({name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u,
-        faces: {front: {svg: face.text, vb: face.vb, ports: portsOf(face.zones)}}});
+      mounted.push({name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u, faces});
     }
     const groups = [{label: 'Cast rack', racks: [{label: '', units: RACK_U, mounted}]}];
-    save(rackDiagram(groups, {faces: ['front'], labels: true}),
+    save(rackDiagram(groups, {faces: ['front', 'rear'], labels: true}),
          'cast-rack.drawio', 'application/xml');
   }
 
@@ -169,7 +178,7 @@ export default function makeTakeaway() {
         lead('<strong>Where can it go from here?</strong>'),
         lead('The cast rack as built here, handed over in the formats a network team uses next.'),
         kv([
-          ['draw.io', 'rack diagram, base front configuration - does not reflect seated cards or optics'],
+          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
           ['GLB / USDZ', !is3d ? 'the 3D model - switch to 3D to build the scene they export'
                         : scene ? 'the mounted rack, as configured, as a 3D model'
                                 : 'unavailable - no 3D in this browser'],
@@ -183,7 +192,7 @@ export default function makeTakeaway() {
 
       const items = [
         {label: 'draw.io',
-         title: 'Download a draw.io rack diagram - base front configuration only; does not show seated cards or optics',
+         title: 'Download a draw.io rack diagram - front and rear, as built, with a connection point on every port',
          run: buildDrawio},
         {label: 'SVG',
          title: 'Download the 2D front elevation, with the seated cards and optics',
@@ -197,10 +206,12 @@ export default function makeTakeaway() {
           title: 'GLB and USDZ export the 3D scene, which 2D does not build - this switches to 3D',
           run: () => setMode('3d')});
       } else if (scene) {
+        // complete() first: optics and plugs are extruded by the deferred
+        // relief pass, and an export taken before it lands has them flat.
         items.push({label: 'GLB', title: 'Download the mounted rack as a GLB, with the current overrides',
-          run: async () => save(await scene.toGLB(), 'cast-rack.glb', 'model/gltf-binary')});
+          run: async () => { await scene.complete(); save(await scene.toGLB(), 'cast-rack.glb', 'model/gltf-binary'); }});
         items.push({label: 'USDZ', title: 'Download the mounted rack as a USDZ, with the current overrides',
-          run: async () => save(await scene.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip')});
+          run: async () => { await scene.complete(); save(await scene.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip'); }});
       }
       ui.setExports(items);
     },

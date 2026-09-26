@@ -1479,6 +1479,27 @@ def check_drawio_port_paths(page, base):
     return bad
 
 
+@extra("stage 6 draw.io carries the plan's seated card, front and rear")
+def check_takeaway_drawio(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    # Stage 4 fills the plan's seats (the ASR-9006's slot-2 line card) into
+    # the shared overrides; stage 6 must export them.
+    page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+    page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('#stageExport button:has-text("draw.io")')
+    text = pathlib.Path(dl.value.path()).read_text()
+    if 'portrayal-path="slot-2/module/p0"' not in text:
+        bad.append("stage 6 draw.io: no port cell for the plan's slot-2 card")
+    if 'value="rear"' not in text:
+        bad.append("stage 6 draw.io: no rear cabinet")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
