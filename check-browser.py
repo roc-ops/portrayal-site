@@ -35,6 +35,7 @@ import re
 import socket
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -3135,6 +3136,99 @@ def check_rack_delete(page, base):
     }""", deleted_id)
     if remaining:
         bad.append("rack page: a deleted rack came back after its pending autosave flushed")
+    return bad
+
+
+@extra("rack.html: opening a .json whose id is already in the library never overwrites it, and switching docs flushes a pending edit first")
+def check_rack_import_keeps_library(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    orig_id = page.evaluate("() => window.__rack.doc().id")
+
+    def set_height(h, wait_redraw=True):
+        # #frameBtn toggles the frame form open/closed, so only click it when
+        # the form isn't already showing (a second call would otherwise close it).
+        if not page.is_visible("#fHeight"):
+            page.click("#frameBtn")
+        page.fill("#fHeight", str(h))
+        page.dispatch_event("#fHeight", "change")
+        # dispatch_event runs the change handler (commit(), which updates
+        # S.doc synchronously) before returning, so the redraw itself need
+        # not be waited on to know the new height is already in S.doc - and
+        # for the pending-edit case below, waiting on it would only give a
+        # 500ms autosave timer more time to land on its own.
+        if wait_redraw:
+            page.wait_for_function(
+                f"""() => document.querySelectorAll('svg[data-pane="front"] rect.rk-u').length === {h}""",
+                timeout=READY_MS)
+
+    # First edit: flush it, then save the doc (as it stands, height 20) to a
+    # file - this is the file we later re-import.
+    set_height(20)
+    page.evaluate("() => window.__rack.flush()")
+    first_doc = page.evaluate("() => window.__rack.doc()")
+    tmp_path = pathlib.Path(tempfile.mkstemp(suffix=".rack.json")[1])
+    tmp_path.write_text(json.dumps(first_doc))
+
+    # Second edit, left pending (no explicit flush): switching to the same
+    # rack from the library list must flush it first, or the switch reads
+    # back the stale, pre-edit copy. The autosave lands 500ms after the edit,
+    # so the edit and the switch are fired from a single page.evaluate (no
+    # round trip between them) to make the race deterministic rather than
+    # dependent on how long Playwright's own IPC happens to take.
+    page.click("#libMenu summary")   # renders #libItems, including the current-rack button, ahead of time
+    page.wait_for_selector("#libItems button.rk-current", timeout=READY_MS)
+    page.evaluate("""() => {
+      const h = document.getElementById('fHeight');
+      h.value = '30';
+      h.dispatchEvent(new Event('change', {bubbles: true}));
+      document.querySelector('#libItems button.rk-current').click();
+    }""")
+    # Give the click handler (its getDoc/setDoc) and the 500ms autosave timer
+    # both time to fully settle before reading the final state - the height
+    # can read 30 transiently (before the switch's own read lands) and then
+    # drop back to a stale value, so an early poll would miss that.
+    page.wait_for_timeout(800)
+    got = page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU")
+    if got != 30:
+        bad.append(f"library switch: doc height is {got} after switching to the current rack, expected 30 "
+                    "(a pending edit was lost)")
+    page.evaluate("() => window.__rack.flush()")
+
+    # Now import the earlier file (id = orig_id, height 20). The library
+    # already holds a document with that id (the one just edited to height
+    # 30): importing must not overwrite it.
+    page.set_input_files("#openFile", str(tmp_path))
+    try:
+        page.wait_for_function("(id) => window.__rack.doc().id !== id", arg=orig_id, timeout=5000)
+    except Exception:
+        pass
+    imported = page.evaluate("() => window.__rack.doc()")
+    if imported["id"] == orig_id:
+        bad.append("import: the imported document kept the original file's id")
+    if imported["racks"][0]["frame"]["heightRU"] != 20:
+        bad.append(f"import: imported doc height is {imported['racks'][0]['frame']['heightRU']}, expected 20")
+
+    docs = page.evaluate("""async () => {
+      const {openLibrary} = await import('/site/rack/library.js');
+      const lib = await openLibrary();
+      return await lib.list();
+    }""")
+    if len(docs) != 2:
+        bad.append(f"import: library holds {len(docs)} document(s), expected 2 "
+                    "(the edited original plus the import)")
+    orig = page.evaluate("""async (id) => {
+      const {openLibrary} = await import('/site/rack/library.js');
+      const lib = await openLibrary();
+      return await lib.get(id);
+    }""", orig_id)
+    if not orig or orig["racks"][0]["frame"]["heightRU"] != 30:
+        bad.append(f"import: the original rack in the library reads height "
+                    f"{orig and orig['racks'][0]['frame']['heightRU']}, expected 30 (its latest edit)")
+    tmp_path.unlink(missing_ok=True)
     return bad
 
 

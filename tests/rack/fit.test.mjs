@@ -81,6 +81,12 @@ test('availableDepth: what is left behind the other face, or the usable depth', 
   assert.equal(F.availableDepth(alone, alone.items[0], chassisOf), 1000);
 });
 
+test('itemsWithU: every item carries its chassis U height, or 1 when unknown', () => {
+  const r = place(place(M.newRack(), 'r740xd', 10), 'unknown-ref', 20);
+  const got = F.itemsWithU(r, chassisOf).map(i => [i.ref, i.u]);
+  assert.deepEqual(got, [['r740xd', 2], ['unknown-ref', 1]]);
+});
+
 test('zero-U: only the frame\'s attachment points, and never overlapping', () => {
   assert.deepEqual(F.attachPoints('four-post'), ['left-front', 'right-front', 'left-rear', 'right-rear']);
   assert.deepEqual(F.attachPoints('two-post'), ['left', 'right']);

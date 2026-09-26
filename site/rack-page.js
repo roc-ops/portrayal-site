@@ -5,7 +5,7 @@
 import {newDoc, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation} from './rack/elevation.js';
-import {reaches, fits, availableDepth} from './rack/fit.js';
+import {reaches, fits, availableDepth, itemsWithU} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {catalogPanel} from './rack/catalog.js';
@@ -51,7 +51,8 @@ function patchItem(id, patch) {
     if (!f.ok) return f;
   }
   if ('cfg' in patch && patch.cfg !== it.cfg &&
-      (Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length))
+      (Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length) &&
+      !Object.keys(next.swaps ?? {}).length && !Object.keys(next.fields ?? {}).length)
     S.notice = {text: 'Your Explorer changes were for the old configuration, so they were cleared.', kind: 'note'};
   commit(updateItem(r, id, patch));
   return {ok: true};
@@ -90,7 +91,7 @@ async function render() {
     ? `tapped${r.frame.holes.thread ? ` ${r.frame.holes.thread}` : ''}` : 'square holes';
   $('headFront').textContent = `Front · ${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
   $('headRear').textContent = 'Rear';
-  const items = r.items.map(i => ({...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1)}));
+  const items = itemsWithU(r, chassisOf);
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
   let front, rear;
   try {
@@ -182,17 +183,41 @@ function onPaneClick(ev) {
   if (u) return select({kind: 'u', face: u.dataset.face, ru: Number(u.dataset.u)});
 }
 
+// Without IndexedDB, S.lib is a no-op: New rack and Delete would otherwise
+// discard the current rack with nothing left of it anywhere - so a rack that
+// only lives in memory gets the chance to leave as a file first. Whichever
+// button the person answers this for still runs afterward either way; this
+// only offers the download.
+async function offerDownloadIfNoLibrary() {
+  if (S.lib.available) return;
+  if (confirm("This browser isn't keeping a library, so this rack will be lost. Save it as .json first?"))
+    downloadDoc(S.doc);
+}
+
 let libDraws = 0;
 async function renderLibrary() {
   const mine = ++libDraws;
   const items = $('libItems');
   const act = (text, fn) => { const b = el('button', {type: 'button', text}); b.addEventListener('click', () => { $('libMenu').open = false; fn(); }); return b; };
   const kids = [
-    act('New rack', async () => { const d = newDoc({name: `Rack ${(await S.lib.list()).length + 1}`}); await S.lib.put(d); setDoc(d); }),
-    act('Duplicate', async () => { const d = {...structuredClone(S.doc), id: newDoc().id}; d.racks[0].name = `${rack().name} copy`; await S.lib.put(d); setDoc(d); }),
+    act('New rack', async () => {
+      await offerDownloadIfNoLibrary();
+      // A document switch drops whatever the previous rack's last edit had
+      // queued (saveSoon fires 500ms later); flushing first means it lands
+      // before the switch instead of being silently skipped.
+      await S.save.flush();
+      const d = newDoc({name: `Rack ${(await S.lib.list()).length + 1}`});
+      await S.lib.put(d); setDoc(d);
+    }),
+    act('Duplicate', async () => {
+      await S.save.flush();
+      const d = {...structuredClone(S.doc), id: newDoc().id};
+      d.racks[0].name = `${rack().name} copy`; await S.lib.put(d); setDoc(d);
+    }),
     act('Rename…', () => { const n = prompt('Rack name', rack().name); if (n && n.trim()) commit(renamed(rack(), n.trim())); }),
     act('Delete…', async () => {
       if (!confirm(`Delete ${rack().name} from this browser? This can't be undone.`)) return;
+      await offerDownloadIfNoLibrary();
       // A pending autosave (queued by the last edit's saveSoon) writes 500ms
       // after it, which can be after confirm()'s blocking dialog closes.
       // Flushing it here - before remove() - means it either lands (and is
@@ -217,6 +242,7 @@ async function renderLibrary() {
   if (mine !== libDraws || !list.length) return;
   items.append(el('hr'), ...list.map(d => {
     const b = act(d.name, async () => {
+      await S.save.flush();
       const doc = await getDoc(d.id);
       if (!doc) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_OPEN})); return; }
       setDoc(doc);
@@ -226,7 +252,22 @@ async function renderLibrary() {
   }));
 }
 
+// If site/rack/chassis.json (or anything else here) fails to load, the page
+// otherwise stays blank with nothing in #side to say why - so this is caught
+// whole, reported once, and rethrown so window.__rack.ready still settles
+// (rejected) instead of hanging a probe forever.
 async function boot() {
+  try {
+    await bootInner();
+  } catch (err) {
+    console.warn('[portrayal] the rack builder could not start', err);
+    $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert',
+      text: "The Rack Builder couldn't start. Reload to try again."}));
+    throw err;
+  }
+}
+
+async function bootInner() {
   S.devices = await loadChassis();
   chassisOf = chassisLookup(S.devices);
   S.entries = catalogEntries(S.devices);
@@ -244,7 +285,15 @@ async function boot() {
   $('openFile').addEventListener('change', async () => {
     const file = $('openFile').files[0]; $('openFile').value = '';
     if (!file) return;
-    try { const d = await readDocFile(file); await S.lib.put(d); setDoc(d); }
+    try {
+      let d = await readDocFile(file);
+      await S.save.flush();
+      // A file's own id can match one already in the library (it was saved
+      // from here, or from another browser sharing the same rack) - importing
+      // it must never overwrite that stored rack, so it gets a fresh id.
+      if ((await S.lib.list()).some(x => x.id === d.id)) d = {...d, id: newDoc().id};
+      await S.lib.put(d); setDoc(d);
+    }
     catch (err) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: err.message})); }
   });
   window.addEventListener('pagehide', () => S.save.flush());
