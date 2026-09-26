@@ -2974,6 +2974,66 @@ def check_rack_place(page, base):
     return bad
 
 
+@extra("rack.html: inspect, move with arrows, face refusal, Explorer round trip, remove")
+def check_rack_inspect(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("dialog", lambda d: d.accept())
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="20"]')
+    page.fill("#catQuery", "AS7726")
+    page.click('.rk-cat[data-ref="as7726-32x"]:not([aria-disabled="true"])')
+    item = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0]")
+    page.wait_for_selector("#iLabel", timeout=READY_MS)
+    # Move with the arrow keys.
+    page.keyboard.press("ArrowUp"); page.keyboard.press("ArrowUp")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].ru === 22")
+    # Another device at U22 on the rear; switching the switch's face to rear is refused.
+    page.click('svg[data-pane="rear"] rect.rk-u[data-u="22"]')
+    page.fill("#catQuery", "TM-280")
+    page.click('.rk-cat[data-ref="tm-280"]:not([aria-disabled="true"])')
+    page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    page.select_option("#iFace", "rear")
+    err = page.text_content(".rk-side .rk-error") or ""
+    if "Taken by" not in err or item()["face"] != "front":
+        bad.append(f"inspect: a face change onto an occupied U was not refused ({err!r}, {item()['face']})")
+    # Label edit.
+    page.fill("#iLabel", "tor-1"); page.dispatch_event("#iLabel", "change")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].label === 'tor-1'")
+    # Explorer round trip: seat an optic in the lens through its own URL state.
+    page.click("#iExplore")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    # A synchronous predicate: a Promise returned from wait_for_function is truthy at once.
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
+                           timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    page.evaluate("""() => {
+      const w = document.querySelector('.rk-lens iframe').contentWindow;
+      // swap= is written raw (it carries its own escaping), so it is appended, not set.
+      const rest = w.location.search.replace(/&?swap=[^&]*/, '');
+      w.location.replace(`${w.location.pathname}${rest}&swap=port-1~generic%2Fqsfp-lc%402`);
+    }""")
+    # Synchronous polling: the reloaded frame's API exists and reports the swap.
+    page.wait_for_function("""() => {
+      const w = document.querySelector('.rk-lens iframe')?.contentWindow;
+      try { return !!w?.portrayalEmbed && !!w.portrayalEmbed.current().swaps['port-1']; } catch { return false; } }""",
+                           timeout=READY_MS)
+    page.click(".rk-lens-done")
+    page.wait_for_function("() => (window.__rack.doc().racks[0].items[0].swaps || {})['port-1'] === 'generic/qsfp-lc@2'",
+                           timeout=READY_MS)
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"] [data-ref^="generic/qsfp-lc@2"]',
+                           timeout=READY_MS)
+    # Remove.
+    page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
+    page.click("#iRemove")
+    page.wait_for_function("() => !window.__rack.doc().racks[0].items.some(i => i.ref === 'as7726-32x')")
+    return bad
+
+
 @extra("rack.html: deleting a rack does not let a pending autosave resurrect it")
 def check_rack_delete(page, base):
     bad = []

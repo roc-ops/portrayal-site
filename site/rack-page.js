@@ -2,13 +2,15 @@
 // goes through commit(), which autosaves and redraws. What the side panel
 // shows follows S.sel.
 
-import {newDoc, withFrame, renamed, uLabel, withItem} from './rack/model.js';
+import {newDoc, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation} from './rack/elevation.js';
-import {reaches, fits} from './rack/fit.js';
+import {reaches, fits, availableDepth} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {catalogPanel} from './rack/catalog.js';
+import {openLens} from './rack/explorer-lens.js';
+import {inspectorPanel} from './rack/inspector.js';
 import {el} from './rack/dom.js';
 
 const $ = id => document.getElementById(id);
@@ -34,6 +36,24 @@ function place(entry, face, ru) {
   const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ru, face, label: entry.model || entry.name});
   S.sel = {kind: 'item', id: item.id};
   commit(next);
+}
+
+// A change to a placed item, checked against the rules before it is made.
+function patchItem(id, patch) {
+  const r = rack(), it = itemById(id);
+  const next = {...it, ...patch};
+  if (['ru', 'face'].some(k => k in patch)) {
+    const f = fits(r, {ref: next.ref, ru: next.ru, face: next.face}, chassisOf, {ignoreId: id});
+    if (!f.ok) return f;
+  }
+  commit(updateItem(r, id, patch));
+  return {ok: true};
+}
+
+async function explore(id) {
+  const it = itemById(id);
+  const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label});
+  if (res && itemById(id)) patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
 }
 
 function commit(nextRack) {
@@ -91,7 +111,6 @@ function summary() {
   ]);
 }
 
-// Task 11 replaces the 'item' branch.
 function renderSide() {
   const r = rack(), sel = S.sel;
   let body;
@@ -100,13 +119,35 @@ function renderSide() {
     onName: name => commit(renamed(r, name)), onFrame: patch => commit(withFrame(r, patch))});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, query: S.query, onQuery: q => { S.query = q; }, onPick: e => place(e, sel.face, sel.ru)});
-  else body = el('h3', {text: itemById(sel.id)?.label ?? 'Device'});
+  else if (sel.kind === 'move') body = el('div', {}, [
+    el('h3', {text: `Move ${itemById(sel.id)?.label ?? ''}`}),
+    el('p', {class: 'rk-muted', text: 'Click the U where its bottom should go, on either face, or use the ↑ and ↓ keys. Esc stops moving.'})]);
+  else {
+    const it = itemById(sel.id);
+    if (!it) { S.sel = null; body = summary(); }
+    else body = inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
+      available: availableDepth(r, it, chassisOf),
+      onPatch: patch => patchItem(it.id, patch),
+      onMove: () => select({kind: 'move', id: it.id}),
+      onRemove: () => { if (confirm(`Remove ${it.label} from the rack?`)) { S.sel = null; commit(withoutItem(r, it.id)); } },
+      onExplore: () => explore(it.id)});
+  }
   const kids = [body];
   if (S.notice) { kids.push(el('p', {class: 'rk-error', role: 'alert', text: S.notice})); S.notice = null; }
   $('side').replaceChildren(...kids);
 }
 
 function onPaneClick(ev) {
+  if (S.sel?.kind === 'move') {
+    const u = ev.target.closest('[data-u]');
+    if (u) {
+      const id = S.sel.id;
+      const r = patchItem(id, {ru: Number(u.dataset.u), face: u.dataset.face});
+      S.sel = {kind: 'item', id};
+      if (!r.ok) { render(); queueMicrotask(() => { const e = document.querySelector('.rk-side .rk-error'); if (e) e.textContent = r.reason; }); }
+      return;
+    }
+  }
   const hit = ev.target.closest('[data-item-id]');
   if (hit) return select({kind: 'item', id: hit.dataset.itemId});
   const u = ev.target.closest('[data-u]');
@@ -179,6 +220,16 @@ async function boot() {
     catch (err) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: err.message})); }
   });
   window.addEventListener('pagehide', () => S.save.flush());
+  document.addEventListener('keydown', ev => {
+    if (ev.target.closest?.('input, select, textarea, .rk-lens')) return;
+    const id = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
+    if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(id && S.sel.kind === 'move' ? {kind: 'item', id} : null); }
+    else if (id && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
+      ev.preventDefault();
+      const r = patchItem(id, {ru: itemById(id).ru + (ev.key === 'ArrowUp' ? 1 : -1)});
+      if (!r.ok) { const e = document.querySelector('.rk-side .rk-error'); if (e) e.textContent = r.reason; }
+    }
+  });
   setDoc(doc);
 }
 
