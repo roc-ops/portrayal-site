@@ -125,6 +125,8 @@ One module owns the sag rule, the colors and the endpoint resolution for both vi
 
 No RJ45 jack in the library declares a cage that accepts `generic/rj45-plug@1` (roc-ops/Portrayal#610). Until that lands, copper cables anchor on the jack's connection point, with no plug drawn, and the panel says so in one line. When #610 lands, the plan's `seats` gain the RJ45 plugs and boots, and copper takes the fiber path. No other change is needed.
 
+*Amended 2026-09-26:* #610 has landed (via Portrayal #619/#620). The plan seats a `generic/rj45-plug@1` at every copper end, and copper lands on the plug's cable point in 2D and 3D, exactly as fiber does; the rear elevation seats the plan too, for the R740xd's iDRAC and NDC. Boots are not seated or drawn until Portrayal #611 lands.
+
 ### 5.5 Colors
 
 The color table lives in `cables.js`, keyed by media and then purpose:
