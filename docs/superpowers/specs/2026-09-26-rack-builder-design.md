@@ -82,7 +82,7 @@ configuredFace({ref, cfg, view, swaps, fields, turned})
   - Stage 6 passes `{bays: true}` and emits the rear page as well.
 - drawio.html: a **stencil library** keeps its separate card shapes, because that is what a library is for. Anything that depicts a *specific* device or rack uses the configured face.
 - Stage 6 GLB/USDZ awaits `scene.complete()` before exporting. This fixes flat optics.
-- Explorer gains **Download SVG** and **Download PNG** of the configured current view. Its Export menu links keep `swap=` and `fields=`.
+- Explorer gains **Download SVG** and **Download PNG** of the configured current view. Its Export menu links to pages that honor `?device=` (DCIM export, Drawings) open on the current device; those pages take no swaps, so carrying `swap=` would be ignored.
 
 **Acceptance:** stage 6's draw.io, SVG and PNG exports show the same seated cards and optics the stage shows, on both faces. The Explorer 2D download matches the Explorer stage.
 
