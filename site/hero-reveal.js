@@ -13,7 +13,7 @@
 import {applyFaceOverrides} from '../vendor/swap.js';
 import {jdist} from '../vendor/dist.js';
 import {cablePoints} from '../vendor/relief.js';
-import {COLORS, WIDTH, sag2d, plugAt} from './showcase/cables.js';
+import {WIDTH, sag2d, plugAt, colorOfJacket} from './showcase/cables.js';
 
 const SVG = 'assets/dist/s9600-72xc.front.svg';
 const PNG = 'assets/exports/netbox/elevation-images/UfiSpace/'
@@ -160,21 +160,9 @@ export const PORTS = {
                jacket: 'dac'},
 };
 
-// A CABLE'S COLOR COMES FROM cables.js, the showcase's one table, so the hero
-// and the showcase cannot disagree about what a jacket looks like. This is a
-// stopgap on cables.js's EXISTING colors: multimode borrows the OS2 yellow and
-// twinax the management gray, because cables.js has no aqua or black yet.
-// Task 1 of the hero plan replaces this with cables.js's `colorOfJacket` and
-// restores aqua (`mm`) and black (`dac`).
-export function jacketColor(j) {
-  switch (j) {
-    case 'sm': return COLORS.os2;
-    case 'cu': return COLORS.copper.server;
-    case 'mm': return COLORS.os2;
-    case 'dac': return COLORS.copper.management;
-    default: return COLORS.os2;
-  }
-}
+// A CABLE'S COLOR COMES FROM cables.js's colorOfJacket, the showcase's one
+// table, so the hero and the showcase cannot disagree about what a jacket
+// looks like.
 
 // The port the caption names when nothing is hovered, focused or tapped, so
 // the caption line is never empty.
@@ -469,7 +457,7 @@ export function drawHeroCables(svg) {
                          id: `hero-cable-${port}`, role: 'button', 'aria-pressed': 'false',
                          'aria-label': captionOf(port), 'data-x': r2(start[0]),
                          'data-left': r2(Math.min(...pts.map(p => p[0])))});
-    const color = jacketColor(row.jacket);
+    const color = colorOfJacket(row.jacket);
     // The drawing, in a group of its own that the front <use> draws: a <use>
     // of the cable's group would clone its tabindex too, and Tab from the
     // cable would go into the clone and be lost.

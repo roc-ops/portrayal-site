@@ -6,8 +6,9 @@
 // rack3d.js's createRackScene with the rows' `seat` maps as the device's
 // overrides; the cables leave the points the kit says each connector's cable
 // leaves from (cableAnchor), and hang with cables.js's own 3D shape. A cable's
-// color and its caption come from hero-reveal.js, so the two panels cannot
-// disagree about what a link is or what it looks like.
+// color comes from cables.js's colorOfJacket and its caption from
+// hero-reveal.js, so the two panels cannot disagree about what a link is or
+// what it looks like.
 //
 // It costs nothing until it is nearly on screen: an IntersectionObserver
 // builds it once, and until then - or for good, without WebGL - the panel
@@ -18,8 +19,8 @@
 // its cables hung - and then only when the browser is next idle, so the front
 // page's first paint and the 2D hero never compete with three.js. On a narrow
 // screen the panel must be on screen, not merely near it, to start.
-import {PORTS, DEFAULT_PORT, jacketColor, captionOf} from './hero-reveal.js';
-import {hangPoints3d, LEAD, WIDTH, clearOf} from './showcase/cables.js';
+import {PORTS, DEFAULT_PORT, captionOf} from './hero-reveal.js';
+import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket} from './showcase/cables.js';
 import {guard3d} from './webgl.js';
 
 const REF = 's9600-72xc';
@@ -212,7 +213,7 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
       const pts = clearOf(hangPoints3d(THREE, A, B, RACK_HALF * 2)
         .filter((p, i, a) => i === 0 || p.distanceToSquared(a[i - 1]) > 1e-6), boxes);
       const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
-      const color = new THREE.Color(jacketColor(f.row.jacket));
+      const color = new THREE.Color(colorOfJacket(f.row.jacket));
       const mat = new THREE.MeshStandardMaterial({color, roughness: 0.55, metalness: 0,
         vertexColors: true, transparent: true});
       const main = new THREE.Mesh(fade(THREE, new THREE.TubeGeometry(curve, 160, WIDTH / 2, 8, false)), mat);

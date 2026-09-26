@@ -419,6 +419,19 @@ def check_hero_cables(page):
             bad.append(f"hero: the caption's default is not port-67 ({caption()!r})")
     step("default caption", default_caption)
 
+    def colors():
+        # Jacket colors come from cables.js's colorOfJacket (Task 1): an SR
+        # link (port-4, jacket mm) draws aqua, a DAC (port-12) draws black.
+        got = page.evaluate("""() => {
+            const stroke = port => document.querySelector(
+                `#hero-reveal [data-hero-cable="${port}"] path[data-main]`)?.getAttribute('stroke') || '';
+            return {mm: stroke('port-4'), dac: stroke('port-12')}; }""")
+        if got["mm"].lower() != "#2bb3c8":
+            bad.append(f"hero: port-4 (mm) is not aqua #2bb3c8 ({got['mm']!r})")
+        if got["dac"].lower() != "#15171a":
+            bad.append(f"hero: port-12 (dac) is not black #15171a ({got['dac']!r})")
+    step("jacket colors", colors)
+
     split_of = lambda: page.evaluate("() => document.querySelector('#hero-reveal .reveal-stage').style.getPropertyValue('--split')")
     set_split = lambda v: page.evaluate("""v => { const r = document.querySelector('#hero-reveal .reveal-range');
             r.value = String(v); r.dispatchEvent(new Event('input')); }""", v)
@@ -848,6 +861,21 @@ def check_hero_3d(browser, base):
                 if got["still"]: bad.append("hero 3D: the still image is still showing over a built scene")
             step("build", built)
             step("waits for the 2D hero", lambda: waited(page, "built"))
+
+            def colors():
+                # Same rows as the 2D check: an SR link (port-4, jacket mm)
+                # tubes aqua, a DAC (port-12) tubes black - both from
+                # cables.js's colorOfJacket, the same table the 2D hero uses.
+                if not ready[0]: bad.append("hero 3D: colors - the scene never built"); return
+                got = page.evaluate("""() => {
+                    const hex = port => { const t = window.__hero3d.tubes.find(x => x.port === port);
+                        return t ? '#' + t.mesh.material.color.getHexString() : ''; };
+                    return {mm: hex('port-4'), dac: hex('port-12')}; }""")
+                if got["mm"].lower() != "#2bb3c8":
+                    bad.append(f"hero 3D: port-4 (mm) tube is not aqua #2bb3c8 ({got['mm']!r})")
+                if got["dac"].lower() != "#15171a":
+                    bad.append(f"hero 3D: port-12 (dac) tube is not black #15171a ({got['dac']!r})")
+            step("jacket colors", colors)
 
             def named():
                 # The built scene says what it shows, with the still hidden.

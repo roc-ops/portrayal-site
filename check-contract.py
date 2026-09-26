@@ -840,6 +840,11 @@ for name, doc in docs.items():
 # floating callout, and every link in its table seats parts the drawing's
 # cages actually accept.
 hero = (HERE / "site" / "hero-reveal.js").read_text()
+cab = (HERE / "site" / "showcase" / "cables.js").read_text()
+check(re.search(r"export const JACKETS\s*=\s*\{", cab) is not None
+      and all(re.search(rf"\b{k}\s*:", cab.split("export const JACKETS", 1)[-1][:400]) for k in ("mm", "sm", "dac", "cu")),
+      "cables.js names the four jacket colors the hero draws (mm, sm, dac, cu)",
+      "no JACKETS export with mm/sm/dac/cu")
 check("pt-mark" not in hero and "pt-label" not in hero,
       "the hero draws no colored port marks or text badges", "pt-mark/pt-label still in hero-reveal.js")
 check((not re.search(r"callout", hero, re.I) or "no floating callout" in hero)
@@ -875,18 +880,14 @@ for port, seat, jacket in rows:
 # fails here by name, not as a count mismatch in the browser.
 check(len(rows) == 21 and not bad_hero, "every hero link (21) seats real parts its cage accepts, with a jacket",
       f"{len(rows)} rows parsed, expected 21; {bad_hero[:5]}")
-# Cable colors come from cables.js. Until Task 1 lands `colorOfJacket`, the
-# hero maps a jacket onto cables.js's existing COLORS through one function,
-# jacketColor, and keeps no color table of its own. (The hero keeps its LAMP
-# colors - those are lamp states, not cables - so this checks the import and
-# jacketColor's body, not every hex in the file.)
-# jacketColor's definition runs to the first blank line after it.
-jc = re.search(r"(?:function\s+jacketColor\b|const\s+jacketColor\s*=).*?\n[ \t]*\n", hero, re.S)
-check(re.search(r"import\s*\{[^}]*\bCOLORS\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", hero) is not None
-      and jc is not None and not re.search(r"#[0-9a-fA-F]{3,8}\b", jc.group(0))
-      and "JACKETS = {" not in hero,
-      "the hero's cable colors come from cables.js",
-      "no COLORS import from ./showcase/cables.js, no jacketColor, a hex in it, or a jacket table of its own")
+# Cable colors come from cables.js's colorOfJacket (Task 1): the hero keeps
+# no color table and no jacketColor stand-in of its own. (The hero keeps its
+# LAMP colors - those are lamp states, not cables.)
+check(re.search(r"import\s*\{[^}]*\bcolorOfJacket\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", hero) is not None
+      and re.search(r"\bjacketColor\b", hero) is None
+      and "JACKETS = {" not in hero and "COLORS = {" not in hero,
+      "the hero's cable colors come from cables.js's colorOfJacket",
+      "no colorOfJacket import from ./showcase/cables.js, a jacketColor left behind, or a jacket/color table of its own")
 
 # ── the hero in 3D ───────────────────────────────────────────────────────
 # The same switch, cabled, as a model (spec §5). Every check below records
@@ -910,11 +911,14 @@ check(re.search(r"\bcreateRackScene\b", h3) is not None and "IntersectionObserve
       and re.search(r"\brails\s*:\s*false\b", h3) is not None,
       "hero-3d.js builds through createRackScene, lazily (IntersectionObserver), with rails: false",
       "site/hero-3d.js missing, or no createRackScene / IntersectionObserver / rails: false")
-check(re.search(r"import\s*\{[^}]*\bhangPoints3d\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", h3) is not None
-      and re.search(r"import\s*\{[^}]*\bjacketColor\b[^}]*\bcaptionOf\b[^}]*\}\s*from\s*'\./hero-reveal\.js'", h3) is not None
-      and "COLORS" not in h3,
-      "hero-3d.js takes its tubes' shape from cables.js and its colors and captions from hero-reveal.js",
-      "no hangPoints3d import from ./showcase/cables.js, or no jacketColor/captionOf import from ./hero-reveal.js, or a COLORS table of its own")
+check(re.search(r"import\s*\{[^}]*\bhangPoints3d\b[^}]*\bcolorOfJacket\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", h3) is not None
+      or re.search(r"import\s*\{[^}]*\bcolorOfJacket\b[^}]*\bhangPoints3d\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", h3) is not None,
+      "hero-3d.js takes its tubes' shape and colors from cables.js",
+      "no hangPoints3d/colorOfJacket import from ./showcase/cables.js")
+check(re.search(r"import\s*\{[^}]*\bcaptionOf\b[^}]*\}\s*from\s*'\./hero-reveal\.js'", h3) is not None
+      and re.search(r"\bjacketColor\b", h3) is None and "COLORS" not in h3,
+      "hero-3d.js takes its captions from hero-reveal.js and keeps no color table of its own",
+      "no captionOf import from ./hero-reveal.js, a jacketColor left behind, or a COLORS table of its own")
 # THE 3D BUILD WAITS ITS TURN: after the 2D hero has settled and the browser
 # is idle (requestIdleCallback), and on a narrow screen only once the panel is
 # actually on screen (rootMargin 0px under max-width 700px). check-browser.py
