@@ -8,6 +8,9 @@ import {faceUrl} from '../faces.js';
 // read off the compiled SVG's own attributes, and a state is only ever applied
 // to an element that declares it in data-states.
 
+import {el, svgEl} from '../rack/dom.js';
+export {el, svgEl};
+
 // The default device: the one the page boots with. Which device is actually
 // on the stage is DEVICE, below - a spoke opens any device in the cast.
 export const DEV = 'as7726-32x';
@@ -34,22 +37,6 @@ export const CONFIGS = [
 ];
 
 const $ = sel => document.querySelector(sel);
-export const el = (tag, attrs = {}, kids = []) => {
-  const n = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) {
-    if (k === 'class') n.className = v;
-    else if (k === 'html') n.innerHTML = v;
-    else if (k === 'text') n.textContent = v;
-    else n.setAttribute(k, v);
-  }
-  for (const c of [].concat(kids)) n.append(c);
-  return n;
-};
-export const svgEl = (tag, attrs = {}) => {
-  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
-  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
-  return n;
-};
 
 export const stage2d = $('#stage2d');
 export const stage3d = $('#stage3d');

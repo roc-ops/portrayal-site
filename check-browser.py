@@ -2548,6 +2548,56 @@ def check_rear_elevation(page, base):
     return bad
 
 
+@extra("elevation.js draws both faces of a four-post rack: mounted, through, ghost, holes")
+def check_rack_elevation(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const E = await import('/site/rack/elevation.js');
+      const M = await import('/site/rack/model.js');
+      const frame = M.normalizeFrame({kind: 'four-post', heightRU: 24,
+                                      holes: {style: 'tapped', thread: '12-24'}});
+      const items = [
+        {id: 'i1', ref: 'r740xd', cfg: 'sff24-rc5-1b2a3a', label: 'R740xd', ru: 10, u: 2,
+         face: 'front', turned: false, swaps: {}, fields: {}},
+        {id: 'i2', ref: 'as7726-32x', cfg: 'ac-f2b', label: 'AS7726', ru: 20, u: 1,
+         face: 'front', turned: false, swaps: {}, fields: {}},
+        {id: 'i3', ref: 'eps201', cfg: 'ac-f2b', label: 'AS4630', ru: 20, u: 1,
+         face: 'rear', turned: false, swaps: {}, fields: {}},
+      ];
+      const reaches = it => it.ref === 'r740xd';
+      const draw = view => E.drawElevation({items, frame, view, reaches, hitTargets: true,
+                                           selectedId: 'i2', selectedU: view === 'front' ? 5 : null});
+      const front = await draw('front'), rear = await draw('rear');
+      const panel = (svg, id) => svg.querySelector(`[data-item-id="${id}"]`)?.dataset.panel;
+      return {
+        pane: [front.dataset.pane, rear.dataset.pane],
+        targets: [front.querySelectorAll('rect.rk-u').length, rear.querySelectorAll('rect.rk-u').length],
+        front: [panel(front, 'i1'), panel(front, 'i2'), panel(front, 'i3')],
+        rear: [panel(rear, 'i1'), panel(rear, 'i2'), panel(rear, 'i3')],
+        rearOfServer: !!rear.querySelector('[data-item-id="i1"] [data-path^="idrac9"]'),
+        round: front.querySelectorAll('circle[data-rail-hole]').length,
+        square: front.querySelectorAll('rect[data-rail-hole]').length,
+        selected: front.querySelector('[data-item-id="i2"]').classList.contains('rk-selected')
+                  && front.querySelectorAll('.rk-sel-ring').length === 1,
+        ghostPassesClicks: rear.querySelector('[data-item-id="i2"]').getAttribute('pointer-events') === 'none',
+        selectedU: front.querySelector('rect.rk-u[data-u="5"]').classList.contains('rk-u-selected'),
+        panelFor: [E.panelFor({face: 'front'}, 'front'), E.panelFor({face: 'front'}, 'rear'),
+                   E.panelFor({face: 'rear'}, 'rear'), E.panelFor({face: 'front', turned: true}, 'front')],
+      };
+    }""")
+    want = {"pane": ["front", "rear"], "targets": [24, 24],
+            "front": ["mounted", "mounted", "ghost"], "rear": ["through", "ghost", "mounted"],
+            "rearOfServer": True, "round": 24 * 3 * 2, "square": 0,
+            "selected": True, "ghostPassesClicks": True, "selectedU": True,
+            "panelFor": ["front", "rear", "front", "rear"]}
+    for k, v in want.items():
+        if r.get(k) != v:
+            bad.append(f"elevation: {k} is {r.get(k)!r}, expected {v!r}")
+    return bad
+
+
 @extra("draw.io port cells carry portrayal-path, including ports on a seated card")
 def check_drawio_port_paths(page, base):
     bad = []
