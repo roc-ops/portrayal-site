@@ -702,6 +702,19 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 /* Holds only the drawing. An overlay pinned to the stage would be offset
    from the image by the stage's padding, which holds the labels. */
 .reveal-frame { position: relative; }
+/* THE STUDIO, behind the 2D hero as behind the 3D one (feedback: black DAC
+   cables vanished on the dark page). A backdrop layer, not the drawings: the
+   mask fades only the gray panel's edges into the page, never the device.
+   --hero-studio must equal hero-3d.js's STUDIO; check-contract.py pins it. */
+.reveal-frame { --hero-studio: #7D848C; }
+.reveal-frame::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--hero-studio);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent),
+                      linear-gradient(to bottom, #000 78%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent),
+              linear-gradient(to bottom, #000 78%, transparent);
+  mask-composite: intersect; }
 .reveal-stage * { user-select: none; -webkit-user-select: none; }
 .reveal-png { -webkit-user-drag: none; user-drag: none; }
 /* THE FRAME IS THE FACE PLUS ROOM FOR ITS CABLES: 44 mm each side, where

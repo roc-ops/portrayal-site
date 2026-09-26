@@ -931,6 +931,16 @@ check("requestIdleCallback" in h3
 check(re.search(r"opts\.rails\s*(?:!==\s*false|\?\?\s*true)", r3d) is not None,
       "rack3d.js reads opts.rails, defaulting to true", "no opts.rails in createRackScene")
 
+# The 2D and 3D heroes stand in one studio: site.css's --hero-studio (the
+# 2D backdrop) must be hero-3d.js's STUDIO.
+_css = (HERE / "site" / "site.css").read_text()
+_h3 = (HERE / "site" / "hero-3d.js").read_text()
+_c2 = re.search(r"--hero-studio:\s*#([0-9A-Fa-f]{6})", _css)
+_c3 = re.search(r"const STUDIO = 0x([0-9A-Fa-f]{6})", _h3)
+check(bool(_c2 and _c3) and _c2.group(1).lower() == _c3.group(1).lower(),
+      "the 2D hero's studio backdrop is the 3D hero's studio color",
+      f"--hero-studio {_c2 and _c2.group(1)} vs STUDIO {_c3 and _c3.group(1)}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
