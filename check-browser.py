@@ -1503,12 +1503,20 @@ def check_drawio_port_paths(page, base):
       const xml = D.deviceCells('dev', f.text, f.vb, f.ports, 0, 0, 200, 200).join('');
       const doc = new DOMParser().parseFromString(`<root>${xml}</root>`, 'application/xml');
       return {path: xml.includes('portrayal-path="slot-2/module/p0"'),
-              parses: !doc.querySelector('parsererror')};
+              parses: !doc.querySelector('parsererror'),
+              bayContainer: xml.includes('portrayal-bay="slot-2"') && xml.includes('container=1;'),
+              foldable: xml.includes('collapsible=1')};
     }""")
     if not r["path"]:
         bad.append('draw.io: no port cell with portrayal-path="slot-2/module/p0"')
     if not r["parses"]:
         bad.append("draw.io: deviceCells output is not well-formed XML")
+    # A card is still a container of its ports, but with no fold toggle: the
+    # "-" draw.io draws on a collapsible container read as a stray icon.
+    if not r["bayContainer"]:
+        bad.append("draw.io: the slot-2 card is no longer a container of its ports")
+    if r["foldable"]:
+        bad.append("draw.io: a bay container is collapsible (draws a fold toggle)")
     return bad
 
 
