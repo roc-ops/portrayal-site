@@ -6,9 +6,13 @@
 import {stage3d, stageRack, el, svgEl, lead, kv, panZoom} from './artifact.js';
 import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf, shortRef}
   from './rack.js';
-import {loadPlan, applyPlanSeats, looseReason, countsBy, endView} from './plan.js';
+import {loadPlan, applyPlanSeats, looseReason, looseWhy, countsBy, endView} from './plan.js';
 import {drawCables2d, drawCables3d, looseOn, colorOf} from './cables.js';
 import {wireClicks} from './svg2d.js';
+// A circular import: stage-rail.js imports the stages, which import this. It
+// is safe because activate is only ever read inside a click handler, never
+// while the modules are being evaluated.
+import {activate} from './stage-rail.js';
 
 // mm of room beside the rack for cross-face tails and their tags.
 const ROOM = 260;
@@ -16,7 +20,7 @@ const ROOM = 260;
 export const HONEST = 'An example patching plan for this rack, not a real lab.';
 
 // Where the cables land (spec §6 item 7), the same line on stages 4 and 5.
-export const LANDS = 'Fiber ends land on the plugs the plan seats; copper lands on the jack, which accepts no plug yet (Portrayal #610).';
+export const LANDS = 'Every end lands on a connector the plan seats: LC plugs in the optics, duplex LC plugs in the patch panel, RJ45 plugs in the copper jacks. Boots are not drawn yet (Portrayal #611).';
 
 // One entry per color the plan draws, named for what it is.
 export function legendFor(plan) {
@@ -68,11 +72,19 @@ export async function enterPatched(ui, {head = [], top = () => [], counts = true
                   view: 'front', setView: null, highlight: null, dispose: () => {}};
   // Every end judged against its own face, off-screen, in either mode: the
   // panel's loose lines never depend on which face is shown, or on a flip
-  // that overtook the first draw.
-  const [, loose] = await Promise.all([
-    ui.mode === '2d' ? enter2d(ui, handle, onDrawn) : enter3d(ui, handle, onDrawn),
-    looseEnds(ui, plan),
-  ]);
+  // that overtook the first draw. In 2D this comes FIRST: a cable whose far
+  // end is on the other face and loose is drawn as an unplugged lead, not
+  // with a tag to that face, so each draw needs to know. In 3D the scene
+  // finds its own loose ends, and the two run side by side.
+  let loose;
+  if (ui.mode === '2d') {
+    loose = await looseEnds(ui, plan);
+    if (!ui.live()) return null;
+    handle.loose = loose;
+    await enter2d(ui, handle, onDrawn);
+  } else {
+    [, loose] = await Promise.all([enter3d(ui, handle, onDrawn), looseEnds(ui, plan)]);
+  }
   if (!ui.live()) { handle.dispose(); return null; }
   handle.loose = loose;
   ui.setPanel(...head, ...top(handle), ...panelHead(plan, kept, {counts}), ...extraPanel(handle),
@@ -160,10 +172,12 @@ async function enter3d(ui, handle, onDrawn) {
   // of its cable's tubes, and how far that end's run first heads out along
   // the connector's normal (straight out of the face, not back into it).
   if (new URLSearchParams(location.search).get('patchprobe') === '1') {
+    // An unplugged lead's points start at the end that landed, whichever it is.
     window.__patch3d = {tubes: r.tubes, boxes: r.boxes,
       anchors: r.anchors.map(({i, side, anchor}) => {
         const pts = r.tubes[i].points;
-        const [p0, p1] = side === 'from' ? [pts[0], pts[1]] : [pts.at(-1), pts.at(-2)];
+        const first = side === 'from' || r.tubes[i].dangling;
+        const [p0, p1] = first ? [pts[0], pts[1]] : [pts.at(-1), pts.at(-2)];
         return {i, side,
           firstGap: Math.min(Infinity, ...r.tubes[i].starts.map(p => p.distanceTo(anchor.position))),
           out: p0 && p1 ? p1.clone().sub(p0).dot(anchor.normal) : -Infinity};
@@ -195,22 +209,39 @@ async function enter2d(ui, handle, onDrawn) {
     panZoom(svg, () => vb);
     const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
     handle.view = view;
-    handle.drawn = drawCables2d(svg, handle.plan, view, {edgeX, tag: (at, far) => {
-      const t = svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
-        class: 'cable-tag', tabindex: '0', role: 'button'});
-      const label = `→ ${far[0]} ${endView(far)} · ${far[1]}`;
+    // A tag's pill sits outboard of the point it labels: right of it on the
+    // front, left of it on the rear. `gap` clears what is drawn at the point.
+    const pill = (t, at, label, gap = 4) => {
       const w = 7 * label.length + 12;
-      // The pill sits outboard of the tail's end: right of it on the front,
-      // left of it on the rear.
-      const x = rear ? at[0] - 4 - w : at[0] + 4;
+      const x = rear ? at[0] - gap - w : at[0] + gap;
       t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
       const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
       return t;
-    }});
-    // A tag flips the face. Through wireClicks, not an onclick: panZoom
-    // captures the pointer on the <svg>, so a plain click never reaches it.
-    wireClicks(svg, {targetAt: n => n.closest?.('[data-tag]') || null,
-                     open: t => handle.setView(t.dataset.toView), ui});
+    };
+    handle.drawn = drawCables2d(svg, handle.plan, view, {
+      edgeX, outboard: rear ? -1 : 1,
+      tag: (at, far) => pill(svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
+        class: 'cable-tag', tabindex: '0', role: 'button'}), at, `→ ${far[0]} ${endView(far)} · ${far[1]}`),
+      // The far end did not land, and the tag says why - a button to the
+      // stage that fixes it, or plain text when that is the Inspect lens (or
+      // nothing the visitor did).
+      farLoose: (i, side) => !!handle.loose[i]?.includes(side),
+      looseTag: (at, far) => {
+        const {why, stage} = looseWhy(handle.plan, handle.kept, far);
+        const t = svgEl('g', {'data-not-connected': far.join(':'), class: 'cable-tag not-connected',
+          ...(stage ? {'data-fix-stage': stage, tabindex: '0', role: 'button'} : {})});
+        const full = svgEl('title', {}); full.textContent = looseReason(handle.plan, handle.kept, far);
+        t.append(full);
+        return pill(t, at, `✕ not connected · ${why}`, 8);
+      },
+    });
+    // A cross-face tag flips the face; a not-connected tag with a stage goes
+    // to it. Through wireClicks, not an onclick: panZoom captures the pointer
+    // on the <svg>, so a plain click never reaches either.
+    wireClicks(svg, {targetAt: n => n.closest?.('[data-tag], [data-fix-stage]') || null,
+                     open: t => t.dataset.fixStage
+                       ? activate(t.dataset.fixStage).catch(err => console.warn('[portrayal] fix stage', err))
+                       : handle.setView(t.dataset.toView), ui});
     wireHover(svg);
     paint(view);
     onDrawn?.(handle);

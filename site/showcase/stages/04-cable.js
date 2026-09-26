@@ -2,9 +2,10 @@
 //
 // The rack stages 0-3 built, cabled to an example plan (patching.json): the
 // plan is invented and says so, and check-contract.py proves every end of it
-// against the compiled faces. Fiber lands on real connectors the plan seats
-// (LC plugs in the optics, duplex plugs in the patch panel); copper lands on
-// the jack, because no RJ45 port accepts a plug yet (roc-ops/Portrayal#610).
+// against the compiled faces. Every end lands on a real connector the plan
+// seats: LC plugs in the optics, duplex plugs in the patch panel, RJ45 plugs
+// in the copper jacks (roc-ops/Portrayal#610). A cable whose other end
+// cannot land hangs as an unplugged lead, tagged with why.
 // patch-view.js is the body stage 5 shares; this file owns the question.
 
 import {stage3d, stageRack, title, lead} from '../artifact.js';

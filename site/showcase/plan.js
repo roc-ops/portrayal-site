@@ -62,19 +62,34 @@ export function applyPlanSeats(plan, overrides) {
 }
 
 // Where the visitor puts a kept key right: stage 2 seats the ASR-9006's
-// slot cards, stage 3 the AS7726-32X's cage optics; anything else was set
-// in the Inspect lens, and is put right there.
-function fixedIn(dev, key) {
-  if (dev === 'asr-9006' && /^slot-\d+$/.test(key)) return 'seat it in stage 2 (Populate)';
-  if (dev === 'as7726-32x' && /^port-\d+$/.test(key)) return 'seat it in stage 3 (Seat optics)';
-  return 'set it in the Inspect lens';
+// slot cards, stage 3 the AS7726-32X's cage optics - fixStage names the
+// stage as the rail does; anything else was set in the Inspect lens, and is
+// put right there (null: no stage).
+export function fixStage(dev, key) {
+  if (dev === 'asr-9006' && /^slot-\d+$/.test(key)) return 'populate';
+  if (dev === 'as7726-32x' && /^port-\d+$/.test(key)) return 'optics';
+  return null;
 }
+function fixedIn(dev, key) {
+  return {populate: 'seat it in stage 2 (Populate)', optics: 'seat it in stage 3 (Seat optics)'}[fixStage(dev, key)]
+    || 'set it in the Inspect lens';
+}
+
+const keptFor = (kept, dev, path) => kept.find(x => x.dev === dev && (path === x.key || below(path, x.key)));
 
 // Why an end did not land, from what the fill rule kept - never a guess.
 export function looseReason(plan, kept, [dev, path]) {
-  const k = kept.find(x => x.dev === dev && (path === x.key || below(path, x.key)));
+  const k = keptFor(kept, dev, path);
   if (k) return `${dev} ${k.key} holds ${k.have ? shortRef(k.have) : 'nothing'}, not the plan's ${shortRef(k.ref)} — ${fixedIn(dev, k.key)} to connect this cable`;
   return `${dev} ${path} is not on the drawing`;
+}
+
+// The same, short enough for a tag on the drawing, and the stage that fixes
+// it (null when none does): {why: 'slot-2 holds a9k-24x10ge-1g-se', stage}.
+export function looseWhy(plan, kept, [dev, path]) {
+  const k = keptFor(kept, dev, path);
+  if (k) return {why: `${k.key} holds ${k.have ? shortRef(k.have) : 'nothing'}`, stage: fixStage(dev, k.key)};
+  return {why: `${path} is not on the drawing`, stage: null};
 }
 
 // {value -> count} for a link field (media, purpose), in first-seen order:

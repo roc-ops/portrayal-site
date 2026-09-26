@@ -149,15 +149,70 @@ def accepted_card(bay_id):
     return next((r for r in (bay or {}).get("accepts", []) if r != bay.get("default")), None)
 
 
+# EVERY COPPER END ON THE FACE SHOWN SITS ON ITS RJ45 PLUG (Portrayal #610):
+# the plug's cablePoints point (path exactly `<port>-occupant`), read here
+# off relief.js itself, is where one of the cable group's paths starts or
+# ends - within 0.05 mm, since the jack's own center is under half a mm away.
+# Returns what misses.
+COPPER_ON_PLUGS_JS = """async (view) => {
+    const {cablePoints} = await import('/vendor/relief.js');
+    const plan = await (await fetch('/site/showcase/patching.json')).json();
+    const svg = document.querySelector('#stageRack svg');
+    const inv = svg.getScreenCTM().inverse();
+    const ends = g => [...g.querySelectorAll('path')].flatMap(p => {
+        const n = (p.getAttribute('d').match(/-?[\\d.]+(?:e-?\\d+)?/g) || []).map(Number);
+        return n.length < 4 ? [] : [[n[0], n[1]], [n.at(-2), n.at(-1)]]; });
+    const miss = [];
+    plan.links.forEach((l, i) => {
+        if (l.media !== 'copper') return;
+        for (const e of [l.from, l.to]) {
+            if ((e[2] || 'front') !== view) continue;
+            const dev = svg.querySelector(`[data-device-ref="${e[0]}"]`);
+            const plugs = dev ? cablePoints(dev).filter(p => p.at && p.path === e[1] + '-occupant') : [];
+            if (plugs.length !== 1) { miss.push(`${i} ${e[0]} ${e[1]}: ${plugs.length} plug points`); continue; }
+            const p = plugs[0];
+            const q = new DOMPoint(+p.at[0], +p.at[1]).matrixTransform(inv.multiply(p.el.getScreenCTM()));
+            const g = svg.querySelector(`[data-cables="${view}"] [data-cable][data-link-index="${i}"]`);
+            const d = g ? Math.min(...ends(g).map(([x, y]) => Math.hypot(x - q.x, y - q.y))) : Infinity;
+            if (!(d <= 0.05)) miss.push(`${i} ${e[0]} ${e[1]}: ${d.toFixed(2)} mm off its plug`);
+        }
+    });
+    return miss;
+}"""
+
+# PART 3, Z-ORDER: a lead from a higher port hangs in front of the plugs and
+# leads below it, so the cables are painted lowest-top first. A cable's top is
+# the highest (smallest y) start or end of any of its paths - its highest
+# connector. Returns [[linkIndex, top], ...] in DOM order.
+CABLE_TOPS_JS = """() => [...document.querySelectorAll('#stageRack svg [data-cables] [data-cable]')].map(g => {
+    const ys = [...g.querySelectorAll('path')].flatMap(p => {
+        const n = (p.getAttribute('d').match(/-?[\\d.]+(?:e-?\\d+)?/g) || []).map(Number);
+        return n.length < 4 ? [] : [n[1], n.at(-1)]; });
+    return [+g.dataset.linkIndex, Math.min(...ys)]; })"""
+
+
+def z_order_problems(page, view):
+    """Every pair of drawn cables: the one whose top is higher is later in the DOM."""
+    tops = page.evaluate(CABLE_TOPS_JS)
+    bad = [f"{b} (top {tb:.2f}) is painted over {a} (top {ta:.2f})"
+           for k, (a, ta) in enumerate(tops) for (b, tb) in tops[k + 1:] if ta < tb - 0.01]
+    return [f"stage cable in 2D, {view}: a lower cable is painted over a higher one: {bad[:4]}"] if bad else []
+
+
 def check_rear_loose(page, base):
     """A loose end on the REAR is named, whichever face is showing - even when
     Rear is clicked while the first face is still building.
 
-    No visitor action can loosen a rear end: build2dElevation seats overrides
-    on the front only, and the plan seats nothing on a rear face. So the
+    No stage can loosen a rear end: the rear's plugs (the R740xd's iDRAC and
+    NDC) sit in the server's own ports, which no stage swaps. So the
     checker serves a plan whose iDRAC end (link 13) names a port the R740xd's
     rear does not have - the same data error a mistyped patching.json would
-    be - and asserts the panel names it."""
+    be - and asserts the panel names it.
+
+    Its other end (eps201 port-48) lands on the FRONT, and its far end is
+    loose, so the front shows it as an unplugged lead with a text-only
+    not-connected tag (no stage fixes a data error), not a cross-face tag;
+    the rear, where neither end lands, draws nothing for it."""
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
@@ -180,10 +235,22 @@ def check_rear_loose(page, base):
         page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
         page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
         got = one("while the front is shown")
+        lead = page.evaluate("""() => {
+            const g = document.querySelector('#stageRack svg [data-cables="front"] [data-cable][data-link-index="13"]');
+            const t = g && g.querySelector('[data-not-connected]');
+            return {lead: !!g && g.hasAttribute('data-loose-lead'), tag: t && t.textContent,
+                    button: !!t && (t.getAttribute('role') === 'button' || t.hasAttribute('tabindex')),
+                    crossFace: !!(g && g.querySelector('[data-tag]'))}; }""")
+        if not lead["lead"] or not lead["tag"] or "idrac9-absent" not in lead["tag"] \
+                or lead["button"] or lead["crossFace"]:
+            bad.append(f"stage cable: on the front, the port-48 cable whose rear end is loose is not "
+                       f"an unplugged lead with a text-only not-connected tag ({lead})")
         page.click('#stageTabs [data-view="rear"]')
         page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
         if named() != got:
             bad.append("stage cable: the rear loose line changed on flipping to Rear")
+        if page.query_selector('#stageRack svg [data-cables="rear"] [data-link-index="13"]'):
+            bad.append("stage cable: on the rear, where neither end of link 13 lands, something is drawn for it")
         # Again, with Rear clicked the moment the toggle exists: the first
         # face is still building, and the panel must still come out right.
         page.click('.stage-rail button[data-stage="optics"]', timeout=READY_MS)
@@ -298,11 +365,64 @@ def check_stages(page, base):
         first = seated.get("first")
         if first is None or seated_count() != first - 12:
             bad.append(f"fill rule: 'seated for the plan' says {seated_count()}, expected {first} - 12")
+        # PART 2: a cable whose far end cannot land hangs as an UNPLUGGED LEAD
+        # from the end that can, tagged "not connected" with why - here the
+        # card the visitor seated. Four of them on the front (slot-2's p0-p3),
+        # and no cable group left as a few mm of strand: every group has a run
+        # longer than 20 mm (a strand to a duplex merge is about 10).
+        card = other.split("/")[-1].split("@")[0]
+        leads = page.eval_on_selector_all(
+            '#stageRack svg [data-cables="front"] [data-cable][data-loose-lead]',
+            "gs => gs.map(g => [+g.dataset.linkIndex, g.querySelector('[data-not-connected]')?.textContent || ''])")
+        if len(leads) != 4 or not all("slot-2" in t and card in t for _, t in leads):
+            bad.append(f"fill rule: expected 4 unplugged leads on the front, each tagged not connected "
+                       f"naming slot-2's {card}, got {leads}")
+        short = page.eval_on_selector_all('#stageRack svg [data-cables] [data-cable]', """gs => gs
+            .filter(g => !g.hasAttribute('data-loose-lead')
+                         && ![...g.querySelectorAll('path')].some(p => p.getTotalLength() > 20))
+            .map(g => g.dataset.linkIndex)""")
+        if short:
+            bad.append(f"fill rule: cable groups with no main run and no lead (strands going nowhere): {short}")
+        bad.extend(z_order_problems(page, "front, with loose leads"))
         # Loose lines are per end, not per face drawn: a flip keeps them.
         page.click('#stageTabs [data-view="rear"]')
         page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
         if len(page.query_selector_all('#sidePanel [data-loose]')) != 4:
             bad.append("fill rule: the loose-end lines changed on flipping to Rear")
+        # 3D, the same rack: each loose link's landed end has a DANGLING TUBE,
+        # starting on its connector and hanging free, out of every device box.
+        try:
+            page.evaluate("() => { delete window.__patch3d; }")
+            page.click('#stageMode [data-mode="3d"]')
+            page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_3D_MS)
+            if not page.evaluate("async () => !!(await import('/site/webgl.js')).webglTrouble()"):
+                page.wait_for_function("() => window.__patch3d && window.__patch3d.tubes.length === 14",
+                                       timeout=READY_3D_MS)
+                r = page.evaluate("""() => {
+                    const {tubes, anchors, boxes} = window.__patch3d;
+                    const loose = tubes.filter(t => t.loose.length);
+                    const inside = [];
+                    for (const t of loose) for (const p of t.points)
+                        for (const b of boxes) if (b.box.containsPoint(p)) { inside.push(`${t.i}:${b.ref}`); break; }
+                    return {loose: loose.map(t => ({i: t.i, mesh: !!t.mesh, n: t.points.length,
+                                                    drop: t.points.length ? t.points[0].y - t.points.at(-1).y : 0})),
+                            inside: [...new Set(inside)],
+                            off: anchors.filter(a => loose.some(t => t.i === a.i) && !(a.firstGap <= 1))
+                                        .map(a => `${a.i}:${a.side}`)}; }""")
+                dangling = [t for t in r["loose"] if t["mesh"] and t["n"] > 2 and t["drop"] > 100]
+                if len(r["loose"]) != 4 or len(dangling) != 4:
+                    bad.append(f"fill rule in 3D: expected 4 loose links with dangling tubes, got {r['loose']}")
+                if r["inside"]:
+                    bad.append(f"fill rule in 3D: dangling tube points inside devices {r['inside']}")
+                if r["off"]:
+                    bad.append(f"fill rule in 3D: dangling tubes not starting at their connector {r['off']}")
+        finally:
+            page.click('#stageMode [data-mode="2d"]')
+            page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        # The tag goes where the fix is: stage 2, which seats slot-2's card.
+        page.wait_for_selector('#stageRack svg [data-cables="front"] [data-not-connected]', timeout=READY_MS)
+        page.click('#stageRack svg [data-cables="front"] [data-not-connected]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         # Put the plan's card back, for the rest of the walk.
         page.click('.stage-rail button[data-stage="populate"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
@@ -390,9 +510,25 @@ def check_stages(page, base):
                        page.inner_text('#sidePanel .plan-list'))
         if "not a real lab" not in page.inner_text('#sidePanel'):
             bad.append("stage cable: the panel does not say the plan is invented")
-        # Spec §6 item 7: copper lands on the jack, no plug yet (#610).
-        if "Portrayal #610" not in page.inner_text('#sidePanel'):
-            bad.append("stage cable: the panel does not say copper has no plug yet (Portrayal #610)")
+        # Spec §6 item 7, amended: every end lands on a connector the plan
+        # seats, copper on RJ45 plugs (#610); boots are not drawn yet (#611).
+        side_text = page.inner_text('#sidePanel')
+        if "RJ45 plugs in the copper jacks" not in side_text or "Portrayal #611" not in side_text:
+            bad.append("stage cable: the panel does not say copper lands on RJ45 plugs, boots not yet (Portrayal #611)")
+        # Every copper end on the front sits on its plug; nothing is unplugged.
+        miss = page.evaluate(COPPER_ON_PLUGS_JS, "front")
+        if miss:
+            bad.append(f"stage cable in 2D: copper ends not on their RJ45 plug on the front: {miss}")
+        if page.query_selector('#stageRack svg [data-not-connected]'):
+            bad.append("stage cable in 2D: a not-connected tag on a fresh rack (front)")
+        # PART 3: higher cables are painted over lower ones - named for the
+        # AS4630-54TE's QSFP28 pair too, port-53 (link 6) above port-54
+        # (link 7), whose leads looked crossed where they left the plugs.
+        bad.extend(z_order_problems(page, "front"))
+        order = page.eval_on_selector_all('#stageRack svg [data-cables="front"] [data-cable]',
+                                          "gs => gs.map(g => +g.dataset.linkIndex)")
+        if 6 in order and 7 in order and order.index(6) < order.index(7):
+            bad.append("stage cable in 2D: the port-53 cable (link 6) is painted under the port-54 cable (link 7)")
         # A plan row is a button a keyboard reaches, so it shows a focus ring.
         page.keyboard.press("Shift")
         page.focus('#sidePanel [data-plan-row="0"]')
@@ -439,6 +575,14 @@ def check_stages(page, base):
             bad.append("stage cable: the rear tag did not select Rear")
         if not page.query_selector('#stageRack svg [data-cables="rear"] [data-cable][data-link-index="8"]'):
             bad.append("stage cable: on the rear, the R740xd NIC 1 cable is not drawn")
+        # The rear elevation seats the plan too: the R740xd's rear copper ends
+        # (NDC ports 1-2, iDRAC) sit on their RJ45 plugs.
+        miss = page.evaluate(COPPER_ON_PLUGS_JS, "rear")
+        if miss:
+            bad.append(f"stage cable in 2D: copper ends not on their RJ45 plug on the rear: {miss}")
+        if page.query_selector('#stageRack svg [data-not-connected]'):
+            bad.append("stage cable in 2D: a not-connected tag on a fresh rack (rear)")
+        bad.extend(z_order_problems(page, "rear"))
         # Spec §6: seen from behind, a cross-face cable arrives from the LEFT.
         side = page.evaluate("""() => {
             const svg = document.querySelector('#stageRack svg');
@@ -501,9 +645,9 @@ def check_stages(page, base):
             : (k.dataset.counts ? 'counts' : k.className))""")
         if "filters" not in kids or kids.index("filters") > 2 or "counts" in kids:
             bad.append(f"stage filter: the filters are not at the top of the panel ({kids[:6]})")
-        # Spec §7: the same content as stage 4, the #610 copper line included.
-        if "Portrayal #610" not in page.inner_text('#sidePanel'):
-            bad.append("stage filter: the panel does not say copper has no plug yet (Portrayal #610)")
+        # Spec §7: the same content as stage 4, the line on where ends land included.
+        if "RJ45 plugs in the copper jacks" not in page.inner_text('#sidePanel'):
+            bad.append("stage filter: the panel does not say copper lands on RJ45 plugs")
         page.click('#sidePanel [data-filter-purpose="management"]', timeout=READY_MS)
         page.wait_for_function(
             """([w, t]) => { const c = document.querySelector('#sidePanel [data-filter-count]');
@@ -631,6 +775,19 @@ def check_stages(page, base):
         if r["off"]: bad.append(f"stage cable in 3D: fiber tubes not starting at their connector {r['off']}")
         if r["back"]: bad.append(f"stage cable in 3D: fiber runs not leaving straight out of the face {r['back'][:5]}")
         if not r["fiber"]: bad.append("stage cable in 3D: no fiber connector anchored")
+        # Copper too: every end of all fourteen (28) is anchored on its seated
+        # connector's cablePoints, so the firstGap check above holds copper
+        # tubes to within 1 mm of their cableAnchor as well.
+        ends = page.evaluate("() => [...new Set(window.__patch3d.anchors.map(a => `${a.i}:${a.side}`))].length")
+        if ends != 28:
+            bad.append(f"stage cable in 3D: {ends} of 28 cable ends anchored on a connector")
+        # PART 3 in 3D: a higher connector's lead reaches further out of the
+        # face than the one below it, so it hangs in front: port-53 (link 6)
+        # over port-54 (link 7), both on the AS4630-54TE.
+        reach = page.evaluate("""() => Object.fromEntries(window.__patch3d.anchors
+            .filter(a => a.side === 'from' && (a.i === 6 || a.i === 7)).map(a => [a.i, a.out]))""")
+        if not (reach.get("6", 0) > reach.get("7", 0) + 1):
+            bad.append(f"stage cable in 3D: the port-53 lead does not reach out past the port-54 one ({reach})")
         if r["tabs"]: bad.append("stage cable in 3D: the 2D-only Front/Rear tabs are showing")
 
     def filter_3d():
