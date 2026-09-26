@@ -5,7 +5,7 @@
 import {newDoc, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation} from './rack/elevation.js';
-import {reaches, fits, availableDepth, itemsWithU} from './rack/fit.js';
+import {reaches, fits, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -13,18 +13,19 @@ import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
 import {el} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
+import {createDragController} from './rack/drag.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  zoom: loadZoom(), svgs: [],
+  zoom: loadZoom(), svgs: [], undo: null,
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
+let suppressNextClick = false;
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
-const topOf = r => Math.max(0, ...r.items.map(i => i.ru + Math.max(1, chassisOf(i.ref)?.ru ?? 1) - 1));
 
 // The readout is a percentage of Fit's own factor (recomputed every time,
 // since Fit's factor moves with the window and with what's drawn), not of
@@ -81,16 +82,61 @@ async function explore(id) {
 }
 
 function commit(nextRack) {
+  S.undo = null;
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
   render();
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
-  S.doc = doc; S.sel = null;
+  S.doc = doc; S.sel = null; S.undo = null;
   try { localStorage.setItem(LAST, doc.id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
+}
+
+// A frame change goes through commit() as usual, unless the height drops and
+// some device no longer fits: shrinkRack (fit.js) compacts, then trims from
+// the bottom, and the previous rack is kept whole in S.undo (not just the
+// frame) so Undo restores items and positions exactly, not only the height.
+//
+// A field whose new value already matches the committed frame is a no-op:
+// removing a still-focused, edited <input> from the DOM (this panel is
+// rebuilt on every commit) makes some browsers re-fire 'change' on it as it
+// loses focus, echoing the same edit a second time. Applying that echo would
+// otherwise re-run this at the now-already-shrunk height and wipe the notice
+// and Undo the first pass just set.
+function commitFrame(patch) {
+  const r = rack();
+  if ('heightRU' in patch && patch.heightRU < r.frame.heightRU) {
+    const {rack: next, moved, removed} = shrinkRack(r, patch.heightRU, chassisOf);
+    if (moved.length || removed.length) {
+      S.undo = r;
+      const parts = [];
+      if (moved.length) parts.push(`Moved ${moved.length} device${moved.length === 1 ? '' : 's'} down to fit ${patch.heightRU}U.`);
+      if (removed.length)
+        parts.push(`Removed ${removed.length} device${removed.length === 1 ? '' : 's'} from the bottom to fit ${patch.heightRU}U: ${removed.map(i => i.label).join(', ')}.`);
+      S.notice = {text: parts.join(' '), kind: 'note'};
+    } else {
+      S.undo = null;
+    }
+    S.doc = {...S.doc, racks: [next]};
+    S.save.saveSoon(S.doc);
+    render();
+    return;
+  }
+  const next = withFrame(r, patch);
+  if (JSON.stringify(next.frame) === JSON.stringify(r.frame)) return; // the echoed duplicate above
+  commit(next);
+}
+
+function undoShrink() {
+  if (!S.undo) return;
+  S.doc = {...S.doc, racks: [S.undo]};
+  S.undo = null;
+  S.notice = null;
+  S.save.saveSoon(S.doc);
+  render();
 }
 
 async function render() {
@@ -99,8 +145,12 @@ async function render() {
   $('rackName').textContent = r.name;
   const holes = r.frame.holes.style === 'tapped'
     ? `tapped${r.frame.holes.thread ? ` ${r.frame.holes.thread}` : ''}` : 'square holes';
-  $('headFront').textContent = `Front · ${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
+  // The heading stays one line ("Front" / "Rear") so both panes' SVGs start
+  // at the same top edge; the frame summary that used to wrap it onto two
+  // lines lives in the top bar instead, beside the rack name.
+  $('headFront').textContent = 'Front';
   $('headRear').textContent = 'Rear';
+  $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
   const items = itemsWithU(r, chassisOf);
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
   let front, rear;
@@ -108,7 +158,8 @@ async function render() {
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
-      reaches: it => reaches(it, r, chassisOf)})));
+      reaches: it => reaches(it, r, chassisOf),
+      depthOf: it => chassisOf(it.ref)?.d})));
   } catch (err) {
     if (mine !== S.draws) return;
     console.warn('[portrayal] the rack elevation failed to draw', err);
@@ -155,8 +206,8 @@ function renderSide() {
   const r = rack(), sel = S.sel;
   let body;
   if (!sel) body = summary();
-  else if (sel.kind === 'frame') body = frameForm({rack: r, maxTop: topOf(r),
-    onName: name => commit(renamed(r, name)), onFrame: patch => commit(withFrame(r, patch))});
+  else if (sel.kind === 'frame') body = frameForm({rack: r,
+    onName: name => commit(renamed(r, name)), onFrame: patch => commitFrame(patch)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
     onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});
@@ -179,10 +230,19 @@ function renderSide() {
   const kids = [body];
   const notice = noticeParagraph();
   if (notice) kids.push(notice);
+  // The shrink notice and Undo can stay past the render that shows them -
+  // they are cleared by the next commit (commit()/undoShrink()) or a
+  // document switch (setDoc()), not by this redraw.
+  if (S.undo) {
+    const undo = el('button', {type: 'button', id: 'undoShrink', text: 'Undo'});
+    undo.addEventListener('click', undoShrink);
+    kids.push(undo);
+  }
   $('side').replaceChildren(...kids);
 }
 
 function onPaneClick(ev) {
+  if (suppressNextClick) { suppressNextClick = false; return; }
   if (S.sel?.kind === 'move') {
     const u = ev.target.closest('[data-u]');
     if (u) {
@@ -296,6 +356,25 @@ async function bootInner() {
   if (!doc) { doc = newDoc(); await S.lib.put(doc); }
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
+  const drag = createDragController({
+    panesEl: $('panes'),
+    svgFor: face => S.svgs.find(s => s.dataset.pane === face),
+    rack, chassisOf, itemById, patchItem,
+    onStart: () => {
+      // A real drag (pointer moved, target retargeted by setPointerCapture)
+      // does not reliably produce a trailing 'click' on drop in every engine
+      // - so this both guards a click that does arrive right away and heals
+      // itself on the next tick, rather than eating some later, unrelated
+      // click if the browser never fires one for this gesture at all.
+      suppressNextClick = true;
+      setTimeout(() => { suppressNextClick = false; }, 0);
+      $('side').replaceChildren(el('p', {id: 'dragStatus', class: 'rk-muted', role: 'status', text: 'Drop to move here.'}));
+    },
+    onEnd: reason => { if (reason) S.notice = {text: reason, kind: 'error'}; render(); },
+    setStatus: text => { const s = $('dragStatus'); if (s) s.textContent = text; },
+  });
+  $('paneFront').addEventListener('pointerdown', drag.onPointerDown);
+  $('paneRear').addEventListener('pointerdown', drag.onPointerDown);
   $('frameBtn').addEventListener('click', () => select(S.sel?.kind === 'frame' ? null : {kind: 'frame'}));
   $('zoomOut').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, -1)));
   $('zoomIn').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, 1)));

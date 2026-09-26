@@ -2933,6 +2933,13 @@ def check_rack_page(page, base):
         bad.append("rack page: tapped holes did not survive the reload")
     if page.get_attribute('.site-bar a[href="rack.html"]', "aria-current") != "page":
         bad.append("rack page: the nav does not mark Rack Builder as the current page")
+    # The two panes' headings are single-line ("Front" / "Rear"); the frame
+    # summary that used to wrap the front heading onto two lines - starting
+    # its SVG lower than the rear one's - now lives in the top bar instead.
+    front_top = page.eval_on_selector('svg[data-pane="front"]', "s => s.getBoundingClientRect().top")
+    rear_top = page.eval_on_selector('svg[data-pane="rear"]', "s => s.getBoundingClientRect().top")
+    if abs(front_top - rear_top) > 1:
+        bad.append(f"rack page: the two panes' SVGs start at different top edges ({front_top} vs {rear_top})")
     return bad
 
 
@@ -3430,6 +3437,166 @@ def check_rack_no_idb(page, base):
     data = json.loads(saved.read_text())
     if data.get("format") != "portrayal-rack":
         bad.append(f"rack page without IndexedDB: downloaded file format is {data.get('format')!r}, expected 'portrayal-rack'")
+    return bad
+
+
+def u_center(page, face, u):
+    box = page.eval_on_selector(
+        f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]',
+        "el => { const r = el.getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height / 2}; }")
+    return box["x"], box["y"]
+
+
+@extra("rack.html: drag a device to move it, across faces, with fit feedback and Esc to cancel")
+def check_rack_drag(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+
+    pick(page, "front", 20, "AS7726", "as7726-32x")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]', timeout=READY_MS)
+
+    # Drag it from front U20 to front U25 - coordinates come from the U rects'
+    # own boxes at the moment of each move, since the layout does not change
+    # mid-drag but the rack could be scrolled or zoomed differently than the
+    # values above assume.
+    x0, y0 = u_center(page, "front", 20)
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    for u in (22, 25):
+        x, y = u_center(page, "front", u)
+        page.mouse.move(x, y, steps=3)
+    page.mouse.up()
+    page.wait_for_function(
+        "() => window.__rack.doc().racks[0].items[0].ru === 25 && window.__rack.doc().racks[0].items[0].face === 'front'",
+        timeout=READY_MS)
+
+    # Drag it onto the rear pane: the face switches.
+    x0, y0 = u_center(page, "front", 25)
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    xr, yr = u_center(page, "rear", 25)
+    page.mouse.move((x0 + xr) / 2, y0, steps=2)
+    page.mouse.move(xr, yr, steps=3)
+    page.mouse.up()
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].face === 'rear'", timeout=READY_MS)
+
+    # A device already on rear U30 refuses a drop onto it, unchanged, and the
+    # reason - not the whole side panel - is what tells the user why.
+    pick(page, "rear", 30, "TM-280", "tm-280")
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+    before = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
+    x0, y0 = u_center(page, "rear", before["ru"])
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    x30, y30 = u_center(page, "rear", 30)
+    page.mouse.move(x0, (y0 + y30) / 2, steps=2)
+    page.mouse.move(x30, y30, steps=3)
+    page.mouse.up()
+    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    err = page.text_content(".rk-side .rk-notice") or ""
+    after = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
+    if "Taken by" not in err:
+        bad.append(f"drag: dropping onto an occupied U was not refused with 'Taken by' ({err!r})")
+    if after["ru"] != before["ru"] or after["face"] != before["face"]:
+        bad.append(f"drag: a refused drop changed the item ({before} -> {after})")
+
+    # A short click (no movement) still selects.
+    page.click('svg[data-pane="rear"] [data-device-ref="as7726-32x"]')
+    page.wait_for_selector("#iLabel", timeout=READY_MS)
+
+    # Esc mid-drag cancels: the item stays exactly where it was.
+    before = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
+    x0, y0 = u_center(page, "rear", before["ru"])
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    page.mouse.move(x0, max(0, y0 - 80), steps=3)
+    page.keyboard.press("Escape")
+    page.mouse.up()
+    after = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
+    if after["ru"] != before["ru"] or after["face"] != before["face"]:
+        bad.append(f"drag: Esc mid-drag did not cancel ({before} -> {after})")
+    return bad
+
+
+@extra("rack.html: shrinking the frame compacts, then trims from the bottom, with Undo")
+def check_rack_shrink(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+
+    # 1U, 1U and a 2U device, at U5, U20 and U30 of a 42U rack.
+    pick(page, "front", 5, "MX204", "mx204")
+    pick(page, "front", 20, "AS7726", "as7726-32x")
+    pick(page, "front", 30, "R740", "r740xd")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    sorted_items = lambda: sorted(page.evaluate("() => window.__rack.doc().racks[0].items"), key=lambda i: i["ru"])
+
+    page.click("#frameBtn")
+    page.fill("#fHeight", "12")
+    page.dispatch_event("#fHeight", "change")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 12")
+    got = [(i["ref"], i["ru"]) for i in sorted_items()]
+    want = [("mx204", 1), ("as7726-32x", 2), ("r740xd", 3)]
+    if got != want:
+        bad.append(f"shrink: after compacting to 12U items are {got}, expected {want}")
+    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    note = (page.text_content(".rk-side .rk-notice") or "").lower()
+    if "moved" not in note:
+        bad.append(f"shrink: the notice does not mention moving devices ({note!r})")
+
+    # Shrinking further to 3U (from the 12U-compacted state, top at U4) means
+    # 1+1+2 = 4U of devices no longer fit in 3U: the bottom one (MX204) goes.
+    page.fill("#fHeight", "3")
+    page.dispatch_event("#fHeight", "change")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.heightRU === 3")
+    refs = [i["ref"] for i in sorted_items()]
+    if refs != ["as7726-32x", "r740xd"]:
+        bad.append(f"shrink: shrinking to 3U left {refs}, expected the bottom device (mx204) removed")
+    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    note2 = page.text_content(".rk-side .rk-notice") or ""
+    if "MX204" not in note2:
+        bad.append(f"shrink: the removal notice does not name MX204 ({note2!r})")
+
+    # Undo restores the rack from just before this shrink - the 12U-compacted
+    # state, frame included - exactly.
+    page.click("#undoShrink")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    got2 = [(i["ref"], i["ru"]) for i in sorted_items()]
+    if got2 != want:
+        bad.append(f"shrink: Undo did not restore the pre-shrink positions, got {got2}")
+    if page.evaluate("() => window.__rack.doc().racks[0].frame.heightRU") != 12:
+        bad.append("shrink: Undo did not restore the pre-shrink frame height")
+    return bad
+
+
+@extra("rack.html: a ghost reads as mounted elsewhere, never as its front showing on this face")
+def check_rack_ghost_label(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+
+    # MX204 (470 mm) is short of a four-post's rear rail (740 - 50 reach
+    # margin), so it ghosts in the rear pane rather than showing a panel.
+    pick(page, "front", 10, "MX204", "mx204")
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="mx204"][data-panel="ghost"]', timeout=READY_MS)
+    text = page.text_content('svg[data-pane="rear"] [data-device-ref="mx204"][data-panel="ghost"] text') or ""
+    if "front-mounted" not in text or "mm deep" not in text:
+        bad.append(f"ghost label: {text!r}, expected it to mention 'front-mounted' and 'mm deep'")
+    if "· front," in text:
+        bad.append(f"ghost label: still reads as the bare '· front,' form ({text!r})")
     return bad
 
 

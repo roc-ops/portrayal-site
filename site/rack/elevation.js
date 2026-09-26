@@ -71,9 +71,48 @@ function outline(top, ruH, text, attrs) {
   return g;
 }
 
+// A ghost must never read as the device's own panel: a dashed outline over a
+// hatch fill (an SVG <pattern>, defined once per pane so its id can't collide
+// with the other pane's), and muted text that names the face it is mounted
+// on rather than "· front," which the user misread as "its front is here".
+function ensureHatch(out, patternId) {
+  if (out.querySelector(`#${patternId}`)) return;
+  const defs = svgEl('defs', {});
+  const pattern = svgEl('pattern', {id: patternId, width: 6, height: 6,
+    patternTransform: 'rotate(45)', patternUnits: 'userSpaceOnUse'});
+  pattern.append(svgEl('rect', {width: 6, height: 6, fill: 'var(--pt-surface-2)', 'fill-opacity': 0.3}));
+  pattern.append(svgEl('line', {x1: 0, y1: 0, x2: 0, y2: 6, stroke: 'var(--pt-ink-muted)',
+    'stroke-width': 1.5, 'stroke-opacity': 0.5}));
+  defs.append(pattern);
+  out.append(defs);
+}
+
+function ghostOutline(top, ruH, text, attrs, patternId) {
+  const g = svgEl('g', attrs);
+  g.append(svgEl('rect', {x: 0.5, y: top + 0.5, width: OPENING - 1, height: ruH * RU - 1, rx: 2,
+    fill: `url(#${patternId})`, stroke: 'var(--pt-ink-muted)',
+    'stroke-width': 1, 'stroke-dasharray': '4 3'}));
+  const t = svgEl('text', {x: OPENING / 2, y: top + ruH * RU / 2 + 4, 'text-anchor': 'middle',
+    'font-size': 10, 'font-family': 'IBM Plex Mono, monospace', fill: 'var(--pt-ink-muted)'});
+  t.textContent = text;
+  g.append(t);
+  return g;
+}
+
+// U at a given SVG y coordinate, the inverse of drawElevation's own layout
+// (y=0 is the top rail; a U's bottom sits at totalH - (u - baseRU) * RU).
+// The pure half of drag support (spec round 2 §1): the drag controller in
+// drag.js maps a pointer's screen position into this space, this then maps
+// that into a U.
+export function uAtY(frame, y, baseRU = 1) {
+  const totalH = frame.heightRU * RU;
+  const i = Math.floor((totalH - y) / RU);
+  return Math.min(baseRU + frame.heightRU - 1, Math.max(baseRU, baseRU + i));
+}
+
 export async function drawElevation({items, frame, view = 'front', baseRU = 1, reaches = () => true,
                                      hitTargets = false, selectedId = null, selectedU = null,
-                                     placeholders = true}) {
+                                     placeholders = true, depthOf = null}) {
   const totalH = frame.heightRU * RU;
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
     viewBox: `${-RAIL_W - 6} -18 ${OPENING + RAIL_W * 2 + 12} ${totalH + 30}`});
@@ -98,8 +137,12 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1, r
       // A ghost lets clicks through to the empty U under it: the space
       // behind a short device is exactly where a half-depth one goes.
       const ruH = it.u ?? 1;
-      out.append(outline(topOf(ruH), ruH, `${it.label} · ${it.face}, short of this rail`,
-                         {...common, 'data-panel': 'ghost', 'pointer-events': 'none'}));
+      const patternId = `rk-hatch-${view}`;
+      ensureHatch(out, patternId);
+      const d = depthOf ? depthOf(it) : null;
+      const text = `${it.label} — ${it.face}-mounted${d != null ? `, ${Math.round(d)} mm deep` : ''}`;
+      out.append(ghostOutline(topOf(ruH), ruH, text,
+                         {...common, 'data-panel': 'ghost', 'pointer-events': 'none'}, patternId));
       if (it.id === selectedId) out.append(ring(topOf(ruH), ruH));
       continue;
     }

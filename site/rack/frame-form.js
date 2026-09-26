@@ -1,6 +1,7 @@
 // THE FRAME, as a form (spec §5.1). The page decides what a change means;
-// this only reports it. Lowering the rack below its highest device is refused
-// here, with the reason, because the page would otherwise have to undo it.
+// this only reports it - including lowering the rack below its highest
+// device, which the page now handles by compacting and, if needed, trimming
+// from the bottom (fit.js's shrinkRack), rather than refusing the edit.
 
 import {el} from './dom.js';
 import {THREADS} from './model.js';
@@ -8,7 +9,7 @@ import {THREADS} from './model.js';
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current) === String(value) ? {selected: ''} : {})});
 
-export function frameForm({rack, maxTop, onName, onFrame}) {
+export function frameForm({rack, onName, onFrame}) {
   const f = rack.frame;
   const err = el('p', {class: 'rk-error', role: 'alert'});
   const field = (label, control) => el('label', {}, [label, control]);
@@ -24,7 +25,6 @@ export function frameForm({rack, maxTop, onName, onFrame}) {
   height.addEventListener('change', () => {
     const n = Math.round(Number(height.value));
     if (!(n >= 1)) { err.textContent = 'Enter a height of 1U or more.'; return; }
-    if (n < maxTop) { err.textContent = `Devices reach U${maxTop}. Move them down before lowering the rack to ${n}U.`; height.value = String(f.heightRU); return; }
     err.textContent = '';
     onFrame({heightRU: n});
   });

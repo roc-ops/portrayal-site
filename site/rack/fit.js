@@ -69,6 +69,78 @@ export const itemsWithU = (rack, chassisOf) =>
 export const attachPoints = kind => (kind === 'four-post'
   ? ['left-front', 'right-front', 'left-rear', 'right-rear'] : ['left', 'right']);
 
+// SHRINK THE FRAME (feedback round 2 §2): a lower height that leaves devices
+// hanging past it is no longer refused - it packs them down instead.
+//
+// Items whose U spans overlap (on either face - a front/rear pair sharing a
+// U is one cluster) move together, keeping their offsets, faces and turned
+// state. Clusters close their gaps by packing upward from U1 in their
+// original bottom-to-top order; if the packed top still overshoots the new
+// height, whole clusters are dropped from the bottom - lowest first - until
+// the rest fits, then the remainder is packed again from U1.
+export function shrinkRack(rack, newHeight, chassisOf) {
+  const heightOf = item => Math.max(1, chassisOf(item.ref)?.ru ?? 1);
+  const topOf = item => item.ru + heightOf(item) - 1;
+  const withFrameHeight = items => ({...rack, frame: {...rack.frame, heightRU: newHeight}, items});
+
+  if (rack.items.every(i => topOf(i) <= newHeight))
+    return {rack: withFrameHeight(rack.items), moved: [], removed: []};
+
+  // Group items into clusters by overlapping U spans (union-find), face
+  // ignored - that is exactly what keeps a front/rear pair together.
+  const items = rack.items;
+  const n = items.length;
+  const parent = items.map((_, i) => i);
+  const find = x => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+  for (let i = 0; i < n; i++)
+    for (let j = i + 1; j < n; j++)
+      if (overlaps(span(items[i], chassisOf), span(items[j], chassisOf))) {
+        const a = find(i), b = find(j);
+        if (a !== b) parent[a] = b;
+      }
+  const groups = new Map();
+  items.forEach((it, i) => {
+    const r = find(i);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r).push(it);
+  });
+  const clusters = [...groups.values()]
+    .map(list => {
+      const lo = Math.min(...list.map(i => i.ru));
+      const hi = Math.max(...list.map(topOf));
+      return {items: list, lo, height: hi - lo + 1};
+    })
+    .sort((a, b) => a.lo - b.lo); // original bottom-to-top order
+
+  const pack = clusterList => {
+    let cursor = 1;
+    const moved = [];
+    const packed = clusterList.map(c => {
+      const shift = cursor - c.lo;
+      const packedItems = c.items.map(it => {
+        if (shift !== 0) moved.push(it.id);
+        return {...it, ru: it.ru + shift};
+      });
+      cursor += c.height;
+      return packedItems;
+    });
+    return {items: packed.flat(), moved, top: cursor - 1};
+  };
+
+  let survivors = clusters;
+  let removed = [];
+  if (clusters.reduce((h, c) => h + c.height, 0) > newHeight) {
+    survivors = clusters.slice();
+    while (survivors.length && survivors.reduce((h, c) => h + c.height, 0) > newHeight) {
+      const [gone, ...rest] = survivors;
+      removed.push(...gone.items);
+      survivors = rest;
+    }
+  }
+  const {items: packedItems, moved} = pack(survivors);
+  return {rack: withFrameHeight(packedItems), moved, removed};
+}
+
 // ZERO-U (spec §5.3): along an attachment point, by offset in mm from the
 // bottom of the rails. The catalog has none yet; the rules are here so the
 // day it does, placing one is data, not a change to this file.
