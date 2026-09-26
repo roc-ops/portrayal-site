@@ -2151,10 +2151,15 @@ def check_rack_lens(page, base):
                   swaps: {'port-1': 'generic/qsfp-lc@2'},
                   fields: {'port-1-occupant': {label: 'LENS-1'}}})); }""")
     page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
-    page.wait_for_function("""async () => {
-      const w = document.querySelector('.rk-lens iframe')?.contentWindow;
-      if (!w?.portrayalEmbed) return false;
-      await w.portrayalEmbed.ready; return true; }""", timeout=READY_MS)
+    # SYNCHRONOUS PREDICATE: a promise-returning one is truthy the instant it is
+    # called, before it ever settles - wait_for_function has no way to tell "not
+    # yet" from "still pending" apart, so it returns on the first poll. The
+    # awaiting happens after, in a plain evaluate.
+    page.wait_for_function(
+        "() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
+        timeout=READY_MS)
+    page.evaluate(
+        "async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
     page.click(".rk-lens-done")
     r = page.evaluate("async () => await window.__lens")
     if not r:
