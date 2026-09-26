@@ -414,8 +414,18 @@ function sideFade(svg) {
 // A strand is drawn and takes the pointer as drawn: it is all on the face.
 // The main cable is drawn with pointer-events off, and takes the pointer
 // through its own invisible hit path, clipped to the face (see sideFade).
+//
+// THE FOCUS MARK: under each stroke, a brass edge RING mm wider each side,
+// hidden until the cable has the keyboard (wireCaption). It is set by the
+// `visibility` attribute, not by a :focus-visible rule, so the <use> that
+// draws the lit cable in front of the rest carries it too. Brass is the
+// page's focus color (--pt-brass), not a cable color: R1 is untouched.
+const RING = 1.1;
 function stroke(g, d, color, w, main = false) {
   const off = main ? {'pointer-events': 'none'} : {};
+  g.append(node('path', {d, fill: 'none', style: 'stroke: var(--pt-brass)', 'stroke-width': r2(w + 0.9 + 2 * RING),
+                         'stroke-linecap': 'round', 'pointer-events': 'none', visibility: 'hidden',
+                         'data-focus-ring': ''}));
   g.append(node('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.5,
                          'stroke-width': r2(w + 0.9), 'stroke-linecap': 'round', ...off}));
   const p = node('path', {d, fill: 'none', stroke: color, 'stroke-width': r2(w), 'stroke-linecap': 'round', ...off});
@@ -449,14 +459,24 @@ export function drawHeroCables(svg) {
       .sort((a, b) => edgeDist(a) - edgeDist(b) || a.start[1] - b.start[1])
       .forEach((f, k) => rank.set(f.port, k));
   }
+  // Named once, by aria-label: a <title> saying the same again was read
+  // twice. The caption line is what a pointer sees. `data-x` is where the
+  // cable starts, which orders the arrow keys; `data-left` its leftmost
+  // connector, which the divider clears to reveal it (wireCaption).
   found.forEach(({port, row, pts}) => {
-    const g = node('g', {'data-hero-cable': port, 'data-jacket': row.jacket, tabindex: 0,
-                         id: `hero-cable-${port}`, role: 'button', 'aria-label': captionOf(port)});
-    const t = node('title'); t.textContent = captionOf(port); g.append(t);
-    const color = jacketColor(row.jacket);
     const [start, strands] = join(pts);
-    for (const d of strands) stroke(g, d, color, WIDTH * 0.4);
-    stroke(g, sweep(start, rank.get(port)), color, WIDTH * 0.6, true);
+    const g = node('g', {'data-hero-cable': port, 'data-jacket': row.jacket, tabindex: -1,
+                         id: `hero-cable-${port}`, role: 'button', 'aria-pressed': 'false',
+                         'aria-label': captionOf(port), 'data-x': r2(start[0]),
+                         'data-left': r2(Math.min(...pts.map(p => p[0])))});
+    const color = jacketColor(row.jacket);
+    // The drawing, in a group of its own that the front <use> draws: a <use>
+    // of the cable's group would clone its tabindex too, and Tab from the
+    // cable would go into the clone and be lost.
+    const art = node('g', {id: `hero-cable-${port}-art`});
+    for (const d of strands) stroke(art, d, color, WIDTH * 0.4);
+    stroke(art, sweep(start, rank.get(port)), color, WIDTH * 0.6, true);
+    g.append(art);
     const top = Math.min(...pts.map(p => p[1]));
     g.setAttribute('data-top', r2(top));
     drawn.push({g, top});
@@ -465,8 +485,9 @@ export function drawHeroCables(svg) {
   sideFade(svg);
   drawn.sort((a, b) => b.top - a.top);
   for (const {g} of drawn) layer.append(g);
-  // The hovered cable, drawn once more over all of them: a <use> of it, so
-  // the group itself never moves in the DOM (moving a focused node blurs it).
+  // The hovered cable, drawn once more over all of them: a <use> of its
+  // drawing, so the group itself never moves in the DOM (moving a focused
+  // node blurs it).
   layer.append(node('use', {'data-hero-front': '', 'pointer-events': 'none', visibility: 'hidden'}));
   svg.append(layer);
   return layer;
@@ -478,12 +499,38 @@ export function drawHeroCables(svg) {
 const GRABS = new WeakSet();
 
 // HOVER, FOCUS AND TAP name a cable in the caption line, light it and dim the
-// rest. Nothing named: the default port. A tap pins a cable until a tap
-// lands anywhere else. The pointer on a cable never moves the divider - the
-// stage's drag starts only off a cable (see heroReveal).
-function wireCaption(layer, caption) {
+// rest. Nothing named: the default port. A tap - or Enter or Space - pins a
+// cable until a press lands anywhere else (or the key is pressed again). The
+// pointer on a cable never moves the divider - the stage's drag starts only
+// off a cable (see heroReveal).
+//
+// ONE TAB STOP (WCAG 2.4.7). The cables are a roving set: the one holding
+// tabindex 0 is where Tab lands - port-67 at first, then whichever last had
+// focus - and the arrow keys walk the rest left to right by where each starts,
+// Home and End to the ends. A cable that takes the keyboard is marked by its
+// brass focus ring, and `reveal` moves the divider off it if it was under the
+// flat side: at the default split most cables are, and focus there was
+// invisible. A pointer's focus neither marks nor moves anything.
+function wireCaption(layer, caption, reveal) {
   const front = layer.querySelector('[data-hero-front]');
+  const cables = [...layer.querySelectorAll('[data-hero-cable]')]
+    .sort((a, b) => +a.dataset.x - +b.dataset.x);
   let pinned = null, shown;       // undefined, so the first show(null) writes the default
+  const pin = g => {
+    if (pinned) pinned.setAttribute('aria-pressed', 'false');
+    pinned = g;
+    if (g) g.setAttribute('aria-pressed', 'true');
+  };
+  let stop = cables.find(g => g.dataset.heroCable === DEFAULT_PORT) || cables[0];
+  const rove = g => {
+    if (stop && stop !== g) stop.setAttribute('tabindex', '-1');
+    stop = g;
+    g.setAttribute('tabindex', '0');
+  };
+  if (stop) rove(stop);
+  const mark = (g, on) => {
+    for (const r of g.querySelectorAll('[data-focus-ring]')) r.setAttribute('visibility', on ? 'visible' : 'hidden');
+  };
   const show = g => {
     if (shown === g) return;
     if (shown) shown.classList.remove('cable-on');
@@ -491,7 +538,7 @@ function wireCaption(layer, caption) {
     if (g) {
       g.classList.add('cable-on');
       layer.classList.add('cables-focus');
-      front.setAttribute('href', `#${g.id}`);
+      front.setAttribute('href', `#${g.id}-art`);
       front.setAttribute('visibility', 'visible');
     } else {
       layer.classList.remove('cables-focus');
@@ -502,29 +549,66 @@ function wireCaption(layer, caption) {
   };
   // Back to what is pinned, else to what has the keyboard, else the default.
   const rest = () => show(pinned || document.activeElement?.closest?.('#hero-reveal [data-hero-cable]') || null);
-  for (const g of layer.querySelectorAll('[data-hero-cable]')) {
+  for (const g of cables) {
     g.addEventListener('pointerenter', ev => { if (ev.pointerType !== 'touch' && !ev.buttons) show(g); });
     g.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') rest(); });
-    g.addEventListener('focus', () => show(g));
-    g.addEventListener('blur', rest);
+    g.addEventListener('focus', () => {
+      rove(g);
+      const keyboard = g.matches(':focus-visible');
+      if (keyboard && reveal) reveal(g);
+      mark(g, keyboard);
+      show(g);
+    });
+    g.addEventListener('blur', () => { mark(g, false); rest(); });
+    g.addEventListener('keydown', ev => {
+      const i = cables.indexOf(g);
+      let to;
+      switch (ev.key) {
+        case 'ArrowRight': case 'ArrowDown': to = cables[i + 1]; break;
+        case 'ArrowLeft': case 'ArrowUp': to = cables[i - 1]; break;
+        case 'Home': to = cables[0]; break;
+        case 'End': to = cables[cables.length - 1]; break;
+        case 'Enter': case ' ':
+          // A button's own keys pin, as a tap does - and Space does not
+          // scroll the page.
+          ev.preventDefault();
+          pin(pinned === g ? null : g);
+          show(g);
+          return;
+        default: return;
+      }
+      ev.preventDefault();
+      if (to) to.focus();
+    });
     g.addEventListener('pointerdown', ev => {
       if (GRABS.has(ev)) return;           // the divider's grip, over this cable
-      if (ev.pointerType === 'touch' || ev.pointerType === 'pen') { pinned = g; show(g); }
+      if (ev.pointerType === 'touch' || ev.pointerType === 'pen') { pin(g); show(g); }
     });
   }
   // A tap anywhere off a cable lets the pinned one go.
   document.addEventListener('pointerdown', ev => {
     if (!pinned || (!GRABS.has(ev) && ev.target.closest?.('[data-hero-cable]'))) return;
-    pinned = null;
+    pin(null);
     rest();
   });
   show(null);
 }
 
+// How far left of a focused cable's leftmost connector the divider goes to
+// reveal it: clear of the grip (1.7rem across, on the divider's middle).
+const REVEAL_GAP = 10;           // mm
+
 export async function heroReveal(host) {
+  // The caption line names the default before anything is fetched, so it is
+  // never empty - not while the drawing loads, and not if it never does.
+  const caption2d = document.getElementById('hero-caption-2d');
+  if (caption2d) caption2d.textContent = captionOf(DEFAULT_PORT);
+
   const r = await fetch(SVG);
-  if (!r.ok) return;                       // the hero still reads without it
-  const doc = new DOMParser().parseFromString(await r.text(), 'image/svg+xml');
+  if (!r.ok || !host.isConnected) return;  // the hero still reads without it
+  const text = await r.text();
+  if (!host.isConnected) return;
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   if (doc.querySelector('parsererror')) return;
   const svg = doc.documentElement;
   svg.removeAttribute('width');
@@ -575,12 +659,15 @@ export async function heroReveal(host) {
   } catch (err) {
     console.error('hero: seating failed', err);
   }
+  if (!svg.isConnected) return;            // the page let the hero go meanwhile
 
   // THE CABLES, from the parts just seated, and the caption line that names
   // them. A failure leaves the parts, the lamps and the slider working.
+  // `reveal` is the divider's, set once the divider exists, below.
+  let reveal = null;
   try {
     const layer = drawHeroCables(svg);
-    if (layer) wireCaption(layer, document.getElementById('hero-caption-2d'));
+    if (layer) wireCaption(layer, caption2d, g => reveal?.(g));
   } catch (err) {
     console.error('hero: cables failed', err);
   }
@@ -598,9 +685,23 @@ export async function heroReveal(host) {
   frame.append(handle, range);
   stage.append(tags);
 
+  let now = 50;
   const split = v => {
+    now = v;
     stage.style.setProperty('--split', `${v}%`);
     range.value = String(v);
+  };
+  // A cable taking the keyboard under the flat side: the divider moves -
+  // through `split`, so the range input moves with it - to REVEAL_GAP left of
+  // its leftmost connector. It never moves right to do it.
+  reveal = g => {
+    const m = svg.getScreenCTM();
+    if (!m) return;
+    const x = new DOMPoint(+g.dataset.left - REVEAL_GAP, 0).matrixTransform(m).x;
+    const box = stage.getBoundingClientRect();
+    const v = Math.max(0, Math.min(100, (x - box.left) / box.width * 100));
+    // Whole steps, as the range input keeps them - rounded down, further left.
+    if (v < now) split(Math.floor(v));
   };
   range.addEventListener('input', () => split(+range.value));
   let dragging = false;
