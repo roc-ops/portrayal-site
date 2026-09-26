@@ -1352,9 +1352,82 @@ def check_schema_coverage(page, base):
     return bad
 
 
+# CHECKS ADDED FOR THE RACK BUILDER, registered rather than hand-wired into
+# main() one block at a time, so `--only` can run one of them in seconds while
+# a task is being built. Each is fn(page, base) -> list of problems.
+EXTRA_CHECKS = []
+
+
+def extra(label):
+    def register(fn):
+        EXTRA_CHECKS.append((label, fn))
+        return fn
+    return register
+
+
+def run_extra(browser, base, only, problems, notes):
+    failed = 0
+    for label, fn in EXTRA_CHECKS:
+        if only and fn.__name__ not in only:
+            continue
+        page = browser.new_page()
+        try:
+            bad = fn(page, base)
+        except Exception as e:
+            bad = [f"{label}: {str(e).splitlines()[0]}"]
+        finally:
+            page.close()
+        if bad:
+            failed += 1
+            problems.append(f"FAIL  {label}")
+            problems += [f"        {b}" for b in dict.fromkeys(bad)]
+        else:
+            notes.append(f"ok    {label}")
+    return failed
+
+
+@extra("configuredFace seats cards, rear bays, optics and fields")
+def check_configured_face(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const F = await import('/site/rack/face.js');
+      const out = {};
+      const plain = await F.configuredFace({ref: 'asr-9006', cfg: 'base', view: 'front'});
+      const card = await F.configuredFace({ref: 'asr-9006', cfg: 'base', view: 'front',
+        swaps: {'slot-2': 'cisco/a9k-16x100ge-tr@1'}});
+      out.plainHasCardPort = plain.zones.some(z => z.path === 'slot-2/module/p0');
+      out.cardZone = card.zones.some(z => z.path === 'slot-2/module/p0');
+      out.cardPort = card.ports.some(p => p.path === 'slot-2/module/p0');
+      const rear = await F.configuredFace({ref: 'as7726-32x', cfg: 'ac-f2b', view: 'rear',
+        swaps: {'psu-2': 'common/psu-dc-650@2'}});
+      out.rearPsu = rear.text.includes('data-ref="common/psu-dc-650@2');
+      const opt = await F.configuredFace({ref: 'as7726-32x', cfg: 'ac-f2b', view: 'front',
+        swaps: {'port-1': 'generic/qsfp-lc@2'},
+        fields: {'port-1-occupant': {label: 'PROBE-LR4'}}});
+      out.optic = opt.text.includes('data-ref="generic/qsfp-lc@2');
+      out.label = opt.text.includes('PROBE-LR4');
+      const turned = await F.configuredFace({ref: 'as7726-32x', cfg: 'ac-f2b', view: 'front', turned: true});
+      out.turned = turned.view === 'rear';
+      out.memo = F.configuredFace({ref: 'asr-9006', cfg: 'base', view: 'front'})
+             === F.configuredFace({view: 'front', cfg: 'base', ref: 'asr-9006'});
+      out.missing = (await F.configuredFace({ref: 'asr-9006', cfg: 'no-such-cfg', view: 'front'})) === null;
+      return out;
+    }""")
+    expect = {"plainHasCardPort": False, "cardZone": True, "cardPort": True, "rearPsu": True,
+              "optic": True, "label": True, "turned": True, "memo": True, "missing": True}
+    for k, want in expect.items():
+        if r.get(k) != want:
+            bad.append(f"configuredFace: {k} is {r.get(k)!r}, expected {want!r}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
+    ap.add_argument("--only", help="run only these registered extra checks, by function "
+                                   "name, comma-separated - skips the page sweep and the stages")
     args = ap.parse_args()
 
     from playwright.sync_api import sync_playwright   # imported late, so --help works without it
@@ -1374,6 +1447,13 @@ def main():
             return 1
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
+            only = set(filter(None, (args.only or "").split(",")))
+            if only:
+                failed_things += run_extra(browser, base, only, problems, notes)
+                browser.close()
+                for line in notes + problems:
+                    print("  " + line)
+                return 1 if failed_things else 0
             for name in PAGES:
                 page = browser.new_page()
                 try:
@@ -1437,6 +1517,8 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    explorer embed mode")
+
+            failed_things += run_extra(browser, base, None, problems, notes)
 
             page = browser.new_page()
             try:
