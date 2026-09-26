@@ -50,7 +50,7 @@ const FADE_FROM = 2 / 3;
 const DIM = 0.22;                 // the other cables' opacity while one is picked
 
 const FLOOR_Y = -210;             // the studio floor, below the lowest hang
-const STUDIO = 0x181B20;          // the studio: one even dark
+const STUDIO = 0x7D848C;          // the studio: one even mid gray
 
 const el = (tag, cls, attrs = {}) => {
   const n = document.createElement(tag);
@@ -145,7 +145,9 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
     const center = box.getCenter(new THREE.Vector3());
     const faceZ = box.max.z;
 
-    // THE STUDIO: one even dark. Where the panel meets the page is the
+    // THE STUDIO: one even mid gray - light enough that a black DAC reads
+    // against it (feedback: on the old near-black it vanished), dark enough
+    // that the yellow and aqua jackets still do. Where the panel meets the page is the
     // stage's CSS mask's job (site.css), so the page's own ground shows
     // through in either theme and nothing here reads a color.
     scene.background = new THREE.Color(STUDIO);
@@ -157,7 +159,7 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
     sun.target.position.copy(center);
     sun.castShadow = true;
     sun.shadow.mapSize.set(512, 512);
-    Object.assign(sun.shadow.camera, {left: -420, right: 420, top: 420, bottom: -420, near: 100, far: 2000});
+    Object.assign(sun.shadow.camera, {left: -1200, right: 1200, top: 1200, bottom: -1200, near: 100, far: 2000});
     sun.shadow.radius = 14;
     sun.shadow.blurSamples = 16;
     scene.add(sun, sun.target);
