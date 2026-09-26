@@ -449,6 +449,29 @@ def check_hero_cables(page):
             cap = caption()
             if "port-13" not in cap or "25G DAC" not in cap:
                 bad.append(f"hero: hovering port-13's cable did not name it in the caption ({cap!r})")
+            # A POINTER HELD STILL ON A CABLE KEEPS ITS CAPTION (feedback: the
+            # caption oscillated). The hovered cable is redrawn on top by a
+            # <use>; if anything in that copy takes the pointer, the cable
+            # sees pointerleave, the copy goes, the cable sees pointerenter...
+            # So: several points along the visible stroke, each held and
+            # sampled 20 times, and every sample must name the cable.
+            spots = page.evaluate("""() => { const p = document.querySelector('[data-hero-cable="port-13"] path[data-main]');
+                const L = p.getTotalLength(), m = p.getScreenCTM();
+                return [0.08, 0.14, 0.2, 0.26].map(f => { const q = p.getPointAtLength(L * f);
+                    const s = new DOMPoint(q.x, q.y).matrixTransform(m); return [s.x, s.y]; }); }""")
+            flicker = []
+            for x, y in spots:
+                if not page.evaluate("([x, y]) => !!document.elementFromPoint(x, y)?.closest('#hero-reveal')", [x, y]):
+                    continue
+                page.mouse.move(x, y)
+                samples = []
+                for _ in range(20):
+                    page.wait_for_timeout(30)
+                    samples.append("port-13" in caption())
+                if not all(samples) and any(samples):
+                    flicker.append(f"({x:.0f},{y:.0f}) {samples.count(True)}/20")
+            if flicker:
+                bad.append(f"hero: the caption flickers with the pointer held on port-13's cable {flicker}")
             page.mouse.move(0, 0)
             if "port-67" not in caption():
                 bad.append(f"hero: leaving the cable did not restore the caption ({caption()!r})")

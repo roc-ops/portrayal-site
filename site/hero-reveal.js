@@ -465,6 +465,12 @@ export function drawHeroCables(svg) {
     for (const d of strands) stroke(art, d, color, WIDTH * 0.4);
     stroke(art, sweep(start, rank.get(port)), color, WIDTH * 0.6, true);
     g.append(art);
+    // THE HIT PATH LIVES OUTSIDE THE DRAWING the front <use> copies. It sets
+    // pointer-events: stroke itself, and an explicit value is not overridden
+    // by the <use>'s pointer-events: none - so a copy on top caught the
+    // pointer, the cable saw pointerleave, the copy was hidden, the cable saw
+    // pointerenter again, and the caption oscillated under a still pointer.
+    g.append(art.querySelector('[data-hit]'));
     const top = Math.min(...pts.map(p => p[1]));
     g.setAttribute('data-top', r2(top));
     drawn.push({g, top});
@@ -535,8 +541,15 @@ function wireCaption(layer, caption, reveal) {
     }
     if (caption) caption.textContent = captionOf(g ? g.dataset.heroCable : DEFAULT_PORT);
   };
-  // Back to what is pinned, else to what has the keyboard, else the default.
-  const rest = () => show(pinned || document.activeElement?.closest?.('#hero-reveal [data-hero-cable]') || null);
+  // Back to what is pinned, else to what has the KEYBOARD, else the default.
+  // Keyboard focus only (:focus-visible): a tap or click also focuses a cable,
+  // and a pointer's focus must not hold the caption - dragging the divider
+  // after a tap would otherwise leave the tapped cable named.
+  const keyboardCable = () => {
+    const f = document.activeElement?.closest?.('#hero-reveal [data-hero-cable]');
+    return f && f.matches(':focus-visible') ? f : null;
+  };
+  const rest = () => show(pinned || keyboardCable() || null);
   for (const g of cables) {
     g.addEventListener('pointerenter', ev => { if (ev.pointerType !== 'touch' && !ev.buttons) show(g); });
     g.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') rest(); });
