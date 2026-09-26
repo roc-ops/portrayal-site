@@ -368,6 +368,11 @@ else
 fi
 
 # The schemas, rendered by the schema browser rather than linked as raw JSON.
+# Cleared first, like assets/dist: a schema that goes away upstream should go
+# away here, not linger as a tab nobody can check. check-contract.py then fails
+# the refresh if schema.js has no tab for a schema, or meets a keyword it does
+# not render; check-browser.py fails if any property is missing from the page.
+rm -rf "$HERE/assets/schemas"
 mkdir -p "$HERE/assets/schemas"
 cp "$SRC"/../spec/schemas/*.json "$HERE/assets/schemas/"
 

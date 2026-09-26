@@ -60,6 +60,15 @@ vendored too. `fields.js` is why that check exists: it arrived as a new module
 the hand-written copy list did not name, and nothing would have said so until
 every page 404'd on its first import.
 
+The schema page is covered by the same pass. The schema files are copied on
+every refresh, so they cannot go stale; what can is `site/schema.js`, the
+renderer. The contract fails when a schema appears upstream without a tab, or
+uses a JSON Schema keyword the renderer does not know. The browser check then
+asserts that every property in every schema file is on the page. It exists
+because the renderer once stopped at the first map (`views`,
+`configurations`, `groups`), and 146 of the device schema's 230 properties were
+missing from a page that said it could not drift.
+
 Then the half that needs a browser:
 
 ```sh

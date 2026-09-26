@@ -5,12 +5,17 @@
 // SOURCES at a different URL - the canonical $id once the repository is public -
 // and this page follows the real file with no regeneration step.
 //
-// The keyword surface is deliberately closed, and it is small because these
-// schemas are: type, properties, required, description, enum, const, $ref,
-// items, oneOf, additionalProperties, default, pattern, format, minItems, title.
-// No allOf, no if/then/else, no patternProperties. Anything NOT in that set is
-// printed as raw JSON instead of being dropped, so a keyword added upstream
-// shows up as something unstyled rather than silently going missing.
+// The keyword surface is deliberately closed: KNOWN below is every keyword
+// this viewer renders, and check-contract.py fails a refresh the day a schema
+// uses one that is not on it. Anything NOT in the set is still printed as raw
+// JSON rather than dropped, so a keyword added upstream shows up as something
+// unstyled rather than silently going missing.
+//
+// Every property row carries its JSON pointer in data-ptr, and check-browser.py
+// compares those against every property in the files. That is the check the
+// keyword list cannot make: the viewer once knew every keyword in use and still
+// never descended into a map (`views`, `configurations`, `groups`, `bays`), so
+// 146 of the device schema's 230 properties were not on this page at all.
 
 // Device first. A visitor arriving here is looking for "what is a device",
 // and leading with the component contract read as though it were the device.
@@ -22,11 +27,12 @@ const SOURCES = {
 
 const KNOWN = new Set([
   'type', 'properties', 'required', 'description', 'enum', 'const', '$ref',
-  'items', 'oneOf', 'additionalProperties', 'default', 'pattern', 'format',
+  'items', 'oneOf', 'anyOf', 'allOf', 'if', 'then', 'else',
+  'additionalProperties', 'patternProperties', 'default', 'pattern', 'format',
   'minItems', 'maxItems', 'uniqueItems', 'minimum', 'maximum', 'title',
   'exclusiveMinimum', 'exclusiveMaximum', 'minProperties', 'maxProperties',
-  'propertyNames',
-  '$defs', '$id', '$schema', 'examples', 'deprecated',
+  'minLength', 'maxLength', 'propertyNames', 'dependentRequired',
+  '$defs', '$id', '$schema', '$comment', 'examples', 'deprecated',
 ]);
 
 const el = (tag, attrs = {}, kids = []) => {
@@ -75,6 +81,7 @@ function typeLabel(node) {
   if (!node || typeof node !== 'object') return '';
   if (node.$ref) return refName(node.$ref);
   if (node.oneOf) return 'one of';
+  if (node.anyOf) return 'any of';
   if (node.const !== undefined) return 'const';
   if (node.enum) return 'enum';
   const t = node.type;
@@ -83,8 +90,21 @@ function typeLabel(node) {
     const inner = node.items ? typeLabel(node.items) : '';
     return inner ? `array of ${inner}` : 'array';
   }
+  // A map: an object whose keys are names the author picks - a view, a bay, a
+  // configuration - and whose values all share one shape.
+  if (isMap(node)) {
+    const inner = typeLabel(node.additionalProperties);
+    return inner ? `map of ${inner}` : 'map';
+  }
   return t || '';
 }
+
+const isSchema = v => !!v && typeof v === 'object' && !Array.isArray(v);
+const isMap = node => isSchema(node.additionalProperties) && !node.properties;
+
+// JSON Pointer segments escape ~ and /, and check-browser.py builds its pointers
+// the same way, so the two sides agree on a key like `a/b`.
+const seg = k => String(k).replace(/~/g, '~0').replace(/\//g, '~1');
 
 const chip = (label, value) =>
   el('span', {class: 'sc-chip'}, [
@@ -95,6 +115,7 @@ const chip = (label, value) =>
 // Constraints worth showing beside a property, in the order an author reads them.
 function constraints(node) {
   const out = [];
+  if (node.deprecated) out.push(chip('', 'deprecated'));
   if (node.const !== undefined) out.push(chip('is', JSON.stringify(node.const)));
   if (node.enum) {
     for (const v of node.enum) out.push(el('span', {class: 'sc-enum', text: String(v)}));
@@ -102,6 +123,8 @@ function constraints(node) {
   if (node.default !== undefined) out.push(chip('default', JSON.stringify(node.default)));
   if (node.pattern) out.push(chip('pattern', node.pattern));
   if (node.format) out.push(chip('format', node.format));
+  if (node.minLength !== undefined) out.push(chip('min length', String(node.minLength)));
+  if (node.maxLength !== undefined) out.push(chip('max length', String(node.maxLength)));
   if (node.minItems !== undefined) out.push(chip('min items', String(node.minItems)));
   if (node.maxItems !== undefined) out.push(chip('max items', String(node.maxItems)));
   if (node.minimum !== undefined) out.push(chip('min', String(node.minimum)));
@@ -111,14 +134,19 @@ function constraints(node) {
   if (node.exclusiveMaximum !== undefined) out.push(chip('less than', String(node.exclusiveMaximum)));
   if (node.minProperties !== undefined) out.push(chip('min keys', String(node.minProperties)));
   if (node.maxProperties !== undefined) out.push(chip('max keys', String(node.maxProperties)));
-  // propertyNames constrains the KEYS of an object rather than its values, and
-  // in these schemas it is always a pattern.
+  // propertyNames constrains the KEYS of an object rather than its values: a
+  // pattern, or a $ref to one.
   if (node.propertyNames) {
     const pn = node.propertyNames;
-    out.push(chip('keys match', pn.pattern || JSON.stringify(pn)));
+    out.push(chip('keys match', pn.pattern || (pn.$ref ? refName(pn.$ref) : JSON.stringify(pn))));
+  }
+  // `interface-at` means nothing without an `interface` to present there.
+  for (const [k, needs] of Object.entries(node.dependentRequired || {})) {
+    out.push(chip(`${k} needs`, needs.join(', ')));
   }
   if (node.uniqueItems) out.push(chip('', 'unique items'));
   if (node.additionalProperties === false) out.push(chip('', 'no other keys'));
+  if (node.examples) out.push(chip('e.g.', node.examples.map(v => JSON.stringify(v)).join(', ')));
   return out;
 }
 
@@ -132,18 +160,39 @@ function unknownKeys(node) {
   return d;
 }
 
-// The object a node describes, if it has one to descend into. An array's shape
-// lives on its items, so unwrap that first.
-function objectShape(node) {
-  if (node.properties) return node;
-  if (node.type === 'array' && node.items && typeof node.items === 'object') {
-    return node.items.properties ? node.items : null;
-  }
-  return null;
+// A labelled sub-schema: a map's value, a branch of a oneOf, the `then` of a
+// condition. Its description and constraints first, then whatever it contains.
+function branch(head, node, depth, ptr) {
+  const b = el('div', {class: 'sc-branch'});
+  b.append(el('p', {class: 'sc-branch-head', text: head}));
+  if (node.description) b.append(descP(node.description));
+  const cons = constraints(node);
+  if (cons.length) b.append(el('div', {class: 'sc-meta'}, cons));
+  b.append(renderNode(node, depth, ptr));
+  return b;
 }
 
-function renderNode(node, depth) {
+// What an `if` asks, in words when it is the one shape these schemas use.
+function condition(node) {
+  if (Object.keys(node).length === 1 && Array.isArray(node.required)) {
+    return `when ${node.required.map(k => `\`${k}\``).join(' and ')} ${node.required.length > 1 ? 'are' : 'is'} given`;
+  }
+  return `when it matches ${JSON.stringify(node)}`;
+}
+
+const COMBINERS = [
+  ['oneOf', 'exactly one of these'],
+  ['anyOf', 'at least one of these'],
+  ['allOf', 'and all of these'],
+];
+
+// Everything a schema node contains, at every position a sub-schema can sit.
+// ptr is the node's JSON pointer, and it is what every property row is stamped
+// with - check-browser.py walks the file the same way and fails on a property
+// this function never reached.
+function renderNode(node, depth, ptr) {
   const frag = document.createDocumentFragment();
+  if (!isSchema(node)) return frag;
 
   if (node.$ref) {
     const name = refName(node.$ref);
@@ -153,61 +202,105 @@ function renderNode(node, depth) {
     ]));
   }
 
-  if (node.oneOf) {
+  // $comment is written for whoever maintains the schema, and it is often the
+  // only place a non-obvious shape is explained - so show it, marked as such.
+  if (node.$comment) {
+    const p = el('p', {class: 'sc-desc sc-note'}, [el('span', {class: 'sc-note-k', text: 'schema note '})]);
+    p.append(richText(node.$comment));
+    frag.append(p);
+  }
+
+  if (node.properties) frag.append(propertyList(node, depth, ptr));
+
+  for (const [pat, sub] of Object.entries(node.patternProperties || {})) {
+    frag.append(branch(`each key matching ${pat}`, sub, depth + 1,
+                       `${ptr}/patternProperties/${seg(pat)}`));
+  }
+
+  if (isSchema(node.additionalProperties)) {
+    frag.append(branch(node.properties ? 'each other key' : 'each key',
+                       node.additionalProperties, depth + 1, `${ptr}/additionalProperties`));
+  }
+
+  // An array's shape lives on its items. Rendered in place rather than as a
+  // labelled branch: "a list of these" is already in the type slot.
+  if (isSchema(node.items)) {
+    const it = node.items;
+    if (it.description) frag.append(descP(it.description));
+    const inner = constraints(it);
+    if (inner.length) frag.append(el('div', {class: 'sc-meta'}, inner));
+    frag.append(renderNode(it, depth, `${ptr}/items`));
+  }
+
+  // Last, because each of these refines the shape above it: a oneOf picks
+  // between shapes, an allOf layers a rule onto one key of a map, an if/else
+  // tightens a property when another is present.
+  for (const [kw, label] of COMBINERS) {
+    if (!Array.isArray(node[kw])) continue;
     const wrap = el('div', {class: 'sc-oneof'});
-    node.oneOf.forEach((branch, i) => {
-      const b = el('div', {class: 'sc-branch'});
-      b.append(el('p', {class: 'sc-branch-head', text: `option ${i + 1} — ${typeLabel(branch) || 'object'}`}));
-      if (branch.description) b.append(descP(branch.description));
-      b.append(renderNode(branch, depth + 1));
-      wrap.append(b);
+    node[kw].forEach((b, i) => {
+      wrap.append(branch(`${label} — option ${i + 1}${typeLabel(b) ? ` — ${typeLabel(b)}` : ''}`,
+                         b, depth + 1, `${ptr}/${kw}/${i}`));
     });
     frag.append(wrap);
   }
 
-  const shape = objectShape(node);
-  if (shape) frag.append(propertyList(shape, depth));
-  else if (node.type === 'array' && node.items && !node.items.properties) {
-    const inner = constraints(node.items);
-    if (inner.length) frag.append(el('div', {class: 'sc-meta'}, inner));
+  if (isSchema(node.if)) {
+    const wrap = el('div', {class: 'sc-oneof'});
+    const when = el('p', {class: 'sc-branch-head'});
+    when.append(richText(condition(node.if)));
+    wrap.append(when);
+    if (isSchema(node.then)) wrap.append(branch('then', node.then, depth + 1, `${ptr}/then`));
+    if (isSchema(node.else)) wrap.append(branch('otherwise', node.else, depth + 1, `${ptr}/else`));
+    frag.append(wrap);
   }
+
+  const raw = unknownKeys(node);
+  if (raw) frag.append(raw);
   return frag;
 }
 
-function propertyList(schema, depth) {
+// The collapsed summary for a nested block: how much is inside it.
+function countProps(node, seen = 0) {
+  if (!isSchema(node)) return seen;
+  if (node.properties) return Object.keys(node.properties).length;
+  if (isSchema(node.items)) return countProps(node.items);
+  if (isSchema(node.additionalProperties)) return countProps(node.additionalProperties);
+  return seen;
+}
+
+function propertyList(schema, depth, ptr) {
   const req = new Set(schema.required || []);
   const list = el('div', {class: 'sc-props'});
   for (const [name, prop] of Object.entries(schema.properties || {})) {
+    const here = `${ptr}/properties/${seg(name)}`;
     const required = req.has(name);
-    const row = el('div', {class: 'sc-prop'});
+    const row = el('div', {class: 'sc-prop', 'data-ptr': here});
     const head = el('div', {class: 'sc-prop-head'}, [
       el('code', {class: `sc-name${required ? ' is-req' : ''}`, text: name}),
       typeLabel(prop) ? el('span', {class: 'sc-type', text: typeLabel(prop)}) : null,
       required ? el('span', {class: 'sc-req', text: 'required'}) : null,
     ]);
     row.append(head);
+    if (!isSchema(prop)) { list.append(row); continue; }
     if (prop.description) row.append(descP(prop.description));
     const cons = constraints(prop);
     if (cons.length) row.append(el('div', {class: 'sc-meta'}, cons));
 
-    const nested = renderNode(prop, depth + 1);
-    if (nested.childNodes.length) {
-      const shape = objectShape(prop);
-      if (shape) {
-        // Collapsible below the top level: a device manifest nests four deep and
-        // opening all of it at once buries the shape it is meant to show.
-        const d = el('details', {class: 'sc-nest'});
-        if (depth < 1) d.setAttribute('open', '');
-        const n = Object.keys(shape.properties).length;
-        d.append(el('summary', {text: `${n} propert${n === 1 ? 'y' : 'ies'}`}));
-        d.append(nested);
-        row.append(d);
-      } else {
-        row.append(nested);
-      }
+    const nested = renderNode(prop, depth + 1, here);
+    const n = countProps(prop);
+    if (n) {
+      // Collapsible below the top level: a device manifest nests six deep and
+      // opening all of it at once buries the shape it is meant to show.
+      const d = el('details', {class: 'sc-nest'});
+      if (depth < 1) d.setAttribute('open', '');
+      const each = isMap(prop) ? 'each key: ' : prop.type === 'array' ? 'each item: ' : '';
+      d.append(el('summary', {text: `${each}${n} propert${n === 1 ? 'y' : 'ies'}`}));
+      d.append(nested);
+      row.append(d);
+    } else if (nested.childNodes.length) {
+      row.append(nested);
     }
-    const raw = unknownKeys(prop);
-    if (raw) row.append(raw);
     list.append(row);
   }
   return list;
@@ -226,16 +319,17 @@ function renderSchema(doc, key) {
   head.append(
     el('h2', {class: 'sc-title', text: doc.title || key}),
     el('p', {class: 'sc-id mono', text: doc.$id || ''}),
+    doc.description ? descP(doc.description) : null,
     el('div', {class: 'sc-counts'}, [
       chip('properties', String(props)),
       chip('required', String(req)),
       defs ? chip('shared definitions', String(defs)) : null,
-      doc.additionalProperties === false ? chip('', 'no other keys') : null,
+      ...constraints(doc),
     ]),
   );
 
   body.append(el('p', {class: 'sc-section-label', text: 'Properties'}));
-  body.append(propertyList(doc, 0));
+  body.append(renderNode(doc, 0, ''));
 
   if (defs) {
     body.append(el('p', {class: 'sc-section-label', text: 'Shared definitions'}));
@@ -245,12 +339,11 @@ function renderSchema(doc, key) {
         el('code', {text: name}),
         typeLabel(def) ? el('span', {class: 'sc-type', text: typeLabel(def)}) : null,
       ]));
+      if (!isSchema(def)) { body.append(block); continue; }
       if (def.description) block.append(descP(def.description));
       const cons = constraints(def);
       if (cons.length) block.append(el('div', {class: 'sc-meta'}, cons));
-      block.append(renderNode(def, 0));
-      const raw = unknownKeys(def);
-      if (raw) block.append(raw);
+      block.append(renderNode(def, 0, `/$defs/${seg(name)}`));
       body.append(block);
     }
   }

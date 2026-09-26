@@ -1105,6 +1105,38 @@ def run_marks_harness(page, base):
     return passed, failed
 
 
+def check_schema_coverage(page, base):
+    """Every property in every schema file is a row on schema.html.
+
+    The page renders the files at runtime, which keeps the WORDS current and
+    says nothing about whether the renderer reaches them. It once stopped at
+    the first map, and 146 of the device schema's 230 properties were simply
+    not on the page. Each row carries its JSON pointer in data-ptr; the files
+    are walked with the same rules by schemawalk.py, and the two must agree.
+    """
+    import schemawalk
+    bad = []
+    for fname, doc in schemawalk.documents().items():
+        key = fname.split(".")[0]
+        page.goto(f"{base}/schema.html?doc={key}", wait_until="load")
+        try:
+            page.wait_for_selector("#schema-body .sc-prop", timeout=15000)
+        except Exception:
+            bad.append(f"{fname}: the page rendered no properties")
+            continue
+        shown = set(page.eval_on_selector_all(
+            "#schema-body .sc-prop[data-ptr]", "ns => ns.map(n => n.dataset.ptr)"))
+        want = schemawalk.property_pointers(doc)
+        missing = sorted(want - shown)
+        if missing:
+            bad.append(f"{fname}: {len(missing)} of {len(want)} properties not rendered, e.g. "
+                       + ", ".join(missing[:5]))
+        raw = page.eval_on_selector_all("#schema-body .sc-raw", "ns => ns.length")
+        if raw:
+            bad.append(f"{fname}: {raw} node(s) fall back to raw JSON - a keyword the viewer does not render")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
@@ -1166,6 +1198,18 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    stage 4: a loose end on the rear is named")
+
+            page = browser.new_page()
+            try:
+                bad = check_schema_coverage(page, base)
+            finally:
+                page.close()
+            if bad:
+                failed_things += 1
+                problems.append(f"FAIL  schema.html shows every property in the schemas")
+                problems += [f"        {b}" for b in dict.fromkeys(bad)]
+            else:
+                notes.append(f"ok    schema.html shows every property in the schemas")
 
             page = browser.new_page()
             try:

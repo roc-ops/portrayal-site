@@ -790,6 +790,41 @@ PV = HERE / "site" / "showcase" / "patch-view.js"
 check(PV.is_file() and not re.search(r"TubeGeometry|CatmullRom", PV.read_text()),
       "patch-view.js leaves the cable geometry to cables.js", "tube geometry in patch-view.js")
 
+# ── the schema page keeps up with the schemas ─────────────────────────────
+# The schema FILES cannot drift: refresh-assets.sh copies them over on every
+# sync. What drifts is the page that renders them. It knew every keyword in use
+# and still never descended into a map, so `views`, `configurations` and
+# `groups` - 146 of the device schema's 230 properties - were missing from a
+# page whose headline promised it "cannot drift". These are the halves of that
+# promise a file can check; check-browser.py checks that every property in the
+# files is actually on the page.
+import schemawalk
+SJS = (HERE / "site" / "schema.js").read_text()
+SHTML = (HERE / "schema.html").read_text()
+docs = schemawalk.documents()
+sources = set(re.findall(r"url:\s*'assets/schemas/([^']+)'", SJS))
+check(bool(docs) and sources == set(docs),
+      f"schema.js renders every vendored schema ({len(docs)})",
+      f"vendored {sorted(docs)}, SOURCES names {sorted(sources)} - a schema "
+      "added upstream needs an entry in SOURCES and a tab in schema.html")
+keys = set(re.findall(r"^\s*(\w+):\s*\{url:", SJS, re.M))
+tabs = set(re.findall(r'data-schema="([^"]+)"', SHTML))
+check(keys == tabs, "schema.html has one tab per SOURCES entry",
+      f"tabs {sorted(tabs)}, SOURCES {sorted(keys)}")
+WORDS = {2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six"}
+n_word = re.search(r"\b(Two|Three|Four|Five|Six) documents:", SHTML)
+check(bool(n_word) and n_word.group(1) == WORDS.get(len(docs)),
+      f"schema.html's intro counts {len(docs)} documents",
+      f"it says {n_word.group(1) if n_word else 'nothing'}")
+kn = re.search(r"const KNOWN = new Set\(\[([\s\S]*?)\]\)", SJS)
+known = set(re.findall(r"'([^']+)'", kn.group(1))) if kn else set()
+for name, doc in docs.items():
+    unknown = {k: at for k, at in schemawalk.keywords(doc).items() if k not in known}
+    check(bool(known) and not unknown,
+          f"schema.js renders every keyword {name} uses",
+          "new upstream: " + ", ".join(f"{k} (first at {at})" for k, at in sorted(unknown.items()))
+          + " - teach site/schema.js to render it, then add it to KNOWN")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
