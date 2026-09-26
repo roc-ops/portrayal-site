@@ -1438,6 +1438,22 @@ def check_rear_elevation(page, base):
     }""")
     if 'data-ref="common/psu-dc-650@2' not in html:
         bad.append("rear elevation: psu-2 swap to common/psu-dc-650@2 not seated")
+    # mx204 is NOT in CAST, so nothing has primed `loadMeta`'s index for it -
+    # this is the case that actually discriminates old code (which reads
+    # bays/cages off that index) from configuredFace (which loads the
+    # device's own configs.json). as7726-32x above is in CAST, so stage 0's
+    # own loadMeta() call already seats it either way, and passes on the old
+    # code too.
+    html2 = page.evaluate("""async () => {
+      const {build2dElevation} = await import('/site/showcase/rack.js');
+      const svg = await build2dElevation({
+        stack: [{ref: 'mx204', cfg: 'ac', u: 1, ru: 1, label: 'probe'}],
+        heightRU: 2, view: 'rear',
+        overrides: {'mx204': {'psu-0': 'juniper/mx204-psu-dc@1'}}});
+      return svg.outerHTML;
+    }""")
+    if 'data-ref="juniper/mx204-psu-dc@1' not in html2:
+        bad.append("rear elevation: a device outside CAST (mx204) does not seat a rear bay swap")
     return bad
 
 
