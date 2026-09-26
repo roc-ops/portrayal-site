@@ -10,7 +10,6 @@ const option = (value, text, current) =>
 
 export function inspectorPanel({item, rack, chassis, available, onPatch, onMove, onRemove, onExplore}) {
   const err = el('p', {class: 'rk-error', role: 'alert'});
-  const note = el('p', {class: 'rk-muted'});
   const apply = (patch, reset) => {
     const r = onPatch(patch);
     if (r && !r.ok) { err.textContent = r.reason; reset(); } else err.textContent = '';
@@ -21,12 +20,12 @@ export function inspectorPanel({item, rack, chassis, available, onPatch, onMove,
   const label = el('input', {id: 'iLabel', type: 'text', value: item.label});
   label.addEventListener('change', () => apply({label: label.value.trim() || item.ref}, () => { label.value = item.label; }));
 
+  // Whether this clears the item's swaps/fields, and the note saying so, are
+  // the page's call (patchItem sets S.notice) - this panel is about to be
+  // replaced by the redraw the patch triggers, so a note written here would
+  // never be seen.
   const cfg = el('select', {id: 'iCfg'}, (chassis?.configs ?? [item.cfg]).map(c => option(c, c, item.cfg)));
-  cfg.addEventListener('change', () => {
-    const had = Object.keys(item.swaps).length + Object.keys(item.fields).length > 0;
-    const r = apply({cfg: cfg.value, swaps: {}, fields: {}}, () => { cfg.value = item.cfg; });
-    if (r?.ok !== false && had) note.textContent = 'Your Explorer changes were for the old configuration, so they were cleared.';
-  });
+  cfg.addEventListener('change', () => apply({cfg: cfg.value, swaps: {}, fields: {}}, () => { cfg.value = item.cfg; }));
 
   const face = el('select', {id: 'iFace'}, [option('front', 'Front', item.face), option('rear', 'Rear', item.face)]);
   face.addEventListener('change', () => apply({face: face.value}, () => { face.value = item.face; }));
@@ -49,6 +48,6 @@ export function inspectorPanel({item, rack, chassis, available, onPatch, onMove,
       button('iMove', 'Move', onMove),
       button('iRemove', 'Remove', onRemove),
     ]),
-    note, err,
+    err,
   ]);
 }

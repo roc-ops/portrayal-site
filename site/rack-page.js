@@ -39,6 +39,10 @@ function place(entry, face, ru) {
 }
 
 // A change to a placed item, checked against the rules before it is made.
+// A configuration change is a delta against the OLD configuration, so a
+// changed cfg that leaves an item with no swaps/fields to carry forward
+// says so - one shot, through S.notice, since the panel showing this patch
+// is about to be replaced by the redraw it triggers.
 function patchItem(id, patch) {
   const r = rack(), it = itemById(id);
   const next = {...it, ...patch};
@@ -46,14 +50,23 @@ function patchItem(id, patch) {
     const f = fits(r, {ref: next.ref, ru: next.ru, face: next.face}, chassisOf, {ignoreId: id});
     if (!f.ok) return f;
   }
+  if ('cfg' in patch && patch.cfg !== it.cfg &&
+      (Object.keys(it.swaps ?? {}).length || Object.keys(it.fields ?? {}).length))
+    S.notice = {text: 'Your Explorer changes were for the old configuration, so they were cleared.', kind: 'note'};
   commit(updateItem(r, id, patch));
   return {ok: true};
 }
 
+// The lens is awaited across a render gap: the rack it opened for can be
+// gone (another rack switched in) or the item removed by the time it
+// resolves, and a repeated item id (i1, i2, ...) is not unique across
+// racks - so the write-back is guarded by both the document and the ref.
 async function explore(id) {
   const it = itemById(id);
+  const docId = S.doc.id, ref = it.ref;
   const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label});
-  if (res && itemById(id)) patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
+  if (res && S.doc.id === docId && itemById(id)?.ref === ref)
+    patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
 }
 
 function commit(nextRack) {
@@ -97,6 +110,17 @@ async function render() {
   renderSide();
 }
 
+// The one-shot notice, shown once beside whatever the side panel now shows
+// and cleared - never written into a panel that render() is about to
+// replace, which is what left the brief's inline notices lost.
+function noticeParagraph() {
+  if (!S.notice) return null;
+  const n = typeof S.notice === 'string' ? {text: S.notice, kind: 'error'} : S.notice;
+  S.notice = null;
+  return el('p', {class: `rk-notice ${n.kind === 'note' ? 'rk-muted' : 'rk-error'}`,
+                  role: n.kind === 'note' ? 'status' : 'alert', text: n.text});
+}
+
 function summary() {
   const r = rack();
   const used = r.items.reduce((n, i) => n + Math.max(1, chassisOf(i.ref)?.ru ?? 1), 0);
@@ -119,10 +143,13 @@ function renderSide() {
     onName: name => commit(renamed(r, name)), onFrame: patch => commit(withFrame(r, patch))});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, query: S.query, onQuery: q => { S.query = q; }, onPick: e => place(e, sel.face, sel.ru)});
-  else if (sel.kind === 'move') body = el('div', {}, [
-    el('h3', {text: `Move ${itemById(sel.id)?.label ?? ''}`}),
-    el('p', {class: 'rk-muted', text: 'Click the U where its bottom should go, on either face, or use the ↑ and ↓ keys. Esc stops moving.'})]);
-  else {
+  else if (sel.kind === 'move') {
+    const it = itemById(sel.id);
+    if (!it) { S.sel = null; body = summary(); }
+    else body = el('div', {}, [
+      el('h3', {text: `Move ${it.label}`}),
+      el('p', {class: 'rk-muted', text: 'Click the U where its bottom should go, on either face, or use the ↑ and ↓ keys. Esc stops moving.'})]);
+  } else {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = summary(); }
     else body = inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
@@ -133,7 +160,8 @@ function renderSide() {
       onExplore: () => explore(it.id)});
   }
   const kids = [body];
-  if (S.notice) { kids.push(el('p', {class: 'rk-error', role: 'alert', text: S.notice})); S.notice = null; }
+  const notice = noticeParagraph();
+  if (notice) kids.push(notice);
   $('side').replaceChildren(...kids);
 }
 
@@ -143,8 +171,8 @@ function onPaneClick(ev) {
     if (u) {
       const id = S.sel.id;
       const r = patchItem(id, {ru: Number(u.dataset.u), face: u.dataset.face});
-      S.sel = {kind: 'item', id};
-      if (!r.ok) { render(); queueMicrotask(() => { const e = document.querySelector('.rk-side .rk-error'); if (e) e.textContent = r.reason; }); }
+      if (!r.ok) S.notice = {text: r.reason, kind: 'error'};
+      select({kind: 'item', id});
       return;
     }
   }
@@ -221,13 +249,21 @@ async function boot() {
   });
   window.addEventListener('pagehide', () => S.save.flush());
   document.addEventListener('keydown', ev => {
-    if (ev.target.closest?.('input, select, textarea, .rk-lens')) return;
+    // The lens holds its own keyboard (Escape closes it, not the rack's
+    // selection), and a click that lands on the backdrop can leave focus on
+    // the document while the lens is still open - so its presence, not just
+    // the event target, gates every key here.
+    if (document.querySelector('.rk-lens')) return;
+    if (ev.target.closest?.('input, select, textarea')) return;
     const id = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
     if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(id && S.sel.kind === 'move' ? {kind: 'item', id} : null); }
     else if (id && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
-      ev.preventDefault();
-      const r = patchItem(id, {ru: itemById(id).ru + (ev.key === 'ArrowUp' ? 1 : -1)});
-      if (!r.ok) { const e = document.querySelector('.rk-side .rk-error'); if (e) e.textContent = r.reason; }
+      const cur = itemById(id);
+      if (cur) {
+        ev.preventDefault();
+        const r = patchItem(id, {ru: cur.ru + (ev.key === 'ArrowUp' ? 1 : -1)});
+        if (!r.ok) { S.notice = {text: r.reason, kind: 'error'}; render(); }
+      }
     }
   });
   setDoc(doc);

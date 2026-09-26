@@ -20,6 +20,10 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
       src: `explorer.html?${q}${sw ? `&swap=${sw}` : ''}${fd ? `&fields=${fd}` : ''}`});
     const status = el('span', {class: 'rk-lens-status', role: 'status', text: `Opening ${title} in Explorer…`});
     const done = el('button', {type: 'button', class: 'rk-lens-done', text: 'Done'});
+    // The box only covers the middle of the viewport (inset: 3vh 3vw); this
+    // covers the rest, so a click in that margin lands on the lens, not on
+    // the rack pane underneath it.
+    const backdrop = el('div', {class: 'rk-lens-backdrop'});
     const box = el('div', {class: 'rk-lens', role: 'dialog', 'aria-modal': 'true',
                            'aria-label': `${title} in Explorer`},
       [el('div', {class: 'rk-lens-bar'}, [el('strong', {text: title}), status, done]), frame]);
@@ -45,6 +49,7 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
       const live = frame.contentWindow?.portrayalEmbed || api;
       try { cur = live?.current?.() ?? null; } catch (err) { console.warn('[portrayal] reading the lens back', err); }
       document.removeEventListener('keydown', onKey);
+      backdrop.remove();
       box.remove();
       resolve(cur && cur.device === ref
         ? {device: cur.device, config: cur.config, swaps: {...(cur.swaps || {})},
@@ -53,7 +58,7 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
     }
     done.addEventListener('click', close);
     document.addEventListener('keydown', onKey);
-    host.append(box);
+    host.append(backdrop, box);
     done.focus();
   });
 }
