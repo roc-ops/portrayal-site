@@ -12,11 +12,21 @@ import {el} from './rack/dom.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
-const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0};
+const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
+const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
+const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null};
 let chassisOf = () => null;
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
 const topOf = r => Math.max(0, ...r.items.map(i => i.ru + Math.max(1, chassisOf(i.ref)?.ru ?? 1) - 1));
+
+// A stored document can be missing (deleted from another tab) or fail to
+// parse (spec §5 rejects it). Either way this reports null rather than
+// throwing, so every caller can fall back instead of taking the page down.
+async function getDoc(id) {
+  try { return await S.lib.get(id); }
+  catch (err) { console.warn('[portrayal] could not read a stored rack', id, err); return null; }
+}
 
 function commit(nextRack) {
   S.doc = {...S.doc, racks: [nextRack]};
@@ -41,10 +51,18 @@ async function render() {
   $('headRear').textContent = 'Rear';
   const items = r.items.map(i => ({...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1)}));
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
-  const [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
-    items, frame: r.frame, view, hitTargets: true, selectedId,
-    selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
-    reaches: it => reaches(it, r, chassisOf)})));
+  let front, rear;
+  try {
+    [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
+      items, frame: r.frame, view, hitTargets: true, selectedId,
+      selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
+      reaches: it => reaches(it, r, chassisOf)})));
+  } catch (err) {
+    if (mine !== S.draws) return;
+    console.warn('[portrayal] the rack elevation failed to draw', err);
+    $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_DRAW}));
+    return;
+  }
   if (mine !== S.draws) return;
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
@@ -74,7 +92,9 @@ function renderSide() {
     onName: name => commit(renamed(r, name)), onFrame: patch => commit(withFrame(r, patch))});
   else if (sel.kind === 'u') body = el('h3', {text: `U${uLabel(r.frame, sel.ru)} · ${sel.face}, empty`});
   else body = el('h3', {text: itemById(sel.id)?.label ?? 'Device'});
-  $('side').replaceChildren(body);
+  const kids = [body];
+  if (S.notice) { kids.push(el('p', {class: 'rk-error', role: 'alert', text: S.notice})); S.notice = null; }
+  $('side').replaceChildren(...kids);
 }
 
 function onPaneClick(ev) {
@@ -95,9 +115,18 @@ async function renderLibrary() {
     act('Rename…', () => { const n = prompt('Rack name', rack().name); if (n && n.trim()) commit(renamed(rack(), n.trim())); }),
     act('Delete…', async () => {
       if (!confirm(`Delete ${rack().name} from this browser? This can't be undone.`)) return;
+      // A pending autosave (queued by the last edit's saveSoon) writes 500ms
+      // after it, which can be after confirm()'s blocking dialog closes.
+      // Flushing it here - before remove() - means it either lands (and is
+      // then deleted with the rest) or is already clear, so it never queues
+      // a put() for a document that's already gone.
+      await S.save.flush();
       await S.lib.remove(S.doc.id);
       const next = (await S.lib.list())[0];
-      setDoc(next ? await S.lib.get(next.id) : await (async () => { const d = newDoc(); await S.lib.put(d); return d; })());
+      let doc = next ? await getDoc(next.id) : null;
+      if (next && !doc) S.notice = CANT_OPEN;
+      if (!doc) { doc = newDoc(); await S.lib.put(doc); }
+      setDoc(doc);
     }),
     el('hr'),
     act('Save as .json', () => downloadDoc(S.doc)),
@@ -109,7 +138,11 @@ async function renderLibrary() {
   const list = await S.lib.list();
   if (mine !== libDraws || !list.length) return;
   items.append(el('hr'), ...list.map(d => {
-    const b = act(d.name, async () => setDoc(await S.lib.get(d.id)));
+    const b = act(d.name, async () => {
+      const doc = await getDoc(d.id);
+      if (!doc) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_OPEN})); return; }
+      setDoc(doc);
+    });
     if (d.id === S.doc.id) b.classList.add('rk-current');
     return b;
   }));
@@ -122,8 +155,8 @@ async function boot() {
   S.save = autosaver(S.lib);
   $('libNote').hidden = S.lib.available;
   let doc = null;
-  try { const last = localStorage.getItem(LAST); if (last) doc = await S.lib.get(last); } catch { /* none */ }
-  if (!doc) { const first = (await S.lib.list())[0]; if (first) doc = await S.lib.get(first.id); }
+  try { const last = localStorage.getItem(LAST); if (last) doc = await getDoc(last); } catch { /* none */ }
+  if (!doc) { const first = (await S.lib.list())[0]; if (first) doc = await getDoc(first.id); }
   if (!doc) { doc = newDoc(); await S.lib.put(doc); }
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
