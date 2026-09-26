@@ -77,6 +77,22 @@ function readItem(i, n) {
           swaps: {...(i.swaps || {})}, fields: structuredClone(i.fields || {})};
 }
 
+// Every item needs an id unique within its rack: a missing one (an older
+// writer, or a hand-edited file) and a duplicate (two items sharing an id,
+// which the `i${n}` fallback could itself produce) are the same problem -
+// assign a fresh one from what has been kept so far.
+function readItems(list) {
+  const items = [];
+  const seen = new Set();
+  list.forEach((i, n) => {
+    const it = readItem(i, n + 1);
+    if (!it.id || seen.has(it.id)) it.id = nextId(items, 'i');
+    seen.add(it.id);
+    items.push(it);
+  });
+  return items;
+}
+
 // READ A FILE, OR REFUSE IT WITH A SENTENCE. A newer file than this page knows
 // is refused whole: reading the parts it understands and dropping the rest
 // would hand back a rack that looks complete and is not.
@@ -94,7 +110,7 @@ export function parseDoc(input) {
     racks: d.racks.map((r, k) => ({
       id: String(r.id ?? `r${k + 1}`), name: String(r.name ?? 'Rack'),
       frame: normalizeFrame(r.frame),
-      items: (r.items || []).map((i, n) => readItem(i, n + 1)),
+      items: readItems(r.items || []),
       zeroU: Array.isArray(r.zeroU) ? structuredClone(r.zeroU) : [],
       cables: Array.isArray(r.cables) ? structuredClone(r.cables) : [],
     })),

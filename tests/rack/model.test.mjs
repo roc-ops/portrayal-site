@@ -69,6 +69,23 @@ test('parseDoc refuses what it cannot read, with a sentence', () => {
     racks: [{frame: {}, items: [{ref: 'x'}]}]}), /Item 1 has no device or no U/);
 });
 
+test('parseDoc gives every item a distinct id, even a duplicated one', () => {
+  const d = M.parseDoc({format: 'portrayal-rack', version: 1,
+    racks: [{frame: {}, items: [{id: 'i2', ref: 'x', ru: 1}, {ref: 'x', ru: 2}, {ref: 'x', ru: 3}]}]});
+  const ids = d.racks[0].items.map(i => i.id);
+  assert.equal(new Set(ids).size, 3, 'all three ids are distinct');
+  assert.equal(ids[0], 'i2', 'the first item keeps its declared id');
+});
+
+test('parseDoc gives a second item the same declared id a fresh one', () => {
+  const d = M.parseDoc({format: 'portrayal-rack', version: 1,
+    racks: [{frame: {}, items: [{id: 'i4', ref: 'x', ru: 1}, {id: 'i4', ref: 'x', ru: 2}]}]});
+  const ids = d.racks[0].items.map(i => i.id);
+  assert.equal(ids[0], 'i4');
+  assert.notEqual(ids[1], 'i4', 'a repeated id is not kept twice');
+  assert.equal(new Set(ids).size, 2);
+});
+
 test('parseDoc fills what an older writer left out, and keeps zeroU and cables', () => {
   const d = M.parseDoc({format: 'portrayal-rack', version: 1,
     racks: [{name: 'A', frame: {kind: 'two-post'}, items: [{id: 'i4', ref: 'tm-280', ru: 3}],
