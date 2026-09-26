@@ -91,9 +91,12 @@ export default function makeFilter() {
       const countEl = el('p', {class: 'panel-lead', 'data-filter-count': 'true'});
       const h = await enterPatched(ui, {
         head: [title('Stage 5 · Filter'), lead('<strong>Show me just management.</strong>')],
-        extraPanel: hh => [lead(LANDS),
-                           lead('Pick a purpose or a media, or one of each: what does not match fades rather than vanishing, on either face.'),
-                           row(ui, hh, 'purpose', countEl), row(ui, hh, 'media', countEl), countEl],
+        // The filters ARE this stage, so they lead the panel; each button
+        // carries its count, so the shared counts are left out.
+        top: hh => [row(ui, hh, 'purpose', countEl), row(ui, hh, 'media', countEl), countEl],
+        counts: false,
+        extraPanel: () => [lead('Pick a purpose or a media, or one of each: what does not match fades rather than vanishing, on either face.'),
+                           lead(LANDS)],
         // Each 2D draw (the Front/Rear toggle redraws) and the 3D tubes: the
         // filter holds across a redraw.
         onDrawn: hh => { if (ui.live()) apply(hh, countEl); },

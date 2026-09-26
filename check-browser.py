@@ -367,11 +367,14 @@ def check_stages(page, base):
                        f"({seated_count()} seated, {len(page.query_selector_all('#sidePanel [data-loose]'))} loose)")
 
     seated = {}
+    # The plan's seats the rack still holds, read off plan.js itself - the
+    # panel no longer lists them (feedback: by stage 4 the visitor knows what
+    # is seated, and the list pushed the cables below the fold).
     def seated_count():
-        said = page.evaluate("""() => [...document.querySelectorAll('#sidePanel dt')]
-            .find(d => d.textContent === 'seated for the plan')?.nextElementSibling?.textContent""")
-        m = re.match(r"(\d+) parts$", said or "")
-        return int(m.group(1)) if m else None
+        return page.evaluate("""async () => {
+            const R = await import('/site/showcase/rack.js');
+            const P = await import('/site/showcase/plan.js');
+            return P.planSeatsMade(R.overrides).length; }""")
 
     def cable_2d():
         # All fourteen are drawn on front or rear, every fiber end on a plug.
@@ -399,6 +402,12 @@ def check_stages(page, base):
         if not ring["fv"] or ring["style"] == "none" or not ring["width"] > 0:
             bad.append(f"stage cable: a focused plan row shows no focus ring ({ring})")
         page.evaluate("() => document.activeElement?.blur()")
+        # THE CABLES ARE ABOVE THE FOLD: after the title, the question and the
+        # one honesty line, the panel starts at the counts - no parts list.
+        kids = page.eval_on_selector_all('#sidePanel > *', "ks => ks.map(k => k.dataset.counts || k.className)")
+        at = kids.index("purpose") if "purpose" in kids else 99
+        if at > 3 or page.query_selector('#sidePanel dt:text-is("seated for the plan")'):
+            bad.append(f"stage cable: the counts are not at the top of the panel ({kids[:6]})")
         # Spec §6 panel items 3 and 5: counts by purpose AND media, and the
         # plan grouped by purpose - one group per purpose, in first-seen order,
         # every row keeping its original link index.
@@ -467,6 +476,13 @@ def check_stages(page, base):
         plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
         want = sum(1 for l in plan["links"] if l["purpose"] == "management")
         mgmt = {str(i) for i, l in enumerate(plan["links"]) if l["purpose"] == "management"}
+        # THE FILTERS LEAD: the purpose row is the first thing after the title
+        # and the question, ahead of the legend and the plan list.
+        kids = page.eval_on_selector_all('#sidePanel > *', """ks => ks.map(k =>
+            k.matches('[data-filter-row]') || k.querySelector('[data-filter-row]') ? 'filters'
+            : (k.dataset.counts ? 'counts' : k.className))""")
+        if "filters" not in kids or kids.index("filters") > 2 or "counts" in kids:
+            bad.append(f"stage filter: the filters are not at the top of the panel ({kids[:6]})")
         # Spec §7: the same content as stage 4, the #610 copper line included.
         if "Portrayal #610" not in page.inner_text('#sidePanel'):
             bad.append("stage filter: the panel does not say copper has no plug yet (Portrayal #610)")

@@ -6,7 +6,7 @@
 import {stage3d, stageRack, el, svgEl, lead, kv, panZoom} from './artifact.js';
 import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf, shortRef}
   from './rack.js';
-import {loadPlan, applyPlanSeats, planSeatsMade, looseReason, countsBy, endView} from './plan.js';
+import {loadPlan, applyPlanSeats, looseReason, countsBy, endView} from './plan.js';
 import {drawCables2d, drawCables3d, looseOn, colorOf} from './cables.js';
 import {wireClicks} from './svg2d.js';
 
@@ -33,19 +33,15 @@ export function legendFor(plan) {
   return wrap;
 }
 
-// The honesty line, what the plan seated, what the fill rule kept of the
-// visitor's, the counts by purpose and the legend.
-export function panelHead(plan, kept) {
-  const seats = planSeatsMade(overrides);
+// The honesty line, what the fill rule kept of the visitor's, the counts by
+// purpose and media (unless the stage's own controls carry them), and the
+// legend. NOT what the plan seated: by stage 4 the visitor has watched the
+// rack being populated, and that list pushed the cables below the fold.
+export function panelHead(plan, kept, {counts = true} = {}) {
   const kids = [lead(`<strong>${HONEST}</strong>`)];
-  if (seats.length) {
-    const top = seats.filter(s => !s.key.includes('-occupant') && !/\/module\/p\d+$|^port-\d+$/.test(s.key));
-    kids.push(kv([['seated for the plan', `${seats.length} parts`, true],
-                  ...top.map(s => [`${s.dev} ${s.key}`, shortRef(s.ref)])]));
-  }
   for (const k of kept) kids.push(el('p', {class: 'panel-lead', 'data-kept': k.key,
     text: `Kept your ${k.dev} ${k.key}: ${k.have ? shortRef(k.have) : 'empty'}.`}));
-  for (const field of ['purpose', 'media']) {
+  for (const field of counts ? ['purpose', 'media'] : []) {
     const d = kv([...countsBy(plan, field)].map(([v, n]) => [v, String(n)]));
     d.dataset.counts = field;
     kids.push(d);
@@ -54,10 +50,14 @@ export function panelHead(plan, kept) {
   return kids;
 }
 
-// `head` leads the panel (the stage's title and question); `extraPanel(handle)`
-// follows the shared head. Returns the handle the stage keeps, or null when
-// the entry went stale.
-export async function enterPatched(ui, {head = [], onDrawn, extraPanel = () => []} = {}) {
+// `head` leads the panel (the stage's title and question); `top(handle)` comes
+// straight after it, ahead of the shared head - the stage's own controls, when
+// they are the point of the stage (stage 5's filters); `extraPanel(handle)`
+// follows the shared head. `counts: false` drops the shared counts, for a
+// stage whose controls already show them. Returns the handle the stage keeps,
+// or null when the entry went stale.
+export async function enterPatched(ui, {head = [], top = () => [], counts = true, onDrawn,
+                                        extraPanel = () => []} = {}) {
   ui.scrim('Patching the rack…');
   await loadMeta();
   if (!ui.live()) return null;
@@ -75,7 +75,8 @@ export async function enterPatched(ui, {head = [], onDrawn, extraPanel = () => [
   ]);
   if (!ui.live()) { handle.dispose(); return null; }
   handle.loose = loose;
-  ui.setPanel(...head, ...panelHead(plan, kept), ...extraPanel(handle), planList(plan, handle));
+  ui.setPanel(...head, ...top(handle), ...panelHead(plan, kept, {counts}), ...extraPanel(handle),
+              planList(plan, handle));
   ui.strip();
   return handle;
 }
