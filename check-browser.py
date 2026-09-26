@@ -2935,6 +2935,72 @@ def check_rack_page(page, base):
     return bad
 
 
+@extra("rack.html: deleting a rack does not let a pending autosave resurrect it")
+def check_rack_delete(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("dialog", lambda d: d.accept())
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    boot_id = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu summary")
+    page.click("#libItems >> text=New rack")
+    # "New rack" is fired-and-forgotten from its click handler; window.__rack.ready
+    # is only boot()'s promise, already settled, so it cannot be waited on again -
+    # wait on the one thing that does change: the active document's id.
+    page.wait_for_function("(id) => window.__rack.doc().id !== id", arg=boot_id, timeout=READY_MS)
+    deleted_id = page.evaluate("() => window.__rack.doc().id")
+    # A commit queues a 500ms autosave. Deleting right after it - the case
+    # that used to resurrect the rack - means that timer is still pending
+    # when remove() runs.
+    page.click("#frameBtn")
+    page.fill("#fHeight", "24")
+    page.dispatch_event("#fHeight", "change")
+    page.wait_for_function("""() => document.querySelectorAll('svg[data-pane="front"] rect.rk-u').length === 24""",
+                           timeout=READY_MS)
+    page.click("#libMenu summary")
+    page.click("#libItems >> text=Delete…")
+    page.wait_for_function("(id) => window.__rack.doc().id !== id", arg=deleted_id, timeout=READY_MS)
+    # Give a stale 500ms timer, if it is still armed, a chance to fire and
+    # queue a put() before we flush and check the library.
+    page.wait_for_timeout(700)
+    page.evaluate("() => window.__rack.flush()")
+    remaining = page.evaluate("""async (id) => {
+      const {openLibrary} = await import('/site/rack/library.js');
+      const lib = await openLibrary();
+      const list = await lib.list();
+      return list.some(d => d.id === id);
+    }""", deleted_id)
+    if remaining:
+        bad.append("rack page: a deleted rack came back after its pending autosave flushed")
+    return bad
+
+
+@extra("rack.html: without IndexedDB the note shows, both faces still draw, and Save as .json still works")
+def check_rack_no_idb(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.add_init_script("Object.defineProperty(window, 'indexedDB', {value: undefined})")
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if page.is_hidden("#libNote"):
+        bad.append("rack page without IndexedDB: #libNote is not shown")
+    counts = page.evaluate("""() => ['front', 'rear'].map(f =>
+      document.querySelectorAll(`svg[data-pane="${f}"] rect.rk-u`).length)""")
+    if counts != [42, 42]:
+        bad.append(f"rack page without IndexedDB: U targets {counts}, expected [42, 42]")
+    with page.expect_download() as download_info:
+        page.click("#libMenu summary")
+        page.click("#libItems >> text=Save as .json")
+    saved = pathlib.Path(download_info.value.path())
+    data = json.loads(saved.read_text())
+    if data.get("format") != "portrayal-rack":
+        bad.append(f"rack page without IndexedDB: downloaded file format is {data.get('format')!r}, expected 'portrayal-rack'")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
