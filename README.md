@@ -1,8 +1,8 @@
 # portrayal-site
 
 Site and identity work for **Portrayal** — declarative, Git-versioned hardware
-device definitions compiled into SVG where every physical thing is individually
-addressable.
+device definitions compiled into SVG where every port and every part is
+individually addressable.
 
 Kept deliberately outside the Portrayal repository so nothing here disturbs work
 in progress there.

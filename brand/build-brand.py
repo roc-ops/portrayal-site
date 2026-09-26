@@ -174,7 +174,7 @@ def og_card(ref='as7726-32x', cfg='ac-f2b', port='port-12',
 
     wm_name, w1 = a700.text_path('portrayal', 47, -0.03, pad, 118)
     wm_tld, w2 = a600.text_path('.dev', 47, -0.03, pad + w1, 118)
-    tag, _ = a600.text_path('every physical thing, individually addressable',
+    tag, _ = a600.text_path('every port, every part, individually addressable',
                             26, -0.01, pad, 166)
     foot, fwid = mono.text_path(
         f'{model}  ·  {dw:g} × {dh:g} mm  ·  {nports} addressable ports',
