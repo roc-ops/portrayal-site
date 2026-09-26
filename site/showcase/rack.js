@@ -8,13 +8,14 @@
 // resolve it through swap.js against the same compiled faces. That is the
 // argument the rack makes: one source, several views - not several sources.
 
-import {DIST, stage3d, stageRack, loading, svgEl} from './artifact.js';
-import {configuredFace, components as faceComponents, loadSkin as faceLoadSkin} from '../rack/face.js';
+import {DIST, stage3d, stageRack, loading} from './artifact.js';
+import {components as faceComponents, loadSkin as faceLoadSkin} from '../rack/face.js';
 // A circular import: stage-rail.js imports the stages, which import this. It is
 // safe because epoch and stale are only ever read inside mount3d, never while
 // the modules are being evaluated.
 import {epoch, stale} from './stage-rail.js';
-import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SIZE, SIDES} from './rails.js';
+import {RU} from './rails.js';
+import {drawElevation} from '../rack/elevation.js';
 export {RU};
 // The rack heights a cabinet is actually sold in. The rack is the smallest of
 // these that holds the cast, so it is a real cabinet and not one sized to fit.
@@ -161,71 +162,21 @@ export const shortRef = ref => (ref || '(empty)').split('/').pop().replace(/@\d+
 // device outside the cast - which is every Rack Builder device - has no entry
 // in `loadMeta`'s index at all; `configuredFace` loads its own configs.json,
 // so it seats regardless.
+//
+// This now draws through site/rack/elevation.js: build2dElevation is an
+// adapter over drawElevation, so the showcase and the Rack Builder can never
+// disagree about what a rail or a device looks like.
 export async function build2dElevation({stack, heightRU, overrides: ov = overrides,
                                         view = 'front', baseRU = 1}) {
-  const totalH = heightRU * RU;
-  const X = x => x + OPENING / 2;          // centre-line mm -> this drawing's x
-  const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg',
-    viewBox: `${-RAIL_W - 6} -18 ${OPENING + RAIL_W * 2 + 12} ${totalH + 30}`});
-
-  for (const s of SIDES) {
-    const x0 = X(Math.min(s.inner, s.outer));
-    out.append(svgEl('rect', {x: x0, y: 0, width: RAIL_W, height: totalH, 'data-rail': s.side,
-      fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
-  }
-  for (let i = 0; i < heightRU; i++) {
-    const u = baseRU + i;                              // the real U number
-    const yBottom = totalH - i * RU;
-    for (const s of SIDES) {
-      const x0 = X(Math.min(s.inner, s.outer));
-      out.append(svgEl('line', {x1: x0, y1: yBottom - RU, x2: x0 + RAIL_W, y2: yBottom - RU,
-        stroke: 'var(--pt-line)', 'stroke-width': 0.8}));
-      for (const dy of HOLE_DY) {
-        out.append(svgEl('rect', {x: X(s.hole) - HOLE_SIZE / 2, y: yBottom - dy - HOLE_SIZE / 2,
-          width: HOLE_SIZE, height: HOLE_SIZE, rx: 0.6, fill: 'var(--pt-ground)',
-          stroke: 'var(--pt-line)', 'stroke-width': 0.5, 'data-rail-hole': s.side}));
-      }
-      const t = svgEl('text', {x: X(s.number), y: yBottom - RU / 2 + 4,
-        'text-anchor': 'middle', 'font-family': 'IBM Plex Mono, monospace',
-        'font-size': 11, 'font-weight': 500, fill: 'var(--pt-ink-muted)', 'data-rail-num': s.side});
-      t.textContent = String(u);
-      out.append(t);
-    }
-  }
-
-  let styled = false;
-  for (const e of stack) {
-    // The face as configured, on whichever view is asked for - front OR rear.
-    // `configuredFace` seats bays and cages, keyed per view in the index
-    // (e.g. cages.front, cages.rear), AND the rear holes that show a swapped
-    // bay's back - the plan's RJ45 plugs in the R740xd's rear iDRAC and NDC
-    // ports, or a swap made on a rear bay in the Inspect lens, which is
-    // Explorer. A key that is not on the face drawn names no bay or cage of
-    // it, and seats nothing.
-    const face = await configuredFace({ref: e.ref, cfg: e.cfg, view,
-                                       swaps: ov?.[e.ref] || {}, turned: !!e.turned});
-    if (!face) continue;
-    const doc = new DOMParser().parseFromString(face.text, 'image/svg+xml');
-    const root = doc.documentElement;
-    const vb = (root.getAttribute('viewBox') || '').split(/\s+/).map(Number);
-    const w = parseFloat(root.getAttribute('width')) || vb[2];
-    const h = parseFloat(root.getAttribute('height')) || vb[3];
-    const ruH = e.u ?? Math.max(1, Math.round(h / RU));
-    const y = totalH - (e.ru - baseRU + ruH) * RU + (ruH * RU - h) / 2;
-
-    const g = svgEl('g', {transform: `translate(${(OPENING - w) / 2} ${y})`,
-                          'data-device-name': e.label, 'data-device-ref': e.ref});
-    // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
-    // no url(#...) and no href="#...", so there is nothing to collide - and
-    // renaming them would break swap.js, which finds a seated module by the
-    // canonical id the compiler gave it.
-    for (const kid of [...root.childNodes]) {
-      if (kid.nodeName === 'style') { if (styled) continue; styled = true; }
-      g.append(document.importNode(kid, true));
-    }
-    out.append(g);
-  }
-  return out;
+  // The cast is every device on the FRONT of one plane of rails, so the rear
+  // view is each device's rear panel - two-post says exactly that - and a
+  // face that was never drawn is left out, as it always was.
+  return drawElevation({
+    items: stack.map(e => ({id: e.ref, ref: e.ref, cfg: e.cfg, label: e.label, ru: e.ru, u: e.u,
+                            face: 'front', turned: !!e.turned, swaps: ov?.[e.ref] || {}, fields: {}})),
+    frame: {kind: 'two-post', heightRU, numbering: 'bottom-up', holes: {style: 'square', thread: null}},
+    view, baseRU, placeholders: false,
+  });
 }
 
 // ── 3D rack ──────────────────────────────────────────────────────────────
