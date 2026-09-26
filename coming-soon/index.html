@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — coming soon</title>
+<meta name="description" content="Declarative, Git-versioned hardware device definitions, compiled into SVG where every port, PSU, fan, LED, bay and region is individually addressable. Coming soon.">
+<meta name="theme-color" content="#0E1013">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="portrayal.dev">
+<meta property="og:url" content="https://portrayal.dev/">
+<meta property="og:title" content="Portrayal — every physical thing, individually addressable">
+<meta property="og:description" content="Declarative, Git-versioned hardware device definitions, compiled into SVG where every port, PSU, fan, LED, bay and region is individually addressable. Coming soon.">
+<meta property="og:image" content="https://portrayal.dev/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<style>
+  /* The teaser that holds the domain until launch. Deliberately self-contained:
+     it is what the deploy publishes today, so it must not reach into assets/ or
+     vendor/ - those are a snapshot of Portrayal and are not public yet. The
+     hero is a still of site/hero-reveal.js, captured in the dark theme.
+     Values are copied from brand/tokens.css; dark only, as the brand is. */
+  :root {
+    --pt-brass: #C79350; --pt-brass-light: #E3BC84;
+    --pt-ground: #0E1013; --pt-line-soft: #21252A;
+    --pt-ink: #E4E7EA; --pt-ink-muted: #9AA1A8; --pt-ink-faint: #8A9199;
+    --pt-font-display: Archivo, ui-sans-serif, system-ui, sans-serif;
+    --pt-font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --pt-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; min-height: 100%;
+    display: flex; flex-direction: column;
+    background: var(--pt-ground); color: var(--pt-ink);
+    font-family: var(--pt-font-body); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px; } }
+
+  header { padding: 1.4rem 0; }
+  .brand { display: inline-flex; align-items: center; gap: 0.6rem;
+           font-family: var(--pt-font-display); font-weight: 700;
+           font-size: 1.15rem; letter-spacing: -0.02em; }
+  .tld { color: var(--pt-ink-faint); }
+
+  main { flex: 1; padding: clamp(2rem, 7vw, 5rem) 0 clamp(2.5rem, 6vw, 4rem); }
+  .tagline { margin: 0 0 1.6rem; max-width: 46ch;
+             font-size: clamp(1.05rem, 1.9vw, 1.35rem); line-height: 1.45;
+             color: var(--pt-ink-faint); }
+  .tagline span { color: var(--pt-ink); }
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; height: auto; }
+  /* The two sides of the divider, as text rather than baked into the still,
+     so they stay legible when the image scales down on a phone. */
+  figcaption { display: flex; justify-content: space-between; margin-top: 0.8rem;
+               font-family: var(--pt-font-mono); font-weight: 500; font-size: 0.75rem;
+               letter-spacing: 0.14em; text-transform: uppercase; color: var(--pt-ink-faint); }
+  figcaption .addr { color: var(--pt-brass); }
+  h1 { margin: clamp(1.5rem, 4vw, 2.5rem) 0 1.1rem;
+       font-family: var(--pt-font-display); font-weight: 800;
+       font-size: clamp(2.2rem, 7vw, 4.4rem); line-height: 1.05;
+       letter-spacing: -0.045em; text-wrap: balance; }
+  .lede { margin: 0; max-width: 60ch; color: var(--pt-ink-muted);
+          font-size: clamp(1.02rem, 1.6vw, 1.18rem); }
+  .soon { display: inline-block; margin-top: 2rem;
+          padding: 0.45rem 0.9rem; border: 1px solid var(--pt-brass);
+          border-radius: 3px; color: var(--pt-brass);
+          font-family: var(--pt-font-mono); font-weight: 500;
+          font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  footer { border-top: 1px solid var(--pt-line-soft); padding: 1.2rem 0;
+           color: var(--pt-ink-faint); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="brand">
+      <img src="portrayal-mark.svg" alt="" width="26" height="26">
+      <span>portrayal<span class="tld">.dev</span></span>
+    </span>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <p class="tagline">A picture is worth a thousand words.<br>
+       <span>An addressable picture answers questions.</span></p>
+    <figure>
+      <img src="hero.png" width="1072" height="285"
+           alt="A UfiSpace S9600-72XC faceplate split down the middle. Left of the divider is an ordinary picture; right of it is the same drawing compiled by Portrayal, with ports labeled by optic and a callout on port-67 reading 100G LR4, vni 110100, to border-2.">
+      <figcaption><span>A picture</span><span class="addr">Addressable</span></figcaption>
+    </figure>
+    <h1>Every physical thing,<br>individually addressable.</h1>
+    <p class="lede">
+      Portrayal turns a YAML device manifest into a model in real millimeters,
+      where every port, PSU, fan, LED, bay and region is a named thing with a
+      stable id. One model becomes whatever the job needs: an SVG you can color
+      from telemetry, a device type in your DCIM, a shape library, a solid you
+      can turn over in 3D.
+    </p>
+    <p class="soon">Coming soon</p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">portrayal.dev</div>
+</footer>
+
+</body>
+</html>

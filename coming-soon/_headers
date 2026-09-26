@@ -1,0 +1,18 @@
+# Cloudflare Pages response headers for the teaser. Pages reads this file
+# from the root of whatever folder is deployed; it is not served itself.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# The page revalidates, so an edit shows up on the next load.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Images are replaced rarely; a day is long enough to spare the edge and
+# short enough that a new hero does not linger.
+/*.png
+  Cache-Control: public, max-age=86400
+/*.svg
+  Cache-Control: public, max-age=86400
