@@ -1,7 +1,7 @@
 # Rack Builder: the showcase's rack, as a tool people drive
 
 **Date:** 2026-09-26
-**Status:** design approved in brainstorming, spec awaiting review
+**Status:** design approved; Phase 0 implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase0-configured-face.md)
 **Builds on:** `2026-09-24-showcase-staged-rack-design.md`, `2026-09-25-showcase-inspect-is-explorer-design.md`, `2026-09-25-showcase-patching-plan-design.md`
 **Upstream:** roc-ops/Portrayal issue (filed 2026-09-26) for a `{module}` naming token on module-type ports; §9.4 depends on it
 
