@@ -73,6 +73,12 @@
       <!-- One line that names a cable: port-67 until one is hovered, focused
            or tapped (site/hero-reveal.js). -->
       <p class="hero-caption" id="hero-caption-2d" data-hero-caption></p>
+      <!-- THE SAME SWITCH IN 3D (site/hero-3d.js): the same parts and cables,
+           built only when the panel nears the viewport. The line above it is a
+           PLACEHOLDER the user will replace (spec §5). -->
+      <p class="tagline tagline-3d">The same switch, as a model you can turn over.</p>
+      <div class="hero-3d" id="hero-3d"></div>
+      <p class="hero-caption" id="hero-caption-3d" data-hero-caption></p>
       <!-- The status line sits AFTER the demonstration, not before it. At the
            top it was the first thing read - a schema version and two counts,
            ahead of the claim they are evidence for - and it took the edge off
@@ -498,6 +504,9 @@
   // Logged, not swallowed. A silent catch here cost real time: the hero simply
   // stopped rendering and the console said nothing at all.
   if (host) heroReveal(host).catch(err => console.error('hero reveal:', err));
+  import { heroThree } from './site/hero-3d.js';
+  const host3d = document.getElementById('hero-3d');
+  if (host3d) heroThree(host3d).catch(err => console.error('hero 3D:', err));
 </script>
 <script type="module" src="site/stats.js"></script>
 <script type="module" src="site/showcase.js"></script>

@@ -597,6 +597,143 @@ def check_hero_cables(page):
     return bad
 
 
+# THE WALK'S WEBGL-TROUBLE TEST, as the stage checks run it inline: the site's
+# own webglTrouble(), so the walk and the page agree on whether 3D can start.
+WEBGL_TROUBLE_JS = "async () => !!(await import('/site/webgl.js')).webglTrouble()"
+
+
+def webgl_trouble(page):
+    return page.evaluate(WEBGL_TROUBLE_JS)
+
+
+# A browser with WebGL switched off, as far as a page can tell: every WebGL
+# context request comes back null, which is what Chrome hands a page when
+# graphics acceleration is off (site/webgl.js).
+NO_WEBGL_JS = """(() => {
+    const get = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (kind, ...rest) {
+        return /webgl/i.test(kind) ? null : get.call(this, kind, ...rest);
+    };
+})();"""
+
+HERO_3D_CAPTION = '#hero-caption-3d'
+
+
+def check_hero_3d(browser, base):
+    """The hero's 3D panel (spec 2026-09-26-hero-cabled-switch §5, §7 phase 2):
+    scrolled to, it builds one device and one tube per link; picking a tube -
+    by the test hook and by a real pointer raycast - writes that link's
+    caption, and a miss restores port-67; off screen the render loop stops.
+    Without WebGL - the runner's own, or forced off in a second page - the
+    still image and the one-line note show and the page throws nothing. Every
+    assertion records on every run."""
+    bad = []
+
+    def step(name, fn):
+        try:
+            fn()
+        except Exception as e:
+            bad.append(f"hero 3D: {name} - {str(e).splitlines()[0]}")
+
+    def no_webgl(page, why):
+        page.wait_for_function("() => /WebGL/.test(document.querySelector('#hero-3d')?.innerText || '')",
+                               timeout=READY_MS)
+        if not page.query_selector('#hero-3d [data-hero-still]') or "WebGL" not in page.inner_text('#hero-3d'):
+            bad.append(f"hero 3D without WebGL ({why}): no still image and note")
+        if page.query_selector('#hero-3d canvas'):
+            bad.append(f"hero 3D without WebGL ({why}): a canvas was left in the panel")
+
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    try:
+        page.goto(f"{base}/index.html?heroprobe=1", wait_until="load")
+        step("scroll to the panel", lambda: page.locator('#hero-3d').scroll_into_view_if_needed(timeout=10000))
+        if webgl_trouble(page):
+            step("no WebGL on this runner", lambda: no_webgl(page, "the runner's"))
+        else:
+            ready = [False]
+            def built():
+                page.wait_for_function("() => window.__hero3d && window.__hero3d.tubes.length >= 21",
+                                       timeout=READY_3D_MS)
+                ready[0] = True
+                got = page.evaluate("""() => ({tubes: window.__hero3d.tubes.map(t => t.port),
+                                               devices: window.__hero3d.devices(),
+                                               still: !!document.querySelector('#hero-3d [data-hero-still]:not([hidden])')})""")
+                if got["devices"] != 1: bad.append(f"hero 3D: {got['devices']} devices, expected one")
+                if len(got["tubes"]) != 21 or len(set(got["tubes"])) != 21:
+                    bad.append(f"hero 3D: tubes {got['tubes']}, expected one per link (21)")
+                if got["still"]: bad.append("hero 3D: the still image is still showing over a built scene")
+            step("build", built)
+
+            def default_caption():
+                cap = page.inner_text(HERO_3D_CAPTION, timeout=5000)
+                if "port-67" not in cap: bad.append(f"hero 3D: the caption's default is not port-67 ({cap!r})")
+            step("default caption", default_caption)
+
+            def pick():
+                if not ready[0]: bad.append("hero 3D: pick - the scene never built"); return
+                cap = page.evaluate("() => window.__hero3d.pick('port-13')")
+                if "port-13" not in (cap or ""): bad.append(f"hero 3D: picking port-13's tube gave {cap!r}")
+                shown = page.inner_text(HERO_3D_CAPTION)
+                if shown != cap: bad.append(f"hero 3D: pick returned {cap!r} but the caption reads {shown!r}")
+                two = page.inner_text(HERO_CAPTION)
+                if "port-13" in two: bad.append("hero 3D: picking in 3D wrote the 2D caption")
+            step("pick", pick)
+
+            def pointer():
+                # A real raycast: the pointer onto a point of port-44's tube that
+                # the ray reaches first, with the turn stopped so it stays put.
+                if not ready[0]: bad.append("hero 3D: pointer - the scene never built"); return
+                page.evaluate("() => window.__hero3d.stop()")
+                at = page.evaluate("() => window.__hero3d.pointAt('port-44')")
+                if not at: bad.append("hero 3D: nowhere on port-44's tube can the pointer reach it"); return
+                page.mouse.move(at[0], at[1])
+                page.wait_for_timeout(100)
+                cap = page.inner_text(HERO_3D_CAPTION)
+                if "port-44" not in cap: bad.append(f"hero 3D: the pointer on port-44's tube gave {cap!r}")
+                box = page.locator('#hero-3d canvas').bounding_box()
+                page.mouse.move(box["x"] + 4, box["y"] + 4)
+                page.wait_for_timeout(100)
+                cap = page.inner_text(HERO_3D_CAPTION)
+                if "port-67" not in cap: bad.append(f"hero 3D: a miss did not restore port-67 ({cap!r})")
+            step("pointer", pointer)
+
+            def pause():
+                if not ready[0]: bad.append("hero 3D: pause - the scene never built"); return
+                page.evaluate("() => window.scrollTo(0, document.documentElement.scrollHeight)")
+                page.wait_for_timeout(600)
+                if page.evaluate("() => window.__hero3d.running()"):
+                    bad.append("hero 3D: the render loop runs with the panel off screen")
+                page.locator('#hero-3d').scroll_into_view_if_needed()
+                page.wait_for_timeout(600)
+                if not page.evaluate("() => window.__hero3d.running()"):
+                    bad.append("hero 3D: the render loop did not resume on screen")
+            step("pause off screen", pause)
+    except Exception as e:
+        bad.append(f"hero 3D: {str(e).splitlines()[0]}")
+    finally:
+        page.close()
+    bad += [f"hero 3D: uncaught {e}" for e in errors]
+
+    # Forced off, whatever the runner has: the R11 path records every run.
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    try:
+        page.add_init_script(NO_WEBGL_JS)
+        page.goto(f"{base}/index.html", wait_until="load")
+        step("scroll to the panel (forced off)",
+             lambda: page.locator('#hero-3d').scroll_into_view_if_needed(timeout=10000))
+        step("forced no WebGL", lambda: no_webgl(page, "forced off"))
+    except Exception as e:
+        bad.append(f"hero 3D without WebGL (forced off): {str(e).splitlines()[0]}")
+    finally:
+        page.close()
+    bad += [f"hero 3D without WebGL: uncaught {e}" for e in errors]
+    return bad
+
+
 def check_embed(page, base):
     """explorer.html?embed=1: the site bar and mode buttons hidden, the API live."""
     bad = []
@@ -2006,6 +2143,14 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(hero_cables)]
             else:
                 notes.append("ok    the hero's cables and caption")
+
+            bad = check_hero_3d(browser, base)
+            if bad:
+                failed_things += 1
+                problems.append("FAIL  the hero in 3D")
+                problems += [f"        {b}" for b in dict.fromkeys(bad)]
+            else:
+                notes.append("ok    the hero in 3D")
 
             page = browser.new_page()
             try:

@@ -885,6 +885,31 @@ check(re.search(r"import\s*\{[^}]*\bCOLORS\b[^}]*\}\s*from\s*'\./showcase/cables
       "the hero's cable colors come from cables.js",
       "no COLORS import from ./showcase/cables.js, no jacketColor, a hex in it, or a jacket table of its own")
 
+# ── the hero in 3D ───────────────────────────────────────────────────────
+# The same switch, cabled, as a model (spec §5). Every check below records
+# whether or not the files exist, so a missing panel fails by name.
+idx_html = (HERE / "index.html").read_text()
+h3_path = HERE / "site" / "hero-3d.js"
+h3 = h3_path.read_text() if h3_path.exists() else ""
+r3d = (HERE / "site" / "rack3d.js").read_text()
+panel = re.search(r'<div[^>]*\bid="hero-3d"[^>]*>.*?</div>\s*(<p[^>]*>)?', idx_html, re.S)
+check(panel is not None and re.search(r'<p[^>]*\bid="hero-caption-3d"[^>]*\bdata-hero-caption\b', panel.group(0)) is not None,
+      "index.html has the 3D panel #hero-3d with its caption #hero-caption-3d[data-hero-caption] in or just under it",
+      "no #hero-3d, or no #hero-caption-3d[data-hero-caption] in or right after it")
+check(re.search(r"import\s*\{[^}]*\bheroThree\b[^}]*\}\s*from\s*'\./site/hero-3d\.js'", idx_html) is not None,
+      "index.html imports heroThree from site/hero-3d.js", "no heroThree import in index.html")
+check(re.search(r"\bcreateRackScene\b", h3) is not None and "IntersectionObserver" in h3
+      and re.search(r"\brails\s*:\s*false\b", h3) is not None,
+      "hero-3d.js builds through createRackScene, lazily (IntersectionObserver), with rails: false",
+      "site/hero-3d.js missing, or no createRackScene / IntersectionObserver / rails: false")
+check(re.search(r"import\s*\{[^}]*\bhangPoints3d\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", h3) is not None
+      and re.search(r"import\s*\{[^}]*\bjacketColor\b[^}]*\bcaptionOf\b[^}]*\}\s*from\s*'\./hero-reveal\.js'", h3) is not None
+      and "COLORS" not in h3,
+      "hero-3d.js takes its tubes' shape from cables.js and its colors and captions from hero-reveal.js",
+      "no hangPoints3d import from ./showcase/cables.js, or no jacketColor/captionOf import from ./hero-reveal.js, or a COLORS table of its own")
+check(re.search(r"opts\.rails\s*(?:!==\s*false|\?\?\s*true)", r3d) is not None,
+      "rack3d.js reads opts.rails, defaulting to true", "no opts.rails in createRackScene")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

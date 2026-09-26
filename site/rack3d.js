@@ -134,6 +134,13 @@ export function createRackScene(container, opts = {}) {
   // scene.three.camera to do this by hand.
   const VIEW = VIEWS[opts.view] ? opts.view : 'iso';
 
+  // THE SWITCH ALONE. `rails: false` is the front page hero's view: one device
+  // turned over in the hand, not a rack, so no rail posts, no U numbers and no
+  // device tag beside the rail. Nothing else changes - the faces, the
+  // overrides, the ears and the anchors are built exactly as in a rack. Every
+  // other caller passes nothing and keeps the rails.
+  const RAILS = opts.rails !== false;
+
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
   const camera = new THREE.PerspectiveCamera(42, 1, 20, 12000);
@@ -332,6 +339,7 @@ export function createRackScene(container, opts = {}) {
   function buildRack() {
     disposeTree(rack);                       // dispose BEFORE detaching, or
     for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
+    if (!RAILS) return;
     const H = UNITS * RU;
     for (const s of SIDES) {
       // The post is the rail's full face, with its inner edge on the opening,
@@ -577,9 +585,14 @@ export function createRackScene(container, opts = {}) {
     const ears = rackEars(entry.ru, ruHeight, W / 2, D);
     scene.add(ears);
 
-    const tag = labelSprite(entry.label, 30, LABEL_TAG);
-    tag.position.set(-(RACK_W / 2 + 120) - tag.scale.x / 2, group.position.y, 46);
-    scene.add(tag);
+    // The device's tag, beside the left rail - a rail label, so it goes with
+    // the rails.
+    let tag = null;
+    if (RAILS) {
+      tag = labelSprite(entry.label, 30, LABEL_TAG);
+      tag.position.set(-(RACK_W / 2 + 120) - tag.scale.x / 2, group.position.y, 46);
+      scene.add(tag);
+    }
     scene.add(group);
     mounted.push({entry, group, tag, ears});
 
@@ -843,7 +856,7 @@ export function createRackScene(container, opts = {}) {
     epoch++;             // anything still filling in faces is now building for
     pending = [];        // groups that are about to be disposed
     for (const m of mounted) {
-      scene.remove(m.group); scene.remove(m.tag); scene.remove(m.ears);
+      scene.remove(m.group); if (m.tag) scene.remove(m.tag); scene.remove(m.ears);
       disposeTree(m.group); disposeTree(m.ears);
     }
     mounted.length = 0;
@@ -881,13 +894,17 @@ export function createRackScene(container, opts = {}) {
   ro.observe(container);
   resize();
 
-  let raf = 0, alive = true;
-  (function tick() {
-    if (!alive) return;
+  // `running` is the host's to switch: a panel scrolled out of sight has no
+  // business drawing sixty frames a second (the front page hero pauses it).
+  // Every other caller never touches it, and the loop runs as it always did.
+  let raf = 0, alive = true, running = true;
+  function tick() {
+    if (!alive || !running) { raf = 0; return; }
     controls.update();
     renderer.render(scene, camera);
     raf = requestAnimationFrame(tick);
-  })();
+  }
+  tick();
 
   return {
     build: buildAll,
@@ -927,6 +944,10 @@ export function createRackScene(container, opts = {}) {
                      heightRU: UNITS, pxmm: PXMM}),
     resize,
     reframe: frameCamera,
+    // Stop and restart the render loop, for a host that knows it is not seen.
+    pause() { running = false; cancelAnimationFrame(raf); raf = 0; },
+    resume() { if (alive && !running) { running = true; tick(); } },
+    running: () => alive && running,
     // What the scene resolved: the stack with chassis, bays and the component
     // index filled in, and the height it settled on. Asked for in
     // roc-ops/portrayal-site#10 - a consumer that used to compute heightRU from
