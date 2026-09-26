@@ -353,8 +353,8 @@ export function hideStrip() {
 // an entry point.
 //
 // Clicking, and what is not a click (a drag that pans, a double-click that
-// fits), is svg2d.js's wireClicks - the same helper ring2d.js's stubs use, so
-// the two cannot drift apart again.
+// fits), is svg2d.js's wireClicks - the same helper the patched rack's
+// cross-face tags use (patch-view.js), so the two cannot drift apart again.
 //
 // EVERYTHING ADDED HERE IS UI, NOT DRAWING. The group lists what was added in
 // data-pt-ui (attribute names, and `.class` for a class), and the <title> is

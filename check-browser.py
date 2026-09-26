@@ -66,8 +66,8 @@ READY_MS = 60000
 
 # How long a stage gets in 3D. The first entry into 3D compiles WebGL shaders,
 # and on a cold or loaded machine - or a runner rendering on the CPU - that
-# alone has taken most of READY_MS; the ring's 3D mount then builds nine
-# devices and thirty tubes on top of it. A separate, longer budget keeps the
+# alone has taken most of READY_MS; the patched rack's 3D mount then seats
+# the plan and hangs fourteen tubes on top of it. A separate, longer budget keeps the
 # 3D walk from flaking without loosening every 2D wait.
 READY_3D_MS = 120000
 
@@ -147,56 +147,6 @@ def accepted_card(bay_id):
     idx = json.loads((HERE / "assets" / "dist" / "asr-9006.configs.json").read_text())
     bay = next((b for b in idx.get("bays", {}).get("front", []) if b.get("id") == bay_id), None)
     return next((r for r in (bay or {}).get("accepts", []) if r != bay.get("default")), None)
-
-
-def management_by_site():
-    """How many management links each 2D ring site draws, in sitesOf's order.
-
-    Recomputed here from the data, the way ring.js does it, so the filter
-    assertion checks the page against the lab rather than against a number
-    the page wrote itself. A site is a connected component once the span
-    links are dropped, ordered top to bottom by its highest U. A link is
-    management when either end's port is in the mgmt group on its device's
-    default-config faces (ring.js's loadGroupMaps). A site draws a link as a
-    cable when both ends are in it, as a stub when one is.
-    """
-    lab = json.loads((HERE / "assets" / "dist" / "labs.json").read_text())["labs"][0]
-    devs = {d["id"]: d for d in lab["devices"]}
-    par = {i: i for i in devs}
-
-    def root(x):
-        while par[x] != x:
-            x = par[x]
-        return x
-    for l in lab["links"]:
-        if not l.get("span"):
-            a, b = root(l["from"][0]), root(l["to"][0])
-            if a != b:
-                par[a] = b
-    comps = {}
-    for i in devs:
-        comps.setdefault(root(i), set()).add(i)
-    sites = sorted(comps.values(), key=lambda ids: -max(devs[i]["ru"] for i in ids))
-
-    groups = {}
-    for ref in {d["ref"] for d in devs.values()}:
-        idx = json.loads((HERE / "assets" / "dist" / f"{ref}.configs.json").read_text())
-        g = {}
-        for view in idx.get("views", []):
-            f = HERE / "assets" / "dist" / f"{ref}.{idx['default']}.{view}.svg"
-            if not f.is_file():
-                continue
-            for tag in re.findall(r"<[^>]+>", f.read_text()):
-                pth = re.search(r'\sdata-path="([^"]+)"', tag)
-                grp = re.search(r'\sdata-group="([^"]+)"', tag)
-                if pth and grp:
-                    g[pth.group(1)] = grp.group(1)
-        groups[ref] = g
-
-    def mgmt(l):
-        return any(groups.get(devs[ep[0]]["ref"], {}).get(ep[1]) == "mgmt" for ep in (l["from"], l["to"]))
-    return [sum(1 for l in lab["links"] if mgmt(l) and (l["from"][0] in ids or l["to"][0] in ids))
-            for ids in sites]
 
 
 def check_rear_loose(page, base):
@@ -450,17 +400,32 @@ def check_stages(page, base):
             bad.append(f"stage optics in 2D: the highlight is {side:.1f} px on its shorter side (< 8)")
 
     def filter_management():
-        # The expected count is the one the management button itself states,
-        # read off the page, and the total is the lab's own link count - so a
-        # new labs.json moves both without this line changing.
-        btn = page.locator('#sidePanel .ctl button', has_text=re.compile(r"^management \(\d+\)$"))
-        want = int(re.search(r"\((\d+)\)", btn.inner_text(timeout=READY_MS)).group(1))
-        btn.click(timeout=READY_MS)
-        total = len(json.loads((HERE / "assets" / "dist" / "labs.json").read_text())["labs"][0]["links"])
+        # "Show me just management": the plan's management cables at full
+        # strength and every other cable ghosted, on the face shown and after
+        # the Front/Rear toggle redraws it; the counts read off the plan (both
+        # numbers derived from patching.json, not from what the page wrote).
+        plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
+        want = sum(1 for l in plan["links"] if l["purpose"] == "management")
+        mgmt = {str(i) for i, l in enumerate(plan["links"]) if l["purpose"] == "management"}
+        page.click('#sidePanel [data-filter-purpose="management"]', timeout=READY_MS)
         page.wait_for_function(
             """([w, t]) => { const c = document.querySelector('#sidePanel [data-filter-count]');
                 return !!c && c.dataset.matching === String(w) && c.dataset.total === String(t); }""",
-            arg=[want, total], timeout=READY_MS)
+            arg=[want, len(plan["links"])], timeout=READY_MS)
+        lit = page.eval_on_selector_all('#stageRack svg [data-cable]:not(.ghost)', "gs => gs.length")
+        ghost = page.eval_on_selector_all('#stageRack svg [data-cable].ghost', "gs => gs.length")
+        if (lit, ghost) != (want, 14 - want):
+            bad.append(f"stage filter in 2D: {lit} lit and {ghost} ghosted, expected {want} and {14 - want}")
+        # The toggle redraws the face; the filter must hold on both.
+        for view in ("rear", "front"):
+            page.click(f'#stageTabs [data-view="{view}"]', timeout=READY_MS)
+            page.wait_for_selector(f'#stageRack svg [data-cables="{view}"]', timeout=READY_MS)
+            got = page.eval_on_selector_all('#stageRack svg [data-cable]',
+                                            "gs => gs.map(g => [g.dataset.linkIndex, g.classList.contains('ghost')])")
+            wrong = [i for i, ghosted in got if ghosted == (i in mgmt)]
+            if not got or wrong:
+                bad.append(f"stage filter in 2D: on the {view} after the toggle, cables {wrong} "
+                           f"are ghosted wrongly ({len(got)} drawn)")
 
     CLAIMS = {
         "populate": ("every slot offers only what it accepts, and a choice seats", populate),
@@ -501,34 +466,6 @@ def check_stages(page, base):
                 run()
             except Exception as e:
                 bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
-        if name == "filter":
-            # Spec §5.2: in 2D a site looks like a rack of its own, so a
-            # stage that draws the ring by site says it is not one. Stage 4
-            # cables the cast rack now; only stage 5 still draws the ring.
-            try:
-                cap = page.inner_text('#sidePanel [data-site-caption]', timeout=READY_MS)
-                if "Physically" not in cap:
-                    bad.append(f"stage {name} in 2D: the site caption does not say the rack is shared: {cap!r}")
-            except Exception as e:
-                bad.append(f"stage {name} in 2D: no site caption in the panel ({str(e).splitlines()[0]})")
-        if name == "filter":
-            try:
-                vis = page.evaluate("""() => [...document.querySelectorAll(
-                    '#stageRack [data-cable], #stageRack [data-stub]')]
-                    .filter(n => getComputedStyle(n).display !== 'none' && n.getAttribute('visibility') !== 'hidden').length""")
-                # 05-filter.js sets data-visible-cables on the panel element itself.
-                if vis != int(page.get_attribute('#sidePanel', 'data-visible-cables') or -1):
-                    bad.append(f"stage filter in 2D: the drawn count ({vis}) and data-visible-cables disagree")
-                # And against the lab, not just against itself: with
-                # "management" on, what is visible in the current site is that
-                # site's management links, recomputed above from the data.
-                at = int(page.get_attribute('#stageTabs [aria-selected="true"]', 'data-tab-index'))
-                want = management_by_site()[at]
-                if vis != want:
-                    bad.append(f"stage filter in 2D: site {at} shows {vis} with management on; "
-                               f"the lab has {want} management links there")
-            except Exception as e:
-                bad.append(f"stage filter in 2D: {e}")
 
     # THE FILL RULE, once, after the stage walk: a card the visitor seats is
     # kept, and its cables are named loose ends.
@@ -595,6 +532,18 @@ def check_stages(page, base):
         if not r["fiber"]: bad.append("stage cable in 3D: no fiber connector anchored")
         if r["tabs"]: bad.append("stage cable in 3D: the 2D-only Front/Rear tabs are showing")
 
+    def filter_3d():
+        # Without WebGL the panel answers (R11): the count still narrows.
+        page.click('#sidePanel [data-filter-purpose="management"]', timeout=READY_3D_MS)
+        m = page.get_attribute('#sidePanel [data-filter-count]', "data-matching")
+        if m != "4":
+            bad.append(f"stage filter in 3D: the panel counts {m} management cables, expected 4")
+        if page.evaluate("async () => !!(await import('/site/webgl.js')).webglTrouble()"):
+            return
+        n = page.evaluate("""() => window.__patch3d.tubes.filter(t => t.mesh &&
+            t.mesh.children[0].material.opacity === 1).length""")
+        if n != 4: bad.append(f"stage filter in 3D: {n} tubes at full strength, expected 4")
+
     try:
         if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
             bad.append("the switch does not default to 2D")
@@ -612,7 +561,7 @@ def check_stages(page, base):
             bad.append("the 3D choice did not follow to the next stage")
         if not layers_are("3d"):
             bad.append("stage populate in 3D: the 2D drawing is showing")
-        for name in ("optics", "cable"):
+        for name in ("optics", "cable", "filter"):
             try:
                 page.click(f'.stage-rail button[data-stage="{name}"]', timeout=READY_3D_MS)
                 page.wait_for_selector(f'[data-stage-ready="{name}"]', timeout=READY_3D_MS)
@@ -622,12 +571,14 @@ def check_stages(page, base):
                     seat_optic_3d()
                 if name == "cable":
                     cable_3d()
+                if name == "filter":
+                    filter_3d()
             except Exception as e:
                 bad.append(f"stage {name} in 3D: {str(e).splitlines()[0]}")
         page.click('#stageMode [data-mode="2d"]')
-        page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="filter"]', timeout=READY_MS)
         if not layers_are("2d"):
-            bad.append("stage cable: switching back to 2D did not replace the 3D picture")
+            bad.append("stage filter: switching back to 2D did not replace the 3D picture")
     except Exception as e:
         bad.append(f"the 2D/3D switch: {str(e).splitlines()[0]}")
     finally:

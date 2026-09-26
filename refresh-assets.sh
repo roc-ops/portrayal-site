@@ -153,10 +153,9 @@ done
 [ -f "$SRC/../NOTICE" ] && cp "$SRC/../NOTICE" "$HERE/vendor/NOTICE"
 cp "$SRC"/dist/devices.json "$HERE/assets/dist/"
 cp "$SRC"/dist/components.json "$HERE/assets/dist/"
-# labs.json is the ROADM ring the showcase's cable stage draws. A BARE cp, not
-# the tolerant loop below: that loop carries indexes nothing reads yet, so a
-# miss there is free, and a miss here ships a cable stage with no topology
-# behind a refresh that passed.
+# labs.json is the ROADM ring lab. No showcase stage draws it since stages 4-5
+# moved to the example patching plan (site/showcase/patching.json), but the
+# dist keeps it: still a bare cp, so a refresh that loses it says so.
 cp "$SRC"/dist/labs.json "$HERE/assets/dist/"
 # Published as of the kit split, when the exporter stopped needing a checkout.
 # vendors.json carries the alias and lineage registry - who owns a brand now,

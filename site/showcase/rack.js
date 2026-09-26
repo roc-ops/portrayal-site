@@ -1,7 +1,7 @@
 // The cast rack: which devices, where they sit, how tall the rack is, and the
-// two renderers that draw it. Stage 0 draws its rails, and stages 1-4 and 6
-// mount it (stage 4 cabled, through patch-view.js; stage 5 still racks the
-// ROADM ring, through ring.js), so it lives here rather than in any one of them.
+// two renderers that draw it. Stage 0 draws its rails, and stages 1-6 mount
+// it (stages 4 and 5 cabled, through patch-view.js), so it lives here rather
+// than in any one of them.
 //
 // ONE stack, two renderers. The 2D elevation and the 3D rack are handed the
 // same array, and a module swapped in either is a swap in both, because both
@@ -252,9 +252,9 @@ export async function mount3d({stack, heightRU, overrides: ov = overrides}) {
   const built = await guard3d(async () => {
     const {createRackScene} = await import('../rack3d.js');
     if (stale(mine)) return null;
-    // What a caller supplies wins: the ROADM ring's refs are not in the
-    // cast's index, so ring.js hands over its own chassis, bays and cages,
-    // and filling them from `meta` here would blank them to {} - which is
+    // What a caller supplies wins: a ref that is not in the cast's index
+    // comes with its own chassis, bays and cages, and filling them from
+    // `meta` here would blank them to {} - which is
     // truthy, so rack3d's hydrate() would skip loading the index and every
     // device would mount with no dimensions.
     const scStack = stack.map(e => ({...e, chassis: e.chassis || chassisOf(e.ref),

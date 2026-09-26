@@ -467,113 +467,6 @@ if opt.is_file():
           "stage 3 does not quietly infer 100G or 4 lanes",
           "R15: the generic optic carries no speed or lane count - showing that gap is the point")
 
-# ── stage 4 cables a real topology ───────────────────────────────────────
-# labs.json is the ROADM ring: 9 devices, 30 links, each end naming a device
-# and a port. It is LOAD-BEARING for stage 4, which is why it is copied with a
-# bare cp rather than through the `[ -f ] &&` loop that carries
-# vendors/overlays/gaps - those are vendored-but-unread, so a silent miss
-# costs nothing, and this one would ship a broken stage behind a green
-# refresh. That is the fields.js/optical.js shape, twice in three days.
-labs = jload("labs.json")
-check(labs is not None, "labs.json is vendored", "stage 4 has no topology to draw")
-if labs is not None:
-    # PARSED IS NOT USABLE. `{}` and `[]` both parse, and a guard of `if labs:`
-    # let `{}` through as vendored while recording none of the checks below -
-    # the silent green the bare cp exists to prevent. So once the file parses,
-    # all three checks record on every run, and an unusable lab fails all three.
-    lablist = labs.get("labs") if isinstance(labs, dict) else None
-    ring = (lablist[0] if isinstance(lablist, list) and lablist
-            and isinstance(lablist[0], dict) else None)
-    if ring is None:
-        why = (f"labs.json parsed as {type(labs).__name__}, not an object" if not isinstance(labs, dict)
-               else "labs.json has no `labs` list" if not isinstance(lablist, list)
-               else "labs.json's `labs` list is empty" if not lablist
-               else "labs.json's first lab is not an object")
-        check(False, "labs.json's first lab has devices", why)
-        check(False, "labs.json's first lab has links", why)
-        check(False, "every link endpoint resolves to a drawn data-path", why)
-        check(False, "the lab has more than one media to filter by", why)
-        check(False, "every link endpoint's port declares a data-group", why)
-        check(False, "purpose() classifies every link", why)
-    else:
-        devs = ring.get("devices") if isinstance(ring.get("devices"), list) else []
-        links = ring.get("links") if isinstance(ring.get("links"), list) else []
-        check(bool(devs), "labs.json's first lab has devices", "no devices list, or it is empty")
-        check(bool(links), "labs.json's first lab has links", "no links list, or it is empty")
-        # EVERY CABLE END MUST LAND ON A DRAWN PORT. portAnchor resolves an end
-        # by data-path against the compiled faces, so an endpoint naming a port
-        # that is not drawn is a cable that silently does not appear. The port
-        # is ep[1], never a tx/rx suffix: no vendored face carries one.
-        byid = {d.get("id"): d.get("ref") for d in devs if isinstance(d, dict)}
-        paths = {}
-        for ref in set(v for v in byid.values() if v):
-            p = set()
-            for f in DIST.glob(f"{ref}.*.svg"):
-                p |= set(re.findall(r'data-path="([^"]+)"', f.read_text()))
-            paths[ref] = p
-        ends = [ep for l in links if isinstance(l, dict) for ep in (l.get("from"), l.get("to"))]
-        bad = [str(ep) for ep in ends
-               if not (isinstance(ep, list) and len(ep) >= 2
-                       and ep[1] in paths.get(byid.get(ep[0]) or "", ()))]
-        check(bool(ends) and not bad,
-              f"every link endpoint resolves to a drawn data-path ({len(ends) - len(bad)}/{len(ends)})",
-              f"{len(bad)} unresolved, e.g. {bad[:3]}" if ends else "no endpoints to resolve")
-
-        # ── stage 5 filters on what the drawing already says ────────────
-        # A link's purpose is the group of the ports it connects, and every
-        # port these links name carries data-group on its face: eth4 -> mgmt,
-        # xc34 -> xc, port-line/port-osc -> line. So purpose filtering needs
-        # no upstream field and no table in the page. Asserted because it is
-        # the premise of the stage: if a link's port stops carrying a group,
-        # the filter silently offers one bucket.
-        media = sorted({l["media"] for l in links if isinstance(l, dict) and "media" in l})
-        check(len(media) > 1, "the lab has more than one media to filter by",
-              f"only {media} - a filter with one value demonstrates nothing")
-
-        groups = {}
-        for ref in set(v for v in byid.values() if v):
-            for f in DIST.glob(f"{ref}.*.svg"):
-                for pth, attrs in re.findall(r'data-path="([^"]+)"([^>]*)', f.read_text()):
-                    g = re.search(r'data-group="([^"]+)"', attrs)
-                    if g:
-                        groups.setdefault((ref, pth), g.group(1))
-        ungrouped = [f"{ep[0]}:{ep[1]}" for l in links if isinstance(l, dict)
-                     for ep in (l.get("from"), l.get("to"))
-                     if isinstance(ep, list) and len(ep) >= 2
-                     and (byid.get(ep[0]), ep[1]) not in groups]
-        check(not ungrouped, "every link endpoint's port declares a data-group",
-              f"{len(ungrouped)} without one, e.g. {ungrouped[:3]} - purpose filtering "
-              "reads the group off the face, so a port without one cannot be classified")
-
-        # The same partition ring.js's purpose() derives, recomputed here the
-        # same way: `line` splits into a ring span (carries span) or an OSC
-        # loop (both ends on the same device), everything else falls through
-        # to its own group name. Every link must land in a bucket - an
-        # unclassified link would mean the filter's rows silently miss a
-        # cable the picture still draws.
-        def group_of(ep):
-            if not (isinstance(ep, list) and len(ep) >= 2):
-                return None
-            return groups.get((byid.get(ep[0]), ep[1]))
-
-        def link_purpose(l):
-            gf, gt = group_of(l.get("from")), group_of(l.get("to"))
-            if gf == "mgmt" or gt == "mgmt":
-                return "management"
-            g = gf or gt
-            if g == "xc":
-                return "cross-connect"
-            if g == "line":
-                f, t = l.get("from"), l.get("to")
-                same_dev = isinstance(f, list) and isinstance(t, list) and f[0] == t[0]
-                return "ring-span" if l.get("span") else ("osc-loop" if same_dev else "line")
-            return g
-
-        classified = [l for l in links if isinstance(l, dict) and link_purpose(l) is not None]
-        check(bool(links) and len(classified) == len(links),
-              f"purpose() classifies every link ({len(classified)}/{len(links)})",
-              f"{len(links) - len(classified)} unclassified" if links else "no links to classify")
-
 # ── one rail, drawn twice ──────────────────────────────────────────────────
 # The 2D rails and the 3D posts were two ideas of a rail. The right 2D rail
 # was a copy of the left instead of its mirror, so its numbers sat inside and
@@ -652,16 +545,17 @@ check("export function renderStrip" in sh, "spoke-host.js exports renderStrip")
 check("export function wireDevices" in sh, "spoke-host.js exports wireDevices")
 check('id="lookStrip"' in (HERE / "index.html").read_text(), "index.html carries the look strip")
 stage_txt = "".join(p.read_text() for p in (HERE / "site" / "showcase" / "stages").glob("*.js"))
-# ONE CLICK HELPER. The cast devices and the ring's stubs used to carry two
-# copies of the pointer logic, and the stubs' copy lost the double-click
-# window. Both now go through svg2d.js's wireClicks; neither keeps its own.
+# ONE CLICK HELPER. The cast devices and the ROADM ring's stubs once carried
+# two copies of the pointer logic, and the stubs' copy lost the double-click
+# window. The cast devices and the patched rack's cross-face tags both go
+# through svg2d.js's wireClicks; neither keeps its own.
 s2d = (HERE / "site" / "showcase" / "svg2d.js").read_text()
-r2d_src = (HERE / "site" / "showcase" / "ring2d.js").read_text()
+pv_src = (HERE / "site" / "showcase" / "patch-view.js").read_text()
 check("export function wireClicks" in s2d and "dblMs" in s2d,
       "svg2d.js exports wireClicks, with a double-click window")
-own = [n for n, t in (("spoke-host.js", sh), ("ring2d.js", r2d_src))
+own = [n for n, t in (("spoke-host.js", sh), ("patch-view.js", pv_src))
        if "wireClicks(" not in t or "'pointerdown'" in t]
-check(not own, "wireDevices and the ring stubs both click through wireClicks",
+check(not own, "wireDevices and the cable tags both click through wireClicks",
       f"{own} keep their own pointer handling")
 check("lookCloser(" not in stage_txt, "no stage puts Look closer in its side panel")
 
@@ -686,73 +580,6 @@ check("node.__ptBase = baseFrame" in art and "__ptBase?.()" in art,
       "panZoom must record its base frame and standalone() must apply it to the clone")
 check("elevationText" not in stage_txt,
       "no stage keeps its own un-zoom workaround for exports")
-
-# ── the ring in 2D, by site ─────────────────────────────────────────────────
-# Sites are the connected components left when the span links are dropped:
-# structural, so they survive renamed devices. Parsing "site-a-" out of an id
-# is the naming-convention guess this project keeps refusing.
-ring_js = (HERE / "site" / "showcase" / "ring.js").read_text()
-ring2d = HERE / "site" / "showcase" / "ring2d.js"
-r2 = ring2d.read_text() if ring2d.is_file() else ""
-check("export function sitesOf" in ring_js, "ring.js exports sitesOf")
-check(bool(r2), "site/showcase/ring2d.js exists")
-# Stage 4 cables the cast rack now (patch-view.js); only stage 5 still draws
-# the ring, until Task 5 moves it too.
-src_ring = ring_js + r2 + "".join((HERE / "site" / "showcase" / "stages" / f).read_text()
-                                  for f in ("05-filter.js",))
-check(not re.search(r"""['"`]site-|\bsite-[a-z]\b|split\(\s*['"]-['"]\s*\)""", src_ring),
-      "the ring code parses no site out of device ids", "derive sites from the topology")
-# Spec §5.2: every 2D ring stage leads with the one caption, built once.
-check("export function siteCaption" in r2
-      and all("siteCaption(lab, sites)" in (HERE / "site" / "showcase" / "stages" / f).read_text()
-              for f in ("05-filter.js",)),
-      "stage 5 captions the 2D ring through ring2d.js's siteCaption")
-# One legend per colour drawn: a span strand is drawn in its span's colour,
-# so it is counted there and not under its media. Built once, in ring.js.
-st45 = [(HERE / "site" / "showcase" / "stages" / f).read_text() for f in ("05-filter.js",)]
-check("export function legendOf" in ring_js
-      and re.search(r"l\.media === m && !l\.span", ring_js) is not None
-      and all("legendEl(lab)" in t and "MEDIA_COLORS" not in t for t in st45),
-      "stage 5 uses ring.js's legend, which counts span strands under their span")
-# The stage-4 section assigns `ring` inside a conditional block, so it may
-# not exist at all when labs.json is missing. Read it defensively; a
-# NameError here would crash the contract instead of recording a FAIL.
-lab_ring = globals().get("ring")
-if lab_ring is not None:
-    ring = lab_ring
-    ids = [d["id"] for d in ring["devices"]]
-    par = {i: i for i in ids}
-    def root(x):
-        while par[x] != x:
-            x = par[x]
-        return x
-    for l in ring["links"]:
-        if not l.get("span"):
-            par[root(l["from"][0])] = root(l["to"][0])
-    comps = {}
-    for i in ids:
-        comps.setdefault(root(i), []).append(i)
-    check(len(comps) == 3 and sum(map(len, comps.values())) == len(ids),
-          "dropping span links splits the ring into 3 sites covering every device",
-          f"got {len(comps)} components")
-    # sitesOf takes every ring device as 1 U (a site's top is its highest
-    # device's bottom U). That holds only while every ref the ring uses says
-    # so in its own index; if one stops, this fails rather than the 2D view
-    # quietly clipping a taller device.
-    ring_refs = sorted({d.get("ref") for d in ring["devices"]})
-    tall = []
-    for ref in ring_refs:
-        idx = jload(f"{ref}.configs.json")
-        ru = ((idx or {}).get("chassis") or {}).get("ru")
-        if ru != 1:
-            tall.append(f"{ref}: {ru}")
-    check(bool(ring_refs) and not tall,
-          f"every ring device ref is 1 U ({len(ring_refs) - len(tall)}/{len(ring_refs)})",
-          f"not 1 U: {tall} - sitesOf's ruMax assumes 1 U")
-else:
-    check(False, "dropping span links splits the ring into 3 sites covering every device",
-          "labs.json is unusable")
-    check(False, "every ring device ref is 1 U", "labs.json is unusable")
 
 # ── explorer's embed mode ────────────────────────────────────────────────
 # EXPLORER'S EMBED MODE. The showcase's Inspect lens is Explorer in a frame;
@@ -900,6 +727,16 @@ check("not a real lab" in (HERE / "site" / "showcase" / "patch-view.js").read_te
       "the patched stages say the plan is invented", "no honesty line in patch-view.js")
 check(not re.search(r"#[0-9a-fA-F]{6}", s4),
       "stage 4 keeps no colors of its own", "colors belong to cables.js")
+
+# Stage 5 filters the same plan, on axes read off it: a purpose or media
+# added to patching.json gets its own button without 05-filter.js changing.
+s5 = (HERE / "site" / "showcase" / "stages" / "05-filter.js").read_text()
+check("countsBy" in s5 and not re.search(r"""['"`](uplink|core|server|management|os2|copper)['"`]""", s5),
+      "stage 5's filters are read off the plan", "a hardcoded purpose or media in 05-filter.js")
+check("ring.js" not in s5 and "ring2d.js" not in s5 and "labs.json" not in s5,
+      "stage 5 no longer reads the ROADM ring", "05-filter.js still imports the ring")
+check(not (HERE / "site" / "showcase" / "ring.js").exists() and not (HERE / "site" / "showcase" / "ring2d.js").exists(),
+      "the ROADM ring's showcase code is retired", "ring.js or ring2d.js still present")
 
 # Stage 4 in 3D: the tubes start on the kit's connector points through
 # rack3d.js's own face->room chain, and their geometry lives in cables.js.

@@ -49,10 +49,10 @@ export function clearHighlights(root, tag = 'hl') {
 }
 
 // ONE WAY TO CLICK ON A DRAWING. A cast device on a 2D elevation (spoke-host's
-// wireDevices) and a span stub on a ring site (ring2d's siteView) are both
-// buttons inside a pan/zoom <svg>, and both used to carry their own copy of
-// this. They drifted: the stubs lost the double-click window, so a
-// double-click over a stub jumped sites instead of fitting the drawing.
+// wireDevices) and a cable's cross-face tag (patch-view.js) are both buttons
+// inside a pan/zoom <svg>. Two copies of this once drifted: one lost the
+// double-click window, so a double-click over it acted instead of fitting
+// the drawing.
 //
 //   wireClicks(root, {targetAt, open, ui = null, dblMs = 300})
 //
