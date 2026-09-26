@@ -85,9 +85,11 @@ export function enqueueRebuild(fn) {
 let meta = null;        // ref -> the device's configs.json, from the compiled index
 let components = null;  // the component index, for resolving a bay occupant
 
-// Through jdist, not fetch: the 3D viewer asks for these same two indexes, and
-// its memo is what stopped components.json coming down repeatedly. A bare
-// fetch here would sit outside that memo and put the duplicate straight back.
+// Through jdist, not fetch, for each device's own configs.json: the 3D
+// viewer asks for the same per-device indexes, and jdist's memo is what
+// stopped one coming down repeatedly. The component index comes from
+// face.js's `components()` instead, which memoizes through jdist itself, so
+// the showcase and every configured face resolve one component list, not two.
 //
 // jdist throws where the old code inspected r.ok, so the tolerance is explicit
 // now: a device whose configs.json is missing drops out of the rack rather
