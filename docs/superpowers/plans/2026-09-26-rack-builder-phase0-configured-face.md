@@ -60,7 +60,8 @@
 | `check-browser.py` | Add a registry of extra checks and an `--only` flag; add one check per task |
 | `site/showcase/rack.js` | `loadMeta` and `loadSkin` come from face.js; `build2dElevation` draws configured faces for every view |
 | `site/drawio.js` | Port cells become `<object portrayal-path=…>` |
-| `site/showcase/stages/06-takeaway.js` | draw.io from configured front and rear faces; GLB/USDZ await `complete()`; panel copy |
+| `site/showcase/stages/06-takeaway.js` | draw.io from configured front and rear faces; GLB/USDZ await `complete()`; panel copy (Task 4); rebuilt on `enterPatched` so it shows and exports the cables (Task 4b) |
+| `site/showcase/cables.js`, `site/showcase/patch-view.js` | The cable layer is a drawing, not UI; `cableFace` / `cabledElevationSvg`; `handle.scene` (Task 4b) |
 | `explorer.html` | "As configured" SVG/PNG menu items; DCIM and Drawings links carry `?device=` |
 
 ---
@@ -705,6 +706,343 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
+### Task 4b: Stage 6 shows the cabling, and its exports carry it
+
+Added 2026-09-26 from the showcase session's handoff (`.superpowers/handoffs/2026-09-26-stage6-cables.md`), at the user's request. Stage 4 (Cable) and stage 5 (Filter) are about the cables, and stage 6 currently drops them. After this task:
+- stage 6 shows the plan's cables, in 2D (with the Front/Rear toggle, as in stage 4) and in 3D;
+- its SVG and PNG exports carry the cables;
+- its GLB and USDZ exports carry the cable tubes.
+
+draw.io edges stay in Phase 2. **Do not change cable geometry or colors**: the user approved the look, including the length-proportional sag.
+
+**Files:**
+- Modify: `site/showcase/cables.js`: `drawCables2d`, where the cable layer is marked `data-pt-ui`.
+- Modify: `site/showcase/patch-view.js`:
+  - extract `cableFace` from `enter2d`'s `paintFace`;
+  - add `cabledElevationSvg`;
+  - expose the 3D scene on the handle.
+- Modify: `site/showcase/stages/06-takeaway.js`: `enter` and `exit` are rebuilt on `enterPatched`.
+- Modify: `check-browser.py`, to add `check_takeaway_cables_2d` and `check_takeaway_cables_3d`.
+
+**Interfaces:**
+- Consumes (Task 4, same file):
+  - `buildDrawio` (configured faces, front and rear);
+  - the GLB/USDZ items that `await scene.complete()`;
+  - `dcimSection`.
+
+  Keep all three.
+- Consumes (main): `enterPatched(ui, {head, top, counts, onDrawn, extraPanel})` → handle `{mode, plan, kept, drawn, loose, view, setView, highlight, dispose}`. It applies the plan's seats itself through `applyPlanSeats`, with the fill rule.
+- Produces:
+  - `cableFace(svg, handle, view) → {vb}` in patch-view.js. It widens the viewBox for tails and tags, and draws cables and tags onto an elevation that is already attached and laid out.
+  - `cabledElevationSvg(handle, view) → Promise<string>`: standalone SVG text of a freshly built, cabled elevation, built off-screen.
+  - `handle.scene`: the mounted 3D scene, in 3D mode, or null.
+
+**Facts (verified on main `fdadf2ac`):**
+- `drawCables2d` (cables.js:128) creates `layer = svgEl('g', {'data-cables': view, 'data-pt-ui': '*'})` and `tagLayer = svgEl('g', {'data-cable-tags': view, 'data-pt-ui': '*'})`.
+- `standalone()` (artifact.js) deletes every `[data-pt-ui="*"]` node from its clone, so every cable is dropped from exports today.
+- Each cable `<g data-cable …>` carries `tabindex: '0'`.
+- `drawCables2d` uses `getScreenCTM`, so the elevation must be in the document and laid out. `looseEnds` in patch-view.js already builds elevations in a hidden, fixed-position host for this reason.
+- `drawCables3d(scene, plan)` adds a `patch-cables` group, with one `cable-<i>` group per link, to `scene.three.scene`. `toGLB()` / `toUSDZ()` export `scene.three.scene`, so the tubes are included.
+- The plan has 14 links (`site/showcase/patching.json`).
+- The 3D mode is switched with `page.click('#stageMode [data-mode="3d"]')`. A 3D stage gets `READY_3D_MS` (240 s).
+
+- [ ] **Step 1: Write the failing 2D check**
+
+```python
+@extra("stage 6 shows the cables in 2D, and its SVG export keeps them without UI")
+def check_takeaway_cables_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    # Straight to stage 6: it must apply the plan's seats itself.
+    page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
+    n = page.eval_on_selector_all('#stageRack [data-cable]', "els => els.length")
+    if n == 0:
+        bad.append("stage 6 2D: no [data-cable] drawn")
+    if not page.is_visible('#stageTabs button[data-view="rear"]'):
+        bad.append("stage 6 2D: no Front/Rear toggle")
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('#stageExport button:has-text("SVG")')
+    text = pathlib.Path(dl.value.path()).read_text()
+    got = text.count("data-cable=")
+    if got != n:
+        bad.append(f"stage 6 SVG: {got} cables exported, {n} drawn on screen")
+    for ui_bit in ("data-cable-tags", "data-tag=", "data-not-connected", "cable-focus",
+                   'tabindex="0"', "data-pt-ui"):
+        if ui_bit in text:
+            bad.append(f"stage 6 SVG: screen UI leaked into the export ({ui_bit})")
+    return bad
+```
+
+- [ ] **Step 2: Write the failing 3D check**
+
+```python
+@extra("stage 6 hangs the cables in 3D, and the GLB carries them")
+def check_takeaway_cables_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
+    page.click('#stageMode [data-mode="3d"]')
+    page.wait_for_selector('#stageExport button:has-text("GLB")', timeout=READY_3D_MS)
+    with page.expect_download(timeout=READY_3D_MS) as dl:
+        page.click('#stageExport button:has-text("GLB")')
+    glb = pathlib.Path(dl.value.path()).read_bytes()
+    missing = [i for i in range(14) if f'"cable-{i}"'.encode() not in glb]
+    if missing:
+        bad.append(f"stage 6 GLB: no node for cable(s) {missing}")
+    return bad
+```
+
+If the CI browser has no WebGL, stage 6 offers no GLB button. That's R11: the panel is still built, and the check times out. `check_stages` already runs stage 4 in 3D under the same conditions, so WebGL is available there. If the 3D check fails only for lack of WebGL, report that rather than weakening the check.
+
+- [ ] **Step 3: Run both and confirm they fail**
+
+Run: `python3 check-browser.py --only check_takeaway_cables_2d,check_takeaway_cables_3d`
+Expected:
+- 2D: FAIL, `no [data-cable] drawn`.
+- 3D: FAIL, `no node for cable(s) [0, …, 13]`.
+
+- [ ] **Step 4: Cables are a drawing, not screen UI (`cables.js`)**
+
+In `drawCables2d`, change the cable layer to:
+
+```js
+  // The CABLES are the drawing, and exports keep them (standalone() drops
+  // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
+  // controls - a cross-face button, a not-connected link to the stage that
+  // fixes it - so that layer stays UI and never reaches a file.
+  const layer = svgEl('g', {'data-cables': view});
+  const tagLayer = svgEl('g', {'data-cable-tags': view, 'data-pt-ui': '*'});
+```
+
+On each cable group, mark its focusability as UI, so that `standalone()` strips `tabindex`:
+
+```js
+    const g = svgEl('g', {'data-cable': 'true', 'data-link-index': String(i),
+      'data-media': link.media, 'data-purpose': link.purpose, tabindex: '0',
+      'data-pt-ui': 'tabindex'});
+```
+
+The cable's `<title>` (its from → to description) stays: it describes the drawing, not a control.
+
+- [ ] **Step 5: `patch-view.js`: extract `cableFace`, add `cabledElevationSvg`, expose the scene**
+
+Add `standalone` to the existing `./artifact.js` import.
+
+Move the body of `enter2d`'s `paintFace`, from `const base = svg.getAttribute('viewBox')…` through the `handle.drawn = drawCables2d(…)` call, into this exported function. The pill and tag code moves unchanged.
+
+```js
+// ONE CABLED FACE, on an elevation already in the document and laid out
+// (drawCables2d reads CTMs): the viewBox widened for tails and their tags on
+// the side a cross-face cable goes round (spec §6), then the plan's cables
+// and tags drawn onto it. The stage and the exports both use this, so a file
+// can never show a different cabling from the screen.
+export function cableFace(svg, handle, view) {
+  const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  const rear = view === 'rear';
+  const vb = rear ? [base[0] - ROOM, base[1], base[2] + ROOM, base[3] + 40]
+                  : [base[0], base[1], base[2] + ROOM, base[3] + 40];
+  svg.setAttribute('viewBox', vb.join(' '));
+  const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
+  const pill = (t, at, label, gap = 4) => {
+    const w = 7 * label.length + 12;
+    const x = rear ? at[0] - gap - w : at[0] + gap;
+    t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
+    const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
+    return t;
+  };
+  handle.drawn = drawCables2d(svg, handle.plan, view, {
+    edgeX, outboard: rear ? -1 : 1,
+    tag: (at, far) => pill(svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
+      class: 'cable-tag', tabindex: '0', role: 'button'}), at, `→ ${far[0]} ${endView(far)} · ${far[1]}`),
+    farLoose: (i, side) => !!handle.loose[i]?.includes(side),
+    looseTag: (at, far) => {
+      const {why, stage} = looseWhy(handle.plan, handle.kept, far);
+      const t = svgEl('g', {'data-not-connected': far.join(':'), class: 'cable-tag not-connected',
+        ...(stage ? {'data-fix-stage': stage, tabindex: '0', role: 'button'} : {})});
+      const full = svgEl('title', {}); full.textContent = looseReason(handle.plan, handle.kept, far);
+      t.append(full);
+      return pill(t, at, `✕ ${why}`);
+    },
+  });
+  return {vb};
+}
+
+// A CABLED ELEVATION AS A FILE: a fresh elevation of `view` with the current
+// overrides, cabled by cableFace in a hidden host (laid out, never seen),
+// and returned as standalone() text. Fresh rather than the one on screen, so
+// hover and focus state and the visitor's pan/zoom never reach a file, and
+// so 3D mode, which has no elevation on screen, exports the same thing.
+export async function cabledElevationSvg(handle, view = 'front') {
+  const svg = await build2dElevation({stack: CAST.filter(e => e.ru != null), heightRU: RACK_U,
+                                      overrides, view});
+  const host = el('div', {'aria-hidden': 'true'});
+  host.style.cssText = 'position:fixed;left:0;top:0;width:800px;visibility:hidden;pointer-events:none';
+  document.body.append(host);
+  try {
+    host.append(svg);
+    cableFace(svg, handle, view);
+    return standalone(svg);
+  } finally {
+    host.remove();
+  }
+}
+```
+
+In `paintFace`, replace the moved code with:
+
+```js
+    const {vb} = cableFace(svg, handle, view);
+    panZoom(svg, () => vb);
+    handle.view = view;
+```
+
+Keep `wireClicks(…)`, `wireHover(svg)`, `paint(view)` and `onDrawn?.(handle)` after it, unchanged.
+
+In `enterPatched`, add `scene: null` to the initial `handle` object. In `enter3d`, directly after `handle.dispose = () => sc?.dispose();`, add:
+
+```js
+  handle.scene = sc;   // stage 6 exports it; null without WebGL
+```
+
+- [ ] **Step 6: Rebuild stage 6 on `enterPatched` (`06-takeaway.js`)**
+
+Keep `dcimSection` and `buildDrawio`, both from Task 4. Replace `makeTakeaway`'s state, `buildPng`, `enter` and `exit` with the code below. The header comment gains a paragraph saying that stage 6 is stage 4's cabled rack, applies the plan's seats itself, and exports the cables.
+
+```js
+import {stage3d, stageRack, title, lead, kv, save, DIST} from '../artifact.js';
+import {CAST, RACK_U, overrides} from '../rack.js';
+import {enterPatched, cabledElevationSvg} from '../patch-view.js';
+```
+
+Drop the imports this file no longer uses: `el`, `saveSvg`, `standalone`, `panZoom`, `loadMeta`, `chassisOf`, `mount3d` and `build2dElevation`. Keep `rackDiagram`, `configuredFace`, `rasterize` and `setMode`.
+
+```js
+export default function makeTakeaway() {
+  let handle = null;
+
+  // The face the visitor is looking at in 2D; the front in 3D, which has none.
+  const face = () => (handle?.mode === '2d' && handle.view) || 'front';
+
+  async function buildSvg() {
+    save(await cabledElevationSvg(handle, face()), `cast-rack-${face()}.svg`, 'image/svg+xml');
+  }
+
+  // rasterize() only takes a URL, so the cabled SVG goes through a blob URL.
+  async function buildPng() {
+    const text = await cabledElevationSvg(handle, face());
+    const url = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
+    try {
+      const bytes = await rasterize(url, 2);
+      if (!bytes) throw new Error('could not rasterize the elevation');
+      save(bytes, `cast-rack-${face()}.png`, 'image/png');
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  return {
+    title: 'Take it away',
+    question: 'Where can it go from here?',
+    async enter(ui) {
+      let exportsIndex = null;
+      try {
+        exportsIndex = await fetch('assets/exports/index.json').then(r => r.ok ? r.json() : null);
+      } catch (err) {
+        console.warn('[portrayal] no export index', err);
+      }
+      if (!ui.live()) return;
+      const is3d = ui.mode === '3d';
+      // Stage 4's cabled rack - the plan's seats applied here too, so a
+      // visitor who jumps straight to this stage still sees it cabled - under
+      // this stage's own panel. The plan list stays: a row still lights its
+      // cable.
+      const h = await enterPatched(ui, {
+        counts: false,
+        head: [
+          title('Take it away'),
+          lead('<strong>Where can it go from here?</strong>'),
+          lead('The cast rack as built and cabled here, handed over in the formats a network team uses next.'),
+          kv([
+            ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
+            ['GLB / USDZ', !is3d ? 'the 3D model with its cables - switch to 3D to build the scene they export'
+                                 : 'the mounted, cabled rack as a 3D model'],
+            ['SVG', 'the face shown, with its cards, optics and cables'],
+            ['PNG', 'a raster of that same face'],
+            ['DCIM', 'NetBox and Nautobot device-type YAMLs for each cast device, linked below'],
+          ]),
+        ],
+        extraPanel: () => [lead('<strong>DCIM device types</strong>'), dcimSection(exportsIndex)],
+      });
+      if (!ui.live()) { h?.dispose(); return; }
+      handle = h;
+
+      const items = [
+        {label: 'draw.io',
+         title: 'Download a draw.io rack diagram - front and rear, as built, with a connection point on every port',
+         run: buildDrawio},
+        {label: 'SVG', title: 'Download the face shown as an SVG, with its cards, optics and cables',
+         run: buildSvg},
+        {label: 'PNG', title: 'Download a PNG raster of the face shown, with its cables',
+         run: buildPng},
+      ];
+      if (!is3d) {
+        items.push({label: '3D formats (GLB, USDZ) — switch to 3D',
+          title: 'GLB and USDZ export the 3D scene, which 2D does not build - this switches to 3D',
+          run: () => setMode('3d')});
+      } else if (handle.scene) {
+        const sc = handle.scene;
+        // complete() first: optics and plugs are extruded by the deferred
+        // relief pass, and an export taken before it lands has them flat.
+        items.push({label: 'GLB', title: 'Download the mounted, cabled rack as a GLB',
+          run: async () => { await sc.complete(); save(await sc.toGLB(), 'cast-rack.glb', 'model/gltf-binary'); }});
+        items.push({label: 'USDZ', title: 'Download the mounted, cabled rack as a USDZ',
+          run: async () => { await sc.complete(); save(await sc.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip'); }});
+      }
+      ui.setExports(items);
+    },
+    exit() {
+      handle?.dispose(); handle = null;
+      stage3d.hidden = true; stage3d.replaceChildren();
+      // The 2D picture. #stageTabs is the rail's to empty (vacate), not this.
+      stageRack.hidden = true; stageRack.replaceChildren();
+    },
+  };
+}
+```
+
+`EXPORTS_BASE` stays for `dcimSection`. Use it in the fetch above instead of the literal if you prefer; they are the same string.
+
+`enterPatched` calls `ui.strip()`. Stages 4 and 5 show the "Look closer" strip, and stage 6 did not. If the strip appears on stage 6 and it didn't before, follow the handoff's call and keep stage 4's behavior (the strip shows). Say which you saw in your report.
+
+- [ ] **Step 7: Run the new checks, then the full suite**
+
+Run: `python3 check-browser.py --only check_takeaway_cables_2d,check_takeaway_cables_3d,check_takeaway_drawio`
+Expected: all three ok. `check_takeaway_drawio` is Task 4's check, and it must still pass.
+
+Run: `python3 check-browser.py`
+Expected: everything passes, including `the stage rail: 7 stages`. The stage 4 and 5 checks also exercise the `cableFace` extraction.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add site/showcase/cables.js site/showcase/patch-view.js site/showcase/stages/06-takeaway.js check-browser.py
+git commit -m "showcase: stage 6 shows the cabling, and its SVG, PNG and GLB carry it
+
+The cable layer was marked as screen UI, so standalone() dropped every
+cable from every export; the tags stay UI. Stage 6 is stage 4's cabled
+rack (plan seats applied on entry) under its own panel, and exports a
+freshly built, cabled elevation, so hover state and pan/zoom never reach
+a file.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+```
+
+---
+
 ### Task 5: Explorer downloads the device as configured
 
 **Files:**
@@ -881,5 +1219,5 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ## Not in Phase 0 (so nobody adds it here)
 
 - drawio.html's **stencil library** keeps separate card shapes (spec §4.3). Its rack elevations have no swap input, so a configured face with no swaps would be the base face anyway. There's nothing to change there.
-- Cables in any export, the draw.io edge converter, and cable length: Phase 2.
+- The draw.io edge converter, cable exports in the Rack Builder, and cable length: Phase 2. (The showcase's stage 6 cables in SVG, PNG and GLB moved into Phase 0 as Task 4b.)
 - Moving `rack.js` / `cables.js` / `rails.js` into `site/rack/`, and the hole-style change: Phase 1.
