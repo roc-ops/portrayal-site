@@ -205,8 +205,8 @@ const LAMP = {
 // The chassis lamps of a switch that is up and happy, in that lamp's own
 // vocabulary rather than a color each.
 const CHASSIS = {
-  'led-sys': 'ok', 'led-fan': 'ok', 'led-ps0': 'ok', 'led-ps1': 'ok',
-  'led-sync': 'locked',
+  'led-sys/lamp': 'ok', 'led-fan/lamp': 'ok', 'led-ps0/lamp': 'ok', 'led-ps1/lamp': 'ok',
+  'led-sync/lamp': 'locked',
 };
 
 // HOW MANY LANES A LINK USES. The lamp count is not a free choice - it
@@ -262,31 +262,49 @@ export async function seatHero(svg) {
   return res;
 }
 
+// WHAT EVERY LAMP SAYS, as one map from `data-path` to the state the lamp
+// declares - the chassis lamps, the management jack's pair, every cabled
+// port, and the two digits of the status display. BOTH PANELS READ IT: 2D sets
+// each lamp from it, and 3D hands it to the renderer as state classes
+// (`state-on`, `state-2`), which the drawing's own stylesheet paints. It used
+// to live only in the 2D pass, which is how the 3D switch came to stand there
+// with every lamp out and a blank display.
+//
+// A port lamp is lit for a single-lane cage (`led-port-N/lamp`) and, per lane,
+// for a QSFP28 quad (`led-port-N/lane-1..4`) - `lanesFor` of the four, so the
+// degraded `port-70` lights three. Both shapes are listed for every port; the
+// drawing has only one of them, and a path nothing carries is ignored by both
+// panels. Lamps not in the map are off.
+export const DISPLAY = '02';
+
+export function lampStates() {
+  const m = new Map(Object.entries(CHASSIS));
+  for (const [port, spec] of Object.entries(PORTS)) {
+    if (port === 'oob') {
+      m.set('oob/led-a', 'link');
+      m.set('oob/led-b', 'activity');
+      continue;
+    }
+    m.set(`led-${port}/lamp`, lanesFor(spec, false).up > 0 ? 'on' : 'off');
+    const {up} = lanesFor(spec, true);
+    for (let i = 1; i <= 4; i++) m.set(`led-${port}/lane-${i}`, i <= up ? 'on' : 'off');
+  }
+  [...DISPLAY].forEach((c, i) => m.set(`status-display/digit-${i + 1}`, c));
+  return m;
+}
+
 // PORT LAMPS SAY WHAT IS UP. Every port lamp on the face is set `off` first,
-// so a lamp is never lit by accident; then each row lights its own - one lamp
-// for a single-lane cage, `lanesFor` of the four for a QSFP28 quad (so the
-// degraded `port-70` lights three). The management jack lights its link and
-// activity pair in their own states.
-function lightPorts(svg) {
+// so a lamp is never lit by accident; then the map lights its own.
+function lightFace(svg) {
   for (const lamp of svg.querySelectorAll('[data-path^="led-port-"][data-states]')) {
     setLamp(lamp, 'off');
   }
-  for (const [port, spec] of Object.entries(PORTS)) {
-    if (port === 'oob') {
-      setLed(svg, 'oob', 'link', 'led-a');
-      setLed(svg, 'oob', 'activity', 'led-b');
-      continue;
-    }
-    const quad = !!svg.querySelector(`[id="led-${port}--lane-1"]`);
-    const {up} = lanesFor(spec, quad);
-    if (quad) {
-      for (let i = 1; i <= 4; i++) {
-        setLed(svg, `led-${port}`, i <= up ? 'on' : 'off', `lane-${i}`);
-      }
-    } else {
-      setLed(svg, `led-${port}`, up > 0 ? 'on' : 'off');
-    }
+  for (const [path, state] of lampStates()) {
+    if (path.startsWith('status-display/')) continue;       // setDigits' job
+    const lamp = svg.querySelector(`[data-path="${path}"][data-states]`);
+    if (lamp) setLamp(lamp, state);
   }
+  setDigits(svg, DISPLAY);
 }
 
 // ── the cables ──────────────────────────────────────────────────────────────
@@ -646,9 +664,7 @@ export async function heroReveal(host) {
   // lamps are `common/led-arrow-sm`, an up triangle for the top port of a
   // pair and a down triangle for the bottom, and the QSFP28 quads take a lane
   // at a time. Set before the parts are seated, which touches no lamp.
-  for (const [id, state] of Object.entries(CHASSIS)) setLed(svg, id, state);
-  lightPorts(svg);
-  setDigits(svg, '02');
+  lightFace(svg);
 
   // THE REAL PARTS. Seated only now the SVG is in the page, because the kit
   // measures. A failure leaves the lamps and the slider working.
@@ -747,14 +763,8 @@ export async function heroReveal(host) {
 
 // A lamp is `off` until something sets its color, and the drawing exposes
 // that as a custom property rather than a fill - so lighting one touches no
-// artwork. `part` picks a lamp within a multi-lamp element, which is how the
-// QSFP28 quads address their four lanes separately.
-function setLed(svg, id, state, part) {
-  const sel = part ? `[id="${id}--${part}"]` : `[id="${id}--lamp"]`;
-  const lamp = svg.querySelector(sel);
-  if (lamp) setLamp(lamp, state);
-}
-
+// artwork.
+//
 // ONLY A STATE THE LAMP DECLARES. `data-states` is the face's own list of what
 // the lamp can be; a state outside it is refused rather than painted, so the
 // code cannot light a port lamp amber the drawing never offered. The state set

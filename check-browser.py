@@ -900,6 +900,33 @@ def check_hero_3d(browser, base):
                     bad.append(f"hero 3D: port-12 (dac) tube is not black #15171a ({got['dac']!r})")
             step("jacket colors", colors)
 
+            def lamps():
+                # The 3D faces are cut with the SAME lamps the 2D drawing
+                # shows: every lamp 2D lit (ports, chassis, the management
+                # pair) reaches the renderer as that state's class, nothing 2D
+                # left dark is lit, and the status display reads 02. The 3D
+                # switch once stood with every lamp out.
+                if not ready[0]: bad.append("hero 3D: lamps - the scene never built"); return
+                got = page.evaluate("""() => {
+                    const rich = document.querySelector('#hero-reveal .reveal-rich svg');
+                    const lit2d = {};
+                    for (const el of rich.querySelectorAll('[data-path][data-state]'))
+                        if (el.dataset.state !== 'off') lit2d[el.dataset.path] = 'state-' + el.dataset.state;
+                    const st = window.__hero3d.states();
+                    const lit3d = {};
+                    for (const [p, c] of Object.entries(st))
+                        if (c !== 'state-off' && !p.startsWith('status-display/')
+                            && rich.querySelector(`[data-path="${p}"]`)) lit3d[p] = c;
+                    return {lit2d, lit3d, d1: st['status-display/digit-1'], d2: st['status-display/digit-2']}; }""")
+                if len(got["lit2d"]) < 21 + 5:
+                    bad.append(f"hero 3D: lamps - 2D lit only {len(got['lit2d'])}, so there is nothing to compare")
+                if got["lit2d"] != got["lit3d"]:
+                    diff = sorted(set(got["lit2d"].items()) ^ set(got["lit3d"].items()))
+                    bad.append(f"hero 3D: lamps disagree with 2D {diff[:6]}")
+                if (got["d1"], got["d2"]) != ("state-0", "state-2"):
+                    bad.append(f"hero 3D: status display is {got['d1']}/{got['d2']}, expected 02")
+            step("lamps", lamps)
+
             def named():
                 # The built scene says what it shows, with the still hidden.
                 got = page.evaluate("""() => { const s = document.querySelector('#hero-3d .hero-3d-stage');

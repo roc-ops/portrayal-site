@@ -19,7 +19,7 @@
 // its cables hung - and then only when the browser is next idle, so the front
 // page's first paint and the 2D hero never compete with three.js. On a narrow
 // screen the panel must be on screen, not merely near it, to start.
-import {PORTS, DEFAULT_PORT, captionOf} from './hero-reveal.js';
+import {PORTS, DEFAULT_PORT, captionOf, lampStates} from './hero-reveal.js';
 import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket} from './showcase/cables.js';
 import {guard3d} from './webgl.js';
 
@@ -111,6 +111,7 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
         dist: 'assets/dist/',
         stack: [{ref: REF, cfg: 'base', ru: 1, label: 'S9600-72XC', overrides}],
         heightRU: 2, rails: false, recess: 0, background: STUDIO,
+        states: lampStates(),                 // the 2D panel's lamps and display
       });
       try {
         s.three.renderer.shadowMap.enabled = true;     // before anything compiles
@@ -417,6 +418,7 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
         pick: port => show(tubes.some(t => t.port === port) ? port : null),
         stop,
         devices: () => s.deviceBoxes().length,
+        states: () => s.states(),
         running: () => s.running(),
         distance: () => camera.position.distanceTo(controls.target),
         // Where every tube's OPAQUE stretch lands on the canvas (NDC, -1..1

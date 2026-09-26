@@ -15,7 +15,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
-         setPulled as setReliefPulled, applyPulled, nodeTools, cablePoints } from '../vendor/relief.js';
+         setPulled as setReliefPulled, applyPulled, nodeTools, cablePoints,
+         setNodeStates, nodeStates } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
@@ -177,6 +178,15 @@ export function createRackScene(container, opts = {}) {
   // collision the override map had, and passing `relief` is what settles it.
   const PXMM = opts.pxmm || PXMM_RELIEF;
   configureRelief({THREE, renderer, PXMM, FRU_PATHS: new Set()}, relief);
+
+  // WHAT THE LAMPS SAY. `opts.states` maps a `data-path` to the state a lamp
+  // (or a display digit) should show - `{'led-port-4/lamp': 'on'}` - and goes
+  // to relief.js as the `state-*` class the drawing's own stylesheet paints.
+  // Set before anything is built, as viewer3d.js does, so the faces are cut
+  // from a document that already carries them. Scene-wide: a path lights on
+  // every mount that has it.
+  if (opts.states) setNodeStates(new Map([...(opts.states instanceof Map
+    ? opts.states : Object.entries(opts.states))].map(([p, s]) => [p, `state-${s}`])), relief);
 
   // A SECOND SCOPE, PURELY FOR DENSITY. A face is rasterised at its own size in
   // millimetres, so a 1RU device's top is 440 x 500 against the front's
@@ -925,6 +935,8 @@ export function createRackScene(container, opts = {}) {
       PULLED = new Set(paths || []);
     },
     pulled: () => new Set(PULLED),
+    // The lamp states the faces were cut with, `data-path` -> `state-*` class.
+    states: () => Object.fromEntries(nodeStates(relief)),
     // The world point of a drawn port, and the way the face it is on is
     // pointing: {position, normal, view, path, mm, ref, ru, label}, or null
     // when nothing on this device carries that data-path. `which` is a ref, a
