@@ -60,9 +60,12 @@ import {dropBelow} from '../plan.js';
 const DEV = 'as7726-32x';
 const GROUP = 'qsfp28';
 const DEFAULT_CAGE = 'port-1';
-// Padding round the highlighted bore, in mm: a halo, so a 7 mm bore reads as
-// a mark you can find at the opening framing, not a hairline on its edge.
-const HALO = 3;
+// THE HIGHLIGHT IS THE PORT, with the TX bore ringed inside it. A box round
+// the bore alone (7 mm, haloed) sat on one corner of a QSFP port and read as a
+// stray square; the port is what the visitor chose, the bore is what the seat
+// made addressable, so both are drawn. Padding in mm.
+const PORT_PAD = 0.8;
+const BORE_PAD = 0.6;
 
 export default function makeOptics() {
   let scene = null;
@@ -148,7 +151,7 @@ export default function makeOptics() {
     const pic = svg;    // and its own 2D picture, likewise
     // The last cage's highlight goes whatever this cage holds; it is redrawn
     // below, after the skin loads, only if this cage has an optic.
-    if (pic) clearHighlights(pic);
+    if (pic) { clearHighlights(pic); clearHighlights(pic, 'hl-bore'); }
     const all = cages();
     const cage = all.find(c => c.id === selected) || all[0];
 
@@ -201,7 +204,7 @@ export default function makeOptics() {
       // A redraw replaced the picture while the skin loaded: the build that
       // follows that redraw paints the panel and the highlight, not this one.
       if (svg !== pic) return;
-      if (pic) clearHighlights(pic);
+      if (pic) { clearHighlights(pic); clearHighlights(pic, 'hl-bore'); }
       if (paths === null) {
         kids.push(lead('The skin could not be loaded, so its paths are unknown.'));
       } else if (!paths.length) {
@@ -219,9 +222,11 @@ export default function makeOptics() {
           const hit = [bore, tx].find(at);
           if (!bore && !tx) {
             kids.push(lead('The skin carries no tx path to highlight.'));
-          } else if (hit && highlight(pic, at(hit), 'hl', HALO)) {
+          } else if (hit && highlight(pic, g.querySelector(`[data-path="${CSS.escape(cage.id)}"]`) || at(hit),
+                                      'hl', PORT_PAD)) {
+            highlight(pic, at(hit), 'hl-bore', BORE_PAD)?.classList.add('pt-hl-inner');
             kids.push(kv([[hit.path,
-              `${hit === bore ? 'TX bore' : 'TX'} highlighted on the face`, true]]));
+              `${cage.id} highlighted, its ${hit === bore ? 'TX bore' : 'TX'} ringed inside`, true]]));
           } else {
             kids.push(lead(`${[bore, tx].filter(Boolean).map(p => `<code>${p.path}</code>`).join(' and ')
               } ${bore && tx ? 'are' : 'is'} not on the drawn face, so nothing is highlighted.`));

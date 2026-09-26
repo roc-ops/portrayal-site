@@ -467,6 +467,24 @@ def check_stages(page, base):
             if (!r) return 0; const b = r.getBoundingClientRect(); return Math.min(b.width, b.height); }""")
         if side < 8:
             bad.append(f"stage optics in 2D: the highlight is {side:.1f} px on its shorter side (< 8)")
+        # THE HIGHLIGHT IS THE PORT (feedback: a square round the TX bore sat on
+        # one corner of the port and "looks funny"). The box frames the whole
+        # cage the optic went into, and the TX bore is ringed inside it.
+        fit = page.evaluate("""() => {
+            const el = document.querySelector('#stageRack svg [data-highlight="hl"]');
+            const box = document.querySelector('#stageRack svg [data-highlight-box="hl"]');
+            const ring = document.querySelector('#stageRack svg [data-highlight-box="hl-bore"]');
+            if (!el || !box) return {why: 'no highlight'};
+            const p = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+            const r = ring && ring.getBoundingClientRect();
+            const inside = (o, i) => i.left >= o.left - 0.5 && i.right <= o.right + 0.5
+                                  && i.top >= o.top - 0.5 && i.bottom <= o.bottom + 0.5;
+            return {path: el.getAttribute('data-path'), covers: inside(b, p), ring: !!r,
+                    ringInside: !!r && inside(b, r)}; }""")
+        if not re.fullmatch(r"port-\d+", fit.get("path") or "") or not fit.get("covers"):
+            bad.append(f"stage optics in 2D: the highlight does not frame the whole port ({fit})")
+        if not fit.get("ring") or not fit.get("ringInside"):
+            bad.append(f"stage optics in 2D: the TX bore is not ringed inside the port ({fit})")
 
     def filter_management():
         # "Show me just management": the plan's management cables at full
