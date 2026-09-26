@@ -276,11 +276,13 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
 
   // A MODULAR CHASSIS GROUPS ITS PORTS UNDER THE CARD THEY ARE ON. The cells
   // are still at their real positions over the image - this is the footprint,
-  // not the miniature - but a bay is now a collapsible container holding its
-  // own card's ports. Fold one and its forty connection points go with it,
-  // which is the difference between a diagram you can cable and a faceplate
-  // wearing forty invisible hit targets. It also gives the bay an identity a
-  // cable can be checked against later.
+  // not the miniature - but a bay is now a container holding its own card's
+  // ports, which gives the bay an identity a cable can be checked against.
+  //
+  // NOT COLLAPSIBLE. It was, so that folding a card took its forty connection
+  // points with it - but draw.io marks every collapsible container with a "-"
+  // toggle, which sat on each card like a stray icon, and folding hid only
+  // invisible cells while the card's picture stayed exactly as drawn.
   const bays = ports.filter(p => p.cls === 'bay');
   const owned = new Set();
   for (const b of bays) {
@@ -294,11 +296,9 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
       `<object label="" portrayal-bay="${esc(b.id)}"` +
       (b.model ? ` portrayal-module="${esc(b.model)}"` : '') +
       ` id="${esc(`${id}-${b.id}`)}"><mxCell style="${tint('bay')}html=1;` +
-      `container=1;collapsible=1;connectable=0;" vertex="1" ` +
+      `container=1;collapsible=0;connectable=0;" vertex="1" ` +
       `parent="${esc(id)}"><mxGeometry x="${bx}" y="${by}" width="${bw}" ` +
-      `height="${bh}" as="geometry"><mxRectangle x="${bx}" y="${by}" ` +
-      `width="${bw}" height="${bh}" as="alternateBounds"/></mxGeometry>` +
-      `</mxCell></object>`);
+      `height="${bh}" as="geometry"/></mxCell></object>`);
     for (const p of mine) {
       out.push(portCell(`${id}-${p.id}`, p.path || p.id,
         `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
