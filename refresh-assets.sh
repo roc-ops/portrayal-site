@@ -464,4 +464,8 @@ du -sh "$HERE/assets/dist" "$HERE/vendor"
 # something this site depends on goes away the failure is SILENT - a tab renders
 # slightly wrong, or a download comes out empty. This is the only thing that
 # turns that into a noise. Non-zero exit fails the refresh.
+
+# The rack builder's catalog sizes, distilled from what was just vendored.
+python3 ./chassis-index.py
+
 python3 "$HERE/check-contract.py"
