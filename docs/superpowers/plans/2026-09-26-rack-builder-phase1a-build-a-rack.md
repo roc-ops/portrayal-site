@@ -2317,19 +2317,21 @@ def check_rack_inspect(page, base):
     # Explorer round trip: seat an optic in the lens through its own URL state.
     page.click("#iExplore")
     page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
-    page.wait_for_function("""async () => {
-      const w = document.querySelector('.rk-lens iframe')?.contentWindow;
-      if (!w?.portrayalEmbed) return false; await w.portrayalEmbed.ready; return true; }""", timeout=READY_MS)
+    # A synchronous predicate: a Promise returned from wait_for_function is truthy at once.
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
+                           timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
     page.evaluate("""() => {
       const w = document.querySelector('.rk-lens iframe').contentWindow;
       // swap= is written raw (it carries its own escaping), so it is appended, not set.
       const rest = w.location.search.replace(/&?swap=[^&]*/, '');
       w.location.replace(`${w.location.pathname}${rest}&swap=port-1~generic%2Fqsfp-lc%402`);
     }""")
-    page.wait_for_function("""async () => {
+    # Synchronous polling: the reloaded frame's API exists and reports the swap.
+    page.wait_for_function("""() => {
       const w = document.querySelector('.rk-lens iframe')?.contentWindow;
-      if (!w?.portrayalEmbed || !w.location.search.includes('swap=')) return false;
-      await w.portrayalEmbed.ready; return !!w.portrayalEmbed.current().swaps['port-1']; }""", timeout=READY_MS)
+      try { return !!w?.portrayalEmbed && !!w.portrayalEmbed.current().swaps['port-1']; } catch { return false; } }""",
+                           timeout=READY_MS)
     page.click(".rk-lens-done")
     page.wait_for_function("() => (window.__rack.doc().racks[0].items[0].swaps || {})['port-1'] === 'generic/qsfp-lc@2'",
                            timeout=READY_MS)
