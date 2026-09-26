@@ -901,6 +901,15 @@ check("not a real lab" in (HERE / "site" / "showcase" / "patch-view.js").read_te
 check(not re.search(r"#[0-9a-fA-F]{6}", s4),
       "stage 4 keeps no colors of its own", "colors belong to cables.js")
 
+# Stage 4 in 3D: the tubes start on the kit's connector points through
+# rack3d.js's own face->room chain, and their geometry lives in cables.js.
+r3d = (HERE / "site" / "rack3d.js").read_text()
+check("async function cableAnchor" in r3d and "cablePoints" in r3d and "function deviceBoxes" in r3d,
+      "rack3d.js anchors cables on the kit's connector points", "cableAnchor/deviceBoxes missing")
+PV = HERE / "site" / "showcase" / "patch-view.js"
+check(PV.is_file() and not re.search(r"TubeGeometry|CatmullRom", PV.read_text()),
+      "patch-view.js leaves the cable geometry to cables.js", "tube geometry in patch-view.js")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

@@ -1,13 +1,13 @@
 // The body stages 4 and 5 share: the cast rack with the plan's seats, cabled.
 // In 2D the front or the rear elevation (the Front/Rear toggle lives in
 // #stageTabs, which the rail empties on vacate); in 3D the mounted rack and
-// its tubes (Task 4). Every write after an await is behind ui.live().
+// its tubes. Every write after an await is behind ui.live().
 
 import {stage3d, stageRack, el, svgEl, lead, kv, panZoom} from './artifact.js';
 import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf, shortRef}
   from './rack.js';
 import {loadPlan, applyPlanSeats, planSeatsMade, looseReason, countsBy, endView} from './plan.js';
-import {drawCables2d, looseOn, colorOf} from './cables.js';
+import {drawCables2d, drawCables3d, looseOn, colorOf} from './cables.js';
 import {wireClicks} from './svg2d.js';
 
 // mm of room beside the rack for cross-face tails and their tags.
@@ -67,7 +67,7 @@ export async function enterPatched(ui, {head = [], onDrawn, extraPanel = () => [
   // panel's loose lines never depend on which face is shown, or on a flip
   // that overtook the first draw.
   const [, loose] = await Promise.all([
-    ui.mode === '2d' ? enter2d(ui, handle, onDrawn) : enter3d(ui, handle),
+    ui.mode === '2d' ? enter2d(ui, handle, onDrawn) : enter3d(ui, handle, onDrawn),
     looseEnds(ui, plan),
   ]);
   if (!ui.live()) { handle.dispose(); return null; }
@@ -124,15 +124,48 @@ async function looseEnds(ui, plan) {
   return out;
 }
 
-// 3D, until Task 4 draws the tubes: the cast mounted with the plan's seats.
-// Without WebGL mount3d leaves its reason on the scrim, and the panel is
-// built all the same (R11).
-async function enter3d(ui, handle) {
+// 3D: the cast mounted with the plan's seats, and the plan as tubes hanging
+// from its connectors (cables.js). There is no face to flip, so #stageTabs
+// stays empty and a row lights its tube and dims the rest. Without WebGL
+// mount3d leaves its reason on the scrim, and the panel is built all the
+// same (R11).
+async function enter3d(ui, handle, onDrawn) {
+  document.getElementById('stageTabs')?.replaceChildren();
   const stack = CAST.map(e => ({...e, chassis: chassisOf(e.ref)}));
   const sc = await mount3d({stack, heightRU: RACK_U, overrides});
   if (!ui.live()) { sc?.dispose(); return; }
   handle.dispose = () => sc?.dispose();
-  if (sc) ui.unscrim();
+  if (!sc) return;
+  ui.unscrim();
+  // Stale here, the scene is handle.dispose's: enterPatched disposes it.
+  const r = await drawCables3d(sc, handle.plan, {live: ui.live});
+  if (!r || !ui.live()) return;
+  handle.drawn = r.tubes;
+  handle.highlight = i => {
+    for (const t of r.tubes) if (t.mesh) t.mesh.traverse(o => {
+      if (!o.material) return;
+      const dim = i != null && t.i !== i;
+      // Turning transparency on or off recompiles the shader, which three.js
+      // does only when told.
+      if (o.material.transparent !== dim) { o.material.transparent = dim; o.material.needsUpdate = true; }
+      o.material.opacity = dim ? 0.15 : 1;
+    });
+  };
+  // TEST HOOK, only with ?patchprobe=1: what check-browser.py's 3D step
+  // measures - every fiber connector's distance to the nearest drawn start
+  // of its cable's tubes, and how far that end's run first heads out along
+  // the connector's normal (straight out of the face, not back into it).
+  if (new URLSearchParams(location.search).get('patchprobe') === '1') {
+    window.__patch3d = {tubes: r.tubes, boxes: r.boxes,
+      anchors: r.anchors.map(({i, side, anchor}) => {
+        const pts = r.tubes[i].points;
+        const [p0, p1] = side === 'from' ? [pts[0], pts[1]] : [pts.at(-1), pts.at(-2)];
+        return {i, side,
+          firstGap: Math.min(Infinity, ...r.tubes[i].starts.map(p => p.distanceTo(anchor.position))),
+          out: p0 && p1 ? p1.clone().sub(p0).dot(anchor.normal) : -Infinity};
+      })};
+  }
+  onDrawn?.(handle);
 }
 
 async function enter2d(ui, handle, onDrawn) {

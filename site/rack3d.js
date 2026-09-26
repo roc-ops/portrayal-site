@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
          setSvgOverride, clearSvgOverrides, createReliefScope,
-         setPulled as setReliefPulled, applyPulled, nodeTools } from '../vendor/relief.js';
+         setPulled as setReliefPulled, applyPulled, nodeTools, cablePoints } from '../vendor/relief.js';
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
@@ -714,6 +714,52 @@ export function createRackScene(container, opts = {}) {
     return null;
   }
 
+  // WHERE A CABLE LEAVES A SEATED CONNECTOR, in the room: relief.js's
+  // cablePoints on the mount's own face (faceDoc is the seated face - see
+  // overrideFaces), each point's own-frame `at` mapped into face millimeters
+  // through its marker's CTM (the same mapping nodeTools' mmRect uses), lifted
+  // by the point's resolved `z` along the face's own +z, then through the same
+  // face->device->room chain portAnchor uses. One entry per connector under
+  // `prefix` (an optic's two plugs; a duplex plug's a and b), or [] for none.
+  async function cableAnchor(which, prefix, o = {}) {
+    const m = findMounted(which);
+    if (!m || !prefix) return [];
+    const {entry, group} = m;
+    const {w: W, h: H, d: D} = entry.chassis;
+    const frames = faceFrames(W, H, D);
+    group.updateMatrixWorld(true);
+    const q = group.getWorldQuaternion(new THREE.Quaternion());
+    for (const view of o.view ? [o.view] : ['front', 'rear']) {
+      const fr = frames.find(x => x.view === view);
+      const doc = fr && await faceDoc(entry, view);
+      if (!doc) continue;
+      const pts = cablePoints(doc.svg).filter(p => p.at && p.path.startsWith(prefix + '-occupant/'));
+      if (!pts.length) continue;
+      const inv = doc.svg.getScreenCTM().inverse();
+      const rot = new THREE.Euler(...fr.rot);
+      const normal = new THREE.Vector3(0, 0, 1).applyEuler(rot).applyQuaternion(q).normalize();
+      return pts.map(p => {
+        const mm = new DOMPoint(+p.at[0], +p.at[1]).matrixTransform(inv.multiply(p.el.getScreenCTM()));
+        const lx = (fr.flipLX ? -1 : 1) * (mm.x - fr.fw / 2);
+        const ly = (fr.flipLY ? -1 : 1) * (fr.fh / 2 - mm.y);
+        const local = new THREE.Vector3(lx, ly, +p.z || 0).applyEuler(rot).add(new THREE.Vector3(...fr.pos));
+        return {position: group.localToWorld(local), normal: normal.clone(), view, path: p.path};
+      });
+    }
+    return [];
+  }
+
+  // Each mounted chassis as a world-space box, for a host that must keep
+  // something (a cable) out of the metal.
+  function deviceBoxes() {
+    return mounted.map(({entry, group}) => {
+      const {w, h, d} = entry.chassis;
+      group.updateMatrixWorld(true);
+      const box = new THREE.Box3(new THREE.Vector3(-w / 2, -h / 2, -d / 2), new THREE.Vector3(w / 2, h / 2, d / 2));
+      return {ref: entry.ref, box: box.applyMatrix4(group.matrixWorld)};
+    });
+  }
+
   function disposeTree(root) {
     root.traverse(o => {
       if (o.geometry) o.geometry.dispose();
@@ -863,6 +909,11 @@ export function createRackScene(container, opts = {}) {
     // label, or {ref, ru} when a rack holds the same model twice; pass
     // {view} to look at one face instead of searching them.
     portAnchor,
+    // Where each cable leaves a seated connector under a path prefix:
+    // [{position, normal, view, path}], one per relief.js cable point, or [].
+    cableAnchor,
+    // The mounted chassis bodies as world-space boxes: [{ref, box}].
+    deviceBoxes,
     // The measurements this scene mounts by, for a host that needs the frame
     // rather than one point in it. `faceZ` is only ever meaningful with
     // `recess`, which is why they are handed over together rather than as a

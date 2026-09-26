@@ -284,7 +284,9 @@ def check_stages(page, base):
             bad.append(f"{r.status} {r.url[len(base):]}")
 
     page.on("response", on_response)
-    page.goto(f"{base}/index.html", wait_until="load")
+    # ?patchprobe=1 only exposes window.__patch3d (patch-view.js), which
+    # cable_3d below measures; it changes nothing the page does.
+    page.goto(f"{base}/index.html?patchprobe=1", wait_until="load")
 
     # WHAT EACH STAGE CLAIMS, driven the way a visitor would. Every one runs
     # on the same page as the walk, so a 404 it causes - stage 3's skin fetch,
@@ -564,6 +566,35 @@ def check_stages(page, base):
             bad.append("stage optics in 3D: the seated optic's tx has neither a position nor "
                        "an 'unavailable' note")
 
+    def cable_3d():
+        # Without WebGL there is no scene to measure, and the panel is what
+        # answers (R11): all fourteen of the plan's rows.
+        if page.evaluate("async () => !!(await import('/site/webgl.js')).webglTrouble()"):
+            n = len(page.query_selector_all('#sidePanel [data-plan-row]'))
+            if n != 14:
+                bad.append(f"stage cable in 3D without WebGL: {n} of 14 plan rows")
+            return
+        # Fourteen tubes; each fiber tube starts at its connector; no sampled
+        # point inside a device body (spec §5.3's clearance rule).
+        page.wait_for_function("() => window.__patch3d && window.__patch3d.tubes.length === 14",
+                               timeout=READY_3D_MS)
+        r = page.evaluate("""() => {
+            const {tubes, anchors, boxes} = window.__patch3d;
+            const inside = [];
+            for (const t of tubes) for (const p of t.points)
+                for (const b of boxes) if (b.box.containsPoint(p)) { inside.push(`${t.i}:${b.ref}`); break; }
+            const off = anchors.filter(a => a.firstGap > 1).map(a => `${a.i}:${a.side} ${a.firstGap.toFixed(1)}`);
+            const back = anchors.filter(a => !(a.out > 1)).map(a => `${a.i}:${a.side} ${a.out.toFixed(1)}`);
+            return {n: tubes.filter(t => t.mesh).length, inside: [...new Set(inside)].slice(0, 5), off, back,
+                    fiber: anchors.length, tabs: document.getElementById('stageTabs')?.childElementCount ?? 0};
+        }""")
+        if r["n"] != 14: bad.append(f"stage cable in 3D: {r['n']} of 14 tubes")
+        if r["inside"]: bad.append(f"stage cable in 3D: tube points inside devices {r['inside']}")
+        if r["off"]: bad.append(f"stage cable in 3D: fiber tubes not starting at their connector {r['off']}")
+        if r["back"]: bad.append(f"stage cable in 3D: fiber runs not leaving straight out of the face {r['back'][:5]}")
+        if not r["fiber"]: bad.append("stage cable in 3D: no fiber connector anchored")
+        if r["tabs"]: bad.append("stage cable in 3D: the 2D-only Front/Rear tabs are showing")
+
     try:
         if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
             bad.append("the switch does not default to 2D")
@@ -589,6 +620,8 @@ def check_stages(page, base):
                     bad.append(f"stage {name} in 3D: the 2D drawing is showing")
                 if name == "optics":
                     seat_optic_3d()
+                if name == "cable":
+                    cable_3d()
             except Exception as e:
                 bad.append(f"stage {name} in 3D: {str(e).splitlines()[0]}")
         page.click('#stageMode [data-mode="2d"]')
