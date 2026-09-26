@@ -2598,6 +2598,42 @@ def check_rack_elevation(page, base):
     return bad
 
 
+@extra("the rack library keeps documents in IndexedDB, and works without it")
+def check_rack_library(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const L = await import('/site/rack/library.js');
+      const M = await import('/site/rack/model.js');
+      const lib = await L.openLibrary();
+      const a = M.newDoc({name: 'Alpha'}), b = M.newDoc({name: 'Beta'});
+      await lib.put(a); await new Promise(r => setTimeout(r, 5)); await lib.put(b);
+      const names = (await lib.list()).map(x => x.name);
+      const got = await lib.get(a.id);
+      const save = L.autosaver(lib, 50);
+      save.saveSoon({...a, racks: [{...a.racks[0], name: 'Alpha 2'}]});
+      save.saveSoon({...a, racks: [{...a.racks[0], name: 'Alpha 3'}]});
+      await save.flush();
+      const renamed = (await lib.get(a.id)).racks[0].name;
+      await lib.remove(b.id);
+      const after = (await lib.list()).map(x => x.name);
+      const none = await L.openLibrary({idb: null});
+      const off = [none.available, (await none.list()).length, await none.get('x')];
+      await none.put(a);   // a no-op, never a throw
+      let refused = '';
+      try { await L.readDocFile(new File(['{"format":"x"}'], 'x.json')); } catch (e) { refused = e.message; }
+      return {available: lib.available, names, same: JSON.stringify(got) === JSON.stringify(a),
+              renamed, after, off, refused};
+    }""")
+    want = {"available": True, "names": ["Beta", "Alpha"], "same": True, "renamed": "Alpha 3",
+            "after": ["Alpha 3"], "off": [False, 0, None], "refused": "This is not a Portrayal rack file."}
+    for k, v in want.items():
+        if r.get(k) != v:
+            bad.append(f"library: {k} is {r.get(k)!r}, expected {v!r}")
+    return bad
+
+
 @extra("draw.io port cells carry portrayal-path, including ports on a seated card")
 def check_drawio_port_paths(page, base):
     bad = []
