@@ -254,6 +254,52 @@ export function svgDataUri(text) {
   return 'data:image/svg+xml,' + btoa(bin);
 }
 
+// ── covers ───────────────────────────────────────────────────────────────
+// A COVER COMES OFF IN THE DIAGRAM TOO. The R740xd's bezel is drawn by default
+// and hides the drives behind it; Explorer takes it off with a pull handle, and
+// a diagram needs the same. So a cover is lifted out of the face into its own
+// image cell, stacked over a face drawn without it, and tagged - draw.io's View
+// > Tags hides every `bezel` at once, and a single one can simply be deleted.
+// The cell stays inside its device's group, so it moves with the device; a
+// layer would have left it behind when the device was dragged.
+//
+// BEZELS ONLY, for now. The drawings have no single marker meaning "this part
+// hides those parts": `behaviour: mounts` is on screws and studs too, and
+// covers are grouped under `covers`, `filters` or `furniture` by device. Rather
+// than guess from group names, this takes the one unambiguous class until
+// Portrayal names covers explicitly.
+export const COVER_SELECTOR = '[data-class="bezel"][data-path]';
+
+/** The face split into a drawing without its covers, and each cover alone on
+ *  the same canvas (so it lands exactly where it was). Outermost covers only. */
+export function splitCovers(svgText) {
+  const parse = () => new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement;
+  const outermost = root => [...root.querySelectorAll(COVER_SELECTOR)]
+    .filter(el => !el.parentElement.closest(COVER_SELECTOR));
+  const found = outermost(parse());
+  if (!found.length) return {base: svgText, covers: []};
+  const ser = root => new XMLSerializer().serializeToString(root);
+
+  const baseRoot = parse();
+  for (const el of outermost(baseRoot)) el.remove();
+
+  const covers = found.map(({dataset}) => {
+    const root = parse();
+    const keep = outermost(root).find(el => el.dataset.path === dataset.path);
+    const onPath = new Set();
+    for (let n = keep; n && n !== root; n = n.parentElement) onPath.add(n);
+    (function prune(el) {
+      for (const kid of [...el.children]) {
+        if (kid === keep) continue;
+        if (onPath.has(kid)) prune(kid);
+        else if (kid.localName !== 'style' && kid.localName !== 'defs') kid.remove();
+      }
+    })(root);
+    return {path: dataset.path, cls: dataset.class, text: ser(root)};
+  });
+  return {base: ser(baseRoot), covers};
+}
+
 /**
  * One device: the compiled face as an image, with a connectable cell per port.
  *
@@ -263,16 +309,26 @@ export function svgDataUri(text) {
  * ports so they can be seen while judging - shipped exports leave them
  * invisible, which is the point of putting them over an exact picture.
  */
-export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false} = {}) {
+export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false, covers = true} = {}) {
   const sx = w / vb[2], sy = h / vb[3];
   const tint = c => visible
     ? (c === 'bay' ? 'fillColor=#F5A623;opacity=16;strokeColor=#F5A623;'
                    : 'fillColor=#00A0FF;opacity=22;strokeColor=#00A0FF;')
     : 'fillColor=none;strokeColor=none;';
   const out = [cell(id, '', 'group;html=1;', x, y, w, h)];
+  const split = covers ? splitCovers(svgText) : {base: svgText, covers: []};
   out.push(cell(`${id}-face`, '',
-    `shape=image;imageAspect=0;editableCssRules=.*;image=${svgDataUri(svgText)};`,
+    `shape=image;imageAspect=0;editableCssRules=.*;image=${svgDataUri(split.base)};`,
     0, 0, w, h, id));
+  // Over the face, under the ports: a hidden bezel must not take the drive
+  // bays' connection points with it, and a shown one must not bury them.
+  for (const c of split.covers) {
+    out.push(`<object label="" tags="cover ${esc(c.cls)}" portrayal-cover="${esc(c.path)}" ` +
+      `id="${esc(`${id}-cover-${slug(c.path)}`)}"><mxCell style="shape=image;imageAspect=0;` +
+      `editableCssRules=.*;connectable=0;image=${svgDataUri(c.text)};" vertex="1" ` +
+      `parent="${esc(id)}"><mxGeometry x="0" y="0" width="${w.toFixed(2)}" ` +
+      `height="${h.toFixed(2)}" as="geometry"/></mxCell></object>`);
+  }
 
   // A MODULAR CHASSIS GROUPS ITS PORTS UNDER THE CARD THEY ARE ON. The cells
   // are still at their real positions over the image - this is the footprint,
