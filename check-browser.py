@@ -2936,7 +2936,16 @@ def check_rack_page(page, base):
     return bad
 
 
-@extra("rack.html: place from the catalog; both faces show it; a device that won't fit says why")
+def pick(page, face, u, query, ref, cfg=None):
+    page.click(f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]')
+    page.fill("#catQuery", query)
+    page.select_option("#catDevice", ref)
+    if cfg:
+        page.select_option("#catCfg", cfg)
+    page.click("#catPlace")
+
+
+@extra("rack.html: place from the picker; both faces show it; a device that won't fit says why")
 def check_rack_place(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -2947,24 +2956,29 @@ def check_rack_place(page, base):
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
 
-    def place(face, u, query, ref):
-        page.click(f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]')
-        page.fill("#catQuery", query)
-        page.click(f'.rk-cat[data-ref="{ref}"]:not([aria-disabled="true"])')
-
-    place("front", 10, "R740", "r740xd")
+    pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
-    place("front", 20, "AS7726", "as7726-32x")
+    pick(page, "front", 20, "AS7726", "as7726-32x")
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="as7726-32x"][data-panel="ghost"]', timeout=READY_MS)
-    # Behind the switch: the patch panel is too deep, the TM-280 fits.
+    # Behind the switch: the patch panel is too deep, the TM-280 fits - the
+    # FHD-1UFCE needs "Only what fits here" off to even show up.
     page.click('svg[data-pane="rear"] rect.rk-u[data-u="20"]')
+    page.uncheck("#catFitsOnly")
     page.fill("#catQuery", "FHD")
-    why = page.text_content('.rk-cat[data-ref="fhd-1ufce"] .rk-why') or ""
+    opt_text = page.text_content('#catDevice option[value="fhd-1ufce"]') or ""
+    if not opt_text.endswith("— doesn't fit"):
+        bad.append(f"place: the FHD-1UFCE's option text is {opt_text!r}, expected it to end with \"doesn't fit\"")
+    page.select_option("#catDevice", "fhd-1ufce")
+    why = page.text_content("#catFit") or ""
     if "mm free behind" not in why:
         bad.append(f"place: the FHD-1UFCE's reason is {why!r}, expected a depth reason")
-    page.fill("#catQuery", "TM-280")
-    page.click('.rk-cat[data-ref="tm-280"]:not([aria-disabled="true"])')
+    before = page.evaluate("() => window.__rack.doc().racks[0].items.length")
+    page.click("#catPlace")
+    after = page.evaluate("() => window.__rack.doc().racks[0].items.length")
+    if after != before:
+        bad.append(f"place: pressing Place on a device that doesn't fit added an item ({before} -> {after})")
+    pick(page, "rear", 20, "TM-280", "tm-280")
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
     doc = page.evaluate("() => window.__rack.doc()")
     got = [(i["ref"], i["ru"], i["face"], i["cfg"]) for i in doc["racks"][0]["items"]]
@@ -2985,18 +2999,14 @@ def check_rack_inspect(page, base):
     page.evaluate("() => window.__rack.ready")
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
-    page.click('svg[data-pane="front"] rect.rk-u[data-u="20"]')
-    page.fill("#catQuery", "AS7726")
-    page.click('.rk-cat[data-ref="as7726-32x"]:not([aria-disabled="true"])')
+    pick(page, "front", 20, "AS7726", "as7726-32x")
     item = lambda: page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     page.wait_for_selector("#iLabel", timeout=READY_MS)
     # Move with the arrow keys.
     page.keyboard.press("ArrowUp"); page.keyboard.press("ArrowUp")
     page.wait_for_function("() => window.__rack.doc().racks[0].items[0].ru === 22")
     # Another device at U22 on the rear; switching the switch's face to rear is refused.
-    page.click('svg[data-pane="rear"] rect.rk-u[data-u="22"]')
-    page.fill("#catQuery", "TM-280")
-    page.click('.rk-cat[data-ref="tm-280"]:not([aria-disabled="true"])')
+    pick(page, "rear", 22, "TM-280", "tm-280")
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
     page.select_option("#iFace", "rear")
     err = page.text_content(".rk-side .rk-error") or ""
@@ -3094,6 +3104,117 @@ def check_rack_inspect(page, base):
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
     page.click("#iRemove")
     page.wait_for_function("() => !window.__rack.doc().racks[0].items.some(i => i.ref === 'as7726-32x')")
+    return bad
+
+
+@extra("rack.html: the device picker narrows by vendor, respects fit, and remembers state across U clicks")
+def check_rack_picker(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+
+    device_refs = lambda: page.eval_on_selector_all("#catDevice option", "os => os.map(o => o.value)")
+    fits_false = lambda: page.eval_on_selector_all(
+        "#catDevice option", "os => os.filter(o => o.dataset.fits === 'false').length")
+
+    # Near the top of the rack only 3U is free, so any 4U-and-up device does
+    # not fit here - unticking "Only what fits here" has to reveal some.
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="40"]')
+    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    if fits_false() != 0:
+        bad.append("picker: an option has data-fits=false while 'Only what fits here' is ticked")
+    page.uncheck("#catFitsOnly")
+    if fits_false() == 0:
+        bad.append("picker: unticking 'Only what fits here' revealed nothing that doesn't fit")
+    page.check("#catFitsOnly")
+
+    # Lower in the rack, where everything fits: the vendor dropdown narrows
+    # the list, and its counts match what the query alone already narrowed to.
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
+    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    page.fill("#catQuery", "AS77")
+    vendor_text = page.eval_on_selector('#catVendor option[value="Edgecore"]', "o => o && o.textContent")
+    if not vendor_text:
+        bad.append("picker: no Edgecore option in #catVendor for the 'AS77' search")
+    else:
+        page.select_option("#catVendor", "Edgecore")
+        refs = device_refs()
+        m = re.search(r"\((\d+)\)", vendor_text)
+        if not m or int(m.group(1)) != len(refs):
+            bad.append(f"picker: Edgecore's count says {vendor_text!r} but the list has {len(refs)} devices")
+        if "as7726-32x" not in refs:
+            bad.append("picker: as7726-32x is missing from the filtered Edgecore list")
+
+    # A device with several configurations preselects its default; choosing
+    # another one and placing stores that configuration.
+    page.select_option("#catDevice", "as7726-32x")
+    cfg_value = page.eval_on_selector("#catCfg", "s => s.value")
+    if cfg_value != "ac-f2b":
+        bad.append(f"picker: as7726-32x's preselected configuration is {cfg_value!r}, expected its default 'ac-f2b'")
+    page.select_option("#catCfg", "dc-b2f")
+    page.click("#catPlace")
+    doc = page.evaluate("() => window.__rack.doc()")
+    item = doc["racks"][0]["items"][0]
+    if item["ref"] != "as7726-32x" or item["cfg"] != "dc-b2f":
+        bad.append(f"picker: placed {item['ref']!r} with cfg {item['cfg']!r}, expected as7726-32x/dc-b2f")
+
+    # Clicking another empty U keeps the chosen vendor and query.
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="30"]')
+    page.wait_for_selector("#catDevice", timeout=READY_MS)
+    if page.eval_on_selector("#catQuery", "i => i.value") != "AS77":
+        bad.append("picker: the search query did not survive clicking another U")
+    if page.eval_on_selector("#catVendor", "s => s.value") != "Edgecore":
+        bad.append("picker: the vendor filter did not survive clicking another U")
+    return bad
+
+
+@extra("rack.html: zoom defaults to Fit, +/- and ctrl+wheel scale both panes, and it survives a reload")
+def check_rack_zoom(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+
+    level = lambda: page.text_content("#zoomLevel")
+    front_box = lambda: page.eval_on_selector('svg[data-pane="front"]', "s => s.getBoundingClientRect()")
+    panes_box = lambda: page.eval_on_selector('#panes', "p => p.getBoundingClientRect()")
+
+    if level() != "Fit":
+        bad.append(f"zoom: on load the readout is {level()!r}, expected 'Fit'")
+    fh, ph = front_box()["height"], panes_box()["height"]
+    if fh > ph + 1:
+        bad.append(f"zoom: the front SVG's height {fh} exceeds the panes' client height {ph} at Fit")
+    fit_width = front_box()["width"]
+
+    page.click("#zoomIn"); page.click("#zoomIn")
+    if front_box()["width"] <= fit_width:
+        bad.append("zoom: #zoomIn twice did not make the SVG wider than its Fit width")
+    if "%" not in level():
+        bad.append(f"zoom: after zooming in the readout is {level()!r}, expected a percentage")
+    zoomed_width = front_box()["width"]
+
+    page.hover("#panes")
+    page.keyboard.down("Control")
+    page.mouse.wheel(0, -300)
+    page.keyboard.up("Control")
+    if front_box()["width"] <= zoomed_width:
+        bad.append("zoom: ctrl+wheel over the panes did not increase the width further")
+
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if "%" not in level():
+        bad.append(f"zoom: after a reload the readout is {level()!r}, expected the zoom to survive")
+
+    page.click("#zoomFit")
+    if level() != "Fit":
+        bad.append(f"zoom: #zoomFit did not return the readout to 'Fit' ({level()!r})")
     return bad
 
 
