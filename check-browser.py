@@ -3136,6 +3136,20 @@ def check_rack_picker(page, base):
     # the list, and its counts match what the query alone already narrowed to.
     page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
     page.wait_for_selector("#catDevice", timeout=READY_MS)
+
+    # "All vendors"'s own count matches the (unfiltered) device list, and the
+    # list box fills the side panel's width rather than shrinking to its
+    # longest option's intrinsic width.
+    all_count = len(device_refs())
+    all_text = page.eval_on_selector('#catVendor option[value="all"]', "o => o && o.textContent") or ""
+    m_all = re.search(r"\((\d+)\)", all_text)
+    if not m_all or int(m_all.group(1)) != all_count:
+        bad.append(f"picker: 'All vendors' says {all_text!r} but the device list has {all_count} devices")
+    device_width = page.eval_on_selector("#catDevice", "s => s.getBoundingClientRect().width")
+    panel_width = page.eval_on_selector(".rk-picker", "el => el.getBoundingClientRect().width")
+    if device_width < panel_width * 0.9:
+        bad.append(f"picker: #catDevice is {device_width}px wide, less than 90% of the {panel_width}px panel")
+
     page.fill("#catQuery", "AS77")
     vendor_text = page.eval_on_selector('#catVendor option[value="Edgecore"]', "o => o && o.textContent")
     if not vendor_text:
@@ -3172,7 +3186,7 @@ def check_rack_picker(page, base):
     return bad
 
 
-@extra("rack.html: zoom defaults to Fit, +/- and ctrl+wheel scale both panes, and it survives a reload")
+@extra("rack.html: zoom defaults to Fit, reads relative to it, ctrl+wheel is anchored at the pointer without drift, and it survives a reload")
 def check_rack_zoom(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -3180,7 +3194,7 @@ def check_rack_zoom(page, base):
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
 
-    level = lambda: page.text_content("#zoomLevel")
+    level = lambda: page.text_content("#zoomLevel") or ""
     front_box = lambda: page.eval_on_selector('svg[data-pane="front"]', "s => s.getBoundingClientRect()")
     panes_box = lambda: page.eval_on_selector('#panes', "p => p.getBoundingClientRect()")
 
@@ -3191,17 +3205,59 @@ def check_rack_zoom(page, base):
         bad.append(f"zoom: the front SVG's height {fh} exceeds the panes' client height {ph} at Fit")
     fit_width = front_box()["width"]
 
+    # The readout is relative to Fit (a controller ruling), not to the raw
+    # column-width factor: two 1.25x steps up from Fit is 1.5625x Fit, which
+    # reads as ~156% regardless of what Fit's own factor happens to be in
+    # this window.
     page.click("#zoomIn"); page.click("#zoomIn")
+    m = re.search(r"(\d+)%", level())
+    if not m or abs(int(m.group(1)) - 156) > 1:
+        bad.append(f"zoom: two zoom-ins from Fit read {level()!r}, expected about 156%")
     if front_box()["width"] <= fit_width:
         bad.append("zoom: #zoomIn twice did not make the SVG wider than its Fit width")
-    if "%" not in level():
-        bad.append(f"zoom: after zooming in the readout is {level()!r}, expected a percentage")
+    before_pct = int(m.group(1)) if m else 0
+    page.click("#zoomIn")
+    m2 = re.search(r"(\d+)%", level())
+    if not m2 or int(m2.group(1)) <= before_pct:
+        bad.append(f"zoom: zooming in again did not increase the displayed percentage ({level()!r})")
     zoomed_width = front_box()["width"]
 
-    page.hover("#panes")
+    # Anchoring works by adjusting scrollLeft/scrollTop, which the browser
+    # clamps to [0, scrollWidth - clientWidth]: below the zoom level where a
+    # pane actually needs a scrollbar, that range is just {0} and no
+    # scrollLeft assignment can compensate, so growing from a fixed left edge
+    # unavoidably drifts. That's a limit of panning via native overflow, not
+    # the bug being fixed here - so this reaches a level that genuinely
+    # overflows before testing the anchor invariant.
+    for _ in range(10):
+        if page.eval_on_selector("#panes", "p => p.scrollWidth > p.clientWidth + 1"):
+            break
+        page.click("#zoomIn")
+    else:
+        bad.append("zoom: could not reach a horizontally-overflowing zoom level to test wheel anchoring")
+
+    # ctrl+wheel is anchored at the pointer: a fixed point in the viewport
+    # has to land on the same fraction of the SVG's own box before and after
+    # - not drift, which a coarser anchor built from column width alone
+    # would do, since it leaves out the panes' padding, the gap between the
+    # two panes, and the heading above the SVG. The point is clamped to the
+    # panes' own visible box (not just a fraction of the SVG's full,
+    # possibly-taller-than-the-viewport box), so Playwright's mouse actually
+    # lands inside the window rather than off-screen.
+    r, pb = front_box(), panes_box()
+    fx = r["x"] + min(r["width"], pb["width"]) * 0.3
+    fy = r["y"] + min(r["height"], pb["height"]) * 0.5
+    fraction = lambda: (lambda b: ((fx - b["x"]) / b["width"], (fy - b["y"]) / b["height"]))(front_box())
+    before_fraction = fraction()
+    page.mouse.move(fx, fy)
     page.keyboard.down("Control")
     page.mouse.wheel(0, -300)
     page.keyboard.up("Control")
+    after_fraction = fraction()
+    if (abs(before_fraction[0] - after_fraction[0]) > 0.01
+            or abs(before_fraction[1] - after_fraction[1]) > 0.01):
+        bad.append(f"zoom: ctrl+wheel drifted the pointer's anchor in the SVG - "
+                   f"fraction {before_fraction} -> {after_fraction}, expected <=1% drift")
     if front_box()["width"] <= zoomed_width:
         bad.append("zoom: ctrl+wheel over the panes did not increase the width further")
 
