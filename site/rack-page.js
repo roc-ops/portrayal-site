@@ -12,7 +12,7 @@ import {catalogPanel} from './rack/picker.js';
 import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
 import {el} from './rack/dom.js';
-import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom} from './rack/zoom.js';
+import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -25,6 +25,14 @@ let chassisOf = () => null;
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
 const topOf = r => Math.max(0, ...r.items.map(i => i.ru + Math.max(1, chassisOf(i.ref)?.ru ?? 1) - 1));
+
+// The readout is a percentage of Fit's own factor (recomputed every time,
+// since Fit's factor moves with the window and with what's drawn), not of
+// the raw column-width factor - a controller ruling, so this needs
+// recomputing after every render and every resize, not just when the zoom
+// itself changes.
+const setZoomLabel = () => { $('zoomLevel').textContent = zoomLabel(S.zoom, factorForFit($('panes'), S.svgs[0])); };
+const setZoom = z => { S.zoom = z; saveZoom(z); applyZoom($('panes'), S.svgs, z); setZoomLabel(); };
 
 // A stored document can be missing (deleted from another tab) or fail to
 // parse (spec §5 rejects it). Either way this reports null rather than
@@ -114,6 +122,7 @@ async function render() {
   // ones) has to be reapplied to these.
   S.svgs = [front, rear];
   applyZoom($('panes'), S.svgs, S.zoom);
+  setZoomLabel();
   renderSide();
 }
 
@@ -288,15 +297,23 @@ async function bootInner() {
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
   $('frameBtn').addEventListener('click', () => select(S.sel?.kind === 'frame' ? null : {kind: 'frame'}));
-  const setZoom = z => { S.zoom = z; saveZoom(z); applyZoom($('panes'), S.svgs, z); $('zoomLevel').textContent = zoomLabel(z); };
   $('zoomOut').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, -1)));
   $('zoomIn').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, 1)));
   $('zoomFit').addEventListener('click', () => setZoom('fit'));
   $('panes').addEventListener('wheel', ev => {
     if (!(ev.ctrlKey || ev.metaKey)) return;
-    setZoom(wheelZoom($('panes'), S.svgs, S.zoom, ev));
+    // wheelZoom already applies the zoom itself (it needs the SVG's
+    // before-and-after box to anchor the pointer), so this only updates the
+    // state that follows from its result - applying it again here would be
+    // redundant, wasted layout work.
+    S.zoom = wheelZoom($('panes'), S.svgs, S.zoom, ev);
+    saveZoom(S.zoom);
+    setZoomLabel();
   }, {passive: false});
-  window.addEventListener('resize', () => { if (S.zoom === 'fit') applyZoom($('panes'), S.svgs, S.zoom); });
+  // A numeric zoom's pixel width is column-width x factor, so it has to
+  // track a resize too, not just Fit; the readout (relative to Fit) also
+  // moves with the window even when the absolute zoom does not.
+  window.addEventListener('resize', () => { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); });
   setZoom(S.zoom);
   $('libMenu').addEventListener('toggle', () => { if ($('libMenu').open) renderLibrary(); });
   $('openFile').addEventListener('change', async () => {
