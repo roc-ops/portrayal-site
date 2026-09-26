@@ -34,8 +34,9 @@ export const planSeatsMade = (ov = null) => [...made.values()]
 const below = (key, parent) => key.startsWith(parent + '/') || key.startsWith(parent + '-occupant');
 
 // Drop every override key below `key` in one device's map `ov`: the cages and
-// plugs of whatever `key` held before. Called when a bay takes a new card, so
-// the old card's seats do not outlive it (stage 2's doSeat).
+// plugs of whatever `key` held before. Called when a bay takes a new card, or
+// a cage a new optic (or none), so the old part's seats do not outlive it
+// (stage 2's doSeat, and stage 3's).
 export function dropBelow(ov, key) {
   for (const k of Object.keys(ov)) if (below(k, key)) delete ov[k];
 }
@@ -60,10 +61,19 @@ export function applyPlanSeats(plan, overrides) {
   return {made: now, kept};
 }
 
+// Where the visitor puts a kept key right: stage 2 seats the ASR-9006's
+// slot cards, stage 3 the AS7726-32X's cage optics; anything else was set
+// in the Inspect lens, and is put right there.
+function fixedIn(dev, key) {
+  if (dev === 'asr-9006' && /^slot-\d+$/.test(key)) return 'seat it in stage 2 (Populate)';
+  if (dev === 'as7726-32x' && /^port-\d+$/.test(key)) return 'seat it in stage 3 (Seat optics)';
+  return 'set it in the Inspect lens';
+}
+
 // Why an end did not land, from what the fill rule kept - never a guess.
 export function looseReason(plan, kept, [dev, path]) {
   const k = kept.find(x => x.dev === dev && (path === x.key || below(path, x.key)));
-  if (k) return `${dev} ${k.key} holds ${k.have ? shortRef(k.have) : 'nothing'}, not the plan's ${shortRef(k.ref)} — seat it in stage 2 to connect this cable`;
+  if (k) return `${dev} ${k.key} holds ${k.have ? shortRef(k.have) : 'nothing'}, not the plan's ${shortRef(k.ref)} — ${fixedIn(dev, k.key)} to connect this cable`;
   return `${dev} ${path} is not on the drawing`;
 }
 

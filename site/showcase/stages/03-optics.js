@@ -55,6 +55,7 @@ import {CAST, RACK_U, loadMeta, cagesOf, overrides, mount3d, shortRef,
 import {boxIn, highlight, clearHighlights} from '../svg2d.js';
 import {wireDevices} from '../spoke-host.js';
 import {occupantNames} from '../../../vendor/swap.js';
+import {dropBelow} from '../plan.js';
 
 const DEV = 'as7726-32x';
 const GROUP = 'qsfp28';
@@ -259,6 +260,10 @@ export default function makeOptics() {
   async function doSeat(cage, ref, ui) {
     if (!ui.live()) return null;
     overrides[DEV] = overrides[DEV] || {};
+    // Ruling R1, as stage 2 does for a bay: the plugs the old optic held go
+    // with it, so an Unseat leaves no `<cage>-occupant/` seat behind (stage
+    // 4 would count it, and the Inspect lens would carry it into swap=).
+    dropBelow(overrides[DEV], cage.id);
     overrides[DEV][cage.id] = ref;
     const message = ref ? `seated — ${cage.id}: ${shortRef(ref)}` : `unseated — ${cage.id}`;
 

@@ -291,7 +291,7 @@ def check_stages(page, base):
         if not page.query_selector(f'#stageRack svg [data-device-ref="asr-9006"] [data-path="slot-2/module"][data-ref^="{other}"]'):
             bad.append("fill rule: stage 4 replaced the visitor's slot-2 card")
         loose = page.eval_on_selector_all('#sidePanel [data-loose]', "ls => ls.map(l => l.textContent)")
-        if len(loose) != 4 or not all("seat it in stage 2" in t for t in loose):
+        if len(loose) != 4 or not all("seat it in stage 2 (Populate)" in t for t in loose):
             bad.append(f"fill rule: expected 4 named loose ends on slot-2, got {loose}")
         # The count is of the plan's seats the rack still holds: the plan's
         # twelve cages and plugs under slot-2 went with its card.
@@ -317,6 +317,54 @@ def check_stages(page, base):
                        f"{seated.get('first')} on the first")
         if page.query_selector('#sidePanel [data-loose]'):
             bad.append("fill rule: loose ends remain after the plan's card is re-seated")
+
+    def unseated_cage():
+        # RULING R1, ONE STAGE OVER: an Unseat on stage 3 takes the optic's
+        # plugs with it. Unseat an AS7726 cage the plan cables, then stage 4
+        # keeps the empty cage, names its cable loose with stage 3 as the place
+        # to fix it, and no `<cage>-occupant/` key is left behind in rack.js's
+        # overrides (nor counted as a plan seat). Then seat it back.
+        plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
+        dev, cage = "as7726-32x", "port-1"
+        row = next(i for i, l in enumerate(plan["links"])
+                   if [dev, cage] in ([l["from"][0], l["from"][1]], [l["to"][0], l["to"][1]]))
+        # The plan's plugs under the cage: the walk's own stage-3 seat put the
+        # optic there before stage 4 first ran, so only the plugs are the plan's.
+        plugs = sum(1 for k in plan["seats"][dev] if k.startswith(cage + "-occupant/"))
+        def to_cage():
+            page.click('.stage-rail button[data-stage="optics"]')
+            page.wait_for_selector('[data-stage-ready="optics"]', timeout=READY_MS)
+            page.select_option('#sidePanel select[data-cage]', cage, timeout=READY_MS)
+            page.wait_for_function("(c) => document.querySelector('#sidePanel [data-cage-row] .mono')?.textContent === c",
+                                   arg=cage, timeout=READY_MS)
+        def to_cable():
+            page.click('.stage-rail button[data-stage="cable"]')
+            page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        to_cage()
+        page.click('#sidePanel [data-unseat]', timeout=READY_MS)
+        page.wait_for_function("(c) => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('unseated — ' + c)",
+                               arg=cage, timeout=READY_MS)
+        to_cable()
+        loose = page.eval_on_selector_all('#sidePanel [data-loose]',
+            "ls => ls.map(l => [+l.closest('li').querySelector('[data-plan-row]').dataset.planRow, l.textContent])")
+        if not loose or any(i != row or "stage 3 (Seat optics)" not in t for i, t in loose):
+            bad.append(f"stage 3 unseat: expected {dev} {cage}'s cable (row {row}) loose, naming stage 3, got {loose}")
+        left = page.evaluate("""async ([d, c]) => Object.keys((await import('/site/showcase/rack.js')).overrides[d] || {})
+            .filter(k => k.startsWith(c + '-occupant/'))""", [dev, cage])
+        if left:
+            bad.append(f"stage 3 unseat: {dev} {cage}'s plugs outlived its optic: {left}")
+        first = seated.get("first")
+        if first is None or seated_count() != first - plugs:
+            bad.append(f"stage 3 unseat: 'seated for the plan' says {seated_count()}, expected {first} - {plugs}")
+        # Restore: seat the optic back, and stage 4 refills its plugs.
+        to_cage()
+        page.click('#sidePanel [data-seat]', timeout=READY_MS)
+        page.wait_for_function("(c) => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — ' + c)",
+                               arg=cage, timeout=READY_MS)
+        to_cable()
+        if page.query_selector('#sidePanel [data-loose]') or seated_count() != first:
+            bad.append(f"stage 3 unseat: re-seating {cage} did not restore the plan "
+                       f"({seated_count()} seated, {len(page.query_selector_all('#sidePanel [data-loose]'))} loose)")
 
     seated = {}
     def seated_count():
@@ -473,6 +521,10 @@ def check_stages(page, base):
         kept_card()
     except Exception as e:
         bad.append(f"fill rule: a visitor's slot-2 card - failed ({str(e).splitlines()[0]})")
+    try:
+        unseated_cage()
+    except Exception as e:
+        bad.append(f"stage 3 unseat: a plan cage emptied on stage 3 - failed ({str(e).splitlines()[0]})")
 
     # Which layer is showing: in 2D the rack drawing and no 3D pane; in 3D the
     # 3D pane and a rack layer that is hidden or empty (stage 6 keeps a
