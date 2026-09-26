@@ -199,6 +199,8 @@ export function cableFace(svg, handle, view) {
                   : [base[0], base[1], base[2] + ROOM, base[3] + 40];
   svg.setAttribute('viewBox', vb.join(' '));
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
+  // A tag's pill sits in the side column, outboard of the point it labels:
+  // right of it on the front, left of it on the rear.
   const pill = (t, at, label, gap = 4) => {
     const w = 7 * label.length + 12;
     const x = rear ? at[0] - gap - w : at[0] + gap;
@@ -206,10 +208,13 @@ export function cableFace(svg, handle, view) {
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
     return t;
   };
-  handle.drawn = drawCables2d(svg, handle.plan, view, {
+  const drawn = drawCables2d(svg, handle.plan, view, {
     edgeX, outboard: rear ? -1 : 1,
     tag: (at, far) => pill(svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
       class: 'cable-tag', tabindex: '0', role: 'button'}), at, `→ ${far[0]} ${endView(far)} · ${far[1]}`),
+    // The far end did not land, and the tag says why - a button to the
+    // stage that fixes it, or plain text when that is the Inspect lens (or
+    // nothing the visitor did).
     farLoose: (i, side) => !!handle.loose[i]?.includes(side),
     looseTag: (at, far) => {
       const {why, stage} = looseWhy(handle.plan, handle.kept, far);
@@ -220,7 +225,7 @@ export function cableFace(svg, handle, view) {
       return pill(t, at, `✕ ${why}`);
     },
   });
-  return {vb};
+  return {vb, drawn};
 }
 
 // A CABLED ELEVATION AS A FILE: a fresh elevation of `view` with the current
@@ -255,7 +260,8 @@ async function enter2d(ui, handle, onDrawn) {
     const svg = await build2dElevation({stack, heightRU: RACK_U, overrides, view});
     if (!ui.live() || mine !== seq) return;
     stageRack.replaceChildren(svg);
-    const {vb} = cableFace(svg, handle, view);
+    const {vb, drawn} = cableFace(svg, handle, view);
+    handle.drawn = drawn;
     panZoom(svg, () => vb);
     handle.view = view;
     // A cross-face tag flips the face; a not-connected tag with a stage goes
