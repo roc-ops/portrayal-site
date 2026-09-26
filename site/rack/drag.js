@@ -14,6 +14,14 @@ const THRESHOLD = 4; // CSS px before a press becomes a drag, not a click
 export function createDragController({panesEl, svgFor, rack, chassisOf, itemById, patchItem,
                                       onStart, onEnd, setStatus}) {
   let d = null; // the in-flight drag, or null between drags
+  // Whether a click that follows the drag just finished should be treated as
+  // its trailing echo rather than a fresh click. Some engines (Chromium, with
+  // setPointerCapture + preventDefault in play) never fire that trailing
+  // click at all; others (Firefox, Safari) do. Rather than guess with a
+  // timer, the page asks consumeClick() from its own click handler: true
+  // exactly once, right after a drag that moved, then false - so a click
+  // that never arrives can never swallow a later, unrelated one.
+  let justDragged = false;
 
   function paneFaceAt(clientX, clientY) {
     let best = null, bestDist = Infinity;
@@ -43,8 +51,10 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     clearPreview();
     const totalH = frame.heightRU * RU;
     const top = totalH - (ru - 1 + ruH) * RU;
+    // Brass stroke always; a green-ish fill says it fits, not brass - brass
+    // is the rack's own accent color and reads as "selected", not "ok here".
     svg.append(svgEl('rect', {x: 0.5, y: top + 0.5, width: OPENING - 1, height: ruH * RU - 1, rx: 2,
-      class: 'rk-drop', fill: ok ? 'var(--pt-brass)' : 'none', 'fill-opacity': ok ? 0.15 : 0,
+      class: 'rk-drop', fill: ok ? 'rgba(52, 168, 83, 0.22)' : 'none',
       stroke: ok ? 'var(--pt-brass)' : 'var(--pt-warn)', 'stroke-width': 2, 'pointer-events': 'none'}));
   }
 
@@ -101,6 +111,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     const wasMoved = d.moved, target = d.target;
     d = null;
     if (!wasMoved) return;
+    justDragged = true;
     if (commitMove && target) {
       const res = patchItem(id, {ru: target.ru, face: target.face});
       if (res.ok) return; // patchItem already committed and re-rendered
@@ -143,6 +154,11 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
   }
 
   function onPointerDown(ev) {
+    // Any new press - even one that turns out not to start a drag, like a
+    // click on an empty U - means a PREVIOUS drag's still-unclaimed trailing
+    // click (an engine that never sent one) is moot: it must not go on to
+    // swallow a later, unrelated click once this press's own click arrives.
+    justDragged = false;
     if (ev.button !== 0 || d) return;
     const group = ev.target.closest('[data-item-id]');
     if (!group || !['mounted', 'through', 'missing'].includes(group.dataset.panel)) return;
@@ -157,5 +173,11 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     window.addEventListener('keydown', onKeyDown, true);
   }
 
-  return {onPointerDown};
+  function consumeClick() {
+    const was = justDragged;
+    justDragged = false;
+    return was;
+  }
+
+  return {onPointerDown, consumeClick};
 }

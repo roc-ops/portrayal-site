@@ -23,7 +23,7 @@ const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, n
   zoom: loadZoom(), svgs: [], undo: null,
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
-let suppressNextClick = false;
+let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
 
@@ -112,11 +112,14 @@ function commitFrame(patch) {
     const {rack: next, moved, removed} = shrinkRack(r, patch.heightRU, chassisOf);
     if (moved.length || removed.length) {
       S.undo = r;
-      const parts = [];
-      if (moved.length) parts.push(`Moved ${moved.length} device${moved.length === 1 ? '' : 's'} down to fit ${patch.heightRU}U.`);
-      if (removed.length)
-        parts.push(`Removed ${removed.length} device${removed.length === 1 ? '' : 's'} from the bottom to fit ${patch.heightRU}U: ${removed.map(i => i.label).join(', ')}.`);
-      S.notice = {text: parts.join(' '), kind: 'note'};
+      const dn = n => `device${n === 1 ? '' : 's'}`;
+      const removedNames = () => removed.map(i => i.label).join(', ');
+      const text = moved.length && removed.length
+        ? `Moved ${moved.length} ${dn(moved.length)} down and removed ${removed.length} from the bottom to fit ${patch.heightRU}U: ${removedNames()}.`
+        : moved.length
+        ? `Moved ${moved.length} ${dn(moved.length)} down to fit ${patch.heightRU}U.`
+        : `Removed ${removed.length} ${dn(removed.length)} from the bottom to fit ${patch.heightRU}U: ${removedNames()}.`;
+      S.notice = {text, kind: 'note'};
     } else {
       S.undo = null;
     }
@@ -242,7 +245,7 @@ function renderSide() {
 }
 
 function onPaneClick(ev) {
-  if (suppressNextClick) { suppressNextClick = false; return; }
+  if (drag?.consumeClick()) return; // this drag's own trailing click (some engines fire one), not a fresh click
   if (S.sel?.kind === 'move') {
     const u = ev.target.closest('[data-u]');
     if (u) {
@@ -356,18 +359,11 @@ async function bootInner() {
   if (!doc) { doc = newDoc(); await S.lib.put(doc); }
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
-  const drag = createDragController({
+  drag = createDragController({
     panesEl: $('panes'),
     svgFor: face => S.svgs.find(s => s.dataset.pane === face),
     rack, chassisOf, itemById, patchItem,
     onStart: () => {
-      // A real drag (pointer moved, target retargeted by setPointerCapture)
-      // does not reliably produce a trailing 'click' on drop in every engine
-      // - so this both guards a click that does arrive right away and heals
-      // itself on the next tick, rather than eating some later, unrelated
-      // click if the browser never fires one for this gesture at all.
-      suppressNextClick = true;
-      setTimeout(() => { suppressNextClick = false; }, 0);
       $('side').replaceChildren(el('p', {id: 'dragStatus', class: 'rk-muted', role: 'status', text: 'Drop to move here.'}));
     },
     onEnd: reason => { if (reason) S.notice = {text: reason, kind: 'error'}; render(); },

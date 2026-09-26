@@ -3470,6 +3470,17 @@ def check_rack_drag(page, base):
     for u in (22, 25):
         x, y = u_center(page, "front", u)
         page.mouse.move(x, y, steps=3)
+    # Mid-drag: a preview outline, a live status line, and the dragged group
+    # dimmed - all before the drop.
+    if page.eval_on_selector_all("rect.rk-drop", "els => els.length") != 1:
+        bad.append("drag: no single rect.rk-drop preview shown mid-drag")
+    status = page.text_content("#dragStatus") or ""
+    if not status.strip():
+        bad.append("drag: #dragStatus has no text mid-drag")
+    opacity = page.eval_on_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"]',
+                                     "el => getComputedStyle(el).opacity")
+    if float(opacity) >= 0.99:
+        bad.append(f"drag: the dragged group is not dimmed mid-drag (opacity {opacity})")
     page.mouse.up()
     page.wait_for_function(
         "() => window.__rack.doc().racks[0].items[0].ru === 25 && window.__rack.doc().racks[0].items[0].face === 'front'",
@@ -3505,6 +3516,24 @@ def check_rack_drag(page, base):
     if after["ru"] != before["ru"] or after["face"] != before["face"]:
         bad.append(f"drag: a refused drop changed the item ({before} -> {after})")
 
+    # Some engines (Firefox, Safari) fire a trailing 'click' after a drag that
+    # used setPointerCapture; Chromium in this harness does not. Either way,
+    # that echo must never be treated as a fresh click - simulate the
+    # Firefox-style trailing click here and check it did not re-select or
+    # clear the refusal notice still showing from the drop above.
+    page.evaluate("""() => {
+      const g = document.querySelector('svg[data-pane="rear"] [data-device-ref="as7726-32x"]');
+      g.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+    }""")
+    err_after_echo = page.text_content(".rk-side .rk-notice") or ""
+    if "Taken by" not in err_after_echo:
+        bad.append(f"drag: a synthetic trailing click after a refused drop cleared the notice ({err_after_echo!r})")
+
+    # A real click right after that - on an empty U - still opens the picker:
+    # the echo must not have swallowed this one instead.
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="1"]')
+    page.wait_for_selector("#catQuery", timeout=READY_MS)
+
     # A short click (no movement) still selects.
     page.click('svg[data-pane="rear"] [data-device-ref="as7726-32x"]')
     page.wait_for_selector("#iLabel", timeout=READY_MS)
@@ -3520,6 +3549,33 @@ def check_rack_drag(page, base):
     after = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     if after["ru"] != before["ru"] or after["face"] != before["face"]:
         bad.append(f"drag: Esc mid-drag did not cancel ({before} -> {after})")
+
+    # Two-post: front and rear are the same plane, so dragging one device onto
+    # the other's U (even on the other face) is refused.
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    page.click("#frameBtn")
+    page.select_option("#fKind", "two-post")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
+    pick(page, "front", 10, "TM-280", "tm-280")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+    # The second device sits on the FRONT too (at U20): dragging the first
+    # one onto the REAR at U20 makes the candidate's face differ from the
+    # occupant's, which is exactly the two-post case ("one plane"), not a
+    # same-face "Taken by" collision.
+    pick(page, "front", 20, "TM-280", "tm-280")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 2")
+    x0, y0 = u_center(page, "front", 10)
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    x20, y20 = u_center(page, "rear", 20)
+    page.mouse.move((x0 + x20) / 2, (y0 + y20) / 2, steps=2)
+    page.mouse.move(x20, y20, steps=3)
+    page.mouse.up()
+    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    tp_err = page.text_content(".rk-side .rk-notice") or ""
+    if "two-post rails are shared" not in tp_err:
+        bad.append(f"drag: a two-post drop onto the other face's U was not refused as shared rails ({tp_err!r})")
     return bad
 
 
