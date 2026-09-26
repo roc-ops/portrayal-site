@@ -78,15 +78,19 @@ function stroke(g, d, color, w) {
 }
 
 // AN UNPLUGGED LEAD. How far it hangs below its connector: the sag of a
-// 140 mm run (56 mm), and TAG_H more per lead already hung from the same
-// device, so their tags stack. It drifts LEAD_SIDE outboard as it falls.
+// 140 mm run (56 mm), and LEAD_STEP more per lead already hung from the same
+// device, so their open plugs do not sit on each other. It drifts LEAD_SIDE
+// outboard as it falls. Its tag is not at its free end, over the devices
+// below, but in the side column with the cross-face tags, a thin leader
+// line running to it.
 export const LEAD_DROP = sag2d(140);
+const LEAD_STEP = 8;
 const LEAD_SIDE = 12;
 const PLUG_W = 7, PLUG_H = 10;   // mm: the open plug outline at the free end
 
 // The lead from `a` down to its free end, and the open plug there - a hollow
 // outline, nose down, with its contacts showing: nothing is in it. Returns
-// the free end's point, where the tag goes.
+// the bottom of the plug, where the leader to its tag starts.
 function leadDown(g, a, color, drop, outboard) {
   const b = [a[0] + outboard * LEAD_SIDE, a[1] + drop];
   stroke(g, `M${a[0]} ${a[1]} C${a[0]} ${a[1] + drop * 0.55} ${b[0]} ${b[1] - drop * 0.45} ${b[0]} ${b[1]}`,
@@ -98,33 +102,40 @@ function leadDown(g, a, color, drop, outboard) {
     x2: b[0] + PLUG_W / 2 - 1.5, y2: b[1] + PLUG_H - 2, stroke: color, 'stroke-width': 0.8,
     'stroke-dasharray': '0.8 0.8'}));
   g.append(plug);
-  return [b[0], b[1] + PLUG_H / 2];
+  return [b[0], b[1] + PLUG_H];
 }
 
 // Every link with at least one end landing on `view`:
 //   - both ends land -> a hanging cable;
 //   - one lands, the other is on the other face and lands there -> a cable
-//     hanging off to `edgeX` with a tag (from `tag(at, farEnd, link)`) naming
-//     the far end (spec §6: front-to-rear runs go round the side);
+//     hanging off to the side column at `edgeX`, where the tag `tag(at,
+//     farEnd, link)` names the far end (spec §6: front-to-rear runs go round
+//     the side);
 //   - one lands, the other cannot (loose on this face, or `farLoose(i, side)`
 //     says so of the other face) -> an unplugged lead hanging from the one
-//     that lands, `data-loose-lead`, with the tag `looseTag(at, looseEnd,
-//     link, i)` at its free end.
+//     that lands, `data-loose-lead`, and a leader from its open plug to the
+//     tag `looseTag(at, looseEnd, link, i)` in the same column.
 // A link neither of whose ends lands here draws nothing: the panel explains.
 // An end on `view` whose connectors are missing is recorded loose.
 //
-// Painted lowest-top first (a cable's top is its highest connector), so a
-// lead from a higher port is in front of the ones below it.
+// Cables are painted lowest-top first (a cable's top is its highest
+// connector), so a lead from a higher port is in front of the ones below
+// it. EVERY TAG is then painted in one layer over all of them, stacked
+// TAG_H apart in the column, each as near its cable's height as the ones
+// above it allow - so no tag covers a port, a plug or another tag, and no
+// cable crosses one. A tag carries its cable's data-link-index, and the
+// record keeps it as `tag`.
 export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
                                                outboard = 1}) {
   const layer = svgEl('g', {'data-cables': view, 'data-pt-ui': '*'});
-  svg.append(layer);
+  const tagLayer = svgEl('g', {'data-cable-tags': view, 'data-pt-ui': '*'});
+  svg.append(layer, tagLayer);
   const fans = new Map(), leads = new Map();
-  const out = [], drawn = [];
+  const out = [], drawn = [], column = [];
   plan.links.forEach((link, i) => {
     const sides = [['from', link.from], ['to', link.to]];
     const here = sides.filter(([, e]) => (e[2] || 'front') === view);
-    const rec = {link, i, g: null, loose: [], tagged: false, dangling: false};
+    const rec = {link, i, g: null, tag: null, loose: [], tagged: false, dangling: false};
     out.push(rec);
     if (!here.length) return;
     const pts = here.map(([k, e]) => [k, ends2d(svg, e[0], e[1])]);
@@ -151,19 +162,25 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     } else if (otherHere || farLoose(i, otherSide)) {
       const dev = sides.find(([k]) => k === landedSide)[1][0];
       const k = leads.get(dev) || 0; leads.set(dev, k + 1);
-      const at = leadDown(g, starts[0], color, LEAD_DROP + TAG_H * k, outboard);
+      const at = leadDown(g, starts[0], color, LEAD_DROP + LEAD_STEP * k, outboard);
       g.setAttribute('data-loose-lead', otherSide);
-      g.append(looseTag(at, other, link, i));
       rec.dangling = true;
+      column.push({rec, want: at[1] + 12, place: y => {
+        // The leader: thin, and dashed, from the open plug to the tag.
+        g.append(svgEl('path', {'data-leader': 'true', fill: 'none', stroke: color, 'stroke-width': 0.7,
+          'stroke-dasharray': '2 1.5', d: `M${at[0]} ${at[1]} C${at[0]} ${Math.max(at[1], y) + 6} `
+            + `${edgeX - outboard * 30} ${y} ${edgeX} ${y}`}));
+        return looseTag([edgeX, y], other, link, i);
+      }});
     } else {
       const fan = fans.get(key) || 0; fans.set(key, fan + 1);
       const a = starts[0];
-      // TAG_H apart per cable already hung between the same two devices, so
-      // their tags stack instead of overlapping.
-      const b = [edgeX, a[1] + 30 + TAG_H * fan];
-      stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
-      g.append(tag(b, other, link));
       rec.tagged = true;
+      column.push({rec, want: a[1] + 30, place: y => {
+        const b = [edgeX, y];
+        stroke(g, hang(a, b, sag2d(Math.abs(b[0] - a[0]), fan)), color, WIDTH);
+        return tag(b, other, link);
+      }});
     }
     const t = svgEl('title', {});
     t.textContent = `${link.from[0]} ${link.from[1]} → ${link.to[0]} ${link.to[1]} · ${link.purpose}, ${link.media}`;
@@ -171,6 +188,18 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     rec.g = g;
     drawn.push({g, top: Math.min(...live.flatMap(([, p]) => p.map(q => q[1])))});
   });
+  // The column, top down: each tag at its cable's height, or TAG_H below
+  // the one above it, whichever is lower.
+  column.sort((a, b) => a.want - b.want);
+  let y = -Infinity;
+  for (const c of column) {
+    y = Math.max(c.want, y + TAG_H);
+    const t = c.place(y);
+    t.setAttribute('data-link-index', String(c.rec.i));
+    t.setAttribute('data-cable-tag', 'true');
+    tagLayer.append(t);
+    c.rec.tag = t;
+  }
   // Lowest top first; a stable sort keeps plan order between equals.
   drawn.sort((a, b) => b.top - a.top);
   for (const {g} of drawn) layer.append(g);

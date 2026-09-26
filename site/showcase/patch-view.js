@@ -4,9 +4,9 @@
 // its tubes. Every write after an await is behind ui.live().
 
 import {stage3d, stageRack, el, svgEl, lead, kv, panZoom} from './artifact.js';
-import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf, shortRef}
+import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf}
   from './rack.js';
-import {loadPlan, applyPlanSeats, looseReason, looseWhy, countsBy, endView} from './plan.js';
+import {loadPlan, applyPlanSeats, looseReason, looseWhy, productName, countsBy, endView} from './plan.js';
 import {drawCables2d, drawCables3d, looseOn, colorOf} from './cables.js';
 import {wireClicks} from './svg2d.js';
 // A circular import: stage-rail.js imports the stages, which import this. It
@@ -44,7 +44,7 @@ export function legendFor(plan) {
 export function panelHead(plan, kept, {counts = true} = {}) {
   const kids = [lead(`<strong>${HONEST}</strong>`)];
   for (const k of kept) kids.push(el('p', {class: 'panel-lead', 'data-kept': k.key,
-    text: `Kept your ${k.dev} ${k.key}: ${k.have ? shortRef(k.have) : 'empty'}.`}));
+    text: `Kept your ${k.dev} ${k.key}: ${k.have ? productName(k.have) : 'empty'}.`}));
   for (const field of counts ? ['purpose', 'media'] : []) {
     const d = kv([...countsBy(plan, field)].map(([v, n]) => [v, String(n)]));
     d.dataset.counts = field;
@@ -209,8 +209,8 @@ async function enter2d(ui, handle, onDrawn) {
     panZoom(svg, () => vb);
     const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
     handle.view = view;
-    // A tag's pill sits outboard of the point it labels: right of it on the
-    // front, left of it on the rear. `gap` clears what is drawn at the point.
+    // A tag's pill sits in the side column, outboard of the point it labels:
+    // right of it on the front, left of it on the rear.
     const pill = (t, at, label, gap = 4) => {
       const w = 7 * label.length + 12;
       const x = rear ? at[0] - gap - w : at[0] + gap;
@@ -232,7 +232,7 @@ async function enter2d(ui, handle, onDrawn) {
           ...(stage ? {'data-fix-stage': stage, tabindex: '0', role: 'button'} : {})});
         const full = svgEl('title', {}); full.textContent = looseReason(handle.plan, handle.kept, far);
         t.append(full);
-        return pill(t, at, `✕ not connected · ${why}`, 8);
+        return pill(t, at, `✕ ${why}`);
       },
     });
     // A cross-face tag flips the face; a not-connected tag with a stage goes
@@ -259,7 +259,7 @@ async function enter2d(ui, handle, onDrawn) {
     const svg = stageRack.querySelector('svg');
     if (!svg) return;
     svg.classList.toggle('cable-focus', i != null);
-    for (const g of svg.querySelectorAll('[data-cable]')) g.classList.toggle('on', g.dataset.linkIndex === String(i));
+    for (const g of svg.querySelectorAll('[data-cable], [data-cable-tag]')) g.classList.toggle('on', g.dataset.linkIndex === String(i));
   };
   // A row whose cable has no end on the face shown flips to the face that
   // has it first.
@@ -282,10 +282,12 @@ async function enter2d(ui, handle, onDrawn) {
   if (ui.live()) ui.unscrim();
 }
 
+// A cable and its tag (in the tags layer, over every cable) light together.
 function wireHover(svg) {
   for (const g of svg.querySelectorAll('[data-cable]')) {
-    const on = () => { svg.classList.add('cable-focus'); g.classList.add('on'); };
-    const off = () => { svg.classList.remove('cable-focus'); g.classList.remove('on'); };
+    const t = svg.querySelector(`[data-cable-tag][data-link-index="${g.dataset.linkIndex}"]`);
+    const on = () => { svg.classList.add('cable-focus'); g.classList.add('on'); t?.classList.add('on'); };
+    const off = () => { svg.classList.remove('cable-focus'); g.classList.remove('on'); t?.classList.remove('on'); };
     g.addEventListener('mouseenter', on); g.addEventListener('mouseleave', off);
     g.addEventListener('focus', on); g.addEventListener('blur', off);
   }

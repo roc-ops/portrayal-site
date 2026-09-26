@@ -75,21 +75,27 @@ function fixedIn(dev, key) {
     || 'set it in the Inspect lens';
 }
 
+// A product as it is named on the drawing and in the panel alike: the part
+// of its ref after the namespace, in capitals, as the product reads -
+// 'cisco/a9k-20hg-flex-se@1' -> 'A9K-20HG-FLEX-SE'.
+export const productName = ref => shortRef(ref).toUpperCase();
+
 const keptFor = (kept, dev, path) => kept.find(x => x.dev === dev && (path === x.key || below(path, x.key)));
 
 // Why an end did not land, from what the fill rule kept - never a guess.
 export function looseReason(plan, kept, [dev, path]) {
   const k = keptFor(kept, dev, path);
-  if (k) return `${dev} ${k.key} holds ${k.have ? shortRef(k.have) : 'nothing'}, not the plan's ${shortRef(k.ref)} — ${fixedIn(dev, k.key)} to connect this cable`;
+  if (k) return `${dev} ${k.key} holds ${k.have ? productName(k.have) : 'nothing'}, not the plan's ${productName(k.ref)} — ${fixedIn(dev, k.key)} to connect this cable`;
   return `${dev} ${path} is not on the drawing`;
 }
 
-// The same, short enough for a tag on the drawing, and the stage that fixes
-// it (null when none does): {why: 'slot-2 holds a9k-24x10ge-1g-se', stage}.
+// The same, short enough for a tag on the drawing (looseReason is its
+// title, and the panel's line), and the stage that fixes it (null when none
+// does): {why: 'slot-2: A9K-20HG-FLEX-SE', stage}.
 export function looseWhy(plan, kept, [dev, path]) {
   const k = keptFor(kept, dev, path);
-  if (k) return {why: `${k.key} holds ${k.have ? shortRef(k.have) : 'nothing'}`, stage: fixStage(dev, k.key)};
-  return {why: `${path} is not on the drawing`, stage: null};
+  if (k) return {why: `${k.key}: ${k.have ? productName(k.have) : 'empty'}`, stage: fixStage(dev, k.key)};
+  return {why: `${path}: not drawn`, stage: null};
 }
 
 // {value -> count} for a link field (media, purpose), in first-seen order:

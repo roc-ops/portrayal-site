@@ -191,6 +191,40 @@ CABLE_TOPS_JS = """() => [...document.querySelectorAll('#stageRack svg [data-cab
     return [+g.dataset.linkIndex, Math.min(...ys)]; })"""
 
 
+# TAGS KEEP CLEAR (fix round 1): a cable tag - cross-face or not-connected -
+# covers no port of any device, no seated plug's cable point, and no other
+# tag. Boxes in client pixels, shrunk 0.5 px so touching is not overlapping.
+TAGS_CLEAR_JS = """async () => {
+    const {cablePoints} = await import('/vendor/relief.js');
+    const svg = document.querySelector('#stageRack svg');
+    const box = e => { const r = e.getBoundingClientRect();
+        return {l: r.left + 0.5, t: r.top + 0.5, r: r.right - 0.5, b: r.bottom - 0.5}; };
+    const hit = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+    const tags = [...svg.querySelectorAll('[data-tag], [data-not-connected]')]
+        .map(t => ({name: t.dataset.tag || 'not-connected ' + t.dataset.notConnected,
+                    b: box(t.querySelector('rect') || t)}));
+    const ports = [...svg.querySelectorAll('[data-device-ref] [data-class="port"]')]
+        .map(p => ({name: p.closest('[data-device-ref]').dataset.deviceRef + ' ' + p.dataset.path, b: box(p)}));
+    const plugs = [...svg.querySelectorAll('[data-device-ref]')].flatMap(g => cablePoints(g)
+        .filter(p => p.at).map(p => {
+            const q = new DOMPoint(+p.at[0], +p.at[1]).matrixTransform(p.el.getScreenCTM());
+            return {name: g.dataset.deviceRef + ' ' + p.path, b: {l: q.x, r: q.x, t: q.y, b: q.y}}; }));
+    const inside = (a, pt) => pt.b.l >= a.l && pt.b.l <= a.r && pt.b.t >= a.t && pt.b.t <= a.b;
+    const bad = [];
+    tags.forEach((t, k) => {
+        for (const p of ports) if (hit(t.b, p.b)) { bad.push(`${t.name} covers port ${p.name}`); break; }
+        for (const p of plugs) if (inside(t.b, p)) { bad.push(`${t.name} covers plug ${p.name}`); break; }
+        for (const o of tags.slice(k + 1)) if (hit(t.b, o.b)) bad.push(`${t.name} overlaps ${o.name}`);
+    });
+    return bad;
+}"""
+
+
+def tag_problems(page, view):
+    bad = page.evaluate(TAGS_CLEAR_JS)
+    return [f"stage cable in 2D, {view}: tags cover the drawing or each other: {bad[:5]}"] if bad else []
+
+
 def z_order_problems(page, view):
     """Every pair of drawn cables: the one whose top is higher is later in the DOM."""
     tops = page.evaluate(CABLE_TOPS_JS)
@@ -237,10 +271,11 @@ def check_rear_loose(page, base):
         got = one("while the front is shown")
         lead = page.evaluate("""() => {
             const g = document.querySelector('#stageRack svg [data-cables="front"] [data-cable][data-link-index="13"]');
-            const t = g && g.querySelector('[data-not-connected]');
+            const t = document.querySelector('#stageRack svg [data-not-connected][data-link-index="13"]');
             return {lead: !!g && g.hasAttribute('data-loose-lead'), tag: t && t.textContent,
                     button: !!t && (t.getAttribute('role') === 'button' || t.hasAttribute('tabindex')),
-                    crossFace: !!(g && g.querySelector('[data-tag]'))}; }""")
+                    crossFace: !!document.querySelector('#stageRack svg [data-tag][data-link-index="13"]')
+                               || !!(g && g.querySelector('[data-tag]'))}; }""")
         if not lead["lead"] or not lead["tag"] or "idrac9-absent" not in lead["tag"] \
                 or lead["button"] or lead["crossFace"]:
             bad.append(f"stage cable: on the front, the port-48 cable whose rear end is loose is not "
@@ -358,8 +393,9 @@ def check_stages(page, base):
         if not page.query_selector(f'#stageRack svg [data-device-ref="asr-9006"] [data-path="slot-2/module"][data-ref^="{other}"]'):
             bad.append("fill rule: stage 4 replaced the visitor's slot-2 card")
         loose = page.eval_on_selector_all('#sidePanel [data-loose]', "ls => ls.map(l => l.textContent)")
-        if len(loose) != 4 or not all("seat it in stage 2 (Populate)" in t for t in loose):
-            bad.append(f"fill rule: expected 4 named loose ends on slot-2, got {loose}")
+        up = other.split("/")[-1].split("@")[0].upper()
+        if len(loose) != 4 or not all("seat it in stage 2 (Populate)" in t and up in t for t in loose):
+            bad.append(f"fill rule: expected 4 named loose ends on slot-2, naming {up}, got {loose}")
         # The count is of the plan's seats the rack still holds: the plan's
         # twelve cages and plugs under slot-2 went with its card.
         first = seated.get("first")
@@ -370,10 +406,13 @@ def check_stages(page, base):
         # card the visitor seated. Four of them on the front (slot-2's p0-p3),
         # and no cable group left as a few mm of strand: every group has a run
         # longer than 20 mm (a strand to a duplex merge is about 10).
-        card = other.split("/")[-1].split("@")[0]
+        # Product names read as the product does, in capitals, the same in
+        # the tag and in the panel's loose lines.
+        card = other.split("/")[-1].split("@")[0].upper()
         leads = page.eval_on_selector_all(
             '#stageRack svg [data-cables="front"] [data-cable][data-loose-lead]',
-            "gs => gs.map(g => [+g.dataset.linkIndex, g.querySelector('[data-not-connected]')?.textContent || ''])")
+            """gs => gs.map(g => [+g.dataset.linkIndex, g.ownerSVGElement.querySelector(
+                `[data-not-connected][data-link-index="${g.dataset.linkIndex}"]`)?.textContent || ''])""")
         if len(leads) != 4 or not all("slot-2" in t and card in t for _, t in leads):
             bad.append(f"fill rule: expected 4 unplugged leads on the front, each tagged not connected "
                        f"naming slot-2's {card}, got {leads}")
@@ -384,6 +423,7 @@ def check_stages(page, base):
         if short:
             bad.append(f"fill rule: cable groups with no main run and no lead (strands going nowhere): {short}")
         bad.extend(z_order_problems(page, "front, with loose leads"))
+        bad.extend(tag_problems(page, "front, with loose leads"))
         # Loose lines are per end, not per face drawn: a flip keeps them.
         page.click('#stageTabs [data-view="rear"]')
         page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
@@ -420,8 +460,8 @@ def check_stages(page, base):
             page.click('#stageMode [data-mode="2d"]')
             page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
         # The tag goes where the fix is: stage 2, which seats slot-2's card.
-        page.wait_for_selector('#stageRack svg [data-cables="front"] [data-not-connected]', timeout=READY_MS)
-        page.click('#stageRack svg [data-cables="front"] [data-not-connected]')
+        page.wait_for_selector('#stageRack svg [data-cable-tags="front"] [data-not-connected]', timeout=READY_MS)
+        page.click('#stageRack svg [data-cable-tags="front"] [data-not-connected]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         # Put the plan's card back, for the rest of the walk.
         page.click('.stage-rail button[data-stage="populate"]')
@@ -476,6 +516,14 @@ def check_stages(page, base):
         first = seated.get("first")
         if first is None or seated_count() != first - plugs:
             bad.append(f"stage 3 unseat: 'seated for the plan' says {seated_count()}, expected {first} - {plugs}")
+        # The unplugged lead's tag goes where the fix is: stage 3, which
+        # seats the cage's optic.
+        fix = f'#stageRack svg [data-not-connected][data-fix-stage="optics"][data-link-index="{row}"]'
+        if not page.query_selector(fix):
+            bad.append(f"stage 3 unseat: no not-connected tag on row {row} leading to stage 3 (optics)")
+        else:
+            page.click(fix)
+            page.wait_for_selector('[data-stage-ready="optics"]', timeout=READY_MS)
         # Restore: seat the optic back, and stage 4 refills its plugs.
         to_cage()
         page.click('#sidePanel [data-seat]', timeout=READY_MS)
@@ -525,6 +573,7 @@ def check_stages(page, base):
         # AS4630-54TE's QSFP28 pair too, port-53 (link 6) above port-54
         # (link 7), whose leads looked crossed where they left the plugs.
         bad.extend(z_order_problems(page, "front"))
+        bad.extend(tag_problems(page, "front"))
         order = page.eval_on_selector_all('#stageRack svg [data-cables="front"] [data-cable]',
                                           "gs => gs.map(g => +g.dataset.linkIndex)")
         if 6 in order and 7 in order and order.index(6) < order.index(7):
@@ -583,6 +632,7 @@ def check_stages(page, base):
         if page.query_selector('#stageRack svg [data-not-connected]'):
             bad.append("stage cable in 2D: a not-connected tag on a fresh rack (rear)")
         bad.extend(z_order_problems(page, "rear"))
+        bad.extend(tag_problems(page, "rear"))
         # Spec §6: seen from behind, a cross-face cable arrives from the LEFT.
         side = page.evaluate("""() => {
             const svg = document.querySelector('#stageRack svg');

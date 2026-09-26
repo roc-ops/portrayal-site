@@ -50,6 +50,7 @@ export default function makeFilter() {
     for (const d of h.drawn) {
       const hit = match(d.link);
       if (d.g) d.g.classList.toggle('ghost', !hit);
+      if (d.tag) d.tag.classList.toggle('ghost', !hit);
       if (d.mesh && !hit) fade3d(d.mesh, true);
     }
     // Counted off the plan, not off what is drawn: the same whichever face
