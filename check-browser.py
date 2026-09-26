@@ -586,15 +586,31 @@ def check_stages(page, base):
 
     def filter_3d():
         # Without WebGL the panel answers (R11): the count still narrows.
+        plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
+        want = sum(1 for l in plan["links"] if l["purpose"] == "management")
         page.click('#sidePanel [data-filter-purpose="management"]', timeout=READY_3D_MS)
         m = page.get_attribute('#sidePanel [data-filter-count]', "data-matching")
-        if m != "4":
-            bad.append(f"stage filter in 3D: the panel counts {m} management cables, expected 4")
+        if m != str(want):
+            bad.append(f"stage filter in 3D: the panel counts {m} management cables, expected {want}")
         if page.evaluate("async () => !!(await import('/site/webgl.js')).webglTrouble()"):
             return
-        n = page.evaluate("""() => window.__patch3d.tubes.filter(t => t.mesh &&
-            t.mesh.children[0].material.opacity === 1).length""")
-        if n != 4: bad.append(f"stage filter in 3D: {n} tubes at full strength, expected 4")
+        # Spec §7: what the filter leaves out fades to a GHOST (opacity 0.12,
+        # still shown), it does not vanish. Every material of a tube counts:
+        # its main run and any duplex strands.
+        r = page.evaluate("""(ghost) => {
+            const shown = o => { for (let n = o; n; n = n.parent) if (!n.visible) return false; return true; };
+            const mats = t => { const ms = []; t.mesh.traverse(o => { if (o.material) ms.push(o); }); return ms; };
+            const tubes = window.__patch3d.tubes.filter(t => t.mesh);
+            return {
+              full: tubes.filter(t => mats(t).every(o => o.material.opacity === 1)).length,
+              ghost: tubes.filter(t => mats(t).every(o => shown(o) && o.material.transparent
+                                                     && o.material.opacity === ghost)).length,
+              meshes: tubes.length };
+        }""", 0.12)
+        if r["full"] != want: bad.append(f"stage filter in 3D: {r['full']} tubes at full strength, expected {want}")
+        if r["ghost"] != len(plan["links"]) - want:
+            bad.append(f"stage filter in 3D: {r['ghost']} tubes ghosted at 0.12 and shown, expected "
+                       f"{len(plan['links']) - want} ({r})")
 
     try:
         if page.get_attribute('#stageMode [data-mode="2d"]', "aria-pressed") != "true":
