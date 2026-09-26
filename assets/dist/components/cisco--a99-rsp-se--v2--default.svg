@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="41.4mm" height="395.7mm" viewBox="0 0 41.4 395.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a99-rsp-se@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a99-rsp-se@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/a99-rsp-se@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="a99-rsp-se" data-path="a99-rsp-se" data-class="supervisor" data-behaviour="fills" data-ref="cisco/a99-rsp-se@2:2.0.0" data-body-depth="625.6" data-wall="#4a4f55" data-alarm="DB9, three dry-contact outputs" data-console="EIA/TIA-232 RJ-45" data-eol="none-announced" data-mgmt="2 x 10/100/1000 RJ-45" data-model="A99-RSP-SE" data-power-draw-max-w="370" data-role="route-switch-processor" data-sfp-plus="4" data-timing="2 x SYNC (BITS/J.211/DTI) RJ-45, IEEE 1588 RJ-45, 2 x inter-chassis sync RJ-45, 10 MHz and 1 PPS SMB" data-usb="1 x USB 2.0 type A" data-weight-kg="8.09" transform="translate(0,0)">
+    <title>a99-rsp-se</title>
+    <rect id="a99-rsp-se--plate" x="0" y="18.97" width="41.4" height="358.56" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <rect id="a99-rsp-se--usb-bezel" x="6.14" y="213.3" width="20.36" height="9.79" rx="0.6" fill="#8db1e2" />
+    <rect id="a99-rsp-se--sfp-block" x="7.79" y="80.27" width="25.88" height="29.37" rx="0.6" fill="#404040" />
+    <rect id="a99-rsp-se--led-matrix" x="13.78" y="347.93" width="18.67" height="7.75" rx="0.4" fill="#6f757b" stroke="#4a4f55" stroke-width="0.3" data-path="a99-rsp-se/led-matrix" data-class="display" data-characters="4" data-description="the four-character 5x7 LED dot-matrix display. The Overview and Reference Guide devotes two sections to what it shows - 'LED Matrix Boot Stage and Runtime Display' and 'LED Matrix CAN Bus Controller Error Display' - which is a message vocabulary rather than a lamp state list, so it is modelled as a display and not as an indicator with states." />
+    <g id="a99-rsp-se--silkscreen">
+      <rect x="28.2" y="62.17" width="6.95" height="12.24" fill="#ffef5c" />
+      <text x="33.21" y="62.91" transform="rotate(90 33.21 62.91)" font-family="sans-serif" font-size="2.1" font-weight="bold" fill="#231f20">CLASS 1</text>
+      <text x="30.15" y="62.91" transform="rotate(90 30.15 62.91)" font-family="sans-serif" font-size="2.1" font-weight="bold" fill="#231f20">LASER</text>
+      <rect x="6.32" y="359.44" width="31.75" height="4.08" fill="#ffef5c" />
+      <text x="22.19" y="362.62" font-family="sans-serif" font-size="3.2" font-weight="bold" text-anchor="middle" fill="#231f20">A99-RSP-SE</text>
+      <text x="20.76" y="39.36" transform="rotate(90 20.76 39.36)" font-family="sans-serif" font-size="2.6" fill="#231f20">SYNC 0</text>
+      <text x="20.76" y="57.7" transform="rotate(90 20.76 57.7)" font-family="sans-serif" font-size="2.6" fill="#231f20">SYNC 1</text>
+      <text x="20.76" y="116.02" transform="rotate(90 20.76 116.02)" font-family="sans-serif" font-size="2.6" fill="#231f20">IEEE 1588</text>
+      <text x="36.01" y="138.08" transform="rotate(90 36.01 138.08)" font-family="sans-serif" font-size="2.6" fill="#231f20">ICS0</text>
+      <text x="20.76" y="138.08" transform="rotate(90 20.76 138.08)" font-family="sans-serif" font-size="2.6" fill="#231f20">ICS1/TOD</text>
+      <text x="37.28" y="226.69" transform="rotate(90 37.28 226.69)" font-family="sans-serif" font-size="2.6" fill="#231f20">MGT LAN 0</text>
+      <text x="20.76" y="226.69" transform="rotate(90 20.76 226.69)" font-family="sans-serif" font-size="2.6" fill="#231f20">MGT LAN 1</text>
+      <text x="20.76" y="246.28" transform="rotate(90 20.76 246.28)" font-family="sans-serif" font-size="2.6" fill="#231f20">CMP</text>
+      <text x="20.76" y="266.19" transform="rotate(90 20.76 266.19)" font-family="sans-serif" font-size="2.6" fill="#231f20">CONSOLE</text>
+      <text x="20.76" y="285.77" transform="rotate(90 20.76 285.77)" font-family="sans-serif" font-size="2.6" fill="#231f20">AUX</text>
+      <text x="17.07" y="157.39" transform="rotate(90 17.07 157.39)" font-family="sans-serif" font-size="2.6" fill="#231f20">10MHz</text>
+      <text x="17.07" y="167.11" transform="rotate(90 17.07 167.11)" font-family="sans-serif" font-size="2.6" fill="#231f20">1PPS</text>
+      <text x="25.34" y="181.84" transform="rotate(90 25.34 181.84)" font-family="sans-serif" font-size="2.6" fill="#231f20">ALARM OUT</text>
+      <text x="23.83" y="327.29" transform="rotate(90 23.83 327.29)" font-family="sans-serif" font-size="1.65" fill="#231f20">SSD</text>
+      <text x="23.83" y="335.22" transform="rotate(90 23.83 335.22)" font-family="sans-serif" font-size="1.65" fill="#231f20">FC FAULT</text>
+      <text x="23.83" y="343.15" transform="rotate(90 23.83 343.15)" font-family="sans-serif" font-size="1.65" fill="#231f20">GPS</text>
+      <text x="19.15" y="327.29" transform="rotate(90 19.15 327.29)" font-family="sans-serif" font-size="1.65" fill="#231f20">CRIT</text>
+      <text x="19.15" y="335.22" transform="rotate(90 19.15 335.22)" font-family="sans-serif" font-size="1.65" fill="#231f20">MAJ</text>
+      <text x="19.15" y="343.15" transform="rotate(90 19.15 343.15)" font-family="sans-serif" font-size="1.65" fill="#231f20">MIN</text>
+      <text x="14.06" y="327.29" transform="rotate(90 14.06 327.29)" font-family="sans-serif" font-size="1.65" fill="#231f20">FAIL</text>
+      <text x="14.06" y="335.22" transform="rotate(90 14.06 335.22)" font-family="sans-serif" font-size="1.65" fill="#231f20">ACO</text>
+      <text x="14.06" y="343.15" transform="rotate(90 14.06 343.15)" font-family="sans-serif" font-size="1.65" fill="#231f20">SYNC</text>
+      <text x="32" y="281.43" transform="rotate(90 32 281.43)" font-family="sans-serif" font-size="2.2" fill="#231f20">S/N</text>
+      <text x="30.62" y="310.79" transform="rotate(90 30.62 310.79)" font-family="sans-serif" font-size="2.2" fill="#231f20">CLEI</text>
+      <text x="3.06" y="225.36" transform="rotate(90 3.06 225.36)" font-family="sans-serif" font-size="2.2" fill="#231f20">LINK</text>
+      <text x="3.06" y="234.94" transform="rotate(90 3.06 234.94)" font-family="sans-serif" font-size="2.2" fill="#231f20">ACTIVITY</text>
+      <text x="13.68" y="306.91" transform="rotate(90 13.68 306.91)" font-family="sans-serif" font-size="2.0" fill="#231f20">ACO</text>
+      <text x="13.68" y="316.71" transform="rotate(90 13.68 316.71)" font-family="sans-serif" font-size="2.0" fill="#231f20">LAMP TEST</text>
+    </g>
+    <rect id="a99-rsp-se--ejector-top" x="17.03" y="1.77" width="14.43" height="22.71" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a99-rsp-se--ejector-bot" x="17.03" y="370.9" width="14.43" height="22.72" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a99-rsp-se--lever-top" x="1.48" y="4.51" width="3.6" height="72.62" rx="1.8" fill="#4a4f55" data-z-out="4.2" />
+    <rect id="a99-rsp-se--lever-bot" x="1.48" y="327.8" width="3.6" height="62.97" rx="1.8" fill="#4a4f55" data-z-out="4.2" />
+    <g id="a99-rsp-se--screw-top" data-z-cyl="1.6">
+      <circle cx="24.68" cy="8.01" r="3.43" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.68" cy="8.01" r="1.54" fill="#6d7379" />
+      <path d="M 22.21 8.01 H 27.15 M 24.68 5.54 V 10.48" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <g id="a99-rsp-se--screw-bot" data-z-cyl="1.6">
+      <circle cx="24.68" cy="387.38" r="3.43" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.68" cy="387.38" r="1.54" fill="#6d7379" />
+      <path d="M 22.21 387.38 H 27.15 M 24.68 384.91 V 389.85" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <rect id="a99-rsp-se--led-sfp-plus-0" x="19.59" y="84.98" width="2.17" height="1.93" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-rsp-se/led-sfp-plus-0" data-class="led" data-states="green off" data-description="the SFP+ port's link lamp. The Overview and Reference Guide gives no colour table for the RSP's SFP+ lamps - its Table 4 covers the discrete card LEDs and the three USB lamps and stops - so this carries green/off and no more." data-z-dome="0.3" />
+    <rect id="a99-rsp-se--led-sfp-plus-1" x="19.59" y="88.55" width="2.17" height="1.93" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-rsp-se/led-sfp-plus-1" data-class="led" data-states="green off" data-description="the SFP+ port's link lamp. The Overview and Reference Guide gives no colour table for the RSP's SFP+ lamps - its Table 4 covers the discrete card LEDs and the three USB lamps and stops - so this carries green/off and no more." data-z-dome="0.3" />
+    <rect id="a99-rsp-se--led-sfp-plus-2" x="19.59" y="99.37" width="2.17" height="1.93" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-rsp-se/led-sfp-plus-2" data-class="led" data-states="green off" data-description="the SFP+ port's link lamp. The Overview and Reference Guide gives no colour table for the RSP's SFP+ lamps - its Table 4 covers the discrete card LEDs and the three USB lamps and stops - so this carries green/off and no more." data-z-dome="0.3" />
+    <rect id="a99-rsp-se--led-sfp-plus-3" x="19.59" y="102.95" width="2.17" height="1.93" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-rsp-se/led-sfp-plus-3" data-class="led" data-states="green off" data-description="the SFP+ port's link lamp. The Overview and Reference Guide gives no colour table for the RSP's SFP+ lamps - its Table 4 covers the discrete card LEDs and the three USB lamps and stops - so this carries green/off and no more." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--aco-button" cx="11.14" cy="305.8" r="1.91" fill="#e6e7e9" stroke="#231f20" stroke-width="0.45" data-path="a99-rsp-se/aco-button" data-class="button" data-description="the Alarm Cut Off momentary push button. Pressing it after an alarm lights the ACO lamp: 'Alarm Cutoff has been enabled. The ACO push button was pressed after at least one alarm has occurred.'" data-z-cyl="1.2" />
+    <circle id="a99-rsp-se--lamp-test" cx="11.14" cy="315.41" r="1.91" fill="#e6e7e9" stroke="#231f20" stroke-width="0.45" data-path="a99-rsp-se/lamp-test" data-class="button" data-description="the LAMP TEST momentary push button. On the RSP5 the guide adds that these two buttons 'can be used to eject the RSP5 card', which is why they are modelled as buttons and not as decoration." data-z-cyl="1.2" />
+    <circle id="a99-rsp-se--ssd" cx="21.68" cy="326.55" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/ssd" data-class="led" data-states="green off" data-description="Internal Solid State Hard Disk Drive (SSD). Green: SSD0 is busy/active, driven by the SSD controller. Off (default after reset): not busy/active." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--fc-fault" cx="21.68" cy="334.32" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/fc-fault" data-class="led" data-states="off on" data-description="FC FAULT, printed on the faceplate between SSD and GPS. THIS CARD'S OWN TABLE HAS NO ROW FOR IT. Table 4 of the Overview and Reference Guide - headed 'RSP, RSP-440, RSP-440 Lite, RSP-880, RSP880-LT, RSP4-S, RSP5', which is this card - describes FAIL, CRIT, MAJ, MIN, SYNC, ACO, HDD, CF, SSD, GPS and the three USB lamps, and stops. TABLE 5 DOES HAVE AN FC FAULT ROW, at amber and off with Cisco's own sentence, but Table 5 is headed 'RP and RP2/RP3' and is a different scope - the same book gives the RSP and RP families different vocabularies for SYNC in those two tables, so they cannot be treated as one. The amber is therefore NOT borrowed across and this lamp carries off/on. An earlier version of this sentence said no row existed in either table, which was simply wrong about Table 5." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--gps" cx="21.68" cy="342.1" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/gps" data-class="led" data-states="green off" data-description="GPS. Green: 'GPS interface provisioned and ports are turned on. ToD, 1 PPS, 10 Mhz are all valid.' Off (default after reset): either the interface is not provisioned or the ports are not turned on." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--crit" cx="17.3" cy="326.55" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/crit" data-class="led" data-states="red off" data-description="Critical Alarm (CRIT). Red: a critical alarm has occurred. Off (default after reset): no critical alarm has occurred." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--maj" cx="17.3" cy="334.32" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/maj" data-class="led" data-states="red off" data-description="Major Alarm (MAJ). Red: a major alarm has occurred. Off (default after reset): no major alarm has occurred." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--min" cx="17.3" cy="342.1" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/min" data-class="led" data-states="amber off" data-description="Minor Alarm (MIN). Amber: a minor alarm has occurred. Off (default after reset): no minor alarm has occurred." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--fail" cx="12.54" cy="326.55" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/fail" data-class="led" data-states="red off" data-description="Power Fail (FAIL). Red: 'Standby Power Fail LED. The LED is turned off by the CAN bus controller after it is up and running.' Off: standby power is normal." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--aco" cx="12.54" cy="334.32" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/aco" data-class="led" data-states="amber off" data-description="Alarm Cutoff (ACO). Amber: 'Alarm Cutoff has been enabled. The ACO push button was pressed after at least one alarm has occurred.' Off (default after reset): alarm cutoff is not enabled." data-z-dome="0.3" />
+    <circle id="a99-rsp-se--sync" cx="12.54" cy="342.1" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a99-rsp-se/sync" data-class="led" data-states="green amber off" data-description="Synchronization (SYNC). Green: system timing is synchronized to an external timing source. Amber: system timing is free running. Off: no system timing is configured." data-z-dome="0.3" />
+    <g id="a99-rsp-se--sync-0" data-path="a99-rsp-se/sync-0" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.49,43.34) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--sync-0</title>
+      <path id="a99-rsp-se--sync-0--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--sync-0--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--sync-0--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/sync-0/opening" data-class="cutout" />
+      <g id="a99-rsp-se--sync-0--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--sync-1" data-path="a99-rsp-se/sync-1" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.49,61.33) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--sync-1</title>
+      <path id="a99-rsp-se--sync-1--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--sync-1--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--sync-1--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/sync-1/opening" data-class="cutout" />
+      <g id="a99-rsp-se--sync-1--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--ieee-1588" data-path="a99-rsp-se/ieee-1588" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.49,118.54) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--ieee-1588</title>
+      <path id="a99-rsp-se--ieee-1588--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--ieee-1588--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--ieee-1588--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/ieee-1588/opening" data-class="cutout" />
+      <g id="a99-rsp-se--ieee-1588--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--ics-0" data-path="a99-rsp-se/ics-0" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(21.77,140.18) rotate(270 6.35 5.5)">
+      <title>a99-rsp-se--ics-0</title>
+      <path id="a99-rsp-se--ics-0--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--ics-0--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--ics-0--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/ics-0/opening" data-class="cutout" />
+      <g id="a99-rsp-se--ics-0--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--ics-1-tod" data-path="a99-rsp-se/ics-1-tod" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.49,140.18) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--ics-1-tod</title>
+      <path id="a99-rsp-se--ics-1-tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--ics-1-tod--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--ics-1-tod--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/ics-1-tod/opening" data-class="cutout" />
+      <g id="a99-rsp-se--ics-1-tod--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--mgt-lan-0" data-path="a99-rsp-se/mgt-lan-0" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(22.96,227.1) rotate(270 6.35 5.5)">
+      <title>a99-rsp-se--mgt-lan-0</title>
+      <g id="a99-rsp-se--mgt-lan-0--jack" data-path="a99-rsp-se/mgt-lan-0/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>a99-rsp-se--mgt-lan-0--jack</title>
+        <path id="a99-rsp-se--mgt-lan-0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="a99-rsp-se--mgt-lan-0--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="a99-rsp-se--mgt-lan-0--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/mgt-lan-0/jack/opening" data-class="cutout" />
+        <g id="a99-rsp-se--mgt-lan-0--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="a99-rsp-se--mgt-lan-0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="a99-rsp-se--mgt-lan-0--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="a99-rsp-se/mgt-lan-0/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="a99-rsp-se--mgt-lan-0--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="a99-rsp-se/mgt-lan-0/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--mgt-lan-1" data-path="a99-rsp-se/mgt-lan-1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(7.49,227.1) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--mgt-lan-1</title>
+      <g id="a99-rsp-se--mgt-lan-1--jack" data-path="a99-rsp-se/mgt-lan-1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>a99-rsp-se--mgt-lan-1--jack</title>
+        <path id="a99-rsp-se--mgt-lan-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="a99-rsp-se--mgt-lan-1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="a99-rsp-se--mgt-lan-1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/mgt-lan-1/jack/opening" data-class="cutout" />
+        <g id="a99-rsp-se--mgt-lan-1--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="a99-rsp-se--mgt-lan-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="a99-rsp-se--mgt-lan-1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="a99-rsp-se/mgt-lan-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="a99-rsp-se--mgt-lan-1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="a99-rsp-se/mgt-lan-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--cmp" data-path="a99-rsp-se/cmp" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(7.49,246.31) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--cmp</title>
+      <g id="a99-rsp-se--cmp--jack" data-path="a99-rsp-se/cmp/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>a99-rsp-se--cmp--jack</title>
+        <path id="a99-rsp-se--cmp--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="a99-rsp-se--cmp--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="a99-rsp-se--cmp--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/cmp/jack/opening" data-class="cutout" />
+        <g id="a99-rsp-se--cmp--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="a99-rsp-se--cmp--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="a99-rsp-se--cmp--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="a99-rsp-se/cmp/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="a99-rsp-se--cmp--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="a99-rsp-se/cmp/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--console" data-path="a99-rsp-se/console" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.49,265.84) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--console</title>
+      <path id="a99-rsp-se--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--console--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--console--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/console/opening" data-class="cutout" />
+      <g id="a99-rsp-se--console--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--aux" data-path="a99-rsp-se/aux" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.49,285.05) rotate(90 6.35 5.5)">
+      <title>a99-rsp-se--aux</title>
+      <path id="a99-rsp-se--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--aux--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="a99-rsp-se--aux--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="a99-rsp-se/aux/opening" data-class="cutout" />
+      <g id="a99-rsp-se--aux--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--gps-10mhz" data-path="a99-rsp-se/gps-10mhz" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(9.66,160.27)">
+      <title>a99-rsp-se--gps-10mhz</title>
+      <circle id="a99-rsp-se--gps-10mhz--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="a99-rsp-se/gps-10mhz/opening" data-class="cutout" />
+      <g id="a99-rsp-se--gps-10mhz--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--gps-1pps" data-path="a99-rsp-se/gps-1pps" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(9.66,169.82)">
+      <title>a99-rsp-se--gps-1pps</title>
+      <circle id="a99-rsp-se--gps-1pps--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="a99-rsp-se/gps-1pps/opening" data-class="cutout" />
+      <g id="a99-rsp-se--gps-1pps--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--usb" data-path="a99-rsp-se/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(10.32,215.95)">
+      <title>a99-rsp-se--usb</title>
+      <rect id="a99-rsp-se--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="a99-rsp-se/usb/opening" data-class="cutout" />
+      <rect id="a99-rsp-se--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--sfp-plus-0" data-path="a99-rsp-se/sfp-plus-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(19.79,82.52) rotate(90 7.125 5.2)">
+      <title>a99-rsp-se--sfp-plus-0</title>
+      <rect id="a99-rsp-se--sfp-plus-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a99-rsp-se/sfp-plus-0/opening" data-class="cutout" />
+      <rect id="a99-rsp-se--sfp-plus-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a99-rsp-se--sfp-plus-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-rsp-se--sfp-plus-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--sfp-plus-1" data-path="a99-rsp-se/sfp-plus-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.67,82.52) rotate(270 7.125 5.2)">
+      <title>a99-rsp-se--sfp-plus-1</title>
+      <rect id="a99-rsp-se--sfp-plus-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a99-rsp-se/sfp-plus-1/opening" data-class="cutout" />
+      <rect id="a99-rsp-se--sfp-plus-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a99-rsp-se--sfp-plus-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-rsp-se--sfp-plus-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--sfp-plus-2" data-path="a99-rsp-se/sfp-plus-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(19.79,96.93) rotate(90 7.125 5.2)">
+      <title>a99-rsp-se--sfp-plus-2</title>
+      <rect id="a99-rsp-se--sfp-plus-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a99-rsp-se/sfp-plus-2/opening" data-class="cutout" />
+      <rect id="a99-rsp-se--sfp-plus-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a99-rsp-se--sfp-plus-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-rsp-se--sfp-plus-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--sfp-plus-3" data-path="a99-rsp-se/sfp-plus-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(7.67,96.93) rotate(270 7.125 5.2)">
+      <title>a99-rsp-se--sfp-plus-3</title>
+      <rect id="a99-rsp-se--sfp-plus-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="a99-rsp-se/sfp-plus-3/opening" data-class="cutout" />
+      <rect id="a99-rsp-se--sfp-plus-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="a99-rsp-se--sfp-plus-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-rsp-se--sfp-plus-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="a99-rsp-se--alarm-out" data-path="a99-rsp-se/alarm-out" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(0.31,189.25) rotate(90 15.4 6.25)">
+      <title>a99-rsp-se--alarm-out</title>
+      <g id="a99-rsp-se--alarm-out--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="a99-rsp-se--alarm-out--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="a99-rsp-se--alarm-out--shell" data-path="a99-rsp-se/alarm-out/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+        <title>a99-rsp-se--alarm-out--shell</title>
+        <path id="a99-rsp-se--alarm-out--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="a99-rsp-se/alarm-out/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <path id="a99-rsp-se--alarm-out--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="a99-rsp-se--alarm-out--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

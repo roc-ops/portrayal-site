@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="41.4mm" height="395.7mm" viewBox="0 0 41.4 395.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-amber-blinking { --led-color: #f5a623; }
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-amber-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-blinking { --led-color: #39b54a; }
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-blinking { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/a99-10x400ge-x-se@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="a99-10x400ge-x-se" data-path="a99-10x400ge-x-se" data-class="line-card" data-behaviour="fills" data-ref="cisco/a99-10x400ge-x-se@2:2.0.0" data-body-depth="609.6" data-wall="#4a4f55" data-eol="none-announced" data-generation="5th" data-model="A99-10X400GE-X-SE" data-operating-temp="5 to 40 C" data-power-absent="not-published" data-qsfp-dd="10" data-role="line-card" data-throughput="4 Tbps" data-weight-kg="12.88" transform="translate(0,0)">
+    <title>a99-10x400ge-x-se</title>
+    <rect id="a99-10x400ge-x-se--plate" x="0" y="18.78" width="41.4" height="358.77" rx="0.81" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <circle id="a99-10x400ge-x-se--pivot-top" cx="20.47" cy="22.21" r="3.056" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" />
+    <g id="a99-10x400ge-x-se--silkscreen">
+      <rect x="0.6" y="27.17" width="40.21" height="4.075" fill="#ffef5c" />
+      <text x="20.7" y="30.33" font-family="sans-serif" font-size="3.32" font-weight="bold" text-anchor="middle" fill="#231f20">A99-10X400GE-X-SE</text>
+      <rect x="24.51" y="19.95" width="13.101" height="6.245" fill="#ffef5c" />
+      <text x="31.07" y="22.71" font-family="sans-serif" font-size="2.22" font-weight="bold" text-anchor="middle" fill="#231f20">CLASS 1</text>
+      <text x="31.07" y="25.28" font-family="sans-serif" font-size="2.22" font-weight="bold" text-anchor="middle" fill="#231f20">LASER</text>
+      <text x="24.61" y="373.87" font-family="sans-serif" font-size="2.04" fill="#231f20">STATUS</text>
+      <text x="6.89" y="44.65" transform="rotate(90 6.89 44.65)" font-family="sans-serif" font-size="2.83" fill="#231f20">0</text>
+      <text x="6.89" y="107.09" transform="rotate(90 6.89 107.09)" font-family="sans-serif" font-size="2.83" fill="#231f20">2</text>
+      <text x="6.89" y="138.29" transform="rotate(90 6.89 138.29)" font-family="sans-serif" font-size="2.83" fill="#231f20">3</text>
+      <text x="35.7" y="181.69" transform="rotate(90 35.7 181.69)" font-family="sans-serif" font-size="2.83" fill="#231f20">4</text>
+      <text x="35.7" y="212.91" transform="rotate(90 35.7 212.91)" font-family="sans-serif" font-size="2.83" fill="#231f20">5</text>
+      <text x="35.7" y="244.12" transform="rotate(90 35.7 244.12)" font-family="sans-serif" font-size="2.83" fill="#231f20">6</text>
+      <text x="35.7" y="275.34" transform="rotate(90 35.7 275.34)" font-family="sans-serif" font-size="2.83" fill="#231f20">7</text>
+      <text x="35.7" y="306.55" transform="rotate(90 35.7 306.55)" font-family="sans-serif" font-size="2.83" fill="#231f20">8</text>
+      <text x="35.7" y="337.76" transform="rotate(90 35.7 337.76)" font-family="sans-serif" font-size="2.83" fill="#231f20">9</text>
+      <text x="6.89" y="75.87" transform="rotate(90 6.89 75.87)" font-family="sans-serif" font-size="2.83" fill="#231f20">1</text>
+    </g>
+    <rect id="a99-10x400ge-x-se--ejector-top" x="4.25" y="0" width="13.101" height="21.872" rx="1.22" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a99-10x400ge-x-se--ejector-bot" x="4.25" y="373.3" width="13.101" height="22.401" rx="1.22" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="a99-10x400ge-x-se--lever-top" x="1.21" y="4.53" width="3.48" height="72.562" rx="1.74" fill="#4a4f55" data-z-out="4.2" />
+    <rect id="a99-10x400ge-x-se--lever-bot" x="1.21" y="318.28" width="3.48" height="72.562" rx="1.74" fill="#4a4f55" data-z-out="4.2" />
+    <g id="a99-10x400ge-x-se--screw-top" data-z-cyl="1.6">
+      <circle cx="24.36" cy="8.01" r="3.301" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.36" cy="8.01" r="1.49" fill="#6d7379" />
+      <path d="M 21.98 8.01 H 26.73 M 24.36 5.63 V 10.39" stroke="#3a4046" stroke-width="0.36" fill="none" />
+    </g>
+    <g id="a99-10x400ge-x-se--screw-bot" data-z-cyl="1.6">
+      <circle cx="24.36" cy="387.39" r="3.301" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.36" cy="387.39" r="1.49" fill="#6d7379" />
+      <path d="M 21.98 387.39 H 26.73 M 24.36 385.02 V 389.77" stroke="#3a4046" stroke-width="0.36" fill="none" />
+    </g>
+    <rect id="a99-10x400ge-x-se--asset-label" x="4.43" y="369.69" width="22.937" height="8.965" rx="0.51" fill="#2e7489" data-z-out="0.2" />
+    <rect id="a99-10x400ge-x-se--led-p0" x="6.72" y="39.89" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p0" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p1" x="6.72" y="71.11" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p1" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p2" x="6.72" y="102.33" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p2" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p3" x="6.72" y="133.54" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p3" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p4" x="35.54" y="176.94" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p4" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p5" x="35.54" y="208.16" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p5" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p6" x="35.54" y="239.37" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p6" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p7" x="35.54" y="270.59" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p7" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p8" x="35.54" y="301.81" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p8" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <rect id="a99-10x400ge-x-se--led-p9" x="35.54" y="333.01" width="2.05" height="3.26" rx="0.3" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.15" data-path="a99-10x400ge-x-se/led-p9" data-class="led" data-states="green blinking red off" data-z-dome="0.3" />
+    <circle id="a99-10x400ge-x-se--status" cx="20.47" cy="372.97" r="1.89" fill="var(--led-color, #39b54a)" stroke="#9aa0a6" stroke-width="0.25" data-path="a99-10x400ge-x-se/status" data-class="led" data-states="green amber amber-blinking red off" data-description="the single tristate card Status LED (Ethernet Line Card Installation Guide, Table 32)" data-z-dome="0.3" />
+    <g id="a99-10x400ge-x-se--p0" data-path="a99-10x400ge-x-se/p0" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(8.02,36.45) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p0</title>
+      <rect id="a99-10x400ge-x-se--p0--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p0/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p0--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p0--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p0--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p1" data-path="a99-10x400ge-x-se/p1" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(8.02,67.67) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p1</title>
+      <rect id="a99-10x400ge-x-se--p1--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p1/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p1--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p1--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p2" data-path="a99-10x400ge-x-se/p2" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(8.02,98.88) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p2</title>
+      <rect id="a99-10x400ge-x-se--p2--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p2/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p2--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p2--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p3" data-path="a99-10x400ge-x-se/p3" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(8.02,130.09) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p3</title>
+      <rect id="a99-10x400ge-x-se--p3--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p3/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p3--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p3--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p4" data-path="a99-10x400ge-x-se/p4" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.74,173.49) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p4</title>
+      <rect id="a99-10x400ge-x-se--p4--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p4/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p4--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p4--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p5" data-path="a99-10x400ge-x-se/p5" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.74,204.7) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p5</title>
+      <rect id="a99-10x400ge-x-se--p5--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p5/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p5--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p5--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p6" data-path="a99-10x400ge-x-se/p6" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.74,235.91) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p6</title>
+      <rect id="a99-10x400ge-x-se--p6--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p6/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p6--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p6--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p7" data-path="a99-10x400ge-x-se/p7" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.74,267.14) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p7</title>
+      <rect id="a99-10x400ge-x-se--p7--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p7/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p7--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p7--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p8" data-path="a99-10x400ge-x-se/p8" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.74,298.34) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p8</title>
+      <rect id="a99-10x400ge-x-se--p8--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p8/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p8--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p8--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+    <g id="a99-10x400ge-x-se--p9" data-path="a99-10x400ge-x-se/p9" data-class="port" data-ref="std/qsfp-dd@1:1.3.1" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp-dd" transform="translate(20.74,329.56) rotate(90 9.5 5.0)">
+      <title>a99-10x400ge-x-se--p9</title>
+      <rect id="a99-10x400ge-x-se--p9--opening" x="0" y="0" width="19" height="10" rx="0.3" fill="#17191c" data-path="a99-10x400ge-x-se/p9/opening" data-class="cutout" />
+      <rect id="a99-10x400ge-x-se--p9--cage-lip" x="1.2" y="7.5" width="16.6" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="a99-10x400ge-x-se--p9--module-slot" x="1.2" y="3.8" width="16.6" height="2.8" rx="0.4" fill="#000000" />
+      <path id="a99-10x400ge-x-se--p9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 18.9 v 9.9 h -18.9 z M 0.8 0.8 h 17.4 v 8.4 h -17.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="9.5 5" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>

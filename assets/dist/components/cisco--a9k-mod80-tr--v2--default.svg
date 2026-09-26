@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="41.4mm" height="395.7mm" viewBox="0 0 41.4 395.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/a9k-mod80-tr@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/a9k-mod80-tr@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/a9k-mod80-tr@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="a9k-mod80-tr" data-path="a9k-mod80-tr" data-class="line-card" data-behaviour="fills" data-ref="cisco/a9k-mod80-tr@2:2.0.0" data-body-depth="616.0" data-wall="#4a4f55" data-capacity="80 Gbps" data-eol="none-announced" data-model="A9K-MOD80-TR" data-mpa-bays="2" data-power-draw-max-w="420" data-role="modular-line-card" data-variant="packet-transport" data-weight-kg="6.913" transform="translate(0,0)">
+    <title>a9k-mod80-tr</title>
+    <rect id="a9k-mod80-tr--plate" x="0.1" y="19.19" width="40.82" height="358.13" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <rect x="4.54" y="31.44" width="36.37" height="333.08" rx="0.6" fill="#dcdee0" stroke="#9aa0a6" stroke-width="0.2" />
+    <g id="a9k-mod80-tr--bay-0" data-path="a9k-mod80-tr/bay-0" data-class="bay">
+      <rect id="a9k-mod80-tr--bay-0--opening" x="6.76" y="31.95" width="34.54" height="161.8" rx="0.5" fill="#3f4448" stroke="#2a2e31" stroke-width="0.25" />
+      <g id="a9k-mod80-tr--bay-0--module" data-path="a9k-mod80-tr/bay-0/module" data-class="blank" data-behaviour="fills" data-ref="cisco/a9k-mpa-blank@1:1.0.0" data-body-depth="170.18" data-wall="#4a4f55" data-model="MPA blank" data-role="airflow-blank" transform="translate(6.76,31.95)">
+        <title>a9k-mod80-tr--bay-0--module</title>
+        <rect id="a9k-mod80-tr--bay-0--module--plate" x="0" y="0" width="34.54" height="161.8" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+        <rect x="0" y="0" width="1.4" height="161.8" fill="#dcdee0" />
+        <rect x="33.14" y="0" width="1.4" height="161.8" fill="#dcdee0" />
+        <g id="a9k-mod80-tr--bay-0--module--screw-t" data-z-cyl="1.6">
+          <circle cx="17.26" cy="9.1" r="3.0" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+          <circle cx="17.26" cy="9.1" r="1.35" fill="#6d7379" />
+          <path d="M 15.06 9.1 H 19.46 M 17.26 6.9 V 11.3" stroke="#3a4046" stroke-width="0.35" fill="none" />
+        </g>
+        <g id="a9k-mod80-tr--bay-0--module--screw-b" data-z-cyl="1.6">
+          <circle cx="17.26" cy="152.68" r="3.0" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+          <circle cx="17.26" cy="152.68" r="1.35" fill="#6d7379" />
+          <path d="M 15.06 152.68 H 19.46 M 17.26 150.48 V 154.88" stroke="#3a4046" stroke-width="0.35" fill="none" />
+        </g>
+      </g>
+    </g>
+    <g id="a9k-mod80-tr--bay-1" data-path="a9k-mod80-tr/bay-1" data-class="bay">
+      <rect id="a9k-mod80-tr--bay-1--opening" x="6.76" y="202.35" width="34.54" height="161.8" rx="0.5" fill="#3f4448" stroke="#2a2e31" stroke-width="0.25" />
+      <g id="a9k-mod80-tr--bay-1--module" data-path="a9k-mod80-tr/bay-1/module" data-class="blank" data-behaviour="fills" data-ref="cisco/a9k-mpa-blank@1:1.0.0" data-body-depth="170.18" data-wall="#4a4f55" data-model="MPA blank" data-role="airflow-blank" transform="translate(6.76,202.35)">
+        <title>a9k-mod80-tr--bay-1--module</title>
+        <rect id="a9k-mod80-tr--bay-1--module--plate" x="0" y="0" width="34.54" height="161.8" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+        <rect x="0" y="0" width="1.4" height="161.8" fill="#dcdee0" />
+        <rect x="33.14" y="0" width="1.4" height="161.8" fill="#dcdee0" />
+        <g id="a9k-mod80-tr--bay-1--module--screw-t" data-z-cyl="1.6">
+          <circle cx="17.26" cy="9.1" r="3.0" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+          <circle cx="17.26" cy="9.1" r="1.35" fill="#6d7379" />
+          <path d="M 15.06 9.1 H 19.46 M 17.26 6.9 V 11.3" stroke="#3a4046" stroke-width="0.35" fill="none" />
+        </g>
+        <g id="a9k-mod80-tr--bay-1--module--screw-b" data-z-cyl="1.6">
+          <circle cx="17.26" cy="152.68" r="3.0" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+          <circle cx="17.26" cy="152.68" r="1.35" fill="#6d7379" />
+          <path d="M 15.06 152.68 H 19.46 M 17.26 150.48 V 154.88" stroke="#3a4046" stroke-width="0.35" fill="none" />
+        </g>
+      </g>
+    </g>
+    <rect x="17.04" y="2.25" width="13.41" height="16.94" rx="1.0" fill="#bfbfbf" stroke="#9aa0a6" stroke-width="0.25" />
+    <rect x="17.04" y="377.31" width="13.41" height="15.87" rx="1.0" fill="#bfbfbf" stroke="#9aa0a6" stroke-width="0.25" />
+    <g>
+      <circle cx="24.16" cy="8.26" r="3.17" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.16" cy="8.26" r="1.4" fill="#6d7379" />
+      <path d="M 21.83 8.26 H 26.49 M 24.16 5.93 V 10.59" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <g>
+      <circle cx="24.16" cy="387.17" r="3.17" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.16" cy="387.17" r="1.4" fill="#6d7379" />
+      <path d="M 21.83 387.17 H 26.49 M 24.16 384.84 V 389.5" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <rect x="4.8" y="371.19" width="24.33" height="6.13" rx="0.8" fill="#2e7489" />
+    <circle id="a9k-mod80-tr--status" cx="28.86" cy="373.95" r="1.77" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="a9k-mod80-tr/status" data-class="led" data-states="green amber red off" data-description="install guide - Table 32, 'Port Status and Line Card Status LEDs', of the Ethernet Line Card Installation Guide, section 'Card Status LED (one per card)'. Green = booted properly and ready to pass, or passing, traffic; steady amber = boot underway, turning green once the Cisco IOS XR software finishes loading; blinking amber = a software configuration error keeps the card from passing traffic, though it may still be passing some in a degraded way; red = a hardware error, and no traffic passing; off = powered off, though the LED can also go dark for a moment while changing between the states above without the card powering off. Steady and blinking amber share one colour and are not carried as two states; the distinction is recorded here because it is the difference between a card booting and a card misconfigured. AN EARLIER VERSION OF THIS SENTENCE said Table 32 'is written for the fixed-port cards' and called this vocabulary a BORROWING. That was wrong. Table 32 sits in Chapter 3, 'Verifying and Troubleshooting the Line Card Installation', which is scoped to line cards generally and not to fixed-port ones - Table 33, the MPA lamp table, is in the same section, and MPAs only exist inside modular carriers. A modular line card is a line card and its Status lamp is a Card Status LED." data-z-dome="0.3" />
+    <g id="a9k-mod80-tr--silkscreen">
+      <rect x="4.54" y="366.12" width="25.91" height="4.0" fill="#ffef5c" />
+      <text x="17.5" y="369.4" font-family="sans-serif" font-size="2.8" font-weight="bold" text-anchor="middle" fill="#231f20">A9K-MOD80-TR</text>
+      <text x="31.76" y="374.38" transform="rotate(90 31.76 374.38)" font-family="sans-serif" font-size="2.0" fill="#231f20">STATUS</text>
+      <text x="33.06" y="27.45" transform="rotate(90 33.06 27.45)" font-family="sans-serif" font-size="2.6" fill="#231f20">0</text>
+      <text x="33.06" y="366.39" transform="rotate(90 33.06 366.39)" font-family="sans-serif" font-size="2.6" fill="#231f20">1</text>
+    </g>
+  </g>
+</svg>

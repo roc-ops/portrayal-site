@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="79.2mm" height="18.42mm" viewBox="0 0 79.2 18.42">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-beacon { --led-color: #eab308; }
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-error { --led-color: #eab308; }
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nvidia/mcx623105-lp@'] .state-link-up { --led-color: #22c55e; }</style>
+  <g id="mcx623105-lp" data-path="mcx623105-lp" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/mcx623105-lp@1:1.0.0" data-body-depth="142.0" data-model="MCX623105A short bracket" data-part-numbers="MCX623105AN-CDAT, MCX623105AC-CDAT, MCX623105AE-CDAT, MCX623105AC-VDAT, MCX623105AN-VDAT, MCX623105AE-VDAT, MCX623105AS-VDAT" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="low" data-power-draw-max-w="24.0" data-power-draw-typical-w="16.94" data-power-input="host PCIe slot" data-role="nic" transform="translate(0,0)">
+    <title>mcx623105-lp</title>
+    <g id="mcx623105-lp--bracket" data-path="mcx623105-lp/bracket" data-class="bracket" data-ref="std/pcie-bracket-lp@1:1.2.1" data-wall="#8a9199" data-card-height-max="68.09" data-chassis-opening="65.34" data-material="0.86 mm (20 GA) low carbon steel, zinc plated" data-return-flange-depth="9.4" data-return-flange-length="21.59" data-tapped-hole-pitch="53.9" transform="translate(0,0)">
+      <title>mcx623105-lp--bracket</title>
+      <path d="M1.91 4.11 L7.74 4.11 L11.85 0 L70.33 0 L70.33 0.00 L77.93 0.00 A1.27 1.27 0 0 1 79.20 1.27 L79.20 15.14 A1.27 1.27 0 0 1 77.93 16.41 L70.33 16.41 L68.03 18.42 L11.85 18.42 L7.74 14.31 L1.91 14.31 A1.91 1.91 0 0 1 0 12.40 L0 6.02 A1.91 1.91 0 0 1 1.91 4.11 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+      <rect id="mcx623105-lp--bracket--opening" x="15.63" y="3.18" width="54.53" height="12.06" rx="1.0" fill="#1b1f22" stroke="#41474d" stroke-width="0.35" data-path="mcx623105-lp/bracket/opening" data-class="cutout" data-description="the connector opening, 54.53 by 12.06, sitting 3.18 in from each long edge" />
+      <path id="mcx623105-lp--bracket--flange-fold" d="M78.34 0.40 V16.01" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+      <path d="M5.08 4.41 V14.01" stroke="#5f666d" stroke-width="0.3" fill="none" />
+    </g>
+    <rect id="mcx623105-lp--plate" x="15.33" y="2.88" width="55.13" height="12.66" fill="#9aa1a8" />
+    <g id="mcx623105-lp--vents">
+      <rect x="11.36" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="11.36" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="16.83" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="16.83" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="22.16" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="22.16" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="50.15" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="50.15" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="55.61" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="55.61" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="61.06" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="61.06" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="66.64" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="66.64" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="71.92" y="11.10" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+      <rect x="71.92" y="5.75" width="3.60" height="3.70" rx="0.60" fill="#17191c" />
+    </g>
+    <g id="mcx623105-lp--slots">
+      <rect x="28.47" y="14.65" width="5.00" height="0.80" rx="0.40" fill="#17191c" />
+      <rect x="35.56" y="14.65" width="5.00" height="0.80" rx="0.40" fill="#17191c" />
+      <rect x="42.52" y="14.65" width="5.00" height="0.80" rx="0.40" fill="#17191c" />
+    </g>
+    <g id="mcx623105-lp--silkscreen">
+  </g>
+    <g id="mcx623105-lp--port-1" data-path="mcx623105-lp/port-1" data-class="port" data-ref="std/qsfp56@1:1.4.2" data-depth="37.0" data-wall="#aab0b7" data-media="qsfp56" data-speed="200g" transform="translate(27.99,3.28) rotate(180 10.0 5.075)" data-group="qsfp56" data-group-role="traffic">
+      <title>mcx623105-lp--port-1</title>
+      <rect id="mcx623105-lp--port-1--opening" x="0" y="0" width="20" height="10.15" rx="0.3" fill="#17191c" data-path="mcx623105-lp/port-1/opening" data-class="cutout" />
+      <rect id="mcx623105-lp--port-1--cage-lip" x="0.8" y="7.6" width="18.4" height="1.3" rx="0.3" fill="#2b2f33" />
+      <rect id="mcx623105-lp--port-1--module-slot" x="0.8" y="3.9" width="18.4" height="2.85" rx="0.4" fill="#000000" />
+      <path id="mcx623105-lp--port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 19.9 v 10.05 h -19.9 z M 0.8 0.8 h 18.4 v 8.55 h -18.4 z" data-z-out="1.0" data-z-color="#7d848c" />
+      <g data-cp="mate" data-cp-at="10 5.075" data-cp-dir="front" />
+    </g>
+    <g id="mcx623105-lp--led-port-1-1" data-path="mcx623105-lp/led-port-1-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(24.39,2.62) rotate(180 1.0 1.0)" data-group="port-leds" data-group-role="indicator">
+      <title>mcx623105-lp--led-port-1-1</title>
+      <circle id="mcx623105-lp--led-port-1-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mcx623105-lp--led-port-1-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mcx623105-lp/led-port-1-1/lamp" data-class="led" data-states="off link-up activity beacon error" data-z-dome="0.3" />
+    </g>
+    <g id="mcx623105-lp--led-port-1-2" data-path="mcx623105-lp/led-port-1-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(21.36,2.62) rotate(180 1.0 1.0)" data-group="port-leds" data-group-role="indicator">
+      <title>mcx623105-lp--led-port-1-2</title>
+      <circle id="mcx623105-lp--led-port-1-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mcx623105-lp--led-port-1-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mcx623105-lp/led-port-1-2/lamp" data-class="led" data-states="off link-up activity" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

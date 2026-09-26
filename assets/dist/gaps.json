@@ -23,8 +23,8 @@
   ]
  },
  "by-kind": {
-  "declared": 811,
-  "derived": 563
+  "declared": 791,
+  "derived": 405
  },
  "devices": 158,
  "gaps": [
@@ -112,17 +112,6 @@
    "manufacturer": "Casa Systems",
    "wanted": "`physical-context` on 33 bays (front 14, rear 19) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "c100g",
-   "kind": "derived",
-   "manufacturer": "Casa Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -256,17 +245,6 @@
   {
    "because": "CAP",
    "blocks": [
-    "templated"
-   ],
-   "device": "c40g",
-   "kind": "derived",
-   "manufacturer": "Casa Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
     "specified"
    ],
    "device": "es1010",
@@ -285,17 +263,6 @@
    "manufacturer": "Celestica",
    "wanted": "`physical-context` on 2 bays (rear 2); `physical-context` on port groups rj45-1g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "es1010",
-   "kind": "derived",
-   "manufacturer": "Celestica",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -366,17 +333,6 @@
    "what": "specified"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9001",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "asr-9006",
@@ -404,25 +360,12 @@
    "what": "power-module-width-disagrees-with-the-component"
   },
   {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9006",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "NINE CARDS SHARE THESE SIX SLOTS AND TWO FAMILIES DISAGREE BY 32.8 mm ON THE ONE AXIS THAT HAS TO FIT ONE OPENING. The line cards and the blank filler are 395.7 mm; all four RSP-880 variants are 428.5. The measured cage opening is 352.59. The line-card story is coherent: a9k-slot-cover's own art measures a PLATE of 362.24 inside a 395.7 envelope, so the plate covers the 352.59 opening with 4.8 mm of overlap per side and the ejector brackets account for the remaining 16.7 per side. Every number has a job. The RSP-880's does not. 428.5 needs 37.96 mm of overlap per side to cover the same opening, and a card centred on this cage reaches x 22.99 to 451.49 in a 444.5 mm chassis - 6.99 mm PAST the outer wall, which is visible in the 3D view as the card's end standing proud of the side of the box. WHERE 428.5 COMES FROM, AND WHY IT IS THE SUSPECT: the RSP-880 data sheet's 'Physical specifications' row. This library's own a9k-rsp880-se provenance already records that NINE RSP AND RP MASTERS IN THE STENCIL ARE ONE DRAWING, scaled to four different stated widths - 402.8, 428.5, 428.2 and 403.4 - so \"the drawing is generic across the family and cannot be all four sizes\". The cage, by contrast, is measured off this chassis's own master and independently supported by Figure 19. NOT RESOLVED HERE. Two numbers describing different things is the likeliest reading - the same trap as a plate against an envelope - but nothing we hold says WHICH thing 428.5 measures, and inventing a smaller one would be the reconciliation this project keeps digging back out.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a Cisco mechanical drawing of an RSP-880 faceplate, or one measurement across a real card from ejector tip to ejector tip. Either settles it for all four variants at once and for every chassis they go in. REQUESTED FROM THE LAB, 2026-08-26, and tracked as roc-ops/Portrayal#16 - that issue carries the three conflicting Cisco figures and what to do when the number arrives.",
-   "what": "rsp880-width-cannot-fit-this-cage"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "asr-9006",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "NARROWED, not closed. This file and the ASR 9010's carried pitches that disagreed - 46.60 here against 44.33 there - for two chassis that take the same cards. Cisco's RSP-880 sheet resolved the 9010 half: the card is 46.0 mm thick and Cisco names the 9010 among the chassis it serves, so a 44.33 slot is impossible there and that cage is now divided on published card thicknesses. THIS CHASSIS IS NOT DISCRIMINATED BY THAT EVIDENCE. Its 279.63 mm cage admits both readings: four line card slots at 41.4 plus two RSP slots at 46.0 is 257.6, leaving 22.03 for guides; and an even six-way division at 46.60 is also >= 46.0 and so also admits the RSP-880. The even division is kept because it is what the cage measures and because nothing here favours the other, but it is an assumption and the 9010 shows the family does not always divide evenly. Neither this master nor the 9010's prints slot labels or draws cage dividers, which is why both were assumptions in the first place - the 9904, 9906, 9910, 9912 and 9922 all have a ruler in the picture and these two do not.",
+   "note": "STILL OPEN; the numbers around it changed. This file and the ASR 9010 manifest carry pitches that differ - 46.605 here against 44.332 there - for two chassis that take the same cards. For a while the 9010 was divided unevenly to fit a 1.81 in (46.0 mm) RSP-880; under the card standard every card is drawn 41.4 thick, so that reason is gone and the 9010 is again divided evenly across its measured cage. The two pitches still differ because the two measured cages differ, which is not a contradiction. HERE THE EVEN SIX-WAY DIVISION OF THE 279.63 mm CAGE IS STILL AN ASSUMPTION: at 41.4 per card any division giving each slot at least 41.4 admits every card, so the card size cannot discriminate between an even split and an uneven one. The even division is kept because it is what the cage measures and nothing here favours another. Neither this master nor the 9010 master prints slot labels or draws cage dividers, which is why both were assumptions in the first place - the 9904, 9906, 9910, 9912 and 9922 all have a ruler in the picture and these two do not.",
    "scope": [
     "slots"
    ],
@@ -500,19 +443,6 @@
    "what": "undocumented-faces"
   },
   {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9006",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "CISCO SAYS THESE CARDS GO IN THIS CHASSIS AND THE DRAWING SAYS THEY DO NOT FIT. Each one's datasheet Chassis compatibility row names this chassis, and each is larger than this chassis' modelled card bay of 395.7 x 41.4, laid flat: - a9k-2x100ge-se (43.7 x 395.7), datasheet C78-662709, over by 2.30 mm - a9k-400g-dwdm-tr (43.7 x 395.7), datasheet c78-736456, over by 2.30 mm They are deliberately NOT in the slot bays' accepts, because seating a module a bay cannot hold would draw a card overhanging its own slot. The differences are 1 to 7 mm - the range where a card figure and a cage figure taken from different drawings disagree without either being obviously wrong - so this is a finding rather than a rounding, and moving either number to close it would be inventing a measurement. Every other chassis its row names DOES seat it, and the same shape is already recorded here for the RSPs. See roc-ops/Portrayal#262.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a card thickness and a slot opening for this chassis measured from the same source, so the two can be compared on purpose rather than by arithmetic",
-   "what": "documented-cards-that-do-not-fit-the-modelled-bay"
-  },
-  {
    "because": "L29",
    "blocks": [],
    "count": 5,
@@ -534,67 +464,17 @@
    "what": "specified"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9006",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "asr-9010",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 403.10 on 8 bays - the 5th-generation envelope, 403.10 long 406.40 on 2 bays - a9k-rsp, 406.40 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "note": "THE CARD BAY EXTENTS ARE A FAMILY STANDARD, NOT MEASUREMENTS OF THIS CAGE. All ten slots are 41.4 x 395.7 with a 41.4 x 355.6 opening, chosen so one card component fits every ASR 9000 chassis. Two of the three numbers are Cisco figures: 395.7 is the fourth-generation \"includes ejector bracket/lever\" envelope, which a lab measurement of a real A9K-RSP880 supports at about 15 1/2 in (roc-ops/Portrayal#16), and 355.6 is the Table A-10 plate length, which the cage measured off the stencil (354.95) matches to 0.65 mm. The 41.4 thickness is the figure Cisco states most often and has NOT been measured; the 43.7 of the original-generation cards and the 46.0 of the RSP-880 are overridden by it as a modelling decision. The slot division is the measured cage split ten ways, which is arithmetic: the stencil master draws the cage as one undivided rectangle, and no per-slot width was found in the Ethernet Line Card Installation Guide, the Hardware Installation Guide or the Overview and Reference Guide. The danger this entry exists to record still applies: a fit check compares a bay to a component and neither to the world, so a standard shared by both passes it whether or not it is true.",
    "scope": [
     "slots"
    ],
-   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "wanted": "a caliper reading of an ASR 9000 card thickness (requested on roc-ops/Portrayal#16), a dimensioned front elevation or per-slot width for the ASR 9010, or a tape measure on a real one",
    "what": "bay-extents-reconciled-rather-than-measured"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9010",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
-   "what": "neighbour-constraint-excludes-the-control-card-length"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9010",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
-   "what": "rsp880-length-also-exceeds-the-cage"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9010",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
-   "what": "rsp880-width-exceeds-every-measured-pitch"
   },
   {
    "because": "sources-disagree",
@@ -608,19 +488,6 @@
    ],
    "wanted": "a re-measurement of the 'A9K Power Module' stencil master, or a Cisco dimension for the version 1 power module",
    "what": "power-module-width-disagrees-with-the-component"
-  },
-  {
-   "because": "needs-drawing",
-   "blocks": [],
-   "device": "asr-9010",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "The two RSP slots are 46.0 mm because that is the RSP-880's published thickness and Cisco names this chassis as one it serves - so 46.0 is a LOWER BOUND on the slot, not a measurement of it. The eight line card slots are 41.4 on the same basis. The 20.12 mm those twenty-two millimetres of card leave over is distributed as eleven equal guides, which is arithmetic rather than observation: the real chassis may well have wider guides between the cages and narrower ones within them. What IS solid is that an even ten-way division is impossible, since 44.33 is thinner than a card Cisco says seats here. Searched and not found: any per-slot width in the Ethernet Line Card Installation Guide, the Hardware Installation Guide or the Overview and Reference Guide, and the stencil master draws the cage as a single undivided rectangle.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a dimensioned front elevation, a per-slot width from any Cisco document, or a tape measure on a real ASR 9010",
-   "what": "rsp-slot-width-is-a-lower-bound"
   },
   {
    "because": "needs-drawing",
@@ -698,17 +565,6 @@
    "manufacturer": "Cisco",
    "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
    "what": "specified"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9010",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -846,17 +702,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9901",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "asr-9902",
@@ -957,17 +802,6 @@
    "manufacturer": "Cisco",
    "wanted": "`physical-context` on port groups qsfp-dd, qsfp28, sfp-plus, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9902",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -1093,17 +927,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9903",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "asr-9904",
@@ -1146,22 +969,9 @@
    "what": "blank-faces"
   },
   {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9904",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "CISCO SAYS THESE CARDS GO IN THIS CHASSIS AND THE DRAWING SAYS THEY DO NOT FIT. Each one's datasheet Chassis compatibility row names this chassis, and each is larger than this chassis' modelled card bay of 395.7 x 41.4, laid flat: - a99-10x400ge-x-se (42.67 x 403.1), datasheet c78-744598, over by 7.40 mm - a99-10x400ge-x-tr (42.67 x 403.1), datasheet c78-744598, over by 7.40 mm - a9k-400g-dwdm-tr (43.7 x 395.7), datasheet c78-736456, over by 2.30 mm They are deliberately NOT in the slot bays' accepts, because seating a module a bay cannot hold would draw a card overhanging its own slot. The differences are 1 to 7 mm - the range where a card figure and a cage figure taken from different drawings disagree without either being obviously wrong - so this is a finding rather than a rounding, and moving either number to close it would be inventing a measurement. Every other chassis its row names DOES seat it, and the same shape is already recorded here for the RSPs. See roc-ops/Portrayal#262.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a card thickness and a slot opening for this chassis measured from the same source, so the two can be compared on purpose rather than by arithmetic",
-   "what": "documented-cards-that-do-not-fit-the-modelled-bay"
-  },
-  {
    "because": "L29",
    "blocks": [],
-   "count": 7,
+   "count": 9,
    "device": "asr-9904",
    "kind": "derived",
    "manufacturer": "Cisco",
@@ -1178,17 +988,6 @@
    "manufacturer": "Cisco",
    "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
    "what": "specified"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9904",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -1210,38 +1009,12 @@
    "device": "asr-9906",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 6 bays - a9k-4hg-flex, 42.67 thick 403.40 on 6 bays - a99-rsp-se, 403.40 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "note": "THESE BAY DIMENSIONS ARE A MODELLING STANDARD AND NOT MEASUREMENTS OF THIS CAGE. Every slot bay is 41.4 x 395.7 with a 41.4 x 355.6 opening, the envelope now shared by every full-size ASR 9000 card (see asr9000-card-standard). Earlier revisions grew these bays to 42.67 x 403.40 to satisfy a fit check against one accepted card, which a fit check would pass just as readily if both sides were wrong; that is gone, but a standard is not a measurement either. What each figure rests on: 395.7 is the Cisco \"includes ejector bracket/lever\" envelope and agrees with a lab measurement of a real RSP-880; 355.6 is the Table A-10 plate length; 41.4 is the thickness Cisco states most often and has not been measured. What IS independently grounded here is the cage, measured off the stencil at 260.52 x 364.32 and corroborated by the printed slot labels, and the 43.42 pitch. The measured cage height is 8.72 mm taller than the 355.6 opening now drawn, a difference the standard accepts rather than explains.",
    "scope": [
     "slots"
    ],
-   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, or a caliper reading of a card thickness, either of which would replace a standard figure with a measured one",
    "what": "bay-extents-reconciled-rather-than-measured"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9906",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
-   "what": "rsp880-length-also-exceeds-the-cage"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9906",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
-   "what": "rsp880-width-exceeds-every-measured-pitch"
   },
   {
    "because": "needs-drawing",
@@ -1262,7 +1035,7 @@
    "device": "asr-9906",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "The ASR 9906's rear carries the fabric card cage and we know a great deal ABOUT it and almost nothing about its geometry. There is no ASR-9906 Rear master in Cisco's stencil, and Figure 21 shows only the front. The count is sourced but indirectly: Table 13 quotes the configured weight for a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\", so five, and the sibling ASR 9910's Figure 22 shows fabric slots numbered from 0. Nothing states their width, their height, or where the PEM sits. The rear is therefore sized and carries regions naming what is there, with no cutouts invented to fill it.",
+   "note": "The ASR 9906's rear carries the fabric card cage and we know a great deal ABOUT it and almost nothing about its geometry. There is no ASR-9906 Rear master in Cisco's stencil, and Figure 21 shows only the front. The count is sourced but indirectly: Table 13 quotes the configured weight for a chassis \"Configured with two fan trays, two RSPs, five fabric cards, and one PEM\", so five, and the sibling ASR 9910's Figure 22 shows fabric slots numbered from 0. Nothing states their width, their height, or where the PEM sits. The rear is therefore sized and carries regions naming what is there. ONE CUTOUT NOW EXISTS ON THIS FACE and it is not an exception to that: the NEBS grounding receptacle, which Table 12 states and Figure 61 shows, on an offset borrowed from the sibling chassis rather than measured - see provenance/grounding. The fabric card cage is still not drawn and is no better sourced than it was.",
    "scope": [
     "rear"
    ],
@@ -1304,17 +1077,6 @@
    "what": "specified"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9906",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "asr-9910",
@@ -1334,51 +1096,12 @@
    "device": "asr-9910",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 10 bays - a9k-4hg-flex, 42.67 thick 403.40 on 10 bays - a99-rsp-se, 403.40 long 492.10 on 5 bays - a99-sfc3-s, 492.10 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 492.10 on 5 bays - a99-sfc3-s, 492.10 long The ten card bays left this list when they took the family standard, 41.4 x 395.7 (see asr9000-card-standard). They had been 42.67 thick and 403.40 long, grown to meet a9k-4hg-flex and a99-rsp-se. The 395.70 is sourced; the 41.4 is a stated thickness chosen as a standard and is NOT measured, so those bays are standardised rather than measured. The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
    "scope": [
     "slots"
    ],
    "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
    "what": "bay-extents-reconciled-rather-than-measured"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9910",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
-   "what": "neighbour-constraint-excludes-the-control-card-length"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9910",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
-   "what": "rsp880-length-also-exceeds-the-cage"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9910",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
-   "what": "rsp880-width-exceeds-every-measured-pitch"
   },
   {
    "because": "needs-drawing",
@@ -1428,17 +1151,6 @@
    "what": "specified"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9910",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "asr-9912",
@@ -1458,51 +1170,14 @@
    "device": "asr-9912",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 10 bays - a9k-4hg-flex, 42.67 thick 403.10 on 10 bays - the 5th-generation envelope, 403.10 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "note": "NARROWED BY THE ASR 9000 CARD STANDARD, NOT CLOSED. The line card bays here were once grown to meet a component - 42.67 thick to fit a9k-4hg-flex and 403.10 long to fit the 5th-generation envelope - and the RP bays to 46.0 to fit a supervisor data sheet. None of those numbers is used now: all 19 card bays are 41.4 x 395.7 with a 41.4 x 355.6 opening, per asr9000-card-standard in provenance. Two of the three standard figures are sourced: 395.7 is the fourth-generation \"includes ejector bracket/lever\" envelope, and 355.6 is the Table A-10 plate length, 0.65 mm from the ASR 9010 cage and 1.75 / 2.55 mm under the two cages measured here. THE THICKNESS IS NOT. 41.4 is the figure Cisco states most often, chosen so every card in the family is one envelope; the original-generation cards are stated at 43.7 and the RSP-880 at 46.0, and both are drawn at 41.4 by decision. A fit check between a bay and a card is now satisfied by construction, so it can no longer catch a wrong thickness - which is why this stays open.",
    "scope": [
-    "slots"
+    "slots",
+    "rp",
+    "fabric"
    ],
-   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "wanted": "a caliper reading of an ASR 9000 card thickness (still requested on roc-ops/Portrayal#16), or a dimensioned figure of the clear opening of any ASR 9000 card cage, which would confirm or move 41.4",
    "what": "bay-extents-reconciled-rather-than-measured"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9912",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
-   "what": "neighbour-constraint-excludes-the-control-card-length"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9912",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
-   "what": "rsp880-length-also-exceeds-the-cage"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9912",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
-   "what": "rsp880-width-exceeds-every-measured-pitch"
   },
   {
    "because": "sources-disagree",
@@ -1544,19 +1219,6 @@
    "what": "bottom-face-is-undocumented-family-wide"
   },
   {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9912",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "CISCO SAYS THESE CARDS GO IN THIS CHASSIS AND THE DRAWING SAYS THEY DO NOT FIT. Each one's datasheet Chassis compatibility row names this chassis, and each is larger than this chassis' modelled card bay of 42.67 x 403.1: - a9k-400g-dwdm-tr (43.7 x 395.7), datasheet c78-736456, over by 1.03 mm They are deliberately NOT in the slot bays' accepts, because seating a module a bay cannot hold would draw a card overhanging its own slot. The differences are 1 to 7 mm - the range where a card figure and a cage figure taken from different drawings disagree without either being obviously wrong - so this is a finding rather than a rounding, and moving either number to close it would be inventing a measurement. Every other chassis its row names DOES seat it, and the same shape is already recorded here for the RSPs. See roc-ops/Portrayal#262.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a card thickness and a slot opening for this chassis measured from the same source, so the two can be compared on purpose rather than by arithmetic",
-   "what": "documented-cards-that-do-not-fit-the-modelled-bay"
-  },
-  {
    "because": "L29",
    "blocks": [],
    "count": 14,
@@ -1578,17 +1240,6 @@
    "what": "specified"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9912",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "asr-9922",
@@ -1608,51 +1259,12 @@
    "device": "asr-9922",
    "kind": "declared",
    "manufacturer": "Cisco",
-   "note": "THESE BAY DIMENSIONS WERE GROWN TO MEET A COMPONENT AND ARE NOT MEASUREMENTS. Each was set by taking the size of a card the bay accepts, because a fit check reported the bay as too small. On this chassis: 42.67 on 20 bays - a9k-4hg-flex, 42.67 thick 403.10 on 20 bays - the 5th-generation envelope, 403.10 long The danger is specific and it is why they are listed rather than left to look like geometry. A fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together exactly as easily as by both being right. Every mismatch resolved by moving one side removes the signal without adding any truth, and once resolved nothing will flag it again. These are the entries where that happened, so the record survives the check going quiet. What IS independently grounded and is not in this list: the cage extents, measured off the stencil and confirmed on several chassis by printed slot labels or a card guide rail; the slot pitch; the 395.70 fourth-generation envelope, which is Cisco's own \"includes ejector bracket/lever\" figure; and the shapesheet sizes for the power modules and fan trays. The ejector arithmetic that explains why a bay legitimately exceeds its cage opening - 355.60 against 395.70, 40.10 mm - is also sourced, and it justifies the SHAPE of these numbers without justifying any particular one of them.",
+   "note": "THESE BAY DIMENSIONS ARE A MODELLING STANDARD, NOT MEASUREMENTS OF THIS CHASSIS. All 29 card bays are 41.4 x 395.7 with a 355.6 opening (asr9000-card-standard in provenance). Before the standard they were 42.67 x 403.10 on the line card slots, grown to meet a component because a fit check reported the bay as too small, and the RP bays were 46.0 wide for the same reason. That history is why this entry exists: a fit check compares a bay to a component and NEITHER of them to the world, so it is satisfied by both being wrong together as easily as by both being right. What IS grounded: 395.7 is the Cisco \"includes ejector bracket/lever\" envelope, and a lab measurement of a real RSP-880 agrees; 355.6 is Table A-10, and the measured cages (358.17 and 355.75, kept in provenance) sit within 2.6 mm of it; the slot pitch and cage extents are measured off the stencil. What is NOT: 41.4 is the thickness Cisco states most often, chosen for every card, and the original-generation 1.72 in (43.7) and the RP 46.0 are overridden by it on purpose rather than disproved.",
    "scope": [
     "slots"
    ],
-   "wanted": "a dimensioned figure giving the clear opening of any ASR 9000 card cage, which would replace every reconciled figure above with a measured one",
+   "wanted": "a caliper reading of an ASR 9000 card thickness (roc-ops/Portrayal#16), or a dimensioned figure giving the clear opening of any ASR 9000 card cage",
    "what": "bay-extents-reconciled-rather-than-measured"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9922",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "A THIRD LINE OF EVIDENCE ON THE ~428 mm CONTROL CARDS, derived rather than asserted, and it comes from parts that have nothing to do with the question. The vertical space available to a card is bounded by whatever structure sits above and below its cage, and on this chassis that space measures the figure recorded in card-envelope-headroom below. A card envelope larger than that cannot be installed whatever any data sheet says, because something else is already there. Applied across the family: ASR 9010 399.96 mm between the cable management tray and the card guide bar ASR 9910 421.79 mm between the tray band and the front air intake ASR 9922 420.30 mm between the tray band and the fan band ASR 9912 439.21 mm - does NOT exclude 428.5, so this chassis is silent on the question ASR 9906 unbounded above in the model, so no constraint is derivable Three of the five independently exclude a 428.2-428.5 card. That is a separate argument from the slot pitch and from the ejector arithmetic, and it agrees with both. THE 9912 DOES NOT EXCLUDE IT and is recorded as silent rather than as agreement - a constraint that fails to bite is not evidence either way, and reporting it as if it were would manufacture support. The 9010's 399.96 also sits 3.14 mm under the 403.10 fifth-generation envelope its bays now carry, which is a smaller open question of the same kind.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a figure dimensioning the clear vertical opening of any ASR 9000 card cage, which would turn all of this from derived to measured",
-   "what": "neighbour-constraint-excludes-the-control-card-length"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9922",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "THE SECOND AXIS OF THE SAME CONFLICT, and it makes the first one much harder to explain away. The RSP-880 family is published at 428.5 mm on its long axis. Two Cisco statements fix what a line card measures on that axis in this family: Table A-10 of OL-17500-09 gives the original-generation card 14 in (355.60 mm) with NO qualifier, and the 4th-generation data sheets give 15.58 in (395.70) explicitly \"including ejector bracket/lever\". The 40.10 mm between them is the ejectors, about 20 mm each end - which is also why a bay declared at the 395.70 envelope is legitimately longer than the cage opening it sits in. Against that, 428.50 does not reconcile. Subtract the same 40.10 of ejector and the plate would still be 33.45 mm longer than this chassis's measured cage - a cage independently confirmed to 0.65 mm by Table A-10's own 355.60. So BOTH published RSP-880 dimensions, 46.0 thick and 428.5 long, are irreconcilable with a cage that two unrelated sources agree on. That is why the bays were NOT inflated to hold it. Building five chassis around a pair of numbers that contradict the only independently confirmed dimension in the family would put the error into the geometry instead of into the record. The accepts keep the RSP-880 where Cisco names it; the bays stay at what the cage and the reconcilable envelopes allow.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's plate dimensions as distinct from whatever 46.0 x 428.5 measures, or a photograph of an RSP-880 beside a line card",
-   "what": "rsp880-length-also-exceeds-the-cage"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9922",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "Cisco's RSP-880 and RSP880-LT data sheet gives \"Height: 1.81 in. (4.60 cm)\", i.e. 46.0 mm, and names the ASR 9006, 9010, 9904, 9906 and 9910 as the chassis they are the system processor for. THAT WIDTH EXCEEDS THE MEASURED SLOT PITCH ON EVERY CHASSIS IN THE FAMILY: 9010 44.33 9906 43.42 9910 43.78 9912 44.06 9922 44.06 and three of those pitches are measured from PRINTED SLOT LABELS or a card guide rail with a spread of 0.11 to 0.20 mm - among the best-supported numbers in this library. A card cannot be thicker than its slot, so 1.81 in is not the seating width; it is most likely taken over the ejector levers, the same way Cisco's line card \"Width\" is stated as \"includes ejector bracket/lever\" elsewhere. The accepts lists keep the RSP-880 family where Cisco names it, because a compatibility claim is Cisco's to make. The bays are sized to what the measured opening can hold. So a reader will find a bay narrower than a component it accepts, and that is a RECORDED CONFLICT between two sources rather than an oversight - the alternative was to inflate five chassis' geometry to fit one published number that three independent pitch measurements contradict.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "the RSP-880's seating width as distinct from its over-ejector width, or any Cisco statement of an ASR 9000 slot pitch",
-   "what": "rsp880-width-exceeds-every-measured-pitch"
   },
   {
    "because": "needs-hardware",
@@ -1666,19 +1278,6 @@
    ],
    "wanted": "a mirror or flip transform on a bay, distinct from rotation, or a photograph settling exactly which way an inverted card reads",
    "what": "lower-cage-cards-are-inverted"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9922",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "RP0 and RP1 are CUTOUTS rather than bays. The candidate component is cisco/asr-9922-rp-se/-tr, named for this chassis and carrying Table 23's \"RP Card\" figure of 259 W, but it declares a slot envelope of 46.0 mm and this cage's nine positions divide its measured 429.04 mm span into 47.67 mm each - which the RP would fit - while the LINE CARD cages divide into 43.388 and the rail pitch is 44.06. A 46.0 mm supervisor does not fit a 44 mm slot, and the same 46.0 x 428.5 x 628.9 appears on a9k-rsp880-se/-tr, byte for byte, which suggests one derivation reused rather than two measurements. Until that width is re-derived from the shapesheet these two positions stay openings. The seven fabric positions beside them ARE bays, because a99-sfc3's 41.4 fits comfortably.",
-   "scope": [
-    "front"
-   ],
-   "wanted": "a re-derivation of asr-9922-rp's width from the stencil shapesheet, both axes from one source",
-   "what": "rp-positions-have-no-occupant-that-fits"
   },
   {
    "because": "sources-disagree",
@@ -1705,19 +1304,6 @@
    ],
    "wanted": "a bottom elevation, a photograph of the underside, or a way for a view to declare itself deliberately empty so that empty-by-verification counts where empty-by-omission does not",
    "what": "bottom-face-is-undocumented-family-wide"
-  },
-  {
-   "because": "sources-disagree",
-   "blocks": [],
-   "device": "asr-9922",
-   "kind": "declared",
-   "manufacturer": "Cisco",
-   "note": "CISCO SAYS THESE CARDS GO IN THIS CHASSIS AND THE DRAWING SAYS THEY DO NOT FIT. Each one's datasheet Chassis compatibility row names this chassis, and each is larger than this chassis' modelled card bay of 42.67 x 403.1: - a9k-2x100ge-se (43.7 x 395.7), datasheet C78-662709, over by 1.03 mm - a9k-400g-dwdm-tr (43.7 x 395.7), datasheet c78-736456, over by 1.03 mm They are deliberately NOT in the slot bays' accepts, because seating a module a bay cannot hold would draw a card overhanging its own slot. The differences are 1 to 7 mm - the range where a card figure and a cage figure taken from different drawings disagree without either being obviously wrong - so this is a finding rather than a rounding, and moving either number to close it would be inventing a measurement. Every other chassis its row names DOES seat it, and the same shape is already recorded here for the RSPs. See roc-ops/Portrayal#262.",
-   "scope": [
-    "slots"
-   ],
-   "wanted": "a card thickness and a slot opening for this chassis measured from the same source, so the two can be compared on purpose rather than by arithmetic",
-   "what": "documented-cards-that-do-not-fit-the-modelled-bay"
   },
   {
    "because": "needs-drawing",
@@ -1752,17 +1338,6 @@
    "manufacturer": "Cisco",
    "wanted": "an `attrs.performance` section; `attrs.platform.cpu`, `attrs.platform.memory`; one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
    "what": "specified"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "asr-9922",
-   "kind": "derived",
-   "manufacturer": "Cisco",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -1868,17 +1443,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ch3000",
-   "kind": "derived",
-   "manufacturer": "CommScope",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "r740xd",
@@ -1923,7 +1487,7 @@
    "device": "r740xd",
    "kind": "declared",
    "manufacturer": "Dell",
-   "note": "THE PREVIOUS FORM OF THIS GAP SAID THE CAD POSE WAS EXPLODED. IT IS NOT, AND THE SENTENCE IS KEPT HERE BECAUSE IT IS THE INSTRUCTIVE PART. A reading of R740XD_GPU_Brackets_01-1 was rejected on the grounds that its y extent ran -40 to +24 against an 86.8 mm panel - \"not a seated pose\". That was a Y-CONVENTION ARTEFACT IN THE READER, not a fact about the model. Calibrated against the rear handle, whose device y is trusted, the convention is face_y = 86.8 - raw_y; it reproduces the handle's low edge at 42.35 to the hundredth and this assembly's own sibling R740XD_Expansioncard_Clip-1.001 at y 1.81..44.81, the figure riser-1-shroud-14g already carried from an independent read. The pose is seated and the 36.9 mm was real all along - a plausibility check that fires on the reader instead of the data rejects good evidence, and it cost a wrong fix at the other end of the part. WHAT THE MODEL ACTUALLY SHOWS, descended to mesh children, is two levels: Body_2_3.002 at 111.70..148.60, 11.06 proud - a wide lower shelf, now drawn - and Body_1_3.005 at 125.00..135.10, 17.71 proud - a narrow rib. WHAT IS STILL OPEN is the rib. riser-1-shroud-14g draws it 120.64..137.26, about 4 mm wider on each side than the body at that depth. The outline came from cad-outline.py cutting at the panel plane, which returns the SILHOUETTE of everything the plane crosses rather than one body, so it cannot settle a single body's width. Re-cutting it would move the slot column and the clip recess, both photo-measured off ISM figure 8 and both currently agreeing with the render, so it is recorded rather than guessed.",
+   "note": "THE PREVIOUS FORM OF THIS GAP SAID THE CAD POSE WAS EXPLODED. IT IS NOT, AND THE SENTENCE IS KEPT HERE BECAUSE IT IS THE INSTRUCTIVE PART. A reading of R740XD_GPU_Brackets_01-1 was rejected on the grounds that its y extent ran -40 to +24 against an 86.8 mm panel - \"not a seated pose\". That was a Y-CONVENTION ARTEFACT IN THE READER, not a fact about the model. Calibrated against the rear handle, whose device y is trusted, the convention is face_y = 86.8 - raw_y; it reproduces the handle's low edge at 42.35 to the hundredth and this assembly's own sibling R740XD_Expansioncard_Clip-1.001 at y 1.81..44.81, the figure riser-1-shroud-14g already carried from an independent read. The pose is seated and the 36.9 mm was real all along - a plausibility check that fires on the reader instead of the data rejects good evidence, and it cost a wrong fix at the other end of the part. WHAT THE MODEL ACTUALLY SHOWS, descended to mesh children, is two levels: Body_2_3.002 at 111.70..148.60, 11.06 proud - a wide lower shelf, now drawn - and Body_1_3.005 at 125.00..135.10, 17.71 proud - a narrow rib. WHAT IS STILL OPEN is the rib. riser-1-shroud-14g draws it 120.64..137.26, about 4 mm wider on each side than the body at that depth. The outline came from cad-outline.py cutting at the panel plane, which returns the SILHOUETTE of everything the plane crosses rather than one body, so it cannot settle a single body's width. Re-cutting it would move the slot column and the clip recess, both photo-measured off ISM figure 8 and both currently agreeing with the render, so it is recorded rather than guessed. RE-READ WHEN THE STRIP UNDER RISER 1 WAS RETIRED, and still open. The same model was cut across face y 66.24..68.05 under the riser, and nothing there stands in front of the rear sheet (Body_8_6, z 708.88 at most, behind fillers whose fronts reach 718.03). That settles the band below the plate and says nothing new about the rib above it.",
    "scope": [
     "rear"
    ],
@@ -2038,17 +1602,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "r740xd",
-   "kind": "derived",
-   "manufacturer": "Dell",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "agr110",
@@ -2158,17 +1711,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port group sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "agr110",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -2294,17 +1836,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "agr130",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "agr560",
@@ -2371,17 +1902,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "agr560",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -2467,17 +1987,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ais800-32d",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "ais800-32o",
@@ -2561,17 +2070,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ais800-32o",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "ais800-64d",
@@ -2653,17 +2151,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfp-dd800 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ais800-64d",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -2773,17 +2260,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ais800-64o",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "amx3200",
@@ -2864,15 +2340,15 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "amx3200",
-   "kind": "derived",
+   "because": "sources-disagree",
+   "blocks": [],
+   "device": "as5912-54x",
+   "kind": "declared",
    "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
+   "note": "TWO EDGECORE DOCUMENTS GIVE THIS CHASSIS TWO DEPTHS, 61 mm apart. The data sheet (Edgecore AGR100 (AS5912-54X) Data Sheet R20) states 440 x 548 x 44 mm (W x D x H). The quick start guide (AGR100 AS5912-54X Quick Start Guide R02) states 438.4 x 609.0 x 43.25 mm. The difference is not rounding and not a unit conversion: 609.0 mm is 24 inches, and 548.0 is near no round figure in either unit. The model carries the data sheet's 440 x 548 x 44, as `provenance.chassis` says, and rules out the 438.4 x 43.5 of the AS7726 and AS7326 line on purpose. The QSG's 609 mm depth was never recorded until now, so a reader holding the QSG could not tell that the choice was made with it in view.",
+   "scope": [],
+   "wanted": "a measured depth, rail to rear, off a real unit - a tape measure settles it, as edgecore/as7946-30xb settled its own 480-versus-524 depth by measuring hardware.",
+   "what": "chassis-depth-sources-disagree"
   },
   {
    "because": "L21",
@@ -2894,17 +2370,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port groups qsfp28, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "as5912-54x",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "L21",
@@ -2939,17 +2404,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "as7326-56x",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "L21",
    "blocks": [],
    "count": 5,
@@ -2980,17 +2434,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port group qsfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "as7726-32x",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -3060,17 +2503,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp28, qsfpdd-100g, qsfpdd-400g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "as7946-30xb",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -3153,17 +2585,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp28, qsfpdd-100g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "as7946-74xksb",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -3268,17 +2689,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port group qsfp28-100g - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "cor550",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -3391,17 +2801,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "cor580",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "csr180",
@@ -3500,17 +2899,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "csr180",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "csr200",
@@ -3607,17 +2995,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 1 bay (front 1); `physical-context` on port groups rj45, sfp, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "csr200",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -3740,17 +3117,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "csr310",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "csr430",
@@ -3838,17 +3204,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 3 bays (front 3); `physical-context` on port groups qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "csr430",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -3958,17 +3313,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 8 bays (front 2, rear 6); `physical-context` on port groups qsfp-dd, qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "csr440",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -4091,17 +3435,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs201",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "dcs202",
@@ -4184,17 +3517,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp28, rj45 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs202",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -4304,17 +3626,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs240",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "dcs500",
@@ -4394,17 +3705,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs500",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -4492,17 +3792,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs510",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "dcs511",
@@ -4586,17 +3875,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs511",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "dcs520",
@@ -4663,17 +3941,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups mgmt, qsfp56dd - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcs520",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -4758,17 +4025,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ecs4120-28fv2-i",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "ecs4530-54csfp",
@@ -4827,17 +4083,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ecs4530-54csfp",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "ecs4530-54csfp-i",
@@ -4894,17 +4139,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on port groups qsfp-plus, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "ecs4530-54csfp-i",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -4966,17 +4200,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "eps112",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "eps121",
@@ -5035,17 +4258,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "eps121",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "eps122",
@@ -5090,17 +4302,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 2 bays (rear 2); `physical-context` on port groups rj45-1g, rj45-poe-hi, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "eps122",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -5157,17 +4358,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 5 bays (rear 5); `physical-context` on port groups qsfp28, rj45-1g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "eps201",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -5240,17 +4430,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 5 bays (rear 5); `physical-context` on port groups qsfp28, rj45-1g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "eps202",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -5331,17 +4510,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 5 bays (rear 5); `physical-context` on port groups qsfp28, rj45-10g, rj45-2g5, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "eps203",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -5439,17 +4607,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "exp100-32x",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "exp400-32x",
@@ -5543,17 +4700,6 @@
    "manufacturer": "Edgecore",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port group qsfp112 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "exp400-32x",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -5652,17 +4798,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "exp800-16o",
-   "kind": "derived",
-   "manufacturer": "Edgecore",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "fhd-1ube",
@@ -5701,17 +4836,6 @@
    "manufacturer": "FS.com",
    "wanted": "`physical-context` on 4 bays (front 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "fhd-1ube",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -5766,17 +4890,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "fhd-1ufce",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "fhd-1ufmt-n",
@@ -5815,17 +4928,6 @@
    "manufacturer": "FS.com",
    "wanted": "`physical-context` on 4 bays (front 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "fhd-1ufmt-n",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -5868,17 +4970,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "fhd-1ufmt-s",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "fhd-1ume",
@@ -5916,17 +5007,6 @@
    "manufacturer": "FS.com",
    "wanted": "`physical-context` on 4 bays (front 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "fhd-1ume",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -5979,17 +5059,6 @@
    "manufacturer": "FS.com",
    "wanted": "`physical-context` on 8 bays (front 8) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "fhd-2ufce",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -6046,17 +5115,6 @@
   {
    "because": "CAP",
    "blocks": [
-    "templated"
-   ],
-   "device": "fhd-4ufce",
-   "kind": "derived",
-   "manufacturer": "FS.com",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
     "specified"
    ],
    "device": "hlx-tgv",
@@ -6075,17 +5133,6 @@
    "manufacturer": "Halny",
    "wanted": "no bays and no grouped ports to correlate against, so there is nothing to wire yet - group the ports first - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "hlx-tgv",
-   "kind": "derived",
-   "manufacturer": "Halny",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -6152,17 +5199,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 14 bays (front 4, rear 10) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx10003",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -6259,17 +5295,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx10004",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "mx10008",
@@ -6350,17 +5375,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx10008",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "mx10016",
@@ -6439,17 +5453,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 30 bays (front 18, rear 12) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx10016",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -6542,17 +5545,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx104",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "mx150",
@@ -6632,17 +5624,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx150",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "mx2008",
@@ -6717,17 +5698,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 30 bays (front 21, rear 9) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx2008",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -6808,17 +5778,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx2010",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "mx2020",
@@ -6883,17 +5842,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 49 bays (front 31, rear 18) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx2020",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -7002,17 +5950,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx204",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "mx240",
@@ -7092,17 +6029,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 11 bays (front 5, rear 6) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx240",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -7201,17 +6127,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx304",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "mx480",
@@ -7288,17 +6203,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 15 bays (front 9, rear 6) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx480",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -7400,17 +6304,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx80",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "mx960",
@@ -7485,17 +6378,6 @@
    "manufacturer": "Juniper",
    "wanted": "`physical-context` on 19 bays (front 15, rear 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "mx960",
-   "kind": "derived",
-   "manufacturer": "Juniper",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -7593,17 +6475,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "pbc-2000",
-   "kind": "derived",
-   "manufacturer": "MaiaEdge",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "port-extender",
@@ -7689,17 +6560,6 @@
    "manufacturer": "MaiaEdge",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group ports - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "port-extender",
-   "kind": "derived",
-   "manufacturer": "MaiaEdge",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -7830,17 +6690,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "nfxs-d-ba",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "nfxs-e-bb",
@@ -7937,17 +6786,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "nfxs-e-bb",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "nfxs-f-bb",
@@ -8025,17 +6863,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "nfxs-f-bb",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "sr-1-ac",
@@ -8092,17 +6919,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-1-ac",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "sr-1-dc",
@@ -8157,17 +6973,6 @@
    "manufacturer": "Nokia",
    "wanted": "`physical-context` on 6 bays (front 2, rear 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-1-dc",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -8251,17 +7056,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-12",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "sr-1e",
@@ -8314,17 +7108,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-1e",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "sr-2e",
@@ -8375,17 +7158,6 @@
    "manufacturer": "Nokia",
    "wanted": "`physical-context` on 23 bays (front 10, rear 13) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-2e",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -8453,17 +7225,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-3e",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "sr-7",
@@ -8516,17 +7277,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "sr-7",
-   "kind": "derived",
-   "manufacturer": "Nokia",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "osa-5420-quartz",
@@ -8635,17 +7385,6 @@
    "manufacturer": "Oscilloquartz",
    "wanted": "`physical-context` on 4 bays (front 4) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "osa-5420-quartz",
-   "kind": "derived",
-   "manufacturer": "Oscilloquartz",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -8758,17 +7497,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "osa-5420-quartz-hq-plus",
-   "kind": "derived",
-   "manufacturer": "Oscilloquartz",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "osa-5421-quartz-hq-plus-plus",
@@ -8876,17 +7604,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "osa-5421-quartz-hq-plus-plus",
-   "kind": "derived",
-   "manufacturer": "Oscilloquartz",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "osa-5421-rubidium",
@@ -8992,17 +7709,6 @@
    "manufacturer": "Oscilloquartz",
    "wanted": "`physical-context` on 3 bays (front 3) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "osa-5421-rubidium",
-   "kind": "derived",
-   "manufacturer": "Oscilloquartz",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -9062,17 +7768,6 @@
    "manufacturer": "ReadyLinks",
    "wanted": "`physical-context` on port group gbe-poe - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "gl-8xep",
-   "kind": "derived",
-   "manufacturer": "ReadyLinks",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -9175,17 +7870,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcp-2",
-   "kind": "derived",
-   "manufacturer": "Smartoptics",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "dcp-m32-cso-zr",
@@ -9262,17 +7946,6 @@
   {
    "because": "CAP",
    "blocks": [
-    "templated"
-   ],
-   "device": "dcp-m32-cso-zr",
-   "kind": "derived",
-   "manufacturer": "Smartoptics",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
     "specified"
    ],
    "device": "dcp-r-34d-cs",
@@ -9295,17 +7968,6 @@
   {
    "because": "CAP",
    "blocks": [
-    "templated"
-   ],
-   "device": "dcp-r-34d-cs",
-   "kind": "derived",
-   "manufacturer": "Smartoptics",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
     "specified"
    ],
    "device": "dcp-r-9d-cs",
@@ -9324,17 +7986,6 @@
    "manufacturer": "Smartoptics",
    "wanted": "`physical-context` on port groups channels, line, xc - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcp-r-9d-cs",
-   "kind": "derived",
-   "manufacturer": "Smartoptics",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -9380,17 +8031,6 @@
    "manufacturer": "Smartoptics",
    "wanted": "`physical-context` on port groups probe, rj45-1g, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "dcp-sc-28p",
-   "kind": "derived",
-   "manufacturer": "Smartoptics",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -9459,17 +8099,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-280",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "tm-3308h",
@@ -9534,17 +8163,6 @@
    "manufacturer": "Telco Systems",
    "wanted": "`physical-context` on port groups copper, sfp - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-3308h",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -9639,17 +8257,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-3312",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "tm-3348",
@@ -9742,17 +8349,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-3348",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "tm-340",
@@ -9830,17 +8426,6 @@
    "manufacturer": "Telco Systems",
    "wanted": "`physical-context` on port groups access, network - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-340",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -9976,17 +8561,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-7124s",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "tm-8001",
@@ -10087,17 +8661,6 @@
    "manufacturer": "Telco Systems",
    "wanted": "`physical-context` on port group sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-8001",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -10254,17 +8817,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-8104",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "tm-8106",
@@ -10402,17 +8954,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "tm-8106",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "xm-3352",
@@ -10510,17 +9051,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "xm-3352",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "xm-7280",
@@ -10598,17 +9128,6 @@
    "manufacturer": "Telco Systems",
    "wanted": "`physical-context` on port group uni - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "xm-7280",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -10716,17 +9235,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "xm-7380",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "xm-8102",
@@ -10804,17 +9312,6 @@
    "manufacturer": "Telco Systems",
    "wanted": "`physical-context` on port groups qsfp, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "xm-8102",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -10907,17 +9404,6 @@
    "manufacturer": "Telco Systems",
    "wanted": "`physical-context` on 2 bays (front 2); `physical-context` on port groups qsfp, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "xm-8424h",
-   "kind": "derived",
-   "manufacturer": "Telco Systems",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -11044,17 +9530,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "m3000-14xc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "s6301-56st",
@@ -11126,17 +9601,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 4 bays (rear 4); `physical-context` on port groups ge, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s6301-56st",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-hardware",
@@ -11235,17 +9699,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s6301-56stp",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s7801-54xs",
@@ -11335,17 +9788,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s7801-54xs",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s8901-54xc",
@@ -11421,17 +9863,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 7 bays (rear 7); `physical-context` on port groups qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s8901-54xc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -11514,17 +9945,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 5 bays (rear 5); `physical-context` on port group qsfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9110-32x",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -11619,17 +10039,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port groups qsfpdd-400g, sfp-plus-mgmt - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9300-32d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -11739,17 +10148,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port groups qsfpdd-400g, sfp-plus-mgmt - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9301-32d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -11875,17 +10273,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 8 bays (rear 8); `physical-context` on port groups qsfp56-200g, qsfpdd-400g, sfp-plus-mgmt - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9301-32db",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -12050,17 +10437,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9311-64d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9321-64e",
@@ -12171,17 +10547,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfpdd-800g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9321-64e",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -12307,17 +10672,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9321-64eo",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9500-22xst",
@@ -12437,17 +10791,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9500-22xst",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9500-30xs",
@@ -12563,17 +10906,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 7 bays (front 2, rear 5); `physical-context` on port groups sfp-plus, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9500-30xs",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -12695,17 +11027,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9501-18smt",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "sources-disagree",
    "blocks": [],
    "device": "s9501-28smt",
@@ -12823,17 +11144,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9501-28smt",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "s9502-12sm",
@@ -12908,17 +11218,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on port groups sfp, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9502-12sm",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -13050,17 +11349,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9502-16smt",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-drawing",
    "blocks": [],
    "device": "s9510-28dc",
@@ -13126,17 +11414,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 7 bays (front 2, rear 5); `physical-context` on port groups qsfp28, qsfpdd-400g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9510-28dc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -13250,17 +11527,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 7 bays (front 2, rear 5); `physical-context` on port groups qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9510-30xc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -13378,17 +11644,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on port groups combo-1g-rj45, combo-1g-sfp, sfp-plus, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9511-20ct",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -13523,17 +11778,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-102xc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "s9600-28dx",
@@ -13640,17 +11884,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfp28, qsfpdd-400g, sfp28-breakout - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-28dx",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -13790,17 +12023,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-30dx",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9600-32x",
@@ -13919,17 +12141,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-32x",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -14051,17 +12262,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-56dx",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9600-64x",
@@ -14154,17 +12354,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
    "what": "module-power"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-64x",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -14301,17 +12490,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9600-72xc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -14469,17 +12647,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfp28, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9601-102xc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -14663,17 +12830,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9601-104bc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9610-36d",
@@ -14811,17 +12967,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9610-36d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9610-46dx",
@@ -14938,17 +13083,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfp28, qsfpdd-400g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9610-46dx",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -15074,17 +13208,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfp28, qsfpdd-400g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9610-48dx",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -15233,17 +13356,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfpdd-400g - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9611-36d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -15416,17 +13528,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfpdd-800g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9620-32e",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -15607,17 +13708,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 7 bays (front 2, rear 5); `physical-context` on port groups qsfp28, qsfpdd-400g, sfp56 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9620-40dg",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -15935,17 +14025,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9620-54dc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "needs-photo",
    "blocks": [],
    "device": "s9700-23d",
@@ -16075,17 +14154,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfpdd-400g-service - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9700-23d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "vendor-silent",
@@ -16248,17 +14316,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9700-53dx",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-drawing",
@@ -16446,17 +14503,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9701-82dc",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9705-48d",
@@ -16609,17 +14655,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port group qsfpdd-400g-fabric - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9705-48d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "needs-photo",
@@ -16776,17 +14811,6 @@
    "what": "wired"
   },
   {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9710-76d",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
-  },
-  {
    "because": "vendor-silent",
    "blocks": [],
    "device": "s9720-56ed",
@@ -16926,17 +14950,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfpdd-800g-service, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9720-56ed",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   },
   {
    "because": "sources-disagree",
@@ -17115,17 +15128,6 @@
    "manufacturer": "UfiSpace",
    "wanted": "`physical-context` on 6 bays (rear 6); `physical-context` on port groups qsfpdd-800g-fabric, sfp-plus - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "device": "s9725-64e",
-   "kind": "derived",
-   "manufacturer": "UfiSpace",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   }
  ]
 }

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="21.59mm" viewBox="0 0 120.02 21.59">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-beacon { --led-color: #eab308; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-beacon { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-error { --led-color: #eab308; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-error { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-link-up { --led-color: #22c55e; }
+    g[data-ref^='nvidia/mcx713114-fh@'] .state-link-up-reduced-speed { --led-color: #eab308; }</style>
+  <g id="mcx713114-fh" data-path="mcx713114-fh" data-class="expansion-card" data-behaviour="fills" data-ref="nvidia/mcx713114-fh@1:1.0.0" data-body-depth="167.15" data-model="MCX713114T tall bracket" data-part-numbers="MCX713114TC-GEAT" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-typical-w="15.8" data-power-input="host PCIe slot" data-role="nic" transform="translate(0,0)">
+    <title>mcx713114-fh</title>
+    <g id="mcx713114-fh--bracket" data-path="mcx713114-fh/bracket" data-class="bracket" data-ref="std/pcie-bracket-fh@2:2.0.0" data-wall="#8a9199" data-card-height-max="111.28" data-chassis-opening="100.71" data-material="0.86 mm (20 GA) low carbon steel, zinc plated" data-return-flange-depth="9.4" data-return-flange-length="21.59" data-tapped-hole-pitch="85.4" transform="translate(0,0)">
+      <title>mcx713114-fh--bracket</title>
+      <path d="M1.91 17.48 L7.27 17.48 L11.38 21.59 L114.28 21.59 L117.18 19.05 L118.75 19.05 A1.27 1.27 0 0 0 120.02 17.78 L120.02 1.27 A1.27 1.27 0 0 0 118.75 0 L117.18 0 L115.29 3.17 L11.38 3.17 L7.27 7.28 L1.91 7.28 A1.91 1.91 0 0 0 0 9.19 L0 15.57 A1.91 1.91 0 0 0 1.91 17.48 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+      <rect id="mcx713114-fh--bracket--opening" x="19.96" y="6.35" width="89.9" height="12.06" rx="1.0" fill="#1b1f22" stroke="#41474d" stroke-width="0.35" data-path="mcx713114-fh/bracket/opening" data-class="cutout" data-description="the connector opening, 89.9 by 12.06, sitting 3.18 in from each long edge" />
+      <path id="mcx713114-fh--bracket--flange-fold" d="M119.16 3.57 V18.65" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+      <path d="M5.08 7.58 V17.18" stroke="#5f666d" stroke-width="0.3" fill="none" />
+    </g>
+    <rect id="mcx713114-fh--plate" x="19.66" y="6.05" width="90.50" height="12.66" fill="#9aa1a8" />
+    <g id="mcx713114-fh--vents">
+      <rect x="82.25" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="75.74" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="67.98" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="61.53" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="53.76" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="47.19" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="39.55" y="17.52" width="2.54" height="2.75" rx="0.60" fill="#17191c" />
+      <rect x="92.99" y="12.64" width="3.00" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="92.99" y="7.12" width="3.00" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="104.13" y="12.64" width="2.88" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="104.13" y="7.12" width="2.88" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="108.14" y="12.64" width="2.50" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="108.14" y="7.12" width="2.50" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="111.77" y="12.64" width="2.50" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="111.77" y="7.12" width="2.50" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="29.76" y="12.64" width="3.00" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="29.76" y="7.12" width="3.00" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="18.75" y="12.64" width="2.88" height="4.51" rx="0.60" fill="#17191c" />
+      <rect x="18.75" y="7.12" width="2.88" height="4.51" rx="0.60" fill="#17191c" />
+    </g>
+    <g id="mcx713114-fh--slots">
+      <rect x="86.12" y="15.80" width="2.44" height="2.61" rx="1.30" fill="#17191c" />
+      <rect x="71.89" y="15.80" width="2.44" height="2.61" rx="1.30" fill="#17191c" />
+      <rect x="57.65" y="15.80" width="2.44" height="2.61" rx="1.30" fill="#17191c" />
+      <rect x="43.42" y="15.80" width="2.44" height="2.61" rx="1.30" fill="#17191c" />
+    </g>
+    <g id="mcx713114-fh--silkscreen">
+      <text id="mcx713114-fh--label-1" x="89.71" y="17.66" transform="rotate(180 89.71 17.12)" font-family="sans-serif" font-size="1.5" font-weight="bold" text-anchor="middle" fill="#2b2d2f">1</text>
+      <text id="mcx713114-fh--label-2" x="75.48" y="17.66" transform="rotate(180 75.48 17.12)" font-family="sans-serif" font-size="1.5" font-weight="bold" text-anchor="middle" fill="#2b2d2f">2</text>
+      <text id="mcx713114-fh--label-3" x="61.24" y="17.66" transform="rotate(180 61.24 17.12)" font-family="sans-serif" font-size="1.5" font-weight="bold" text-anchor="middle" fill="#2b2d2f">3</text>
+      <text id="mcx713114-fh--label-4" x="47.01" y="17.66" transform="rotate(180 47.01 17.12)" font-family="sans-serif" font-size="1.5" font-weight="bold" text-anchor="middle" fill="#2b2d2f">4</text>
+      <text id="mcx713114-fh--label-IN" x="100.12" y="18.19" transform="rotate(180 100.12 17.58)" font-family="sans-serif" font-size="1.7" font-weight="bold" text-anchor="middle" fill="#2b2d2f">IN</text>
+      <text id="mcx713114-fh--label-OUT" x="25.94" y="18.19" transform="rotate(180 25.94 17.58)" font-family="sans-serif" font-size="1.7" font-weight="bold" text-anchor="middle" fill="#2b2d2f">OUT</text>
+    </g>
+    <g id="mcx713114-fh--port-1" data-path="mcx713114-fh/port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp56" data-speed="50g" transform="translate(77.02,5.59) rotate(180 7.125 5.2)" data-group="sfp56" data-group-role="traffic">
+      <title>mcx713114-fh--port-1</title>
+      <rect id="mcx713114-fh--port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mcx713114-fh/port-1/opening" data-class="cutout" />
+      <rect id="mcx713114-fh--port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mcx713114-fh--port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mcx713114-fh--port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mcx713114-fh--port-2" data-path="mcx713114-fh/port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp56" data-speed="50g" transform="translate(62.8,5.59) rotate(180 7.125 5.2)" data-group="sfp56" data-group-role="traffic">
+      <title>mcx713114-fh--port-2</title>
+      <rect id="mcx713114-fh--port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mcx713114-fh/port-2/opening" data-class="cutout" />
+      <rect id="mcx713114-fh--port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mcx713114-fh--port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mcx713114-fh--port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mcx713114-fh--port-3" data-path="mcx713114-fh/port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp56" data-speed="50g" transform="translate(48.56,5.59) rotate(180 7.125 5.2)" data-group="sfp56" data-group-role="traffic">
+      <title>mcx713114-fh--port-3</title>
+      <rect id="mcx713114-fh--port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mcx713114-fh/port-3/opening" data-class="cutout" />
+      <rect id="mcx713114-fh--port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mcx713114-fh--port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mcx713114-fh--port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mcx713114-fh--port-4" data-path="mcx713114-fh/port-4" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp56" data-speed="50g" transform="translate(34.33,5.59) rotate(180 7.125 5.2)" data-group="sfp56" data-group-role="traffic">
+      <title>mcx713114-fh--port-4</title>
+      <rect id="mcx713114-fh--port-4--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="mcx713114-fh/port-4/opening" data-class="cutout" />
+      <rect id="mcx713114-fh--port-4--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="mcx713114-fh--port-4--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="mcx713114-fh--port-4--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="mcx713114-fh--port-pps-in" data-path="mcx713114-fh/port-pps-in" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-media="coax-sma" transform="translate(95.37,7.42) rotate(180 4.75 4.75)" data-group="timing" data-group-role="management" data-description="PPS in and PPS out, SMA jacks">
+      <title>mcx713114-fh--port-pps-in</title>
+      <path id="mcx713114-fh--port-pps-in--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="mcx713114-fh--port-pps-in--jack" data-path="mcx713114-fh/port-pps-in/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>mcx713114-fh--port-pps-in--jack</title>
+        <circle id="mcx713114-fh--port-pps-in--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="mcx713114-fh/port-pps-in/jack/opening" data-class="cutout" />
+        <g id="mcx713114-fh--port-pps-in--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="mcx713114-fh--port-pps-out" data-path="mcx713114-fh/port-pps-out" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-media="coax-sma" transform="translate(21.19,7.42) rotate(180 4.75 4.75)" data-group="timing" data-group-role="management" data-description="PPS in and PPS out, SMA jacks">
+      <title>mcx713114-fh--port-pps-out</title>
+      <path id="mcx713114-fh--port-pps-out--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="mcx713114-fh--port-pps-out--jack" data-path="mcx713114-fh/port-pps-out/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>mcx713114-fh--port-pps-out--jack</title>
+        <circle id="mcx713114-fh--port-pps-out--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="mcx713114-fh/port-pps-out/jack/opening" data-class="cutout" />
+        <g id="mcx713114-fh--port-pps-out--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="mcx713114-fh--led-port-1" data-path="mcx713114-fh/led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(86.34,16.15) rotate(180 1.0 1.0)" data-group="port-leds" data-group-role="indicator">
+      <title>mcx713114-fh--led-port-1</title>
+      <circle id="mcx713114-fh--led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mcx713114-fh--led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mcx713114-fh/led-port-1/lamp" data-class="led" data-states="off link-up link-up-reduced-speed activity beacon error" data-z-dome="0.3" />
+    </g>
+    <g id="mcx713114-fh--led-port-2" data-path="mcx713114-fh/led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(72.11,16.15) rotate(180 1.0 1.0)" data-group="port-leds" data-group-role="indicator">
+      <title>mcx713114-fh--led-port-2</title>
+      <circle id="mcx713114-fh--led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mcx713114-fh--led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mcx713114-fh/led-port-2/lamp" data-class="led" data-states="off link-up link-up-reduced-speed activity beacon error" data-z-dome="0.3" />
+    </g>
+    <g id="mcx713114-fh--led-port-3" data-path="mcx713114-fh/led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(57.87,16.15) rotate(180 1.0 1.0)" data-group="port-leds" data-group-role="indicator">
+      <title>mcx713114-fh--led-port-3</title>
+      <circle id="mcx713114-fh--led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mcx713114-fh--led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mcx713114-fh/led-port-3/lamp" data-class="led" data-states="off link-up link-up-reduced-speed activity beacon error" data-z-dome="0.3" />
+    </g>
+    <g id="mcx713114-fh--led-port-4" data-path="mcx713114-fh/led-port-4" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(43.64,16.15) rotate(180 1.0 1.0)" data-group="port-leds" data-group-role="indicator">
+      <title>mcx713114-fh--led-port-4</title>
+      <circle id="mcx713114-fh--led-port-4--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="mcx713114-fh--led-port-4--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="mcx713114-fh/led-port-4/lamp" data-class="led" data-states="off link-up link-up-reduced-speed activity beacon error" data-z-dome="0.3" />
+    </g>
+  </g>
+</svg>

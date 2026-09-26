@@ -1869,7 +1869,9 @@
  },
  "capability": {
   "blocked": [],
-  "flags": [],
+  "flags": [
+   "templated"
+  ],
   "level": 4,
   "name": "addressable",
   "unknown": []
@@ -2420,6 +2422,23 @@
    "airflow": null,
    "bays": {
     "riser-1": "dell/riser-1a-14g@2",
+    "riser-2": "dell/riser-2a-14g@2",
+    "riser-2/slot-4": "nvidia/mcx623102a-fh@1",
+    "riser-2/slot-6": "nvidia/mcx623102a-lp@1",
+    "riser-3": "dell/riser-3a-14g@2"
+   },
+   "description": "Riser configuration 4 with NVIDIA ConnectX-6 Dx MCX623102A dual-port SFP56 adapters seated in riser 2: the full-height build in slot 4 and the low-profile build in slot 6 - the same board on its two brackets.",
+   "kind": "example",
+   "name": "sff24-rc4-1a2a3a-connectx",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [],
+   "views": {}
+  },
+  {
+   "airflow": null,
+   "bays": {
+    "riser-1": "dell/riser-1a-14g@2",
     "riser-1/slot-1": "ufispace/n3100-4c@1",
     "riser-2": "dell/riser-2a-14g@2",
     "riser-3": "dell/riser-3a-14g@2",
@@ -2561,7 +2580,7 @@
    "because": "needs-drawing",
    "blocks": [],
    "kind": "declared",
-   "note": "THE PREVIOUS FORM OF THIS GAP SAID THE CAD POSE WAS EXPLODED. IT IS NOT, AND THE SENTENCE IS KEPT HERE BECAUSE IT IS THE INSTRUCTIVE PART. A reading of R740XD_GPU_Brackets_01-1 was rejected on the grounds that its y extent ran -40 to +24 against an 86.8 mm panel - \"not a seated pose\". That was a Y-CONVENTION ARTEFACT IN THE READER, not a fact about the model. Calibrated against the rear handle, whose device y is trusted, the convention is face_y = 86.8 - raw_y; it reproduces the handle's low edge at 42.35 to the hundredth and this assembly's own sibling R740XD_Expansioncard_Clip-1.001 at y 1.81..44.81, the figure riser-1-shroud-14g already carried from an independent read. The pose is seated and the 36.9 mm was real all along - a plausibility check that fires on the reader instead of the data rejects good evidence, and it cost a wrong fix at the other end of the part. WHAT THE MODEL ACTUALLY SHOWS, descended to mesh children, is two levels: Body_2_3.002 at 111.70..148.60, 11.06 proud - a wide lower shelf, now drawn - and Body_1_3.005 at 125.00..135.10, 17.71 proud - a narrow rib. WHAT IS STILL OPEN is the rib. riser-1-shroud-14g draws it 120.64..137.26, about 4 mm wider on each side than the body at that depth. The outline came from cad-outline.py cutting at the panel plane, which returns the SILHOUETTE of everything the plane crosses rather than one body, so it cannot settle a single body's width. Re-cutting it would move the slot column and the clip recess, both photo-measured off ISM figure 8 and both currently agreeing with the render, so it is recorded rather than guessed.",
+   "note": "THE PREVIOUS FORM OF THIS GAP SAID THE CAD POSE WAS EXPLODED. IT IS NOT, AND THE SENTENCE IS KEPT HERE BECAUSE IT IS THE INSTRUCTIVE PART. A reading of R740XD_GPU_Brackets_01-1 was rejected on the grounds that its y extent ran -40 to +24 against an 86.8 mm panel - \"not a seated pose\". That was a Y-CONVENTION ARTEFACT IN THE READER, not a fact about the model. Calibrated against the rear handle, whose device y is trusted, the convention is face_y = 86.8 - raw_y; it reproduces the handle's low edge at 42.35 to the hundredth and this assembly's own sibling R740XD_Expansioncard_Clip-1.001 at y 1.81..44.81, the figure riser-1-shroud-14g already carried from an independent read. The pose is seated and the 36.9 mm was real all along - a plausibility check that fires on the reader instead of the data rejects good evidence, and it cost a wrong fix at the other end of the part. WHAT THE MODEL ACTUALLY SHOWS, descended to mesh children, is two levels: Body_2_3.002 at 111.70..148.60, 11.06 proud - a wide lower shelf, now drawn - and Body_1_3.005 at 125.00..135.10, 17.71 proud - a narrow rib. WHAT IS STILL OPEN is the rib. riser-1-shroud-14g draws it 120.64..137.26, about 4 mm wider on each side than the body at that depth. The outline came from cad-outline.py cutting at the panel plane, which returns the SILHOUETTE of everything the plane crosses rather than one body, so it cannot settle a single body's width. Re-cutting it would move the slot column and the clip recess, both photo-measured off ISM figure 8 and both currently agreeing with the render, so it is recorded rather than guessed. RE-READ WHEN THE STRIP UNDER RISER 1 WAS RETIRED, and still open. The same model was cut across face y 66.24..68.05 under the riser, and nothing there stands in front of the rear sheet (Body_8_6, z 708.88 at most, behind fillers whose fronts reach 718.03). That settles the band below the plate and says nothing new about the rib above it.",
    "scope": [
     "rear"
    ],
@@ -2658,15 +2677,6 @@
    "kind": "derived",
    "wanted": "`physical-context` on 71 bays (front 25, front-lff-12 13, rear 19, top 14) - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
    "what": "wired"
-  },
-  {
-   "because": "CAP",
-   "blocks": [
-    "templated"
-   ],
-   "kind": "derived",
-   "wanted": "the Nautobot exporter is not importable - unlocks NetBox / Nautobot device-type export",
-   "what": "templated"
   }
  ],
  "model": "PowerEdge R740xd",

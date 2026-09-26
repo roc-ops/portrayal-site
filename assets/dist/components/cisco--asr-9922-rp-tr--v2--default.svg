@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="41.4mm" height="395.7mm" viewBox="0 0 41.4 395.7">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='cisco/asr-9922-rp-tr@'] .state-amber { --led-color: #f5a623; }
+    g[data-ref^='cisco/asr-9922-rp-tr@'] .state-green { --led-color: #39b54a; }
+    g[data-ref^='cisco/asr-9922-rp-tr@'] .state-red { --led-color: #d0021b; }</style>
+  <g id="asr-9922-rp-tr" data-path="asr-9922-rp-tr" data-class="supervisor" data-behaviour="fills" data-ref="cisco/asr-9922-rp-tr@2:2.0.0" data-body-depth="628.9" data-wall="#4a4f55" data-alarm="DB9, three dry-contact outputs" data-console="EIA/TIA-232 RJ-45" data-eol="none-announced" data-mgmt="2 x 100/1000 RJ-45" data-model="ASR-9922-RP-TR" data-power-draw-max-w="259" data-role="route-processor" data-timing="2 x SYNC (BITS/J.211/DTI) RJ-45, IEEE 1588 RJ-45, 2 x nV Sync RJ-45, 10 MHz and 1 PPS SMB" data-usb="1 x USB 2.0 type A" data-weight-kg="5.9" transform="translate(0,0)">
+    <title>asr-9922-rp-tr</title>
+    <rect id="asr-9922-rp-tr--plate" x="0" y="18.97" width="41.4" height="358.56" rx="0.8" fill="#e6e7e9" stroke="#9aa0a6" stroke-width="0.3" />
+    <rect id="asr-9922-rp-tr--led-matrix" x="11.8" y="342.12" width="19.4" height="7.57" rx="0.4" fill="#6f757b" stroke="#4a4f55" stroke-width="0.3" data-path="asr-9922-rp-tr/led-matrix" data-class="display" data-characters="4" data-description="the four-character 5x7 LED dot-matrix display. What it shows is a message vocabulary - the guide gives it two sections, boot-stage/runtime and CAN bus controller errors - not a lamp state list, so it is a display and not an indicator." />
+    <g id="asr-9922-rp-tr--silkscreen">
+      <rect x="5.57" y="362.57" width="33.04" height="4.33" fill="#ffef5c" />
+      <text x="22.04" y="365.93" font-family="sans-serif" font-size="3.2" font-weight="bold" text-anchor="middle" fill="#231f20">ASR-9922-RP-TR</text>
+      <rect x="28.35" y="49.07" width="7.24" height="13.01" fill="#ffef5c" />
+      <text x="33.56" y="49.72" transform="rotate(90 33.56 49.72)" font-family="sans-serif" font-size="2.1" font-weight="bold" fill="#231f20">CLASS 1</text>
+      <text x="30.38" y="49.72" transform="rotate(90 30.38 49.72)" font-family="sans-serif" font-size="2.1" font-weight="bold" fill="#231f20">LASER</text>
+      <text x="20.59" y="29.77" transform="rotate(90 20.59 29.77)" font-family="sans-serif" font-size="2.6" fill="#231f20">SYNC 0</text>
+      <text x="20.59" y="49.23" transform="rotate(90 20.59 49.23)" font-family="sans-serif" font-size="2.6" fill="#231f20">SYNC 1</text>
+      <text x="20.59" y="94.69" transform="rotate(90 20.59 94.69)" font-family="sans-serif" font-size="2.6" fill="#231f20">IEEE 1588</text>
+      <text x="20.59" y="114.6" transform="rotate(90 20.59 114.6)" font-family="sans-serif" font-size="2.6" fill="#231f20">nV Sync0</text>
+      <text x="20.59" y="134.5" transform="rotate(90 20.59 134.5)" font-family="sans-serif" font-size="2.6" fill="#231f20">nV Sync1/TOD</text>
+      <text x="20.59" y="228.52" transform="rotate(90 20.59 228.52)" font-family="sans-serif" font-size="2.6" fill="#231f20">MGT LAN0</text>
+      <text x="20.59" y="249.3" transform="rotate(90 20.59 249.3)" font-family="sans-serif" font-size="2.6" fill="#231f20">MGT LAN1</text>
+      <text x="20.59" y="270.42" transform="rotate(90 20.59 270.42)" font-family="sans-serif" font-size="2.6" fill="#231f20">CONSOLE</text>
+      <text x="20.59" y="291.19" transform="rotate(90 20.59 291.19)" font-family="sans-serif" font-size="2.6" fill="#231f20">AUX</text>
+      <text x="16.52" y="156.73" transform="rotate(90 16.52 156.73)" font-family="sans-serif" font-size="2.4" fill="#231f20">10MHz</text>
+      <text x="16.52" y="167.02" transform="rotate(90 16.52 167.02)" font-family="sans-serif" font-size="2.4" fill="#231f20">1PPS</text>
+      <text x="24.16" y="182.11" transform="rotate(90 24.16 182.11)" font-family="sans-serif" font-size="2.6" fill="#231f20">ALARM OUT</text>
+      <text x="13.61" y="331.02" transform="rotate(90 13.61 331.02)" font-family="sans-serif" font-size="1.8" fill="#231f20">FAIL</text>
+      <text x="13.61" y="337.8" transform="rotate(90 13.61 337.8)" font-family="sans-serif" font-size="1.8" fill="#231f20">ACO</text>
+      <text x="13.61" y="345.41" transform="rotate(90 13.61 345.41)" font-family="sans-serif" font-size="1.8" fill="#231f20">SYNC</text>
+      <text x="18.9" y="331.02" transform="rotate(90 18.9 331.02)" font-family="sans-serif" font-size="1.8" fill="#231f20">CRIT</text>
+      <text x="18.9" y="337.8" transform="rotate(90 18.9 337.8)" font-family="sans-serif" font-size="1.8" fill="#231f20">MAJ</text>
+      <text x="18.9" y="345.41" transform="rotate(90 18.9 345.41)" font-family="sans-serif" font-size="1.8" fill="#231f20">MIN</text>
+      <text x="24.47" y="331.02" transform="rotate(90 24.47 331.02)" font-family="sans-serif" font-size="1.8" fill="#231f20">SSD</text>
+      <text x="24.47" y="337.8" transform="rotate(90 24.47 337.8)" font-family="sans-serif" font-size="1.8" fill="#231f20">FC FAULT</text>
+      <text x="13.24" y="311.57" transform="rotate(90 13.24 311.57)" font-family="sans-serif" font-size="2.0" fill="#231f20">ACO</text>
+      <text x="13.24" y="321.96" transform="rotate(90 13.24 321.96)" font-family="sans-serif" font-size="2.0" fill="#231f20">LAMP TEST</text>
+    </g>
+    <rect id="asr-9922-rp-tr--ejector-top" x="16.74" y="1.06" width="15.01" height="24.13" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="asr-9922-rp-tr--ejector-bot" x="16.74" y="370.19" width="15.01" height="24.13" rx="1.2" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.25" data-z-out="4.2" />
+    <rect id="asr-9922-rp-tr--lever-top" x="1.4" y="2.25" width="3.75" height="77.13" rx="1.88" fill="#4a4f55" data-z-out="4.2" />
+    <rect id="asr-9922-rp-tr--lever-bot" x="1.4" y="325.84" width="3.75" height="66.89" rx="1.88" fill="#4a4f55" data-z-out="4.2" />
+    <g id="asr-9922-rp-tr--screw-top" data-z-cyl="1.6">
+      <circle cx="24.68" cy="8.02" r="3.57" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.68" cy="8.02" r="1.61" fill="#6d7379" />
+      <path d="M 22.11 8.02 H 27.25 M 24.68 5.45 V 10.59" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <g id="asr-9922-rp-tr--screw-bot" data-z-cyl="1.6">
+      <circle cx="24.68" cy="387.39" r="3.57" fill="#b8bdc2" stroke="#9aa0a6" stroke-width="0.3" />
+      <circle cx="24.68" cy="387.39" r="1.61" fill="#6d7379" />
+      <path d="M 22.11 387.39 H 27.25 M 24.68 384.82 V 389.96" stroke="#3a4046" stroke-width="0.35" fill="none" />
+    </g>
+    <circle id="asr-9922-rp-tr--fail" cx="12.53" cy="322.51" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/fail" data-class="led" data-states="red off" data-description="Power Fail (FAIL). Red: standby power fail; the LED is turned off by the CAN bus controller once it is up and running. Off: standby power is normal." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--aco" cx="12.53" cy="328.77" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/aco" data-class="led" data-states="amber off" data-description="Alarm Cutoff (ACO). Amber: alarm cutoff has been enabled - the ACO push button was pressed after at least one alarm occurred." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--sync" cx="12.53" cy="335.8" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/sync" data-class="led" data-states="green amber off" data-description="Synchronization (SYNC). Table 5, 'RP and RP2/RP3 Discrete LED Display Definitions' - this card's own table, not the RSP family's Table 4, and the two differ here. Green: 'System timing is synchronized to an external timing source INCLUDING IEEE 1588' - Table 4 omits the 1588 clause. Amber: system timing is free running. Off (default after reset): Cisco writes 'LED never turns off', which contradicts listing Off as a colour at all; off is kept as a declared state because the drawing needs an unlit appearance, and Cisco's sentence is recorded here rather than tidied away. Table 4 says 'No system timing is configured' for the same row, which is the RSP family's answer and is not this card's." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--crit" cx="17.28" cy="322.51" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/crit" data-class="led" data-states="red off" data-description="Critical Alarm (CRIT). Red: a critical alarm has occurred." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--maj" cx="17.28" cy="328.77" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/maj" data-class="led" data-states="red off" data-description="Major Alarm (MAJ). Red: a major alarm has occurred." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--min" cx="17.28" cy="335.8" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/min" data-class="led" data-states="amber off" data-description="Minor Alarm (MIN). Amber: a minor alarm has occurred." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--ssd" cx="22.29" cy="322.51" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/ssd" data-class="led" data-states="green off" data-description="Internal Solid State Hard Disk Drive (SSD). Green: SSD0 is busy/active." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--fc-fault" cx="22.29" cy="328.77" r="1.05" fill="var(--led-color, #8d949c)" stroke="#5f6469" stroke-width="0.2" data-path="asr-9922-rp-tr/fc-fault" data-class="led" data-states="amber off" data-description="FC Fault. Table 5, 'RP and RP2/RP3 Discrete LED Display Definitions' - amber: 'A fault has occurred on any or all of the FC cards installed. This LED will be on during the boot phase of the FC.' Off (default after reset): 'FC cards are booted up and ready.' A real vocabulary from this card's own table. An earlier version of this component said no row for FC FAULT existed in Table 4 or Table 5 and carried a bare off/on; that was wrong about Table 5." data-z-dome="0.3" />
+    <circle id="asr-9922-rp-tr--aco-button" cx="11.14" cy="303.8" r="1.99" fill="#e6e7e9" stroke="#231f20" stroke-width="0.45" data-path="asr-9922-rp-tr/aco-button" data-class="button" data-description="the ACO momentary push button." data-z-cyl="1.2" />
+    <circle id="asr-9922-rp-tr--lamp-test" cx="11.14" cy="313.4" r="1.99" fill="#e6e7e9" stroke="#231f20" stroke-width="0.45" data-path="asr-9922-rp-tr/lamp-test" data-class="button" data-description="the LAMP TEST momentary push button." data-z-cyl="1.2" />
+    <g id="asr-9922-rp-tr--sync-0" data-path="asr-9922-rp-tr/sync-0" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,43.5) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--sync-0</title>
+      <path id="asr-9922-rp-tr--sync-0--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--sync-0--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--sync-0--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/sync-0/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--sync-0--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--sync-1" data-path="asr-9922-rp-tr/sync-1" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,61.47) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--sync-1</title>
+      <path id="asr-9922-rp-tr--sync-1--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--sync-1--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--sync-1--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/sync-1/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--sync-1--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--ieee-1588" data-path="asr-9922-rp-tr/ieee-1588" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,103.45) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--ieee-1588</title>
+      <path id="asr-9922-rp-tr--ieee-1588--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--ieee-1588--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--ieee-1588--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/ieee-1588/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--ieee-1588--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--nv-sync-0" data-path="asr-9922-rp-tr/nv-sync-0" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,121.84) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--nv-sync-0</title>
+      <path id="asr-9922-rp-tr--nv-sync-0--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--nv-sync-0--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--nv-sync-0--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/nv-sync-0/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--nv-sync-0--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--nv-sync-1-tod" data-path="asr-9922-rp-tr/nv-sync-1-tod" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,140.22) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--nv-sync-1-tod</title>
+      <path id="asr-9922-rp-tr--nv-sync-1-tod--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--nv-sync-1-tod--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--nv-sync-1-tod--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/nv-sync-1-tod/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--nv-sync-1-tod--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--mgt-lan-0" data-path="asr-9922-rp-tr/mgt-lan-0" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(7.51,227.04) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--mgt-lan-0</title>
+      <g id="asr-9922-rp-tr--mgt-lan-0--jack" data-path="asr-9922-rp-tr/mgt-lan-0/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>asr-9922-rp-tr--mgt-lan-0--jack</title>
+        <path id="asr-9922-rp-tr--mgt-lan-0--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="asr-9922-rp-tr--mgt-lan-0--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="asr-9922-rp-tr--mgt-lan-0--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/mgt-lan-0/jack/opening" data-class="cutout" />
+        <g id="asr-9922-rp-tr--mgt-lan-0--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="asr-9922-rp-tr--mgt-lan-0--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="asr-9922-rp-tr--mgt-lan-0--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="asr-9922-rp-tr/mgt-lan-0/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="asr-9922-rp-tr--mgt-lan-0--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="asr-9922-rp-tr/mgt-lan-0/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--mgt-lan-1" data-path="asr-9922-rp-tr/mgt-lan-1" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" transform="translate(7.51,246.23) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--mgt-lan-1</title>
+      <g id="asr-9922-rp-tr--mgt-lan-1--jack" data-path="asr-9922-rp-tr/mgt-lan-1/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+        <title>asr-9922-rp-tr--mgt-lan-1--jack</title>
+        <path id="asr-9922-rp-tr--mgt-lan-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="asr-9922-rp-tr--mgt-lan-1--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+        <path id="asr-9922-rp-tr--mgt-lan-1--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/mgt-lan-1/jack/opening" data-class="cutout" />
+        <g id="asr-9922-rp-tr--mgt-lan-1--jack--pins" fill="#a8873c">
+          <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+          <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+          <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+          <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+          <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+          <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+          <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+          <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+        </g>
+        <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+      </g>
+      <path id="asr-9922-rp-tr--mgt-lan-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <rect id="asr-9922-rp-tr--mgt-lan-1--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="asr-9922-rp-tr/mgt-lan-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+      <rect id="asr-9922-rp-tr--mgt-lan-1--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="asr-9922-rp-tr/mgt-lan-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+      <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--console" data-path="asr-9922-rp-tr/console" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,265.73) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--console</title>
+      <path id="asr-9922-rp-tr--console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--console--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--console--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/console/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--console--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--aux" data-path="asr-9922-rp-tr/aux" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(7.51,284.91) rotate(90 6.35 5.5)">
+      <title>asr-9922-rp-tr--aux</title>
+      <path id="asr-9922-rp-tr--aux--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--aux--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="asr-9922-rp-tr--aux--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="asr-9922-rp-tr/aux/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--aux--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--gps-10mhz" data-path="asr-9922-rp-tr/gps-10mhz" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(9.64,161.75)">
+      <title>asr-9922-rp-tr--gps-10mhz</title>
+      <circle id="asr-9922-rp-tr--gps-10mhz--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="asr-9922-rp-tr/gps-10mhz/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--gps-10mhz--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--gps-1pps" data-path="asr-9922-rp-tr/gps-1pps" data-class="port" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(9.64,171.26)">
+      <title>asr-9922-rp-tr--gps-1pps</title>
+      <circle id="asr-9922-rp-tr--gps-1pps--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="asr-9922-rp-tr/gps-1pps/opening" data-class="cutout" />
+      <g id="asr-9922-rp-tr--gps-1pps--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+        <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+        <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+        <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--sfp-plus-0" data-path="asr-9922-rp-tr/sfp-plus-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(19.33,82.57) rotate(90 7.125 5.2)">
+      <title>asr-9922-rp-tr--sfp-plus-0</title>
+      <rect id="asr-9922-rp-tr--sfp-plus-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="asr-9922-rp-tr/sfp-plus-0/opening" data-class="cutout" />
+      <rect id="asr-9922-rp-tr--sfp-plus-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="asr-9922-rp-tr--sfp-plus-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="asr-9922-rp-tr--sfp-plus-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--sfp-plus-1" data-path="asr-9922-rp-tr/sfp-plus-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp" transform="translate(8.21,82.57) rotate(270 7.125 5.2)">
+      <title>asr-9922-rp-tr--sfp-plus-1</title>
+      <rect id="asr-9922-rp-tr--sfp-plus-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="asr-9922-rp-tr/sfp-plus-1/opening" data-class="cutout" />
+      <rect id="asr-9922-rp-tr--sfp-plus-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="asr-9922-rp-tr--sfp-plus-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="asr-9922-rp-tr--sfp-plus-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--usb" data-path="asr-9922-rp-tr/usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" transform="translate(10.67,215.67) rotate(90 6.0 2.25)">
+      <title>asr-9922-rp-tr--usb</title>
+      <rect id="asr-9922-rp-tr--usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="asr-9922-rp-tr/usb/opening" data-class="cutout" />
+      <rect id="asr-9922-rp-tr--usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+      <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+    </g>
+    <g id="asr-9922-rp-tr--alarm-out" data-path="asr-9922-rp-tr/alarm-out" data-class="port" data-ref="common/db9-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(0.64,189.16) rotate(90 15.4 6.25)">
+      <title>asr-9922-rp-tr--alarm-out</title>
+      <g id="asr-9922-rp-tr--alarm-out--bore-floor">
+        <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+        <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+      </g>
+      <path id="asr-9922-rp-tr--alarm-out--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+      <g id="asr-9922-rp-tr--alarm-out--shell" data-path="asr-9922-rp-tr/alarm-out/shell" data-class="port" data-inner="1" data-ref="std/db9@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="db9" transform="translate(5.165,0.55)">
+        <title>asr-9922-rp-tr--alarm-out--shell</title>
+        <path id="asr-9922-rp-tr--alarm-out--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="asr-9922-rp-tr/alarm-out/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+        <path id="asr-9922-rp-tr--alarm-out--shell--insert" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#17191c" stroke="#3a3e43" stroke-width="0.2" data-z-out="4.2" data-z-shape="1" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-1" cx="4.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-2" cx="7.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-3" cx="10.3" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-4" cx="12.97" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-5" cx="15.63" cy="4.23" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-6" cx="6.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-7" cx="9.02" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-8" cx="11.68" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <circle id="asr-9922-rp-tr--alarm-out--shell--pin-9" cx="14.35" cy="7.36" r="0.52" fill="#cfd6dd" data-z-cyl="2.2" data-z-lift="4.2" data-z-color="#cfd6dd" />
+        <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+      </g>
+      <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+    </g>
+  </g>
+</svg>
