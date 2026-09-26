@@ -51,6 +51,10 @@ jobs:
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         uses: cloudflare/wrangler-action@v3
         with:
+          # The action's default is 3.90.0, which predates wrangler.jsonc and
+          # fails asking for a Worker entry point. Pinned to what deploys
+          # locally, so a manual deploy and this one behave the same.
+          wranglerVersion: '4.141.0'
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
