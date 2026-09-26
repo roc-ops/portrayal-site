@@ -22,8 +22,13 @@ export async function loadPlan() {
 export const endView = end => end[2] || 'front';
 export const isFiber = link => link.media !== 'copper';
 
-const made = [];
-export const planSeatsMade = () => made.slice();
+// Every seat the plan has made, once per device and key (a re-seat that the
+// plan fills again is the same seat). planSeatsMade(overrides) counts only
+// those the rack still holds: a card the visitor seated since takes its
+// cages' plan seats with it.
+const made = new Map();
+export const planSeatsMade = (ov = null) => [...made.values()]
+  .filter(s => !ov || ov[s.dev]?.[s.key] === s.ref);
 
 // Is `key` below `parent` - a card's cage under its slot, a plug under its optic?
 const below = (key, parent) => key.startsWith(parent + '/') || key.startsWith(parent + '-occupant');
@@ -45,7 +50,7 @@ export function applyPlanSeats(plan, overrides) {
       if (!Object.hasOwn(ov, key)) {
         ov[key] = ref;
         const s = {dev, key, ref};
-        now.push(s); made.push(s);
+        now.push(s); made.set(`${dev}\n${key}`, s);
       } else if (ov[key] !== ref) {
         kept.push({dev, key, ref, have: ov[key]});
         blocked.push(key);

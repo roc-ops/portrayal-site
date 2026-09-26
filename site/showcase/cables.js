@@ -29,6 +29,8 @@ const esc = s => (window.CSS && CSS.escape ? CSS.escape(s) : String(s));
 
 // An end's points in `svg`'s user space, left to right: a fiber end's
 // connectors, or a copper end's jack center. null when the end is not drawn.
+// `svg` must be in the document, displayed and laid out: this reads
+// getScreenCTM and getBoundingClientRect, which are null or zero otherwise.
 export function ends2d(svg, dev, path, fiber) {
   const g = svg.querySelector(`[data-device-ref="${esc(dev)}"]`);
   if (!g) return null;
@@ -118,6 +120,20 @@ export function drawCables2d(svg, plan, view, {edgeX, tag}) {
     g.prepend(t);
     layer.append(g);
     rec.g = g;
+  });
+  return out;
+}
+
+// Which ends of the plan do not land on `view`'s drawing: [[linkIndex,
+// 'from' | 'to'], ...]. The same test drawCables2d applies, without drawing,
+// so the panel can judge every end against its own face whichever is shown.
+export function looseOn(svg, plan, view) {
+  const out = [];
+  plan.links.forEach((link, i) => {
+    for (const k of ['from', 'to']) {
+      const e = link[k];
+      if ((e[2] || 'front') === view && !ends2d(svg, e[0], e[1], link.media !== 'copper')) out.push([i, k]);
+    }
   });
   return out;
 }

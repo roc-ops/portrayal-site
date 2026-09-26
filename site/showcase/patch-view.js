@@ -6,9 +6,12 @@
 import {stage3d, stageRack, el, svgEl, lead, kv, panZoom} from './artifact.js';
 import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf, shortRef}
   from './rack.js';
-import {loadPlan, applyPlanSeats, planSeatsMade, looseReason, countsBy} from './plan.js';
-import {drawCables2d, colorOf} from './cables.js';
+import {loadPlan, applyPlanSeats, planSeatsMade, looseReason, countsBy, endView} from './plan.js';
+import {drawCables2d, looseOn, colorOf} from './cables.js';
 import {wireClicks} from './svg2d.js';
+
+// mm of room beside the rack for cross-face tails and their tags.
+const ROOM = 260;
 
 export const HONEST = 'An example patching plan for this rack, not a real lab.';
 
@@ -30,7 +33,7 @@ export function legendFor(plan) {
 // The honesty line, what the plan seated, what the fill rule kept of the
 // visitor's, the counts by purpose and the legend.
 export function panelHead(plan, kept) {
-  const seats = planSeatsMade();
+  const seats = planSeatsMade(overrides);
   const kids = [lead(`<strong>${HONEST}</strong>`)];
   if (seats.length) {
     const top = seats.filter(s => !s.key.includes('-occupant') && !/\/module\/p\d+$|^port-\d+$/.test(s.key));
@@ -39,7 +42,11 @@ export function panelHead(plan, kept) {
   }
   for (const k of kept) kids.push(el('p', {class: 'panel-lead', 'data-kept': k.key,
     text: `Kept your ${k.dev} ${k.key}: ${k.have ? shortRef(k.have) : 'empty'}.`}));
-  kids.push(kv([...countsBy(plan, 'purpose')].map(([p, n]) => [p, String(n)])));
+  for (const field of ['purpose', 'media']) {
+    const d = kv([...countsBy(plan, field)].map(([v, n]) => [v, String(n)]));
+    d.dataset.counts = field;
+    kids.push(d);
+  }
   kids.push(legendFor(plan));
   return kids;
 }
@@ -54,31 +61,67 @@ export async function enterPatched(ui, {head = [], onDrawn, extraPanel = () => [
   const plan = await loadPlan();
   if (!ui.live()) return null;
   const {kept} = applyPlanSeats(plan, overrides);
-  const handle = {mode: ui.mode, plan, kept, drawn: [], view: 'front',
-                  setView: null, highlight: null, dispose: () => {}};
-  if (ui.mode === '2d') await enter2d(ui, handle, onDrawn);
-  else await enter3d(ui, handle);
+  const handle = {mode: ui.mode, plan, kept, drawn: [], loose: plan.links.map(() => []),
+                  view: 'front', setView: null, highlight: null, dispose: () => {}};
+  // Every end judged against its own face, off-screen, in either mode: the
+  // panel's loose lines never depend on which face is shown, or on a flip
+  // that overtook the first draw.
+  const [, loose] = await Promise.all([
+    ui.mode === '2d' ? enter2d(ui, handle, onDrawn) : enter3d(ui, handle),
+    looseEnds(ui, plan),
+  ]);
   if (!ui.live()) { handle.dispose(); return null; }
+  handle.loose = loose;
   ui.setPanel(...head, ...panelHead(plan, kept), ...extraPanel(handle), planList(plan, handle));
   ui.strip();
   return handle;
 }
 
-// One row per link, in plan order; a row lights its cable, and names any end
-// that did not land and why (looseReason: from what the fill rule kept).
+// The plan grouped by purpose, one group per purpose in first-seen order;
+// each row keeps its link's index in the file. A row lights its cable
+// (flipping to the face that has it), and names any end that did not land
+// and why (looseReason: from what the fill rule kept).
 function planList(plan, handle) {
-  const ul = el('ul', {class: 'plan-list'});
-  plan.links.forEach((l, i) => {
-    const b = el('button', {type: 'button', 'data-plan-row': String(i),
-      text: `${l.from[0]} ${l.from[1]} → ${l.to[0]} ${l.to[1]}`});
-    b.onclick = () => handle.highlight?.(i);
-    const loose = handle.drawn[i]?.loose || [];
-    const li = el('li', {'data-purpose': l.purpose}, [b]);
-    for (const k of loose) li.append(el('span', {class: 'loose', 'data-loose': k,
-      text: ' — loose: ' + looseReason(plan, handle.kept, l[k])}));
-    ul.append(li);
-  });
-  return ul;
+  const wrap = el('div', {class: 'plan-list'});
+  for (const purpose of countsBy(plan, 'purpose').keys()) {
+    const ul = el('ul');
+    plan.links.forEach((l, i) => {
+      if (l.purpose !== purpose) return;
+      const b = el('button', {type: 'button', 'data-plan-row': String(i),
+        text: `${l.from[0]} ${l.from[1]} → ${l.to[0]} ${l.to[1]}`});
+      b.onclick = () => handle.highlight?.(i);
+      const li = el('li', {'data-purpose': l.purpose}, [b]);
+      for (const k of handle.loose[i] || []) li.append(el('span', {class: 'loose', 'data-loose': k,
+        text: ' — loose: ' + looseReason(plan, handle.kept, l[k])}));
+      ul.append(li);
+    });
+    wrap.append(el('section', {'data-plan-group': purpose},
+      [el('p', {class: 'plan-group', text: purpose}), ul]));
+  }
+  return wrap;
+}
+
+// Both faces built off-screen - laid out, since ends2d reads CTMs, but never
+// seen - and every end tested on its own. Returns per link the sides that do
+// not land, or null when the entry went stale.
+async function looseEnds(ui, plan) {
+  const out = plan.links.map(() => []);
+  const views = [...new Set(plan.links.flatMap(l => [endView(l.from), endView(l.to)]))];
+  const host = el('div', {'aria-hidden': 'true'});
+  host.style.cssText = 'position:fixed;left:0;top:0;width:800px;visibility:hidden;pointer-events:none';
+  document.body.append(host);
+  try {
+    for (const view of views) {
+      const svg = await build2dElevation({stack: CAST.filter(e => e.ru != null), heightRU: RACK_U,
+                                          overrides, view});
+      if (!ui.live()) return null;
+      host.replaceChildren(svg);
+      for (const [i, k] of looseOn(svg, plan, view)) out[i].push(k);
+    }
+  } finally {
+    host.remove();
+  }
+  return out;
 }
 
 // 3D, until Task 4 draws the tubes: the cast mounted with the plan's seats.
@@ -96,25 +139,35 @@ async function enter2d(ui, handle, onDrawn) {
   stage3d.hidden = true; stageRack.hidden = false;
   const tabs = document.getElementById('stageTabs');
   let seq = 0;
-  const draw = async view => {
+  let latest = null;
+  const draw = view => (latest = paintFace(view));
+  const paintFace = async view => {
     const mine = ++seq;
     const stack = CAST.filter(e => e.ru != null);
     const svg = await build2dElevation({stack, heightRU: RACK_U, overrides, view});
     if (!ui.live() || mine !== seq) return;
     stageRack.replaceChildren(svg);
     const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
-    // Room past the right-hand rail for tails and their tags.
-    const vb = [base[0], base[1], base[2] + 260, base[3] + 40];
+    // Room for tails and their tags on the side a cross-face cable goes
+    // round (spec §6): past the right-hand rail on the front, and on the rear
+    // the matching side, which is the LEFT when seen from behind.
+    const rear = view === 'rear';
+    const vb = rear ? [base[0] - ROOM, base[1], base[2] + ROOM, base[3] + 40]
+                    : [base[0], base[1], base[2] + ROOM, base[3] + 40];
     svg.setAttribute('viewBox', vb.join(' '));
     panZoom(svg, () => vb);
-    const edgeX = base[0] + base[2] + 8;
+    const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
     handle.view = view;
     handle.drawn = drawCables2d(svg, handle.plan, view, {edgeX, tag: (at, far) => {
-      const t = svgEl('g', {'data-tag': far.join(':'), 'data-to-view': far[2] || 'front',
+      const t = svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
         class: 'cable-tag', tabindex: '0', role: 'button'});
-      const label = `→ ${far[0]} ${far[2] || 'front'} · ${far[1]}`;
-      t.append(svgEl('rect', {x: at[0] + 4, y: at[1] - 9, width: 7 * label.length + 12, height: 18, rx: 4}));
-      const tx = svgEl('text', {x: at[0] + 10, y: at[1] + 4}); tx.textContent = label; t.append(tx);
+      const label = `→ ${far[0]} ${endView(far)} · ${far[1]}`;
+      const w = 7 * label.length + 12;
+      // The pill sits outboard of the tail's end: right of it on the front,
+      // left of it on the rear.
+      const x = rear ? at[0] - 4 - w : at[0] + 4;
+      t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
+      const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
       return t;
     }});
     // A tag flips the face. Through wireClicks, not an onclick: panZoom
@@ -134,13 +187,30 @@ async function enter2d(ui, handle, onDrawn) {
   const paint = v => buttons.forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
   if (tabs) { tabs.setAttribute('aria-label', 'Rack face'); tabs.replaceChildren(...buttons); }
   handle.setView = v => draw(v).catch(err => console.warn('[portrayal] patched rack', v, err));
-  handle.highlight = i => {
+  const light = i => {
     const svg = stageRack.querySelector('svg');
     if (!svg) return;
     svg.classList.toggle('cable-focus', i != null);
     for (const g of svg.querySelectorAll('[data-cable]')) g.classList.toggle('on', g.dataset.linkIndex === String(i));
   };
-  await draw('front');
+  // A row whose cable has no end on the face shown flips to the face that
+  // has it first.
+  handle.highlight = async i => {
+    const l = i == null ? null : handle.plan.links[i];
+    if (l && ![endView(l.from), endView(l.to)].includes(handle.view)) {
+      await handle.setView(endView(l.from));
+      if (!ui.live()) return;
+    }
+    light(i);
+  };
+  // The first face, and any flip that overtook it: the scrim comes down on
+  // whichever draw is the newest once it has landed.
+  // Only the newest draw's failure is the stage's (the rail says so).
+  let awaited;
+  do {
+    awaited = latest ?? draw('front');
+    try { await awaited; } catch (err) { if (latest === awaited) throw err; }
+  } while (ui.live() && latest !== awaited);
   if (ui.live()) ui.unscrim();
 }
 

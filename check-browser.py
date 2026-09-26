@@ -199,6 +199,55 @@ def management_by_site():
             for ids in sites]
 
 
+def check_rear_loose(page, base):
+    """A loose end on the REAR is named, whichever face is showing - even when
+    Rear is clicked while the first face is still building.
+
+    No visitor action can loosen a rear end: build2dElevation seats overrides
+    on the front only, and the plan seats nothing on a rear face. So the
+    checker serves a plan whose iDRAC end (link 13) names a port the R740xd's
+    rear does not have - the same data error a mistyped patching.json would
+    be - and asserts the panel names it."""
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
+    plan["links"][13]["from"] = ["r740xd", "idrac9-absent", "rear"]
+    page.route("**/site/showcase/patching.json",
+               lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(plan)))
+    try:
+        def named():
+            return page.eval_on_selector_all('#sidePanel li:has([data-plan-row="13"]) [data-loose]',
+                                             "ls => ls.map(l => l.textContent)")
+        def one(when):
+            got = named()
+            if len(got) != 1 or "idrac9-absent" not in got[0]:
+                bad.append(f"stage cable: the rear iDRAC end is not named loose {when}: {got}")
+            if len(page.query_selector_all('#sidePanel [data-loose]')) != 1:
+                bad.append(f"stage cable: loose lines other than the rear iDRAC end {when}")
+            return got
+        page.goto(f"{base}/index.html", wait_until="load")
+        # Entered as usual, on the front: the rear end is still judged.
+        page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        got = one("while the front is shown")
+        page.click('#stageTabs [data-view="rear"]')
+        page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
+        if named() != got:
+            bad.append("stage cable: the rear loose line changed on flipping to Rear")
+        # Again, with Rear clicked the moment the toggle exists: the first
+        # face is still building, and the panel must still come out right.
+        page.click('.stage-rail button[data-stage="optics"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="optics"]', timeout=READY_MS)
+        page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
+        page.click('#stageTabs [data-view="rear"]', timeout=READY_MS)
+        page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
+        one("after an early Rear click")
+    except Exception as e:
+        bad.append(f"stage cable: rear loose end - {str(e).splitlines()[0]}")
+    return bad
+
+
 def check_embed(page, base):
     """explorer.html?embed=1: the site bar and mode buttons hidden, the API live."""
     bad = []
@@ -292,11 +341,37 @@ def check_stages(page, base):
         loose = page.eval_on_selector_all('#sidePanel [data-loose]', "ls => ls.map(l => l.textContent)")
         if len(loose) != 4 or not all("seat it in stage 2" in t for t in loose):
             bad.append(f"fill rule: expected 4 named loose ends on slot-2, got {loose}")
+        # The count is of the plan's seats the rack still holds: the plan's
+        # twelve cages and plugs under slot-2 went with its card.
+        first = seated.get("first")
+        if first is None or seated_count() != first - 12:
+            bad.append(f"fill rule: 'seated for the plan' says {seated_count()}, expected {first} - 12")
+        # Loose lines are per end, not per face drawn: a flip keeps them.
+        page.click('#stageTabs [data-view="rear"]')
+        page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
+        if len(page.query_selector_all('#sidePanel [data-loose]')) != 4:
+            bad.append("fill rule: the loose-end lines changed on flipping to Rear")
         # Put the plan's card back, for the rest of the walk.
         page.click('.stage-rail button[data-stage="populate"]')
         page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
         page.select_option('#sidePanel select[data-bay="slot-2"]', "cisco/a9k-16x100ge-tr@1", timeout=READY_MS)
         page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
+        # Back on stage 4 the plan refills slot-2's cages: the count is the
+        # first visit's again, not inflated by the re-seat.
+        page.click('.stage-rail button[data-stage="cable"]')
+        page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        if seated_count() != seated.get("first"):
+            bad.append(f"fill rule: 'seated for the plan' says {seated_count()} on a revisit, "
+                       f"{seated.get('first')} on the first")
+        if page.query_selector('#sidePanel [data-loose]'):
+            bad.append("fill rule: loose ends remain after the plan's card is re-seated")
+
+    seated = {}
+    def seated_count():
+        said = page.evaluate("""() => [...document.querySelectorAll('#sidePanel dt')]
+            .find(d => d.textContent === 'seated for the plan')?.nextElementSibling?.textContent""")
+        m = re.match(r"(\d+) parts$", said or "")
+        return int(m.group(1)) if m else None
 
     def cable_2d():
         # All fourteen are drawn on front or rear, every fiber end on a plug.
@@ -312,6 +387,26 @@ def check_stages(page, base):
                        page.inner_text('#sidePanel .plan-list'))
         if "not a real lab" not in page.inner_text('#sidePanel'):
             bad.append("stage cable: the panel does not say the plan is invented")
+        # Spec §6 panel items 3 and 5: counts by purpose AND media, and the
+        # plan grouped by purpose - one group per purpose, in first-seen order,
+        # every row keeping its original link index.
+        plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
+        for field in ("purpose", "media"):
+            want = list(dict.fromkeys(l[field] for l in plan["links"]))
+            got = page.eval_on_selector_all(f'#sidePanel [data-counts="{field}"] dt', "ds => ds.map(d => d.textContent)")
+            if got != want:
+                bad.append(f"stage cable: counts by {field} are {got}, the plan has {want}")
+        groups = page.eval_on_selector_all('#sidePanel [data-plan-group]', "gs => gs.map(g => g.dataset.planGroup)")
+        want_groups = list(dict.fromkeys(l["purpose"] for l in plan["links"]))
+        if groups != want_groups:
+            bad.append(f"stage cable: the plan is grouped as {groups}, not by purpose {want_groups}")
+        rows = page.eval_on_selector_all('#sidePanel [data-plan-group] [data-plan-row]', "rs => rs.map(r => +r.dataset.planRow)")
+        if sorted(rows) != list(range(len(plan["links"]))):
+            bad.append(f"stage cable: grouped rows do not carry each link index once: {rows}")
+        # What the plan seated on this first visit; kept_card holds later
+        # visits to it (earlier stages seat some of the plan's refs themselves,
+        # so it is not simply every seat in the file).
+        seated["first"] = seated_count()
         # The plan's card is in slot-2, and its connectors are what the cables start on.
         if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
                                    '[data-path="slot-2/module"][data-ref^="cisco/a9k-16x100ge-tr@1"]'):
@@ -323,6 +418,21 @@ def check_stages(page, base):
             bad.append("stage cable: the rear tag did not select Rear")
         if not page.query_selector('#stageRack svg [data-cables="rear"] [data-cable][data-link-index="8"]'):
             bad.append("stage cable: on the rear, the R740xd NIC 1 cable is not drawn")
+        # Spec §6: seen from behind, a cross-face cable arrives from the LEFT.
+        side = page.evaluate("""() => {
+            const svg = document.querySelector('#stageRack svg');
+            const rails = [...svg.querySelectorAll('[data-rail]')].map(r => r.getBoundingClientRect().left);
+            const tags = [...svg.querySelectorAll('[data-tag]')].map(t => t.getBoundingClientRect().right);
+            return {rail: Math.min(...rails), tags};
+        }""")
+        if not side["tags"] or not all(t < side["rail"] for t in side["tags"]):
+            bad.append(f"stage cable: on the rear, a tag is not left of the left rail ({side})")
+        # A row whose cable is not on this face flips to the face that has it.
+        page.click('#sidePanel [data-plan-row="0"]')
+        page.wait_for_selector('#stageRack svg [data-cables="front"] [data-cable][data-link-index="0"].on',
+                               timeout=READY_MS)
+        page.click('#stageTabs [data-view="rear"]')
+        page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
         page.click('#stageTabs [data-view="front"]')
         page.wait_for_selector('#stageRack svg [data-cables="front"]', timeout=READY_MS)
 
@@ -943,6 +1053,18 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    the stage rail: 7 stages")
+
+            page = browser.new_page()
+            try:
+                bad = check_rear_loose(page, base)
+            finally:
+                page.close()
+            if bad:
+                failed_things += 1
+                problems.append(f"FAIL  stage 4: a loose end on the rear is named")
+                problems += [f"        {b}" for b in dict.fromkeys(bad)]
+            else:
+                notes.append(f"ok    stage 4: a loose end on the rear is named")
 
             page = browser.new_page()
             try:
