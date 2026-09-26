@@ -1,10 +1,16 @@
 // Stage 3 - Seat optics. "What media, speed and lanes?"
 //
-// The cages on the AS7726-32X's qsfp28 group accept exactly one thing:
-// generic/qsfp-lc@1 (verified against assets/dist/as7726-32x.configs.json's
-// .cages.front - 32 cages in group qsfp28, each `accepts: ["generic/qsfp-lc@1"]`,
-// plus 2 mgmt cages this stage does not touch). That component carries NO
-// speed and NO lanes attribute - components.json's own description says so:
+// The cages on the AS7726-32X's qsfp28 group accept a generic LC optic,
+// generic/qsfp-lc@2, plus - since the pluggables-cables work (PR set
+// including roc-ops/Portrayal#611) - a growing list of cable and DAC/AOC
+// ends (generic/qsfp-cable@1, amphenol/qsfp28-passive-dac@1, and friends;
+// verified against assets/dist/as7726-32x.configs.json's .cages.front - 32
+// cages in group qsfp28, plus 2 mgmt cages this stage does not touch). This
+// stage is about the LC optic specifically - the cages's `accepts` array is
+// no longer safe to index blindly, so seating picks the qsfp-lc entry by
+// name rather than `accepts[0]` (a cable end has no tx/bore to highlight).
+// The optic itself carries NO speed and NO lanes attribute - components.json's
+// own description says so:
 // "which module it is - rate, reach, wavelength, watts - is a fact about a
 // vendor's product" and lives on the wrapper that composes this generic shape,
 // never here. So this stage answers "what media / speed / lanes?" only as far
@@ -60,6 +66,14 @@ import {dropBelow} from '../plan.js';
 const DEV = 'as7726-32x';
 const GROUP = 'qsfp28';
 const DEFAULT_CAGE = 'port-1';
+// The LC optic among whatever a cage accepts (cables and DACs joined the
+// list alongside it - see the header comment). Falls back to the first
+// entry if a future library drop ever drops the LC generic from `accepts`,
+// so this stage still seats something rather than seating nothing.
+function lcRef(cage) {
+  const accepts = cage?.accepts || [];
+  return accepts.find(r => r.startsWith('generic/qsfp-lc@')) || accepts[0] || null;
+}
 // THE HIGHLIGHT IS THE PORT, with the TX bore ringed inside it. A box round
 // the bore alone (7 mm, haloed) sat on one corner of a QSFP port and read as a
 // stray square; the port is what the visitor chose, the bore is what the seat
@@ -161,7 +175,7 @@ export default function makeOptics() {
     cageSel.onchange = () => { if (!ui.live()) return; selected = cageSel.value; buildPanel(ui); };
 
     const seatBtn = el('button', {type: 'button', 'data-seat': 'true', text: 'Seat optic'});
-    seatBtn.onclick = () => seat(ui, cage, (cage.accepts || [])[0] || null);
+    seatBtn.onclick = () => seat(ui, cage, lcRef(cage));
     const unseatBtn = el('button', {type: 'button', 'data-unseat': 'true', text: 'Unseat'});
     unseatBtn.onclick = () => seat(ui, cage, null);
 
@@ -176,7 +190,7 @@ export default function makeOptics() {
     const kids = [
       title('Stage 3 · Seat optics'),
       lead('<strong>What media, speed and lanes?</strong>'),
-      lead('Every qsfp28 cage on the AS7726-32X accepts exactly one thing, read off its own `accepts`: a generic QSFP with an LC duplex face. Seat it and read back what the compiled index actually knows about it.'),
+      lead('Every qsfp28 cage on the AS7726-32X accepts a generic QSFP with an LC duplex face, plus a growing list of cables, DACs and AOCs (read off its own `accepts`). This stage seats the LC optic. Seat it and read back what the compiled index actually knows about it.'),
       el('div', {class: 'ctl-row', 'data-cage-row': 'true'},
         [el('span', {class: 'mono', text: cage?.id || '(none)'}), cageSel, seatBtn, unseatBtn]),
       readout,

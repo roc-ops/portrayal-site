@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="13.55mm" height="11.5mm" viewBox="0 -1.4 13.55 11.5">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="sfp-plus-passive-dac" data-path="sfp-plus-passive-dac" data-class="transceiver" data-behaviour="occupies" data-ref="molex/sfp-plus-passive-dac@1:1.0.0" data-body-depth="47.5" data-cable-kind="dac" data-media="sfp-plus" data-model="74752" data-power-absent="not-published" data-speed="10g" transform="translate(0,0)">
+    <title>sfp-plus-passive-dac</title>
+    <g id="sfp-plus-passive-dac--body" data-path="sfp-plus-passive-dac/body" data-class="transceiver" data-behaviour="occupies" data-ref="generic/sfp-cable@1:1.0.0" data-depth="47.5" data-form-factor="sfp" data-latch-color="#1c1c1c" data-power-absent="not-applicable" transform="translate(0,0)">
+      <title>sfp-plus-passive-dac--body</title>
+      <rect id="sfp-plus-passive-dac--body--head" x="0" y="-1.40" width="13.55" height="11.50" rx="0.5" fill="#9aa0a6" stroke="#5f656b" stroke-width="0.18" data-z-out="10.8" data-z-color="#9aa0a6" />
+      <circle id="sfp-plus-passive-dac--body--relief-boot" cx="6.775" cy="4.275" r="4.4" fill="#2a2a2a" stroke="#111111" stroke-width="0.15" data-z-cyl="27.9" data-z-lift="10.8" />
+      <rect id="sfp-plus-passive-dac--body--strap" x="3.9" y="-0.625" width="5.75" height="0.5" fill="#1c1c1c" stroke="#111111" stroke-width="0.1" data-fill-from="latch-color" data-stroke-derive="latch-color" data-z-out="39.0" data-z-lift="10.8" />
+      <rect id="sfp-plus-passive-dac--body--strap-ring" x="0.06" y="-1.125" width="13.43" height="1.5" rx="0.4" fill="#1c1c1c" stroke="#111111" stroke-width="0.1" data-fill-from="latch-color" data-stroke-derive="latch-color" data-z-out="53.9" data-z-lift="39.0" />
+      <circle id="sfp-plus-passive-dac--body--stub" cx="6.775" cy="4.275" r="2.4" fill="#1c1c1c" stroke="#000000" stroke-width="0.1" data-r-from="cable-od" data-fill-from="jacket-color" data-z-cyl="30.0" data-z-lift="38.7" />
+      <g data-cp="cable" data-cp-at="6.775 4.275" data-cp-dir="front" data-cp-on="sfp-plus-passive-dac--body--stub" />
+      <g data-cp="mate" data-cp-at="6.775 4.275" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.775 4.275" data-cp-dir="front" />
+  </g>
+</svg>

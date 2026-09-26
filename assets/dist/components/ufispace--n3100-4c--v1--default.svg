@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="120.02mm" height="21.59mm" viewBox="0 0 120.02 21.59">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='ufispace/n3100-4c@'] .state-activity-10g { --led-color: #eab308; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-activity-10g { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-activity-25g { --led-color: #22c55e; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-activity-25g { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-free-run { --led-color: #22c55e; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-free-run { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-link-down { --led-color: #eab308; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-synced { --led-color: #22c55e; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-thermal-alert { --led-color: #eab308; }
+    g[data-ref^='ufispace/n3100-4c@'] .state-thermal-alert { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="n3100-4c" data-path="n3100-4c" data-class="expansion-card" data-behaviour="fills" data-ref="ufispace/n3100-4c@1:1.0.0" data-body-depth="181.07" data-bus="PCIe Gen4 x16 (Gen3 compatible)" data-clock-specs="G.8271.1, G.8272 PRTC, G.8273.2 T-BC/T-TSC, G.8273.4 APTS (via firmware upgrade), G.8262 EEC, G.8262.1 eEEC, G.8264 ESMC" data-controller="Intel E-810" data-cooling="host airflow, 500 LFM required (no onboard fans)" data-emc="FCC Part 15, Subpart B, Class A" data-eol="none-announced" data-fpga="Intel Cyclone V SoC" data-management-interface="managed from the host DU server - ufiCardMgmt CLI over the E-810 network interface to the card's management IP; UFI PTP Timing Software" data-model="N3100-4C" data-operating-humidity="5 to 95 percent RH noncondensing" data-operating-temp-c="0 to 55" data-optics-sfp28="25G SFP28 SR/LR, 25G SFP28 CR DAC, 10G SFP+ SR/LR, SFP+ Twinax (datasheet supported-accessories list)" data-oran-sync="O-RAN LLS C1, C2, C3 synchronization topologies" data-os-support="CentOS, Ubuntu (ice driver 1.7.16+, NVM 3.20+)" data-oscillator="Stratum 3E OCXO" data-pcie-connector="x16" data-pcie-generation="4" data-pcie-height="full" data-power-draw-max-w="48" data-power-draw-typical-w="34" data-power-input="host PCIe slot" data-role="timing-adapter" data-safety="UL 62368-1, IEC 62368-1" data-sfp28="4" data-slot-compatibility="one open PCIe slot, x4, x8 or x16, Gen3 or Gen4" data-storage-humidity="5 to 93 percent RH noncondensing" data-storage-temp-c="-40 to 70" data-timing-accuracy="ITU-T G.8273.2 Class C" data-timing-cables="SMA coax with 1/4-36UNS-2B connector for GNSS; SMB coax with 10-32UNF-2A connector for 1PPS and 10MHz" data-timing-roles="IEEE 1588v2 T-GM, T-BC/OC (G.8275.1 telecom profile); SyncE with ESMC; PTP offload and redundancy; Assisted FTS" data-weight-kg="0.44" transform="translate(0,0)">
+    <title>n3100-4c</title>
+    <g id="n3100-4c--bracket" data-path="n3100-4c/bracket" data-class="bracket" data-ref="std/pcie-bracket-fh@2:2.0.0" data-wall="#8a9199" data-card-height-max="111.28" data-chassis-opening="100.71" data-material="0.86 mm (20 GA) low carbon steel, zinc plated" data-return-flange-depth="9.4" data-return-flange-length="21.59" data-tapped-hole-pitch="85.4" transform="translate(0,0)">
+      <title>n3100-4c--bracket</title>
+      <path d="M1.91 17.48 L7.27 17.48 L11.38 21.59 L114.28 21.59 L117.18 19.05 L118.75 19.05 A1.27 1.27 0 0 0 120.02 17.78 L120.02 1.27 A1.27 1.27 0 0 0 118.75 0 L117.18 0 L115.29 3.17 L11.38 3.17 L7.27 7.28 L1.91 7.28 A1.91 1.91 0 0 0 0 9.19 L0 15.57 A1.91 1.91 0 0 0 1.91 17.48 Z" fill="#9aa1a8" stroke="#5f666d" stroke-width="0.4" stroke-linejoin="round" />
+      <rect id="n3100-4c--bracket--opening" x="19.96" y="6.35" width="89.9" height="12.06" rx="1.0" fill="#1b1f22" stroke="#41474d" stroke-width="0.35" data-path="n3100-4c/bracket/opening" data-class="cutout" data-description="the connector opening, 89.9 by 12.06, sitting 3.18 in from each long edge" />
+      <path id="n3100-4c--bracket--flange-fold" d="M119.16 3.57 V18.65" stroke="#5f666d" stroke-width="0.3" fill="none" data-z-out="9.4" data-z-color="#9aa1a8" />
+      <path d="M5.08 7.58 V17.18" stroke="#5f666d" stroke-width="0.3" fill="none" />
+    </g>
+    <rect id="n3100-4c--pcb-edge" x="32.80" y="1.37" width="87.31" height="1.80" fill="#1d2023" data-path="n3100-4c/pcb-edge" data-class="bezel" />
+    <rect id="n3100-4c--plate" x="19.66" y="6.05" width="90.50" height="12.66" fill="#9aa1a8" data-path="n3100-4c/plate" data-class="bezel" />
+    <g id="n3100-4c--vents">
+      <rect x="107.95" y="16.40" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="104.60" y="16.40" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="101.25" y="16.40" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="97.90" y="16.40" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="94.55" y="16.40" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="91.20" y="16.40" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="109.32" y="13.18" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="109.32" y="9.83" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="109.32" y="6.49" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="99.19" y="13.10" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+      <rect x="99.19" y="9.75" width="2.0" height="2.0" rx="0.25" fill="#17191c" />
+    </g>
+    <g id="n3100-4c--port-tags">
+      <rect x="76.67" y="17.02" width="5.07" height="2.49" rx="0.3" fill="#e0cd3c" />
+      <rect x="62.50" y="17.02" width="5.07" height="2.49" rx="0.3" fill="#e0cd3c" />
+      <rect x="48.20" y="17.02" width="5.07" height="2.49" rx="0.3" fill="#e0cd3c" />
+      <rect x="33.86" y="17.02" width="5.07" height="2.49" rx="0.3" fill="#e0cd3c" />
+    </g>
+    <g id="n3100-4c--silkscreen">
+      <text id="n3100-4c--label-port-0" x="79.2" y="19.05" transform="rotate(180 79.2 18.26)" font-family="sans-serif" font-size="2.2" font-weight="bold" text-anchor="middle" fill="#141414">0</text>
+      <text id="n3100-4c--label-port-1" x="65.03" y="19.05" transform="rotate(180 65.03 18.26)" font-family="sans-serif" font-size="2.2" font-weight="bold" text-anchor="middle" fill="#141414">1</text>
+      <text id="n3100-4c--label-port-2" x="50.74" y="19.05" transform="rotate(180 50.74 18.26)" font-family="sans-serif" font-size="2.2" font-weight="bold" text-anchor="middle" fill="#141414">2</text>
+      <text id="n3100-4c--label-port-3" x="36.4" y="19.05" transform="rotate(180 36.4 18.26)" font-family="sans-serif" font-size="2.2" font-weight="bold" text-anchor="middle" fill="#141414">3</text>
+      <text id="n3100-4c--label-1pps" x="105.04" y="8.09" transform="rotate(180 105.04 7.23)" font-family="sans-serif" font-size="2.4" font-weight="bold" text-anchor="middle" fill="#2b2d2f">1PPS</text>
+      <text id="n3100-4c--label-10mhz" x="94.95" y="8.09" transform="rotate(180 94.95 7.23)" font-family="sans-serif" font-size="2.4" font-weight="bold" text-anchor="middle" fill="#2b2d2f">10MHZ</text>
+      <text id="n3100-4c--label-gnss-ant" x="24.77" y="8.09" transform="rotate(180 24.77 7.23)" font-family="sans-serif" font-size="2.4" font-weight="bold" text-anchor="middle" fill="#2b2d2f">GNSS ANT</text>
+    </g>
+    <g id="n3100-4c--port-0" data-path="n3100-4c/port-0" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(74.78,6.58) rotate(180 7.125 5.2)" data-group="sfp28" data-group-role="traffic">
+      <title>n3100-4c--port-0</title>
+      <rect id="n3100-4c--port-0--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="n3100-4c/port-0/opening" data-class="cutout" />
+      <rect id="n3100-4c--port-0--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="n3100-4c--port-0--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="n3100-4c--port-0--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--port-1" data-path="n3100-4c/port-1" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(60.53,6.58) rotate(180 7.125 5.2)" data-group="sfp28" data-group-role="traffic">
+      <title>n3100-4c--port-1</title>
+      <rect id="n3100-4c--port-1--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="n3100-4c/port-1/opening" data-class="cutout" />
+      <rect id="n3100-4c--port-1--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="n3100-4c--port-1--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="n3100-4c--port-1--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--port-2" data-path="n3100-4c/port-2" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(46.27,6.58) rotate(180 7.125 5.2)" data-group="sfp28" data-group-role="traffic">
+      <title>n3100-4c--port-2</title>
+      <rect id="n3100-4c--port-2--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="n3100-4c/port-2/opening" data-class="cutout" />
+      <rect id="n3100-4c--port-2--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="n3100-4c--port-2--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="n3100-4c--port-2--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--port-3" data-path="n3100-4c/port-3" data-class="port" data-ref="std/sfp-ganged@1:1.1.1" data-depth="41.0" data-wall="#aab0b7" data-media="sfp28" data-speed="25g" transform="translate(32.02,6.58) rotate(180 7.125 5.2)" data-group="sfp28" data-group-role="traffic">
+      <title>n3100-4c--port-3</title>
+      <rect id="n3100-4c--port-3--opening" x="0" y="0" width="14.25" height="10.4" fill="#17191c" data-path="n3100-4c/port-3/opening" data-class="cutout" />
+      <rect id="n3100-4c--port-3--cage-wall" x="0" y="0" width="0.25" height="10.4" fill="#3a4046" />
+      <rect id="n3100-4c--port-3--cage-lip" x="1.1" y="7.9" width="12.0" height="1.2" rx="0.3" fill="#2b2f33" />
+      <rect id="n3100-4c--port-3--module-slot" x="1.1" y="3.8" width="12.0" height="2.7" rx="0.4" fill="#000000" />
+      <g data-cp="mate" data-cp-at="7.125 5.2" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--led-port-0" data-path="n3100-4c/led-port-0" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(83.82,16.7)" data-group="sfp28-leds" data-group-role="indicator">
+      <title>n3100-4c--led-port-0</title>
+      <circle id="n3100-4c--led-port-0--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="n3100-4c--led-port-0--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="n3100-4c/led-port-0/lamp" data-class="led" data-states="off activity-25g activity-10g" data-z-dome="0.3" />
+    </g>
+    <g id="n3100-4c--led-port-1" data-path="n3100-4c/led-port-1" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(69.66,16.7)" data-group="sfp28-leds" data-group-role="indicator">
+      <title>n3100-4c--led-port-1</title>
+      <circle id="n3100-4c--led-port-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="n3100-4c--led-port-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="n3100-4c/led-port-1/lamp" data-class="led" data-states="off activity-25g activity-10g" data-z-dome="0.3" />
+    </g>
+    <g id="n3100-4c--led-port-2" data-path="n3100-4c/led-port-2" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(55.49,16.7)" data-group="sfp28-leds" data-group-role="indicator">
+      <title>n3100-4c--led-port-2</title>
+      <circle id="n3100-4c--led-port-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="n3100-4c--led-port-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="n3100-4c/led-port-2/lamp" data-class="led" data-states="off activity-25g activity-10g" data-z-dome="0.3" />
+    </g>
+    <g id="n3100-4c--led-port-3" data-path="n3100-4c/led-port-3" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(41.32,16.7)" data-group="sfp28-leds" data-group-role="indicator">
+      <title>n3100-4c--led-port-3</title>
+      <circle id="n3100-4c--led-port-3--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="n3100-4c--led-port-3--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="n3100-4c/led-port-3/lamp" data-class="led" data-states="off activity-25g activity-10g" data-z-dome="0.3" />
+    </g>
+    <g id="n3100-4c--clk-1pps" data-path="n3100-4c/clk-1pps" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" data-role="1pps-io" transform="translate(101.71,8.84) rotate(180 3.5 3.5)" data-group="timing" data-group-role="management">
+      <title>n3100-4c--clk-1pps</title>
+      <path id="n3100-4c--clk-1pps--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="n3100-4c--clk-1pps--jack" data-path="n3100-4c/clk-1pps/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>n3100-4c--clk-1pps--jack</title>
+        <circle id="n3100-4c--clk-1pps--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="n3100-4c/clk-1pps/jack/opening" data-class="cutout" />
+        <g id="n3100-4c--clk-1pps--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--clk-10mhz" data-path="n3100-4c/clk-10mhz" data-class="port" data-ref="common/smb-jack@1:1.0.0" data-media="coax-smb" data-role="10mhz-io" transform="translate(91.62,8.88) rotate(180 3.5 3.5)" data-group="timing" data-group-role="management">
+      <title>n3100-4c--clk-10mhz</title>
+      <path id="n3100-4c--clk-10mhz--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.28" d="M 5.25 0.469 L 6.99 3.5 L 5.25 6.531 L 1.75 6.531 L 0.01 3.5 L 1.75 0.469 z" data-z-cyl="1.8" data-z-color="#b8962e" />
+      <g id="n3100-4c--clk-10mhz--jack" data-path="n3100-4c/clk-10mhz/jack" data-class="port" data-inner="1" data-ref="std/smb@1:1.0.0" data-media="coax-smb" transform="translate(1.085,1.085)">
+        <title>n3100-4c--clk-10mhz--jack</title>
+        <circle id="n3100-4c--clk-10mhz--jack--opening" cx="2.415" cy="2.415" r="2.415" fill="#8a7118" data-path="n3100-4c/clk-10mhz/jack/opening" data-class="cutout" />
+        <g id="n3100-4c--clk-10mhz--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227">
+          <circle cx="2.415" cy="2.415" r="2.3" fill="#d4af37" stroke="#8a7118" stroke-width="0.22" />
+          <circle cx="2.415" cy="2.415" r="1.25" fill="#f0ead6" />
+          <circle cx="2.415" cy="2.415" r="0.45" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="2.415 2.415" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="3.5 3.5" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--gnss-ant" data-path="n3100-4c/gnss-ant" data-class="port" data-ref="common/sma-jack@1:1.0.1" data-media="coax-sma" data-role="gnss-in" transform="translate(20.19,8.57) rotate(180 4.75 4.75)" data-group="timing" data-group-role="management">
+      <title>n3100-4c--gnss-ant</title>
+      <path id="n3100-4c--gnss-ant--nut" fill="#d4af37" stroke="#8a7118" stroke-width="0.3" fill-rule="evenodd" d="M 7.125 0.639 L 9.486 4.75 L 7.125 8.861 L 2.375 8.861 L 0.014 4.75 L 2.375 0.639 z        M 1.575 4.75 A 3.175 3.175 0 1 0 7.925 4.75 A 3.175 3.175 0 1 0 1.575 4.75 z" data-z-cyl="2.2" data-z-color="#b8962e" />
+      <g id="n3100-4c--gnss-ant--jack" data-path="n3100-4c/gnss-ant/jack" data-class="port" data-inner="1" data-ref="std/sma@1:1.1.0" data-media="coax-sma" transform="translate(1.575,1.575)">
+        <title>n3100-4c--gnss-ant--jack</title>
+        <circle id="n3100-4c--gnss-ant--jack--opening" cx="3.175" cy="3.175" r="3.175" fill="#8a7118" data-path="n3100-4c/gnss-ant/jack/opening" data-class="cutout" />
+        <g id="n3100-4c--gnss-ant--jack--barrel" data-z-cyl="5.0" data-z-color="#c9a227" data-z-thread="0.706">
+          <circle cx="3.175" cy="3.175" r="3.05" fill="#d4af37" stroke="#8a7118" stroke-width="0.25" />
+          <circle cx="3.175" cy="3.175" r="1.75" fill="#f0ead6" />
+          <circle cx="3.175" cy="3.175" r="0.55" fill="#3a3325" />
+        </g>
+        <g data-cp="mate" data-cp-at="3.175 3.175" data-cp-dir="front" />
+      </g>
+      <g data-cp="rf" data-cp-at="4.75 4.75" data-cp-dir="front" />
+    </g>
+    <g id="n3100-4c--led-sync" data-path="n3100-4c/led-sync" data-class="led" data-ref="common/led-dot@1:1.1.0" transform="translate(99.19,5.71)" data-group="status-leds" data-group-role="indicator">
+      <title>n3100-4c--led-sync</title>
+      <circle id="n3100-4c--led-sync--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+      <circle id="n3100-4c--led-sync--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="n3100-4c/led-sync/lamp" data-class="led" data-states="off synced link-down free-run thermal-alert" data-z-dome="0.3" />
+    </g>
+    <g id="n3100-4c--plate-screw" data-path="n3100-4c/plate-screw" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" transform="translate(113.5,13.33)" data-group="plate-screws" data-group-role="furniture">
+      <title>n3100-4c--plate-screw</title>
+      <circle id="n3100-4c--plate-screw--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+      <rect id="n3100-4c--plate-screw--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+      <rect id="n3100-4c--plate-screw--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    </g>
+  </g>
+</svg>
