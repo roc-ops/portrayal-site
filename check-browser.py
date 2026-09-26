@@ -1500,6 +1500,50 @@ def check_takeaway_drawio(page, base):
     return bad
 
 
+@extra("stage 6 shows the cables in 2D, and its SVG export keeps them without UI")
+def check_takeaway_cables_2d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    # Straight to stage 6: it must apply the plan's seats itself.
+    page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
+    n = page.eval_on_selector_all('#stageRack [data-cable]', "els => els.length")
+    if n == 0:
+        bad.append("stage 6 2D: no [data-cable] drawn")
+    if not page.is_visible('#stageTabs button[data-view="rear"]'):
+        bad.append("stage 6 2D: no Front/Rear toggle")
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('#stageExport button:has-text("SVG")')
+    text = pathlib.Path(dl.value.path()).read_text()
+    got = text.count("data-cable=")
+    if got != n:
+        bad.append(f"stage 6 SVG: {got} cables exported, {n} drawn on screen")
+    for ui_bit in ("data-cable-tags", "data-tag=", "data-not-connected", "cable-focus",
+                   'tabindex="0"', "data-pt-ui"):
+        if ui_bit in text:
+            bad.append(f"stage 6 SVG: screen UI leaked into the export ({ui_bit})")
+    return bad
+
+
+@extra("stage 6 hangs the cables in 3D, and the GLB carries them")
+def check_takeaway_cables_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
+    page.click('#stageMode [data-mode="3d"]')
+    page.wait_for_selector('#stageExport button:has-text("GLB")', timeout=READY_3D_MS)
+    with page.expect_download(timeout=READY_3D_MS) as dl:
+        page.click('#stageExport button:has-text("GLB")')
+    glb = pathlib.Path(dl.value.path()).read_bytes()
+    missing = [i for i in range(14) if f'"cable-{i}"'.encode() not in glb]
+    if missing:
+        bad.append(f"stage 6 GLB: no node for cable(s) {missing}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

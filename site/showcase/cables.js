@@ -127,7 +127,11 @@ function leadDown(g, a, color, drop, outboard) {
 // record keeps it as `tag`.
 export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
                                                outboard = 1}) {
-  const layer = svgEl('g', {'data-cables': view, 'data-pt-ui': '*'});
+  // The CABLES are the drawing, and exports keep them (standalone() drops
+  // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
+  // controls - a cross-face button, a not-connected link to the stage that
+  // fixes it - so that layer stays UI and never reaches a file.
+  const layer = svgEl('g', {'data-cables': view});
   const tagLayer = svgEl('g', {'data-cable-tags': view, 'data-pt-ui': '*'});
   svg.append(layer, tagLayer);
   const fans = new Map(), leads = new Map();
@@ -143,7 +147,8 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     const live = pts.filter(([, p]) => p);
     if (!live.length) return;
     const g = svgEl('g', {'data-cable': 'true', 'data-link-index': String(i),
-      'data-media': link.media, 'data-purpose': link.purpose, tabindex: '0'});
+      'data-media': link.media, 'data-purpose': link.purpose, tabindex: '0',
+      'data-pt-ui': 'tabindex'});
     const color = colorOf(link);
     const key = [link.from[0], link.to[0]].sort().join('|');
     const starts = live.map(([, p]) => {

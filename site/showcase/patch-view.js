@@ -3,7 +3,7 @@
 // #stageTabs, which the rail empties on vacate); in 3D the mounted rack and
 // its tubes. Every write after an await is behind ui.live().
 
-import {stage3d, stageRack, el, svgEl, lead, kv, panZoom} from './artifact.js';
+import {stage3d, stageRack, el, svgEl, lead, kv, panZoom, standalone} from './artifact.js';
 import {CAST, RACK_U, loadMeta, overrides, build2dElevation, mount3d, chassisOf}
   from './rack.js';
 import {loadPlan, applyPlanSeats, looseReason, looseWhy, productName, countsBy, endView} from './plan.js';
@@ -69,7 +69,7 @@ export async function enterPatched(ui, {head = [], top = () => [], counts = true
   if (!ui.live()) return null;
   const {kept} = applyPlanSeats(plan, overrides);
   const handle = {mode: ui.mode, plan, kept, drawn: [], loose: plan.links.map(() => []),
-                  view: 'front', setView: null, highlight: null, dispose: () => {}};
+                  view: 'front', setView: null, highlight: null, dispose: () => {}, scene: null};
   // Every end judged against its own face, off-screen, in either mode: the
   // panel's loose lines never depend on which face is shown, or on a flip
   // that overtook the first draw. In 2D this comes FIRST: a cable whose far
@@ -151,6 +151,7 @@ async function enter3d(ui, handle, onDrawn) {
   const sc = await mount3d({stack, heightRU: RACK_U, overrides});
   if (!ui.live()) { sc?.dispose(); return; }
   handle.dispose = () => sc?.dispose();
+  handle.scene = sc;   // stage 6 exports it; null without WebGL
   if (!sc) return;
   ui.unscrim();
   // Stale here, the scene is handle.dispose's: enterPatched disposes it.
@@ -186,6 +187,62 @@ async function enter3d(ui, handle, onDrawn) {
   onDrawn?.(handle);
 }
 
+// ONE CABLED FACE, on an elevation already in the document and laid out
+// (drawCables2d reads CTMs): the viewBox widened for tails and their tags on
+// the side a cross-face cable goes round (spec §6), then the plan's cables
+// and tags drawn onto it. The stage and the exports both use this, so a file
+// can never show a different cabling from the screen.
+export function cableFace(svg, handle, view) {
+  const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  const rear = view === 'rear';
+  const vb = rear ? [base[0] - ROOM, base[1], base[2] + ROOM, base[3] + 40]
+                  : [base[0], base[1], base[2] + ROOM, base[3] + 40];
+  svg.setAttribute('viewBox', vb.join(' '));
+  const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
+  const pill = (t, at, label, gap = 4) => {
+    const w = 7 * label.length + 12;
+    const x = rear ? at[0] - gap - w : at[0] + gap;
+    t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
+    const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
+    return t;
+  };
+  handle.drawn = drawCables2d(svg, handle.plan, view, {
+    edgeX, outboard: rear ? -1 : 1,
+    tag: (at, far) => pill(svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
+      class: 'cable-tag', tabindex: '0', role: 'button'}), at, `→ ${far[0]} ${endView(far)} · ${far[1]}`),
+    farLoose: (i, side) => !!handle.loose[i]?.includes(side),
+    looseTag: (at, far) => {
+      const {why, stage} = looseWhy(handle.plan, handle.kept, far);
+      const t = svgEl('g', {'data-not-connected': far.join(':'), class: 'cable-tag not-connected',
+        ...(stage ? {'data-fix-stage': stage, tabindex: '0', role: 'button'} : {})});
+      const full = svgEl('title', {}); full.textContent = looseReason(handle.plan, handle.kept, far);
+      t.append(full);
+      return pill(t, at, `✕ ${why}`);
+    },
+  });
+  return {vb};
+}
+
+// A CABLED ELEVATION AS A FILE: a fresh elevation of `view` with the current
+// overrides, cabled by cableFace in a hidden host (laid out, never seen),
+// and returned as standalone() text. Fresh rather than the one on screen, so
+// hover and focus state and the visitor's pan/zoom never reach a file, and
+// so 3D mode, which has no elevation on screen, exports the same thing.
+export async function cabledElevationSvg(handle, view = 'front') {
+  const svg = await build2dElevation({stack: CAST.filter(e => e.ru != null), heightRU: RACK_U,
+                                      overrides, view});
+  const host = el('div', {'aria-hidden': 'true'});
+  host.style.cssText = 'position:fixed;left:0;top:0;width:800px;visibility:hidden;pointer-events:none';
+  document.body.append(host);
+  try {
+    host.append(svg);
+    cableFace(svg, handle, view);
+    return standalone(svg);
+  } finally {
+    host.remove();
+  }
+}
+
 async function enter2d(ui, handle, onDrawn) {
   stage3d.hidden = true; stageRack.hidden = false;
   const tabs = document.getElementById('stageTabs');
@@ -198,43 +255,9 @@ async function enter2d(ui, handle, onDrawn) {
     const svg = await build2dElevation({stack, heightRU: RACK_U, overrides, view});
     if (!ui.live() || mine !== seq) return;
     stageRack.replaceChildren(svg);
-    const base = svg.getAttribute('viewBox').split(/\s+/).map(Number);
-    // Room for tails and their tags on the side a cross-face cable goes
-    // round (spec §6): past the right-hand rail on the front, and on the rear
-    // the matching side, which is the LEFT when seen from behind.
-    const rear = view === 'rear';
-    const vb = rear ? [base[0] - ROOM, base[1], base[2] + ROOM, base[3] + 40]
-                    : [base[0], base[1], base[2] + ROOM, base[3] + 40];
-    svg.setAttribute('viewBox', vb.join(' '));
+    const {vb} = cableFace(svg, handle, view);
     panZoom(svg, () => vb);
-    const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
     handle.view = view;
-    // A tag's pill sits in the side column, outboard of the point it labels:
-    // right of it on the front, left of it on the rear.
-    const pill = (t, at, label, gap = 4) => {
-      const w = 7 * label.length + 12;
-      const x = rear ? at[0] - gap - w : at[0] + gap;
-      t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
-      const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
-      return t;
-    };
-    handle.drawn = drawCables2d(svg, handle.plan, view, {
-      edgeX, outboard: rear ? -1 : 1,
-      tag: (at, far) => pill(svgEl('g', {'data-tag': far.join(':'), 'data-to-view': endView(far),
-        class: 'cable-tag', tabindex: '0', role: 'button'}), at, `→ ${far[0]} ${endView(far)} · ${far[1]}`),
-      // The far end did not land, and the tag says why - a button to the
-      // stage that fixes it, or plain text when that is the Inspect lens (or
-      // nothing the visitor did).
-      farLoose: (i, side) => !!handle.loose[i]?.includes(side),
-      looseTag: (at, far) => {
-        const {why, stage} = looseWhy(handle.plan, handle.kept, far);
-        const t = svgEl('g', {'data-not-connected': far.join(':'), class: 'cable-tag not-connected',
-          ...(stage ? {'data-fix-stage': stage, tabindex: '0', role: 'button'} : {})});
-        const full = svgEl('title', {}); full.textContent = looseReason(handle.plan, handle.kept, far);
-        t.append(full);
-        return pill(t, at, `✕ ${why}`);
-      },
-    });
     // A cross-face tag flips the face; a not-connected tag with a stage goes
     // to it. Through wireClicks, not an onclick: panZoom captures the pointer
     // on the <svg>, so a plain click never reaches either.
