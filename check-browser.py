@@ -1630,6 +1630,10 @@ def check_drawio_covers(page, base):
       const cover = doc.querySelector('object[portrayal-cover="bezel"]');
       const coverSvg = cover ? svgOf(cover.querySelector('mxCell')) : '';
       const plain = await cellsOf('as7726-32x', 'ac-f2b');
+      // The rear has plates classed `bezel` inside parts that do not come off
+      // (riser shrouds, trims): none of them is a cover.
+      const rearF = await F.configuredFace({ref: 'r740xd', cfg: 'sff24-rc5-1b2a3a', view: 'rear'});
+      const rearXml = D.deviceCells('dev', rearF.text, rearF.vb, rearF.ports, 0, 0, 400, 80).join('');
       return {
         parses: !doc.querySelector('parsererror'),
         faceHasBezel: svgOf(face).includes('data-class="bezel"'),
@@ -1641,16 +1645,18 @@ def check_drawio_covers(page, base):
         coverHasDrive: coverSvg.includes('id="drive-0"'),
         coverBelowPorts: cover ? xml.indexOf('portrayal-cover=') < xml.indexOf('portrayal-path=') : false,
         plainCovers: plain.doc.querySelectorAll('object[portrayal-cover]').length,
+        rearCovers: (rearXml.match(/portrayal-cover=/g) || []).length,
       };
     }""")
     expect = {"parses": True, "faceHasBezel": False, "faceHasDrive": True, "cover": True,
               "parent": "dev", "coverHasBezel": True, "coverHasDrive": False,
-              "coverBelowPorts": True, "plainCovers": 0}
+              "coverBelowPorts": True, "plainCovers": 0, "rearCovers": 0}
     for k, want in expect.items():
         if r.get(k) != want:
             bad.append(f"draw.io covers: {k} is {r.get(k)!r}, expected {want!r}")
-    if set(r.get("tags", "").split()) != {"cover", "bezel"}:
-        bad.append(f"draw.io covers: tags are {r.get('tags')!r}, expected 'cover bezel'")
+    # ONE tag: draw.io hides a cell only when every tag on it is hidden.
+    if r.get("tags") != "bezel":
+        bad.append(f"draw.io covers: tags are {r.get('tags')!r}, expected 'bezel'")
     return bad
 
 
