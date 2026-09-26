@@ -8,16 +8,19 @@ import {drawElevation} from './rack/elevation.js';
 import {reaches, fits, availableDepth, itemsWithU} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
-import {catalogPanel} from './rack/catalog.js';
+import {catalogPanel} from './rack/picker.js';
 import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
 import {el} from './rack/dom.js';
+import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom} from './rack/zoom.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
-const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [], query: ''};
+const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
+  zoom: loadZoom(), svgs: [],
+  pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
@@ -31,8 +34,7 @@ async function getDoc(id) {
   catch (err) { console.warn('[portrayal] could not read a stored rack', id, err); return null; }
 }
 
-function place(entry, face, ru) {
-  const cfg = entry.default ?? entry.configs?.[0] ?? '';
+function place(entry, cfg, face, ru) {
   const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ru, face, label: entry.model || entry.name});
   S.sel = {kind: 'item', id: item.id};
   commit(next);
@@ -108,6 +110,10 @@ async function render() {
   if (mine !== S.draws) return;
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
+  // The SVGs are new nodes every render, so the zoom (a style on the old
+  // ones) has to be reapplied to these.
+  S.svgs = [front, rear];
+  applyZoom($('panes'), S.svgs, S.zoom);
   renderSide();
 }
 
@@ -143,7 +149,8 @@ function renderSide() {
   else if (sel.kind === 'frame') body = frameForm({rack: r, maxTop: topOf(r),
     onName: name => commit(renamed(r, name)), onFrame: patch => commit(withFrame(r, patch))});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
-    chassisOf, query: S.query, onQuery: q => { S.query = q; }, onPick: e => place(e, sel.face, sel.ru)});
+    chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
+    onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});
   else if (sel.kind === 'move') {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = summary(); }
@@ -281,6 +288,16 @@ async function bootInner() {
   $('paneFront').addEventListener('click', onPaneClick);
   $('paneRear').addEventListener('click', onPaneClick);
   $('frameBtn').addEventListener('click', () => select(S.sel?.kind === 'frame' ? null : {kind: 'frame'}));
+  const setZoom = z => { S.zoom = z; saveZoom(z); applyZoom($('panes'), S.svgs, z); $('zoomLevel').textContent = zoomLabel(z); };
+  $('zoomOut').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, -1)));
+  $('zoomIn').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, 1)));
+  $('zoomFit').addEventListener('click', () => setZoom('fit'));
+  $('panes').addEventListener('wheel', ev => {
+    if (!(ev.ctrlKey || ev.metaKey)) return;
+    setZoom(wheelZoom($('panes'), S.svgs, S.zoom, ev));
+  }, {passive: false});
+  window.addEventListener('resize', () => { if (S.zoom === 'fit') applyZoom($('panes'), S.svgs, S.zoom); });
+  setZoom(S.zoom);
   $('libMenu').addEventListener('toggle', () => { if ($('libMenu').open) renderLibrary(); });
   $('openFile').addEventListener('change', async () => {
     const file = $('openFile').files[0]; $('openFile').value = '';
