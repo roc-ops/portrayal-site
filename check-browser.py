@@ -69,7 +69,15 @@ READY_MS = 60000
 # alone has taken most of READY_MS; the patched rack's 3D mount then seats
 # the plan and hangs fourteen tubes on top of it. A separate, longer budget keeps the
 # 3D walk from flaking without loosening every 2D wait.
-READY_3D_MS = 120000
+#
+# 240 s, not 120: copper now lands on real RJ45 plugs, and three of them are
+# on the R740xd. A device with ANY override has every one of its faces
+# re-seated and re-rasterised by the kit's 3D build, and the R740xd's are the
+# heaviest faces in the rack - measured with SwiftShader, stage 4 in 3D went
+# from 4.7 s to 8.7 s entered directly, and CI's CPU-rendered runner then
+# overran 120 s twice (roc-ops/portrayal-site#33). This is a time budget,
+# not a correctness check: every assertion after it is unchanged.
+READY_3D_MS = 240000
 
 # THE CAST, READ FROM rack.js - the configuration each cast device is cast in,
 # parsed the way check-contract.py parses it, so the Inspect lens is held to
