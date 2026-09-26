@@ -503,10 +503,16 @@
   const host = document.getElementById('hero-reveal');
   // Logged, not swallowed. A silent catch here cost real time: the hero simply
   // stopped rendering and the console said nothing at all.
-  if (host) heroReveal(host).catch(err => console.error('hero reveal:', err));
-  import { heroThree } from './site/hero-3d.js';
+  // `settled` resolves either way, once the 2D hero is done or has failed:
+  // the 3D build waits for it (site/hero-3d.js).
+  const settled = host ? heroReveal(host).catch(err => console.error('hero reveal:', err))
+                       : Promise.resolve();
+  // THE 3D PANEL IS LOADED WITH import(), not a static import: a 3D module
+  // that fails to load or throws while it evaluates costs only the 3D panel.
+  // Statically imported, it failed this whole script, the 2D hero with it.
   const host3d = document.getElementById('hero-3d');
-  if (host3d) heroThree(host3d).catch(err => console.error('hero 3D:', err));
+  if (host3d) import('./site/hero-3d.js').then(m => m.heroThree(host3d, {after: settled}))
+    .catch(err => console.error('hero 3D:', err));
 </script>
 <script type="module" src="site/stats.js"></script>
 <script type="module" src="site/showcase.js"></script>

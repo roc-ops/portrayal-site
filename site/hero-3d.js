@@ -12,6 +12,12 @@
 // It costs nothing until it is nearly on screen: an IntersectionObserver
 // builds it once, and until then - or for good, without WebGL - the panel
 // shows the compiled front face as a still image.
+//
+// IT WAITS ITS TURN. The build starts only after `after` - the 2D hero's own
+// promise, which settles (resolved or failed) once its parts are seated and
+// its cables hung - and then only when the browser is next idle, so the front
+// page's first paint and the 2D hero never compete with three.js. On a narrow
+// screen the panel must be on screen, not merely near it, to start.
 import {PORTS, DEFAULT_PORT, jacketColor, captionOf} from './hero-reveal.js';
 import {hangPoints3d, LEAD, WIDTH, clearOf} from './showcase/cables.js';
 import {guard3d} from './webgl.js';
@@ -52,7 +58,17 @@ const el = (tag, cls, attrs = {}) => {
   return n;
 };
 
-export async function heroThree(host) {
+// When the browser is next idle, or after IDLE_MS at the latest.
+const IDLE_MS = 1500;
+const idle = () => new Promise(done => {
+  if ('requestIdleCallback' in window) requestIdleCallback(() => done(), {timeout: IDLE_MS});
+  else setTimeout(done, 200);
+});
+
+// What the scene shows, for a screen reader: the stage is one image.
+const LABEL = 'The UfiSpace S9600-72XC with its optics and cables, in 3D';
+
+export async function heroThree(host, {after = Promise.resolve()} = {}) {
   const probe = new URLSearchParams(location.search).has('heroprobe');
   const caption = document.getElementById('hero-caption-3d');
   // The default names port-67 from the start - with no WebGL too - as in 2D.
@@ -62,7 +78,9 @@ export async function heroThree(host) {
   // fetched, so it costs nothing and always matches the device.
   const still = el('img', 'hero-3d-still', {'data-hero-still': '', alt:
     'UfiSpace S9600-72XC front panel', decoding: 'async', src: STILL});
-  const stage = el('div', 'hero-3d-stage');
+  // role=img, labelled: the canvas three.js puts in it says nothing on its
+  // own, and the label stays when the still image is hidden over the scene.
+  const stage = el('div', 'hero-3d-stage', {role: 'img', 'aria-label': LABEL});
   const note = el('p', 'hero-3d-note');
   note.hidden = true;
   host.append(still, stage, note);
@@ -76,10 +94,14 @@ export async function heroThree(host) {
     }
     // The turn pauses while the panel is off screen.
     if (sc) onScreen ? sc.resume() : sc.pause();
-  }, {rootMargin: '200px'});
+  }, {rootMargin: matchMedia('(max-width: 700px)').matches ? '0px' : '200px'});
   io.observe(host);
 
   async function build() {
+    // After the 2D hero, and when the browser is idle (see the top).
+    await after.catch(() => {});
+    await idle();
+    if (!host.isConnected) return;
     const made = await guard3d(async () => {
       const {createRackScene} = await import('./rack3d.js');
       // Every row's seat, merged: the device's overrides, applied once.
@@ -100,6 +122,7 @@ export async function heroThree(host) {
       }
     }, msg => {
       // The still image stays, with one line saying why.
+      if (!host.isConnected) return;
       stage.remove();
       note.textContent = /webgl/i.test(msg)
         ? '3D needs WebGL, which this browser has switched off.'
@@ -108,6 +131,7 @@ export async function heroThree(host) {
       note.hidden = false;
     });
     if (!made) return;
+    if (!host.isConnected) { made.dispose(); return; }
     sc = made;
     still.hidden = true;
     if (!onScreen) sc.pause();
@@ -160,6 +184,8 @@ export async function heroThree(host) {
       const x = pts.reduce((t, p) => t + p.x, 0) / pts.length;
       found.push({port, row, pts, normal: got[0].normal, x, y});
     }
+    // The page may have let the panel go while the anchors were read.
+    if (!host.isConnected) throw new Error('hero 3D: the panel left the page');
     const rows = [];
     for (const f of found) if (!rows.some(v => Math.abs(v - f.y) < ROW)) rows.push(f.y);
     rows.sort((a, b) => a - b);
