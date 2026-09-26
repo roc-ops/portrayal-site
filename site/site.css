@@ -75,8 +75,26 @@ code { font-size: 0.875em; color: var(--pt-ink); }
   padding: 0.3rem 0.75rem; border-radius: var(--pt-radius);
 }
 .masthead-nav .gh:hover { border-color: var(--pt-brass); color: var(--pt-brass); }
+/* The same credit in the masthead, after GitHub, on the pages that carry it in
+ * the footer: small, so it sits in the nav's line rather than competing with
+ * the wordmark, and down to the logo alone on a phone. */
+.masthead-nav .nav-sponsor {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding-left: 1.2rem; border-left: 1px solid var(--pt-line);
+  font-size: 0.78rem; line-height: 1.1;
+}
+.masthead-nav .nav-sponsor:hover { color: var(--pt-brass); }
+.nav-sponsor img { display: block; height: 32px; width: auto; }
 @media (max-width: 720px) {
-  .masthead-nav a:not(.gh) { display: none; }
+  .masthead-nav a:not(.gh):not(.nav-sponsor) { display: none; }
+  /* room for the sponsor's logo beside GitHub on a phone */
+  .masthead-in { gap: 0.75rem; }
+  .masthead-nav { gap: 0.75rem; }
+  .masthead-nav .nav-sep { display: none; }
+  .masthead-nav .nav-sponsor { padding-left: 0; border-left: 0; }
+  .masthead-nav .gh { padding: 0.3rem 0.55rem; }
+  .masthead-nav .nav-sponsor img { height: 24px; }
+  .masthead-nav .nav-sponsor-label { display: none; }
 }
 
 /* ── Hero ───────────────────────────────────────────────────────────── */
@@ -619,13 +637,13 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 .footer-sponsor { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--pt-ink-muted); text-decoration: none; }
 .footer-sponsor:hover { color: var(--pt-brass); }
 .footer-sponsor img { display: block; height: 36px; width: auto; }
-.footer-sponsor .on-light { display: none; }
+.footer-sponsor .on-light, .nav-sponsor .on-light { display: none; }
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .footer-sponsor .on-dark { display: none; }
-  :root:not([data-theme="dark"]) .footer-sponsor .on-light { display: block; }
+  :root:not([data-theme="dark"]) :is(.footer-sponsor, .nav-sponsor) .on-dark { display: none; }
+  :root:not([data-theme="dark"]) :is(.footer-sponsor, .nav-sponsor) .on-light { display: block; }
 }
-:root[data-theme="light"] .footer-sponsor .on-dark { display: none; }
-:root[data-theme="light"] .footer-sponsor .on-light { display: block; }
+:root[data-theme="light"] :is(.footer-sponsor, .nav-sponsor) .on-dark { display: none; }
+:root[data-theme="light"] :is(.footer-sponsor, .nav-sponsor) .on-light { display: block; }
 .footer-tools { display: flex; flex-wrap: wrap; gap: 0.4rem; color: var(--pt-line); }
 .footer-tools a { color: var(--pt-ink-muted); text-decoration: none; }
 .footer-tools a:hover { color: var(--pt-brass); }
