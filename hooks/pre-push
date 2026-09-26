@@ -29,7 +29,7 @@ BROWSER="check-browser.py"
 touches_the_site() {
   # Anything the pages load, are, or are served by. assets/ is in the list
   # because a drawing that goes away is a page that fetches a 404.
-  grep -qE '^(vendor/|site/|assets/|brand/|[^/]+\.html$|check-browser\.py$|serve\.py$)'
+  grep -qE '^(vendor/|site/|assets/|brand/|tests/|[^/]+\.html$|check-browser\.py$|serve\.py$)'
 }
 
 z=0000000000000000000000000000000000000000
@@ -60,6 +60,12 @@ done
 
 echo "pre-push: $CONTRACT"
 python3 "$CONTRACT"
+
+# The rack builder's pure modules: no browser, a second or two, so always.
+if command -v node >/dev/null 2>&1 && ls tests/rack/*.test.mjs >/dev/null 2>&1; then
+  echo "pre-push: node --test tests/rack"
+  node --test tests/rack/*.test.mjs
+fi
 
 if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
   if python3 -c "import playwright" 2>/dev/null; then
