@@ -442,6 +442,19 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
           return e;
         },
         sway: SWAY,
+        // Turn the camera to azimuth `az` about the target, at the opening
+        // distance and elevation - the teaser capture (tools/capture-teaser.py)
+        // drives the sway itself with this, so its loop is exact.
+        aim(az) {
+          stop();
+          const sph = new THREE.Spherical().setFromVector3(openDir.clone());
+          sph.theta = az;
+          camera.position.copy(openTarget)
+            .addScaledVector(new THREE.Vector3().setFromSpherical(sph).normalize(), openDist);
+          controls.target.copy(openTarget);
+          camera.lookAt(openTarget);
+          controls.update();
+        },
         // The device's front face's share of the canvas width at the opening.
         deviceShare() {
           const cam = camera.clone();
