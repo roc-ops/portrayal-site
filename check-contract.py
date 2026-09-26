@@ -696,22 +696,24 @@ ring2d = HERE / "site" / "showcase" / "ring2d.js"
 r2 = ring2d.read_text() if ring2d.is_file() else ""
 check("export function sitesOf" in ring_js, "ring.js exports sitesOf")
 check(bool(r2), "site/showcase/ring2d.js exists")
+# Stage 4 cables the cast rack now (patch-view.js); only stage 5 still draws
+# the ring, until Task 5 moves it too.
 src_ring = ring_js + r2 + "".join((HERE / "site" / "showcase" / "stages" / f).read_text()
-                                  for f in ("04-cable.js", "05-filter.js"))
+                                  for f in ("05-filter.js",))
 check(not re.search(r"""['"`]site-|\bsite-[a-z]\b|split\(\s*['"]-['"]\s*\)""", src_ring),
       "the ring code parses no site out of device ids", "derive sites from the topology")
 # Spec §5.2: every 2D ring stage leads with the one caption, built once.
 check("export function siteCaption" in r2
       and all("siteCaption(lab, sites)" in (HERE / "site" / "showcase" / "stages" / f).read_text()
-              for f in ("04-cable.js", "05-filter.js")),
-      "stages 4 and 5 both caption the 2D ring through ring2d.js's siteCaption")
+              for f in ("05-filter.js",)),
+      "stage 5 captions the 2D ring through ring2d.js's siteCaption")
 # One legend per colour drawn: a span strand is drawn in its span's colour,
 # so it is counted there and not under its media. Built once, in ring.js.
-st45 = [(HERE / "site" / "showcase" / "stages" / f).read_text() for f in ("04-cable.js", "05-filter.js")]
+st45 = [(HERE / "site" / "showcase" / "stages" / f).read_text() for f in ("05-filter.js",)]
 check("export function legendOf" in ring_js
       and re.search(r"l\.media === m && !l\.span", ring_js) is not None
       and all("legendEl(lab)" in t and "MEDIA_COLORS" not in t for t in st45),
-      "stages 4 and 5 share ring.js's legend, which counts span strands under their span")
+      "stage 5 uses ring.js's legend, which counts span strands under their span")
 # The stage-4 section assigns `ring` inside a conditional block, so it may
 # not exist at all when labs.json is missing. Read it defensively; a
 # NameError here would crash the contract instead of recording a FAIL.
@@ -883,6 +885,21 @@ else:
                  "every plan end is a drawn port with a connection point",
                  "every plan seat is one its cage or bay accepts", "every fiber end seats a connector"):
         check(False, what, "patching.json is missing or unreadable")
+
+# Stage 4 cables THIS rack now, not the ROADM ring: cables.js draws them from
+# the kit's own cablePoints, and the stage keeps no colors of its own.
+CAB = HERE / "site" / "showcase" / "cables.js"
+cab = CAB.read_text() if CAB.is_file() else ""
+check("export function drawCables2d" in cab and "cablePoints" in cab,
+      "cables.js draws 2D cables from the kit's cablePoints", "missing")
+s4 = (HERE / "site" / "showcase" / "stages" / "04-cable.js").read_text()
+check("ring.js" not in s4 and "ring2d.js" not in s4 and "labs.json" not in s4 and "loadLab" not in s4,
+      "stage 4 no longer reads the ROADM ring", "04-cable.js still imports the ring")
+check("not a real lab" in (HERE / "site" / "showcase" / "patch-view.js").read_text()
+      if (HERE / "site" / "showcase" / "patch-view.js").is_file() else False,
+      "the patched stages say the plan is invented", "no honesty line in patch-view.js")
+check(not re.search(r"#[0-9a-fA-F]{6}", s4),
+      "stage 4 keeps no colors of its own", "colors belong to cables.js")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:

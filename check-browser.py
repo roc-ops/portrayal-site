@@ -275,6 +275,57 @@ def check_stages(page, base):
             if page.eval_on_selector(f'#sidePanel select[data-bay="{bay}"]', "s => s.value") != ref:
                 bad.append(f"stage populate: {bay}'s menu does not show the card it now holds")
 
+    def kept_card():
+        # A card the visitor chose is kept: seat a different line card in
+        # slot-2 on stage 2, then stage 4 must keep it and name the loose ends.
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        slot2 = next(b for b in slot_bays() if b["id"] == "slot-2")
+        other = next(r for r in slot2["accepts"]
+                     if r not in ("cisco/a9k-16x100ge-tr@1", "cisco/a9k-slot-cover@1"))
+        page.select_option('#sidePanel select[data-bay="slot-2"]', other, timeout=READY_MS)
+        page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
+        page.click('.stage-rail button[data-stage="cable"]')
+        page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+        if not page.query_selector(f'#stageRack svg [data-device-ref="asr-9006"] [data-path="slot-2/module"][data-ref^="{other}"]'):
+            bad.append("fill rule: stage 4 replaced the visitor's slot-2 card")
+        loose = page.eval_on_selector_all('#sidePanel [data-loose]', "ls => ls.map(l => l.textContent)")
+        if len(loose) != 4 or not all("seat it in stage 2" in t for t in loose):
+            bad.append(f"fill rule: expected 4 named loose ends on slot-2, got {loose}")
+        # Put the plan's card back, for the rest of the walk.
+        page.click('.stage-rail button[data-stage="populate"]')
+        page.wait_for_selector('[data-stage-ready="populate"]', timeout=READY_MS)
+        page.select_option('#sidePanel select[data-bay="slot-2"]', "cisco/a9k-16x100ge-tr@1", timeout=READY_MS)
+        page.wait_for_function("() => document.querySelector('#sidePanel [data-readout]')?.textContent.startsWith('seated — slot-2')", timeout=READY_MS)
+
+    def cable_2d():
+        # All fourteen are drawn on front or rear, every fiber end on a plug.
+        page.wait_for_selector('#stageRack svg [data-cables="front"]', timeout=READY_MS)
+        front = page.eval_on_selector_all('#stageRack svg [data-cable]', "gs => gs.map(g => g.dataset.linkIndex)")
+        tagged = page.eval_on_selector_all('#stageRack svg [data-tag]', "ts => ts.length")
+        if len(front) != 14:
+            bad.append(f"stage cable in 2D: {len(front)} of 14 cables drawn on the front")
+        if tagged != 2 + 1:   # two server links and the iDRAC run to the rear
+            bad.append(f"stage cable in 2D: {tagged} rear tags on the front, expected 3")
+        if page.query_selector('#sidePanel [data-loose]'):
+            bad.append("stage cable in 2D: a loose end on a fresh rack: " +
+                       page.inner_text('#sidePanel .plan-list'))
+        if "not a real lab" not in page.inner_text('#sidePanel'):
+            bad.append("stage cable: the panel does not say the plan is invented")
+        # The plan's card is in slot-2, and its connectors are what the cables start on.
+        if not page.query_selector('#stageRack svg [data-device-ref="asr-9006"] '
+                                   '[data-path="slot-2/module"][data-ref^="cisco/a9k-16x100ge-tr@1"]'):
+            bad.append("stage cable: slot-2 does not hold the plan's A9K-16X100GE-TR")
+        # Front/Rear: the server tag flips to the rear, where that cable lands on the NIC.
+        page.click('#stageRack svg [data-tag^="r740xd:ndc/module/port-1"]')
+        page.wait_for_selector('#stageRack svg [data-cables="rear"]', timeout=READY_MS)
+        if page.get_attribute('#stageTabs [data-view="rear"]', "aria-selected") != "true":
+            bad.append("stage cable: the rear tag did not select Rear")
+        if not page.query_selector('#stageRack svg [data-cables="rear"] [data-cable][data-link-index="8"]'):
+            bad.append("stage cable: on the rear, the R740xd NIC 1 cable is not drawn")
+        page.click('#stageTabs [data-view="front"]')
+        page.wait_for_selector('#stageRack svg [data-cables="front"]', timeout=READY_MS)
+
     def seat_optic():
         page.click('#sidePanel [data-seat]', timeout=READY_MS)
         page.wait_for_selector('#sidePanel [data-readout][data-seated]', timeout=READY_MS)
@@ -302,6 +353,7 @@ def check_stages(page, base):
     CLAIMS = {
         "populate": ("every slot offers only what it accepts, and a choice seats", populate),
         "optics": ("an optic seats and reads back", seat_optic),
+        "cable": ("every cable is drawn, and the rear tag flips the face", cable_2d),
         "filter": ("management filters the count", filter_management),
     }
 
@@ -331,52 +383,16 @@ def check_stages(page, base):
                   and geo["right"]["num"] > geo["right"]["hole"])   # and to its right on the right rail
             if not ok:
                 bad.append(f"stage rails: rail numbers are not outboard of the holes on both rails: {geo}")
-        if name == "cable":
-            try:
-                tabs = page.query_selector_all('#stageTabs [role="tab"]')
-                if len(tabs) != 3:
-                    bad.append(f"stage cable in 2D: expected 3 site tabs, got {len(tabs)}")
-                before = page.inner_text('#stageTabs [aria-selected="true"]')
-                page.click('#stageRack [data-stub]')
-                page.wait_for_selector('#stageRack [data-stub][data-highlight]', timeout=READY_MS)
-                after = page.inner_text('#stageTabs [aria-selected="true"]')
-                if after == before:
-                    bad.append("stage cable in 2D: clicking a stub did not switch site")
-                if not page.query_selector('#stageRack [data-cable]'):
-                    bad.append("stage cable in 2D: no cables drawn in the site")
-                # The same jump from the panel: each span end is also a real
-                # button, legible at any zoom. It must switch the site and
-                # highlight the partner stub exactly as the drawing's stub does.
-                # A span is two strands on one pair of ports: each end must
-                # still be told apart, on the drawing and in the panel.
-                names = page.evaluate("""() => ({
-                    stubs: [...document.querySelectorAll('#stageRack [data-stub]')].map(g => g.getAttribute('aria-label')),
-                    buttons: [...document.querySelectorAll('#sidePanel [data-span-end]')].map(b => b.textContent)})""")
-                for k, v in names.items():
-                    if len(set(v)) != len(v):
-                        bad.append(f"stage cable in 2D: two span {k} say the same thing: {v}")
-                btn = page.query_selector('#sidePanel [data-span-end]')
-                if not btn:
-                    bad.append("stage cable in 2D: the panel lists no span-end buttons")
-                else:
-                    li = btn.get_attribute("data-link-index")
-                    before = page.inner_text('#stageTabs [aria-selected="true"]')
-                    btn.click()
-                    page.wait_for_selector(f'#stageRack [data-stub][data-link-index="{li}"][data-highlight]',
-                                           timeout=READY_MS)
-                    if page.inner_text('#stageTabs [aria-selected="true"]') == before:
-                        bad.append("stage cable in 2D: a span-end button did not switch site")
-            except Exception as e:
-                bad.append(f"stage cable in 2D: {e}")
         if name in CLAIMS:
             what, run = CLAIMS[name]
             try:
                 run()
             except Exception as e:
                 bad.append(f"stage {name}: {what} - failed ({str(e).splitlines()[0]})")
-        if name in ("cable", "filter"):
-            # Spec §5.2: in 2D a site looks like a rack of its own, so every
-            # stage that draws the ring by site says it is not one.
+        if name == "filter":
+            # Spec §5.2: in 2D a site looks like a rack of its own, so a
+            # stage that draws the ring by site says it is not one. Stage 4
+            # cables the cast rack now; only stage 5 still draws the ring.
             try:
                 cap = page.inner_text('#sidePanel [data-site-caption]', timeout=READY_MS)
                 if "Physically" not in cap:
@@ -402,6 +418,13 @@ def check_stages(page, base):
             except Exception as e:
                 bad.append(f"stage filter in 2D: {e}")
 
+    # THE FILL RULE, once, after the stage walk: a card the visitor seats is
+    # kept, and its cables are named loose ends.
+    try:
+        kept_card()
+    except Exception as e:
+        bad.append(f"fill rule: a visitor's slot-2 card - failed ({str(e).splitlines()[0]})")
+
     # Which layer is showing: in 2D the rack drawing and no 3D pane; in 3D the
     # 3D pane and a rack layer that is hidden or empty (stage 6 keeps a
     # hidden elevation there for its exports).
@@ -414,8 +437,8 @@ def check_stages(page, base):
 
     # THE SWITCH. 2D is the default; flip stage 1 to 3D, confirm the choice
     # follows to stage 2, then exercise stages 3 and 4 in 3D too (R12): the
-    # seat's readout, which in 3D goes through portAnchor, and the ring's
-    # mountRing. Then flip back. Each re-entry must reach ready.
+    # seat's readout, which in 3D goes through portAnchor, and the patched
+    # cast rack (patch-view.js). Then flip back. Each re-entry must reach ready.
     def seat_optic_3d():
         page.click('#sidePanel [data-seat]', timeout=READY_3D_MS)
         # The readout says "seated" only once THIS seat's rebuild ran (the

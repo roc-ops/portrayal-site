@@ -30,6 +30,7 @@ import {stage3d, stageRack, el, title, lead, panZoom} from '../artifact.js';
 import {CAST, RACK_U, loadMeta, chassisOf, baysOf, byRef, overrides, mount3d, shortRef,
         enqueueRebuild, build2dElevation} from '../rack.js';
 import {wireDevices} from '../spoke-host.js';
+import {dropBelow} from '../plan.js';
 
 const DEV = 'asr-9006';
 const GROUP = 'slots';
@@ -159,6 +160,10 @@ export default function makePopulate() {
       return null;
     }
     overrides[DEV] = overrides[DEV] || {};
+    // A new card, so the old card's cages and plugs go with it: the plan fill
+    // (stage 4) would otherwise leave slot-2/module/p0... seated on a card
+    // that is no longer there.
+    dropBelow(overrides[DEV], bay.id);
     overrides[DEV][bay.id] = ref;
     const said = `seated — ${bay.id}: ${ref === COVER ? 'slot cover' : shortRef(ref)}`;
 

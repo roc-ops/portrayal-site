@@ -28,6 +28,13 @@ export const planSeatsMade = () => made.slice();
 // Is `key` below `parent` - a card's cage under its slot, a plug under its optic?
 const below = (key, parent) => key.startsWith(parent + '/') || key.startsWith(parent + '-occupant');
 
+// Drop every override key below `key` in one device's map `ov`: the cages and
+// plugs of whatever `key` held before. Called when a bay takes a new card, so
+// the old card's seats do not outlive it (stage 2's doSeat).
+export function dropBelow(ov, key) {
+  for (const k of Object.keys(ov)) if (below(k, key)) delete ov[k];
+}
+
 export function applyPlanSeats(plan, overrides) {
   const now = [], kept = [];
   for (const [dev, seats] of Object.entries(plan.seats || {})) {

@@ -1,7 +1,7 @@
 // The cast rack: which devices, where they sit, how tall the rack is, and the
-// two renderers that draw it. Stage 0 draws its rails, and stages 1-3 and 6
-// mount it (stages 4 and 5 rack the ROADM ring instead, through ring.js), so
-// it lives here rather than in any one of them.
+// two renderers that draw it. Stage 0 draws its rails, and stages 1-4 and 6
+// mount it (stage 4 cabled, through patch-view.js; stage 5 still racks the
+// ROADM ring, through ring.js), so it lives here rather than in any one of them.
 //
 // ONE stack, two renderers. The 2D elevation and the 3D rack are handed the
 // same array, and a module swapped in either is a swap in both, because both
