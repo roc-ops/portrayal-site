@@ -627,11 +627,12 @@ check(not hot, "no page hotlinks RocNet's logo", f"hotlinked from {hot}")
 # An INVENTED plan, labelled as such, whose every end is proven here against
 # the compiled faces - that is what keeps "invented" from becoming "made up".
 PLAN = HERE / "site" / "showcase" / "patching.json"
-plan = None
+plan, plan_err = None, ""
 try:
     plan = json.loads(PLAN.read_text())
 except Exception as e:
-    check(False, "patching.json parses", str(e))
+    plan_err = str(e)
+check(plan is not None, "patching.json parses", plan_err)
 comps = {f"{c['ns']}/{c['name']}@{c['major'][1:]}": c
          for c in json.loads((DIST / "components.json").read_text())["components"]}
 
@@ -649,22 +650,27 @@ def skin_text(ref):
     hits = sorted((DIST / "components").glob(f"{ns}--{name}--v{major}--*.svg"))
     return hits[0].read_text() if hits else ""
 
-def port_on(text, path):
-    """A port element with that data-path, carrying a connection point."""
+def port_tag(text, path):
+    """The opening tag of a port element with that data-path, carrying a
+    connection point - or None."""
     m = re.search(r'<g [^>]*data-path="%s"[^>]*data-class="port"[^>]*>' % re.escape(path), text)
     if not m:
-        return False
+        return None
     tail = text[m.end():m.end() + 4000]
-    return "data-cp=" in tail
+    return m.group(0) if "data-cp=" in tail else None
 
-def resolves(dev, path, view, seats):
+def end_tag(dev, path, view, seats):
+    """The port element a plan end lands on, as its opening tag, or None."""
     if "/module/" in path:                       # below a bay: the seated card's skin,
         bay, rest = path.split("/module/", 1)     # if the plan seats one there -
         ref = seats.get(dev, {}).get(bay)          # otherwise it's already part of the
         if ref:                                     # cast config's own compiled face
-            return port_on(skin_text(ref), f"{comps[ref]['name']}/{rest}") or port_on(skin_text(ref), rest)
-        return port_on(face_text(dev, view), path)
-    return port_on(face_text(dev, view), path)
+            return port_tag(skin_text(ref), f"{comps[ref]['name']}/{rest}") or port_tag(skin_text(ref), rest)
+        return port_tag(face_text(dev, view), path)
+    return port_tag(face_text(dev, view), path)
+
+def resolves(dev, path, view, seats):
+    return end_tag(dev, path, view, seats) is not None
 
 if plan:
     seats = plan.get("seats", {})
@@ -707,10 +713,28 @@ if plan:
     fiber_unseated = [e for l in links if l["media"] == "os2" for e in (l["from"], l["to"])
                       if e[1] not in seats.get(e[0], {})]
     check(not fiber_unseated, "every fiber end seats a connector", str(fiber_unseated))
+    # Spec §8: MEDIA MATCHES AT BOTH ENDS. An os2 end is a cage that takes
+    # the LC-faced QSFP (on the device, or on the card the plan seats), or an
+    # FHD adapter that takes the LC duplex plug; a copper end is a port the
+    # compiled face or card skin marks data-media="rj45".
+    FIBER_TAKES = ("generic/qsfp-lc@1", "generic/lc-duplex-plug@2")
+    def media_ok(media, end):
+        dev, path = end[0], end[1]
+        if media == "os2":
+            return any(r in cage_accepts(dev, path) for r in FIBER_TAKES)
+        if media == "copper":
+            tag = end_tag(dev, path, end[2] if len(end) > 2 else "front", seats) or ""
+            return 'data-media="rj45"' in tag
+        return False
+    mismatched = [(l["media"], e[0], e[1]) for l in links for e in (l["from"], l["to"])
+                  if not media_ok(l["media"], e)]
+    check(not mismatched, "media matches at both ends of every plan cable", str(mismatched))
 else:
     for what in ("every plan device is a cast device", "the plan has its fourteen cables",
                  "every plan end is a drawn port with a connection point",
-                 "every plan seat is one its cage or bay accepts", "every fiber end seats a connector"):
+                 "every link's media is os2 or copper", "every link names its purpose",
+                 "every plan seat is one its cage or bay accepts", "every fiber end seats a connector",
+                 "media matches at both ends of every plan cable"):
         check(False, what, "patching.json is missing or unreadable")
 
 # Stage 4 cables THIS rack now, not the ROADM ring: cables.js draws them from
