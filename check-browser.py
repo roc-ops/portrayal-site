@@ -1526,6 +1526,29 @@ def check_takeaway_cables_2d(page, base):
     return bad
 
 
+@extra("Explorer downloads the device as configured, and its DCIM link names it")
+def check_explorer_configured_download(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=as7726-32x&config=ac-f2b&view=front"
+              f"&swap=port-1~generic%2Fqsfp-lc%402", wait_until="load")
+    page.wait_for_selector('#shell svg [data-ref^="generic/qsfp-lc@2"]', timeout=READY_MS)
+    page.click("details.navmenu summary")
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('a[data-export="svg"]')
+    if dl.value.suggested_filename != "as7726-32x.ac-f2b.front.configured.svg":
+        bad.append(f"explorer: download named {dl.value.suggested_filename!r}")
+    if 'data-ref="generic/qsfp-lc@2' not in pathlib.Path(dl.value.path()).read_text():
+        bad.append("explorer: configured SVG is missing the seated optic")
+    # Setting `a.search` on an anchor resolves it against the page's own URL,
+    # so the attribute comes back absolute (http://.../exporter.html?device=...)
+    # rather than the relative form it started as - hence a substring match.
+    href = page.get_attribute('a[href*="exporter.html"]', "href") or ""
+    if "device=as7726-32x" not in href:
+        bad.append(f"explorer: DCIM export link is {href!r}, expected ?device=as7726-32x")
+    return bad
+
+
 @extra("stage 6 hangs the cables in 3D, and the GLB carries them")
 def check_takeaway_cables_3d(page, base):
     bad = []
