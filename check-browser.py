@@ -1457,6 +1457,28 @@ def check_rear_elevation(page, base):
     return bad
 
 
+@extra("draw.io port cells carry portrayal-path, including ports on a seated card")
+def check_drawio_port_paths(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const F = await import('/site/rack/face.js');
+      const D = await import('/site/drawio.js');
+      const f = await F.configuredFace({ref: 'asr-9006', cfg: 'base', view: 'front',
+        swaps: {'slot-2': 'cisco/a9k-16x100ge-tr@1'}});
+      const xml = D.deviceCells('dev', f.text, f.vb, f.ports, 0, 0, 200, 200).join('');
+      const doc = new DOMParser().parseFromString(`<root>${xml}</root>`, 'application/xml');
+      return {path: xml.includes('portrayal-path="slot-2/module/p0"'),
+              parses: !doc.querySelector('parsererror')};
+    }""")
+    if not r["path"]:
+        bad.append('draw.io: no port cell with portrayal-path="slot-2/module/p0"')
+    if not r["parses"]:
+        bad.append("draw.io: deviceCells output is not well-formed XML")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
