@@ -1175,6 +1175,21 @@ check("index.json" in (HERE / "site" / "schema.js").read_text() and "method: 'HE
 check("assets/schemas/index.json" in (HERE / "refresh-assets.sh").read_text(),
       "refresh-assets.sh writes assets/schemas/index.json", "no index.json written for the schemas")
 
+# ── the rack builder's chassis index ───────────────────────────────────────
+# The catalog grays out what will not fit, which needs every device's RU and
+# depth; those live only in 158 configs.json files (7.9 MB). chassis-index.py
+# distils them into site/rack/chassis.json, and refresh-assets.sh regenerates
+# it after every sync - this is what fails if a sync forgot to.
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("chassis_index", HERE / "chassis-index.py")
+if _spec and (HERE / "chassis-index.py").is_file():
+    _ci = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_ci)
+    _out = HERE / "site" / "rack" / "chassis.json"
+    check(_out.is_file() and _out.read_text() == _ci.text(),
+          "site/rack/chassis.json matches assets/dist", "run ./chassis-index.py")
+else:
+    check(False, "chassis-index.py exists", "the rack builder's catalog has no sizes")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
