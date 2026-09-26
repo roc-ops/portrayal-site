@@ -1078,6 +1078,8 @@ def check_embed(page, base):
         cur = page.evaluate("async () => { await window.portrayalEmbed.ready; return window.portrayalEmbed.current(); }")
         if cur.get("device") != "r740xd":
             bad.append(f"embed: current().device is {cur.get('device')!r}")
+        if not isinstance(cur.get("fields"), dict):
+            bad.append(f"embed: current().fields is {cur.get('fields')!r}, expected a dict")
         for sel in (".site-bar", "#mode"):
             if page.is_visible(sel):
                 bad.append(f"embed: {sel} is visible")
@@ -2137,6 +2139,36 @@ def run_extra(browser, base, only, problems, notes):
         else:
             notes.append(f"ok    {label}")
     return failed
+
+
+@extra("the Explorer lens opens a device with its swaps and fields, and hands them back")
+def check_rack_lens(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    page.evaluate("""() => { window.__lens = import('/site/rack/explorer-lens.js').then(L =>
+      L.openLens({ref: 'as7726-32x', cfg: 'ac-f2b', title: 'AS7726',
+                  swaps: {'port-1': 'generic/qsfp-lc@2'},
+                  fields: {'port-1-occupant': {label: 'LENS-1'}}})); }""")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    page.wait_for_function("""async () => {
+      const w = document.querySelector('.rk-lens iframe')?.contentWindow;
+      if (!w?.portrayalEmbed) return false;
+      await w.portrayalEmbed.ready; return true; }""", timeout=READY_MS)
+    page.click(".rk-lens-done")
+    r = page.evaluate("async () => await window.__lens")
+    if not r:
+        bad.append("lens: resolved null")
+    else:
+        if r.get("device") != "as7726-32x":
+            bad.append(f"lens: device {r.get('device')!r}")
+        if r.get("swaps", {}).get("port-1") != "generic/qsfp-lc@2":
+            bad.append(f"lens: swaps {r.get('swaps')!r}")
+        if r.get("fields", {}).get("port-1-occupant", {}).get("label") != "LENS-1":
+            bad.append(f"lens: fields {r.get('fields')!r}")
+    if page.query_selector(".rk-lens"):
+        bad.append("lens: the overlay is still open after Done")
+    return bad
 
 
 @extra("configuredFace seats cards, rear bays, optics and fields")

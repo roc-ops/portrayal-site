@@ -505,17 +505,27 @@ shell.el.stage.appendChild(host3d);
 
 let mode = '2d', viewer = null, loading = null, loadedKey = '';
 
+// `READY` MEANS FIELDS TOO. A link's `fields=` is applied by applyPendingFields
+// below, one tick after shell.ready - so a caller who awaited shell.ready alone
+// could read current().fields before that landed (rack-builder-1a's lens hit
+// this: `ready` resolved and current().fields was still `{}`). This settles once
+// applyPendingFields has run, whether the URL named any fields or none, and the
+// embed's `ready` waits on it too, so `ready` is the one signal that means
+// "read me now" for everything current() reports.
+let fieldsSettled;
+const fieldsSettledPromise = new Promise(res => { fieldsSettled = res; });
+
 // SYNCHRONOUS, NOT AFTER shell.ready. The showcase reads window.portrayalEmbed
 // off the frame's `load` event and then awaits `.ready` itself - so the object
 // has to exist before the device loads, not after. `current()` is safe to call
 // in that gap: `state.device` is null until the shell has actually loaded a
 // device, so until then this falls back to the URL's own device/config/view
-// (the values the shell is about to apply) and reports no swaps and nothing
-// pulled, rather than reading state that is not there yet.
+// (the values the shell is about to apply) and reports no swaps, no fields and
+// nothing pulled, rather than reading state that is not there yet.
 if (EMBED) {
   const q = new URLSearchParams(location.search);
   window.portrayalEmbed = Object.freeze({
-    ready: shell.ready,
+    ready: shell.ready.then(() => fieldsSettledPromise),
     setMode: m => setMode(m),
     current: () => ({
       device: state.device ?? q.get('device') ?? null,
@@ -523,6 +533,7 @@ if (EMBED) {
       view: state.view ?? q.get('view') ?? null,
       mode,
       swaps: state.device ? {...swapsNow(shell)} : {},
+      fields: state.device ? fieldsNow(shell) : {},
       pulled: state.device ? shell.pulledPaths() : [],
     }),
   });
@@ -805,9 +816,13 @@ for (const a of document.querySelectorAll('a[data-export]')) {
 function applyPendingFields() {
   const map = pendingFields;
   pendingFields = null;
-  if (!map) return;
-  for (const [path, vals] of Object.entries(map)) shell.setFields(path, vals);
-  writeLocation();
+  if (map) {
+    for (const [path, vals] of Object.entries(map)) shell.setFields(path, vals);
+    writeLocation();
+  }
+  // Settled either way - a URL naming none is done applying them too, and the
+  // embed's `ready` is waiting on this same tick regardless.
+  fieldsSettled();
 }
 
 // An optic's latch colour and label: controls beneath the optic menu. Shared
