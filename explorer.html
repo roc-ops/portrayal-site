@@ -152,10 +152,12 @@
     <details class="navmenu">
       <summary>Export</summary>
       <div class="navmenu-items">
-        <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+        <a href="#" data-export="svg">This device as configured (SVG)<span class="hint">the current view, with its cards, optics and labels</span></a>
+        <a href="#" data-export="png">This device as configured (PNG)<span class="hint">the same view as a 2× raster</span></a>
+        <a href="exporter.html" data-carry-device>DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
         <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
         <a href="drawio.html#omnigraffle">OmniGraffle export<span class="hint">stencils with named ports</span></a>
-        <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
+        <a href="drawings.html" data-carry-device>Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
       </div>
     </details>
     <a href="schema.html">Schema</a>
@@ -171,6 +173,8 @@ import { statesOfEl } from './vendor/states.js';
 import { encodeSwaps, searchWith, rawParam } from './vendor/swap.js';
 import { swapsNow, fieldsNow, encodeFields, decodeFields,
          installOpticFields, OPTIC_CSS } from './site/optics.js';
+import { configuredFace } from './site/rack/face.js';
+import { rasterize } from './site/raster.js';
 
 const shell = createShell({
   title: 'Explorer',
@@ -736,9 +740,49 @@ function writeLocation() {
     try { history.replaceState(history.state, '', `${location.pathname}${search}${location.hash}`); }
     catch (err) { /* a sandboxed frame may refuse; nothing else depends on it */ }
   }
+  // The pages that honor ?device= open on this one, not on their own default.
+  for (const a of document.querySelectorAll('a[data-carry-device]'))
+    a.search = `?device=${encodeURIComponent(state.device)}`;
 }
 shell.on('change', writeLocation);
 shell.on('load', writeLocation);
+
+// THE DEVICE AS THE READER CONFIGURED IT, as a file. The same configuredFace
+// the showcase and the Rack Builder export through, handed this page's swaps
+// and fields, so the download is what is on the stage and not the base build.
+function download(blob, name) {
+  const a = Object.assign(document.createElement('a'),
+                          {href: URL.createObjectURL(blob), download: name});
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+async function exportConfigured(kind) {
+  if (!state.device || !state.meta) return;
+  const face = await configuredFace({ref: state.device, cfg: state.cfg, view: state.view,
+                                     swaps: swapsNow(shell), fields: fieldsNow(shell)});
+  if (!face) return;
+  const name = `${state.device}.${state.cfg}.${state.view}.configured`;
+  const svgBlob = new Blob([face.text], {type: 'image/svg+xml'});
+  if (kind === 'svg') return download(svgBlob, `${name}.svg`);
+  const url = URL.createObjectURL(svgBlob);
+  try {
+    const bytes = await rasterize(url, 2);
+    if (bytes) download(new Blob([bytes], {type: 'image/png'}), `${name}.png`);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+for (const a of document.querySelectorAll('a[data-export]')) {
+  a.addEventListener('click', ev => {
+    ev.preventDefault();
+    a.closest('details')?.removeAttribute('open');
+    exportConfigured(a.dataset.export).catch(err => console.warn('[portrayal] export', err));
+  });
+}
 
 /** A LINK'S FIELDS WAIT FOR ITS PARTS. `shell.ready` resolves after the shell
  *  has loaded the device the URL named AND applied its `swap=`, which is when
