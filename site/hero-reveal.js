@@ -344,21 +344,48 @@ function join(pts) {
 // THE HANG. Down from the start with the showcase's sag, then a sweep to the
 // nearer side and on past the frame's edge, where the fade takes it.
 //
-// SHORT: the showcase's sag2d is for a run between two devices; here it is
-// scaled to SAG_SCALE of that, which is the short drop of the approved
-// mockup (the v2 "fading at the sides"). A full sag2d loop swung most tails
-// to the bottom of the frame.
+// sag2d SETS THE DROP: the first control point sits sag2d(run) * SAG_SCALE
+// below the start, `run` being how far the cable goes across to its edge -
+// so, as in the showcase's stage 4, a longer run hangs deeper. SAG_SCALE is
+// 1: the showcase's own rule, unscaled, which is also the short drop of the
+// approved v2 mockup ("fading at the sides").
+//
+// A CEILING, NEVER A FLOOR. Where that drop would carry the curve's lowest
+// point below HANG_FLOOR - out of the frame - it is cut back just far enough
+// to keep it in; no drop is ever raised. check-browser.py holds each cable to
+// exactly this.
 //
 // NESTED: `rank` is the cable's place on its side, nearest the edge first.
 // The nearer a cable starts to the edge, the higher its tail runs out, so a
 // cable from further in loops outside it rather than across it.
-const SAG_SCALE = 0.55;
+export const SAG_SCALE = 1;
+export const HANG_FLOOR = FACE.h + BELOW - 4;   // the lowest a curve's center may go
 const TAIL_Y = 104, TAIL_STEP = 1.8;
+
+// The lowest point of a cubic's y, sampled.
+function lowest(y0, y1, y2, y3) {
+  let m = -Infinity;
+  for (let i = 0; i <= 64; i++) {
+    const t = i / 64, u = 1 - t;
+    m = Math.max(m, u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3);
+  }
+  return m;
+}
+
 function sweep(a, rank) {
   const left = a[0] < FACE.w / 2, ex = left ? -SIDE : FACE.w + SIDE;
-  const ey = Math.min(TAIL_Y + rank * TAIL_STEP, FACE.h + BELOW - 6);
-  const s = sag2d(Math.abs(ex - a[0])) * SAG_SCALE;
-  return `M${r2(a[0])} ${r2(a[1])} C${r2(a[0])} ${r2(Math.max(a[1] + s, ey - 6))} `
+  const ey = Math.min(TAIL_Y + rank * TAIL_STEP, HANG_FLOOR);
+  let s = sag2d(Math.abs(ex - a[0])) * SAG_SCALE;
+  if (lowest(a[1], a[1] + s, ey, ey) > HANG_FLOOR) {
+    // The ceiling: the largest drop whose curve stays in the frame.
+    let lo = 0, hi = s;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      if (lowest(a[1], a[1] + mid, ey, ey) > HANG_FLOOR) hi = mid; else lo = mid;
+    }
+    s = lo;
+  }
+  return `M${r2(a[0])} ${r2(a[1])} C${r2(a[0])} ${r2(a[1] + s)} `
        + `${r2(left ? ex + 60 : ex - 60)} ${r2(ey)} ${r2(ex)} ${r2(ey)}`;
 }
 
@@ -376,15 +403,28 @@ function sideFade(svg) {
   const mask = node('mask', {id: 'hero-side-fade', maskUnits: 'userSpaceOnUse',
                              x: -SIDE, y: 0, width: w, height: h});
   mask.append(node('rect', {x: -SIDE, y: 0, width: w, height: h, fill: 'url(#hero-side-fade-ramp)'}));
-  defs.append(grad, mask);
+  // Where a cable takes the pointer: the face's width only. A mask hides the
+  // faded tails but does not stop them hit-testing, so each cable's hit path
+  // is clipped to the face, where the fade has not begun.
+  const hit = node('clipPath', {id: 'hero-cable-hit'});
+  hit.append(node('rect', {x: 0, y: 0, width: FACE.w, height: h}));
+  defs.append(grad, mask, hit);
 }
 
+// A strand is drawn and takes the pointer as drawn: it is all on the face.
+// The main cable is drawn with pointer-events off, and takes the pointer
+// through its own invisible hit path, clipped to the face (see sideFade).
 function stroke(g, d, color, w, main = false) {
+  const off = main ? {'pointer-events': 'none'} : {};
   g.append(node('path', {d, fill: 'none', stroke: '#000', 'stroke-opacity': 0.5,
-                         'stroke-width': r2(w + 0.9), 'stroke-linecap': 'round'}));
-  const p = node('path', {d, fill: 'none', stroke: color, 'stroke-width': r2(w), 'stroke-linecap': 'round'});
+                         'stroke-width': r2(w + 0.9), 'stroke-linecap': 'round', ...off}));
+  const p = node('path', {d, fill: 'none', stroke: color, 'stroke-width': r2(w), 'stroke-linecap': 'round', ...off});
   if (main) p.setAttribute('data-main', '');
   g.append(p);
+  if (main) {
+    g.append(node('path', {d, fill: 'none', stroke: 'transparent', 'stroke-width': r2(w + 1.2),
+                           'pointer-events': 'stroke', 'clip-path': 'url(#hero-cable-hit)', 'data-hit': ''}));
+  }
 }
 
 // ONE CABLE PER LINK, hung from its seated part. Painted lowest-top first -
@@ -563,14 +603,29 @@ export async function heroReveal(host) {
     const x = ('touches' in ev ? ev.touches[0].clientX : ev.clientX) - box.left;
     split(Math.max(0, Math.min(100, (x / box.width) * 100)));
   };
+  // THE HANDLE ALWAYS DRAGS. It is pointer-events: none (so it never hides
+  // the drawing from a hover), which means a press on it lands on whatever is
+  // under it - often a cable. So the stage decides first, in the capture
+  // phase: a press on the grip, or on the bar itself, starts the drag and
+  // goes no further, whatever is under it. Anywhere else, a press on a cable
+  // is asking about the cable (hero cables' own pointerdown), and a press off
+  // one moves the divider there, as always.
+  const grip = handle.querySelector('.reveal-grip');
+  const onHandle = ev => {
+    const g = grip.getBoundingClientRect(), h = handle.getBoundingClientRect();
+    const gx = g.x + g.width / 2, gy = g.y + g.height / 2;
+    return Math.hypot(ev.clientX - gx, ev.clientY - gy) <= g.width / 2 + 4
+        || (Math.abs(ev.clientX - (h.x + h.width / 2)) <= h.width / 2 + 3
+            && ev.clientY >= h.top && ev.clientY <= h.bottom);
+  };
   stage.addEventListener('pointerdown', ev => {
-    // A pointer on a cable is asking about the cable, not moving the divider.
-    // The drag still starts anywhere else, the handle included.
-    if (ev.target.closest?.('[data-hero-cable]')) return;
+    const grab = onHandle(ev);
+    if (!grab && ev.target.closest?.('[data-hero-cable]')) return;
+    if (grab) ev.stopPropagation();
     dragging = true; at(ev);
     // Stops the drag becoming a text selection across the silkscreen.
     ev.preventDefault();
-  });
+  }, {capture: true});
   stage.addEventListener('dragstart', ev => ev.preventDefault());
   stage.addEventListener('selectstart', ev => {
     if (dragging) ev.preventDefault();

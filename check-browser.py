@@ -419,21 +419,120 @@ def check_hero_cables(page):
             bad.append(f"hero: the caption's default is not port-67 ({caption()!r})")
     step("default caption", default_caption)
 
+    split_of = lambda: page.evaluate("() => document.querySelector('#hero-reveal .reveal-stage').style.getPropertyValue('--split')")
+    set_split = lambda v: page.evaluate("""v => { const r = document.querySelector('#hero-reveal .reveal-range');
+            r.value = String(v); r.dispatchEvent(new Event('input')); }""", v)
+
     def hover():
-        # The whole rich side shown, so the pointer can reach port-13's cable.
-        page.evaluate("""() => { const r = document.querySelector('#hero-reveal .reveal-range');
-            r.value = '0'; r.dispatchEvent(new Event('input')); }""")
-        at = page.evaluate(HERO_CABLE_POINT_JS, "port-13")
-        if not at:
-            bad.append("hero: nowhere on port-13's cable can the pointer reach it"); return
-        page.mouse.move(at[0], at[1])
-        cap = caption()
-        if "port-13" not in cap or "25G DAC" not in cap:
-            bad.append(f"hero: hovering port-13's cable did not name it in the caption ({cap!r})")
-        page.mouse.move(0, 0)
-        if "port-67" not in caption():
-            bad.append(f"hero: leaving the cable did not restore the caption ({caption()!r})")
+        # The whole rich side shown, so the pointer can reach port-13's cable;
+        # the split put back afterwards, so later steps see the page as loaded.
+        before = page.evaluate("() => document.querySelector('#hero-reveal .reveal-range').value")
+        set_split(0)
+        try:
+            at = page.evaluate(HERO_CABLE_POINT_JS, "port-13")
+            if not at:
+                bad.append("hero: nowhere on port-13's cable can the pointer reach it"); return
+            page.mouse.move(at[0], at[1])
+            cap = caption()
+            if "port-13" not in cap or "25G DAC" not in cap:
+                bad.append(f"hero: hovering port-13's cable did not name it in the caption ({cap!r})")
+            page.mouse.move(0, 0)
+            if "port-67" not in caption():
+                bad.append(f"hero: leaving the cable did not restore the caption ({caption()!r})")
+        finally:
+            set_split(before)
+        if split_of() != "50%":
+            bad.append(f"hero: the hover step left the split at {split_of()!r}")
     step("hover", hover)
+
+    def grip():
+        # THE GRIP DRAGS EVEN OVER A CABLE. The handle is pointer-events: none,
+        # so a press on the grip lands on whatever is under it; with the split
+        # on a cable's column, that is the cable.
+        found = page.evaluate("""() => {
+            const stage = document.querySelector('#hero-reveal .reveal-stage');
+            const r = document.querySelector('#hero-reveal .reveal-range');
+            for (const g of document.querySelectorAll('#hero-reveal [data-hero-cable]')) {
+                const x = +g.querySelector('path[data-main]').getAttribute('d').match(/^M\\s*([-\\d.]+)/)[1];
+                // The split just left of the cable, and the press a few px
+                // right of the grip's center - still well inside the grip -
+                // where the cable shows (left of the split is the PNG).
+                r.value = String((x - 1 + 44) / 524 * 100); r.dispatchEvent(new Event('input'));
+                const b = document.querySelector('#hero-reveal .reveal-grip').getBoundingClientRect();
+                const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+                for (let px = 0; px <= b.width / 2 - 3; px++) {
+                    const hit = document.elementFromPoint(cx + px, cy);
+                    if (hit && hit.closest('[data-hero-cable]'))
+                        return {port: g.dataset.heroCable, at: [cx + px, cy], split: stage.style.getPropertyValue('--split')};
+                }
+            }
+            return null; }""")
+        if not found:
+            bad.append("hero: no cable column puts a cable under the grip (the drag test has nothing to test)"); return
+        try:
+            page.mouse.move(*found["at"]); page.mouse.down()
+            page.mouse.move(found["at"][0] + 90, found["at"][1], steps=4); page.mouse.up()
+            if split_of() == found["split"]:
+                bad.append(f"hero: the grip over {found['port']}'s cable did not drag the divider ({found})")
+        finally:
+            set_split(50)
+    step("grip over a cable", grip)
+
+    def sag():
+        # sag2d SETS EACH DROP (ruling R3): a cable's first control point sits
+        # sag2d(run) * SAG_SCALE below its start, clamped only where the curve
+        # would otherwise leave the frame (below HANG_FLOOR) - and a longer
+        # run hangs deeper.
+        got = page.evaluate("""async () => {
+            const H = await import('/site/hero-reveal.js');
+            const {sag2d} = await import('/site/showcase/cables.js');
+            if (!(H.SAG_SCALE > 0) || !(H.HANG_FLOOR > 0)) return {missing: true};
+            const maxY = (y0, y1, y2, y3) => { let m = -Infinity; for (let i = 0; i <= 200; i++) { const t = i / 200, u = 1 - t;
+                m = Math.max(m, u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3); } return m; };
+            const rows = [...document.querySelectorAll('#hero-reveal [data-hero-cable]')].map(g => {
+                const n = g.querySelector('path[data-main]').getAttribute('d').match(/-?[\\d.]+/g).map(Number);
+                const [x0, y0, , y1, , y2, x3, y3] = n;
+                const run = Math.abs(x3 - x0), want = sag2d(run) * H.SAG_SCALE, drop = y1 - y0;
+                const low = maxY(y0, y1, y2, y3), wantLow = maxY(y0, y0 + want, y2, y3);
+                const free = Math.abs(drop - want) < 0.05;
+                const fair = free ? low <= H.HANG_FLOOR + 0.1
+                                  : drop < want && wantLow > H.HANG_FLOOR && low <= H.HANG_FLOOR + 0.1;
+                return {port: g.dataset.heroCable, run, drop, want, low, free, fair};
+            });
+            return {rows}; }""")
+        if got.get("missing"):
+            bad.append("hero: hero-reveal.js exports no SAG_SCALE / HANG_FLOOR to hold the sag to"); return
+        rows = got["rows"]
+        unfair = [f"{r['port']} drop {r['drop']:.1f} vs sag2d {r['want']:.1f}" for r in rows if not r["fair"]]
+        if unfair: bad.append(f"hero: drops not set by sag2d, nor clamped only to stay in the frame {unfair}")
+        free = [r for r in rows if r["free"]]
+        pairs = [(a, b) for a in free for b in free if a["run"] + 1 < b["run"] and a["drop"] + 1 < b["drop"]]
+        if not pairs: bad.append("hero: no two cables of different run lengths hang to different sag2d drops")
+    step("sag", sag)
+
+    def faded_tails():
+        # A TAIL IN THE FADE DOES NOT TAKE THE POINTER. A mask hides a stroke
+        # without stopping it hit-testing, so an invisible tail near the frame's
+        # edge would take hovers and block the drag there.
+        set_split(0)
+        try:
+            hits = page.evaluate("""() => {
+                const out = [];
+                for (const g of document.querySelectorAll('#hero-reveal [data-hero-cable]')) {
+                    const p = g.querySelector('path[data-main]'), m = p.getScreenCTM(), n = p.getTotalLength();
+                    for (let i = 0; i <= 80; i++) {
+                        const q = p.getPointAtLength(n * i / 80);
+                        if (q.x > -22 && q.x < 458) continue;           // only the outer half of the fade
+                        const s = new DOMPoint(q.x, q.y).matrixTransform(m);
+                        const hit = document.elementFromPoint(s.x, s.y);
+                        if (hit && hit.closest('[data-hero-cable]')) { out.push(g.dataset.heroCable); break; }
+                    }
+                }
+                return out; }""")
+            if hits: bad.append(f"hero: faded tails still take the pointer {hits}")
+        finally:
+            set_split(50)
+    step("faded tails", faded_tails)
 
     def keyboard():
         page.focus('#hero-reveal [data-hero-cable="port-4"]', timeout=5000)
