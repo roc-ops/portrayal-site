@@ -39,6 +39,13 @@ jobs:
       - name: the contract with Portrayal
         run: python3 check-contract.py
 
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+
+      # THE RACK MODEL, on its own: pure modules, no browser, a second or two.
+      - name: the rack builder's pure modules
+        run: node --test tests/rack/*.test.mjs
+
       - name: install a browser
         run: |
           python3 -m pip install --disable-pip-version-check playwright

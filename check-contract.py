@@ -484,12 +484,17 @@ if opt.is_file():
 # was a copy of the left instead of its mirror, so its numbers sat inside and
 # its holes outside. rails.js now holds the only description, and neither
 # renderer may keep its own.
-rails = HERE / "site" / "showcase" / "rails.js"
+rails = HERE / "site" / "rack" / "rails.js"
 rtxt = rails.read_text() if rails.is_file() else ""
-check(bool(rtxt), "site/showcase/rails.js exists", "the rail has no single description")
-for name in ("RU", "RAIL_W", "OPENING", "HOLE_CC", "HOLE_DY", "HOLE_SIZE", "SIDES"):
+check(bool(rtxt), "site/rack/rails.js exists", "the rail has no single description")
+for name in ("RU", "RAIL_W", "OPENING", "HOLE_CC", "HOLE_DY", "HOLE_SQUARE", "HOLE_ROUND", "HOLE_SIZE", "SIDES"):
     check(re.search(rf"export const {name}\b", rtxt) is not None,
           f"rails.js exports {name}", "missing")
+shim = (HERE / "site" / "showcase" / "rails.js")
+check(shim.is_file() and "export * from '../rack/rails.js'" in shim.read_text()
+      and "export const" not in shim.read_text(),
+      "site/showcase/rails.js only re-exports site/rack/rails.js",
+      "the rail has a second description")
 # THE MIRROR, STRUCTURALLY (spec §6). SIDES is computed from the constants
 # above; recompute it here from the same numbers and hold its shape, so a
 # right rail that copies the left instead of mirroring it fails here. On
@@ -524,7 +529,7 @@ check("0.22" not in rack_js and "0.78" not in rack_js,
       "rack.js has no non-EIA hole fractions", "holes must come from HOLE_DY")
 
 r3d = (HERE / "site" / "rack3d.js").read_text()
-check("from './showcase/rails.js'" in r3d, "rack3d.js draws its rails from rails.js")
+check("from './rack/rails.js'" in r3d, "rack3d.js draws its rails from rails.js")
 check(not re.search(r"\[\s*6\.35\s*,\s*22\.22", r3d),
       "rack3d.js keeps no hole positions of its own", "HOLE_DY belongs to rails.js")
 
