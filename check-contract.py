@@ -702,17 +702,25 @@ if plan:
         if "/module/" in key:                    # a card's or cassette's own cage
             bay, rest = key.split("/module/", 1)
             card = seats.get(dev, {}).get(bay)
-            if not card:                         # the cast config's own module (the FHD's cassettes)
+            if not card:                         # the cast config's own module: the one it names
                 cfg = next(c for c in idx["configs"] if c["name"] == dict(cast)[dev])
-                card = (cfg.get("bays") or {}).get(bay)
+                # (the FHD's cassettes), else the bay's default (the R740xd's NDC)
+                card = (cfg.get("bays") or {}).get(bay) or (bays.get(bay) or {}).get("default")
             return next((c.get("accepts") or [] for c in comps.get(card, {}).get("cages") or []
                          if c.get("id") == rest), [])
         return []
     refused = [(d, k, r) for d, ss in seats.items() for k, r in ss.items() if r not in cage_accepts(d, k)]
     check(not refused, "every plan seat is one its cage or bay accepts", str(refused))
-    fiber_unseated = [e for l in links if l["media"] == "os2" for e in (l["from"], l["to"])
-                      if e[1] not in seats.get(e[0], {})]
-    check(not fiber_unseated, "every fiber end seats a connector", str(fiber_unseated))
+    # EVERY END SEATS A CONNECTOR, fiber and copper alike: an optic (whose
+    # plugs follow it) or a duplex plug for fiber, an RJ45 plug for copper
+    # (Portrayal #610). A cable lands on what the plan seats, never a bare jack.
+    unseated = [e for l in links for e in (l["from"], l["to"]) if e[1] not in seats.get(e[0], {})]
+    check(not unseated, "every end seats a connector", str(unseated))
+    RJ45_PLUG = "generic/rj45-plug@1"
+    copper_bad = [(e[0], e[1], seats.get(e[0], {}).get(e[1])) for l in links if l["media"] == "copper"
+                  for e in (l["from"], l["to"])
+                  if seats.get(e[0], {}).get(e[1]) != RJ45_PLUG or RJ45_PLUG not in cage_accepts(e[0], e[1])]
+    check(not copper_bad, "every copper end seats an RJ45 plug its jack accepts", str(copper_bad))
     # Spec §8: MEDIA MATCHES AT BOTH ENDS. An os2 end is a cage that takes
     # the LC-faced QSFP (on the device, or on the card the plan seats), or an
     # FHD adapter that takes the LC duplex plug; a copper end is a port the
@@ -733,7 +741,8 @@ else:
     for what in ("every plan device is a cast device", "the plan has its fourteen cables",
                  "every plan end is a drawn port with a connection point",
                  "every link's media is os2 or copper", "every link names its purpose",
-                 "every plan seat is one its cage or bay accepts", "every fiber end seats a connector",
+                 "every plan seat is one its cage or bay accepts", "every end seats a connector",
+                 "every copper end seats an RJ45 plug its jack accepts",
                  "media matches at both ends of every plan cable"):
         check(False, what, "patching.json is missing or unreadable")
 
