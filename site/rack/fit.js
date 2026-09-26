@@ -112,19 +112,23 @@ export function shrinkRack(rack, newHeight, chassisOf) {
     })
     .sort((a, b) => a.lo - b.lo); // original bottom-to-top order
 
+  // A shift per surviving item, not a repacked list: the returned rack keeps
+  // rack.items in its ORIGINAL order (only positions change), so nothing
+  // downstream that assumes item order is stable sees them shuffled by
+  // cluster.
   const pack = clusterList => {
     let cursor = 1;
+    const shiftById = new Map();
     const moved = [];
-    const packed = clusterList.map(c => {
+    for (const c of clusterList) {
       const shift = cursor - c.lo;
-      const packedItems = c.items.map(it => {
+      for (const it of c.items) {
+        shiftById.set(it.id, shift);
         if (shift !== 0) moved.push(it.id);
-        return {...it, ru: it.ru + shift};
-      });
+      }
       cursor += c.height;
-      return packedItems;
-    });
-    return {items: packed.flat(), moved, top: cursor - 1};
+    }
+    return {shiftById, moved};
   };
 
   let survivors = clusters;
@@ -137,7 +141,11 @@ export function shrinkRack(rack, newHeight, chassisOf) {
       survivors = rest;
     }
   }
-  const {items: packedItems, moved} = pack(survivors);
+  const {shiftById, moved} = pack(survivors);
+  const removedIds = new Set(removed.map(i => i.id));
+  const packedItems = items
+    .filter(it => !removedIds.has(it.id))
+    .map(it => (shiftById.get(it.id) ? {...it, ru: it.ru + shiftById.get(it.id)} : it));
   return {rack: withFrameHeight(packedItems), moved, removed};
 }
 

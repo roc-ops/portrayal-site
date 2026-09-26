@@ -153,3 +153,31 @@ test('shrinkRack: shrinking to exactly the packed height removes nothing', () =>
   assert.deepEqual(removed, []);
   assert.deepEqual(next.items.map(i => [i.label, i.ru]), [['A', 1], ['B', 2], ['C', 3]]);
 });
+
+test('shrinkRack: cluster membership is transitive - A overlaps B, B overlaps C, so all three pack together', () => {
+  // A (2U, front, U10-11) overlaps B (2U, rear, U11-12); B overlaps C (1U,
+  // front, U12) - A and C never touch directly, but share a cluster via B.
+  let r = place(M.newRack(), 'r740xd', 10, 'front', 'A');
+  r = place(r, 'r740xd', 11, 'rear', 'B');
+  r = place(r, 'tm-280', 12, 'front', 'C');
+  const {rack: next, moved} = F.shrinkRack(r, 5, chassisOf);
+  const byLabel = label => next.items.find(i => i.label === label);
+  assert.deepEqual(['A', 'B', 'C'].map(l => byLabel(l).ru), [1, 2, 3]);
+  // Faces and each item's offset within the cluster are untouched - only the
+  // whole cluster moved.
+  assert.equal(byLabel('A').face, 'front');
+  assert.equal(byLabel('B').face, 'rear');
+  assert.equal(byLabel('C').face, 'front');
+  assert.deepEqual(moved.slice().sort(), next.items.map(i => i.id).sort());
+});
+
+test('shrinkRack: rack.items keeps its original order - only positions (and membership) change', () => {
+  // Placed out of U order: X at U30, Y at U5, Z at U20.
+  let r = place(M.newRack(), 'tm-280', 30, 'front', 'X');
+  r = place(r, 'as7726-32x', 5, 'front', 'Y');
+  r = place(r, 'fhd-1ufce', 20, 'front', 'Z');
+  const before = r.items.map(i => i.id);
+  const {rack: next} = F.shrinkRack(r, 12, chassisOf);
+  assert.deepEqual(next.items.map(i => i.id), before, 'shrinkRack must not reorder rack.items');
+  assert.deepEqual(next.items.map(i => [i.label, i.ru]), [['X', 3], ['Y', 1], ['Z', 2]]);
+});
