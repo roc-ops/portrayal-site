@@ -9,6 +9,7 @@
 // argument the rack makes: one source, several views - not several sources.
 
 import {DIST, stage3d, stageRack, loading, svgEl} from './artifact.js';
+import {configuredFace, components as faceComponents, loadSkin as faceLoadSkin} from '../rack/face.js';
 // A circular import: stage-rail.js imports the stages, which import this. It is
 // safe because epoch and stale are only ever read inside mount3d, never while
 // the modules are being evaluated.
@@ -99,8 +100,7 @@ export async function loadMeta() {
     try { m[e.ref] = await jdist(`${DIST}${e.ref}.configs.json`); }
     catch (err) { console.warn('[portrayal] no config index for', e.ref, err); }
   }
-  try { components = (await jdist(`${DIST}components.json`)).components; }
-  catch (err) { console.warn('[portrayal] no component index', err); components = []; }
+  components = await faceComponents();
   meta = m;
 
   let next = 1;
@@ -142,27 +142,23 @@ export function unitsOf(ref) {
 // writing a second copy that can drift from it.
 export const byRef = ref => (components || []).find(
   c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref.split(':')[0]);
-export async function loadSkin(ref) {
-  const c = byRef(ref);
-  if (!c) return null;
-  const skin = c.skins?.includes('default') ? 'default' : c.skins?.[0];
-  const url = `${DIST}components/${c.ns}--${c.name}--${c.major}--${skin}.svg`;
-  const r = await fetch(url);
-  if (!r.ok) return null;
-  return {comp: c, text: await r.text()};
-}
+// One skin loader for the showcase and every configured face, so the two can
+// never resolve a component differently.
+export const loadSkin = faceLoadSkin;
 export const shortRef = ref => (ref || '(empty)').split('/').pop().replace(/@\d+$/, '');
 
 // ── 2D elevation ─────────────────────────────────────────────────────────
-// Rails and RU marks for heightRU units, then each device's compiled front face
-// at its own bottom U. An empty stack is an empty rack - stage 0 draws exactly
-// that.
+// Rails and RU marks for heightRU units, then each device's compiled face at
+// its own bottom U, on whichever view is asked for. An empty stack is an
+// empty rack - stage 0 draws exactly that.
 //
-// A device's overrides are seated the way the 3D rack seats them: through
-// swap.js's face-level pass, bays AND cages, never a bays-only call. Seating
-// the bays alone is how stage 3's optics went missing from stage 6's SVG and
-// PNG - the AS7726-32X has no front bays at all, and its 34 cages are in
-// `cages.front`.
+// Each device is drawn through `configuredFace`, which seats bays, cages AND
+// rear holes on any view - not the front alone. Seating the bays alone is how
+// stage 3's optics went missing from stage 6's SVG and PNG - the AS7726-32X
+// has no front bays at all, and its 34 cages are in `cages.front`. And a
+// device outside the cast - which is every Rack Builder device - has no entry
+// in `loadMeta`'s index at all; `configuredFace` loads its own configs.json,
+// so it seats regardless.
 export async function build2dElevation({stack, heightRU, overrides: ov = overrides,
                                         view = 'front', baseRU = 1}) {
   const totalH = heightRU * RU;
@@ -197,10 +193,17 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
 
   let styled = false;
   for (const e of stack) {
-    const url = `${DIST}${e.ref}.${e.cfg}.${view}.svg`;
-    const text = await fetch(url).then(r => r.ok ? r.text() : null);
-    if (!text) continue;
-    const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    // The face as configured, on whichever view is asked for - front OR rear.
+    // `configuredFace` seats bays and cages, keyed per view in the index
+    // (e.g. cages.front, cages.rear), AND the rear holes that show a swapped
+    // bay's back - the plan's RJ45 plugs in the R740xd's rear iDRAC and NDC
+    // ports, or a swap made on a rear bay in the Inspect lens, which is
+    // Explorer. A key that is not on the face drawn names no bay or cage of
+    // it, and seats nothing.
+    const face = await configuredFace({ref: e.ref, cfg: e.cfg, view,
+                                       swaps: ov?.[e.ref] || {}, turned: !!e.turned});
+    if (!face) continue;
+    const doc = new DOMParser().parseFromString(face.text, 'image/svg+xml');
     const root = doc.documentElement;
     const vb = (root.getAttribute('viewBox') || '').split(/\s+/).map(Number);
     const w = parseFloat(root.getAttribute('width')) || vb[2];
@@ -219,18 +222,6 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
       g.append(document.importNode(kid, true));
     }
     out.append(g);
-    const mine = ov?.[e.ref];
-    // Each face is seated against ITS OWN bays and cages: they are keyed per
-    // view in the index (e.g. cages.front, cages.rear), and one device's
-    // overrides hold keys for either - the plan's RJ45 plugs in the R740xd's
-    // rear iDRAC and NDC ports, or a swap made on a rear bay in the Inspect
-    // lens, which is Explorer. A key that is not on the face drawn names no
-    // bay or cage of it, and seats nothing.
-    if (mine && Object.keys(mine).length) {
-      const {applyFaceOverrides} = await import('../../vendor/swap.js');
-      await applyFaceOverrides(g, {bays: baysOf(e.ref)[view] || [], cages: cagesOf(e.ref)[view] || []},
-                               mine, loadSkin, byRef);
-    }
   }
   return out;
 }

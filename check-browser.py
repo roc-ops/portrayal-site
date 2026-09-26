@@ -1423,6 +1423,24 @@ def check_configured_face(page, base):
     return bad
 
 
+@extra("the rear elevation seats a swapped rear bay")
+def check_rear_elevation(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    html = page.evaluate("""async () => {
+      const {build2dElevation} = await import('/site/showcase/rack.js');
+      const svg = await build2dElevation({
+        stack: [{ref: 'as7726-32x', cfg: 'ac-f2b', u: 1, ru: 1, label: 'probe'}],
+        heightRU: 2, view: 'rear',
+        overrides: {'as7726-32x': {'psu-2': 'common/psu-dc-650@2'}}});
+      return svg.outerHTML;
+    }""")
+    if 'data-ref="common/psu-dc-650@2' not in html:
+        bad.append("rear elevation: psu-2 swap to common/psu-dc-650@2 not seated")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
