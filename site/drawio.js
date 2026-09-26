@@ -221,6 +221,17 @@ const cell = (id, value, style, x, y, w, h, parent = '1') =>
   `width="${Math.max(w, 0.5).toFixed(2)}" height="${Math.max(h, 0.5).toFixed(2)}" ` +
   `as="geometry"/></mxCell>`;
 
+// A PORT names the drawing path it came from. The cell id is a slug of the
+// SVG id, which is namespaced for a port on a seated card
+// (slot-2--module--p0); the path (slot-2/module/p0) is what a cable plan,
+// Explorer's swaps and the Rack Builder all speak, so a connector drawn later
+// finds its port by this attribute instead of reversing the slug.
+const portCell = (id, path, style, x, y, w, h, parent) =>
+  `<object label="" portrayal-path="${esc(path)}" id="${esc(id)}"><mxCell style="${style}" ` +
+  `vertex="1" parent="${esc(parent)}"><mxGeometry x="${x.toFixed(2)}" y="${y.toFixed(2)}" ` +
+  `width="${Math.max(w, 0.5).toFixed(2)}" height="${Math.max(h, 0.5).toFixed(2)}" ` +
+  `as="geometry"/></mxCell></object>`;
+
 const model = cells =>
   `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${cells.join('')}` +
   `</root></mxGraphModel>`;
@@ -289,7 +300,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
       `width="${bw}" height="${bh}" as="alternateBounds"/></mxGeometry>` +
       `</mxCell></object>`);
     for (const p of mine) {
-      out.push(cell(`${id}-${p.id}`, '',
+      out.push(portCell(`${id}-${p.id}`, p.path || p.id,
         `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
         p.x * sx - bx, p.y * sy - by,
         Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), `${id}-${b.id}`));
@@ -297,7 +308,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
   }
   for (const p of ports) {
     if (owned.has(p) || p.cls === 'bay') continue;
-    out.push(cell(`${id}-${p.id}`, '', `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
+    out.push(portCell(`${id}-${p.id}`, p.path || p.id, `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
       p.x * sx, p.y * sy, Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), id));
   }
   // A bay with no ports of its own is still worth being a cell - it is an empty
