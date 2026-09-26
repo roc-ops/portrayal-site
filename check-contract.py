@@ -1190,6 +1190,13 @@ if _spec and (HERE / "chassis-index.py").is_file():
 else:
     check(False, "chassis-index.py exists", "the rack builder's catalog has no sizes")
 
+# ── every nav names the Rack Builder ───────────────────────────────────────
+for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",
+                  "annotate.html", "drawio.html", "exporter.html", "index.html", "rack.html"):
+    p = HERE / page_name
+    check(p.is_file() and 'href="rack.html"' in p.read_text(),
+          f"{page_name} links the Rack Builder", "the nav is copied by hand; add it there")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

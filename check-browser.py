@@ -47,7 +47,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
          "schema.html", "kit.html", "schematic.html", "marks-harness.html",
-         "viewer3d-harness.html"]
+         "viewer3d-harness.html", "rack.html"]
 
 # REQUESTS THAT ARE MEANT TO MISS. compare.html overlays a photograph on a
 # drawing and asks for one per view; this repository has never shipped any, and
@@ -2899,6 +2899,39 @@ def check_narrow_tool_pages(page, base):
             if box[0] < 0 or box[1] > 360:
                 bad.append(f"{name}: at 360px the {label} menu opens off screen, "
                            f"from x={box[0]} to x={box[1]}")
+    return bad
+
+
+@extra("rack.html: a 42U four-post rack on first open, frame edits redraw and survive a reload")
+def check_rack_page(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    counts = lambda: page.evaluate("""() => ['front', 'rear'].map(f =>
+      document.querySelectorAll(`svg[data-pane="${f}"] rect.rk-u`).length)""")
+    if counts() != [42, 42]:
+        bad.append(f"rack page: U targets {counts()}, expected [42, 42]")
+    page.click("#frameBtn")
+    page.fill("#fHeight", "24")
+    page.dispatch_event("#fHeight", "change")
+    # The side panel is redrawn after each change: wait for it, then the next control.
+    page.wait_for_function("""() => document.querySelectorAll('svg[data-pane="front"] rect.rk-u').length === 24""",
+                           timeout=READY_MS)
+    page.select_option("#fHoles", "tapped")
+    page.wait_for_function("""() => document.querySelector('svg[data-pane="front"] circle[data-rail-hole]')""",
+                           timeout=READY_MS)
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if counts() != [24, 24]:
+        bad.append(f"rack page: after reload U targets {counts()}, expected [24, 24]")
+    if not page.query_selector('svg[data-pane="rear"] circle[data-rail-hole]'):
+        bad.append("rack page: tapped holes did not survive the reload")
+    if page.get_attribute('.site-bar a[href="rack.html"]', "aria-current") != "page":
+        bad.append("rack page: the nav does not mark Rack Builder as the current page")
     return bad
 
 
