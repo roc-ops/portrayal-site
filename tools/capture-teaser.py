@@ -83,23 +83,30 @@ def video(browser, base):
     page.evaluate("() => window.__hero3d.aim(0)")
     page.wait_for_timeout(1500)   # faces and relief settle
 
-    # Poster: the first frame of the loop.
-    poster = page.evaluate("""() => document.querySelector('#hero-3d canvas')
-        .toDataURL('image/jpeg', 0.9)""")
-    (OUT / "hero-3d-poster.jpg").write_bytes(base64.b64decode(poster.split(",", 1)[1]))
+    # Poster: the first frame of the loop. A screenshot of the canvas element,
+    # not toDataURL - a WebGL canvas without preserveDrawingBuffer reads back
+    # blank between frames, which is what the first capture got.
+    page.locator("#hero-3d canvas").screenshot(path=str(OUT / "hero-3d-poster.jpg"), type="jpeg", quality=88)
 
     for mime, name in (("video/webm;codecs=vp9", "hero-3d.webm"),
                        ("video/mp4;codecs=avc1.640028", "hero-3d.mp4")):
         data = page.evaluate("""async ([mime, period, fps]) => {
             if (!MediaRecorder.isTypeSupported(mime)) return {error: 'unsupported ' + mime};
-            const canvas = document.querySelector('#hero-3d canvas');
+            // Recorded from a 2D copy, filled in the same task as each render:
+            // the WebGL canvas's buffer is not preserved, and recording it
+            // directly gave a frozen first frame.
+            const gl = document.querySelector('#hero-3d canvas');
+            const canvas = document.createElement('canvas');
+            canvas.width = gl.width; canvas.height = gl.height;
+            const ctx = canvas.getContext('2d');
+            const copy = () => ctx.drawImage(gl, 0, 0);
             const stream = canvas.captureStream(fps);
             const rec = new MediaRecorder(stream, {mimeType: mime, videoBitsPerSecond: 2500000});
             const chunks = [];
             rec.ondataavailable = e => e.data.size && chunks.push(e.data);
             const done = new Promise(r => rec.onstop = r);
             const sway = window.__hero3d.sway;
-            window.__hero3d.aim(0);
+            window.__hero3d.aim(0); copy();
             await new Promise(r => requestAnimationFrame(r));
             rec.start();
             const t0 = performance.now();
@@ -109,12 +116,13 @@ def video(browser, base):
                     const t = (performance.now() - t0) / 1000;
                     if (t >= period) return resolve();
                     window.__hero3d.aim(sway * Math.sin(2 * Math.PI * t / period));
+                    copy();
                     frames++;
                     requestAnimationFrame(step);
                 };
                 requestAnimationFrame(step);
             });
-            window.__hero3d.aim(0);
+            window.__hero3d.aim(0); copy();
             await new Promise(r => requestAnimationFrame(r));
             rec.stop();
             await done;

@@ -454,6 +454,10 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
           controls.target.copy(openTarget);
           camera.lookAt(openTarget);
           controls.update();
+          // Rendered now, so a caller can copy the canvas in this same task:
+          // the drawing buffer is not preserved, and captureStream on the
+          // WebGL canvas itself hands a recorder a stale frame.
+          renderer.render(scene, camera);
         },
         // The device's front face's share of the canvas width at the opening.
         deviceShare() {

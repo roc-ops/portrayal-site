@@ -22,8 +22,11 @@
 <style>
   /* The teaser that holds the domain until launch. Deliberately self-contained:
      it is what the deploy publishes today, so it must not reach into assets/ or
-     vendor/ - those are a snapshot of Portrayal and are not public yet. The
-     hero is a still of site/hero-reveal.js, captured in the dark theme.
+     vendor/ - those are a snapshot of Portrayal and are not public yet. So the
+     two visuals are pixels captured from the real front-page hero, never the
+     renderer itself: hero-switch.png is the 2D hero with its divider fully
+     open, and hero-3d.webm/.mp4 is the 3D hero over one sway period, looping.
+     Re-capture both with tools/capture-teaser.py after the hero changes.
      Values are copied from brand/tokens.css; dark only, as the brand is. */
   :root {
     --pt-brass: #C79350; --pt-brass-light: #E3BC84;
@@ -65,6 +68,18 @@
                font-family: var(--pt-font-mono); font-weight: 500; font-size: 0.75rem;
                letter-spacing: 0.14em; text-transform: uppercase; color: var(--pt-ink-faint); }
   figcaption .addr { color: var(--pt-brass); }
+  .caption-one { justify-content: flex-start; }
+  /* The 3D loop: the page's ground shows through at its edges, as the live
+     panel's CSS mask does on the full site. */
+  .turn { margin-top: clamp(2rem, 5vw, 3rem); }
+  .turn video { display: block; width: 100%; height: auto; aspect-ratio: 1608 / 417;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent),
+                        linear-gradient(to bottom, #000 80%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent),
+                linear-gradient(to bottom, #000 80%, transparent);
+    mask-composite: intersect; }
+  .turn .tagline { margin-bottom: 1rem; }
   h1 { margin: clamp(1.5rem, 4vw, 2.5rem) 0 1.1rem;
        font-family: var(--pt-font-display); font-weight: 800;
        font-size: clamp(2.2rem, 7vw, 4.4rem); line-height: 1.05;
@@ -97,10 +112,19 @@
     <p class="tagline">A picture is worth a thousand words.<br>
        <span>An addressable picture answers questions.</span></p>
     <figure>
-      <img src="hero.png" width="1072" height="285"
-           alt="A UfiSpace S9600-72XC faceplate split down the middle. Left of the divider is an ordinary picture; right of it is the same drawing compiled by Portrayal, with ports labeled by optic and a callout on port-67 reading 100G LR4, vni 110100, to border-2.">
-      <figcaption><span>A picture</span><span class="addr">Addressable</span></figcaption>
+      <img src="hero-switch.png" width="1072" height="279"
+           alt="A UfiSpace S9600-72XC drawn by Portrayal, with every port that is in use holding its real part - LC optics with their plugs, DAC and AOC cable ends, an RJ45 plug - and a cable hanging from each, colored by what it is, sweeping out to both sides.">
+      <figcaption class="caption-one"><span class="addr">Every port, every part, every cable - addressable</span></figcaption>
     </figure>
+    <div class="turn">
+      <p class="tagline"><span>The same switch, as a model you can turn over.</span></p>
+      <video autoplay muted loop playsinline preload="metadata" poster="hero-3d-poster.jpg"
+             width="1608" height="417"
+             aria-label="The same switch in 3D, turning slowly from side to side, its cables hanging from their parts.">
+        <source src="hero-3d.webm" type="video/webm">
+        <source src="hero-3d.mp4" type="video/mp4">
+      </video>
+    </div>
     <h1>Every physical thing,<br>individually addressable.</h1>
     <p class="lede">
       Portrayal turns a YAML device manifest into a model in real millimeters,
@@ -117,5 +141,11 @@
   <div class="wrap">portrayal.dev</div>
 </footer>
 
+<script>
+  // Reduced motion: stop the loop and keep the poster frame.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (const v of document.querySelectorAll('video')) { v.removeAttribute('autoplay'); v.pause(); }
+  }
+</script>
 </body>
 </html>
