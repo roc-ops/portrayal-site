@@ -11,7 +11,7 @@
 // mounted; without a scene a button still narrows the count.
 
 import {stage3d, stageRack, el, title, lead} from '../artifact.js';
-import {enterPatched} from '../patch-view.js';
+import {enterPatched, LANDS} from '../patch-view.js';
 import {countsBy} from '../plan.js';
 
 // How much of a filtered-out cable is left: enough to see the rack is cabled.
@@ -91,7 +91,8 @@ export default function makeFilter() {
       const countEl = el('p', {class: 'panel-lead', 'data-filter-count': 'true'});
       const h = await enterPatched(ui, {
         head: [title('Stage 5 · Filter'), lead('<strong>Show me just management.</strong>')],
-        extraPanel: hh => [lead('Pick a purpose or a media, or one of each: what does not match fades rather than vanishing, on either face.'),
+        extraPanel: hh => [lead(LANDS),
+                           lead('Pick a purpose or a media, or one of each: what does not match fades rather than vanishing, on either face.'),
                            row(ui, hh, 'purpose', countEl), row(ui, hh, 'media', countEl), countEl],
         // Each 2D draw (the Front/Rear toggle redraws) and the 3D tubes: the
         // filter holds across a redraw.

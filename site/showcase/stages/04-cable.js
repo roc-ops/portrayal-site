@@ -8,7 +8,7 @@
 // patch-view.js is the body stage 5 shares; this file owns the question.
 
 import {stage3d, stageRack, title, lead} from '../artifact.js';
-import {enterPatched} from '../patch-view.js';
+import {enterPatched, LANDS} from '../patch-view.js';
 
 export default function makeCable() {
   let handle = null;
@@ -20,7 +20,7 @@ export default function makeCable() {
     async enter(ui) {
       const h = await enterPatched(ui, {
         head: [title('Stage 4 · Cable'), lead('<strong>What is connected to what?</strong>')],
-        extraPanel: () => [lead('Fiber ends land on the plugs the plan seats; copper lands on the jack, which accepts no plug yet (Portrayal #610). Hover a cable, or pick a row, to follow it.')],
+        extraPanel: () => [lead(`${LANDS} Hover a cable, or pick a row, to follow it.`)],
       });
       if (!ui.live()) { h?.dispose(); return; }
       handle = h;

@@ -387,6 +387,18 @@ def check_stages(page, base):
                        page.inner_text('#sidePanel .plan-list'))
         if "not a real lab" not in page.inner_text('#sidePanel'):
             bad.append("stage cable: the panel does not say the plan is invented")
+        # Spec §6 item 7: copper lands on the jack, no plug yet (#610).
+        if "Portrayal #610" not in page.inner_text('#sidePanel'):
+            bad.append("stage cable: the panel does not say copper has no plug yet (Portrayal #610)")
+        # A plan row is a button a keyboard reaches, so it shows a focus ring.
+        page.keyboard.press("Shift")
+        page.focus('#sidePanel [data-plan-row="0"]')
+        ring = page.eval_on_selector('#sidePanel [data-plan-row="0"]', """b => {
+            const s = getComputedStyle(b);
+            return {fv: b.matches(':focus-visible'), style: s.outlineStyle, width: parseFloat(s.outlineWidth)}; }""")
+        if not ring["fv"] or ring["style"] == "none" or not ring["width"] > 0:
+            bad.append(f"stage cable: a focused plan row shows no focus ring ({ring})")
+        page.evaluate("() => document.activeElement?.blur()")
         # Spec §6 panel items 3 and 5: counts by purpose AND media, and the
         # plan grouped by purpose - one group per purpose, in first-seen order,
         # every row keeping its original link index.
@@ -455,6 +467,9 @@ def check_stages(page, base):
         plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
         want = sum(1 for l in plan["links"] if l["purpose"] == "management")
         mgmt = {str(i) for i, l in enumerate(plan["links"]) if l["purpose"] == "management"}
+        # Spec §7: the same content as stage 4, the #610 copper line included.
+        if "Portrayal #610" not in page.inner_text('#sidePanel'):
+            bad.append("stage filter: the panel does not say copper has no plug yet (Portrayal #610)")
         page.click('#sidePanel [data-filter-purpose="management"]', timeout=READY_MS)
         page.wait_for_function(
             """([w, t]) => { const c = document.querySelector('#sidePanel [data-filter-count]');

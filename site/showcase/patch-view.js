@@ -15,6 +15,9 @@ const ROOM = 260;
 
 export const HONEST = 'An example patching plan for this rack, not a real lab.';
 
+// Where the cables land (spec §6 item 7), the same line on stages 4 and 5.
+export const LANDS = 'Fiber ends land on the plugs the plan seats; copper lands on the jack, which accepts no plug yet (Portrayal #610).';
+
 // One entry per color the plan draws, named for what it is.
 export function legendFor(plan) {
   const seen = new Map();
