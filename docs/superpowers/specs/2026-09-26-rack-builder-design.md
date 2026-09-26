@@ -267,7 +267,7 @@ Every export is built from the saved model through `configuredFace()`, never fro
 - A cable list panel with stage 5's media and purpose filter and click-to-highlight.
 - A cable schedule CSV.
 - Cables drawn on the SVG, PNG and GLB exports; cables as draw.io edges between `portrayal-path` port cells.
-- The showcase's stage 6 exports gain the plan's cables through the same converters.
+- The showcase's stage 6 already shows the plan's cables and carries them in its SVG, PNG and GLB exports (moved into Phase 0 as Task 4b, 2026-09-26). Phase 2 adds them to its draw.io export as edges.
 - **NetBox cable import comes last** and is blocked on the upstream `{module}` naming token. Today, module-type ports are named `p0…p11`, which collide between identical cards and do not match drawing paths.
 
 ### 9.5 Out of scope, as in the patching spec
