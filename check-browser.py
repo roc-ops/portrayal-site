@@ -594,6 +594,157 @@ def check_hero_cables(page):
         if got["before"] != got["after"]: bad.append(f"hero: tapping a cable moved the divider {got}")
         if "port-67" not in got["restored"]: bad.append(f"hero: tapping outside did not restore the caption {got}")
     step("tap", tap)
+
+    def roving():
+        # ONE TAB STOP FOR THE CABLES, AND NEVER AN INVISIBLE FOCUS (WCAG
+        # 2.4.7). Tab lands on the cable set once; the arrow keys walk all 21,
+        # left to right by where each cable starts; Home and End go to the ends.
+        # Every cable that takes focus is in the revealed (right-hand) side -
+        # the divider moves, range input and all, to show one that was under
+        # the flat PNG - lit, named, and marked by a visible focus stroke.
+        set_split(50)
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")
+        state = lambda: page.evaluate("""() => {
+            const stage = document.querySelector('#hero-reveal .reveal-stage');
+            const all = [...document.querySelectorAll('#hero-reveal [data-hero-cable]')];
+            const zero = all.filter(x => x.getAttribute('tabindex') === '0').map(x => x.dataset.heroCable);
+            const a = document.activeElement;
+            const g = a && a.closest ? a.closest('#hero-reveal [data-hero-cable]') : null;
+            if (!g) return {port: null, zero};
+            const p = g.querySelector('path[data-main]');
+            const m = p.getAttribute('d').match(/^M\\s*([-\\d.]+)[ ,]([-\\d.]+)/);
+            const at = new DOMPoint(+m[1], +m[2]).matrixTransform(p.getScreenCTM());
+            const f = document.querySelector('#hero-reveal .reveal-frame').getBoundingClientRect();
+            const split = parseFloat(stage.style.getPropertyValue('--split'));
+            const range = +document.querySelector('#hero-reveal .reveal-range').value;
+            const ring = g.querySelector('[data-focus-ring]');
+            const cs = ring && getComputedStyle(ring);
+            const marked = !!ring && cs.visibility === 'visible' && cs.display !== 'none'
+                && cs.stroke !== 'none' && +cs.strokeOpacity > 0 && +cs.opacity > 0 && +cs.strokeWidth.replace('px', '') > 0;
+            return {port: g.dataset.heroCable, startX: at.x, splitX: f.left + split / 100 * f.width,
+                    split, range, marked, zero, lit: g.classList.contains('cable-on'),
+                    cap: document.querySelector('#hero-caption-2d').textContent}; }""")
+        order = page.evaluate("""() => [...document.querySelectorAll('#hero-reveal [data-hero-cable]')].map(g => {
+            const p = g.querySelector('path[data-main]'), m = p.getAttribute('d').match(/^M\\s*([-\\d.]+)/);
+            return [g.dataset.heroCable, +m[1]]; }).sort((a, b) => a[1] - b[1]).map(r => r[0])""")
+        try:
+            page.focus('header a.gh', timeout=5000)
+            st = None
+            for _ in range(12):
+                page.keyboard.press("Tab")
+                st = state()
+                if st["port"]: break
+            if not st or not st["port"]:
+                bad.append("hero: Tab never reached the cables"); return
+            if len(st["zero"]) != 1:
+                bad.append(f"hero: {len(st['zero'])} cables are tab stops, expected one ({st['zero'][:6]})")
+            page.keyboard.press("Home")
+            seen = []
+            for k in range(len(order)):
+                if k: page.keyboard.press("ArrowRight")
+                st = state()
+                seen.append(st["port"])
+                if not st["port"]: bad.append(f"hero: arrow key {k} left the cables"); break
+                if st["startX"] < st["splitX"] - 0.5:
+                    bad.append(f"hero: focused {st['port']} starts under the flat side "
+                               f"(start {st['startX']:.0f}px, split {st['splitX']:.0f}px)")
+                if abs(st["range"] - st["split"]) > 0.01:
+                    bad.append(f"hero: the split and the range input disagree on {st['port']} ({st['split']} vs {st['range']})")
+                if not st["marked"]: bad.append(f"hero: focused {st['port']} has no visible focus mark")
+                if not st["lit"] or st["port"] + " " not in st["cap"] + " ":
+                    bad.append(f"hero: focused {st['port']} is not lit and named ({st['cap']!r})")
+                if st["zero"] != [st["port"]]:
+                    bad.append(f"hero: on {st['port']} the tab stop is {st['zero']}")
+            if seen != order:
+                bad.append(f"hero: the arrow keys did not walk all {len(order)} cables left to right ({seen} vs {order})")
+            page.keyboard.press("ArrowLeft")
+            if state()["port"] != order[-2]: bad.append(f"hero: ArrowLeft from {order[-1]} did not go to {order[-2]}")
+            page.keyboard.press("Home")
+            if state()["port"] != order[0]: bad.append(f"hero: Home did not go to {order[0]}")
+            page.keyboard.press("End")
+            if state()["port"] != order[-1]: bad.append(f"hero: End did not go to {order[-1]}")
+            page.keyboard.press("Tab")
+            if state()["port"]: bad.append("hero: a second Tab stayed in the cables (more than one tab stop)")
+            page.keyboard.press("Shift+Tab")
+            if state()["port"] != order[-1]: bad.append(f"hero: Shift+Tab did not come back to {order[-1]} ({state()['port']})")
+        finally:
+            page.evaluate("() => document.activeElement && document.activeElement.blur()")
+            set_split(50)
+    step("keyboard: one tab stop, revealed and marked", roving)
+
+    def press_pins():
+        # ENTER AND SPACE PIN, as a tap does; Space does not scroll the page.
+        set_split(0)
+        unpin = "() => document.body.dispatchEvent(new PointerEvent('pointerdown', {bubbles: true, pointerType: 'mouse'}))"
+        blur = "() => document.activeElement && document.activeElement.blur()"
+        try:
+            for key, port in (("Enter", "port-44"), (" ", "port-13")):
+                name = "Space" if key == " " else key
+                page.focus(f'#hero-reveal [data-hero-cable="{port}"]', timeout=5000)
+                y0 = page.evaluate("() => scrollY")
+                page.keyboard.press(key)
+                page.wait_for_timeout(150)
+                if page.evaluate("() => scrollY") != y0: bad.append(f"hero: {name} on a cable scrolled the page")
+                pressed = page.get_attribute(f'#hero-reveal [data-hero-cable="{port}"]', "aria-pressed")
+                page.evaluate(blur)
+                if port not in caption(): bad.append(f"hero: {name} on {port}'s cable did not pin it ({caption()!r})")
+                if pressed != "true": bad.append(f"hero: {name} on {port}'s cable left aria-pressed {pressed!r}")
+                page.evaluate(unpin)
+                if "port-67" not in caption(): bad.append(f"hero: a press off the cable did not let {port} go ({caption()!r})")
+        finally:
+            page.evaluate(blur)
+            page.evaluate(unpin)
+            set_split(50)
+    step("keyboard: Enter and Space pin", press_pins)
+
+    def one_name():
+        # A cable is named once: aria-label or <title>, never both saying it.
+        got = page.evaluate("""() => [...document.querySelectorAll('#hero-reveal [data-hero-cable]')].map(g => {
+            const label = g.getAttribute('aria-label') || '';
+            const title = [...g.children].find(c => c.tagName.toLowerCase() === 'title')?.textContent || '';
+            return {port: g.dataset.heroCable, named: !!(label || title), twice: !!label && label === title}; })""")
+        if len(got) != 21: bad.append(f"hero: {len(got)} cables to name, expected 21")
+        if [g for g in got if not g["named"]]: bad.append(f"hero: unnamed cables {[g['port'] for g in got if not g['named']]}")
+        if [g for g in got if g["twice"]]: bad.append(f"hero: cables named twice (aria-label and <title>) {[g['port'] for g in got if g['twice']][:5]}")
+    step("one name per cable", one_name)
+    return bad
+
+
+def check_hero_fallbacks(browser, base):
+    """The 2D hero stands on its own: its caption names port-67 before
+    anything is fetched, so it is never empty even when the drawing cannot
+    load; and a 3D module that fails to load costs only the 3D panel - the
+    2D hero still seats its parts and hangs its 21 cables. Records every run."""
+    bad = []
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    try:
+        page.route("**/assets/dist/s9600-72xc.front.svg", lambda r: r.abort())
+        page.goto(f"{base}/index.html", wait_until="load")
+        try:
+            page.wait_for_function("() => /port-67/.test(document.querySelector('#hero-caption-2d')?.textContent || '')",
+                                   timeout=10000)
+        except Exception:
+            cap = page.inner_text('#hero-caption-2d')
+            bad.append(f"hero: with the drawing unreachable, the 2D caption is not the port-67 default ({cap!r})")
+    except Exception as e:
+        bad.append(f"hero: caption default without the drawing - {str(e).splitlines()[0]}")
+    finally:
+        page.close()
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    try:
+        page.route("**/site/hero-3d.js", lambda r: r.fulfill(status=500, body="broken"))
+        page.goto(f"{base}/index.html", wait_until="load")
+        try:
+            page.wait_for_function("() => document.querySelector('#hero-reveal .reveal-rich svg[data-hero-seated]')"
+                                   " && document.querySelectorAll('#hero-reveal [data-hero-cable]').length === 21",
+                                   timeout=READY_MS)
+        except Exception:
+            n = page.evaluate("() => document.querySelectorAll('#hero-reveal [data-hero-cable]').length")
+            bad.append(f"hero: with site/hero-3d.js failing to load, the 2D hero did not draw ({n} cables)")
+    except Exception as e:
+        bad.append(f"hero: 2D without the 3D module - {str(e).splitlines()[0]}")
+    finally:
+        page.close()
     return bad
 
 
@@ -618,6 +769,23 @@ NO_WEBGL_JS = """(() => {
 
 HERO_3D_CAPTION = '#hero-caption-3d'
 
+# WHEN EACH HERO STARTED, on the page's own clock: `cables` when the 2D hero
+# first had a cable in it, `build` when the 3D panel first had a canvas or its
+# no-WebGL note - i.e. when the 3D build began. The 3D build waits for the 2D
+# hero to settle, so `build` must come after `cables`.
+HERO_TIMES_JS = """(() => {
+    window.__heroT = {};
+    new MutationObserver(() => {
+        const T = window.__heroT, now = performance.now();
+        if (T.cables == null && document.querySelector('#hero-reveal [data-hero-cable]')) T.cables = now;
+        if (T.build == null && document.querySelector('#hero-3d canvas, #hero-3d .hero-3d-note:not([hidden])')) T.build = now;
+    }).observe(document, {subtree: true, childList: true, attributes: true, attributeFilter: ['hidden']});
+})();"""
+
+HERO_3D_UNEXERCISED = ("the hero in 3D: this runner has no WebGL, so the build, the stage's role=img label, "
+                       "the pick, the pointer, the framing, the scroll capture and the pause were NOT exercised "
+                       "(the forced-off page still ran)")
+
 
 def check_hero_3d(browser, base):
     """The hero's 3D panel (spec 2026-09-26-hero-cabled-switch §5, §7 phase 2):
@@ -626,14 +794,22 @@ def check_hero_3d(browser, base):
     caption, and a miss restores port-67; off screen the render loop stops.
     Without WebGL - the runner's own, or forced off in a second page - the
     still image and the one-line note show and the page throws nothing. Every
-    assertion records on every run."""
-    bad = []
+    assertion records on every run; returns (problems, notes), and on a
+    runner with no WebGL the notes say what that left unexercised."""
+    bad, skipped = [], []
 
     def step(name, fn):
         try:
             fn()
         except Exception as e:
             bad.append(f"hero 3D: {name} - {str(e).splitlines()[0]}")
+
+    def waited(page, why):
+        # The 3D build began only after the 2D hero had drawn its cables.
+        t = page.evaluate("() => window.__heroT || {}")
+        if t.get("cables") is None or t.get("build") is None or t["build"] <= t["cables"]:
+            bad.append(f"hero 3D ({why}): the 3D build did not wait for the 2D hero "
+                       f"(2D cables at {t.get('cables')}, 3D build at {t.get('build')} ms)")
 
     def no_webgl(page, why):
         page.wait_for_function("() => /WebGL/.test(document.querySelector('#hero-3d')?.innerText || '')",
@@ -650,10 +826,13 @@ def check_hero_3d(browser, base):
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     try:
+        page.add_init_script(HERO_TIMES_JS)
         page.goto(f"{base}/index.html?heroprobe=1", wait_until="load")
         step("scroll to the panel", lambda: page.locator('#hero-3d').scroll_into_view_if_needed(timeout=10000))
         if webgl_trouble(page):
             step("no WebGL on this runner", lambda: no_webgl(page, "the runner's"))
+            step("waits for the 2D hero (the runner's)", lambda: waited(page, "the runner's"))
+            skipped.append(HERO_3D_UNEXERCISED)
         else:
             ready = [False]
             def built():
@@ -668,6 +847,18 @@ def check_hero_3d(browser, base):
                     bad.append(f"hero 3D: tubes {got['tubes']}, expected one per link (21)")
                 if got["still"]: bad.append("hero 3D: the still image is still showing over a built scene")
             step("build", built)
+            step("waits for the 2D hero", lambda: waited(page, "built"))
+
+            def named():
+                # The built scene says what it shows, with the still hidden.
+                got = page.evaluate("""() => { const s = document.querySelector('#hero-3d .hero-3d-stage');
+                    return s && {role: s.getAttribute('role'), label: s.getAttribute('aria-label') || '',
+                                 still: !!document.querySelector('#hero-3d [data-hero-still]:not([hidden])')}; }""")
+                if not got or got["role"] != "img" or "S9600-72XC" not in got["label"]:
+                    bad.append(f"hero 3D: the stage is not role=img with a label naming the S9600-72XC ({got})")
+                elif got["still"]:
+                    bad.append("hero 3D: the stage's label was checked with the still image showing")
+            step("the stage is an image, named", named)
 
             def default_caption():
                 cap = page.inner_text(HERO_3D_CAPTION, timeout=5000)
@@ -778,16 +969,18 @@ def check_hero_3d(browser, base):
     page.on("pageerror", lambda e: errors.append(str(e)))
     try:
         page.add_init_script(NO_WEBGL_JS)
+        page.add_init_script(HERO_TIMES_JS)
         page.goto(f"{base}/index.html", wait_until="load")
         step("scroll to the panel (forced off)",
              lambda: page.locator('#hero-3d').scroll_into_view_if_needed(timeout=10000))
         step("forced no WebGL", lambda: no_webgl(page, "forced off"))
+        step("waits for the 2D hero (forced off)", lambda: waited(page, "forced off"))
     except Exception as e:
         bad.append(f"hero 3D without WebGL (forced off): {str(e).splitlines()[0]}")
     finally:
         page.close()
     bad += [f"hero 3D without WebGL: uncaught {e}" for e in errors]
-    return bad
+    return bad, skipped
 
 
 def check_embed(page, base):
@@ -2160,6 +2353,7 @@ def main():
                                    "--bind", "127.0.0.1"],
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     problems, notes, failed_things = [], [], 0
+    unexercised = []          # printed on every run, pass or fail: what this runner could not check
     hero_cables = ["hero: the index.html walk never reached the hero's cables"]
     try:
         if not wait_for(f"{base}/index.html"):
@@ -2200,7 +2394,16 @@ def main():
             else:
                 notes.append("ok    the hero's cables and caption")
 
-            bad = check_hero_3d(browser, base)
+            bad = check_hero_fallbacks(browser, base)
+            if bad:
+                failed_things += 1
+                problems.append("FAIL  the 2D hero stands on its own")
+                problems += [f"        {b}" for b in dict.fromkeys(bad)]
+            else:
+                notes.append("ok    the 2D hero stands on its own")
+
+            bad, skipped = check_hero_3d(browser, base)
+            unexercised += skipped
             if bad:
                 failed_things += 1
                 problems.append("FAIL  the hero in 3D")
@@ -2275,6 +2478,8 @@ def main():
     else:
         notes.append(f"ok    the marks harness: {passed} checks")
 
+    for u in unexercised:
+        print(f"note  {u}")
     if problems:
         print(f"browser: {len(notes)} passed, {failed_things} FAILED")
         for p in problems:

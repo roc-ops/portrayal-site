@@ -870,8 +870,11 @@ for port, seat, jacket in rows:
             bad_hero.append(f"{port}: {key} does not accept {ref}")
     if jacket not in ("mm", "sm", "dac", "cu"):
         bad_hero.append(f"{port}: jacket {jacket}")
-check(len(rows) >= 20 and not bad_hero, "every hero link seats real parts its cage accepts, with a jacket",
-      f"{len(rows)} rows parsed; {bad_hero[:5]}")
+# EXACTLY 21: the walk holds the page to one cable and one tube per link (21),
+# so a row the parse misses - or one added without the walk's count moving -
+# fails here by name, not as a count mismatch in the browser.
+check(len(rows) == 21 and not bad_hero, "every hero link (21) seats real parts its cage accepts, with a jacket",
+      f"{len(rows)} rows parsed, expected 21; {bad_hero[:5]}")
 # Cable colors come from cables.js. Until Task 1 lands `colorOfJacket`, the
 # hero maps a jacket onto cables.js's existing COLORS through one function,
 # jacketColor, and keeps no color table of its own. (The hero keeps its LAMP
@@ -896,8 +899,13 @@ panel = re.search(r'<div[^>]*\bid="hero-3d"[^>]*>.*?</div>\s*(<p[^>]*>)?', idx_h
 check(panel is not None and re.search(r'<p[^>]*\bid="hero-caption-3d"[^>]*\bdata-hero-caption\b', panel.group(0)) is not None,
       "index.html has the 3D panel #hero-3d with its caption #hero-caption-3d[data-hero-caption] in or just under it",
       "no #hero-3d, or no #hero-caption-3d[data-hero-caption] in or right after it")
-check(re.search(r"import\s*\{[^}]*\bheroThree\b[^}]*\}\s*from\s*'\./site/hero-3d\.js'", idx_html) is not None,
-      "index.html imports heroThree from site/hero-3d.js", "no heroThree import in index.html")
+# DYNAMICALLY: a static import that fails to load (or throws while it
+# evaluates) fails the whole module script, and the 2D hero with it. Loaded
+# with import(), a broken 3D module costs only the 3D panel.
+check(re.search(r"import\(\s*'\./site/hero-3d\.js'\s*\)\s*\.then\([^)]*\bheroThree\b", idx_html) is not None
+      and re.search(r"import\s*\{[^}]*\}\s*from\s*'\./site/hero-3d\.js'", idx_html) is None,
+      "index.html loads site/hero-3d.js with import() and calls heroThree, with no static import of it",
+      "hero-3d.js imported statically, or no import('./site/hero-3d.js').then(... heroThree ...)")
 check(re.search(r"\bcreateRackScene\b", h3) is not None and "IntersectionObserver" in h3
       and re.search(r"\brails\s*:\s*false\b", h3) is not None,
       "hero-3d.js builds through createRackScene, lazily (IntersectionObserver), with rails: false",
@@ -907,6 +915,15 @@ check(re.search(r"import\s*\{[^}]*\bhangPoints3d\b[^}]*\}\s*from\s*'\./showcase/
       and "COLORS" not in h3,
       "hero-3d.js takes its tubes' shape from cables.js and its colors and captions from hero-reveal.js",
       "no hangPoints3d import from ./showcase/cables.js, or no jacketColor/captionOf import from ./hero-reveal.js, or a COLORS table of its own")
+# THE 3D BUILD WAITS ITS TURN: after the 2D hero has settled and the browser
+# is idle (requestIdleCallback), and on a narrow screen only once the panel is
+# actually on screen (rootMargin 0px under max-width 700px). check-browser.py
+# holds the order; this holds the idle wait and the narrow-screen margin.
+check("requestIdleCallback" in h3
+      and re.search(r"matchMedia\(\s*'\(max-width:\s*700px\)'\s*\)", h3) is not None
+      and re.search(r"'0px'", h3) is not None,
+      "hero-3d.js waits for an idle moment and uses rootMargin 0px on narrow screens (max-width 700px)",
+      "no requestIdleCallback, or no matchMedia('(max-width: 700px)') with a '0px' rootMargin in hero-3d.js")
 check(re.search(r"opts\.rails\s*(?:!==\s*false|\?\?\s*true)", r3d) is not None,
       "rack3d.js reads opts.rails, defaulting to true", "no opts.rails in createRackScene")
 
