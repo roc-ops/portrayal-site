@@ -1608,6 +1608,52 @@ def check_takeaway_cables_3d(page, base):
     return bad
 
 
+@extra("draw.io: a bezel is its own tagged shape, over a face drawn without it")
+def check_drawio_covers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const F = await import('/site/rack/face.js');
+      const D = await import('/site/drawio.js');
+      const svgOf = cell => {
+        const b64 = cell.getAttribute('style').split('image=data:image/svg+xml,')[1].split(';')[0];
+        return new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+      };
+      const cellsOf = async (ref, cfg) => {
+        const f = await F.configuredFace({ref, cfg, view: 'front'});
+        const xml = D.deviceCells('dev', f.text, f.vb, f.ports, 0, 0, 400, 80).join('');
+        return {xml, doc: new DOMParser().parseFromString(`<root>${xml}</root>`, 'application/xml')};
+      };
+      const {xml, doc} = await cellsOf('r740xd', 'sff24-rc5-1b2a3a');
+      const face = doc.querySelector('mxCell[id="dev-face"]');
+      const cover = doc.querySelector('object[portrayal-cover="bezel"]');
+      const coverSvg = cover ? svgOf(cover.querySelector('mxCell')) : '';
+      const plain = await cellsOf('as7726-32x', 'ac-f2b');
+      return {
+        parses: !doc.querySelector('parsererror'),
+        faceHasBezel: svgOf(face).includes('data-class="bezel"'),
+        faceHasDrive: svgOf(face).includes('id="drive-0"'),
+        cover: !!cover,
+        tags: cover?.getAttribute('tags') || '',
+        parent: cover?.querySelector('mxCell')?.getAttribute('parent') || '',
+        coverHasBezel: coverSvg.includes('id="bezel"'),
+        coverHasDrive: coverSvg.includes('id="drive-0"'),
+        coverBelowPorts: cover ? xml.indexOf('portrayal-cover=') < xml.indexOf('portrayal-path=') : false,
+        plainCovers: plain.doc.querySelectorAll('object[portrayal-cover]').length,
+      };
+    }""")
+    expect = {"parses": True, "faceHasBezel": False, "faceHasDrive": True, "cover": True,
+              "parent": "dev", "coverHasBezel": True, "coverHasDrive": False,
+              "coverBelowPorts": True, "plainCovers": 0}
+    for k, want in expect.items():
+        if r.get(k) != want:
+            bad.append(f"draw.io covers: {k} is {r.get(k)!r}, expected {want!r}")
+    if set(r.get("tags", "").split()) != {"cover", "bezel"}:
+        bad.append(f"draw.io covers: tags are {r.get('tags')!r}, expected 'cover bezel'")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
