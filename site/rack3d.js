@@ -720,7 +720,8 @@ export function createRackScene(container, opts = {}) {
   // through its marker's CTM (the same mapping nodeTools' mmRect uses), lifted
   // by the point's resolved `z` along the face's own +z, then through the same
   // face->device->room chain portAnchor uses. One entry per connector under
-  // `prefix` (an optic's two plugs; a duplex plug's a and b), or [] for none.
+  // `prefix` (an optic's two plugs; a duplex plug's a and b; an RJ45 plug's
+  // one), or [] for none.
   async function cableAnchor(which, prefix, o = {}) {
     const m = findMounted(which);
     if (!m || !prefix) return [];
@@ -733,7 +734,11 @@ export function createRackScene(container, opts = {}) {
       const fr = frames.find(x => x.view === view);
       const doc = fr && await faceDoc(entry, view);
       if (!doc) continue;
-      const pts = cablePoints(doc.svg).filter(p => p.at && p.path.startsWith(prefix + '-occupant/'));
+      // An RJ45 plug's point is the occupant itself, `<prefix>-occupant`; an
+      // optic's LC plugs, or a duplex plug's two, are below it. Never
+      // `port-10-occupant` for `port-1`.
+      const pts = cablePoints(doc.svg).filter(p => p.at && (p.path === prefix + '-occupant'
+        || p.path.startsWith(prefix + '-occupant/')));
       if (!pts.length) continue;
       const inv = doc.svg.getScreenCTM().inverse();
       const rot = new THREE.Euler(...fr.rot);

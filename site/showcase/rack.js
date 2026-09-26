@@ -220,15 +220,15 @@ export async function build2dElevation({stack, heightRU, overrides: ov = overrid
     }
     out.append(g);
     const mine = ov?.[e.ref];
-    // Seating overrides is front-only: bays and cages are keyed per view in
-    // the index (e.g. cages.front, cages.rear). The stages only ever seat
-    // front bays, but the Inspect lens is Explorer, and a swap made there on
-    // a REAR bay comes back into `overrides` too. This front elevation
-    // ignores it: applying it against a rear face's keys would seat nothing,
-    // or the wrong thing.
-    if (view === 'front' && mine && Object.keys(mine).length) {
+    // Each face is seated against ITS OWN bays and cages: they are keyed per
+    // view in the index (e.g. cages.front, cages.rear), and one device's
+    // overrides hold keys for either - the plan's RJ45 plugs in the R740xd's
+    // rear iDRAC and NDC ports, or a swap made on a rear bay in the Inspect
+    // lens, which is Explorer. A key that is not on the face drawn names no
+    // bay or cage of it, and seats nothing.
+    if (mine && Object.keys(mine).length) {
       const {applyFaceOverrides} = await import('../../vendor/swap.js');
-      await applyFaceOverrides(g, {bays: baysOf(e.ref).front || [], cages: cagesOf(e.ref).front || []},
+      await applyFaceOverrides(g, {bays: baysOf(e.ref)[view] || [], cages: cagesOf(e.ref)[view] || []},
                                mine, loadSkin, byRef);
     }
   }
