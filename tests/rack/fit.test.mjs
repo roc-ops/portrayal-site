@@ -100,3 +100,56 @@ test('zero-U: only the frame\'s attachment points, and never overlapping', () =>
   assert.equal(F.fitsZeroU(r, {ref: 'pdu-v', at: 'right-rear', offsetMm: 900}, chassisOf).reason,
     '1200 mm long; it runs past the top of the rack.');
 });
+
+// shrinkRack (feedback round 2 §2): compact, then trim from the bottom.
+
+test('shrinkRack: nothing moves when everything already fits', () => {
+  let r = place(M.newRack(), 'r740xd', 5);   // U5-U6
+  r = place(r, 'tm-280', 20);                // U20
+  const {rack: next, moved, removed} = F.shrinkRack(r, 25, chassisOf);
+  assert.equal(next.frame.heightRU, 25);
+  assert.deepEqual(moved, []);
+  assert.deepEqual(removed, []);
+  assert.deepEqual(next.items.map(i => i.ru), [5, 20]);
+});
+
+test('shrinkRack: gaps close in order, packing from U1', () => {
+  let r = place(M.newRack(), 'tm-280', 5, 'front', 'A');
+  r = place(r, 'as7726-32x', 20, 'front', 'B');
+  r = place(r, 'fhd-1ufce', 30, 'front', 'C');
+  const {rack: next, moved, removed} = F.shrinkRack(r, 12, chassisOf);
+  assert.equal(next.frame.heightRU, 12);
+  assert.deepEqual(next.items.map(i => [i.label, i.ru]), [['A', 1], ['B', 2], ['C', 3]]);
+  assert.deepEqual(moved.slice().sort(), next.items.map(i => i.id).sort());
+  assert.deepEqual(removed, []);
+});
+
+test('shrinkRack: a front/rear pair sharing a U moves together', () => {
+  let r = place(M.newRack(), 'r740xd', 3, 'front', 'BASE');    // U3-U4, its own cluster
+  r = place(r, 'as7726-32x', 20, 'front', 'FRONT');
+  r = place(r, 'tm-280', 20, 'rear', 'REAR');                  // shares U20 with FRONT
+  const {rack: next} = F.shrinkRack(r, 10, chassisOf);
+  const front = next.items.find(i => i.label === 'FRONT');
+  const rear = next.items.find(i => i.label === 'REAR');
+  assert.equal(front.ru, rear.ru);
+});
+
+test('shrinkRack: the bottom cluster is removed first, the rest re-packs from U1, both are reported', () => {
+  let r = place(M.newRack(), 'tm-280', 5, 'front', 'A');       // 1U, lowest - goes first
+  r = place(r, 'as7726-32x', 20, 'front', 'B');                // 1U
+  r = place(r, 'r740xd', 30, 'front', 'C');                    // 2U
+  const {rack: next, moved, removed} = F.shrinkRack(r, 3, chassisOf);
+  assert.equal(next.frame.heightRU, 3);
+  assert.deepEqual(removed.map(i => i.label), ['A']);
+  assert.deepEqual(next.items.map(i => [i.label, i.ru]), [['B', 1], ['C', 2]]);
+  assert.deepEqual(moved.slice().sort(), next.items.map(i => i.id).sort());
+});
+
+test('shrinkRack: shrinking to exactly the packed height removes nothing', () => {
+  let r = place(M.newRack(), 'tm-280', 5, 'front', 'A');
+  r = place(r, 'as7726-32x', 20, 'front', 'B');
+  r = place(r, 'fhd-1ufce', 30, 'front', 'C');
+  const {rack: next, removed} = F.shrinkRack(r, 3, chassisOf);
+  assert.deepEqual(removed, []);
+  assert.deepEqual(next.items.map(i => [i.label, i.ru]), [['A', 1], ['B', 2], ['C', 3]]);
+});
