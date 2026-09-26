@@ -25,6 +25,13 @@ export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '
 export const colorOf = l => l.media === 'copper'
   ? (COLORS.copper[l.purpose] || COLORS.copper.server) : (COLORS[l.media] || COLORS.os2);
 
+// JACKETS: what a cable's outer sheath looks like, by what it is. Multimode
+// fiber and AOCs are aqua, single-mode is yellow (the same yellow as os2), a
+// twinax DAC is black, and copper patch leads are blue. The front-page hero
+// colors its cables by these; the showcase's plan keeps colorOf.
+export const JACKETS = {mm: '#2bb3c8', sm: COLORS.os2, dac: '#15171a', cu: COLORS.copper.server};
+export const colorOfJacket = j => JACKETS[j] || JACKETS.sm;
+
 export const WIDTH = 3;          // mm: a patch lead, to scale
 const MERGE = 10;                // mm below a duplex pair where the two strands join
 // How far a cable hangs below the lower of its two ends: a little always, more
