@@ -3004,6 +3004,39 @@ def check_rack_inspect(page, base):
     # Label edit.
     page.fill("#iLabel", "tor-1"); page.dispatch_event("#iLabel", "change")
     page.wait_for_function("() => window.__rack.doc().racks[0].items[0].label === 'tor-1'")
+    # Move by clicking a U while in move mode: a free U changes ru and face.
+    page.click("#iMove")
+    page.wait_for_selector(".rk-side h3:has-text('Move tor-1')", timeout=READY_MS)
+    page.click('svg[data-pane="rear"] rect.rk-u[data-u="5"]')
+    page.wait_for_function(
+        "() => window.__rack.doc().racks[0].items[0].ru === 5 && window.__rack.doc().racks[0].items[0].face === 'rear'",
+        timeout=READY_MS)
+    # Moving by click onto an occupied U is refused; the reason must survive
+    # the redraw (it is written through S.notice, not into the panel the
+    # redraw is about to replace), and the item stays where it was.
+    page.click("#iMove")
+    page.wait_for_selector(".rk-side h3:has-text('Move tor-1')", timeout=READY_MS)
+    # The occupying device's own panel is drawn over its U's hit rectangle
+    # (elevation.js: "a click on a device is the device's"), so a real click
+    # there would hit the device, not the U - dispatch straight to the rect,
+    # the same target the app's own click handler reads ev.target from.
+    page.dispatch_event('svg[data-pane="rear"] rect.rk-u[data-u="22"]', "click")
+    # The reason is written through S.notice, as .rk-notice.rk-error, and
+    # only reaches the DOM once the redraw it triggers (select() -> render())
+    # finishes - unlike the synchronous onPatch refusals above (which land in
+    # the inspector's own, always-present .rk-error), this one needs a wait
+    # on the distinct .rk-notice element, not an immediate read of the first
+    # .rk-error in the panel.
+    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    err = page.text_content(".rk-side .rk-notice") or ""
+    if "Taken by" not in err or item()["ru"] != 5 or item()["face"] != "rear":
+        bad.append(f"inspect: a move-by-click onto an occupied U was not refused ({err!r}, {item()['ru']}, {item()['face']!r})")
+    # Move it back to the front for the rest of this check.
+    page.click("#iMove")
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="10"]')
+    page.wait_for_function(
+        "() => window.__rack.doc().racks[0].items[0].ru === 10 && window.__rack.doc().racks[0].items[0].face === 'front'",
+        timeout=READY_MS)
     # Explorer round trip: seat an optic in the lens through its own URL state.
     page.click("#iExplore")
     page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
@@ -3027,6 +3060,35 @@ def check_rack_inspect(page, base):
                            timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"] [data-ref^="generic/qsfp-lc@2"]',
                            timeout=READY_MS)
+    # A configuration change clears swaps and fields (a delta against the old
+    # configuration), and the page says so once, beside the panel it redraws.
+    page.select_option("#iCfg", "ac-b2f")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].cfg === 'ac-b2f'", timeout=READY_MS)
+    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    note = page.text_content(".rk-side .rk-notice") or ""
+    if "cleared" not in note:
+        bad.append(f"inspect: a configuration change did not show the cleared-changes note ({note!r})")
+    if item()["swaps"] or item()["fields"]:
+        bad.append(f"inspect: a configuration change left swaps/fields behind ({item()['swaps']!r}, {item()['fields']!r})")
+    # A configuration changed inside Explorer changes the item's own cfg too.
+    page.click("#iExplore")
+    page.wait_for_selector(".rk-lens iframe", timeout=READY_MS)
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
+                           timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    page.evaluate("""() => {
+      const w = document.querySelector('.rk-lens iframe').contentWindow;
+      const u = new URL(w.location.href);
+      u.searchParams.set('config', 'dc-f2b');
+      w.location.replace(u.toString());
+    }""")
+    # Synchronous polling: the reloaded frame's API exists and reports the config.
+    page.wait_for_function("""() => {
+      const w = document.querySelector('.rk-lens iframe')?.contentWindow;
+      try { return !!w?.portrayalEmbed && w.portrayalEmbed.current().config === 'dc-f2b'; } catch { return false; } }""",
+                           timeout=READY_MS)
+    page.click(".rk-lens-done")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].cfg === 'dc-f2b'", timeout=READY_MS)
     # Remove.
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
     page.click("#iRemove")
