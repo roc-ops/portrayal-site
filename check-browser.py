@@ -1423,6 +1423,39 @@ def check_configured_face(page, base):
     return bad
 
 
+@extra("configuredFace snapshots swaps/fields, immune to the caller mutating them before awaiting")
+def check_configured_face_snapshot(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const F = await import('/site/rack/face.js');
+      // The showcase never replaces overrides[dev] - applyPlanSeats, dropBelow
+      // and stage 2/3's doSeat all write INTO the same object a build already
+      // has a live reference to. Simulate that: mutate the SAME swaps object
+      // synchronously, right after calling configuredFace and before this
+      // await lets the pending build run any further, so a build that reads
+      // `swaps` after its own later awaits would see the mutation instead of
+      // what the caller asked for when the key was computed.
+      const swaps = {'slot-2': 'cisco/a9k-16x100ge-tr@1'};
+      const pending = F.configuredFace({ref: 'asr-9006', cfg: 'base', view: 'front', swaps});
+      delete swaps['slot-2'];
+      swaps['slot-3'] = 'cisco/a9k-16x100ge-tr@1';
+      const face = await pending;
+      return {
+        origZone: face.zones.some(z => z.path === 'slot-2/module/p0'),
+        origPort: face.ports.some(p => p.path === 'slot-2/module/p0'),
+        mutatedZone: face.zones.some(z => z.path === 'slot-3/module/p0'),
+      };
+    }""")
+    expect = {"origZone": True, "origPort": True, "mutatedZone": False}
+    for k, want in expect.items():
+        if r.get(k) != want:
+            bad.append(f"configuredFace snapshot: {k} is {r.get(k)!r}, expected {want!r} - "
+                       "a build in flight read the caller's swaps object after it was mutated")
+    return bad
+
+
 @extra("the rear elevation seats a swapped rear bay")
 def check_rear_elevation(page, base):
     bad = []
