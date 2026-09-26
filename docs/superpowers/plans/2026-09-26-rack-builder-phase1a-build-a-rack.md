@@ -2560,3 +2560,16 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Placing or drawing zero-U items. The catalog has none, `fit.js` already has the rules (`fitsZeroU`), and the model keeps `zeroU`. **This deviates from spec §5.3**, which asked for the rendering hook in v1: with no zero-U device to draw, a side-gutter renderer could not be tested against anything real. It arrives with the first zero-U device, together with the UI for placing it.
 - Cables: Phase 2. The model keeps `cables` untouched.
 - Pan and zoom in the panes. The panes scroll together, which is enough for a 42U rack.
+
+## Carried to Phase 1b (deferred Minor findings from Phase 1a's reviews)
+
+None of these loses data. The Phase 1b plan should pick them up.
+
+- `explorer.html`: wrap the `applyPendingFields` block in `try`/`finally`, so a synchronous throw can't leave the embed's `ready` pending.
+- The frame form loses keyboard focus on every change; restore focus by id after `renderSide`.
+- `check_rack_page` doesn't regression-test the library menu or the summary's depth warnings. The lens's Escape and null-result paths are also untested.
+- Without IndexedDB, new racks are all named "Rack 1".
+- `library.js` `list()` reads `name` and `updatedAt` off the raw record rather than through `parseDoc`. This matters only after a format migration.
+- The showcase adapter uses `id = e.ref`, which isn't unique if a cast repeats a ref.
+- `chassis-index.py` uses `h or RU`, so a zero-height zero-U part would get 44.45 mm. This is latent; no such device exists.
+- `nextId` has no explicit prefix-match guard; it is safe via `Number.isInteger`. Boot keeps a redundant `try`/`catch` around `getDoc`.
