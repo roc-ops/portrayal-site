@@ -1,7 +1,9 @@
 // Stage 6 - Take it away. "Where can it go from here?"
 //
-// The cast rack as built - the same overrides stages 1-3 produced - handed
-// over in the formats a network team uses next. Every exporter already
+// The cast rack as built - the same overrides stages 1-3 produced, plus the
+// seats stage 4's patching plan filled in (the line card, optics and plugs
+// its cables land on; plan.js's applyPlanSeats writes them into the same
+// overrides) - handed over in the formats a network team uses next. Every exporter already
 // exists elsewhere on this site; this stage only wires them to the rack that
 // got built here (R6). No new export code.
 //
@@ -18,8 +20,8 @@
 //   SVG       - build2dElevation with the current overrides, which DOES
 //               apply them - it is the same call stage 0's rails export
 //               already uses, and it seats each front face through swap.js's
-//               face-level pass, so stage 2's cards AND stage 3's optics are
-//               in the file (R26).
+//               face-level pass, so stage 2's cards, stage 3's optics AND
+//               the seats stage 4's plan filled in are in the file (R26).
 //   PNG       - raster.js's rasterize, which only takes a URL: the SVG built
 //               above is not one, so it is turned into an object URL first
 //               and the URL is revoked once the raster is done.
