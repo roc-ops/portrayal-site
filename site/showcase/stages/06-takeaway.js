@@ -35,8 +35,9 @@
 //               links rather than a guessed one.
 //
 // The picture follows the switch (ui.mode): in 2D this stage shows the same
-// elevation it exports, in 3D the mounted scene. Clicking a device here does
-// nothing - Look closer belongs to stages 1-3.
+// elevation it exports, in 3D the mounted scene. Clicking a device on the
+// drawing itself does nothing here - but enterPatched's "Look closer" strip,
+// shared with stages 4 and 5, still opens any cast device's own lenses.
 
 import {stage3d, stageRack, el, title, lead, kv, save} from '../artifact.js';
 import {CAST, RACK_U, overrides} from '../rack.js';
@@ -111,18 +112,25 @@ export default function makeTakeaway() {
   // The face the visitor is looking at in 2D; the front in 3D, which has none.
   const face = () => (handle?.mode === '2d' && handle.view) || 'front';
 
+  // `h`/`v` are captured once, at the start of the export: a stage the
+  // visitor has already left (handle gone, exit() nulled it) downloads
+  // nothing rather than throwing on a stale handle.
   async function buildSvg() {
-    save(await cabledElevationSvg(handle, face()), `cast-rack-${face()}.svg`, 'image/svg+xml');
+    const h = handle, v = face();
+    if (!h) return;
+    save(await cabledElevationSvg(h, v), `cast-rack-${v}.svg`, 'image/svg+xml');
   }
 
   // rasterize() only takes a URL, so the cabled SVG goes through a blob URL.
   async function buildPng() {
-    const text = await cabledElevationSvg(handle, face());
+    const h = handle, v = face();
+    if (!h) return;
+    const text = await cabledElevationSvg(h, v);
     const url = URL.createObjectURL(new Blob([text], {type: 'image/svg+xml'}));
     try {
       const bytes = await rasterize(url, 2);
       if (!bytes) throw new Error('could not rasterize the elevation');
-      save(bytes, `cast-rack-${face()}.png`, 'image/png');
+      save(bytes, `cast-rack-${v}.png`, 'image/png');
     } finally {
       URL.revokeObjectURL(url);
     }
@@ -150,15 +158,19 @@ export default function makeTakeaway() {
           title('Take it away'),
           lead('<strong>Where can it go from here?</strong>'),
           lead('The cast rack as built and cabled here, handed over in the formats a network team uses next.'),
-          kv([
-            ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
-            ['GLB / USDZ', !is3d ? 'the 3D model with its cables - switch to 3D to build the scene they export'
-                                 : 'the mounted, cabled rack as a 3D model'],
-            ['SVG', 'the face shown, with its cards, optics and cables'],
-            ['PNG', 'a raster of that same face'],
-            ['DCIM', 'NetBox and Nautobot device-type YAMLs for each cast device, linked below'],
-          ]),
         ],
+        // Built from the handle enterPatched hands back, after enter2d/enter3d
+        // have run - so the GLB/USDZ row can tell "no 3D in this browser"
+        // (R11: is3d but hh.scene never mounted) apart from "a scene is ready".
+        top: hh => [kv([
+          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
+          ['GLB / USDZ', !is3d ? 'the 3D model with its cables - switch to 3D to build the scene they export'
+                        : hh.scene ? 'the mounted, cabled rack as a 3D model'
+                                   : 'unavailable - no 3D in this browser'],
+          ['SVG', 'the face shown, with its cards, optics and cables'],
+          ['PNG', 'a raster of that same face'],
+          ['DCIM', 'NetBox and Nautobot device-type YAMLs for each cast device, linked below'],
+        ])],
         extraPanel: () => [lead('<strong>DCIM device types</strong>'), dcimSection(exportsIndex)],
       });
       if (!ui.live()) { h?.dispose(); return; }
@@ -179,12 +191,18 @@ export default function makeTakeaway() {
           run: () => setMode('3d')});
       } else if (handle.scene) {
         const sc = handle.scene;
+        // The plan list's row highlight (patch-view.js's enter3d) dims every
+        // other tube to opacity 0.15 for the screen; cleared first, or an
+        // export taken mid-highlight ships 13 ghosted cables. highlight(null)
+        // is the same call a cleared plan-row selection makes.
         // complete() first: optics and plugs are extruded by the deferred
         // relief pass, and an export taken before it lands has them flat.
         items.push({label: 'GLB', title: 'Download the mounted, cabled rack as a GLB',
-          run: async () => { await sc.complete(); save(await sc.toGLB(), 'cast-rack.glb', 'model/gltf-binary'); }});
+          run: async () => { handle.highlight?.(null); await sc.complete();
+                             save(await sc.toGLB(), 'cast-rack.glb', 'model/gltf-binary'); }});
         items.push({label: 'USDZ', title: 'Download the mounted, cabled rack as a USDZ',
-          run: async () => { await sc.complete(); save(await sc.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip'); }});
+          run: async () => { handle.highlight?.(null); await sc.complete();
+                             save(await sc.toUSDZ(), 'cast-rack.usdz', 'model/vnd.usdz+zip'); }});
       }
       ui.setExports(items);
     },
