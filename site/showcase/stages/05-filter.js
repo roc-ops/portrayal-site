@@ -30,17 +30,27 @@ function fade3d(mesh, ghost) {
 export default function makeFilter() {
   let handle = null;
   const on = {purpose: null, media: null};
+  // 3D only: the plan row lit last (null for none), and the highlight that
+  // lights it, so a filter change keeps the row's dimming under the ghosts.
+  let lit = null;
+  let relight = null;
   const match = l => (!on.purpose || l.purpose === on.purpose) && (!on.media || l.media === on.media);
 
   // Ghost what does not match - the SVG groups in 2D, the tubes in 3D - and
-  // say how many match. `restore` false leaves a matching tube as it is, so
-  // a plan row's highlight (which dims the rest) is not undone.
-  function apply(h, countEl, restore = true) {
+  // say how many match. In 2D the ghost is a class, and a row's highlight is
+  // another, so neither undoes the other. In 3D both are the tube's opacity:
+  // the row's highlight is laid down first (or every tube restored), then
+  // the ghosts over it.
+  function apply(h, countEl) {
     let n = 0;
+    if (h.mode !== '2d') {
+      if (relight) relight(lit);
+      else for (const d of h.drawn) if (d.mesh) fade3d(d.mesh, false);
+    }
     for (const d of h.drawn) {
       const hit = match(d.link);
       if (d.g) d.g.classList.toggle('ghost', !hit);
-      if (d.mesh && (!hit || restore)) fade3d(d.mesh, !hit);
+      if (d.mesh && !hit) fade3d(d.mesh, true);
     }
     // Counted off the plan, not off what is drawn: the same whichever face
     // is shown, and with no scene at all.
@@ -77,6 +87,7 @@ export default function makeFilter() {
     // after an await, and every button, asks ui.live() first.
     async enter(ui) {
       on.purpose = null; on.media = null;
+      lit = null; relight = null;
       const countEl = el('p', {class: 'panel-lead', 'data-filter-count': 'true'});
       const h = await enterPatched(ui, {
         head: [title('Stage 5 · Filter'), lead('<strong>Show me just management.</strong>')],
@@ -88,19 +99,21 @@ export default function makeFilter() {
       });
       if (!ui.live()) { h?.dispose(); return; }
       handle = h;
-      // In 3D a plan row's highlight resets every tube; fade what the filter
-      // leaves out again afterwards. In 2D the ghost class outlives it.
-      const highlight = h.highlight;
-      if (h.mode !== '2d' && highlight) {
+      // In 3D a plan row's highlight sets every tube's opacity; remember the
+      // row, and fade what the filter leaves out again over it.
+      if (h.mode !== '2d' && h.highlight) {
+        relight = h.highlight;
         h.highlight = async i => {
-          await highlight(i);
-          if (ui.live()) apply(h, countEl, false);
+          await relight(i);
+          if (!ui.live()) return;
+          lit = i;
+          apply(h, countEl);
         };
       }
       apply(h, countEl);
     },
     exit() {
-      handle?.dispose(); handle = null;
+      handle?.dispose(); handle = null; lit = null; relight = null;
       stage3d.hidden = true; stage3d.replaceChildren();
       // The 2D picture. #stageTabs is the rail's to empty (vacate), not this.
       stageRack.hidden = true; stageRack.replaceChildren();
