@@ -749,8 +749,27 @@ check("ring.js" not in s4 and "ring2d.js" not in s4 and "labs.json" not in s4 an
 check("not a real lab" in (HERE / "site" / "showcase" / "patch-view.js").read_text()
       if (HERE / "site" / "showcase" / "patch-view.js").is_file() else False,
       "the patched stages say the plan is invented", "no honesty line in patch-view.js")
-check(not re.search(r"#[0-9a-fA-F]{6}", s4),
-      "stage 4 keeps no colors of its own", "colors belong to cables.js")
+# NO COLORS OF THEIR OWN: every color a cable is drawn in comes from
+# cables.js's COLORS/colorOf. So the files that draw or light the plan -
+# stage 4, stage 5 and patch-view.js - carry no color literal (#rrggbb or longer,
+# 0xrrggbb, rgb()/hsl()) and never define COLORS or colorOf again;
+# and rack3d.js's cable code this branch added (cableAnchor through
+# deviceBoxes) carries no color literal or `color:` at all. rack3d.js's
+# older hex colors, which predate the cables, are out of scope.
+COLOR_LIT = re.compile(r"#[0-9a-fA-F]{6}|\b0x[0-9a-fA-F]{6}\b|\b(?:rgba?|hsla?)\(")
+COLOR_DEF = re.compile(r"\b(?:const|let|var|function)\s+(?:COLORS|colorOf)\b")
+colored = []
+for rel in ("stages/04-cable.js", "stages/05-filter.js", "patch-view.js"):
+    f = HERE / "site" / "showcase" / rel
+    t = f.read_text() if f.is_file() else ""
+    if COLOR_LIT.search(t) or COLOR_DEF.search(t):
+        colored.append(rel)
+r3d_all = (HERE / "site" / "rack3d.js").read_text()
+m = re.search(r"async function cableAnchor.*?\n  function disposeTree", r3d_all, re.S)
+if not m or COLOR_LIT.search(m.group(0)) or re.search(r"\bcolor\s*:", m.group(0)):
+    colored.append("rack3d.js cableAnchor/deviceBoxes" + ("" if m else " (not found)"))
+check(not colored, "the patched stages keep no colors of their own",
+      f"colors belong to cables.js: {colored}")
 
 # Stage 5 filters the same plan, on axes read off it: a purpose or media
 # added to patching.json gets its own button without 05-filter.js changing.
