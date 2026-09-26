@@ -472,6 +472,11 @@ export function drawHeroCables(svg) {
   return layer;
 }
 
+// Presses the stage has taken as a grab of the divider's grip or bar. They
+// still propagate - the document's listener must see them, to let a pinned
+// cable go - but a cable under the grip does not treat one as a tap on it.
+const GRABS = new WeakSet();
+
 // HOVER, FOCUS AND TAP name a cable in the caption line, light it and dim the
 // rest. Nothing named: the default port. A tap pins a cable until a tap
 // lands anywhere else. The pointer on a cable never moves the divider - the
@@ -503,12 +508,13 @@ function wireCaption(layer, caption) {
     g.addEventListener('focus', () => show(g));
     g.addEventListener('blur', rest);
     g.addEventListener('pointerdown', ev => {
+      if (GRABS.has(ev)) return;           // the divider's grip, over this cable
       if (ev.pointerType === 'touch' || ev.pointerType === 'pen') { pinned = g; show(g); }
     });
   }
   // A tap anywhere off a cable lets the pinned one go.
   document.addEventListener('pointerdown', ev => {
-    if (!pinned || ev.target.closest?.('[data-hero-cable]')) return;
+    if (!pinned || (!GRABS.has(ev) && ev.target.closest?.('[data-hero-cable]'))) return;
     pinned = null;
     rest();
   });
@@ -606,8 +612,10 @@ export async function heroReveal(host) {
   // THE HANDLE ALWAYS DRAGS. It is pointer-events: none (so it never hides
   // the drawing from a hover), which means a press on it lands on whatever is
   // under it - often a cable. So the stage decides first, in the capture
-  // phase: a press on the grip, or on the bar itself, starts the drag and
-  // goes no further, whatever is under it. Anywhere else, a press on a cable
+  // phase: a press on the grip, or on the bar itself, starts the drag
+  // whatever is under it, and is marked in GRABS - so a cable under the grip
+  // does not pin itself, while the document's listener still sees the press
+  // and lets any pinned cable go, as it does for any press off a cable. Anywhere else, a press on a cable
   // is asking about the cable (hero cables' own pointerdown), and a press off
   // one moves the divider there, as always.
   const grip = handle.querySelector('.reveal-grip');
@@ -621,7 +629,7 @@ export async function heroReveal(host) {
   stage.addEventListener('pointerdown', ev => {
     const grab = onHandle(ev);
     if (!grab && ev.target.closest?.('[data-hero-cable]')) return;
-    if (grab) ev.stopPropagation();
+    if (grab) GRABS.add(ev);
     dragging = true; at(ev);
     // Stops the drag becoming a text selection across the silkscreen.
     ev.preventDefault();

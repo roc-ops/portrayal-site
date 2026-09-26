@@ -478,6 +478,38 @@ def check_hero_cables(page):
             set_split(50)
     step("grip over a cable", grip)
 
+    def pin_then_drag():
+        # A TOUCH-PINNED CABLE LETS GO WHEN THE DIVIDER IS GRABBED. Real touch
+        # input through CDP, so the stage's capture-phase grip handler sees it
+        # as a finger would: tap port-44's cable to pin it, then drag the grip.
+        cdp = page.context.new_cdp_session(page)
+        def touch(kind, x=None, y=None):
+            pts = [] if kind == "touchEnd" else [{"x": x, "y": y, "id": 1}]
+            cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": pts})
+        set_split(0)
+        try:
+            at = page.evaluate(HERO_CABLE_POINT_JS, "port-44")
+            if not at:
+                bad.append("hero: nowhere on port-44's cable can a finger reach it"); return
+            touch("touchStart", *at); touch("touchEnd")
+            if "port-44" not in caption():
+                bad.append(f"hero: a tap on port-44's cable did not pin it ({caption()!r})"); return
+            g = page.evaluate("""() => { const b = document.querySelector('#hero-reveal .reveal-grip').getBoundingClientRect();
+                return [b.x + b.width / 2, b.y + b.height / 2]; }""")
+            before = split_of()
+            touch("touchStart", *g)
+            for dx in (20, 40, 60, 80):
+                touch("touchMove", g[0] + dx, g[1])
+            touch("touchEnd")
+            if split_of() == before:
+                bad.append(f"hero: a touch drag on the grip did not move the divider ({before})")
+            if "port-67" not in caption():
+                bad.append(f"hero: dragging the divider left port-44 pinned ({caption()!r})")
+        finally:
+            cdp.detach()
+            set_split(50)
+    step("pin, then drag the grip", pin_then_drag)
+
     def sag():
         # sag2d SETS EACH DROP (ruling R3): a cable's first control point sits
         # sag2d(run) * SAG_SCALE below its start, clamped only where the curve
