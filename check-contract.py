@@ -834,6 +834,57 @@ for name, doc in docs.items():
           "new upstream: " + ", ".join(f"{k} (first at {at})" for k, at in sorted(unknown.items()))
           + " - teach site/schema.js to render it, then add it to KNOWN")
 
+# ── the hero: a cabled switch ────────────────────────────────────────────
+# The front page's hero is the S9600 with real parts seated in it (spec
+# 2026-09-26-hero-cabled-switch §3-§4): no colored marks, no text badges, no
+# floating callout, and every link in its table seats parts the drawing's
+# cages actually accept.
+hero = (HERE / "site" / "hero-reveal.js").read_text()
+check("pt-mark" not in hero and "pt-label" not in hero,
+      "the hero draws no colored port marks or text badges", "pt-mark/pt-label still in hero-reveal.js")
+check((not re.search(r"callout", hero, re.I) or "no floating callout" in hero)
+      and "reveal-call" not in hero,
+      "the hero has no floating callout", "a callout is still built in hero-reveal.js")
+# Every row seats real parts its cage accepts (spec §7), read off the dist.
+s96 = json.loads((DIST / "s9600-72xc.configs.json").read_text())
+cage_acc = {c["id"]: c.get("accepts") or [] for v in s96.get("cages", {}).values() for c in v}
+comp_by = {f"{c['ns']}/{c['name']}@{c['major'][1:]}": c
+           for c in json.loads((DIST / "components.json").read_text())["components"]}
+rows = re.findall(r"'([a-z0-9-]+)':\s*\{[^}]*?seat:\s*\{([^}]*)\}[^}]*?jacket:\s*'([a-z]+)'", hero, re.S)
+bad_hero = []
+for port, seat, jacket in rows:
+    pairs = dict(re.findall(r"'([^']+)':\s*'([^']+)'", seat))
+    if not pairs:
+        bad_hero.append(f"{port}: seats nothing")
+    for key, ref in pairs.items():
+        if ref not in comp_by:
+            bad_hero.append(f"{port}: {ref} is not a component"); continue
+        if "-occupant/" in key:
+            host, bore = key.rsplit("-occupant/", 1)
+            opt = pairs.get(host)
+            ok = any(c.get("id") == bore and ref in (c.get("accepts") or [])
+                     for c in (comp_by.get(opt, {}).get("cages") or []))
+        else:
+            ok = ref in cage_acc.get(key, [])
+        if not ok:
+            bad_hero.append(f"{port}: {key} does not accept {ref}")
+    if jacket not in ("mm", "sm", "dac", "cu"):
+        bad_hero.append(f"{port}: jacket {jacket}")
+check(len(rows) >= 20 and not bad_hero, "every hero link seats real parts its cage accepts, with a jacket",
+      f"{len(rows)} rows parsed; {bad_hero[:5]}")
+# Cable colors come from cables.js. Until Task 1 lands `colorOfJacket`, the
+# hero maps a jacket onto cables.js's existing COLORS through one function,
+# jacketColor, and keeps no color table of its own. (The hero keeps its LAMP
+# colors - those are lamp states, not cables - so this checks the import and
+# jacketColor's body, not every hex in the file.)
+# jacketColor's definition runs to the first blank line after it.
+jc = re.search(r"(?:function\s+jacketColor\b|const\s+jacketColor\s*=).*?\n[ \t]*\n", hero, re.S)
+check(re.search(r"import\s*\{[^}]*\bCOLORS\b[^}]*\}\s*from\s*'\./showcase/cables\.js'", hero) is not None
+      and jc is not None and not re.search(r"#[0-9a-fA-F]{3,8}\b", jc.group(0))
+      and "JACKETS = {" not in hero,
+      "the hero's cable colors come from cables.js",
+      "no COLORS import from ./showcase/cables.js, no jacketColor, a hex in it, or a jacket table of its own")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

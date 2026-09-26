@@ -308,6 +308,35 @@ def check_rear_loose(page, base):
     return bad
 
 
+def check_hero(page):
+    """The front page's hero (spec 2026-09-26-hero-cabled-switch §4): every
+    link in its table seats a real part on the right of the slider, its port
+    lamps are lit, and nothing else is drawn - no colored marks, no text
+    badges, no floating callout, and nothing at all on the flat PNG side.
+    Runs on index.html as the page walk already loaded it."""
+    bad = []
+    try:
+        page.wait_for_selector('#hero-reveal .reveal-rich svg[data-hero-seated]',
+                               state="attached", timeout=READY_MS)
+    except Exception:
+        return ["hero: the rich SVG never said it was seated (data-hero-seated)"]
+    got = page.evaluate("""() => {
+        const rich = document.querySelector('#hero-reveal .reveal-rich svg');
+        const flat = document.querySelector('#hero-reveal .reveal-png');
+        return {seated: rich.querySelectorAll('[data-path$="-occupant"][data-ref]').length,
+                marks: rich.querySelectorAll('.pt-mark, .pt-label').length,
+                callout: document.querySelectorAll('#hero-reveal .reveal-callout, #hero-reveal .reveal-call, #hero-reveal [data-callout]').length,
+                lampsOn: rich.querySelectorAll('[data-path^="led-port-"][data-state="on"]').length,
+                refused: rich.getAttribute('data-hero-refused') || '',
+                flatKids: flat.parentElement.querySelectorAll('svg, [data-cable]').length}; }""")
+    if got["seated"] < 21: bad.append(f"hero: {got['seated']} seated occupants, expected at least 21")
+    if got["refused"]: bad.append(f"hero: the kit refused or failed {got['refused']}")
+    if got["marks"] or got["callout"]: bad.append(f"hero: marks/badges/callout still drawn ({got})")
+    if got["lampsOn"] < 21: bad.append(f"hero: only {got['lampsOn']} port lamps on")
+    if got["flatKids"]: bad.append("hero: the flat PNG side carries drawing")
+    return bad
+
+
 def check_embed(page, base):
     """explorer.html?embed=1: the site bar and mode buttons hidden, the API live."""
     bad = []
@@ -1695,6 +1724,8 @@ def main():
                 page = browser.new_page()
                 try:
                     bad = check(page, base, name)
+                    if name == "index.html":
+                        bad += check_hero(page)
                     if name == "explorer.html":
                         if not page.is_visible(".site-bar"): bad.append("explorer: .site-bar not visible without embed")
                         if not page.is_visible("#mode"): bad.append("explorer: #mode not visible without embed")
