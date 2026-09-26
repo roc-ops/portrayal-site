@@ -2935,6 +2935,45 @@ def check_rack_page(page, base):
     return bad
 
 
+@extra("rack.html: place from the catalog; both faces show it; a device that won't fit says why")
+def check_rack_place(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    # A fresh, empty rack, whatever an earlier check left in this browser.
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+
+    def place(face, u, query, ref):
+        page.click(f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]')
+        page.fill("#catQuery", query)
+        page.click(f'.rk-cat[data-ref="{ref}"]:not([aria-disabled="true"])')
+
+    place("front", 10, "R740", "r740xd")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
+    place("front", 20, "AS7726", "as7726-32x")
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="as7726-32x"][data-panel="ghost"]', timeout=READY_MS)
+    # Behind the switch: the patch panel is too deep, the TM-280 fits.
+    page.click('svg[data-pane="rear"] rect.rk-u[data-u="20"]')
+    page.fill("#catQuery", "FHD")
+    why = page.text_content('.rk-cat[data-ref="fhd-1ufce"] .rk-why') or ""
+    if "mm free behind" not in why:
+        bad.append(f"place: the FHD-1UFCE's reason is {why!r}, expected a depth reason")
+    page.fill("#catQuery", "TM-280")
+    page.click('.rk-cat[data-ref="tm-280"]:not([aria-disabled="true"])')
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+    doc = page.evaluate("() => window.__rack.doc()")
+    got = [(i["ref"], i["ru"], i["face"], i["cfg"]) for i in doc["racks"][0]["items"]]
+    want = [("r740xd", 10, "front", "sff24-rc5-1b2a3a"), ("as7726-32x", 20, "front", "ac-f2b"),
+            ("tm-280", 20, "rear", doc["racks"][0]["items"][2]["cfg"])]
+    if got != want:
+        bad.append(f"place: items {got}, expected {want}")
+    return bad
+
+
 @extra("rack.html: deleting a rack does not let a pending autosave resurrect it")
 def check_rack_delete(page, base):
     bad = []

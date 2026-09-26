@@ -2,19 +2,20 @@
 // goes through commit(), which autosaves and redraws. What the side panel
 // shows follows S.sel.
 
-import {newDoc, withFrame, renamed, uLabel} from './rack/model.js';
+import {newDoc, withFrame, renamed, uLabel, withItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation} from './rack/elevation.js';
 import {reaches, fits} from './rack/fit.js';
-import {loadChassis, chassisLookup} from './rack/chassis.js';
+import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
+import {catalogPanel} from './rack/catalog.js';
 import {el} from './rack/dom.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
-const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null};
+const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [], query: ''};
 let chassisOf = () => null;
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
@@ -26,6 +27,13 @@ const topOf = r => Math.max(0, ...r.items.map(i => i.ru + Math.max(1, chassisOf(
 async function getDoc(id) {
   try { return await S.lib.get(id); }
   catch (err) { console.warn('[portrayal] could not read a stored rack', id, err); return null; }
+}
+
+function place(entry, face, ru) {
+  const cfg = entry.default ?? entry.configs?.[0] ?? '';
+  const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ru, face, label: entry.model || entry.name});
+  S.sel = {kind: 'item', id: item.id};
+  commit(next);
 }
 
 function commit(nextRack) {
@@ -83,14 +91,15 @@ function summary() {
   ]);
 }
 
-// Tasks 10 and 11 replace the 'u' and 'item' branches.
+// Task 11 replaces the 'item' branch.
 function renderSide() {
   const r = rack(), sel = S.sel;
   let body;
   if (!sel) body = summary();
   else if (sel.kind === 'frame') body = frameForm({rack: r, maxTop: topOf(r),
     onName: name => commit(renamed(r, name)), onFrame: patch => commit(withFrame(r, patch))});
-  else if (sel.kind === 'u') body = el('h3', {text: `U${uLabel(r.frame, sel.ru)} · ${sel.face}, empty`});
+  else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
+    chassisOf, query: S.query, onQuery: q => { S.query = q; }, onPick: e => place(e, sel.face, sel.ru)});
   else body = el('h3', {text: itemById(sel.id)?.label ?? 'Device'});
   const kids = [body];
   if (S.notice) { kids.push(el('p', {class: 'rk-error', role: 'alert', text: S.notice})); S.notice = null; }
@@ -151,6 +160,7 @@ async function renderLibrary() {
 async function boot() {
   S.devices = await loadChassis();
   chassisOf = chassisLookup(S.devices);
+  S.entries = catalogEntries(S.devices);
   S.lib = await openLibrary();
   S.save = autosaver(S.lib);
   $('libNote').hidden = S.lib.available;
