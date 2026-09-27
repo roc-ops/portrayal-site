@@ -3973,6 +3973,23 @@ def check_rack_faces(page, base):
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
+
+    # Two screws per ear per U, on the rail's own holes - rack3d.js's rackEars
+    # and the BOM's 4 x U count the same way. The R740xd is 2U: 8 heads.
+    r740_id = page.eval_on_selector('svg[data-pane="front"] [data-device-ref="r740xd"]', "el => el.dataset.itemId")
+    screws = page.eval_on_selector('svg[data-pane="front"]', """(svg, id) => {
+      const ears = svg.querySelector(`g.rk-ears[data-ears-for="${id}"]`);
+      const holes = [...svg.querySelectorAll('[data-rail-hole]')].map(h => h.tagName === 'circle'
+        ? +h.getAttribute('cy') : +h.getAttribute('y') + +h.getAttribute('height') / 2);
+      const heads = ears ? [...ears.querySelectorAll('circle')] : [];
+      return {n: heads.length,
+              onHoles: heads.every(c => holes.some(y => Math.abs(y - +c.getAttribute('cy')) < 0.01))};
+    }""", r740_id)
+    if screws["n"] != 8:
+        bad.append(f"faces: a 2U device's ears carry {screws['n']} screws, expected 8 (2 per ear per U)")
+    if not screws["onHoles"]:
+        bad.append("faces: a screw head is not on a rail hole")
+
     xr2, yr2 = u_center(page, "rear", 10)
     page.mouse.click(xr2, yr2)
     page.wait_for_selector("#iLabel, #catQuery", timeout=READY_MS)

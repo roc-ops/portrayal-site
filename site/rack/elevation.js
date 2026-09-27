@@ -84,9 +84,8 @@ function outline(top, ruH, text, attrs) {
 // edges like a real ear. Geometry matches rack3d.js's rackEars and the rails
 // in rails.js - the flange runs from the device's own edge (the opening's
 // side, x=0 or x=OPENING) out across the rail to just past the hole column
-// (SIDES[].hole), and a screw head sits at the device's top-most and
-// bottom-most holes (HOLE_DY) within its span - for a 1U device, that is
-// simply the first and last hole of that U.
+// (SIDES[].hole), and a screw head sits at the first and last hole (HOLE_DY)
+// of every U the device covers.
 //
 // Fix round 1: the flange in the rail's own surface-2/line colours was
 // nearly invisible against the rail itself. It reads as metal now - a
@@ -98,7 +97,15 @@ const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 function drawEars(out, item, topOf, ruH, C = THEMED) {
   const X = x => x + OPENING / 2;
   const top = topOf(ruH), bottom = topOf(0);
-  const screwYs = [bottom - HOLE_DY[0], topOf(ruH - 1) - HOLE_DY[HOLE_DY.length - 1]];
+  // Two screws per ear in EVERY U the ear covers - the first and last hole of
+  // each U - as rack3d.js's rackEars draws them and as the BOM counts them
+  // (4 x U per device). One pair for the whole device read as a 1U ear on a
+  // 10U chassis.
+  const screwYs = [];
+  for (let k = 0; k < ruH; k++) {
+    const uBottom = topOf(k);
+    screwYs.push(uBottom - HOLE_DY[0], uBottom - HOLE_DY[HOLE_DY.length - 1]);
+  }
   const g = svgEl('g', {class: 'rk-ears', 'data-ears-for': item.id, 'data-item-id': item.id,
                         'pointer-events': 'all'});
   for (const s of SIDES) {
