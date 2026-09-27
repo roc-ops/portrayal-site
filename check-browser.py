@@ -49,7 +49,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
          "schema.html", "kit.html", "schematic.html", "marks-harness.html",
-         "viewer3d-harness.html", "rack.html"]
+         "viewer3d-harness.html", "rack.html", "contribute.html"]
 
 # REQUESTS THAT ARE MEANT TO MISS. compare.html overlays a photograph on a
 # drawing and asks for one per view; this repository has never shipped any, and
@@ -2340,7 +2340,8 @@ def check_kit_no_webgl(page, base):
 
 
 DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
-              "annotate.html", "drawio.html", "exporter.html", "drawings.html"]
+              "annotate.html", "drawio.html", "exporter.html", "drawings.html",
+              "contribute.html"]
 
 
 # EVERY FACE RESOLVES (Portrayal #670). Each distinct drawing is written once,
@@ -2449,7 +2450,7 @@ def check_docs_menu(page, base):
             bad.append(f"{name}: the Docs label is {off:.1f}px off its neighbors' baseline")
         page.click(f"{d} > summary")
         links = page.eval_on_selector_all(f"{d}[open] .navmenu-items a", "as => as.map(a => a.getAttribute('href'))")
-        if links != ["schema.html", "kit.html"]:
+        if links != ["schema.html", "kit.html", "contribute.html"]:
             bad.append(f"{name}: the open Docs menu offers {links}")
         page.keyboard.press("Escape")
         if page.evaluate(f"!!document.querySelector('{d}').open"):
