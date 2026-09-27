@@ -5,7 +5,7 @@
 import {newDoc, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation, uAtY} from './rack/elevation.js';
-import {fits, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
+import {fits, reaches, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -318,18 +318,28 @@ function onPaneClick(ev) {
     }
   }
   // A `through` panel may now cover an empty U's own hit target - the
-  // half-depth case, where the space behind a short front device is exactly
+  // half-depth case, where the space behind a SHORT front device is exactly
   // where a rear device goes - so a plain click there opens the picker for
-  // that U on the clicked face when the U is actually free there, and only
-  // falls through to selecting the item when it is not (round 3 §2).
+  // that U on the clicked face instead of selecting the item, but only when
+  // all three hold (fix round 1): the frame is four-post (a two-post's
+  // through panel is the same physical device on the one shared plane -
+  // reaches() is always true there, but the frame check makes the rule read
+  // without relying on that), the item does NOT reach this rail (fit.js's
+  // reaches - a full-depth server's through panel IS its real, present rear,
+  // not a stand-in for empty space), and the U is actually free on this
+  // face. Otherwise a through panel is clicked like any other panel: it
+  // selects the item.
   const through = ev.target.closest('[data-panel="through"]');
   if (through) {
     const svg = through.closest('svg');
     const face = svg.dataset.pane;
-    const u = uAtY(rack().frame, svgY(svg, ev.clientX, ev.clientY));
-    const free = !itemsWithU(rack(), chassisOf)
+    const r = rack();
+    const u = uAtY(r.frame, svgY(svg, ev.clientX, ev.clientY));
+    const item = itemById(through.dataset.itemId);
+    const free = !itemsWithU(r, chassisOf)
       .some(it => it.face === face && u >= it.ru && u <= it.ru + it.u - 1);
-    return free ? select({kind: 'u', face, ru: u}) : select({kind: 'item', id: through.dataset.itemId});
+    const opensPicker = r.frame.kind === 'four-post' && item && !reaches(item, r, chassisOf) && free;
+    return opensPicker ? select({kind: 'u', face, ru: u}) : select({kind: 'item', id: through.dataset.itemId});
   }
   const hit = ev.target.closest('[data-item-id]');
   if (hit) return select({kind: 'item', id: hit.dataset.itemId});

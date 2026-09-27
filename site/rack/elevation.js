@@ -77,7 +77,13 @@ function outline(top, ruH, text, attrs) {
 // (SIDES[].hole), and a screw head sits at the device's top-most and
 // bottom-most holes (HOLE_DY) within its span - for a 1U device, that is
 // simply the first and last hole of that U.
+//
+// Fix round 1: the flange in the rail's own surface-2/line colours was
+// nearly invisible against the rail itself. It reads as metal now - a
+// muted-ink flange (not full ink, so it stays a shade behind the device's
+// own panel) with a darker screw head and a short slot line.
 const EAR_OVERHANG = 3; // mm the flange runs past the hole centre, so the screw head sits inside it
+const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 
 function drawEars(out, item, topOf, ruH) {
   const X = x => x + OPENING / 2;
@@ -90,10 +96,13 @@ function drawEars(out, item, topOf, ruH) {
     const x0 = s.side === 'left' ? holeX - EAR_OVERHANG : OPENING;
     const x1 = s.side === 'left' ? 0 : holeX + EAR_OVERHANG;
     g.append(svgEl('rect', {x: x0, y: top, width: x1 - x0, height: bottom - top,
-      fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
-    for (const cy of screwYs)
+      fill: 'var(--pt-ink-muted)', 'fill-opacity': 0.35, stroke: 'var(--pt-ink-muted)', 'stroke-width': 1}));
+    for (const cy of screwYs) {
       g.append(svgEl('circle', {cx: holeX, cy, r: HOLE_ROUND / 2,
-        fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
+        fill: 'var(--pt-ink-muted)', stroke: 'var(--pt-ink)', 'stroke-width': 0.6}));
+      g.append(svgEl('line', {x1: holeX - SCREW_SLOT, y1: cy, x2: holeX + SCREW_SLOT, y2: cy,
+        stroke: 'var(--pt-ink)', 'stroke-width': 0.5}));
+    }
   }
   out.append(g);
 }
@@ -127,6 +136,12 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     }
   }
   let styled = false;
+  // Fix round 1: a selection ring is queued here and appended only after
+  // every item is drawn, not right after its own item - otherwise a ring
+  // drawn for a `through` item (through panels go first, by precedence
+  // below) could sit under a `mounted` item's panel drawn later at the same
+  // U (a four-post pair sharing it).
+  const rings = [];
   // Precedence (round 3 §2): draw every item's `through` panel before any
   // `mounted` one, so a four-post pair sharing a U shows the item actually
   // mounted on this face on top - by data-panel, not by item order.
@@ -139,12 +154,15 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const panel = panelFor(it, view);
     const face = await configuredFace({ref: it.ref, cfg: it.cfg, view: panel,
                                        swaps: it.swaps || {}, fields: it.fields || {}});
-    const ruH = it.u ?? 1;
+    // One height for this item, computed before the `!face` branch: `it.u`
+    // when it is known (every real caller sets it via fit.js's itemsWithU),
+    // falling back to the compiled drawing's own height only when it is not.
+    let ruH = it.u ?? 1;
     if (!face) {
       if (placeholders) {
         out.append(outline(topOf(ruH), ruH, `${it.label} · no ${panel} drawing`,
                            {...common, 'data-panel': 'missing'}));
-        if (it.id === selectedId) out.append(ring(topOf(ruH), ruH));
+        if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
       }
       continue;
     }
@@ -152,8 +170,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     const vb = (root.getAttribute('viewBox') || '').split(/\s+/).map(Number);
     const w = parseFloat(root.getAttribute('width')) || vb[2];
     const h = parseFloat(root.getAttribute('height')) || vb[3];
-    const itemRuH = it.u ?? Math.max(1, Math.round(h / RU));
-    const y = topOf(itemRuH) + (itemRuH * RU - h) / 2;
+    if (it.u == null) ruH = Math.max(1, Math.round(h / RU));
+    const y = topOf(ruH) + (ruH * RU - h) / 2;
     const g = svgEl('g', {transform: `translate(${(OPENING - w) / 2} ${y})`, ...common,
                           'data-panel': through ? 'through' : 'mounted'});
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
@@ -168,8 +186,9 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     out.append(g);
     // Ears only on the face the item is actually mounted on, and only after
     // its own group, so they overlap its edges like a real ear.
-    if (!through && ears) drawEars(out, it, topOf, itemRuH);
-    if (it.id === selectedId) out.append(ring(topOf(itemRuH), itemRuH));
+    if (!through && ears) drawEars(out, it, topOf, ruH);
+    if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
   }
+  for (const [top, ruH] of rings) out.append(ring(top, ruH));
   return out;
 }
