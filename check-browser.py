@@ -2315,29 +2315,34 @@ DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "compone
 # schema file the site carries and none for one it does not, so it is right on
 # both sides of the change. After: served with the overlay schema gone and a
 # listing schema in its place.
-@extra("schema.html shows the NOS overlay tab before #677 and the NOS listing tab after")
+@extra("schema.html shows a NOS tab for the NOS schema the site carries - overlay before #677, listing after")
 def check_schema_nos_tab(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"schema: uncaught {e}"))
     tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
+    have = "listing" if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "listing.schema.json").exists() else "overlay"
+    other = "overlay" if have == "listing" else "listing"
+    # as vendored
     page.goto(f"{base}/schema.html", wait_until="load")
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
-    before = page.evaluate(tabs)
-    if before != ["device", "component", "overlay"]:
-        bad.append(f"schema: before #677 the tabs are {before}")
-    listing = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": "listing",
-               "type": "object", "properties": {"hardware": {"type": "string", "description": "the device it lists"}}}
-    page.route("**/assets/schemas/overlay.schema.json", lambda r: r.fulfill(status=404, body="gone in #677"))
-    page.route("**/assets/schemas/listing.schema.json", lambda r: r.fulfill(json=listing))
-    page.goto(f"{base}/schema.html?doc=listing", wait_until="load")
+    got = page.evaluate(tabs)
+    if got != ["device", "component", have]:
+        bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
+    # the other side of #677: this snapshot's NOS schema gone, the other one served
+    stub = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": other, "type": "object",
+            "properties": {"hardware": {"type": "string", "description": "a property to find"}}}
+    page.route(f"**/assets/schemas/{have}.schema.json", lambda r: r.fulfill(status=404, body="the other side of #677"))
+    page.route(f"**/assets/schemas/{other}.schema.json", lambda r: r.fulfill(json=stub))
+    page.goto(f"{base}/schema.html?doc={other}", wait_until="load")
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
-    after = page.evaluate(tabs)
-    if after != ["device", "component", "listing"]:
-        bad.append(f"schema: after #677 the tabs are {after}")
+    got = page.evaluate(tabs)
+    order = ["device", "component", "listing"] if other == "listing" else ["device", "component", "overlay"]
+    if got != order:
+        bad.append(f"schema: with only {other}.schema.json the tabs are {got}")
     if not page.query_selector('#schema-body .sc-prop[data-ptr="/properties/hardware"]'):
-        bad.append("schema: ?doc=listing did not render the listing schema")
+        bad.append(f"schema: ?doc={other} did not render the {other} schema")
     return bad
 
 @extra("every face resolves through configs[].files (Portrayal #670)")
