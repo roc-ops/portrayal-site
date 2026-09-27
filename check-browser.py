@@ -4034,6 +4034,31 @@ def check_rack_rails_metal(page, base):
     return bad
 
 
+@extra("rack.html: an In development pill opens a note on what's done and what's coming")
+def check_rack_dev_note(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if not page.is_visible("#devNote > summary"):
+        return bad + ["dev note: no In development pill in the top bar"]
+    if (page.text_content("#devNote > summary") or "").strip() != "In development":
+        bad.append(f"dev note: the pill reads {page.text_content('#devNote > summary')!r}")
+    if page.is_visible("#devNote .rk-devnote-body"):
+        bad.append("dev note: the note is open before it is clicked")
+    page.click("#devNote > summary")
+    body = page.text_content("#devNote .rk-devnote-body") or ""
+    for want in ("still being built", "Coming next", "cabling"):
+        if want not in body:
+            bad.append(f"dev note: the note doesn't mention {want!r}")
+    box = page.evaluate("""() => { const r = document.querySelector('#devNote .rk-devnote-body').getBoundingClientRect();
+                              return [Math.round(r.left), Math.round(r.right), innerWidth]; }""")
+    if box[0] < 0 or box[1] > box[2]:
+        bad.append(f"dev note: the note opens off screen ({box})")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
