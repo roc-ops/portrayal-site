@@ -79,7 +79,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
 
   function beginDrag(ev) {
     d.moved = true;
-    d.group.style.opacity = '0.4';
+    d.panelGroup.style.opacity = '0.4';
     // The grab point is where the pointer went DOWN, not where it happens to
     // be once it has moved past the threshold - by the time a move fires,
     // the pointer may already be a whole U or more from the press.
@@ -95,10 +95,11 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
 
   function finish(commitMove) {
     if (!d) return;
-    const {id, group, pointerId} = d;
+    const {id, group, panelGroup, pointerId} = d;
     if (d.rafId != null) cancelAnimationFrame(d.rafId);
     clearPreview();
-    if (group) { group.style.opacity = ''; try { group.releasePointerCapture(pointerId); } catch { /* already released */ } }
+    if (panelGroup) panelGroup.style.opacity = '';
+    if (group) { try { group.releasePointerCapture(pointerId); } catch { /* already released */ } }
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
     window.removeEventListener('pointercancel', onPointerCancel);
@@ -163,8 +164,14 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
                     || group.classList.contains('rk-ears'))) return;
     const item = itemById(group.dataset.itemId);
     if (!item) return;
+    // A press on the ears group itself (fix round 1 #3) must still fade and
+    // restore the item's own PANEL, not the small ear shapes - pointer
+    // capture stays on whatever was actually pressed.
+    const panelGroup = group.dataset.panel
+      ? group
+      : group.closest('svg')?.querySelector(`[data-item-id="${item.id}"][data-panel]`) || group;
     group.setPointerCapture(ev.pointerId);
-    d = {id: item.id, item, group, pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY,
+    d = {id: item.id, item, group, panelGroup, pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY,
          origFace: item.face, moved: false, scrollDir: 0, rafId: null};
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);

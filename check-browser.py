@@ -3762,6 +3762,41 @@ def check_rack_faces(page, base):
     heading = page.text_content(".rk-side h3") or ""
     if "rear, empty" not in heading or "U20" not in heading.replace("U 20", "U20"):
         bad.append(f"faces: clicking the free rear U under MX204's through panel opened {heading!r}, not the U20/rear picker")
+
+    # Fix round 1 #1: a through panel opens the picker ONLY when the frame is
+    # four-post, the item does not reach this rail, and the U is free here -
+    # otherwise a click on it selects the item, same as any other panel.
+    #
+    # Two-post: front and rear are the same shared plane (fit.js's reaches()
+    # is always true there), so a real click on a front device's rear
+    # (through) panel selects the device.
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    page.click("#frameBtn")
+    page.select_option("#fKind", "two-post")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
+    pick(page, "front", 10, "TM-280", "tm-280")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="through"]', timeout=READY_MS)
+    xr, yr = u_center(page, "rear", 10)
+    page.mouse.click(xr, yr)
+    page.wait_for_selector("#iLabel, #catQuery", timeout=READY_MS)
+    if page.query_selector("#catQuery"):
+        bad.append("faces: a two-post click on a front device's rear (through) panel opened the picker instead of selecting the device")
+
+    # Four-post, full depth: R740xd (737.5 mm) reaches the far rail (>= 740 -
+    # 50), so its through panel IS its real, present rear - a click there
+    # selects it too, not the picker.
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    pick(page, "front", 10, "R740", "r740xd")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
+    xr2, yr2 = u_center(page, "rear", 10)
+    page.mouse.click(xr2, yr2)
+    page.wait_for_selector("#iLabel, #catQuery", timeout=READY_MS)
+    if page.query_selector("#catQuery"):
+        bad.append("faces: a four-post click on a full-depth R740xd's rear (through) panel opened the picker instead of selecting it")
     return bad
 
 
