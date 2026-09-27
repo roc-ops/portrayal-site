@@ -1003,6 +1003,19 @@ check(bool(_fm) and json.loads(_fm.group(1))["imports"] == _imap and "<base" not
       "kit-frame.html sits beside kit.html and carries the same import map",
       "the frame's import map differs from kit.html's, or it has a <base> (jdist resolves against location, not <base>)")
 
+# THE DOCS MENU: Schema and Using the kit, one menu, on every page with a nav.
+_DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
+               "annotate.html", "drawio.html", "exporter.html", "drawings.html"]
+for _p in _DOCS_PAGES:
+    _t = (HERE / _p).read_text()
+    _m = re.search(r'<details class="navmenu"[^>]*data-docs[^>]*>(.*?)</details>', _t, re.S)
+    _ok = bool(_m) and 'href="schema.html"' in _m.group(1) and 'href="kit.html"' in _m.group(1) \
+          and "<summary>Docs</summary>" in _m.group(1)
+    _nav = _t.split("</nav>")[0]
+    check(_ok and re.search(r'<a href="schema\.html"[^>]*>Schema</a>', _nav) is None,
+          f"{_p}: the header has a Docs menu (Schema, Using the kit) in place of the Schema link",
+          "no <details class=navmenu data-docs> with both links, or a bare Schema link left in the nav")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

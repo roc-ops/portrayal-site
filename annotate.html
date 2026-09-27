@@ -243,7 +243,13 @@
         <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
       </div>
     </details>
-    <a href="schema.html">Schema</a>
+    <details class="navmenu" data-docs>
+      <summary>Docs</summary>
+      <div class="navmenu-items">
+        <a href="schema.html">Schema<span class="hint">the manifest, component and overlay contracts</span></a>
+        <a href="kit.html">Using the kit<span class="hint">2D, 3D and export in your own pages</span></a>
+      </div>
+    </details>
     <a href="https://github.com/roc-ops/Portrayal">GitHub</a>
   </nav>
 </div>
@@ -1332,6 +1338,23 @@ if (fromHash) {
                  (out ? `; ${out} do not fit this drawing and were left out` : ''),
       out ? 'bad' : 'good');
 }
+</script>
+<script>
+// Close the export menu on Escape or on a click outside it. <details> handles
+// opening, keyboard focus and the disclosure semantics on its own; these are the
+// two behaviours a nav menu needs that it does not give you.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
 </script>
 </body>
 </html>

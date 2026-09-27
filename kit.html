@@ -63,7 +63,13 @@
         <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
         </div>
       </details>
-      <a href="schema.html">Schema</a>
+      <details class="navmenu" data-docs data-here>
+        <summary>Docs</summary>
+        <div class="navmenu-items">
+          <a href="schema.html">Schema<span class="hint">the manifest, component and overlay contracts</span></a>
+          <a href="kit.html" aria-current="page">Using the kit<span class="hint">2D, 3D and export in your own pages</span></a>
+        </div>
+      </details>
       <a class="gh" href="https://github.com/roc-ops/Portrayal">GitHub</a>
       <a class="nav-sponsor" href="https://www.rocnetsupply.com/" aria-label="Sponsored by RocNet Supply">
         <span class="nav-sponsor-label">Sponsored by</span>
@@ -96,6 +102,7 @@
           <a href="#three-d">In 3D</a>
           <a href="#annotate">Annotate and export</a>
           <a href="#shell">The Explorer shell</a>
+          <a href="#files">Getting the files</a>
         </nav>
         <div class="kit-body">
           <section class="kit-sec" id="start">
@@ -195,6 +202,28 @@
                 <button type="button" data-act="copy">Copy</button></div>
             </figure>
           </section>
+          <section class="kit-sec" id="files">
+            <h2>Getting the files</h2>
+            <p>Two things: the kit's modules, and the compiled files they read. Today you
+              copy both - the kit is a dozen plain ES modules with no build step, and the
+              compiled files are static - and serve them beside your page. Point an import
+              map at the kit, and at three.js if you use 3D:</p>
+            <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
+{ "imports": {
+    "@portrayal/kit/": "/vendor/portrayal-kit/",
+    "three": "/vendor/three/three.module.js",
+    "three/addons/": "/vendor/three/addons/"
+} }
+&lt;/script&gt;</code></pre>
+            <p>and set <code>DIST</code> in each recipe to wherever the compiled files are.
+              The 2D recipes don't need three.js at all. (With npm,
+              <code>@portrayal/kit/viewer3d</code> resolves through the package's exports; with a
+              copied folder, add <code>.js</code> or list each module in the map, as this page does.)</p>
+            <p class="kit-note">How the kit and the compiled files are distributed is being
+              settled: <code>@portrayal/kit</code> on npm, and a registry for the compiled
+              files (roc-ops/Portrayal #526, #527, #528). This section will change when
+              those land.</p>
+          </section>
         </div>
       </div>
     </div>
@@ -210,6 +239,7 @@
     <p>
       The kit is Apache-2.0, the same as the rest of Portrayal.
     </p>
+    <p class="footer-tools"><a href="schema.html">Schema</a> · <a href="kit.html">Using the kit</a></p>
     <p><a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a></p>
     <a class="footer-sponsor" href="https://www.rocnetsupply.com/">
       <img class="on-dark" src="brand/sponsor/RocNet-Primary-Logo-white.svg" alt="" width="60" height="36">

@@ -2275,6 +2275,49 @@ def check_kit_no_webgl(page, base):
     if "webgl" not in txt.lower(): bad.append(f"kit: the no-WebGL 3D pane says {txt!r}")
     return bad
 
+
+DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
+              "annotate.html", "drawio.html", "exporter.html", "drawings.html"]
+
+@extra("the Docs menu opens on every page, level with its neighbors, and Escape closes it")
+def check_docs_menu(page, base):
+    bad = []
+    page.set_viewport_size({"width": 1440, "height": 900})
+    for name in DOCS_PAGES:
+        page.goto(f"{base}/{name}", wait_until="domcontentloaded")
+        d = "details.navmenu[data-docs]"
+        try:
+            page.wait_for_selector(d, timeout=READY_MS)
+        except Exception:
+            bad.append(f"{name}: no Docs menu"); continue
+        # the label sits on the same baseline as the nav's plain links
+        off = page.evaluate("""() => {
+            const s = document.querySelector('details.navmenu[data-docs] > summary');
+            const nav = s.closest('nav');
+            const link = [...nav.querySelectorAll(':scope > a')].find(a => a.offsetParent && a.textContent.trim().length > 2
+                                                                  && a.getClientRects().length === 1);
+            if (!link) return null;
+            const r = x => { const g = document.createRange(); g.selectNodeContents(x.firstChild); return g.getBoundingClientRect().bottom; };
+            return Math.abs(r(s) - r(link)); }""")
+        if off is not None and off > 0.6:
+            bad.append(f"{name}: the Docs label is {off:.1f}px off its neighbors' baseline")
+        page.click(f"{d} > summary")
+        links = page.eval_on_selector_all(f"{d}[open] .navmenu-items a", "as => as.map(a => a.getAttribute('href'))")
+        if links != ["schema.html", "kit.html"]:
+            bad.append(f"{name}: the open Docs menu offers {links}")
+        page.keyboard.press("Escape")
+        if page.evaluate(f"!!document.querySelector('{d}').open"):
+            bad.append(f"{name}: Escape leaves the Docs menu open")
+    # a phone-width masthead still fits: the Docs menu must not push the page sideways
+    for w in (360, 375):
+        page.set_viewport_size({"width": w, "height": 800})
+        for name in ("index.html", "schema.html", "kit.html"):
+            page.goto(f"{base}/{name}", wait_until="domcontentloaded")
+            page.wait_for_timeout(300)
+            sw = page.evaluate("document.documentElement.scrollWidth")
+            if sw > w: bad.append(f"{name} at {w}px scrolls sideways to {sw}px")
+    return bad
+
 @extra("configuredFace snapshots swaps/fields, immune to the caller mutating them before awaiting")
 def check_configured_face_snapshot(page, base):
     bad = []
