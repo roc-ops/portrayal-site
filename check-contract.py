@@ -592,7 +592,8 @@ check("++buildSeq" in bp and after_await and all("current()" in l for l in after
 # frame onto the clone instead, for every export at once; no stage keeps a
 # private workaround (stage 6's elevationText swapped the live viewBox).
 art = (HERE / "site" / "showcase" / "artifact.js").read_text()
-check("node.__ptBase = baseFrame" in art and "__ptBase?.()" in art,
+svg_export = (HERE / "site" / "svg-export.js").read_text()
+check("node.__ptBase = baseFrame" in art and "__ptBase?.()" in svg_export,
       "exports use panZoom's base frame, not the current crop",
       "panZoom must record its base frame and standalone() must apply it to the clone")
 check("elevationText" not in stage_txt,
