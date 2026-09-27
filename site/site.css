@@ -660,9 +660,12 @@ code { font-size: 0.875em; color: var(--pt-ink); }
  */
 .navmenu { position: relative; }
 .navmenu > summary {
-  list-style: none; cursor: pointer; display: inline-flex; align-items: center;
+  list-style: none; cursor: pointer; display: flex; align-items: center;
   gap: 0.25rem; color: var(--pt-ink-muted);
 }
+/* `flex`, not `inline-flex`: an inline box sits on a line in the <details>,
+   whose strut is the details' own 1rem, so the label's baseline dropped a
+   pixel or two below the links beside it. */
 /* The bar sizes its links with rules that match `a`, so a <summary> falls back
    to 1rem and sits visibly larger than everything beside it. */
 .masthead-nav .navmenu > summary { font-size: 0.9rem; }
