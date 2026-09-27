@@ -29,6 +29,7 @@ async function runOne(fig) {
   const my = gen[name] = (gen[name] || 0) + 1;   // a newer run supersedes this one
   const pane = fig.querySelector('.kit-result');
   delete fig.dataset.result; delete fig.dataset.error;
+  pane.querySelector('.kit-host')?.viewer?.dispose?.();
   pane.replaceChildren();
   pane.classList.add('busy');
   try {
@@ -116,6 +117,27 @@ if (new URLSearchParams(location.search).get('kitfail') === '1') {
   })();
 }
 
+// THE 3D RECIPE BUILDS ON A CLICK. It fetches six faces and compiles shaders,
+// which no reader should pay for by scrolling past it. Without WebGL the pane
+// says why, in the site's own words (webgl.js), rather than offering a button
+// that can only fail.
+async function armClick(fig) {
+  const pane = fig.querySelector('.kit-result');
+  const {webglTrouble} = await import('./webgl.js');
+  const why = webglTrouble();
+  if (why) {
+    pane.replaceChildren(Object.assign(document.createElement('p'),
+      {className: 'kit-fail', textContent: `3D needs WebGL: ${why}`}));
+    fig.dataset.error = `webgl: ${why}`;
+    return;
+  }
+  const b = Object.assign(document.createElement('button'),
+    {type: 'button', className: 'kit-build', textContent: 'Build the 3D view'});
+  b.dataset.act = 'build';
+  b.onclick = () => runOne(fig);
+  pane.replaceChildren(b);
+}
+
 const io = new IntersectionObserver(entries => {
   for (const e of entries) {
     if (!e.isIntersecting) continue;
@@ -128,6 +150,7 @@ for (const fig of document.querySelectorAll('figure.kit-ex')) {
   if (fig.dataset.example === 'kitfail') continue;
   wire(fig);
   if (fig.dataset.run === 'view' || fig.dataset.run === 'frame') io.observe(fig);
+  if (fig.dataset.run === 'click') armClick(fig);
 }
 
 // The table of contents marks the section in view.

@@ -2186,6 +2186,7 @@ KIT_EXPECT = {
     "03-metadata": lambda r: r.get("device") == "UfiSpace S9600-72XC" and "base" in r.get("configs", [])
                    and r.get("chassis", {}).get("w") == 436 and r.get("chassis", {}).get("ru") == 2
                    and r.get("devices", 0) >= 100,
+    "05-viewer3d": lambda r: True,     # clicked and asserted on its own below
     "04-seat": lambda r: r.get("seated", 0) >= 3 and r.get("refused") == [] and r.get("url", "").startswith("port-4~"),
 }
 
@@ -2227,6 +2228,21 @@ def check_kit_page(page, base):
                            " await new Promise(r => setTimeout(r, 50)); return window.__kit.copyText['01-drawing']; }")
     src = page.evaluate("() => fetch('site/kit-examples/01-drawing.js').then(r => r.text())")
     if copied != src: bad.append("kit: Copy did not produce the example's exact source")
+    # 05: 3D builds on a click, selects port-12 and lights its lamp - or, with
+    # no WebGL here, says why instead of showing a black box.
+    fig3 = 'figure[data-example="05-viewer3d"]'
+    if not page.query_selector(fig3):
+        bad.append("kit: no 05-viewer3d figure")
+    elif webgl_trouble(page):
+        print("  note  kit.html 3D recipe not exercised: this runner has no WebGL")
+    else:
+        page.locator(fig3).scroll_into_view_if_needed()
+        page.click(f"{fig3} .kit-result button[data-act='build']")
+        page.wait_for_selector(f"{fig3}[data-result], {fig3}[data-error]", timeout=READY_3D_MS)
+        err = page.get_attribute(fig3, "data-error")
+        res = json.loads(page.get_attribute(fig3, "data-result") or "{}")
+        if err or not (res.get("loaded") and res.get("selected") == "port-12" and res.get("lit") == "state-on"):
+            bad.append(f"kit: 3D recipe returned {res} / {err}")
     # a failing recipe stays in its own pane
     page.goto(f"{base}/kit.html?kitfail=1", wait_until="load")
     page.wait_for_selector('figure[data-example="kitfail"][data-error]', timeout=READY_MS)
@@ -2234,6 +2250,20 @@ def check_kit_page(page, base):
     if "failed" not in txt: bad.append(f"kit: a failing recipe's pane says {txt!r}")
     page.locator('figure[data-example="01-drawing"]').scroll_into_view_if_needed()
     page.wait_for_selector('figure[data-example="01-drawing"][data-result]', timeout=READY_MS)
+    return bad
+
+
+@extra("kit.html: without WebGL the 3D recipe says why")
+def check_kit_no_webgl(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"kit: uncaught {e}"))
+    page.add_init_script(NO_WEBGL_JS)
+    page.goto(f"{base}/kit.html", wait_until="load")
+    fig3 = 'figure[data-example="05-viewer3d"]'
+    page.locator(fig3).scroll_into_view_if_needed()
+    page.wait_for_selector(f"{fig3}[data-error]", timeout=READY_MS)
+    txt = page.text_content(f"{fig3} .kit-result") or ""
+    if "webgl" not in txt.lower(): bad.append(f"kit: the no-WebGL 3D pane says {txt!r}")
     return bad
 
 @extra("configuredFace snapshots swaps/fields, immune to the caller mutating them before awaiting")
