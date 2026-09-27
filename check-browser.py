@@ -2586,7 +2586,7 @@ def check_rear_elevation(page, base):
     return bad
 
 
-@extra("elevation.js draws both faces of a four-post rack: mounted, through, ghost, holes")
+@extra("elevation.js draws both faces of a four-post rack: mounted, through, missing, holes, precedence")
 def check_rack_elevation(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -2596,6 +2596,8 @@ def check_rack_elevation(page, base):
       const M = await import('/site/rack/model.js');
       const frame = M.normalizeFrame({kind: 'four-post', heightRU: 24,
                                       holes: {style: 'tapped', thread: '12-24'}});
+      // i2 (front, U20) and i3 (rear, U20) share a U - a four-post pair - so
+      // each pane's precedence (through drawn before mounted) is exercised.
       const items = [
         {id: 'i1', ref: 'r740xd', cfg: 'sff24-rc5-1b2a3a', label: 'R740xd', ru: 10, u: 2,
          face: 'front', turned: false, swaps: {}, fields: {}},
@@ -2604,11 +2606,14 @@ def check_rack_elevation(page, base):
         {id: 'i3', ref: 'eps201', cfg: 'ac-f2b', label: 'AS4630', ru: 20, u: 1,
          face: 'rear', turned: false, swaps: {}, fields: {}},
       ];
-      const reaches = it => it.ref === 'r740xd';
-      const draw = view => E.drawElevation({items, frame, view, reaches, hitTargets: true,
+      const draw = view => E.drawElevation({items, frame, view, hitTargets: true,
                                            selectedId: 'i2', selectedU: view === 'front' ? 5 : null});
       const front = await draw('front'), rear = await draw('rear');
       const panel = (svg, id) => svg.querySelector(`[data-item-id="${id}"]`)?.dataset.panel;
+      const docOrder = (svg, a, b) => {
+        const A = svg.querySelector(`[data-item-id="${a}"]`), B = svg.querySelector(`[data-item-id="${b}"]`);
+        return !!(A && B) && !!(A.compareDocumentPosition(B) & Node.DOCUMENT_POSITION_FOLLOWING);
+      };
       return {
         pane: [front.dataset.pane, rear.dataset.pane],
         targets: [front.querySelectorAll('rect.rk-u').length, rear.querySelectorAll('rect.rk-u').length],
@@ -2619,16 +2624,19 @@ def check_rack_elevation(page, base):
         square: front.querySelectorAll('rect[data-rail-hole]').length,
         selected: front.querySelector('[data-item-id="i2"]').classList.contains('rk-selected')
                   && front.querySelectorAll('.rk-sel-ring').length === 1,
-        ghostPassesClicks: rear.querySelector('[data-item-id="i2"]').getAttribute('pointer-events') === 'none',
         selectedU: front.querySelector('rect.rk-u[data-u="5"]').classList.contains('rk-u-selected'),
+        // The mounted item at a shared U is drawn AFTER (on top of) the
+        // through item there, in each pane.
+        frontOrder: docOrder(front, 'i3', 'i2'),   // i3 (through) before i2 (mounted)
+        rearOrder: docOrder(rear, 'i2', 'i3'),     // i2 (through) before i3 (mounted)
         panelFor: [E.panelFor({face: 'front'}, 'front'), E.panelFor({face: 'front'}, 'rear'),
                    E.panelFor({face: 'rear'}, 'rear'), E.panelFor({face: 'front', turned: true}, 'front')],
       };
     }""")
     want = {"pane": ["front", "rear"], "targets": [24, 24],
-            "front": ["mounted", "mounted", "ghost"], "rear": ["through", "ghost", "mounted"],
+            "front": ["mounted", "mounted", "through"], "rear": ["through", "through", "mounted"],
             "rearOfServer": True, "round": 24 * 3 * 2, "square": 0,
-            "selected": True, "ghostPassesClicks": True, "selectedU": True,
+            "selected": True, "selectedU": True, "frontOrder": True, "rearOrder": True,
             "panelFor": ["front", "rear", "front", "rear"]}
     for k, v in want.items():
         if r.get(k) != v:
@@ -2943,8 +2951,19 @@ def check_rack_page(page, base):
     return bad
 
 
-def pick(page, face, u, query, ref, cfg=None):
-    page.click(f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]')
+def pick(page, face, u, query, ref, cfg=None, dispatch=False):
+    sel = f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]'
+    # A `through` panel can visually cover a free U's own hit rectangle (round
+    # 3 §2's half-depth case) without blocking a real click - onPaneClick
+    # routes a click there itself - but a real, position-based Playwright
+    # click still refuses to act on an element another one visually covers,
+    # so callers that know the U is covered dispatch straight to the rect,
+    # the same target the app's own click handler reads ev.target from (this
+    # mirrors check_rack_inspect's identical workaround for a mounted panel).
+    if dispatch:
+        page.dispatch_event(sel, "click")
+    else:
+        page.click(sel)
     page.fill("#catQuery", query)
     page.select_option("#catDevice", ref)
     if cfg:
@@ -2967,10 +2986,12 @@ def check_rack_place(page, base):
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="r740xd"][data-panel="through"]', timeout=READY_MS)
     pick(page, "front", 20, "AS7726", "as7726-32x")
-    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="as7726-32x"][data-panel="ghost"]', timeout=READY_MS)
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="as7726-32x"][data-panel="through"]', timeout=READY_MS)
     # Behind the switch: the patch panel is too deep, the TM-280 fits - the
-    # FHD-1UFCE needs "Only what fits here" off to even show up.
-    page.click('svg[data-pane="rear"] rect.rk-u[data-u="20"]')
+    # FHD-1UFCE needs "Only what fits here" off to even show up. AS7726's
+    # through panel now covers this U's own hit rectangle, so this dispatches
+    # straight to it rather than a real, position-based click.
+    page.dispatch_event('svg[data-pane="rear"] rect.rk-u[data-u="20"]', "click")
     page.uncheck("#catFitsOnly")
     page.fill("#catQuery", "FHD")
     opt_text = page.text_content('#catDevice option[value="fhd-1ufce"]') or ""
@@ -2985,7 +3006,7 @@ def check_rack_place(page, base):
     after = page.evaluate("() => window.__rack.doc().racks[0].items.length")
     if after != before:
         bad.append(f"place: pressing Place on a device that doesn't fit added an item ({before} -> {after})")
-    pick(page, "rear", 20, "TM-280", "tm-280")
+    pick(page, "rear", 20, "TM-280", "tm-280", dispatch=True)
     page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
     doc = page.evaluate("() => window.__rack.doc()")
     got = [(i["ref"], i["ru"], i["face"], i["cfg"]) for i in doc["racks"][0]["items"]]
@@ -3012,8 +3033,10 @@ def check_rack_inspect(page, base):
     # Move with the arrow keys.
     page.keyboard.press("ArrowUp"); page.keyboard.press("ArrowUp")
     page.wait_for_function("() => window.__rack.doc().racks[0].items[0].ru === 22")
-    # Another device at U22 on the rear; switching the switch's face to rear is refused.
-    pick(page, "rear", 22, "TM-280", "tm-280")
+    # Another device at U22 on the rear; switching the switch's face to rear is
+    # refused. AS7726's own through panel now covers this U's hit rectangle
+    # on the rear pane, so this dispatches straight to it.
+    pick(page, "rear", 22, "TM-280", "tm-280", dispatch=True)
     page.click('svg[data-pane="front"] [data-device-ref="as7726-32x"]')
     page.select_option("#iFace", "rear")
     err = page.text_content(".rk-side .rk-error") or ""
@@ -3576,6 +3599,47 @@ def check_rack_drag(page, base):
     tp_err = page.text_content(".rk-side .rk-notice") or ""
     if "two-post rails are shared" not in tp_err:
         bad.append(f"drag: a two-post drop onto the other face's U was not refused as shared rails ({tp_err!r})")
+
+    # Part 1's regression: a stale S.sel from an earlier click on an EMPTY U
+    # (its catalog panel left open) must not keep painting that U's brass
+    # highlight forever - a later drag of an unrelated device has to replace
+    # the selection, on both a same-pane and a cross-pane drop.
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    pick(page, "front", 20, "AS7726", "as7726-32x")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]', timeout=READY_MS)
+    page.click('svg[data-pane="rear"] rect.rk-u[data-u="12"]')
+    page.wait_for_selector("#catQuery", timeout=READY_MS)
+    x0, y0 = u_center(page, "front", 20)
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    xf, yf = u_center(page, "front", 7)
+    page.mouse.move((x0 + xf) / 2, (y0 + yf) / 2, steps=2)
+    page.mouse.move(xf, yf, steps=3)
+    page.mouse.up()
+    page.wait_for_function(
+        "() => window.__rack.doc().racks[0].items[0].ru === 7 && window.__rack.doc().racks[0].items[0].face === 'front'",
+        timeout=READY_MS)
+    stray = page.eval_on_selector_all("rect.rk-drop, rect.rk-u-selected", "els => els.length")
+    if stray != 0:
+        bad.append(f"drag: a stale rk-drop/rk-u-selected rect stayed after a same-pane drop ({stray} found)")
+
+    # Repeat across a cross-pane drop: select empty rear U5 (opens the
+    # catalog there), then drag the device from front to rear.
+    page.click('svg[data-pane="rear"] rect.rk-u[data-u="5"]')
+    page.wait_for_selector("#catQuery", timeout=READY_MS)
+    x0, y0 = u_center(page, "front", 7)
+    page.mouse.move(x0, y0)
+    page.mouse.down()
+    xr, yr = u_center(page, "rear", 15)
+    page.mouse.move((x0 + xr) / 2, y0, steps=2)
+    page.mouse.move(xr, yr, steps=3)
+    page.mouse.up()
+    page.wait_for_function(
+        "() => window.__rack.doc().racks[0].items[0].face === 'rear'", timeout=READY_MS)
+    stray2 = page.eval_on_selector_all("rect.rk-drop, rect.rk-u-selected", "els => els.length")
+    if stray2 != 0:
+        bad.append(f"drag: a stale rk-drop/rk-u-selected rect stayed after a cross-pane drop ({stray2} found)")
     return bad
 
 
@@ -3634,8 +3698,8 @@ def check_rack_shrink(page, base):
     return bad
 
 
-@extra("rack.html: a ghost reads as mounted elsewhere, never as its front showing on this face")
-def check_rack_ghost_label(page, base):
+@extra("rack.html: each pane shows a device's real panel, ears on the mounted face, through/mounted precedence")
+def check_rack_faces(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
@@ -3644,15 +3708,59 @@ def check_rack_ghost_label(page, base):
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
     page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
 
-    # MX204 (470 mm) is short of a four-post's rear rail (740 - 50 reach
-    # margin), so it ghosts in the rear pane rather than showing a panel.
+    # MX204 (short of a four-post's rear rail) at front U10, TM-280 at rear
+    # U10: a four-post pair sharing a U.
     pick(page, "front", 10, "MX204", "mx204")
-    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="mx204"][data-panel="ghost"]', timeout=READY_MS)
-    text = page.text_content('svg[data-pane="rear"] [data-device-ref="mx204"][data-panel="ghost"] text') or ""
-    if "front-mounted" not in text or "mm deep" not in text:
-        bad.append(f"ghost label: {text!r}, expected it to mention 'front-mounted' and 'mm deep'")
-    if "· front," in text:
-        bad.append(f"ghost label: still reads as the bare '· front,' form ({text!r})")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="mx204"][data-panel="mounted"]', timeout=READY_MS)
+    # MX204's own through panel now covers this same U's hit rectangle on the
+    # rear pane, so this dispatches straight to it.
+    pick(page, "rear", 10, "TM-280", "tm-280", dispatch=True)
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+
+    mx_id = page.eval_on_selector('svg[data-pane="front"] [data-device-ref="mx204"]', "el => el.dataset.itemId")
+    tm_id = page.eval_on_selector('svg[data-pane="rear"] [data-device-ref="tm-280"]', "el => el.dataset.itemId")
+
+    # Front pane: MX204 is mounted, with ears.
+    if not page.query_selector(f'svg[data-pane="front"] g.rk-ears[data-ears-for="{mx_id}"]'):
+        bad.append("faces: no rk-ears group for the front-mounted MX204 in the front pane")
+
+    # Rear pane: MX204 shows its real rear panel as `through`, with no ears;
+    # TM-280 is `mounted` there, with ears, and comes after (on top of)
+    # MX204's through panel in document order.
+    mx_rear = page.query_selector('svg[data-pane="rear"] [data-device-ref="mx204"][data-panel="through"]')
+    if not mx_rear:
+        bad.append("faces: MX204's rear panel is not data-panel=through in the rear pane")
+    elif not mx_rear.query_selector('[data-path="cutout:esd-rear"]'):
+        bad.append("faces: the rear pane does not show MX204's real rear panel (missing cutout:esd-rear)")
+    if page.query_selector(f'svg[data-pane="rear"] g.rk-ears[data-ears-for="{mx_id}"]'):
+        bad.append("faces: MX204's through panel in the rear pane has ears, expected none")
+    if not page.query_selector(f'svg[data-pane="rear"] g.rk-ears[data-ears-for="{tm_id}"]'):
+        bad.append("faces: no rk-ears group for the rear-mounted TM-280 in the rear pane")
+    order = page.eval_on_selector('svg[data-pane="rear"]', """(svg, ids) => {
+      const a = svg.querySelector(`[data-item-id="${ids[0]}"][data-panel="through"]`);
+      const b = svg.querySelector(`[data-item-id="${ids[1]}"][data-panel="mounted"]`);
+      return !!(a && b) && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    }""", [mx_id, tm_id])
+    if not order:
+        bad.append("faces: the rear pane does not draw TM-280 (mounted) after MX204 (through)")
+
+    # No leftover ghost wording anywhere on the page.
+    body_text = page.text_content("body") or ""
+    if "short of this rail" in body_text or "-mounted," in body_text:
+        bad.append(f"faces: stale ghost wording is still on the page")
+
+    # A second MX204 at front U20, nothing at rear U20: the rear pane's U20
+    # is free even though MX204's through panel there covers its hit target -
+    # a click on it opens the picker for that free rear U.
+    pick(page, "front", 20, "MX204", "mx204")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 3")
+    page.wait_for_selector('svg[data-pane="rear"] rect.rk-u[data-u="20"]', timeout=READY_MS)
+    x20, y20 = u_center(page, "rear", 20)
+    page.mouse.click(x20, y20)
+    page.wait_for_selector(".rk-side h3", timeout=READY_MS)
+    heading = page.text_content(".rk-side h3") or ""
+    if "rear, empty" not in heading or "U20" not in heading.replace("U 20", "U20"):
+        bad.append(f"faces: clicking the free rear U under MX204's through panel opened {heading!r}, not the U20/rear picker")
     return bad
 
 

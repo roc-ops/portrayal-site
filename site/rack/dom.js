@@ -17,3 +17,9 @@ export const svgEl = (tag, attrs = {}) => {
   for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
   return n;
 };
+
+// A client (screen) point mapped into an <svg>'s own user-space y - shared by
+// drag.js (the pointer during a drag) and rack-page.js's onPaneClick (a click
+// on a through panel, to find the U under it).
+export const svgY = (svg, clientX, clientY) =>
+  new DOMPoint(clientX, clientY).matrixTransform(svg.getScreenCTM().inverse()).y;

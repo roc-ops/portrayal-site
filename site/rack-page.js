@@ -4,14 +4,14 @@
 
 import {newDoc, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
-import {drawElevation} from './rack/elevation.js';
-import {reaches, fits, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
+import {drawElevation, uAtY} from './rack/elevation.js';
+import {fits, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {catalogPanel} from './rack/picker.js';
 import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
-import {el} from './rack/dom.js';
+import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 
@@ -159,10 +159,8 @@ async function render() {
   let front, rear;
   try {
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
-      items, frame: r.frame, view, hitTargets: true, selectedId,
-      selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null,
-      reaches: it => reaches(it, r, chassisOf),
-      depthOf: it => chassisOf(it.ref)?.d})));
+      items, frame: r.frame, view, hitTargets: true, selectedId, ears: true,
+      selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null})));
   } catch (err) {
     if (mine !== S.draws) return;
     console.warn('[portrayal] the rack elevation failed to draw', err);
@@ -255,6 +253,20 @@ function onPaneClick(ev) {
       select({kind: 'item', id});
       return;
     }
+  }
+  // A `through` panel may now cover an empty U's own hit target - the
+  // half-depth case, where the space behind a short front device is exactly
+  // where a rear device goes - so a plain click there opens the picker for
+  // that U on the clicked face when the U is actually free there, and only
+  // falls through to selecting the item when it is not (round 3 §2).
+  const through = ev.target.closest('[data-panel="through"]');
+  if (through) {
+    const svg = through.closest('svg');
+    const face = svg.dataset.pane;
+    const u = uAtY(rack().frame, svgY(svg, ev.clientX, ev.clientY));
+    const free = !itemsWithU(rack(), chassisOf)
+      .some(it => it.face === face && u >= it.ru && u <= it.ru + it.u - 1);
+    return free ? select({kind: 'u', face, ru: u}) : select({kind: 'item', id: through.dataset.itemId});
   }
   const hit = ev.target.closest('[data-item-id]');
   if (hit) return select({kind: 'item', id: hit.dataset.itemId});
@@ -363,7 +375,13 @@ async function bootInner() {
     panesEl: $('panes'),
     svgFor: face => S.svgs.find(s => s.dataset.pane === face),
     rack, chassisOf, itemById, patchItem,
-    onStart: () => {
+    // A drag replaces whatever was selected - including a stale empty-U pick
+    // whose catalog panel is still open (part 1's bug: that U kept painting
+    // its brass highlight forever, since neither a drag nor its drop ever
+    // touched S.sel) - with the item actually being dragged, so the render
+    // the drop triggers shows the item selected and nothing else.
+    onStart: id => {
+      S.sel = {kind: 'item', id};
       $('side').replaceChildren(el('p', {id: 'dragStatus', class: 'rk-muted', role: 'status', text: 'Drop to move here.'}));
     },
     onEnd: reason => { if (reason) S.notice = {text: reason, kind: 'error'}; render(); },
