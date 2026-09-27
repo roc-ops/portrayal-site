@@ -2322,18 +2322,23 @@ def check_schema_nos_tab(page, base):
     tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
     have = "listing" if (pathlib.Path(__file__).resolve().parent / "assets" / "schemas" / "listing.schema.json").exists() else "overlay"
     other = "overlay" if have == "listing" else "listing"
-    # as vendored
+    # as vendored - and without asking for a schema the site does not carry
+    misses = []
+    page.on("response", lambda r: misses.append(r.url) if r.status == 404 else None)
     page.goto(f"{base}/schema.html", wait_until="load")
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)
     got = page.evaluate(tabs)
     if got != ["device", "component", have]:
         bad.append(f"schema: with {have}.schema.json vendored the tabs are {got}")
+    if misses: bad.append(f"schema: the page asked for missing files {misses}")
     # the other side of #677: this snapshot's NOS schema gone, the other one served
     stub = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": other, "type": "object",
             "properties": {"hardware": {"type": "string", "description": "a property to find"}}}
     page.route(f"**/assets/schemas/{have}.schema.json", lambda r: r.fulfill(status=404, body="the other side of #677"))
     page.route(f"**/assets/schemas/{other}.schema.json", lambda r: r.fulfill(json=stub))
+    page.route("**/assets/schemas/index.json", lambda r: r.fulfill(json={"schemas": sorted(
+        ["component.schema.json", "device.schema.json", f"{other}.schema.json"])}))
     page.goto(f"{base}/schema.html?doc={other}", wait_until="load")
     page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
     page.wait_for_timeout(500)

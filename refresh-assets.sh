@@ -379,6 +379,10 @@ fi
 rm -rf "$HERE/assets/schemas"
 mkdir -p "$HERE/assets/schemas"
 cp "$SRC"/../spec/schemas/*.json "$HERE/assets/schemas/"
+# Which schemas are here, for the schema page: it offers a tab per file listed,
+# and asking for one that is not here (overlay before Portrayal #677, listing
+# after) would be a 404 on every visit.
+python3 -c 'import json,os,sys; d=sys.argv[1]; json.dump({"schemas": sorted(f for f in os.listdir(d) if f.endswith(".schema.json"))}, open(os.path.join(d, "index.json"), "w"), indent=1)' "$HERE/assets/schemas"   # assets/schemas/index.json
 
 # Facts the page states about the library are DERIVED here, not typed into the
 # HTML. The counts drift every time a device lands upstream, and a page that

@@ -1155,6 +1155,21 @@ check("tools/nos_platforms.py" in _ra and not _ovr and "listings.json" in _ra,
       "refresh-assets.sh takes NOS flags and platforms from tools/nos_platforms.py, and vendors listings.json",
       f"refresh-assets.sh still reads overlays.json itself ({_ovr}), or does not copy listings.json")
 
+# THE SCHEMA PAGE KNOWS WHICH SCHEMAS EXIST WITHOUT ASKING FOR ONE THAT DOES NOT.
+# refresh-assets.sh writes assets/schemas/index.json beside the files it copies;
+# schema.js offers a tab per file listed there. Probing for a missing file was a
+# 404 on every visit, which the page sweep rightly calls a break.
+_six = HERE / "assets" / "schemas" / "index.json"
+_listed = json.loads(_six.read_text()).get("schemas") if _six.exists() else None
+_vend = sorted(p.name for p in (HERE / "assets" / "schemas").glob("*.schema.json"))
+check(_listed == _vend, "assets/schemas/index.json lists exactly the vendored schema files",
+      f"index {_listed} vs files {_vend}")
+check("index.json" in (HERE / "site" / "schema.js").read_text() and "method: 'HEAD'" not in (HERE / "site" / "schema.js").read_text(),
+      "schema.js reads assets/schemas/index.json instead of probing for files",
+      "schema.js still probes schema files with HEAD requests")
+check("assets/schemas/index.json" in (HERE / "refresh-assets.sh").read_text(),
+      "refresh-assets.sh writes assets/schemas/index.json", "no index.json written for the schemas")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

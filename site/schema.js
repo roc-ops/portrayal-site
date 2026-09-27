@@ -373,12 +373,15 @@ async function show(key) {
   }
 }
 
-// A TAB FOR EACH SCHEMA THE SITE CARRIES, AND NONE FOR ONE IT DOES NOT. A tab
-// whose file 404s would open on an error, so a missing file's tab is hidden.
-const present = async key => {
-  try { return (await fetch(SOURCES[key].url, {method: 'HEAD'})).ok; } catch { return false; }
-};
-const have = Object.fromEntries(await Promise.all(Object.keys(SOURCES).map(async k => [k, await present(k)])));
+// A TAB FOR EACH SCHEMA THE SITE CARRIES, AND NONE FOR ONE IT DOES NOT.
+// refresh-assets.sh lists the vendored files in assets/schemas/index.json; a
+// tab whose file is not listed is hidden. Asking for the file instead would be
+// a 404 on every visit for whichever of overlay/listing is not here. Without
+// an index every tab shows, as it did before there was one.
+const listed = await fetch('assets/schemas/index.json').then(r => (r.ok ? r.json() : null))
+  .then(d => (d && Array.isArray(d.schemas) ? new Set(d.schemas) : null)).catch(() => null);
+const have = Object.fromEntries(Object.entries(SOURCES).map(([k, {url}]) =>
+  [k, !listed || listed.has(url.split('/').pop())]));
 document.querySelectorAll('.show-tabs button').forEach(b => {
   b.hidden = !have[b.dataset.schema];
   b.onclick = () => { show(b.dataset.schema); };
