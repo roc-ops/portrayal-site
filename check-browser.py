@@ -2252,6 +2252,23 @@ def check_kit_page(page, base):
         res = json.loads(page.get_attribute(fig3, "data-result") or "{}")
         if err or not (res.get("loaded") and res.get("selected") == "port-12" and res.get("lit") == "state-on"):
             bad.append(f"kit: 3D recipe returned {res} / {err}")
+        # a fast rerun on a fresh page leaves one viewer, not two stacked
+        page.goto(f"{base}/kit.html?fresh=1#three-d", wait_until="load")   # a query forces a real reload
+        page.locator(fig3).scroll_into_view_if_needed()
+        # watch the pane for the whole race: the most hosts it ever holds at once
+        page.evaluate("""f => { window.__kitMaxHosts = 0; const pane = document.querySelector(f + ' .kit-result');
+            new MutationObserver(() => { window.__kitMaxHosts = Math.max(window.__kitMaxHosts,
+                pane.querySelectorAll('.kit-host').length); }).observe(pane, {childList: true, subtree: true}); }""", fig3)
+        # both clicks in one task, so both runs are in flight before either import lands
+        page.evaluate("""f => { document.querySelector(f + " .kit-result button[data-act='build']").click();
+                                document.querySelector(f + " [data-act='run']").click(); }""", fig3)
+        page.wait_for_selector(f"{fig3}[data-result], {fig3}[data-error]", timeout=READY_3D_MS)
+        page.wait_for_timeout(1500)
+        most = page.evaluate("window.__kitMaxHosts")
+        hosts = page.eval_on_selector_all(f"{fig3} .kit-result .kit-host", "e => e.length")
+        canvases = page.eval_on_selector_all(f"{fig3} .kit-result canvas", "e => e.length")
+        if most > 1 or hosts != 1 or canvases != 1:
+            bad.append(f"kit: a fast 3D rerun stacked {most} viewers at once (ends with {hosts} hosts, {canvases} canvases)")
     # a failing recipe stays in its own pane
     page.goto(f"{base}/kit.html?kitfail=1", wait_until="load")
     page.wait_for_selector('figure[data-example="kitfail"][data-error]', timeout=READY_MS)
@@ -2273,6 +2290,13 @@ def check_kit_no_webgl(page, base):
     page.wait_for_selector(f"{fig3}[data-error]", timeout=READY_MS)
     txt = page.text_content(f"{fig3} .kit-result") or ""
     if "webgl" not in txt.lower(): bad.append(f"kit: the no-WebGL 3D pane says {txt!r}")
+    run = page.query_selector(f"{fig3} [data-act='run']")
+    if run and run.is_visible() and run.is_enabled():
+        run.click()
+        page.wait_for_timeout(1500)
+    txt = page.text_content(f"{fig3} .kit-result") or ""
+    if "failed" in txt.lower() or "webgl" not in txt.lower():
+        bad.append(f"kit: without WebGL, Run again on the 3D recipe leaves {txt!r}")
     return bad
 
 

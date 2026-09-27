@@ -1003,6 +1003,28 @@ check(bool(_fm) and json.loads(_fm.group(1))["imports"] == _imap and "<base" not
       "kit-frame.html sits beside kit.html and carries the same import map",
       "the frame's import map differs from kit.html's, or it has a <base> (jdist resolves against location, not <base>)")
 
+# THE "GETTING THE FILES" MAP MUST WORK WITH THE RECIPES AS WRITTEN: every
+# @portrayal/kit/<module> a recipe imports is a key of the snippet's map, and
+# each maps to a .js file. A folder mapping ("@portrayal/kit/": "…/") resolves
+# @portrayal/kit/dist to …/dist, with no .js - a 404 for anyone who copies it.
+_snip = re.search(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)
+_snipmap = {}
+if _snip:
+    _raw = _snip.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    _js = re.search(r"\{.*\}", _raw, re.S)
+    try: _snipmap = json.loads(_js.group(0))["imports"] if _js else {}
+    except ValueError: _snipmap = {}
+_used = set()
+for _stem in _exfiles:
+    _used |= set(re.findall(r"from\s*'(@portrayal/kit/[\w-]+)'", (_exdir / f"{_stem}.js").read_text()))
+check(bool(_used) and all(u in _snipmap and _snipmap[u].endswith(".js") for u in _used),
+      "the 'Getting the files' import map resolves every @portrayal/kit module the recipes import, to a .js file",
+      f"recipes use {sorted(_used)}; snippet maps {_snipmap}")
+# American English on the kit page, as everywhere in this site's prose.
+_kit_prose = _kit_html + _kps + "".join((_exdir / f"{s}.js").read_text() for s in _exfiles)
+_brit = sorted(set(re.findall(r"\b(\w*(?:utilis|behaviour|colour|centre|favourite|recognis|organis)\w*)\b", _kit_prose, re.I)))
+check(not _brit, "the kit page, its runner and its recipes are in American English", f"{_brit}")
+
 # THE DOCS MENU: Schema and Using the kit, one menu, on every page with a nav.
 _DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
                "annotate.html", "drawio.html", "exporter.html", "drawings.html"]

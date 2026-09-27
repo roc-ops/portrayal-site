@@ -32,23 +32,30 @@ async function runOne(fig) {
   pane.querySelector('.kit-host')?.viewer?.dispose?.();
   pane.replaceChildren();
   pane.classList.add('busy');
+  // A SUPERSEDED RUN CLEANS UP AFTER ITSELF. Two runs can be in flight at once
+  // (Run again pressed while the first is still importing), and the older one
+  // must neither mount into the pane the newer one owns nor leave a live 3D
+  // viewer behind - a WebGL context and a render loop nobody can see.
+  let host = null;
+  const drop = () => { host?.viewer?.dispose?.(); host?.remove(); };
   try {
     let result;
     if (fig.dataset.run === 'frame') {
       result = await inFrame(pane, name);
     } else {
       const mod = await import(`./kit-examples/${name}.js`);
-      const host = document.createElement('div');
+      if (gen[name] !== my) return;                      // superseded before it mounted
+      host = document.createElement('div');
       host.className = 'kit-host';
       pane.append(host);
       result = await mod.run(host);
-      if (gen[name] !== my) { host.remove(); return; }   // superseded: leave the newer run's pane alone
+      if (gen[name] !== my) { drop(); return; }          // superseded while it ran
     }
     if (gen[name] !== my) return;
     kit.results[name] = result;
     fig.dataset.result = JSON.stringify(result ?? {});
   } catch (err) {
-    if (gen[name] !== my) return;
+    if (gen[name] !== my) { drop(); return; }
     pane.replaceChildren(Object.assign(document.createElement('p'),
       {className: 'kit-fail', textContent: `This example failed: ${err?.message || err}`}));
     fig.dataset.error = String(err?.message || err);
@@ -94,27 +101,19 @@ async function wire(fig) {
   });
 }
 
-// ?kitfail=1 adds a recipe that throws, so the checks can prove a failure
-// stays in its own pane. Nothing links to it.
+// ?kitfail=1 adds a recipe whose module does not exist, run through the same
+// runOne as every other, so the checks can prove a failure stays in its own
+// pane. Nothing links to it.
 if (new URLSearchParams(location.search).get('kitfail') === '1') {
   const first = document.querySelector('figure.kit-ex');
   const fig = first.cloneNode(true);
   fig.dataset.example = 'kitfail';
   fig.dataset.run = 'view';
+  fig.querySelector('pre code').textContent = '// a recipe whose module is missing';
+  fig.querySelector('.kit-result').replaceChildren();
   first.before(fig);
   fig.querySelector('[data-act="run"]').addEventListener('click', () => runOne(fig));
-  kit.copyText.kitfail = '';
-  (async () => {
-    const pane = fig.querySelector('.kit-result');
-    pane.replaceChildren();
-    fig.querySelector('pre code').textContent = '// a recipe that throws';
-    try { throw new Error('a deliberate failure'); }
-    catch (err) {
-      pane.append(Object.assign(document.createElement('p'),
-        {className: 'kit-fail', textContent: `This example failed: ${err.message}`}));
-      fig.dataset.error = err.message;
-    }
-  })();
+  runOne(fig);
 }
 
 // THE 3D RECIPE BUILDS ON A CLICK. It fetches six faces and compiles shaders,
@@ -129,6 +128,10 @@ async function armClick(fig) {
     pane.replaceChildren(Object.assign(document.createElement('p'),
       {className: 'kit-fail', textContent: `3D needs WebGL: ${why}`}));
     fig.dataset.error = `webgl: ${why}`;
+    // and no Run again either: it could only replace the reason with a failure
+    const again = fig.querySelector('[data-act="run"]');
+    again.disabled = true;
+    again.title = 'This browser has no WebGL, so the 3D recipe cannot run here.';
     return;
   }
   const b = Object.assign(document.createElement('button'),

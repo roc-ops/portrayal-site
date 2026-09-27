@@ -3,7 +3,7 @@
 // its data-path and given a fill - the drawing is yours to style.
 const DIST = 'assets/dist/';  // wherever you host the compiled files
 
-const telemetry = {            // port -> utilisation, 0..1
+const telemetry = {            // port -> utilization, 0..1
   'port-4': 0.12, 'port-5': 0.48, 'port-6': 0.71, 'port-7': 0.93, 'port-12': 0.35,
 };
 

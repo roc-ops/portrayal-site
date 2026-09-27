@@ -210,15 +210,19 @@
               map at the kit, and at three.js if you use 3D:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/": "/vendor/portrayal-kit/",
+    "@portrayal/kit/dist": "/vendor/portrayal-kit/dist.js",
+    "@portrayal/kit/swap": "/vendor/portrayal-kit/swap.js",
+    "@portrayal/kit/viewer3d": "/vendor/portrayal-kit/viewer3d.js",
+    "@portrayal/kit/marks": "/vendor/portrayal-kit/marks.js",
+    "@portrayal/kit/shell": "/vendor/portrayal-kit/shell.js",
     "three": "/vendor/three/three.module.js",
     "three/addons/": "/vendor/three/addons/"
 } }
 &lt;/script&gt;</code></pre>
             <p>and set <code>DIST</code> in each recipe to wherever the compiled files are.
-              The 2D recipes don't need three.js at all. (With npm,
-              <code>@portrayal/kit/viewer3d</code> resolves through the package's exports; with a
-              copied folder, add <code>.js</code> or list each module in the map, as this page does.)</p>
+              The 2D recipes don't need three.js at all. List each kit module you
+              use, as above; once the kit is on npm, a bundler or an import map generator
+              resolves <code>@portrayal/kit/viewer3d</code> through the package's exports.</p>
             <p class="kit-note">How the kit and the compiled files are distributed is being
               settled: <code>@portrayal/kit</code> on npm, and a registry for the compiled
               files (roc-ops/Portrayal #526, #527, #528). This section will change when
@@ -252,9 +256,9 @@
 <script type="module" src="site/stats.js"></script>
 <script type="module" src="site/kit-page.js"></script>
 <script>
-// Close the export menu on Escape or on a click outside it. <details> handles
+// Close a nav menu on Escape or on a click outside it. <details> handles
 // opening, keyboard focus and the disclosure semantics on its own; these are the
-// two behaviours a nav menu needs that it does not give you.
+// two behaviors a nav menu needs that it does not give you.
 document.addEventListener('click', e => {
   for (const d of document.querySelectorAll('details.navmenu[open]')) {
     if (!d.contains(e.target)) d.open = false;
