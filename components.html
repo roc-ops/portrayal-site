@@ -43,6 +43,16 @@
            background-image: linear-gradient(#c9cdd1 1px, transparent 1px), linear-gradient(90deg, #c9cdd1 1px, transparent 1px);
            border-radius: 6px; padding: 6px; display: inline-block; }
   .stage img { display: block; }
+  /* On a phone a card must fit the column: long monospace names break rather
+     than widen it, and a drawing wider than the card scrolls inside its own
+     graph paper instead of pushing the page sideways. Below 720px only - wide
+     drawings spill past their cards on the desktop too, but that layout is
+     left as it is here. */
+  @media (max-width: 719.98px) {
+    .card { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    .card h3 { overflow-wrap: anywhere; }
+    .stage { max-width: 100%; box-sizing: border-box; overflow-x: auto; }
+  }
   .skinrow { margin-top: 0.4rem; font-size: 0.72rem; display: flex; gap: 0.5rem; align-items: center; color: var(--pt-ink-muted); }
   .desc { font-size: 0.72rem; color: var(--pt-ink-faint); margin-top: 0.4rem; max-width: 320px; }
   /* Ours: the card action, and the 3D overlay the v1 link became. */

@@ -39,6 +39,17 @@
 body.tool { margin: 0; height: 100vh; display: flex; flex-direction: column; }
 body.tool > .fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
+/* A PHONE MUST NOT SCROLL SIDEWAYS. The shell's side panel is `width: 23rem`
+   (the Annotator adds a second, `#marks`, at 28rem), and a flex item will not
+   shrink below its min-content - and the tree's rows are `nowrap`, so that is
+   the longest row. At 360px the panel stayed 366px wide and the whole page
+   scrolled. Letting it shrink hands the long rows to the tree's own
+   `overflow: auto`. Below 720px only, so the desktop layout is untouched; the
+   selector outranks shell.js's bare `aside` whatever order the two load in. */
+@media (max-width: 719.98px) {
+  body.tool main > aside { min-width: 0; }
+}
+
 /* Pages that just scroll - the component browser, the export viewer. */
 /* The ported pages carry their own `body { ... }` rule with margins in it, and
    it loads after this file. Reset the margin on the class instead of fighting

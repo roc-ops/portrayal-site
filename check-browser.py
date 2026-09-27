@@ -2668,6 +2668,41 @@ def check_drawio_covers(page, base):
     return bad
 
 
+# THE TOOL PAGES FIT A PHONE. At 360px explorer.html scrolled sideways by 6px,
+# annotate.html by 287px and components.html by 2645px. Not the tool bar: the
+# shell's 23rem side panel (and the Annotator's second one) would not shrink
+# below its nowrap tree rows, and a component card would not shrink below its
+# monospace title or its true-scale drawing. The Explorer fit at 375px, which
+# is why nobody saw it.
+NARROW_PAGES = ["explorer.html", "components.html", "annotate.html", "drawio.html",
+                "exporter.html", "drawings.html"]
+
+
+@extra("the tool-bar pages have no horizontal scroll at a 360px viewport")
+def check_narrow_tool_pages(page, base):
+    bad = []
+    page.set_viewport_size({"width": 360, "height": 740})
+    for name in NARROW_PAGES:
+        page.goto(f"{base}/{name}", wait_until="load")
+        page.wait_for_timeout(1500)
+        r = page.evaluate(r"""() => {
+          const w = document.documentElement.scrollWidth;
+          // Name the widest culprits, so a failure says where to look.
+          const wide = [...document.querySelectorAll('body *')]
+            .filter(e => e.getBoundingClientRect().right > 360.5)
+            .slice(0, 4)
+            .map(e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '')
+                      + (e.className && typeof e.className === 'string'
+                         ? '.' + e.className.trim().split(/\s+/).join('.') : '')
+                      + ' right=' + Math.round(e.getBoundingClientRect().right));
+          return {w, wide};
+        }""")
+        if r["w"] > 360:
+            bad.append(f"{name}: scrollWidth {r['w']} at a 360px viewport; past the edge: "
+                       + ", ".join(r["wide"]))
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
