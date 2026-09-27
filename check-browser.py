@@ -3927,6 +3927,29 @@ def check_rack_3d(page, base):
     return bad
 
 
+@extra("rack.html: the 2D/3D switch stays put when the mode changes")
+def check_rack_mode_toggle_stable(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    x = lambda: page.evaluate("() => Math.round(document.getElementById('rkMode').getBoundingClientRect().left)")
+    page.click('#rkMode [data-mode="2d"]')
+    before = x()
+    page.click('#rkMode [data-mode="3d"]')
+    in3d = x()
+    page.click('#rkMode [data-mode="2d"]')
+    after = x()
+    if not (before == in3d == after):
+        bad.append(f"mode switch: the toggle moved (2D {before}px, 3D {in3d}px, back {after}px)")
+    if page.is_visible("#zoomIn"):
+        page.click('#rkMode [data-mode="3d"]')
+        if page.is_visible("#zoomIn"):
+            bad.append("mode switch: the zoom controls are still visible in 3D")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

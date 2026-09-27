@@ -84,8 +84,10 @@ function showMode() {
   const is3d = S.mode === '3d';
   $('panes').hidden = is3d;
   $('panes').style.display = is3d ? 'none' : '';
-  $('rkZoom').hidden = is3d;
-  $('rkZoom').style.display = is3d ? 'none' : '';
+  // The zoom controls keep their place in 3D - invisible and inert, not
+  // removed - so the 2D/3D switch beside them never moves when it is used.
+  $('rkZoom').style.visibility = is3d ? 'hidden' : '';
+  $('rkZoom').inert = is3d;
   $('stage3d').hidden = !is3d;
   $('stage3d').style.display = is3d ? '' : 'none';
 }
