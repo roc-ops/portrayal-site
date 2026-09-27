@@ -2,9 +2,9 @@
  "contract": 2,
  "decor-confidence": {
   "drawing": 9,
-  "estimated": 121,
+  "estimated": 123,
   "measured": 1,
-  "unstated": 1125
+  "unstated": 1153
  },
  "devices": [
   {
@@ -256,6 +256,394 @@
    },
    "search": "power-max-w 1800 power-envelope fully-configured front-slots slot cooling fan module power pem furniture item grounding point rear-slots c40g-chassis-ac part c40g-chassis-dc bdm2 bdm2m bdm blank-faceplate c40g-ac-inlet-panel c40g-fan-left c40g-fan c40g-ground-studs c40g-pem c40g-psu-ac c40g-psu-cover chassis-label csc-8x10g ds-8x192 ds-8x8 ds-8x96 io-6p12-io2 io-6p12-sw-io2 io-6p12-sw io-6p12 lc-sw-bdm oob-2p8 rfd rfu-16x8 smm-2x10g smm-300g smm-300gm smm-8x10g smm-sw-bdm-a smm-sw-bdm-b ups-32x4 us-16x4 us-16x8 screw-head",
    "version": "0.5.14"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "specified",
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {
+    "title": "Celestica DS4000 1U 32-port 400GbE Data Center Switch datasheet",
+    "url": "https://www.celestica.com/hps/ds4000"
+   },
+   "decor-confidence": {
+    "unstated": 1
+   },
+   "description": "Celestica DS4000 1U 32-port 400GbE data center switch - 32 QSFP-DD in two belly-to-belly rows of sixteen, up to two 10G SFP+ management ports (M1/M2) beside a vertical console RJ45 / USB-A / management RJ45 stack at the right of the front, and at the rear two 1500 W AC supplies (1+1) at either end of seven hot-swap fans (6+1). 12.8 Tbps, COMe Xeon D control plane. Sold front-to-back (R4023-F9102/F9103/F9104-A0) and back-to-front (R4023-F9003/F9004/F9005-A0). The DS4001 is a separate device with a different faceplate.",
+   "gaps": [
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The guide draws three fronts (2x 10GKR, 1x SFP+ plus 1x 10GKR, 2x SFP+) and lists six chassis SKUs whose descriptions differ only in CPU, memory, SSD and airflow. Nothing held ties a front to a SKU. The base follows the datasheet render (one SFP+); the other two are `example` configurations.",
+     "scope": [
+      "sfp-plus-mgmt",
+      "f2b-2sfp",
+      "f2b-kr"
+     ],
+     "wanted": "a Celestica ordering guide or SKU description naming the SFP+ build",
+     "what": "front-build-sku"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The only rear render held is of a DS4001 (black fans, blue latches, orange PSU latches) and its airflow is not stated. The DS4100 rear, from the same vendor, is orange-faced, which may be an airflow colour code; no held DS4000/DS4001 document says so.",
+     "scope": [
+      "fans",
+      "psus",
+      "b2f"
+     ],
+     "wanted": "a rear photograph of each airflow build",
+     "what": "b2f-finish"
+    },
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The artwork prints STAT, FAN, PWR, ALM top to bottom; the guide's Front Panel Status LEDs table signs the same four SYS, ALM, PSU, FAN. The silkscreen follows the artwork and each lamp takes the table row for its function.",
+     "scope": [
+      "status-leds"
+     ],
+     "wanted": "a front photograph of a DS4000",
+     "what": "system-led-signs"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "No held document names the FRU part numbers of the 1500 W supply or the fan module; the components are named for their form (celestica/psu-1500-ac, celestica/fan-40).",
+     "scope": [
+      "psus",
+      "fans"
+     ],
+     "wanted": "a Celestica FRU list",
+     "what": "psu-and-fan-part-numbers"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Neither the DS4000 datasheet nor the guide names the switching silicon. Distributor pages (Stordis) name Broadcom Tomahawk 3; that is not a Celestica document and is not carried as an attr.",
+     "scope": [
+      "qsfpdd-400g"
+     ],
+     "wanted": "a Celestica document naming the ASIC",
+     "what": "asic"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 9 bays (rear 9); `physical-context` on port group qsfpdd-400g - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "manufacturer": "Celestica",
+   "model": "DS4000",
+   "name": "ds4000",
+   "ns": "celestica",
+   "options": {
+    "airflow": [
+     "back-to-front",
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "portfolio": {
+    "family": "Data Center Switch"
+   },
+   "search": "switching-capacity 12.8 tbps packet-buffer 64 mb latency less than 700 ns port to (cut-through) power-max-w 1100 power-envelope fully-configured input-ac 100-240 vac auto-ranging, 47-63 hz input-dc 180-300 vdc auto input psu-redundancy 1+1 hot-swappable, 1500 w each fan-redundancy 6+1 hot-swappable port-power-f2b 28 x 15 + 4 20 (ports 1, 2, 31, 32) port-power-b2f 24 5 8 12 25-32) operating-temp 0 45 c at 900 m operating-humidity 90% non-condensing operating-temp-guide 40 c, either airflow operating-humidity-guide 60% rh storage-humidity 95% mtbf in excess of 150,000 hours cpu intel xeon d-1627 4-core or d-1649n 8-core on a come module (per sku) memory 16 32 gb ddr4 ecc storage 64, 128 256 m.2 ssd bmc management option (ddr3, spi flash dual boot, nc-si shared port, ipmi 2.0) breakout 144 sub-rate ports maximum (10/25/50gbe) 40/100gbe using cables timing ieee 1588 1-step and 2-step, tc bc, synce (timing option) optics-qsfp-dd 10gbase-cr/sr/lr/er, 25gbase-cr/sr/lr/er, 40gbase-cr4/sr4/lr4/er4, 100gbase-cr4/sr4/lr4/er4/dr1/psm4/cwdm4, 400gbase-cr4/sr4/fr4/dr4/lr8 (guide descriptions); dac up 3 (datasheet) optics-sfp-plus 10gbe descriptions) console rj45 rs-232, 115200 8n1, flow control xon/xoff (labelled ioioi) oob 10/100/1000, cpu/bmc usb 2.0 host type a, data only (does not supply power) emc cn (gb9254-2008), eu (en55022, en55024), fcc, vcci safety iec60950-1, gb4943, ul/csa, cb eol none-announced qsfpdd-400g qsfp-dd 400g sfp-plus-mgmt sfp-plus 10g mgmt status-leds led port-leds psus psu fans fan grounding point furniture item rj45-serial 1g fan-40 lug-tag psu-1500-ac compliance-sticker led-dot led-indicator rj45-ganged-eth screw-head sfp-plus-cage rj45-ganged usb-a",
+   "version": "0.1.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {
+    "title": "Celestica DS4001 1U 32-port 400GbE Data Center Switch datasheet",
+    "url": "https://www.celestica.com/hps/ds4001"
+   },
+   "decor-confidence": {
+    "unstated": 1
+   },
+   "description": "Celestica DS4001 1U 32-port 400GbE data center switch - 32 QSFP-DD in two belly-to-belly rows of sixteen (ports 1, 2, 31 and 32 printed '-HP', the 20 W high-power positions), a stacked pair of 10G SFP+ management ports (M1/M2) at the LEFT end, and at the right four status lamps and a vertical console RJ45 / USB-A / management RJ45 stack; at the rear two 1500 W supplies (1+1) either side of seven hot-swap fans (6+1). 12.8 Tbps, 70 MB buffer. The DS4000 shares its installation guide and rear but has a different faceplate.",
+   "gaps": [
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The docs-portal What's in the Box lists R3240-F9104-A1, '1U,32X400GBE,DC PSU 2x1500W,COMe 4C/16G DDR4/64G SSD,F2B', and the Ground Lug Installation page exists because a DC build does ('The GLA is not applicable to the AC SKU versions'). The PDF revision 1.4.0 of the same guide lists only the two AC SKUs, and no held image shows the DC supply's face, so no DC supply component or configuration is drawn.",
+     "scope": [
+      "psus"
+     ],
+     "wanted": "a rear image of the DC build and its supply's input connector",
+     "what": "dc-build"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Every vertical position on this front is carried from the DS4000's orthographic guide elevation; the DS4001 is known only from three-quarter renders, which give x through a homography but were not used for y. A square-on DS4001 front photograph or elevation would settle it.",
+     "scope": [
+      "qsfpdd-400g",
+      "sfp-plus-mgmt",
+      "mgmt",
+      "status-leds"
+     ],
+     "wanted": "a square-on front image of a DS4001",
+     "what": "front-vertical-measure"
+    },
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The shared guide says each QSFP-DD port has four tri-colour LEDs; the DS4001 render shows two windows per port on the four -HP ports (1, 2, 31, 32) and four on the rest. Modelled as the render shows; which of LED1-LED4 the two windows carry is not stated.",
+     "scope": [
+      "port-leds"
+     ],
+     "wanted": "a DS4001 LED table or a front photograph of a lit unit",
+     "what": "hp-port-lamps"
+    },
+    {
+     "because": "needs-photo",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The one rear render held (black fans, blue latches, orange PSU latches) does not state its airflow. The DS4100 rear, from the same vendor, is orange-faced, which may be an airflow colour code; no held DS4000/DS4001 document says so.",
+     "scope": [
+      "fans",
+      "psus",
+      "b2f"
+     ],
+     "wanted": "a rear photograph of each airflow build",
+     "what": "b2f-finish"
+    },
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "note": "The artwork prints STAT, FAN, PWR, ALM top to bottom; the shared guide's Front Panel Status LEDs table signs the four SYS, ALM, PSU, FAN. The silkscreen follows the artwork and each lamp takes the table row for its function.",
+     "scope": [
+      "status-leds"
+     ],
+     "wanted": "a front photograph of a DS4001",
+     "what": "system-led-signs"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "No held document names the FRU part numbers of the 1500 W supply or the fan module; the components are named for their form (celestica/psu-1500-ac, celestica/fan-40).",
+     "scope": [
+      "psus",
+      "fans"
+     ],
+     "wanted": "a Celestica FRU list",
+     "what": "psu-and-fan-part-numbers"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "note": "Neither the DS4001 datasheet nor the shared guide names the switching silicon.",
+     "scope": [
+      "qsfpdd-400g"
+     ],
+     "wanted": "a Celestica document naming the ASIC",
+     "what": "asic"
+    },
+    {
+     "because": "L29",
+     "blocks": [],
+     "count": 1,
+     "kind": "derived",
+     "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
+     "what": "module-power"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "specified"
+     ],
+     "kind": "derived",
+     "wanted": "one of `power-max-w`, `power-max-ac-w`, `power-max-dc-w` in `attrs.power` (profile `networking` - see spec/schemas/profiles.yaml) - unlocks the About panel, and comparison against other devices",
+     "what": "specified"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 9 bays (rear 9); `physical-context` on port group qsfpdd-400g - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "manufacturer": "Celestica",
+   "model": "DS4001",
+   "name": "ds4001",
+   "ns": "celestica",
+   "options": {
+    "airflow": [
+     "back-to-front",
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "portfolio": {
+    "family": "Data Center Switch"
+   },
+   "search": "switching-capacity 12.8 tbps packet-buffer 70 mb latency low-latency cut-through mode supported input-ac 100-240 v nominal (90-264 max), 47-63 hz psu-redundancy 1+1 hot-swappable, 1500 w each fan-redundancy 6+1 hot-swappable port-power-f2b 28 x 15 + 4 20 (ports 1, 2, 31, 32) port-power-b2f 24 5 8 12 25-32) operating-temp 0 to 45 c at 900 m operating-humidity 90% non-condensing operating-temp-guide 40 c, either airflow operating-humidity-guide 60% rh storage-humidity 95% cpu intel xeon d, 4-core d-1627 on a come module (both skus); up cores per datasheet memory 16 gb ddr4 ecc skus; 32 datasheet) storage 64 m.2 ssd skus) bmc with 1 ddr4, dual flash, nc-si shared port, sol, ipmi 2.0 breakout 168 50gbe, 128 100gbe or 200gbe using cables optics-qsfp-dd 10gbase-cr/sr/lr/er, 25gbase-cr/sr/lr/er, 40gbase-cr4/sr4/lr4/er4, 100gbase-cr4/sr4/lr4/er4/dr1/psm4/cwdm4, 400gbase-cr4/sr4/fr4/dr4/lr8 (shared guide port descriptions); dac 3 (datasheet) optics-sfp-plus 10gbe descriptions) tunnelling ipinip, ipingre, vxlan console rj45 rs-232, 115200 8n1, flow control xon/xoff (labelled ioioi) oob 10/100/1000, cpu/bmc usb type a, data only (does not supply power) emc cn (gb/t9254-2008 class a), eu (en550032, en55035, en300386), fcc, vcci, ccc safety ul/csa/iec/en60950-1/62368-1, ul, cb, (gb4943.1-2011) environment rohs eol none-announced qsfpdd-400g qsfp-dd 400g sfp-plus-mgmt sfp-plus 10g mgmt status-leds led port-leds psus psu fans fan grounding point furniture item rj45-serial 1g fan-40 lug-tag psu-1500-ac compliance-sticker led-dot led-indicator rj45-ganged-eth screw-head sfp-plus-cage rj45-ganged usb-a",
+   "version": "0.1.0"
+  },
+  {
+   "aliases": [],
+   "capability": {
+    "blocked": [],
+    "flags": [
+     "specified",
+     "templated"
+    ],
+    "level": 4,
+    "name": "addressable",
+    "unknown": []
+   },
+   "datasheet": {
+    "sha256": "f0bf9ba185ead49cd52cd5b7c2d154d0e5f17aeb775a32106e1fd6145f596d4e",
+    "title": "Celestica ES1000 1U 24-port / 48-port 1GbE (PoE) Access Switch datasheet",
+    "url": "https://www.celestica.com/hps/es1000"
+   },
+   "decor-confidence": {
+    "estimated": 2,
+    "unstated": 26
+   },
+   "description": "Celestica ES1000 - 1U enterprise access switch, 24 or 48 x 1000BASE-T RJ45 (PoE++ 802.3bt Type 4 Class 8 on the -P builds) and 4 x 1/10/25G SFP28 uplinks, Marvell AC5X, integrated ARM A55 CPU (Intel Denverton x86 on the -48C/-48CP), 2+1 fixed fans, 1+1 hot-swap CRPS AC supplies, F2B or B2F airflow. Six SKUs on one chassis: the 24-port builds wear the front-24 panel, the 48-port builds the front panel, and all share one rear.",
+   "gaps": [
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "usb-1",
+      "usb-2"
+     ],
+     "wanted": "WHICH USB GENERATION THE -24, -24P, -48 AND -48P CARRY. The guide's Table of Ports and Port Descriptions give USB 2.0 on those four and USB 3.0 on the -48C/-48CP; the datasheet FEATURES says '2x USB 3.0 Type A' with no SKU split. The one 48-port front figure (captioned for all four 48-port SKUs) prints the SuperSpeed 'SS' mark and the 24-port figure does not. Modelled per the guide table; the front panel's SS legend is drawn on all four 48-port builds because only one 48-port panel exists. A photograph of an ES1000-48 or -48P front closes it.",
+     "what": "usb-generation"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "24-f2b",
+      "24-b2f",
+      "48-f2b",
+      "48-b2f",
+      "48c-f2b",
+      "48c-b2f"
+     ],
+     "wanted": "A way to carry the per-SKU power maximum (<3200 W PoE, <550 W non-PoE), the PoE budget and the CPU per configuration. Today they are device attrs stated for the whole family with the split in words, as on cisco/asr-9001's gap of the same name.",
+     "what": "config-scoped-device-attrs"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "psu-1",
+      "psu-2"
+     ],
+     "wanted": "The vendor part numbers of the 550 W, 920 W and 1600 W supplies. Neither the guide nor the datasheet names them, and the ordering table lists only chassis SKUs. Whether the 1600 W supply is the same Gospower G1482-1600WRA already modelled for the ES1010 (celestica/psu-1600@1, drawn from bench photos with a purple latch and one lamp, against this guide's black tab and two lamps) is the open question.",
+     "what": "psu-part-numbers"
+    },
+    {
+     "because": "sources-disagree",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "psu-1",
+      "psu-2"
+     ],
+     "wanted": "Whether the 550 W supply has one lamp or two. The PSU LEDs table describes one bi-colour lamp for the 550 W and a DC OK / AC OK pair for the 920 W and 1600 W; the rear figures draw two windows on every supply and the guide says the rear of all ES1000 systems is visually identical. A photograph of a 550 W supply closes it.",
+     "what": "psu-550-lamp-count"
+    },
+    {
+     "because": "vendor-silent",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "rear"
+     ],
+     "wanted": "What the two round bosses left of fan labels 2 and 3 are (light pipes for per-fan lamps, or plugged holes). The guide documents no fan lamps; they are drawn as outlines only.",
+     "what": "rear-bosses"
+    },
+    {
+     "because": "needs-drawing",
+     "blocks": [],
+     "kind": "declared",
+     "scope": [
+      "top",
+      "bottom",
+      "left",
+      "right"
+     ],
+     "wanted": "A mechanical drawing or square-on photographs of the lid, underside and sides. Everything on those faces is placed by proportion from three-quarter renders.",
+     "what": "side-top-bottom-geometry"
+    },
+    {
+     "because": "CAP",
+     "blocks": [
+      "wired"
+     ],
+     "kind": "derived",
+     "wanted": "`physical-context` on 2 bays (rear 2); `physical-context` on port groups rj45-1g, sfp28 - unlocks ENTITY-MIB / Redfish correlation and monitoring overlays",
+     "what": "wired"
+    }
+   ],
+   "manufacturer": "Celestica",
+   "model": "ES1000",
+   "name": "es1000",
+   "ns": "celestica",
+   "options": {
+    "airflow": [
+     "back-to-front",
+     "front-to-back"
+    ],
+    "power": [
+     "ac"
+    ]
+   },
+   "portfolio": {},
+   "search": "weight-kg 7.6 weight-note +/- 0.3 kg with two psus switching-capacity 148 gbps port-modes-rj45 10/100/1000base-t port-modes-sfp28 1/10/25g power-max-w 3200 power-max-no-poe-w 550 input-ac 100-240 vac, 50-60 hz 1+1 hot-swap ac crps (550 w, 920 w or 1600 by sku), 0:1 / 1:1 modes poe-budget-w 2910 poe-budget-note high line, supplies: 1550 on the -24p (up to 17 ports at 90 w), -48p/-48cp 32 w); low line and 1710 fans 2+1 fixed (not field-replaceable) operating-temp 0 45 c (front back airflow), 900 m; derate 1 per 175 m above storage-temp -40 70 (guide); 60 (datasheet) humidity-operating 5 85 percent non-condensing humidity-storage 95 altitude 3050 maximum asic marvell ac5x cpu integrated arm a55, 2c 1.5 ghz; intel denverton x86 4c 2.1 ghz (come) -48c/-48cp memory 8 gb ddr4 (16 option -48c/-48cp) storage emmc (arm builds); 64 m.2 ssd (-48c/-48cp) encryption 256b macsec poe ieee 802.3af/at/bt type 4 class 8, port, persistent - -24p, -48p -48cp mgmt-ports rj45 console (9600 115200 default, 8n1), out-of-band combo pair (rj45 in stack sfp left of uplinks one interface, not usable together), 2 x usb-a (data only) acoustic iso 7779, 3744 environment eu rohs, svhc requirements reach directive emc b usa, canada, europe, japan, china safety ul csa iec en 60950-1 62368-1 psu-approvals ce, fcc, ccc, kc, tuv, cul, bis bsmi eol none-announced rj45-1g port 1g sfp28 25g sfp28-leds led mgmt status-leds marks mark psu grounding point furniture item r3194-f9007-a1 part r3194-f9107-a1 r3194-f9001-a1 r3194-f9101-a1 r3194-f9008-a1 r3194-f9108-a1 r3194-f9002-a1 r3194-f9102-a1 r3194-f9019-a1 r3194-f9119-a1 r3194-f9016-a1 r3194-f9116-a1 mgmt-combo rj45-serial psu-crps-1600-ac psu-crps-550-ac psu-crps-920-ac led-arrow-sm led-indicator rj45-ganged-eth screw-head usb-symbol rj45-ganged sfp-ganged",
+   "version": "0.1.0"
   },
   {
    "aliases": [],
@@ -4302,7 +4690,7 @@
     "series": "DCS201"
    },
    "search": "weight-note 8.815 kg (19.43 lb), with two installed psus operating-temp 0 to 45 c storage-temp -40 70 humidity 5% 95% non-condensing processor intel atom c3558 2.2 ghz 4-core x86, 2 x 8 gb ddr4 so-dimm onie pre-loaded, no switch software image optics-sfp-plus datasheet: \"48 sfp+ ports, supporting 1/10 gbe (dac, 10gbase-sr/lr) or 1 (1000base-t/sx/lx)\". its supported transceivers and cables list adds 10gbase-rj45 10g-dac/aoc cable. optics-qsfp28 \"6 100 qsfp28 each 40/100 100gbase sr4/lr4) 4 10/25 (dac fiber breakout cable)\". 40gbase-sr4/lr4, 40g-dac/aoc, 100gbase-sr4/cwdm4/lr4 100g-dac/aoc. emissions en 55032 class a, 61000-3-2, 61000-3-3, as/nzs ices-003 fcc vcci bsmi tec a eol none-announced dcs201 sfp-plus port 10g 100g port-leds led mgmt leds furniture part psu fans fan rj45 1g rj45-serial console usb-a storage led-arrow led-dot led-rect reset-button screw-head usb-symbol dcs201-fan dcs201-psu-ac dcs201-psu-dc qsfp-ganged rj45-ganged sfp-ganged",
-   "version": "1.0.5"
+   "version": "1.0.6"
   },
   {
    "aliases": [
@@ -4414,7 +4802,7 @@
     "series": "DCS202"
    },
    "search": "weight-note 9.59 kg (21.14 lb), with two installed psus operating-temp 0 to 45 c storage-temp -40 70 humidity 5% 95% non-condensing optics-qsfp28 quick start: dac cables or qsfp28 transceivers; \"1 led green - 100 gbps mode, 1 blue 40 mode\", 25 and 10 four-lane breakout modes. emissions en 55032 class a, 61000-3-2, 61000-3-3, as/nzs ices-003 fcc vcci bsmi kc a (ac sku only) immunity 55024/55035, iec 61000-4-2/3/4/5/6/8/11 safety ul (csa 22.2 no 62368-1 & ul62368-1), cb (iec/en62368-1), cns 15598-1 eol none-announced dcs202 rj45 port 10g 100g mgmt leds port-leds furniture part psu fans fan 1g rj45-serial console usb-a storage led-dot led-rect reset-button rj45-ganged-eth screw-head usb-symbol dcs201-fan dcs201-psu-ac dcs201-psu-dc qsfp-ganged rj45-ganged",
-   "version": "1.0.6"
+   "version": "1.0.7"
   },
   {
    "aliases": [
@@ -4546,7 +4934,7 @@
     "series": "DCS240"
    },
    "search": "weight-note 11.85 kg (26.12 lb), with 2 psus and 6 fans installed operating-temp 0 to 45 c storage-temp -40 70 optics-qsfp-dd datasheet: each port takes 1 x 400 gbe or breaks out 200g / 4 100g, also accepts 100 qsfp28 40 qsfp+. the upper sixteen ports support up 24 w per transceiver lower do not, which is a per-row fact this model has no vocabulary for recorded as gap. optics-sfp-plus quick start, leds: 10g 1g modes are both indicated, so pair 10gbe 1gbe optics. eol none-announced dcs240 as9726-32dbs qsfp-dd 400g sfp-plus port-leds led mgmt timing leds furniture part psu fan rj45 usb-a storage rj45-serial console micro-usb-b coax-smb led-dot led-rect-sm pull-tab reset-button rj45-eth smb-jack usb-symbol dcs240-fan dcs240-psu-ac dcs240-psu-dc micro-usb qsfp-ganged sfp-ganged",
-   "version": "1.1.5"
+   "version": "1.1.6"
   },
   {
    "aliases": [
@@ -4884,7 +5272,7 @@
     "series": "DCS511"
    },
    "search": "weight-note 11.88 kg (26.16 lb), with 2 psus and 6 fans installed operating-temp 0 to 45 c (f2b) / 30 (b2f) storage-temp -40 70 humidity operating: 5% 95% (non-condensing) cpu intel xeon d-1713nte, 4-core 2.2 ghz bmc aspeed ast2600 running openbmc, serial-over-lan optics-qsfp-dd datasheet: 32 x qsfp56-dd 400gbe. the guide's own led table enumerates modes each port runs - 400g 200g 4 100g on 50g pam4, 25g nrz, 40g 10g nrz which is a fuller statement of what works than datasheet's line gives. eol none-announced dcs511 qsfp-dd port-leds mgmt timing leds furniture part psu fan as9737-32db-o-ac-f fp5ec8632004z as9737-32db-o-ac-f-un power-cord un as9737-32db-o-ac-f-eu eu as9737-32db-o-ac-f-uk uk as9737-32db-o-ac-f-us us as9737-32db-o-ac-f-jp jp as9737-32db-o-ac-b fp5ec8632005z as9737-32db-o-ac-b-un as9737-32db-o-ac-b-eu as9737-32db-o-ac-b-uk as9737-32db-o-ac-b-us as9737-32db-o-ac-b-jp as9737-32db-o-48v-f fp5ec8632006z as9737-32db-o-48v-b fp5ec8632007z rj45 1g usb-a storage rj45-serial console micro-usb-b sfp coax-smb sfp-plus led-dot pull-tab reset-button rj45-eth screw-head smb-jack usb-symbol dcs240-fan dcs240-psu-ac dcs240-psu-dc micro-usb qsfp-ganged sfp-ganged",
-   "version": "2.0.5"
+   "version": "2.0.6"
   },
   {
    "aliases": [

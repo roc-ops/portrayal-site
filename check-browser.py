@@ -2304,65 +2304,18 @@ DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "compone
               "annotate.html", "drawio.html", "exporter.html", "drawings.html"]
 
 
-# A DRESS REHEARSAL OF PORTRAYAL #670 against this snapshot. #670 writes each
-# distinct drawing once, named after the first configuration (in manifest
-# order) that draws it, and maps every configuration's faces to their files in
-# configs[].files. Here the snapshot is served as #670 would publish it: each
-# <device>.configs.json gains `files`, and every face name #670 stops writing
-# answers 404. The site's face readers must still find every face.
-def _faces_after_670():
-    import hashlib
-    dist = pathlib.Path(__file__).resolve().parent / "assets" / "dist"
-    files, gone = {}, set()
-    for cf in sorted(dist.glob("*.configs.json")):
-        dev = cf.name[:-len(".configs.json")]
-        idx = json.loads(cf.read_text())
-        names = [c["name"] if isinstance(c, dict) else c for c in idx.get("configs", [])]
-        per = files.setdefault(dev, {n: {} for n in names})
-        for view in ("front", "rear", "top", "bottom", "left", "right"):
-            first = {}
-            for n in names:
-                p = dist / f"{dev}.{n}.{view}.svg"
-                if not p.exists(): continue
-                t = re.sub(r"<metadata>.*?</metadata>", "", p.read_text(), flags=re.S)
-                t = re.sub(r'\sdata-config="[^"]*"', "", t)
-                h = hashlib.sha256(t.encode()).hexdigest()
-                if h in first: gone.add(p.name)
-                else: first[h] = p.name
-                per[n][view] = first[h]
-    return files, gone
-
-def route_as_670(page):
-    files, gone = _faces_after_670()
-    missed = []
-    def handle(route):
-        name = route.request.url.split("?")[0].rsplit("/", 1)[-1]
-        if name in gone:
-            # The vendored kit's own shell.js/viewer3d.js still build these names
-            # until the #670 sync brings their faceFile; the shell recipe runs in
-            # kit-frame.html, so its requests are the kit's, not the site's.
-            try: kit = "kit-frame.html" in route.request.frame.url
-            except Exception: kit = False
-            if not kit: missed.append(name)
-            return route.fulfill(status=404, body="removed by #670")
-        if name.endswith(".configs.json"):
-            dev = name[:-len(".configs.json")]
-            idx = route.fetch().json()
-            for c in idx.get("configs", []):
-                if isinstance(c, dict) and c.get("name") in files.get(dev, {}):
-                    c["files"] = files[dev][c["name"]]
-            return route.fulfill(json=idx)
-        return route.continue_()
-    page.route("**/assets/dist/*", handle)
-    return missed, gone
-
-@extra("after Portrayal #670 (faces written once, found through configs[].files) every face still resolves")
+# EVERY FACE RESOLVES (Portrayal #670). Each distinct drawing is written once,
+# named after the first configuration that draws it, and configs[].files says
+# which file each configuration's face is - so `s9600-72xc.base.front.svg` does
+# not exist (base draws ac's front). This drives the site's per-configuration
+# readers on devices #670 renamed, and fails on any face request that 404s.
+@extra("every face resolves through configs[].files (Portrayal #670)")
 def check_faces_after_670(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"670: uncaught {e}"))
-    missed, gone = route_as_670(page)
-    if "s9600-72xc.base.front.svg" not in gone:
-        bad.append("670: the rehearsal no longer removes s9600-72xc.base.front.svg - recheck what it tests")
+    missed = []
+    page.on("response", lambda r: missed.append(r.url.rsplit("/", 1)[-1])
+            if "/assets/dist/" in r.url and r.url.endswith(".svg") and r.status == 404 else None)
     page.goto(f"{base}/kit.html", wait_until="load")
     for name in ("01-drawing", "02-telemetry", "03-metadata", "04-seat", "06-marks"):
         fig = f'figure[data-example="{name}"]'
@@ -2389,7 +2342,7 @@ def check_faces_after_670(page, base):
             page.wait_for_function("() => window.__hero3d && window.__hero3d.tubes.length >= 21", timeout=READY_3D_MS)
         except Exception:
             bad.append("670: the hero's 3D panel never built")
-    if missed: bad.append(f"670: requested {len(missed)} removed face names, e.g. {sorted(set(missed))[:4]}")
+    if missed: bad.append(f"670: {len(missed)} face requests 404d, e.g. {sorted(set(missed))[:4]}")
     return bad
 
 @extra("the Docs menu opens on every page, level with its neighbors, and Escape closes it")

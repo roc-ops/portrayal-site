@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.2mm" height="43.4mm" viewBox="0 0 438.2 43.4" data-device="es1000" data-view="rear" data-weight-kg="7.6" data-weight-note="7.6 +/- 0.3 kg with two PSUs" data-switching-capacity="148 Gbps" data-port-modes-rj45="10/100/1000BASE-T" data-port-modes-sfp28="1/10/25G" data-power-max-w="3200" data-power-max-no-poe-w="550" data-input-ac="100-240 VAC, 50-60 Hz" data-psus="1+1 hot-swap AC CRPS (550 W, 920 W or 1600 W by SKU), 0:1 / 1:1 modes" data-poe-budget-w="2910" data-poe-budget-note="high line, two supplies: 1550 W on the -24P (up to 17 ports at 90 W), 2910 W on the -48P/-48CP (up to 32 ports at 90 W); low line 1550 W and 1710 W" data-fans="2+1 fixed (not field-replaceable)" data-operating-temp="0 to 45 C (front to back airflow), 900 m; derate 1 C per 175 m above 900 m" data-storage-temp="-40 to 70 C (guide); -40 to 60 C (datasheet)" data-humidity-operating="5 to 85 percent non-condensing" data-humidity-storage="5 to 95 percent" data-altitude="3050 m maximum" data-asic="Marvell AC5X" data-cpu="integrated ARM A55, 2C 1.5 GHz; Intel Denverton x86 4C 2.1 GHz (COMe) on the -48C/-48CP" data-memory="8 GB DDR4 (16 GB option on the -48C/-48CP)" data-storage="32 GB eMMC (ARM builds); 32 or 64 GB M.2 SSD (-48C/-48CP)" data-encryption="256b MACsec" data-poe="IEEE 802.3af/at/bt Type 4 Class 8, 90 W per port, persistent PoE - on the -24P, -48P and -48CP" data-mgmt-ports="RJ45 console (9600 / 115200 default, 8N1), out-of-band combo pair (RJ45 in the stack and SFP left of the uplinks - one interface, not usable together), 2 x USB-A (data only)" data-acoustic="ISO 7779, ISO 3744" data-environment="EU RoHS, SVHC requirements of REACH directive" data-emc="Class B - USA, Canada, Europe, Japan, China" data-safety="UL / CSA / IEC / EN 60950-1 / 62368-1" data-psu-approvals="CE, FCC, CCC, KC, TUV, UL / cUL, BIS and BSMI" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/psu-crps-1600-ac@'] .state-fail { --led-color: #ef4444; }
+    g[data-ref^='celestica/psu-crps-1600-ac@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='celestica/psu-crps-1600-ac@'] .state-peer-ac-fault { --led-color: #ef4444; }
+    g[data-ref^='celestica/psu-crps-1600-ac@'] .state-peer-ac-fault { animation: portrayal-blink 2s linear infinite; }
+    g[data-ref^='celestica/psu-crps-1600-ac@'] .state-standby { --led-color: #22c55e; }
+    g[data-ref^='celestica/psu-crps-1600-ac@'] .state-standby { animation: portrayal-blink 2s linear infinite; }
+</style>
+  <metadata>{"device":"Celestica ES1000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"celestica/psu-crps-1600-ac@1":"1.0.0","common/screw-head@1":"1.1.0","std/c14-inlet@1":"1.3.0"},"source-sha256":"791ddbf2fe8ace8ef3e8eac2e592494bc0c8a0d4eee97eb04dbb8e4dc07cb938","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ES1000" data-sku="R3194-F9002-A1" data-part-number="R3194-F9002-A1" x="0" y="0" width="438.2" height="43.4" rx="1.2" fill="#c9ccd0" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-vent" width="8.86" height="5.11" patternUnits="userSpaceOnUse">
+      <path d="M 2.55 0 L 1.275 2.208 L -1.275 2.208 L -2.55 0 L -1.275 -2.208 L 1.275 -2.208 Z" fill="#17191c" />
+      <path d="M 11.41 0 L 10.135 2.208 L 7.585 2.208 L 6.31 0 L 7.585 -2.208 L 10.135 -2.208 Z" fill="#17191c" />
+      <path d="M 6.98 2.555 L 5.705 4.763 L 3.155 4.763 L 1.88 2.555 L 3.155 0.347 L 5.705 0.347 Z" fill="#17191c" />
+      <path d="M 2.55 5.11 L 1.275 7.318 L -1.275 7.318 L -2.55 5.11 L -1.275 2.902 L 1.275 2.902 Z" fill="#17191c" />
+      <path d="M 11.41 5.11 L 10.135 7.318 L 7.585 7.318 L 6.31 5.11 L 7.585 2.902 L 10.135 2.902 Z" fill="#17191c" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="fan-plate" data-kind="stiffener-plate" x="2.6" y="0.5" width="233.5" height="12.4" rx="1" fill="#cfd2d6" />
+    <rect id="fan-1-backing" data-kind="vent-backing" x="30.89" y="2.85" width="38.5" height="38.5" rx="19.25" fill="#4a4f55" />
+    <rect id="fan-1-grille" data-kind="vent-field" data-aperture="air" x="30.89" y="2.85" width="38.5" height="38.5" rx="19.25" fill="url(#portrayal-vent)" data-vent="6" />
+    <rect id="fan-2-backing" data-kind="vent-backing" x="86.34" y="2.85" width="38.5" height="38.5" rx="19.25" fill="#4a4f55" />
+    <rect id="fan-2-grille" data-kind="vent-field" data-aperture="air" x="86.34" y="2.85" width="38.5" height="38.5" rx="19.25" fill="url(#portrayal-vent)" data-vent="6" />
+    <rect id="fan-3-backing" data-kind="vent-backing" x="141.84" y="2.85" width="38.5" height="38.5" rx="19.25" fill="#4a4f55" />
+    <rect id="fan-3-grille" data-kind="vent-field" data-aperture="air" x="141.84" y="2.85" width="38.5" height="38.5" rx="19.25" fill="url(#portrayal-vent)" data-vent="6" />
+    <rect id="fan-1-screw-a-land" data-kind="print-island" x="31.94" y="35.8" width="4" height="4" rx="0.6" fill="#c9ccd0" />
+    <rect id="fan-1-screw-b-land" data-kind="print-island" x="64.34" y="35.8" width="4" height="4" rx="0.6" fill="#c9ccd0" />
+    <rect id="fan-2-screw-a-land" data-kind="print-island" x="87.39" y="35.8" width="4" height="4" rx="0.6" fill="#c9ccd0" />
+    <rect id="fan-2-screw-b-land" data-kind="print-island" x="119.79" y="35.8" width="4" height="4" rx="0.6" fill="#c9ccd0" />
+    <rect id="fan-3-screw-a-land" data-kind="print-island" x="142.89" y="35.8" width="4" height="4" rx="0.6" fill="#c9ccd0" />
+    <rect id="fan-3-screw-b-land" data-kind="print-island" x="175.29" y="35.8" width="4" height="4" rx="0.6" fill="#c9ccd0" />
+    <rect id="boss-1" data-kind="outline" x="74.1" y="27.2" width="4.2" height="4.2" rx="2.1" fill="none" stroke="#8d9297" stroke-width="0.35" />
+    <rect id="boss-2" data-kind="outline" x="129.6" y="27.2" width="4.2" height="4.2" rx="2.1" fill="none" stroke="#8d9297" stroke-width="0.35" />
+    <rect id="psu-wall-seam" data-kind="seam" x="237.6" y="13" width="0.4" height="29.9" rx="0.6" fill="#8d9297" />
+    <rect id="psu-divider" data-kind="outline" x="330.2" y="1.7" width="15.4" height="40" rx="0.4" fill="none" stroke="#8d9297" stroke-width="0.35" />
+    <rect id="strip-seam" data-kind="seam" x="421.9" y="1" width="0.4" height="41.4" rx="0.6" fill="#8d9297" />
+  </g>
+  <rect id="region--fan-1" data-path="region:fan-1" data-class="region" data-physical-context="Fan" x="30.89" y="2.85" width="38.5" height="38.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--fan-2" data-path="region:fan-2" data-class="region" data-physical-context="Fan" x="86.34" y="2.85" width="38.5" height="38.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--fan-3" data-path="region:fan-3" data-class="region" data-physical-context="Fan" x="141.84" y="2.85" width="38.5" height="38.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M -0.9 -1.1 L 1.1 0 L -0.9 1.1 Z" fill="#1f2226" stroke="none" stroke-linejoin="round" transform="translate(25.1 17.3)" id="fan-1-arrow" data-path="silk:fan-1-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -1.1 -1.1 L 1.1 1.1 M 1.1 -1.1 L -1.1 1.1" fill="none" stroke="#1f2226" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(25.1 22.4)" id="fan-1-symbol" data-path="silk:fan-1-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="25.1" y="28.9" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#1f2226" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">1</text>
+    <path d="M -0.9 -1.1 L 1.1 0 L -0.9 1.1 Z" fill="#1f2226" stroke="none" stroke-linejoin="round" transform="translate(80.55 17.3)" id="fan-2-arrow" data-path="silk:fan-2-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -1.1 -1.1 L 1.1 1.1 M 1.1 -1.1 L -1.1 1.1" fill="none" stroke="#1f2226" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(80.55 22.4)" id="fan-2-symbol" data-path="silk:fan-2-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="80.55" y="28.9" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#1f2226" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">2</text>
+    <path d="M -0.9 -1.1 L 1.1 0 L -0.9 1.1 Z" fill="#1f2226" stroke="none" stroke-linejoin="round" transform="translate(136 17.3)" id="fan-3-arrow" data-path="silk:fan-3-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <path d="M -1.1 -1.1 L 1.1 1.1 M 1.1 -1.1 L -1.1 1.1" fill="none" stroke="#1f2226" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(136 22.4)" id="fan-3-symbol" data-path="silk:fan-3-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis" />
+    <text x="136" y="28.9" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#1f2226" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">3</text>
+    <path d="M -0.9 -1.1 L 1.1 0 L -0.9 1.1 Z" fill="#1f2226" stroke="none" stroke-linejoin="round" transform="translate(246.7 17.3)" id="psu-1-arrow" data-path="silk:psu-1-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <path d="M -1.1 -1.1 L 1.1 -1.1 L 1.1 1.1 L -1.1 1.1 L -1.1 -1.1 M 0.35 -0.7 L -0.35 0.1 L 0.35 -0.1 L -0.35 0.7" fill="none" stroke="#1f2226" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(246.7 22.6)" id="psu-1-symbol" data-path="silk:psu-1-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="246.7" y="28.9" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#1f2226" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M 0.9 -1.1 L -1.1 0 L 0.9 1.1 Z" fill="#1f2226" stroke="none" stroke-linejoin="round" transform="translate(429.6 9.8)" id="psu-2-arrow" data-path="silk:psu-2-arrow" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <path d="M -1.1 -1.1 L 1.1 -1.1 L 1.1 1.1 L -1.1 1.1 L -1.1 -1.1 M 0.35 -0.7 L -0.35 0.1 L 0.35 -0.1 L -0.35 0.7" fill="none" stroke="#1f2226" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(429.6 14.4)" id="psu-2-symbol" data-path="silk:psu-2-symbol" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+    <text x="429.6" y="21.3" font-family="sans-serif" font-size="3.4" text-anchor="middle" fill="#1f2226" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2</text>
+    <path d="M 2.2 0 L 1.56 1.56 L 0 2.2 L -1.56 1.56 L -2.2 0 L -1.56 -1.56 L 0 -2.2 L 1.56 -1.56 L 2.2 0 M 0 -1.3 L 0 -0.1 M -1.2 -0.1 L 1.2 -0.1 M -0.8 0.65 L 0.8 0.65 M -0.4 1.4 L 0.4 1.4" fill="none" stroke="#1f2226" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(15.8 35.9)" id="earth-left" data-path="silk:earth-left" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-screw-1 ground-screw-2" />
+    <path d="M 2.2 0 L 1.56 1.56 L 0 2.2 L -1.56 1.56 L -2.2 0 L -1.56 -1.56 L 0 -2.2 L 1.56 -1.56 L 2.2 0 M 0 -1.3 L 0 -0.1 M -1.2 -0.1 L 1.2 -0.1 M -0.8 0.65 L 0.8 0.65 M -0.4 1.4 L 0.4 1.4" fill="none" stroke="#1f2226" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(429.6 28.3)" id="earth-right" data-path="silk:earth-right" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ground-screw-3" />
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="256" y="1.7" width="73.5" height="40" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="celestica/psu-crps-1600-ac@1:1.0.0" data-body-depth="185.0" data-form-factor="crps-1u" data-input="ac" data-power-output-low-line-w="1000" data-power-output-w="1600" data-states="ok fail absent" transform="translate(292.75,21.7) translate(-36.75,-20)">
+      <title>psu-1--module</title>
+      <rect id="psu-1--module--body" x="0" y="0" width="73.5" height="40" rx="0.5" fill="#c3c7cc" stroke="#8a9099" stroke-width="0.35" />
+      <rect id="psu-1--module--fan-surround" x="2.3" y="0.6" width="38.0" height="31.6" rx="3.0" fill="#2a2d31" />
+      <g id="psu-1--module--fan">
+        <circle id="psu-1--module--fan-bore" cx="21.3" cy="16.4" r="14.5" fill="#15171a" />
+        <circle cx="21.3" cy="16.4" r="6.2" fill="#6f757c" />
+        <g id="psu-1--module--fan-guard" fill="none" stroke="#dfe2e5" stroke-width="0.8">
+          <circle cx="21.3" cy="16.4" r="14.0" />
+          <circle cx="21.3" cy="16.4" r="7.0" />
+          <line x1="6.3" y1="2.7" x2="36.3" y2="30.1" />
+          <line x1="35.2" y1="2.7" x2="6.3" y2="30.1" />
+        </g>
+        <circle id="psu-1--module--guard-screw-a" cx="6.3" cy="2.7" r="1.9" fill="#d4d7da" stroke="#8a9099" stroke-width="0.25" />
+        <circle id="psu-1--module--guard-screw-b" cx="35.2" cy="2.7" r="1.9" fill="#d4d7da" stroke="#8a9099" stroke-width="0.25" />
+      </g>
+      <rect id="psu-1--module--inlet-frame" x="42.3" y="0.5" width="25.0" height="29.2" rx="1.6" fill="#1a1c1f" stroke="#0d0f11" stroke-width="0.3" />
+      <circle id="psu-1--module--release" cx="56.7" cy="36.6" r="1.5" fill="#15171a" />
+      <g id="psu-1--module--handle" fill="#1d1f22" stroke="#0d0f11" stroke-width="0.3" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="10.0">
+        <path d="M 1.8 28.0 h 2.5 v 5.3 h 34.4 v -5.3 h 2.5 v 10.8 h -39.4 z" />
+      </g>
+      <g id="psu-1--module--latch" data-path="psu-1/module/latch" data-class="latch" data-z-out="2.5">
+        <rect x="67.0" y="13.8" width="4.6" height="18.2" rx="1.0" fill="#202326" stroke="#0d0f11" stroke-width="0.3" />
+      </g>
+      <circle id="psu-1--module--led-dc-ok" cx="45.3" cy="36.6" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#2a2d31" stroke-width="0.3" data-path="psu-1/module/led-dc-ok" data-class="led" data-states="off ok standby fail" data-z-dome="0.3" />
+      <circle id="psu-1--module--led-ac-ok" cx="68.1" cy="36.6" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#2a2d31" stroke-width="0.3" data-path="psu-1/module/led-ac-ok" data-class="led" data-states="off ok peer-ac-fault" data-z-dome="0.3" />
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(40.75,5.1) rotate(90 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="54.8 15.1" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="346.3" y="1.7" width="73.5" height="40" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="celestica/psu-crps-1600-ac@1:1.0.0" data-body-depth="185.0" data-form-factor="crps-1u" data-input="ac" data-power-output-low-line-w="1000" data-power-output-w="1600" data-states="ok fail absent" transform="translate(383.05,21.7) translate(-36.75,-20)">
+      <title>psu-2--module</title>
+      <rect id="psu-2--module--body" x="0" y="0" width="73.5" height="40" rx="0.5" fill="#c3c7cc" stroke="#8a9099" stroke-width="0.35" />
+      <rect id="psu-2--module--fan-surround" x="2.3" y="0.6" width="38.0" height="31.6" rx="3.0" fill="#2a2d31" />
+      <g id="psu-2--module--fan">
+        <circle id="psu-2--module--fan-bore" cx="21.3" cy="16.4" r="14.5" fill="#15171a" />
+        <circle cx="21.3" cy="16.4" r="6.2" fill="#6f757c" />
+        <g id="psu-2--module--fan-guard" fill="none" stroke="#dfe2e5" stroke-width="0.8">
+          <circle cx="21.3" cy="16.4" r="14.0" />
+          <circle cx="21.3" cy="16.4" r="7.0" />
+          <line x1="6.3" y1="2.7" x2="36.3" y2="30.1" />
+          <line x1="35.2" y1="2.7" x2="6.3" y2="30.1" />
+        </g>
+        <circle id="psu-2--module--guard-screw-a" cx="6.3" cy="2.7" r="1.9" fill="#d4d7da" stroke="#8a9099" stroke-width="0.25" />
+        <circle id="psu-2--module--guard-screw-b" cx="35.2" cy="2.7" r="1.9" fill="#d4d7da" stroke="#8a9099" stroke-width="0.25" />
+      </g>
+      <rect id="psu-2--module--inlet-frame" x="42.3" y="0.5" width="25.0" height="29.2" rx="1.6" fill="#1a1c1f" stroke="#0d0f11" stroke-width="0.3" />
+      <circle id="psu-2--module--release" cx="56.7" cy="36.6" r="1.5" fill="#15171a" />
+      <g id="psu-2--module--handle" fill="#1d1f22" stroke="#0d0f11" stroke-width="0.3" data-path="psu-2/module/handle" data-class="handle" data-z-uhandle="10.0">
+        <path d="M 1.8 28.0 h 2.5 v 5.3 h 34.4 v -5.3 h 2.5 v 10.8 h -39.4 z" />
+      </g>
+      <g id="psu-2--module--latch" data-path="psu-2/module/latch" data-class="latch" data-z-out="2.5">
+        <rect x="67.0" y="13.8" width="4.6" height="18.2" rx="1.0" fill="#202326" stroke="#0d0f11" stroke-width="0.3" />
+      </g>
+      <circle id="psu-2--module--led-dc-ok" cx="45.3" cy="36.6" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#2a2d31" stroke-width="0.3" data-path="psu-2/module/led-dc-ok" data-class="led" data-states="off ok standby fail" data-z-dome="0.3" />
+      <circle id="psu-2--module--led-ac-ok" cx="68.1" cy="36.6" r="1.5" fill="var(--led-color, #3a3f44)" stroke="#2a2d31" stroke-width="0.3" data-path="psu-2/module/led-ac-ok" data-class="led" data-states="off ok peer-ac-fault" data-z-dome="0.3" />
+      <g id="psu-2--module--inlet" data-path="psu-2/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(40.75,5.1) rotate(90 14.0 10.0)">
+        <title>psu-2--module--inlet</title>
+        <rect id="psu-2--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-2/module/inlet/opening" data-class="cutout" />
+        <path id="psu-2--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-2--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="54.8 15.1" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="ground-screw-1" data-path="ground-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(5.5,24.2)" data-group="grounding" data-group-role="furniture" data-description="the rear grounding point - two screws beside an earth symbol at the left edge - and the second earth symbol with its screw in the right-hand strip">
+    <title>ground-screw-1</title>
+    <circle id="ground-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="ground-screw-2" data-path="ground-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(5.5,34.1)" data-group="grounding" data-group-role="furniture" data-description="the rear grounding point - two screws beside an earth symbol at the left edge - and the second earth symbol with its screw in the right-hand strip">
+    <title>ground-screw-2</title>
+    <circle id="ground-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="ground-screw-3" data-path="ground-screw-3" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(427.8,33.9)" data-group="grounding" data-group-role="furniture" data-description="the rear grounding point - two screws beside an earth symbol at the left edge - and the second earth symbol with its screw in the right-hand strip">
+    <title>ground-screw-3</title>
+    <circle id="ground-screw-3--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-3--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-3--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="standoff-1" data-path="standoff-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(8.8,3.8)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>standoff-1</title>
+    <circle id="standoff-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="standoff-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="standoff-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="screw-psu-wall" data-path="screw-psu-wall" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(231.5,24.4)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>screw-psu-wall</title>
+    <circle id="screw-psu-wall--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-psu-wall--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-psu-wall--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-1-screw-a" data-path="fan-1-screw-a" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(32.14,36.0)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>fan-1-screw-a</title>
+    <circle id="fan-1-screw-a--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-1-screw-a--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-1-screw-a--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-1-screw-b" data-path="fan-1-screw-b" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="4" transform="translate(64.54,36.0)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>fan-1-screw-b</title>
+    <circle id="fan-1-screw-b--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-1-screw-b--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-1-screw-b--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-2-screw-a" data-path="fan-2-screw-a" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="5" transform="translate(87.59,36.0)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>fan-2-screw-a</title>
+    <circle id="fan-2-screw-a--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-2-screw-a--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-2-screw-a--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-2-screw-b" data-path="fan-2-screw-b" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="6" transform="translate(119.99,36.0)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>fan-2-screw-b</title>
+    <circle id="fan-2-screw-b--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-2-screw-b--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-2-screw-b--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-3-screw-a" data-path="fan-3-screw-a" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="7" transform="translate(143.09,36.0)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>fan-3-screw-a</title>
+    <circle id="fan-3-screw-a--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-3-screw-a--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-3-screw-a--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="fan-3-screw-b" data-path="fan-3-screw-b" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="8" transform="translate(175.49,36.0)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>fan-3-screw-b</title>
+    <circle id="fan-3-screw-b--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="fan-3-screw-b--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="fan-3-screw-b--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

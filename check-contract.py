@@ -31,6 +31,17 @@ def check(cond, what, detail=""):
     return cond
 
 
+def face_file(idx, cfg, view):
+    """The file that draws `view` of configuration `cfg` (Portrayal #670): the
+    kit's faceFile, in Python. A drawing is written once and shared by every
+    configuration that draws it identically, so the name is looked up in
+    configs[].files, falling back to the one the build wrote before #670."""
+    for c in (idx or {}).get("configs", []):
+        if isinstance(c, dict) and c.get("name") == cfg and (c.get("files") or {}).get(view):
+            return c["files"][view]
+    return f"{(idx or {}).get('device')}.{cfg}.{view}.svg"
+
+
 def jload(rel):
     try:
         return json.loads((DIST / rel).read_text())
@@ -368,8 +379,9 @@ else:
             except Exception as e:
                 missing.append(f"{idx_path.name} unreadable ({e})")
                 continue
-        if not cfg or not (DIST / f"{ref}.{cfg}.front.svg").is_file():
-            missing.append(f"{ref}.{cfg}.front.svg")
+        _ff = face_file(json.loads(idx_path.read_text()), cfg, "front") if cfg else None
+        if not cfg or not (DIST / _ff).is_file():
+            missing.append(_ff or f"{ref}.{cfg}.front.svg")
 
     # THE CAST IS FIVE, BOTTOM-UP, AND THE COPPER SWITCH SITS BETWEEN THE SERVER
     # AND THE 100G SWITCH (patching spec §3). Stage 4's plan cables the server and
@@ -639,7 +651,7 @@ comps = {f"{c['ns']}/{c['name']}@{c['major'][1:]}": c
 def face_text(dev, view):
     idx = json.loads((DIST / f"{dev}.configs.json").read_text())
     cfg = dict(cast).get(dev) or idx.get("default")
-    for name in (f"{dev}.{cfg}.{view}.svg", f"{dev}.{view}.svg"):
+    for name in (face_file(idx, cfg, view), f"{dev}.{view}.svg"):
         if (DIST / name).is_file():
             return (DIST / name).read_text()
     return ""
@@ -1079,6 +1091,28 @@ for _f in sorted(list((HERE / "site").rglob("*.js")) + list(HERE.glob("*.html"))
         _hand.append(f"{_f.relative_to(HERE)}:{_t[:_mm.start()].count(chr(10)) + 1}")
 check(not _hand, "no site code builds a per-configuration face file name by hand (site/faces.js resolves them)",
       f"{len(_hand)}: " + ", ".join(_hand))
+
+# EVERY CONFIGURATION NAMES ITS FACES (Portrayal #670). configs[].files maps each
+# configuration's views to the one file that draws them, and site/faces.js
+# resolves through it; a name there with no file behind it is a face the site
+# would ask for and 404.
+_nofiles, _dangling = [], []
+for _cf in sorted(DIST.glob("*.configs.json")):
+    for _c in json.loads(_cf.read_text()).get("configs", []):
+        if not isinstance(_c, dict): continue
+        _fl = _c.get("files")
+        if not _fl: _nofiles.append(f"{_cf.name[:-13]}.{_c.get('name')}"); continue
+        _dangling += [f for f in _fl.values() if not (DIST / f).is_file()]
+check(not _nofiles and not _dangling,
+      "every configuration names its faces in configs[].files, and every file named exists",
+      f"{len(_nofiles)} without files (e.g. {_nofiles[:3]}), {len(_dangling)} dangling (e.g. {_dangling[:3]})")
+# and the site resolves them with the kit's own faceFile once the kit carries it
+_vd = (VENDOR / "dist.js").read_text()
+_fj = (HERE / "site" / "faces.js").read_text()
+check("export function faceFile" not in _vd
+      or re.search(r"export\s*\{\s*faceFile\s*\}\s*from\s*'\.\./vendor/dist\.js'", _fj) is not None,
+      "site/faces.js re-exports the vendored kit's faceFile rather than keeping its own copy",
+      "vendor/dist.js exports faceFile but site/faces.js defines its own")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:

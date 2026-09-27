@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="371.6mm" height="43.4mm" viewBox="0 0 371.6 43.4" data-device="es1000" data-view="right" data-weight-kg="7.6" data-weight-note="7.6 +/- 0.3 kg with two PSUs" data-switching-capacity="148 Gbps" data-port-modes-rj45="10/100/1000BASE-T" data-port-modes-sfp28="1/10/25G" data-power-max-w="3200" data-power-max-no-poe-w="550" data-input-ac="100-240 VAC, 50-60 Hz" data-psus="1+1 hot-swap AC CRPS (550 W, 920 W or 1600 W by SKU), 0:1 / 1:1 modes" data-poe-budget-w="2910" data-poe-budget-note="high line, two supplies: 1550 W on the -24P (up to 17 ports at 90 W), 2910 W on the -48P/-48CP (up to 32 ports at 90 W); low line 1550 W and 1710 W" data-fans="2+1 fixed (not field-replaceable)" data-operating-temp="0 to 45 C (front to back airflow), 900 m; derate 1 C per 175 m above 900 m" data-storage-temp="-40 to 70 C (guide); -40 to 60 C (datasheet)" data-humidity-operating="5 to 85 percent non-condensing" data-humidity-storage="5 to 95 percent" data-altitude="3050 m maximum" data-asic="Marvell AC5X" data-cpu="integrated ARM A55, 2C 1.5 GHz; Intel Denverton x86 4C 2.1 GHz (COMe) on the -48C/-48CP" data-memory="8 GB DDR4 (16 GB option on the -48C/-48CP)" data-storage="32 GB eMMC (ARM builds); 32 or 64 GB M.2 SSD (-48C/-48CP)" data-encryption="256b MACsec" data-poe="IEEE 802.3af/at/bt Type 4 Class 8, 90 W per port, persistent PoE - on the -24P, -48P and -48CP" data-mgmt-ports="RJ45 console (9600 / 115200 default, 8N1), out-of-band combo pair (RJ45 in the stack and SFP left of the uplinks - one interface, not usable together), 2 x USB-A (data only)" data-acoustic="ISO 7779, ISO 3744" data-environment="EU RoHS, SVHC requirements of REACH directive" data-emc="Class B - USA, Canada, Europe, Japan, China" data-safety="UL / CSA / IEC / EN 60950-1 / 62368-1" data-psu-approvals="CE, FCC, CCC, KC, TUV, UL / cUL, BIS and BSMI" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica ES1000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/screw-head@1":"1.1.0"},"source-sha256":"791ddbf2fe8ace8ef3e8eac2e592494bc0c8a0d4eee97eb04dbb8e4dc07cb938","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ES1000" data-sku="R3194-F9008-A1" data-part-number="R3194-F9008-A1" x="0" y="0" width="371.6" height="43.4" rx="1.2" fill="#c9ccd0" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+  <g id="screw-r1" data-path="screw-r1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="25" transform="translate(20,20)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>screw-r1</title>
+    <circle id="screw-r1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-r1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-r1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="screw-r2" data-path="screw-r2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="26" transform="translate(120,20)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>screw-r2</title>
+    <circle id="screw-r2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-r2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-r2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="screw-r3" data-path="screw-r3" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="27" transform="translate(250,20)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>screw-r3</title>
+    <circle id="screw-r3--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-r3--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-r3--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="screw-r4" data-path="screw-r4" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="28" transform="translate(350,20)" data-group="furniture" data-group-role="furniture" data-description="fan screws, the rear standoff and the side screws">
+    <title>screw-r4</title>
+    <circle id="screw-r4--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-r4--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-r4--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>
