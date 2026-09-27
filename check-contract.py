@@ -941,6 +941,61 @@ check(bool(_c2 and _c3) and _c2.group(1).lower() == _c3.group(1).lower(),
       "the 2D hero's studio backdrop is the 3D hero's studio color",
       f"--hero-studio {_c2 and _c2.group(1)} vs STUDIO {_c3 and _c3.group(1)}")
 
+# ── the kit page ─────────────────────────────────────────────────────────
+# kit.html shows each example's own file and runs that same file, importing the
+# kit the way an embedder would: `@portrayal/kit/<module>`, mapped by the page's
+# import map onto ./vendor/<module>.js. A sync that renames or removes anything
+# an example uses fails here, before a reader meets a broken recipe.
+_kit = (HERE / "kit.html")
+_kit_html = _kit.read_text() if _kit.exists() else ""
+check(bool(_kit_html), "kit.html exists", "no kit.html")
+_im = re.search(r'<script type="importmap">\s*(\{.*?\})\s*</script>', _kit_html, re.S)
+_imap = json.loads(_im.group(1))["imports"] if _im else {}
+_kitmods = {k.split("/", 2)[2]: v for k, v in _imap.items() if k.startswith("@portrayal/kit/")}
+check(bool(_kitmods) and all(v == f"./vendor/{m}.js" and (VENDOR / f"{m}.js").exists()
+                             for m, v in _kitmods.items()),
+      "kit.html's import map sends every @portrayal/kit/<module> to an existing ./vendor/<module>.js",
+      f"{_kitmods}")
+check(_imap.get("three") == "./vendor/three/three.module.js"
+      and _imap.get("three/addons/") == "./vendor/three/addons/",
+      "kit.html's import map resolves three and three/addons/ to the vendored copy", f"{_imap}")
+_exdir = HERE / "site" / "kit-examples"
+_exfiles = sorted(p.stem for p in _exdir.glob("*.js")) if _exdir.exists() else []
+_listed = re.findall(r'data-example="([^"]+)"', _kit_html)
+check(bool(_exfiles) and sorted(_listed) == _exfiles and len(set(_listed)) == len(_listed),
+      "kit.html lists every example in site/kit-examples/ exactly once, and nothing else",
+      f"files {_exfiles} vs listed {_listed}")
+
+def _exports(mod):
+    t = (VENDOR / f"{mod}.js").read_text()
+    names = set(re.findall(r"^export\s+(?:async\s+)?(?:function\*?|const|let|class)\s+([A-Za-z_$][\w$]*)", t, re.M))
+    for grp in re.findall(r"^export\s*\{([^}]*)\}", t, re.M):
+        names |= {n.split(" as ")[-1].strip() for n in grp.split(",") if n.strip()}
+    return names
+
+for _stem in _exfiles:
+    _src = (_exdir / f"{_stem}.js").read_text()
+    check(re.search(r"^export\s+async\s+function\s+run\s*\(\s*host\s*\)", _src, re.M) is not None,
+          f"kit example {_stem} exports async function run(host)", "no `export async function run(host)`")
+    check(re.search(r"from\s+'(?:\.\.?/)+(?:vendor|site)/", _src) is None,
+          f"kit example {_stem} imports the kit by package name, never by path",
+          "a ./vendor or ./site path import")
+    check("const DIST = 'assets/dist/';" in _src or "DIST" not in _src,
+          f"kit example {_stem} names where the compiled files live as const DIST", "no const DIST = 'assets/dist/';")
+    for _names, _mod in re.findall(r"import\s*\{([^}]*)\}\s*from\s*'@portrayal/kit/([\w-]+)'", _src):
+        _want = {n.split(" as ")[0].strip() for n in _names.split(",") if n.strip()}
+        _have = _exports(_mod) if _mod in _kitmods else set()
+        check(_mod in _kitmods and _want <= _have,
+              f"kit example {_stem}: @portrayal/kit/{_mod} exports {sorted(_want)}",
+              f"missing {sorted(_want - _have)}" if _mod in _kitmods else "module not in kit.html's import map")
+# THE RUNNER KEEPS ONE FAILURE IN ITS OWN PANE: run() is awaited inside a try,
+# and the catch writes data-error, so a throwing recipe cannot take the others down.
+_kp = (HERE / "site" / "kit-page.js")
+_kps = _kp.read_text() if _kp.exists() else ""
+check(re.search(r"try\s*\{(?:(?!catch).)*?await\s+mod\.run\(", _kps, re.S) is not None and "dataset.error" in _kps,
+      "kit-page.js runs each example inside try/catch and records data-error",
+      "no try { … await mod.run( … } with dataset.error")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

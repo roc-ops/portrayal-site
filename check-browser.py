@@ -46,7 +46,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 # list rather than quietly stop being checked.
 PAGES = ["index.html", "explorer.html", "annotate.html", "components.html",
          "compare.html", "drawings.html", "drawio.html", "exporter.html",
-         "schema.html", "schematic.html", "marks-harness.html",
+         "schema.html", "kit.html", "schematic.html", "marks-harness.html",
          "viewer3d-harness.html"]
 
 # REQUESTS THAT ARE MEANT TO MISS. compare.html overlays a photograph on a
@@ -2175,6 +2175,61 @@ def check_configured_face(page, base):
             bad.append(f"configuredFace: {k} is {r.get(k)!r}, expected {want!r}")
     return bad
 
+
+
+# THE KIT PAGE'S RECIPES, RUN. Each <figure data-example> runs its own file
+# into its pane and records what it returned; this holds every one to what its
+# section promises. KIT_EXPECT grows one entry per recipe.
+KIT_EXPECT = {
+    "01-drawing": lambda r: r.get("lit") == ["port-12"],
+}
+
+@extra("kit.html: every recipe runs and returns what its section promises")
+def check_kit_page(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"kit: uncaught {e}"))
+    page.goto(f"{base}/kit.html", wait_until="load")
+    names = page.eval_on_selector_all("figure.kit-ex", "fs => fs.map(f => [f.dataset.example, f.dataset.run])")
+    if sorted(n for n, _ in names) != sorted(KIT_EXPECT):
+        bad.append(f"kit: figures {sorted(n for n, _ in names)} vs expected {sorted(KIT_EXPECT)}")
+    for name, mode in names:
+        fig = f'figure[data-example="{name}"]'
+        if mode == "click":
+            continue                     # the 3D recipe has its own step (Task 4)
+        page.locator(fig).scroll_into_view_if_needed()
+        try:
+            page.wait_for_selector(f"{fig}[data-result], {fig}[data-error]", timeout=READY_MS)
+        except Exception:
+            bad.append(f"kit: {name} never finished"); continue
+        err = page.get_attribute(fig, "data-error")
+        if err: bad.append(f"kit: {name} failed: {err}"); continue
+        res = json.loads(page.get_attribute(fig, "data-result"))
+        if not KIT_EXPECT.get(name, lambda r: True)(res):
+            bad.append(f"kit: {name} returned {res}")
+    # 01: a click on a port says its data-path
+    page.click('figure[data-example="01-drawing"] .kit-result [data-path="port-12"]', force=True)
+    said = page.text_content('figure[data-example="01-drawing"] .kit-result output') or ""
+    if "port-12" not in said: bad.append(f"kit: clicking port-12 printed {said!r}")
+    # Run again, twice fast: one drawing in the pane, not two
+    page.click('figure[data-example="01-drawing"] [data-act="run"]')
+    page.click('figure[data-example="01-drawing"] [data-act="run"]')
+    page.wait_for_selector('figure[data-example="01-drawing"][data-result]', timeout=READY_MS)
+    page.wait_for_timeout(500)
+    n = page.eval_on_selector_all('figure[data-example="01-drawing"] .kit-result svg', "e => e.length")
+    if n != 1: bad.append(f"kit: after two quick reruns pane 01 holds {n} drawings")
+    # Copy gives the file's text, not the highlighted markup
+    copied = page.evaluate("async () => { document.querySelector('figure[data-example=\"01-drawing\"] [data-act=\"copy\"]').click();"
+                           " await new Promise(r => setTimeout(r, 50)); return window.__kit.copyText['01-drawing']; }")
+    src = page.evaluate("() => fetch('site/kit-examples/01-drawing.js').then(r => r.text())")
+    if copied != src: bad.append("kit: Copy did not produce the example's exact source")
+    # a failing recipe stays in its own pane
+    page.goto(f"{base}/kit.html?kitfail=1", wait_until="load")
+    page.wait_for_selector('figure[data-example="kitfail"][data-error]', timeout=READY_MS)
+    txt = page.text_content('figure[data-example="kitfail"] .kit-result') or ""
+    if "failed" not in txt: bad.append(f"kit: a failing recipe's pane says {txt!r}")
+    page.locator('figure[data-example="01-drawing"]').scroll_into_view_if_needed()
+    page.wait_for_selector('figure[data-example="01-drawing"][data-result]', timeout=READY_MS)
+    return bad
 
 @extra("configuredFace snapshots swaps/fields, immune to the caller mutating them before awaiting")
 def check_configured_face_snapshot(page, base):

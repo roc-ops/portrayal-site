@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — using the kit</title>
+<meta name="description" content="How to use Portrayal's drawings and @portrayal/kit in your own pages: 2D, 3D, annotation and export, each with code that runs.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="portrayal.dev">
+<meta property="og:url" content="https://portrayal.dev/kit.html">
+<meta property="og:title" content="Portrayal — using the kit">
+<meta property="og:description" content="How to use Portrayal's drawings and @portrayal/kit in your own pages: 2D, 3D, annotation and export, each with code that runs.">
+<meta property="og:image" content="https://portrayal.dev/brand/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An AS7726-32X faceplate compiled from its manifest, with a brass callout on port-12 reading qsfp28 · 100g · 4 lanes.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Portrayal — using the kit">
+<meta name="twitter:description" content="How to use Portrayal's drawings and @portrayal/kit in your own pages: 2D, 3D, annotation and export, each with code that runs.">
+<meta name="twitter:image" content="https://portrayal.dev/brand/og-card.png">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="brand/tokens.css">
+<link rel="stylesheet" href="site/site.css">
+<!-- Examples import the kit by its package name, as an embedder would. The
+     map points those names at this site's vendored copy; "Getting the files"
+     below shows the same map pointed at your own. -->
+<script type="importmap">
+{ "imports": {
+    "@portrayal/kit/dist": "./vendor/dist.js",
+    "@portrayal/kit/swap": "./vendor/swap.js",
+    "@portrayal/kit/viewer3d": "./vendor/viewer3d.js",
+    "@portrayal/kit/marks": "./vendor/marks.js",
+    "@portrayal/kit/shell": "./vendor/shell.js",
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+</head>
+<body>
+
+<a class="skip" href="#start">Skip to the guide</a>
+
+<header class="masthead">
+  <div class="wrap masthead-in">
+    <a class="brand" href="index.html">
+      <img src="brand/portrayal-mark.svg" alt="" width="26" height="26">
+      <span class="brand-name">portrayal<span class="tld">.dev</span></span>
+    </a>
+    <nav class="masthead-nav">
+      <a href="index.html#showcase">Showcase</a>
+      <a href="explorer.html">Explorer</a>
+      <a href="components.html">Components</a>
+    <a href="annotate.html">Annotate</a>
+      <details class="navmenu">
+        <summary>Export</summary>
+        <div class="navmenu-items">
+          <a href="exporter.html">DCIM export<span class="hint">NetBox &amp; Nautobot device types</span></a>
+          <a href="drawio.html">draw.io export<span class="hint">shape library and rack elevations</span></a>
+          <a href="drawio.html#omnigraffle">OmniGraffle export<span class="hint">stencils with named ports</span></a>
+        <a href="drawings.html">Drawings<span class="hint">the compiled SVGs, as a zip</span></a>
+        </div>
+      </details>
+      <a href="schema.html">Schema</a>
+      <a class="gh" href="https://github.com/roc-ops/Portrayal">GitHub</a>
+      <a class="nav-sponsor" href="https://www.rocnetsupply.com/" aria-label="Sponsored by RocNet Supply">
+        <span class="nav-sponsor-label">Sponsored by</span>
+        <img class="on-dark" src="brand/sponsor/RocNet-Primary-Logo-white.svg" alt="" width="53" height="32">
+        <img class="on-light" src="brand/sponsor/RocNet-Primary-Logo.svg" alt="" width="53" height="32">
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main class="kit">
+  <section class="section" id="kit-top" style="border-top:none">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Docs · Using the kit</p>
+        <h1 class="kit-h1">Put a device in your own page.</h1>
+        <p class="sub">
+          Portrayal compiles each device into ordinary files: an SVG per face,
+          and JSON indexes beside them. Everything below runs here, live, and the
+          code beside each result is the file that just ran it.
+        </p>
+      </div>
+      <div class="kit-layout">
+        <nav class="kit-toc" aria-label="On this page">
+          <a href="#start">Start here</a>
+          <a href="#drawing">The drawing is the API</a>
+        </nav>
+        <div class="kit-body">
+          <section class="kit-sec" id="start">
+            <h2>Start here</h2>
+            <p>A compiled device is one SVG per face (<code>&lt;device&gt;.&lt;config&gt;.&lt;view&gt;.svg</code>)
+              plus <code>devices.json</code>, <code>components.json</code> and a
+              <code>&lt;device&gt;.configs.json</code> per device. The kit,
+              <code>@portrayal/kit</code>, is plain ES modules with no build step; three.js
+              is needed only for 3D. The recipes below use the UfiSpace S9600-72XC.</p>
+          </section>
+          <section class="kit-sec" id="drawing">
+            <h2>The drawing is the API</h2>
+            <p>No kit at all: fetch a face, insert it, and address its parts by
+              <code>data-path</code>. A lamp is lit by a state class the drawing
+              already styles; a click tells you which part it hit.</p>
+            <figure class="kit-ex" data-example="01-drawing" data-run="view">
+              <pre><code></code></pre>
+              <div class="kit-result" aria-live="polite"></div>
+              <div class="kit-bar"><button type="button" data-act="run">Run again</button>
+                <button type="button" data-act="copy">Copy</button></div>
+            </figure>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-in">
+    <div class="footer-brand">
+      <img src="brand/portrayal-mark-16.svg" alt="" width="16" height="16">
+      <span>portrayal<span class="tld">.dev</span></span>
+    </div>
+    <p>
+      The kit is Apache-2.0, the same as the rest of Portrayal.
+    </p>
+    <p><a href="https://github.com/roc-ops/Portrayal">github.com/roc-ops/Portrayal</a></p>
+    <a class="footer-sponsor" href="https://www.rocnetsupply.com/">
+      <img class="on-dark" src="brand/sponsor/RocNet-Primary-Logo-white.svg" alt="" width="60" height="36">
+      <img class="on-light" src="brand/sponsor/RocNet-Primary-Logo.svg" alt="" width="60" height="36">
+      <span>Sponsored by RocNet Supply</span>
+    </a>
+  </div>
+</footer>
+
+<script type="module" src="site/stats.js"></script>
+<script type="module" src="site/kit-page.js"></script>
+<script>
+// Close the export menu on Escape or on a click outside it. <details> handles
+// opening, keyboard focus and the disclosure semantics on its own; these are the
+// two behaviours a nav menu needs that it does not give you.
+document.addEventListener('click', e => {
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    if (!d.contains(e.target)) d.open = false;
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  for (const d of document.querySelectorAll('details.navmenu[open]')) {
+    d.open = false;
+    d.querySelector('summary')?.focus();
+  }
+});
+</script>
+</body>
+</html>
