@@ -85,7 +85,22 @@ code { font-size: 0.875em; color: var(--pt-ink); }
 }
 .masthead-nav .nav-sponsor:hover { color: var(--pt-brass); }
 .nav-sponsor img { display: block; height: 32px; width: auto; }
-@media (max-width: 720px) {
+/* The full bar needs about 1010px, so it gives way in steps rather than
+ * running off the right edge: first the "Sponsored by" words and some of the
+ * spacing, then the links you can most easily do without (the index's own
+ * sections, which are a scroll away, and the Components and Annotate tools,
+ * which the index footer lists), and at 800px down to the phone bar below. */
+@media (max-width: 1080px) {
+  .masthead-in { gap: 1.25rem; }
+  .masthead-nav { gap: 1rem; }
+  .masthead-nav .nav-sponsor { padding-left: 1rem; }
+  .masthead-nav .nav-sponsor-label { display: none; }
+}
+@media (max-width: 960px) {
+  .masthead-nav > a:is([href="#how"], [href="#status"],
+    [href="components.html"], [href="annotate.html"]) { display: none; }
+}
+@media (max-width: 800px) {
   .masthead-nav a:not(.gh):not(.nav-sponsor) { display: none; }
   /* room for the sponsor's logo beside GitHub on a phone */
   .masthead-in { gap: 0.75rem; }
