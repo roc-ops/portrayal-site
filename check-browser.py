@@ -4059,6 +4059,23 @@ def check_rack_dev_note(page, base):
     return bad
 
 
+# ...AND THE DESKTOP. components.html draws every part at true scale in a card
+# capped at 340px, so a line card or a faceplate spilled out of it and the page
+# scrolled sideways at every width - 3729px wide at 1280. A drawing wider than
+# its card scrolls inside it instead (roc-ops/portrayal-site#53).
+@extra("the tool-bar pages have no horizontal scroll at a 1280px viewport")
+def check_wide_tool_pages(page, base):
+    bad = []
+    page.set_viewport_size({"width": 1280, "height": 800})
+    for name in NARROW_PAGES:
+        page.goto(f"{base}/{name}", wait_until="load")
+        page.wait_for_timeout(1500)
+        w = page.evaluate("document.documentElement.scrollWidth")
+        if w > 1280:
+            bad.append(f"{name}: scrollWidth {w} at a 1280px viewport")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
