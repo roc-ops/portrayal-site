@@ -3855,13 +3855,38 @@ def check_rack_3d(page, base):
         if not (tm280["z"] < r740["z"]):
             bad.append(f"rack 3D: TM-280's z ({tm280['z']}) is not behind the R740xd's front-mounted z ({r740['z']})")
 
-    # Switch the frame to two-post while still in 3D: the rear pair goes away.
+    # Shrinking the frame while in 3D moves devices - fit.js's shrinkRack
+    # compacts everything from the bottom once anything no longer fits - and
+    # Undo must restore the ORIGINAL rack. The 3D scene has to follow it
+    # (round 1 fix #2: undoShrink() used to leave the shrunk scene standing,
+    # never scheduling a rebuild).
     page.click("#frameBtn")
+    page.fill("#fHeight", "15")
+    page.dispatch_event("#fHeight", "change")
+    page.wait_for_selector("#undoShrink", timeout=READY_MS)
+    moved = page.evaluate("""() => Object.fromEntries(
+      window.__rack.doc().racks[0].items.map(i => [i.ref, i.ru]))""")
+    if moved.get("r740xd") == 10 and moved.get("tm-280") == 20:
+        bad.append(f"rack 3D shrink: nothing moved, so Undo was not exercised ({moved})")
+    page.click("#undoShrink")
+    page.wait_for_function("""() => { const it = window.__rack.doc().racks[0].items;
+      const r = it.find(i => i.ref === 'r740xd'), t = it.find(i => i.ref === 'tm-280');
+      return !!r && !!t && r.ru === 10 && t.ru === 20; }""", timeout=READY_MS)
+    # The rebuild is debounced (300ms) - poll the scene until it agrees too.
+    page.wait_for_function("""() => { const s = window.__rack.scene(); if (!s) return false;
+      const st = s.resolved().stack, r = st.find(i => i.ref === 'r740xd'),
+        t = st.find(i => i.ref === 'tm-280'); return !!r && !!t && r.ru === 10 && t.ru === 20; }""",
+        timeout=READY_MS)
+
+    # Switch the frame to two-post while still in 3D: the rear pair goes away.
     page.select_option("#fKind", "two-post")
     page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().posts() === 2",
                            timeout=READY_MS)
 
-    # Back to 2D: the scene is gone and the panes return, still 42 U each.
+    # Back to 2D: the scene is gone and the panes return, still 42 U each,
+    # and NOT stuck at height 0 (round 1 fix #1: render() applied zoom against
+    # a #panes that was still `hidden`, measuring a 0 column and leaving every
+    # SVG at height:0 once the panes came back).
     page.click('#rkMode [data-mode="2d"]')
     page.wait_for_function("() => window.__rack.scene() == null", timeout=READY_MS)
     if not page.is_visible("#panes"):
@@ -3870,8 +3895,28 @@ def check_rack_3d(page, base):
       document.querySelectorAll(`svg[data-pane="${f}"] rect.rk-u`).length)""")
     if counts != [42, 42]:
         bad.append(f"rack 3D: after switching back to 2D, U targets are {counts}, expected [42, 42]")
+    h = page.eval_on_selector('svg[data-pane="front"]', "s => s.getBoundingClientRect().height")
+    if not (h > 100):
+        bad.append(f"rack 3D: after editing in 3D and switching back to 2D, the front SVG's height is {h}, expected > 100")
 
-    # A reload remembers the mode - 2D, just chosen.
+    # Reload while in 3D (the mode is remembered) and switch back to 2D: the
+    # same blank-pane bug, from the reload direction rather than the toggle.
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
+    page.evaluate("async () => { await window.__rack.scene().complete(); }")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if page.get_attribute('#rkMode [data-mode="3d"]', "aria-pressed") != "true":
+        bad.append("rack 3D: the 3D mode was not remembered across a reload")
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
+    page.click('#rkMode [data-mode="2d"]')
+    page.wait_for_function("() => window.__rack.scene() == null", timeout=READY_MS)
+    h2 = page.eval_on_selector('svg[data-pane="front"]', "s => s.getBoundingClientRect().height")
+    if not (h2 > 100):
+        bad.append(f"rack 3D: after reloading into remembered 3D and switching back to 2D, the front SVG's height is {h2}, expected > 100")
+
+    # A reload remembers the mode - 2D, just chosen above.
     page.reload(wait_until="load")
     page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
     page.evaluate("() => window.__rack.ready")
