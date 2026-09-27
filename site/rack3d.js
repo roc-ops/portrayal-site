@@ -143,6 +143,23 @@ export function createRackScene(container, opts = {}) {
   // other caller passes nothing and keeps the rails.
   const RAILS = opts.rails !== false;
 
+  // FRAME-AWARE POSTS, opt-in. Every existing caller passes no `frame` at all
+  // and gets exactly today's single front pair - the code path below reads
+  // `FRAME` only to decide whether a REAR pair exists, never to change how
+  // the front one is built.
+  //
+  // `two-post` is written out because a caller may want to say so (and get
+  // the two-post default framing/usable-depth rules from model.js), but in
+  // this file it draws the same single pair as no frame at all.
+  const FRAME = opts.frame && opts.frame.kind === 'four-post' ? opts.frame : null;
+  const RAIL_DEPTH = FRAME?.railDepth > 0 ? FRAME.railDepth : 740;
+  // The rear mounting face, front rail to back, for a four-post frame.
+  const REAR_FACE_Z = RACK_FACE_Z - RAIL_DEPTH;
+  // A REAR entry with no four-post rear rail (a two-post frame, or no frame
+  // at all) mounts on the back of the single front pair instead - the far
+  // face of its 34 mm post box.
+  const REAR_MOUNT_Z = FRAME ? REAR_FACE_Z : RACK_FACE_Z - 34;
+
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(opts.background ?? 0x0E1013);
   const camera = new THREE.PerspectiveCamera(42, 1, 20, 12000);
@@ -295,8 +312,16 @@ export function createRackScene(container, opts = {}) {
     const ch = container.clientHeight || 1;
     const aspect = cw / ch;
     const half = Math.tan((camera.fov * Math.PI / 180) / 2);
-    // Whichever of height or width needs more room wins.
-    const need = Math.max(H / (2 * half), (RACK_W * v.wide) / (2 * half * aspect));
+    // Whichever of height, width or (on a four-post frame) depth needs more
+    // room wins. Width and height were the whole story while every rack was
+    // one front pair 34 mm deep; a four-post rear pair can sit up to about a
+    // metre back, past what H and RACK_W alone would frame - so its depth is
+    // folded in here the same way width already is, rather than only ever
+    // being checked against the height and width of what is directly in
+    // front of the camera.
+    const depth = FRAME ? RACK_FACE_Z - REAR_FACE_Z : 0;
+    const need = Math.max(H / (2 * half), (RACK_W * v.wide) / (2 * half * aspect),
+                          (depth * 1.15) / (2 * half * aspect));
     camera.position.copy(target)
       .addScaledVector(new THREE.Vector3(...v.dir), need * v.margin);
 
@@ -347,32 +372,52 @@ export function createRackScene(container, opts = {}) {
   const screwMat = new THREE.MeshLambertMaterial({color: 0x8d949c});
 
   const rack = new THREE.Group();
-  function buildRack() {
-    disposeTree(rack);                       // dispose BEFORE detaching, or
-    for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
-    if (!RAILS) return;
+  // Every post mesh built, front and rear together - posts() (the API) is
+  // just its length, and a rebuild starts it fresh.
+  let rackPosts = [];
+  // ONE PAIR-BUILDER, called once for the front pair and, on a four-post
+  // frame, once more for the rear one - so the two never drift apart, the way
+  // 26 mm rails in 2D and 16 mm posts in 3D once did (see the file banner).
+  //
+  // `mountZ` is where the pair's MOUNTING face sits - the plane a device's
+  // ears actually bolt to - and `dir` is which way the post body sits behind
+  // it: +1 for the front pair (the box sits at smaller z, behind the face,
+  // exactly as before) and -1 for the rear pair (the box sits at larger z,
+  // so it is inboard, inside the rack, as the brief asks). Holes and numbers
+  // sit just off the mounting face, offset by `dir` the same way the box is,
+  // so a rear pair's holes and numbers read from the back.
+  function buildPostPair(mountZ, dir) {
     const H = UNITS * RU;
     for (const s of SIDES) {
       // The post is the rail's full face, with its inner edge on the opening,
       // exactly as the 2D elevation draws it.
       const cx = (s.inner + s.outer) / 2;
       const post = new THREE.Mesh(new THREE.BoxGeometry(RAIL_W, H, 34), railMat);
-      post.position.set(cx, H / 2, RACK_FACE_Z - 17);
+      post.position.set(cx, H / 2, mountZ - dir * 17);
       rack.add(post);
+      rackPosts.push(post);
       for (let u = 0; u < UNITS; u++) {
         for (const dy of HOLE_DY) {
           const h = new THREE.Mesh(new THREE.BoxGeometry(HOLE_SIZE, HOLE_SIZE, 1), holeMat);
-          h.position.set(s.hole, u * RU + dy, RACK_FACE_Z + 0.3);
+          h.position.set(s.hole, u * RU + dy, mountZ + dir * 0.3);
           rack.add(h);
         }
         // U numbers ON the rail, on its outboard half, on BOTH rails. They
         // used to float off the left side only.
         const n = labelSprite(String(u + 1), 30, (u + 1) % 5 === 0 ? LABEL_EMPH : LABEL_UNIT);
         n.scale.multiplyScalar(0.45);   // sized to sit inside a 26 mm face; adjust by eye
-        n.position.set(s.number, u * RU + RU / 2, RACK_FACE_Z + 0.6);
+        n.position.set(s.number, u * RU + RU / 2, mountZ + dir * 0.6);
         rack.add(n);
       }
     }
+  }
+  function buildRack() {
+    disposeTree(rack);                       // dispose BEFORE detaching, or
+    for (const c of [...rack.children]) rack.remove(c);   // there is nothing left to walk
+    rackPosts = [];
+    if (!RAILS) return;
+    buildPostPair(RACK_FACE_Z, 1);
+    if (FRAME) buildPostPair(REAR_FACE_Z, -1);
   }
   buildRack();
   scene.add(rack);
@@ -381,7 +426,13 @@ export function createRackScene(container, opts = {}) {
   // a leg running back along the flank of the device. The gear sits recessed, so
   // the leg spans that gap - which is what a flat plate cannot do and why it
   // looked wrong as one.
-  function rackEars(ru, ruHeight, halfW, depth) {
+  //
+  // `mountZ`/`dir` generalize this the same way buildPostPair does, so an ear
+  // on the rear plane sits with its flange just behind that plane, its leg
+  // running toward the front, and its screw heads facing the back - the
+  // mirror image of a front ear, not a copy of it parented somewhere else.
+  // Defaulted to the front pair, so nothing that already calls this changes.
+  function rackEars(ru, ruHeight, halfW, depth, mountZ = RACK_FACE_Z, dir = 1) {
     const g = new THREE.Group();
     const yBase = (ru - 1) * RU;
     const h = ruHeight * RU - 4.5;
@@ -401,16 +452,16 @@ export function createRackScene(container, opts = {}) {
       const holeX = SIDES.find(s => s.side === (side < 0 ? 'left' : 'right')).hole;
       const earX = side * (halfW + 12);
       const flange = new THREE.Mesh(new THREE.BoxGeometry(24, h, 3), earMat);
-      flange.position.set(earX, yBase + ruHeight * RU / 2, RACK_FACE_Z + 1.5);
+      flange.position.set(earX, yBase + ruHeight * RU / 2, mountZ + dir * 1.5);
       g.add(flange);
       const leg = new THREE.Mesh(new THREE.BoxGeometry(3, h, legLen), earMat);
-      leg.position.set(side * (halfW + 1.5), yBase + ruHeight * RU / 2, RACK_FACE_Z - legLen / 2);
+      leg.position.set(side * (halfW + 1.5), yBase + ruHeight * RU / 2, mountZ - dir * legLen / 2);
       g.add(leg);
       for (let u = 0; u < ruHeight; u++) {
         for (const dy of [6.35, 38.10]) {
           const head = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 2.2, 14), screwMat);
           head.rotation.x = Math.PI / 2;
-          head.position.set(holeX, yBase + u * RU + dy, RACK_FACE_Z + 4.1);
+          head.position.set(holeX, yBase + u * RU + dy, mountZ + dir * 4.1);
           g.add(head);
         }
       }
@@ -573,28 +624,39 @@ export function createRackScene(container, opts = {}) {
     meshes.forEach(m => group.add(m));
 
     const ruHeight = Math.max(1, Math.round(H / RU));
-    group.position.set(0, (entry.ru - 1) * RU + H / 2, RACK_FACE_Z - RECESS - D / 2);
-    // RACKED BACK TO FRONT. `reversed: true` on the entry turns the unit round
-    // in its bay: its faceplate looks out of the BACK of the rack and what you
-    // see from the front is its rear panel. Not a drawing preference - on the
-    // OK ROADM shelf every management port but the controller's is already on a
-    // rear face, so turning the controller round is what makes each management
-    // run a short rear-to-rear jumper, and that is how it would be installed.
+    // WHICH RAIL THIS ENTRY BOLTS TO. `face: 'rear'` (default 'front') mounts
+    // on the rear plane instead of the front one - REAR_FACE_Z on a four-post
+    // frame, or the back of the single front pair otherwise (REAR_MOUNT_Z).
+    // `turned` is the general name for what `reversed` always meant here:
+    // the device's OTHER panel faces out. `reversed` keeps working - it is
+    // read as a synonym, never required alongside `turned`.
+    const face = entry.face === 'rear' ? 'rear' : 'front';
+    const turned = entry.turned ?? entry.reversed ?? false;
+    const mountZ = face === 'rear' ? REAR_MOUNT_Z : RACK_FACE_Z;
+    group.position.set(0, (entry.ru - 1) * RU + H / 2,
+      face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);
+    // RACKED BACK TO FRONT. `turned` on the entry turns the unit round in its
+    // bay: its faceplate looks out of the back of whichever rail it is
+    // mounted to, and what you see from the mounting face's own side is its
+    // other panel. Not a drawing preference - on the OK ROADM shelf every
+    // management port but the controller's is already on a rear face, so
+    // turning the controller round is what makes each management run a
+    // short rear-to-rear jumper, and that is how it would be installed.
     //
     // A HALF TURN AND NOTHING ELSE. The chassis keeps the depth it already
-    // occupies, so the position above stands: the faceplate lands where the
-    // rear panel was, at RACK_FACE_Z - RECESS - D, and the rear panel comes
-    // forward to RACK_FACE_Z - RECESS, which is where a faceplate normally
-    // sits. Everything that hangs off this group - relief, FRU subgroups, the
-    // tweens that pull a module out along its own normal - is in device space
-    // and turns with it. The ears do not: they are parented to the SCENE, not
-    // to the device, because a reversed unit still bolts to the same posts.
-    if (entry.reversed) group.rotation.y = Math.PI;
+    // occupies, so the position above stands regardless of `turned` - the
+    // half-turn is about the group's own centre, not its position. A front
+    // entry is turned exactly when `turned` says so; a rear entry starts
+    // turned (its faceplate already looks out the back of the rack, toward
+    // the rear plane) and `turned` flips it back to facing forward again -
+    // hence the XOR below, not a plain `turned`.
+    group.rotation.y = ((face === 'rear') !== turned) ? Math.PI : 0;
 
     // The ears live in RACK space, not device space. Parenting them to the
     // device and cancelling only the Y offset left them displaced by the Z
     // recess, which is what put a pair of white slabs out beside each unit.
-    const ears = rackEars(entry.ru, ruHeight, W / 2, D);
+    // A rear entry's ears go on the rail it is actually mounted to.
+    const ears = rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1);
     scene.add(ears);
 
     // The device's tag, beside the left rail - a rail label, so it goes with
@@ -952,6 +1014,15 @@ export function createRackScene(container, opts = {}) {
     cableAnchor,
     // The mounted chassis bodies as world-space boxes: [{ref, box}].
     deviceBoxes,
+    // How many post meshes are standing - two for a front (or two-post)
+    // pair, four once a four-post frame's rear pair joins it. For tests.
+    posts: () => rackPosts.length,
+    // Each mounted device's own rack-frame placement, for a test that needs
+    // to tell a front-mounted unit from a rear-mounted, turned one without
+    // reaching into the scene graph by hand: [{ref, face, z, rotY}].
+    devices: () => mounted.map(({entry, group}) => ({
+      ref: entry.ref, face: entry.face === 'rear' ? 'rear' : 'front',
+      z: group.position.z, rotY: group.rotation.y})),
     // The measurements this scene mounts by, for a host that needs the frame
     // rather than one point in it. `faceZ` is only ever meaningful with
     // `recess`, which is why they are handed over together rather than as a

@@ -30,6 +30,7 @@ Run it locally the same way CI does:
 import argparse
 import contextlib
 import json
+import math
 import pathlib
 import re
 import socket
@@ -3761,6 +3762,88 @@ def check_rack_faces(page, base):
     heading = page.text_content(".rk-side h3") or ""
     if "rear, empty" not in heading or "U20" not in heading.replace("U 20", "U20"):
         bad.append(f"faces: clicking the free rear U under MX204's through panel opened {heading!r}, not the U20/rear picker")
+    return bad
+
+
+@extra("rack.html: the 3D view - frame-aware posts, rear mounting, and the 2D/3D toggle")
+def check_rack_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+
+    # A new rack defaults to four-post. R740xd on the front at U10, TM-280 on
+    # the rear at U20 - a front and a rear mount that do not share a U, so
+    # neither click is covered by the other's through panel.
+    pick(page, "front", 10, "R740", "r740xd")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
+    pick(page, "rear", 20, "TM-280", "tm-280")
+    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+
+    # THE SAME BRANCH check_stages TAKES: this runner may have no WebGL at
+    # all, in which case the 3D view can only ever show its fallback
+    # sentence - asserted here instead of failing on a scene that can never
+    # exist.
+    no_webgl = webgl_trouble(page)
+    print(f"[check_rack_3d] WebGL path: {'unavailable - checking the fallback sentence' if no_webgl else 'available - running the full 3D checks'}")
+
+    page.click('#rkMode [data-mode="3d"]')
+
+    if no_webgl:
+        page.wait_for_function(
+            "() => (document.querySelector('#stage3d')?.textContent || '').includes(\"3D isn't available\")",
+            timeout=READY_MS)
+        if not page.is_visible("#stage3d"):
+            bad.append("rack 3D (no WebGL): #stage3d is not shown with the fallback sentence")
+        if page.is_visible("#panes"):
+            bad.append("rack 3D (no WebGL): #panes is still visible once 3D is chosen")
+        return bad
+
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_MS)
+    page.evaluate("async () => { await window.__rack.scene().complete(); }")
+
+    posts = page.evaluate("() => window.__rack.scene().posts()")
+    if posts != 4:
+        bad.append(f"rack 3D: posts() is {posts}, expected 4 on a four-post rack")
+
+    devices = page.evaluate("() => window.__rack.scene().devices()")
+    r740 = next((d for d in devices if d["ref"] == "r740xd"), None)
+    tm280 = next((d for d in devices if d["ref"] == "tm-280"), None)
+    if not r740 or not tm280:
+        bad.append(f"rack 3D: devices() did not report both mounts ({devices})")
+    else:
+        if abs(tm280["rotY"] - math.pi) > 0.01:
+            bad.append(f"rack 3D: the rear-mounted TM-280's rotation.y is {tm280['rotY']}, expected ~pi")
+        if not (tm280["z"] < r740["z"]):
+            bad.append(f"rack 3D: TM-280's z ({tm280['z']}) is not behind the R740xd's front-mounted z ({r740['z']})")
+
+    # Switch the frame to two-post while still in 3D: the rear pair goes away.
+    page.click("#frameBtn")
+    page.select_option("#fKind", "two-post")
+    page.wait_for_function("() => window.__rack.scene() != null && window.__rack.scene().posts() === 2",
+                           timeout=READY_MS)
+
+    # Back to 2D: the scene is gone and the panes return, still 42 U each.
+    page.click('#rkMode [data-mode="2d"]')
+    page.wait_for_function("() => window.__rack.scene() == null", timeout=READY_MS)
+    if not page.is_visible("#panes"):
+        bad.append("rack 3D: #panes is not visible after switching back to 2D")
+    counts = page.evaluate("""() => ['front', 'rear'].map(f =>
+      document.querySelectorAll(`svg[data-pane="${f}"] rect.rk-u`).length)""")
+    if counts != [42, 42]:
+        bad.append(f"rack 3D: after switching back to 2D, U targets are {counts}, expected [42, 42]")
+
+    # A reload remembers the mode - 2D, just chosen.
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    if page.get_attribute('#rkMode [data-mode="2d"]', "aria-pressed") != "true":
+        bad.append("rack 3D: the 2D mode was not remembered across a reload")
+    if not page.is_visible("#panes"):
+        bad.append("rack 3D: after reload in the remembered 2D mode, #panes is not visible")
     return bad
 
 

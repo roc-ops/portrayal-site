@@ -26,6 +26,12 @@
 <link rel="stylesheet" href="site/toolbar.css">
 <link rel="stylesheet" href="site/tool-theme.css">
 <link rel="stylesheet" href="site/rack/rack.css">
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+} }
+</script>
 </head>
 <body class="tool">
 
@@ -62,11 +68,15 @@
     </details>
     <span class="rk-muted" id="frameSummary"></span>
     <button type="button" id="frameBtn">Frame</button>
-    <div class="rk-zoom">
+    <div class="rk-zoom" id="rkZoom">
       <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
       <span id="zoomLevel" class="rk-muted" aria-live="polite">Fit</span>
       <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
       <button type="button" id="zoomFit" aria-label="Fit the rack to the window">Fit</button>
+    </div>
+    <div class="rk-mode" id="rkMode" role="group" aria-label="View">
+      <button type="button" data-mode="2d" aria-pressed="true">2D</button>
+      <button type="button" data-mode="3d" aria-pressed="false">3D</button>
     </div>
     <span class="rk-note" id="libNote" hidden>This browser isn't keeping a library, so use Save and Open.</span>
   </div>
@@ -75,6 +85,7 @@
       <section class="rk-pane"><h2 id="headFront">Front</h2><div id="paneFront"></div></section>
       <section class="rk-pane"><h2 id="headRear">Rear</h2><div id="paneRear"></div></section>
     </div>
+    <div class="rk-stage3d" id="stage3d" hidden></div>
     <aside class="rk-side" id="side" aria-live="polite"></aside>
   </div>
 </div>
