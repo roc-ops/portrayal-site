@@ -158,6 +158,11 @@ export function createRackScene(container, opts = {}) {
   // A REAR entry with no four-post rear rail (a two-post frame, or no frame
   // at all) mounts on the back of the single front pair instead - the far
   // face of its 34 mm post box.
+  //
+  // RULING: this stays as built. The faceplate sits at that back face and the
+  // chassis body passes through it toward the front, which is where a device
+  // actually bolted to the back of two-post rails physically is - not a
+  // drawing shortcut to fix.
   const REAR_MOUNT_Z = FRAME ? REAR_FACE_Z : RACK_FACE_Z - 34;
 
   const scene = new THREE.Scene();
@@ -631,7 +636,7 @@ export function createRackScene(container, opts = {}) {
     // the device's OTHER panel faces out. `reversed` keeps working - it is
     // read as a synonym, never required alongside `turned`.
     const face = entry.face === 'rear' ? 'rear' : 'front';
-    const turned = entry.turned ?? entry.reversed ?? false;
+    const turned = !!(entry.turned ?? entry.reversed);
     const mountZ = face === 'rear' ? REAR_MOUNT_Z : RACK_FACE_Z;
     group.position.set(0, (entry.ru - 1) * RU + H / 2,
       face === 'rear' ? mountZ + RECESS + D / 2 : mountZ - RECESS - D / 2);

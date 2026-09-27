@@ -27,7 +27,7 @@ function loadMode() {
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null,
+  zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null, camera3d: null,
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
@@ -39,12 +39,26 @@ let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it
 // opening one. `epoch` drops a rebuild that was overtaken by a mode switch
 // or a faster-arriving one, the same guard rack3d.js's own build() uses.
 let stage3dEpoch = 0;
+// The last camera a scene actually had, kept even once the scene itself is
+// gone: a rebuild started while a PREVIOUS rebuild is still awaiting its
+// mount finds S.scene3d already null (the in-flight one cleared it before
+// awaiting), and reading the camera off `S.scene3d` at that moment would
+// hand the new build a null camera - snapping the view back to the opening
+// one on every rebuild that overlaps another. This is updated wherever a
+// scene is disposed, so it is always the most recent real camera, in-flight
+// build or not.
+function disposeScene3d() {
+  if (!S.scene3d) return;
+  S.camera3d = {position: S.scene3d.three.camera.position.clone(),
+                target: S.scene3d.three.controls.target.clone()};
+  S.scene3d.dispose();
+  S.scene3d = null;
+}
 async function rebuild3d() {
+  if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
-  const old = S.scene3d;
-  const camera = old ? {position: old.three.camera.position.clone(),
-                        target: old.three.controls.target.clone()} : null;
-  if (old) { old.dispose(); S.scene3d = null; }
+  const camera = S.camera3d;
+  disposeScene3d();
   const built = await mountRack3d($('stage3d'), {rack: rack(), chassisOf, camera});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   S.scene3d = built;
@@ -77,12 +91,17 @@ function showMode() {
 }
 function setMode(m) {
   if ((m !== '2d' && m !== '3d') || m === S.mode) return;
+  clearTimeout(rebuild3dTimer);          // a switch answers any pending rebuild itself
   S.mode = m;
   saveMode(m);
   paintMode();
   showMode();
-  if (m === '3d') rebuild3d();
-  else if (S.scene3d) { S.scene3d.dispose(); S.scene3d = null; }
+  if (m === '3d') { rebuild3d(); return; }
+  disposeScene3d();
+  // render() skips applying zoom while #panes is hidden (it was, in 3D), so
+  // whatever was drawn there while hidden never got a real height - this is
+  // what makes the panes come back to life rather than blank.
+  render();
 }
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
@@ -203,6 +222,7 @@ function undoShrink() {
   S.notice = null;
   S.save.saveSoon(S.doc);
   render();
+  scheduleRebuild3d();
 }
 
 async function render() {
@@ -236,8 +256,11 @@ async function render() {
   // The SVGs are new nodes every render, so the zoom (a style on the old
   // ones) has to be reapplied to these.
   S.svgs = [front, rear];
-  applyZoom($('panes'), S.svgs, S.zoom);
-  setZoomLabel();
+  // #panes is hidden while in 3D (showMode()) - applyZoom measures its own
+  // column width to fit into, and a hidden element measures 0, which is what
+  // left every SVG at height:0 once the panes came back. Skipped here, this
+  // is instead applied by setMode() the moment #panes is shown again.
+  if (!$('panes').hidden) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
   renderSide();
 }
 
