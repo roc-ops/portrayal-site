@@ -2186,6 +2186,7 @@ KIT_EXPECT = {
     "03-metadata": lambda r: r.get("device") == "UfiSpace S9600-72XC" and "base" in r.get("configs", [])
                    and r.get("chassis", {}).get("w") == 436 and r.get("chassis", {}).get("ru") == 2
                    and r.get("devices", 0) >= 100,
+    "04-seat": lambda r: r.get("seated", 0) >= 3 and r.get("refused") == [] and r.get("url", "").startswith("port-4~"),
 }
 
 @extra("kit.html: every recipe runs and returns what its section promises")
