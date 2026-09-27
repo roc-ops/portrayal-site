@@ -2309,6 +2309,37 @@ DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "compone
 # which file each configuration's face is - so `s9600-72xc.base.front.svg` does
 # not exist (base draws ac's front). This drives the site's per-configuration
 # readers on devices #670 renamed, and fails on any face request that 404s.
+
+# THE SCHEMA PAGE'S NOS TAB FOLLOWS THE SCHEMAS (Portrayal #677). #677 replaces
+# overlay.schema.json with listing.schema.json. The page shows a tab for each
+# schema file the site carries and none for one it does not, so it is right on
+# both sides of the change. After: served with the overlay schema gone and a
+# listing schema in its place.
+@extra("schema.html shows the NOS overlay tab before #677 and the NOS listing tab after")
+def check_schema_nos_tab(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"schema: uncaught {e}"))
+    tabs = "() => [...document.querySelectorAll('.show-tabs button')].filter(b => !b.hidden).map(b => b.dataset.schema)"
+    page.goto(f"{base}/schema.html", wait_until="load")
+    page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
+    page.wait_for_timeout(500)
+    before = page.evaluate(tabs)
+    if before != ["device", "component", "overlay"]:
+        bad.append(f"schema: before #677 the tabs are {before}")
+    listing = {"$schema": "https://json-schema.org/draft/2020-12/schema", "title": "listing",
+               "type": "object", "properties": {"hardware": {"type": "string", "description": "the device it lists"}}}
+    page.route("**/assets/schemas/overlay.schema.json", lambda r: r.fulfill(status=404, body="gone in #677"))
+    page.route("**/assets/schemas/listing.schema.json", lambda r: r.fulfill(json=listing))
+    page.goto(f"{base}/schema.html?doc=listing", wait_until="load")
+    page.wait_for_selector("#schema-body .sc-prop", timeout=READY_MS)
+    page.wait_for_timeout(500)
+    after = page.evaluate(tabs)
+    if after != ["device", "component", "listing"]:
+        bad.append(f"schema: after #677 the tabs are {after}")
+    if not page.query_selector('#schema-body .sc-prop[data-ptr="/properties/hardware"]'):
+        bad.append("schema: ?doc=listing did not render the listing schema")
+    return bad
+
 @extra("every face resolves through configs[].files (Portrayal #670)")
 def check_faces_after_670(page, base):
     bad = []

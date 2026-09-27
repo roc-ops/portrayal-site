@@ -22,6 +22,10 @@
 const SOURCES = {
   device:    {url: 'assets/schemas/device.schema.json',    label: 'one piece of hardware'},
   component: {url: 'assets/schemas/component.schema.json', label: 'a reusable part it places'},
+  // A NOS vendor LISTS the hardware it supports (Portrayal #677, listing.schema.json);
+  // before that a NOS was an overlay on the hardware (overlay.schema.json). The
+  // page offers whichever of the two the vendored schemas carry - see `present`.
+  listing:   {url: 'assets/schemas/listing.schema.json',   label: 'a NOS vendor listing the hardware it supports'},
   overlay:   {url: 'assets/schemas/overlay.schema.json',   label: "an operating system's naming"},
 };
 
@@ -369,8 +373,15 @@ async function show(key) {
   }
 }
 
+// A TAB FOR EACH SCHEMA THE SITE CARRIES, AND NONE FOR ONE IT DOES NOT. A tab
+// whose file 404s would open on an error, so a missing file's tab is hidden.
+const present = async key => {
+  try { return (await fetch(SOURCES[key].url, {method: 'HEAD'})).ok; } catch { return false; }
+};
+const have = Object.fromEntries(await Promise.all(Object.keys(SOURCES).map(async k => [k, await present(k)])));
 document.querySelectorAll('.show-tabs button').forEach(b => {
+  b.hidden = !have[b.dataset.schema];
   b.onclick = () => { show(b.dataset.schema); };
 });
-show(new URLSearchParams(location.search).get('doc') in SOURCES
-  ? new URLSearchParams(location.search).get('doc') : 'device');
+const asked = new URLSearchParams(location.search).get('doc');
+show(asked in SOURCES && have[asked] ? asked : 'device');

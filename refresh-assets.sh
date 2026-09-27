@@ -163,7 +163,8 @@ cp "$SRC"/dist/labs.json "$HERE/assets/dist/"
 # overlays.json is the NOS join: the entity-map rules that turn what a box calls
 # its own components into the ids on the drawing. portrayal-site#12 has been
 # waiting on that artifact existing; it exists now.
-for f in vendors.json overlays.json gaps.json; do
+# listings.json replaces overlays.json in Portrayal #677; whichever the build has is copied.
+for f in vendors.json overlays.json listings.json gaps.json; do
   [ -f "$SRC/dist/$f" ] && cp "$SRC/dist/$f" "$HERE/assets/dist/"
 done
 # <device>.source.json is the source manifest, published once per device since
@@ -248,10 +249,10 @@ print("\n".join(d["name"] for d in json.load(open(sys.argv[1]))["devices"]))' \
   # --nos that no overlay in the build declares - `--nos sonic`, hard-coded
   # here since the day the flag existed, started exiting non-zero and took
   # every device export with it. Ask overlays.json what is declared instead.
-  NOS_ARGS=$(python3 -c 'import json,sys
-d = json.load(open(sys.argv[1])).get("overlays", {})
-seen = sorted({ov.get("nos") for per in d.values() for ov in per.values() if ov.get("nos")})
-print(" ".join("--nos " + n for n in seen))' "$SRC/dist/overlays.json")
+  # AND AFTER PORTRAYAL #677 THERE ARE NO FLAGS AT ALL: a NOS vendor lists the
+  # hardware it supports (listings.json), every listing exports, and `--nos` is
+  # an error. tools/nos_platforms.py answers for whichever file the build has.
+  NOS_ARGS=$(python3 "$HERE/tools/nos_platforms.py" args "$SRC/dist")
   : > "$EXPORTS/.paths"
   # ONE DEVICE PER CALL, DELIBERATELY. A single pass exports all 84 in 1.5s
   # against roughly 25s for the loop, but it prints paths without saying which
@@ -272,6 +273,7 @@ print(" ".join("--nos " + n for n in seen))' "$SRC/dist/overlays.json")
     --out "$EXPORTS" --images >/dev/null 2>&1 || \
     echo "  note: this exporter has no --modules pass" >&2
 
+  NOS_PLATFORMS=$(python3 "$HERE/tools/nos_platforms.py" platforms "$SRC/dist") \
   python3 - "$EXPORTS" "$SRC" <<'PYEOF'
 import json, os, re, sys, glob
 import yaml
@@ -340,16 +342,9 @@ for f in sorted(glob.glob(os.path.join(lib, 'devices', '*', '*', 'device.yaml'))
 # Arrcus), and platform is the field both products use to say so. The
 # manufacturer directory is the tell now - the `-arcos` suffix that used to
 # be is gone, and the exporter knows no NOS by name, so this reads the same
-# overlays.json the exporter did.
-platform_of = {}
-try:
-    for per in json.load(open(os.path.join(lib, 'dist', 'overlays.json'))).get('overlays', {}).values():
-        for ov in per.values():
-            vendor = (ov.get('identity') or {}).get('vendor')
-            if vendor and ov.get('nos'):
-                platform_of[vendor.lower()] = ov['nos']
-except (OSError, ValueError):
-    pass
+# overlays.json the exporter did. Now tools/nos_platforms.py reads whichever of
+# overlays.json and listings.json (Portrayal #677) the build has.
+platform_of = json.loads(os.environ.get('NOS_PLATFORMS') or '{}')
 for dev, targets in index.items():
     for rel in targets.get('netbox', []):
         m = re.search(r'device-types/([^/]+)/', rel)

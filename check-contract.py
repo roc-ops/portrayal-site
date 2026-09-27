@@ -824,7 +824,12 @@ SJS = (HERE / "site" / "schema.js").read_text()
 SHTML = (HERE / "schema.html").read_text()
 docs = schemawalk.documents()
 sources = set(re.findall(r"url:\s*'assets/schemas/([^']+)'", SJS))
-check(bool(docs) and sources == set(docs),
+# One of the pair may be staged ahead of the sync that brings it: Portrayal #677
+# replaces overlay.schema.json with listing.schema.json, and the page hides the
+# tab of whichever the site does not carry.
+_nos_pair = {"overlay.schema.json", "listing.schema.json"}
+check(bool(docs) and set(docs) <= sources and sources - set(docs) <= _nos_pair
+      and len(_nos_pair & set(docs)) == 1,
       f"schema.js renders every vendored schema ({len(docs)})",
       f"vendored {sorted(docs)}, SOURCES names {sorted(sources)} - a schema "
       "added upstream needs an entry in SOURCES and a tab in schema.html")
@@ -1113,6 +1118,42 @@ check("export function faceFile" not in _vd
       or re.search(r"export\s*\{\s*faceFile\s*\}\s*from\s*'\.\./vendor/dist\.js'", _fj) is not None,
       "site/faces.js re-exports the vendored kit's faceFile rather than keeping its own copy",
       "vendor/dist.js exports faceFile but site/faces.js defines its own")
+
+# WHICH NOS A SOFTWARE VENDOR'S EXPORTS RUN, before and after Portrayal #677.
+# #677 replaces per-hardware NOS overlays (overlays.json, exporter --nos) with
+# NOS vendor listings (listings.json; --nos removed - passing it is an error).
+# tools/nos_platforms.py reads whichever the build has: the exporter flags, and
+# the default_platform the DCIM exports are tagged with. Held against both
+# shapes here, so the refresh neither aborts nor silently drops the tagging.
+import subprocess as _sp, tempfile as _tf
+def _nosrun(files):
+    with _tf.TemporaryDirectory() as _d:
+        for _n, _doc in files.items():
+            (Path(_d) / _n).write_text(json.dumps(_doc))
+        _run = lambda cmd: _sp.run([sys.executable, str(HERE / "tools" / "nos_platforms.py"), cmd, _d],
+                                   capture_output=True, text=True)
+        _a, _p = _run("args"), _run("platforms")
+        return (_a.returncode, _a.stdout.split(), _p.returncode,
+                json.loads(_p.stdout) if _p.returncode == 0 and _p.stdout.strip() else None)
+_L = {"listings": {"arrcus/as7726-32x": {"ns": "arrcus", "manufacturer": "Arrcus", "nos": "arcos",
+                                          "hardware": "as7726-32x"}}}
+_O = {"overlays": {"as7726-32x": {"arcos": {"nos": "arcos", "identity": {"vendor": "Arrcus"}}}}}
+_have = (HERE / "tools" / "nos_platforms.py").exists()
+check(_have and _nosrun({"listings.json": _L}) == (0, [], 0, {"arrcus": "arcos"}),
+      "after #677 (listings.json): no --nos flags, and Arrcus exports are tagged arcos",
+      f"{_nosrun({'listings.json': _L}) if _have else 'no tools/nos_platforms.py'}")
+check(_have and _nosrun({"overlays.json": _O}) == (0, ["--nos", "arcos"], 0, {"arrcus": "arcos"}),
+      "before #677 (overlays.json): --nos arcos, and Arrcus exports are tagged arcos",
+      f"{_nosrun({'overlays.json': _O}) if _have else 'no tools/nos_platforms.py'}")
+check(_have and _nosrun({}) == (0, [], 0, {}),
+      "with neither file, no flags and no tagging - and no failure",
+      f"{_nosrun({}) if _have else 'no tools/nos_platforms.py'}")
+_ra = (HERE / "refresh-assets.sh").read_text()
+_ovr = [l for l in _ra.splitlines() if "overlays.json" in l and not l.lstrip().startswith("#")
+        and not l.lstrip().startswith("for f in vendors.json")]
+check("tools/nos_platforms.py" in _ra and not _ovr and "listings.json" in _ra,
+      "refresh-assets.sh takes NOS flags and platforms from tools/nos_platforms.py, and vendors listings.json",
+      f"refresh-assets.sh still reads overlays.json itself ({_ovr}), or does not copy listings.json")
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
