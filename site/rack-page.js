@@ -244,7 +244,7 @@ async function render() {
   let front, rear;
   try {
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
-      items, frame: r.frame, view, hitTargets: true, selectedId, ears: true,
+      items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null})));
   } catch (err) {
     if (mine !== S.draws) return;
