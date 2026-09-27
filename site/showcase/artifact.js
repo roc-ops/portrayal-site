@@ -1,3 +1,4 @@
+import {faceUrl} from '../faces.js';
 // The compiled artifact and everything that operates on it: load, frame,
 // pan/zoom, overlay, states, exports, panel builders. A stage or a spoke
 // imports from here instead of relying on a module global that happens to be
@@ -19,9 +20,10 @@ export const DIST = 'assets/dist/';
 export let DEVICE = DEV;
 export let VIEW = 'front';
 export let CONFIG = CFG;
-const file = (dev, config, view) => `${dev}.${config}.${view}.svg`;
-// The file on the stage, as the footer names it.
-export const srcName = () => file(DEVICE, CONFIG, VIEW);
+// The file on the stage, as the footer names it. Looked up rather than built
+// (site/faces.js): since Portrayal #670 it may be another configuration's.
+let SRC = `${DEV}.${CFG}.front.svg`;
+export const srcName = () => SRC;
 
 export const VIEWS = ['front', 'rear', 'top', 'bottom', 'left', 'right'];
 export const CONFIGS = [
@@ -90,13 +92,13 @@ export async function loadDrawing(dev = DEVICE, view = VIEW, config = CONFIG, is
 }
 
 async function load(dev, view, config, isStale, mine) {
-  const url = DIST + file(dev, config, view);
+  const url = await faceUrl(DIST, dev, config, view);
   const text = await fetch(url).then(r => {
     if (!r.ok) throw new Error(`${url} — ${r.status}`);
     return r.text();
   });
   if (mine !== gen || isStale?.()) return false;
-  DEVICE = dev; VIEW = view; CONFIG = config;
+  DEVICE = dev; VIEW = view; CONFIG = config; SRC = url.slice(DIST.length);
   stage2d.innerHTML = text;
   svg = stage2d.querySelector('svg');
   // The file is authored at true size (438.4mm x 43.5mm). Drop the physical

@@ -54,6 +54,7 @@
 
 <script type="module">
 import { loadFace, portsOf } from './site/drawio.js';
+import { faceFile } from './site/faces.js';
 import { schematicPage, bandsOf } from './site/schematic.js';
 
 const DIST = 'assets/dist/';
@@ -135,7 +136,7 @@ async function loadDevice() {
     }));
     here.forEach(b => seen.add(b.id));
     bays.push(...here);
-    for (const url of [`${DIST}${dev.name}.${cfg?.default}.${face}.svg`,
+    for (const url of [DIST + faceFile(cfg || {device: dev.name}, cfg?.default, face),
                        `${DIST}${dev.name}.${face}.svg`]) {
       try {
         const f = await loadFace(url);

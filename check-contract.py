@@ -1066,6 +1066,20 @@ _nexp = [d for d in _devs if d not in _exi]
 check(not _nexp, "the DCIM exports index has an entry for every device in devices.json",
       f"{len(_nexp)} of {len(_devs)} missing, e.g. {_nexp[:3]}")
 
+# ONE PLACE NAMES A FACE FILE (Portrayal #670). A drawing is written once and
+# shared by every configuration that draws it identically, named after the
+# first of them, so `<device>.<config>.<view>.svg` stops existing for most
+# configurations. site/faces.js resolves a face through configs[].files; no
+# other site code may build a per-configuration face name by hand.
+_hand = []
+for _f in sorted(list((HERE / "site").rglob("*.js")) + list(HERE.glob("*.html")) + [HERE / "brand" / "build-brand.py"]):
+    if _f.name == "faces.js": continue
+    _t = _f.read_text()
+    for _mm in re.finditer(r"\$\{[^}]+\}\.\$\{[^}]+\}\.\$\{[^}]+\}\.svg[`'\"]|\{[a-z_]+\}\.\{[a-z_]+\}\.\{?[a-z_]*\}?\.?front\.svg|\.base\.front\.svg", _t):
+        _hand.append(f"{_f.relative_to(HERE)}:{_t[:_mm.start()].count(chr(10)) + 1}")
+check(not _hand, "no site code builds a per-configuration face file name by hand (site/faces.js resolves them)",
+      f"{len(_hand)}: " + ", ".join(_hand))
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

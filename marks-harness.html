@@ -127,6 +127,7 @@
 
 <script type="module">
 import * as marks from './vendor/marks.js';
+import { faceFile } from './site/faces.js';
 
 const $ = s => document.querySelector(s);
 const DIST = 'assets/dist';
@@ -207,7 +208,7 @@ function fill(sel, values, chosen) {
 }
 
 async function loadStage() {
-  const file = `${state.meta.device}.${$('#cfg').value}.${$('#view').value}.svg`;
+  const file = faceFile(state.meta, $('#cfg').value, $('#view').value);   // #670: looked up, not built
   let txt;
   try { txt = await (await get(file)).text(); }
   catch (e) { $('#status').textContent = e.message; return; }

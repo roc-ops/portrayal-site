@@ -10,7 +10,7 @@ const telemetry = {            // port -> utilization, 0..1
 const colorFor = u => u > 0.9 ? '#e0574f' : u > 0.6 ? '#e0a94a' : '#48d08a';
 
 export async function run(host) {
-  const text = await fetch(`${DIST}s9600-72xc.base.front.svg`).then(r => r.text());
+  const text = await fetch(`${DIST}s9600-72xc.front.svg`).then(r => r.text());
   host.insertAdjacentHTML('beforeend', text);
   const svg = host.querySelector('svg');
 

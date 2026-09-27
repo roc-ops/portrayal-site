@@ -1,4 +1,5 @@
 // The compiled drawings, zipped: pick a scope, get the SVGs.
+import {faceFile} from './faces.js';
 import { createDevicePicker } from '../vendor/devsel.js';
 import { jdist } from '../vendor/dist.js';
 import { makeZip } from './bundle.js';
@@ -45,9 +46,14 @@ async function filesFor(dev, faces, everyConfig) {
               url: `${DIST}${dev.name}.${face}.svg`,
               device: dev.name, version: dev.version ?? null,
               config: cfg?.default ?? null, face});
+    // One entry per distinct FILE: since Portrayal #670 configurations that
+    // draw a face identically share one, named after the first of them.
+    const seen = new Set();
     for (const c of configs) {
-      out.push({path: `devices/${dev.name}/${dev.name}.${c}.${face}.svg`,
-                url: `${DIST}${dev.name}.${c}.${face}.svg`,
+      const f = faceFile(cfg || {device: dev.name}, c, face);
+      if (seen.has(f)) continue;
+      seen.add(f);
+      out.push({path: `devices/${dev.name}/${f}`, url: `${DIST}${f}`,
                 device: dev.name, version: dev.version ?? null, config: c, face});
     }
   }

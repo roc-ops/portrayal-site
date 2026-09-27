@@ -134,7 +134,11 @@ def og_card(ref='as7726-32x', cfg='ac-f2b', port='port-12',
     webfont, so live text here would silently fall back off-brand.
     """
     import re
-    src = DIST / f'{ref}.{cfg}.front.svg'
+    # Looked up, not built (Portrayal #670): a configuration's face may be
+    # another configuration's file. configs[].files says which.
+    idx = json.loads((DIST / f'{ref}.configs.json').read_text())
+    face = next((c.get('files', {}).get('front') for c in idx['configs'] if c['name'] == cfg), None)
+    src = DIST / (face or f'{ref}.' + cfg + '.front.svg')
     body, (_, _, dw, dh) = _inline_drawing(src)
     raw = src.read_text()
 

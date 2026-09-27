@@ -4,7 +4,7 @@
 const DIST = 'assets/dist/';  // wherever you host the compiled files
 
 export async function run(host) {
-  const text = await fetch(`${DIST}s9600-72xc.base.front.svg`).then(r => r.text());
+  const text = await fetch(`${DIST}s9600-72xc.front.svg`).then(r => r.text());
   host.insertAdjacentHTML('beforeend', text);
   const svg = host.querySelector('svg');
 

@@ -23,6 +23,7 @@
 // same key: one caller mutating a zone or pushing onto `ports` would corrupt
 // what every other caller sees. Treat all of it as read-only.
 
+import {faceUrl} from '../faces.js';
 import {jdist} from '../../vendor/dist.js';
 import {seatFace} from '../../vendor/swap.js';
 import {paintFields} from '../../vendor/fields.js';
@@ -88,7 +89,7 @@ export function configuredFace({ref, cfg, view = 'front', swaps = {}, fields = {
 
 async function build({ref, cfg, view, swaps, fields, turned}) {
   const shown = turned ? (OPPOSITE[view] || view) : view;
-  const res = await fetch(`${DIST}${ref}.${cfg}.${shown}.svg`);
+  const res = await fetch(await faceUrl(DIST, ref, cfg, shown));   // #670: may be another config's file
   if (!res.ok) return null;
   let text = await res.text();
   const seat = {applied: 0, refused: [], failed: []};

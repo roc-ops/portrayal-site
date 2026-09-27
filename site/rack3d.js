@@ -20,6 +20,7 @@ import { configureRelief, buildFaceRelief, canvasTex, svgCanvas, svgSource,
 import { toGLB, toUSDZ } from '../vendor/share.js';
 import { seatViews, refusalReason } from '../vendor/swap.js';
 import { jdist } from '../vendor/dist.js';
+import { faceFile } from './faces.js';
 import { RU, RAIL_W, HOLE_DY, HOLE_SIZE, SIDES } from './showcase/rails.js';
 
 export { RU };                      // EIA-310 rack unit; rails.js is the one source
@@ -433,7 +434,8 @@ export function createRackScene(container, opts = {}) {
   // fetch otherwise, and a synthetic key has nothing to fetch. So `faceSrc`
   // asks whether this mount has one before handing it out.
   const SYNTH = new Set();
-  const faceUrl = (entry, view) => `${DIST}${entry.ref}.${entry.cfg}.${view}.svg`;
+  // A face's file is looked up, never built: see site/faces.js (Portrayal #670).
+  const faceUrl = (entry, view) => DIST + faceFile(entry.index || {device: entry.ref}, entry.cfg, view);
   const faceKey = (entry, view) => `${faceUrl(entry, view)}#mount-${entry.slot}`;
   const faceSrc = (entry, view) =>
     SYNTH.has(faceKey(entry, view)) ? faceKey(entry, view) : faceUrl(entry, view);
@@ -823,7 +825,8 @@ export function createRackScene(container, opts = {}) {
       // chassis and bays.
       // Cages as well since Portrayal #441: a caller that supplies chassis and
       // bays but not cages still needs the index, or its optics go nowhere.
-      if (((e.chassis && e.bays && e.cages) && e.cfg) || configs.has(e.ref)) continue;
+      // And always since Portrayal #670: it says which file draws each face.
+      if (configs.has(e.ref)) continue;
       configs.set(e.ref, jdist(`${DIST}${e.ref}.configs.json`).catch(() => null));
     }
     if (STACK.some(e => !e.componentIndex) && !COMPONENTS) {
@@ -846,7 +849,8 @@ export function createRackScene(container, opts = {}) {
         // A PORT THAT TAKES AN OPTIC is a cage (Portrayal #441), listed per view
         // beside the bays, and an override map names both in one namespace.
         cages: e.cages || cfg?.cages || {},
-        componentIndex: e.componentIndex || COMPONENTS || []});
+        componentIndex: e.componentIndex || COMPONENTS || [],
+        index: cfg});
     }
   }
 
