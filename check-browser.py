@@ -2182,6 +2182,10 @@ def check_configured_face(page, base):
 # section promises. KIT_EXPECT grows one entry per recipe.
 KIT_EXPECT = {
     "01-drawing": lambda r: r.get("lit") == ["port-12"],
+    "02-telemetry": lambda r: r.get("colored") == 5,
+    "03-metadata": lambda r: r.get("device") == "UfiSpace S9600-72XC" and "base" in r.get("configs", [])
+                   and r.get("chassis", {}).get("w") == 436 and r.get("chassis", {}).get("ru") == 2
+                   and r.get("devices", 0) >= 100,
 }
 
 @extra("kit.html: every recipe runs and returns what its section promises")
