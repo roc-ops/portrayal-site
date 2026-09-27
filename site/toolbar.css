@@ -50,6 +50,27 @@ body.tool > .fill { flex: 1; min-height: 0; display: flex; flex-direction: colum
   body.tool main > aside { min-width: 0; }
 }
 
+/* THE BAR GROWS WHEN ITS LINKS WRAP. On a phone the nav no longer fits beside
+   the brand and wraps onto a second row, and a bar held at `height: 42px` left
+   that row hanging over the page underneath - Export, Docs and GitHub drawn on
+   top of the tool's heading. `min-height` instead of `height`, so a bar with
+   one row is exactly as tall as before - on the border-box tool pages and the
+   content-box ones alike. The breathing room for two rows is padding on the
+   nav, not the bar: one row plus that padding is still under 42px, so it only
+   counts once the nav has wrapped. The rows sit closer than the links do side
+   by side, or the bar would be mostly gap. */
+@media (max-width: 719.98px) {
+  .site-bar { height: auto; min-height: 42px; }
+  .site-bar nav { row-gap: 0.3rem; padding: 0.35rem 0; }
+  /* A menu hangs from its own button's right edge, and on a phone Export
+     starts the second row - so its panel opened past the left of the screen,
+     the first words of every item cut off. Hang it from the nav instead, whose
+     right edge is the bar's. */
+  .site-bar nav { position: relative; }
+  .site-bar nav .navmenu { position: static; }
+  .site-bar nav .navmenu-items { max-width: calc(100vw - 1.8rem); }
+}
+
 /* Pages that just scroll - the component browser, the export viewer. */
 /* The ported pages carry their own `body { ... }` rule with margins in it, and
    it loads after this file. Reset the margin on the class instead of fighting

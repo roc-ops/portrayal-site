@@ -2678,7 +2678,7 @@ NARROW_PAGES = ["explorer.html", "components.html", "annotate.html", "drawio.htm
                 "exporter.html", "drawings.html"]
 
 
-@extra("the tool-bar pages have no horizontal scroll at a 360px viewport")
+@extra("the tool-bar pages fit a 360px viewport: no sideways scroll, the bar holds its links, menus open on screen")
 def check_narrow_tool_pages(page, base):
     bad = []
     page.set_viewport_size({"width": 360, "height": 740})
@@ -2695,11 +2695,37 @@ def check_narrow_tool_pages(page, base):
                       + (e.className && typeof e.className === 'string'
                          ? '.' + e.className.trim().split(/\s+/).join('.') : '')
                       + ' right=' + Math.round(e.getBoundingClientRect().right));
-          return {w, wide};
+          // The bar's links wrap onto a second row on a phone; a bar of fixed
+          // height let that row hang over the page's heading.
+          const bar = document.querySelector('.site-bar');
+          const bottom = bar ? bar.getBoundingClientRect().bottom : 0;
+          const spill = bar ? [...bar.querySelectorAll('a, summary')]
+            .filter(e => !e.closest('.navmenu-items'))
+            .filter(e => e.getBoundingClientRect().bottom > bottom + 0.5)
+            .map(e => e.textContent.trim()) : [];
+          return {w, wide, spill};
         }""")
         if r["w"] > 360:
             bad.append(f"{name}: scrollWidth {r['w']} at a 360px viewport; past the edge: "
                        + ", ".join(r["wide"]))
+        if r["spill"]:
+            bad.append(f"{name}: at 360px the tool bar's links hang below the bar, over the page: "
+                       + ", ".join(r["spill"]))
+        # Each menu in the bar opens on screen. Export starts a row of its own
+        # on a phone, and a panel hung from its right edge opened off the left.
+        for i in range(page.locator(".site-bar .navmenu > summary").count()):
+            summary = page.locator(".site-bar .navmenu > summary").nth(i)
+            label = summary.inner_text().strip()
+            summary.click()
+            box = page.evaluate("""i => {
+              const m = document.querySelectorAll('.site-bar .navmenu')[i];
+              const r = m.querySelector('.navmenu-items').getBoundingClientRect();
+              m.open = false;
+              return [Math.round(r.left), Math.round(r.right)];
+            }""", i)
+            if box[0] < 0 or box[1] > 360:
+                bad.append(f"{name}: at 360px the {label} menu opens off screen, "
+                           f"from x={box[0]} to x={box[1]}")
     return bad
 
 
