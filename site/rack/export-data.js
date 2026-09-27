@@ -118,3 +118,122 @@ export function perFaceItems(items) {
   }
   return out;
 }
+
+// ── DCIM (spec §8) ─────────────────────────────────────────────────────
+export const stemOf = path => String(path).split('/').pop().replace(/\.ya?ml$/i, '');
+export const vendorOf = path => String(path).split('/').at(-2) ?? '';
+export const tokens = s => String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+
+// How a configuration's words are also spelled in vendor part numbers:
+// Edgecore writes front-to-back airflow as -F, back-to-front as -B, and
+// 48 V DC as 48V.
+const ALIAS = {f2b: ['f'], b2f: ['b'], dc: ['48v']};
+const runIn = (hay, needle) => needle.length > 0 && hay.some((_, i) =>
+  i + needle.length <= hay.length && needle.every((t, k) => hay[i + k] === t));
+
+// WHICH DEVICE TYPE IS THIS ITEM. index.json lists every type a device ref
+// exports - one per SKU, often one per configuration - and nothing names
+// which configuration each is. So: the chassis manufacturer's own files
+// first; one file is certain; a file whose name carries the configuration's
+// words as a run is certain when it is the only one; otherwise the best
+// match on words and aliases is a GUESS, and the caller lists it in notes.
+export function matchDeviceType({cfg, manufacturer, paths}) {
+  if (!paths?.length) return null;
+  const own = paths.filter(p => vendorOf(p) === manufacturer);
+  const pool = own.length ? own : [...paths];
+  if (pool.length === 1) return {path: pool[0], guess: false, candidates: 1};
+  const want = tokens(cfg);
+  const exact = pool.filter(p => runIn(tokens(stemOf(p)), want));
+  if (exact.length) {
+    const best = [...exact].sort((a, b) => tokens(stemOf(a)).length - tokens(stemOf(b)).length)[0];
+    return {path: best, guess: exact.length > 1, candidates: pool.length};
+  }
+  const wanted = want.flatMap(t => [t, ...(ALIAS[t] || [])]);
+  let best = pool[0], score = -1;
+  for (const p of pool) {
+    const have = new Set(tokens(stemOf(p)));
+    const s = wanted.filter(t => have.has(t)).length;
+    if (s > score) { best = p; score = s; }
+  }
+  return {path: best, guess: true, candidates: pool.length};
+}
+
+// The identity lines at the top of a device-type YAML - enough for a CSV to
+// name the type exactly as the YAML does. Top level only: an indented
+// `model:` belongs to a component, not the type.
+export function yamlHead(text) {
+  const out = {};
+  for (const line of String(text).split(/\r?\n/)) {
+    const m = line.match(/^(manufacturer|model|slug|u_height|is_full_depth):\s*(.*?)\s*$/);
+    if (!m || m[1] in out) continue;
+    let v = m[2];
+    if (/^'.*'$/.test(v)) v = v.slice(1, -1).replace(/''/g, "'");
+    else if (/^".*"$/.test(v)) v = JSON.parse(v);
+    out[m[1]] = v;
+  }
+  return {manufacturer: out.manufacturer ?? null, model: out.model ?? null, slug: out.slug ?? null,
+          uHeight: out.u_height != null ? Number(out.u_height) : null,
+          isFullDepth: out.is_full_depth === 'true'};
+}
+
+// A module type's file is named for the part number (attrs.model), a "/"
+// in it written "-" (exporter.html reads it the same way).
+export function moduleTypePath(paths, model) {
+  if (!model) return null;
+  const want = [model, model.replace(/\//g, '-')];
+  return paths.find(p => p.includes('/module-types/') && want.includes(stemOf(p))) ?? null;
+}
+export const partNumber = comp => comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
+  ?? comp?.attrs?.['vendor-sku'] ?? '';
+
+// A DCIM wants unique device names; two items may share a label.
+export function uniqueNames(items) {
+  const base = i => String(i.label || i.ref).trim();
+  const seen = new Map();
+  for (const i of items) seen.set(base(i), (seen.get(base(i)) || 0) + 1);
+  return new Map(items.map(i => [i.id, seen.get(base(i)) > 1
+    ? {name: `${base(i)}-${i.id}`, renamed: true} : {name: base(i), renamed: false}]));
+}
+
+export const NETBOX_COLUMNS = ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack',
+  'position', 'face', 'comments'];
+export const NAUTOBOT_COLUMNS = ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model',
+  'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments'];
+const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
+
+// One row per rail item, top down. Role and site/location are left blank on
+// purpose: both are required, and this rack knows neither - a blank one
+// fails the import loudly instead of filing devices under a guess.
+export function deviceImportRows({rack, items, types, target = 'netbox'}) {
+  const T = TARGET_NAME[target] || 'NetBox';
+  const names = uniqueNames(items);
+  const sorted = [...items].sort((a, b) => b.ru - a.ru || (a.face === b.face ? 0 : a.face === 'front' ? -1 : 1));
+  const rows = sorted.map(it => {
+    const t = types.get(it.id) || null;
+    const n = names.get(it.id);
+    const notes = [];
+    if (!t) notes.push(`No ${T} device type for ${it.ref} (${it.cfg}); add one before importing.`);
+    else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
+    if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${String(it.label || it.ref).trim()}.`);
+    if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
+    const other = items.find(o => o.id !== it.id && o.face !== it.face && overlaps(o, it));
+    if (other && (t?.isFullDepth || types.get(other.id)?.isFullDepth))
+      notes.push(`Shares its U with ${names.get(other.id).name} on the ${other.face}; ${T} refuses this while either type is full depth.`);
+    const position = positionOf(rack.frame, it.ru, it.u);
+    const comments = notes.join(' ');
+    return target === 'nautobot'
+      ? {name: n.name, role__name: '', device_type__manufacturer__name: t?.manufacturer ?? '',
+         device_type__model: t?.model ?? '', status__name: 'Planned', location__name: '',
+         rack__name: rack.name, position, face: it.face, comments}
+      : {name: n.name, role: '', manufacturer: t?.manufacturer ?? '', device_type: t?.model ?? '',
+         status: 'planned', site: '', rack: rack.name, position, face: it.face, comments};
+  });
+  return {columns: target === 'nautobot' ? NAUTOBOT_COLUMNS : NETBOX_COLUMNS, rows};
+}
+
+export function dcimNotesText({rackName, target, date, notes}) {
+  const T = TARGET_NAME[target] || 'NetBox';
+  const body = notes.length ? notes.map(n => `- ${n}`).join('\n')
+    : `Every device and part in this rack matched a ${T} type.`;
+  return `${T} types for ${rackName}, from the Portrayal Rack Builder, ${isoDate(date)}.\n\n${body}\n`;
+}

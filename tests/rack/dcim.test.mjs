@@ -1,0 +1,110 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import * as X from '../../site/rack/export-data.js';
+import * as M from '../../site/rack/model.js';
+import {ITEMS} from './export-data.test.mjs';
+
+const DAY = new Date(2026, 8, 27);
+const nb = (vendor, model) => `netbox/device-types/${vendor}/${model}.yaml`;
+
+test('one file is certain; a manufacturer filter comes first', () => {
+  assert.deepEqual(X.matchDeviceType({cfg: 'base', manufacturer: 'Telco Systems', paths: [nb('Telco Systems', 'TM-280')]}),
+    {path: nb('Telco Systems', 'TM-280'), guess: false, candidates: 1});
+  assert.equal(X.matchDeviceType({cfg: 'base', manufacturer: 'X', paths: []}), null);
+});
+
+test('a file naming the configuration wins, as a run of its words', () => {
+  const paths = ['lff12-mlff4-rlff2-rc0-noriser', 'lff12-rc0-noriser', 'lff12-rc3-1a2a']
+    .map(c => nb('Dell', `PowerEdge R740xd ${c}`));
+  assert.deepEqual(X.matchDeviceType({cfg: 'lff12-rc0-noriser', manufacturer: 'Dell', paths}),
+    {path: paths[1], guess: false, candidates: 3});
+  const asr = [nb('Cisco', 'ASR-9006-AC-V2'), nb('Cisco', 'ASR-9006-DC-V2')];
+  assert.deepEqual(X.matchDeviceType({cfg: 'dc', manufacturer: 'Cisco', paths: asr}),
+    {path: asr[1], guess: false, candidates: 2});
+});
+
+test('otherwise the best token score, with airflow and DC aliases, is a guess', () => {
+  const paths = ['ArcOS on 7726-32X-O-AC-F', 'ArcOS on 7726-32X-O-AC-B'].map(m => nb('Arrcus', m))
+    .concat(['7726-32X-O-48V-B', '7726-32X-O-48V-F', '7726-32X-O-AC-B', '7726-32X-O-AC-F'].map(m => nb('Edgecore', m)));
+  assert.deepEqual(X.matchDeviceType({cfg: 'ac-f2b', manufacturer: 'Edgecore', paths}),
+    {path: nb('Edgecore', '7726-32X-O-AC-F'), guess: true, candidates: 4});
+  assert.equal(X.matchDeviceType({cfg: 'dc-b2f', manufacturer: 'Edgecore', paths}).path, nb('Edgecore', '7726-32X-O-48V-B'));
+  const asr = [nb('Cisco', 'ASR-9006-AC-V2'), nb('Cisco', 'ASR-9006-DC-V2')];
+  assert.deepEqual(X.matchDeviceType({cfg: 'base', manufacturer: 'Cisco', paths: asr}),
+    {path: asr[0], guess: true, candidates: 2});
+});
+
+test('yamlHead reads the top-level identity, quoted or not', () => {
+  const h = X.yamlHead('---\nmanufacturer: Cisco\nmodel: ASR 9901 Router, AC supplies\nslug: cisco-asr-9901\n' +
+                       'u_height: 2.0\nis_full_depth: true\ninterfaces:\n  - name: x\n    model: nested\n');
+  assert.deepEqual(h, {manufacturer: 'Cisco', model: 'ASR 9901 Router, AC supplies', slug: 'cisco-asr-9901',
+                       uHeight: 2, isFullDepth: true});
+  assert.equal(X.yamlHead("model: 'O''Brien 1'").model, "O'Brien 1");
+  assert.equal(X.yamlHead('model: "A: B"').model, 'A: B');
+  assert.equal(X.yamlHead('').model, null);
+});
+
+test('a module type is found by its part number, slashes as dashes', () => {
+  const paths = ['netbox/module-types/Cisco/A9K Slot Cover.yaml', 'netbox/device-types/Cisco/X.yaml',
+                 'netbox/module-types/Acme/A-B.yaml'];
+  assert.equal(X.moduleTypePath(paths, 'A9K Slot Cover'), paths[0]);
+  assert.equal(X.moduleTypePath(paths, 'A/B'), paths[2]);
+  assert.equal(X.moduleTypePath(paths, 'X'), null);
+  assert.equal(X.moduleTypePath(paths, ''), null);
+  assert.equal(X.partNumber({attrs: {model: 'A9K-3KW-AC'}}), 'A9K-3KW-AC');
+  assert.equal(X.partNumber({attrs: {'part-number': 'P1'}}), 'P1');
+  assert.equal(X.partNumber(null), '');
+});
+
+test('a repeated label gets the item id, once per duplicate', () => {
+  const n = X.uniqueNames(ITEMS);
+  assert.deepEqual([...n.values()].map(v => v.name), ['core-1', 'leaf-1', 'demarc-i3', 'demarc-i4']);
+  assert.equal(n.get('i3').renamed, true);
+  assert.equal(n.get('i1').renamed, false);
+});
+
+const TYPES = new Map([
+  ['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: true, guess: true}],
+  ['i2', {manufacturer: 'Edgecore', model: '7726-32X-O-AC-F', isFullDepth: true, guess: true}],
+  ['i3', {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: true, guess: false}],
+  ['i4', {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: true, guess: false}],
+]);
+const RACK = {name: 'Export test', frame: M.normalizeFrame({heightRU: 24})};
+
+test('NetBox rows: top down, unique names, planned, notes in comments', () => {
+  const {columns, rows} = X.deviceImportRows({rack: RACK, items: ITEMS, types: TYPES, target: 'netbox'});
+  assert.deepEqual(columns, ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack',
+                             'position', 'face', 'comments']);
+  assert.deepEqual(rows.map(r => [r.name, r.position, r.face, r.manufacturer, r.device_type]), [
+    ['demarc-i4', 20, 'rear', 'Telco Systems', 'TM-280'], ['leaf-1', 14, 'front', 'Edgecore', '7726-32X-O-AC-F'],
+    ['demarc-i3', 14, 'rear', 'Telco Systems', 'TM-280'], ['core-1', 2, 'front', 'Cisco', 'ASR-9006-AC-V2']]);
+  assert.ok(rows.every(r => r.status === 'planned' && r.role === '' && r.site === '' && r.rack === 'Export test'));
+  assert.equal(rows[0].comments, 'Named demarc-i4 because another device here is also demarc.');
+  assert.equal(rows[1].comments, 'Device type 7726-32X-O-AC-F is a best guess for configuration ac-f2b. ' +
+    'Shares its U with demarc-i3 on the rear; NetBox refuses this while either type is full depth.');
+  assert.equal(rows[3].comments, 'Device type ASR-9006-AC-V2 is a best guess for configuration base.');
+});
+
+test('positions follow a top-down frame', () => {
+  const rack = {...RACK, frame: {...RACK.frame, numbering: 'top-down'}};
+  assert.deepEqual(X.deviceImportRows({rack, items: ITEMS, types: TYPES}).rows.map(r => r.position), [5, 11, 11, 14]);
+});
+
+test('Nautobot rows use natural-key columns; a device with no type says so', () => {
+  const types = new Map([...TYPES, ['i1', null]]);
+  const {columns, rows} = X.deviceImportRows({rack: RACK, items: ITEMS, types, target: 'nautobot'});
+  assert.deepEqual(columns, ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model',
+    'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments']);
+  assert.deepEqual([rows[1].device_type__manufacturer__name, rows[1].device_type__model, rows[1].status__name,
+                    rows[1].rack__name], ['Edgecore', '7726-32X-O-AC-F', 'Planned', 'Export test']);
+  assert.equal(rows[3].device_type__model, '');
+  assert.equal(rows[3].comments, 'No Nautobot device type for asr-9006 (base); add one before importing.');
+});
+
+test('NOTES.txt heads its list, or says everything matched', () => {
+  assert.equal(X.dcimNotesText({rackName: 'Export test', target: 'netbox', date: DAY, notes: []}),
+    'NetBox types for Export test, from the Portrayal Rack Builder, 2026-09-27.\n\n' +
+    'Every device and part in this rack matched a NetBox type.\n');
+  assert.equal(X.dcimNotesText({rackName: 'R', target: 'nautobot', date: DAY, notes: ['a', 'b']}),
+    'Nautobot types for R, from the Portrayal Rack Builder, 2026-09-27.\n\n- a\n- b\n');
+});
