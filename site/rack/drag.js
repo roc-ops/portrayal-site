@@ -7,7 +7,7 @@
 import {RU, OPENING} from './rails.js';
 import {uAtY} from './elevation.js';
 import {fits} from './fit.js';
-import {svgEl} from './dom.js';
+import {svgEl, svgY} from './dom.js';
 
 const THRESHOLD = 4; // CSS px before a press becomes a drag, not a click
 
@@ -36,11 +36,6 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
       if (dist < bestDist) { bestDist = dist; best = face; }
     }
     return best;
-  }
-
-  function svgY(svg, clientX, clientY) {
-    const pt = new DOMPoint(clientX, clientY);
-    return pt.matrixTransform(svg.getScreenCTM().inverse()).y;
   }
 
   function clearPreview() {
@@ -94,7 +89,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     d.ruH = Math.max(1, chassisOf(d.item.ref)?.ru ?? 1);
     const grabU = svg ? uAtY(r.frame, svgY(svg, d.startX, d.startY)) : d.item.ru;
     d.grabOffsetU = grabU - d.item.ru;
-    onStart();
+    onStart(d.id);
     d.rafId = requestAnimationFrame(edgeScroll);
   }
 
@@ -161,7 +156,11 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     justDragged = false;
     if (ev.button !== 0 || d) return;
     const group = ev.target.closest('[data-item-id]');
-    if (!group || !['mounted', 'through', 'missing'].includes(group.dataset.panel)) return;
+    // A press on the item's own panel group, or on its rack ears (round 3
+    // §2's `<g class="rk-ears">`, which carries no data-panel) - either
+    // starts a drag on the item, exactly like a press on the device itself.
+    if (!group || !(['mounted', 'through', 'missing'].includes(group.dataset.panel)
+                    || group.classList.contains('rk-ears'))) return;
     const item = itemById(group.dataset.itemId);
     if (!item) return;
     group.setPointerCapture(ev.pointerId);

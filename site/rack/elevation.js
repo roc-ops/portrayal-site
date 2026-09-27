@@ -3,12 +3,10 @@
 // build2dElevation is an adapter over it, so the two can never disagree about
 // what a rail or a device looks like.
 //
-// What a pane shows of an item:
-//   mounted  - on this face: its outward panel
-//   through  - on the other face, deep enough to reach this one: its far panel
-//   ghost    - on the other face and short of this one: a dashed outline, so
-//              the space it takes is visible without hiding the free depth
-//              behind it
+// What a pane shows of an item (feedback round 3 §2 - there is no more
+// "ghost"; every device shows a real panel on both faces):
+//   mounted  - on this face: its outward panel, plus rack ears when `ears`
+//   through  - on the other face: its far panel, whether or not it reaches
 //   missing  - no compiled drawing for that panel: an outline saying so
 //
 // Every device goes through configuredFace, with its own swaps and fields.
@@ -71,32 +69,33 @@ function outline(top, ruH, text, attrs) {
   return g;
 }
 
-// A ghost must never read as the device's own panel: a dashed outline over a
-// hatch fill (an SVG <pattern>, defined once per pane so its id can't collide
-// with the other pane's), and muted text that names the face it is mounted
-// on rather than "· front," which the user misread as "its front is here".
-function ensureHatch(out, patternId) {
-  if (out.querySelector(`#${patternId}`)) return;
-  const defs = svgEl('defs', {});
-  const pattern = svgEl('pattern', {id: patternId, width: 6, height: 6,
-    patternTransform: 'rotate(45)', patternUnits: 'userSpaceOnUse'});
-  pattern.append(svgEl('rect', {width: 6, height: 6, fill: 'var(--pt-surface-2)', 'fill-opacity': 0.3}));
-  pattern.append(svgEl('line', {x1: 0, y1: 0, x2: 0, y2: 6, stroke: 'var(--pt-ink-muted)',
-    'stroke-width': 1.5, 'stroke-opacity': 0.5}));
-  defs.append(pattern);
-  out.append(defs);
-}
+// RACK EARS (feedback round 3 §2): an L-bracket flange over each rail at a
+// mounted device's height, drawn AFTER the device group so it overlaps its
+// edges like a real ear. Geometry matches rack3d.js's rackEars and the rails
+// in rails.js - the flange runs from the device's own edge (the opening's
+// side, x=0 or x=OPENING) out across the rail to just past the hole column
+// (SIDES[].hole), and a screw head sits at the device's top-most and
+// bottom-most holes (HOLE_DY) within its span - for a 1U device, that is
+// simply the first and last hole of that U.
+const EAR_OVERHANG = 3; // mm the flange runs past the hole centre, so the screw head sits inside it
 
-function ghostOutline(top, ruH, text, attrs, patternId) {
-  const g = svgEl('g', attrs);
-  g.append(svgEl('rect', {x: 0.5, y: top + 0.5, width: OPENING - 1, height: ruH * RU - 1, rx: 2,
-    fill: `url(#${patternId})`, stroke: 'var(--pt-ink-muted)',
-    'stroke-width': 1, 'stroke-dasharray': '4 3'}));
-  const t = svgEl('text', {x: OPENING / 2, y: top + ruH * RU / 2 + 4, 'text-anchor': 'middle',
-    'font-size': 10, 'font-family': 'IBM Plex Mono, monospace', fill: 'var(--pt-ink-muted)'});
-  t.textContent = text;
-  g.append(t);
-  return g;
+function drawEars(out, item, topOf, ruH) {
+  const X = x => x + OPENING / 2;
+  const top = topOf(ruH), bottom = topOf(0);
+  const screwYs = [bottom - HOLE_DY[0], topOf(ruH - 1) - HOLE_DY[HOLE_DY.length - 1]];
+  const g = svgEl('g', {class: 'rk-ears', 'data-ears-for': item.id, 'data-item-id': item.id,
+                        'pointer-events': 'all'});
+  for (const s of SIDES) {
+    const holeX = X(s.hole);
+    const x0 = s.side === 'left' ? holeX - EAR_OVERHANG : OPENING;
+    const x1 = s.side === 'left' ? 0 : holeX + EAR_OVERHANG;
+    g.append(svgEl('rect', {x: x0, y: top, width: x1 - x0, height: bottom - top,
+      fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
+    for (const cy of screwYs)
+      g.append(svgEl('circle', {cx: holeX, cy, r: HOLE_ROUND / 2,
+        fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
+  }
+  out.append(g);
 }
 
 // U at a given SVG y coordinate, the inverse of drawElevation's own layout
@@ -110,9 +109,9 @@ export function uAtY(frame, y, baseRU = 1) {
   return Math.min(baseRU + frame.heightRU - 1, Math.max(baseRU, baseRU + i));
 }
 
-export async function drawElevation({items, frame, view = 'front', baseRU = 1, reaches = () => true,
+export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
-                                     placeholders = true, depthOf = null}) {
+                                     placeholders = true, ears = false}) {
   const totalH = frame.heightRU * RU;
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
     viewBox: `${-RAIL_W - 6} -18 ${OPENING + RAIL_W * 2 + 12} ${totalH + 30}`});
@@ -128,30 +127,21 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1, r
     }
   }
   let styled = false;
-  for (const it of items) {
+  // Precedence (round 3 §2): draw every item's `through` panel before any
+  // `mounted` one, so a four-post pair sharing a U shows the item actually
+  // mounted on this face on top - by data-panel, not by item order.
+  const order = [...items].sort((a, b) => (a.face === view) - (b.face === view));
+  for (const it of order) {
     const common = {'data-item-id': it.id, 'data-device-name': it.label, 'data-device-ref': it.ref,
                     ...(it.id === selectedId ? {class: 'rk-selected'} : {})};
     const through = it.face !== view;
     const topOf = ruH => totalH - (it.ru - baseRU + ruH) * RU;
-    if (through && !reaches(it)) {
-      // A ghost lets clicks through to the empty U under it: the space
-      // behind a short device is exactly where a half-depth one goes.
-      const ruH = it.u ?? 1;
-      const patternId = `rk-hatch-${view}`;
-      ensureHatch(out, patternId);
-      const d = depthOf ? depthOf(it) : null;
-      const text = `${it.label} — ${it.face}-mounted${d != null ? `, ${Math.round(d)} mm deep` : ''}`;
-      out.append(ghostOutline(topOf(ruH), ruH, text,
-                         {...common, 'data-panel': 'ghost', 'pointer-events': 'none'}, patternId));
-      if (it.id === selectedId) out.append(ring(topOf(ruH), ruH));
-      continue;
-    }
     const panel = panelFor(it, view);
     const face = await configuredFace({ref: it.ref, cfg: it.cfg, view: panel,
                                        swaps: it.swaps || {}, fields: it.fields || {}});
+    const ruH = it.u ?? 1;
     if (!face) {
       if (placeholders) {
-        const ruH = it.u ?? 1;
         out.append(outline(topOf(ruH), ruH, `${it.label} · no ${panel} drawing`,
                            {...common, 'data-panel': 'missing'}));
         if (it.id === selectedId) out.append(ring(topOf(ruH), ruH));
@@ -162,8 +152,8 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1, r
     const vb = (root.getAttribute('viewBox') || '').split(/\s+/).map(Number);
     const w = parseFloat(root.getAttribute('width')) || vb[2];
     const h = parseFloat(root.getAttribute('height')) || vb[3];
-    const ruH = it.u ?? Math.max(1, Math.round(h / RU));
-    const y = topOf(ruH) + (ruH * RU - h) / 2;
+    const itemRuH = it.u ?? Math.max(1, Math.round(h / RU));
+    const y = topOf(itemRuH) + (itemRuH * RU - h) / 2;
     const g = svgEl('g', {transform: `translate(${(OPENING - w) / 2} ${y})`, ...common,
                           'data-panel': through ? 'through' : 'mounted'});
     // Ids are NOT rewritten per device. The compiled drawings carry no <defs>,
@@ -176,7 +166,10 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1, r
       g.append(document.importNode(kid, true));
     }
     out.append(g);
-    if (it.id === selectedId) out.append(ring(topOf(ruH), ruH));
+    // Ears only on the face the item is actually mounted on, and only after
+    // its own group, so they overlap its edges like a real ear.
+    if (!through && ears) drawEars(out, it, topOf, itemRuH);
+    if (it.id === selectedId) out.append(ring(topOf(itemRuH), itemRuH));
   }
   return out;
 }
