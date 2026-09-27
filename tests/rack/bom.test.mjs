@@ -43,6 +43,20 @@ test('the BOM counts devices by configuration and parts by reference, hardware l
   assert.deepEqual(X.BOM_COLUMNS, ['section', 'qty', 'manufacturer', 'model', 'description', 'ref']);
 });
 
+test('a BOM cell that opens as a formula is guarded; the device-import CSV cell is not', () => {
+  const label = '=HYPERLINK("x")';
+  assert.equal(X.bomCell(label), '"\'=HYPERLINK(""x"")"');
+  assert.equal(X.csvCell(label), '"=HYPERLINK(""x"")"');
+  assert.equal(X.bomCell('+1'), "'+1");
+  assert.equal(X.bomCell('-5'), "'-5");
+  assert.equal(X.bomCell('@cmd'), "'@cmd");
+  assert.equal(X.bomCell('plain'), 'plain');
+  assert.equal(X.bomCell(null), '');
+  const line = X.toCsv(X.BOM_COLUMNS, [{section: 'Devices', qty: 1, manufacturer: '', model: label,
+    description: '', ref: 'r1'}], [], {cell: X.bomCell}).split('\r\n')[1];
+  assert.equal(line, 'Devices,1,,"\'=HYPERLINK(""x"")",,r1');
+});
+
 test('mounting hardware is 4 per U: cage nuts and screws, or screws of the thread', () => {
   const tapped = M.normalizeFrame({holes: {style: 'tapped', thread: '12-24'}});
   assert.deepEqual(X.hardwareRows(tapped, [2]), [{section: 'Mounting hardware', qty: 8, manufacturer: '',

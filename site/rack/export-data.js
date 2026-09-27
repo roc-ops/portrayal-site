@@ -17,13 +17,15 @@ export const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d
 
 // RFC 4180: a cell with a comma, a quote, a line break or an edge space is
 // quoted, its quotes doubled. Nothing else is touched - a part number that
-// starts with "-" is a part number, not a formula to defuse.
+// starts with "-" is a part number, not a formula to defuse. NetBox and
+// Nautobot read this literally on import, so a guard prefix here would
+// corrupt a name; the BOM's spreadsheet-safe variant is `bomCell`, below.
 export const csvCell = v => {
   const s = v == null ? '' : String(v);
   return /[",\r\n]|^\s|\s$/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
-export function toCsv(columns, rows, notes = []) {
-  const line = cells => cells.map(csvCell).join(',');
+export function toCsv(columns, rows, notes = [], {cell = csvCell} = {}) {
+  const line = cells => cells.map(cell).join(',');
   const out = [line(columns), ...rows.map(r => line(columns.map(c => r[c])))];
   if (notes.length) out.push('', line(['Notes']), ...notes.map(n => line([n])));
   return `${out.join('\r\n')}\r\n`;
@@ -140,13 +142,17 @@ const runIn = (hay, needle) => needle.length > 0 && hay.some((_, i) =>
 export function matchDeviceType({cfg, manufacturer, paths}) {
   if (!paths?.length) return null;
   const own = paths.filter(p => vendorOf(p) === manufacturer);
-  const pool = own.length ? own : [...paths];
-  if (pool.length === 1) return {path: pool[0], guess: false, candidates: 1};
+  // No file of the chassis's own manufacturer: the match falls back to every
+  // file, so whatever wins is still someone else's part - a guess even when
+  // it is the only file, or the only one naming the configuration.
+  const fallback = !own.length;
+  const pool = fallback ? [...paths] : own;
+  if (pool.length === 1) return {path: pool[0], guess: fallback, candidates: 1};
   const want = tokens(cfg);
   const exact = pool.filter(p => runIn(tokens(stemOf(p)), want));
   if (exact.length) {
     const best = [...exact].sort((a, b) => tokens(stemOf(a)).length - tokens(stemOf(b)).length)[0];
-    return {path: best, guess: exact.length > 1, candidates: pool.length};
+    return {path: best, guess: fallback || exact.length > 1, candidates: pool.length};
   }
   const wanted = want.flatMap(t => [t, ...(ALIAS[t] || [])]);
   let best = pool[0], score = -1;
@@ -207,7 +213,10 @@ const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
 export function deviceImportRows({rack, items, types, target = 'netbox'}) {
   const T = TARGET_NAME[target] || 'NetBox';
   const names = uniqueNames(items);
-  const sorted = [...items].sort((a, b) => b.ru - a.ru || (a.face === b.face ? 0 : a.face === 'front' ? -1 : 1));
+  // Top down by the U a device's TOP occupies, not where it starts (ru is
+  // its bottom): a tall device reaches higher than its ru alone would say.
+  const topU = it => it.ru + it.u - 1;
+  const sorted = [...items].sort((a, b) => topU(b) - topU(a) || (a.face === b.face ? 0 : a.face === 'front' ? -1 : 1));
   const rows = sorted.map(it => {
     const t = types.get(it.id) || null;
     const n = names.get(it.id);
@@ -264,6 +273,13 @@ export function partManufacturer(comp, path) {
 }
 
 export const BOM_COLUMNS = ['section', 'qty', 'manufacturer', 'model', 'description', 'ref'];
+
+// The BOM is meant to open in a spreadsheet, unlike the device-import CSVs
+// (an importer reads those literally). A cell that OPENS as a formula -
+// starts with =, +, - or @ - gets a leading apostrophe first, so the
+// spreadsheet keeps it as text; csvCell then quotes it as any such text needs.
+const FORMULA_START = /^[=+\-@]/;
+export const bomCell = v => csvCell(FORMULA_START.test(String(v ?? '')) ? `'${v}` : v);
 
 export function bomRows({devices = [], parts = [], frame, railUs = []}) {
   const lines = new Map();

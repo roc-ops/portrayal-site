@@ -34,6 +34,12 @@ test('otherwise the best token score, with airflow and DC aliases, is a guess', 
     {path: asr[0], guess: true, candidates: 2});
 });
 
+test('falling back past the manufacturer filter is always a guess', () => {
+  const arrcus = nb('Arrcus', '7726-32X-O-AC-F');
+  assert.deepEqual(X.matchDeviceType({cfg: 'ac-f2b', manufacturer: 'Edgecore', paths: [arrcus]}),
+    {path: arrcus, guess: true, candidates: 1});
+});
+
 test('yamlHead reads the top-level identity, quoted or not', () => {
   const h = X.yamlHead('---\nmanufacturer: Cisco\nmodel: ASR 9901 Router, AC supplies\nslug: cisco-asr-9901\n' +
                        'u_height: 2.0\nis_full_depth: true\ninterfaces:\n  - name: x\n    model: nested\n');
@@ -83,6 +89,15 @@ test('NetBox rows: top down, unique names, planned, notes in comments', () => {
   assert.equal(rows[1].comments, 'Device type 7726-32X-O-AC-F is a best guess for configuration ac-f2b. ' +
     'Shares its U with demarc-i3 on the rear; NetBox refuses this while either type is full depth.');
   assert.equal(rows[3].comments, 'Device type ASR-9006-AC-V2 is a best guess for configuration base.');
+});
+
+test('rows sort by each item\'s top U, not where it starts', () => {
+  const tall = {id: 't1', ref: 'asr-9006', cfg: 'base', label: 'tall', ru: 2, u: 10, face: 'front', turned: false};
+  const short = {id: 't2', ref: 'tm-280', cfg: 'base', label: 'short', ru: 5, u: 1, face: 'front', turned: false};
+  const types = new Map([['t1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: false, guess: false}],
+                          ['t2', {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]]);
+  const {rows} = X.deviceImportRows({rack: RACK, items: [short, tall], types, target: 'netbox'});
+  assert.deepEqual(rows.map(r => r.name), ['tall', 'short']);
 });
 
 test('positions follow a top-down frame', () => {
