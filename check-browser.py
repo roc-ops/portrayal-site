@@ -4868,6 +4868,30 @@ def check_annotate_mode_in_address(page, base):
         bad.append(f"address: back in 3D the address is {again}, not mode=3d with debug=1 and the document")
     return bad
 
+
+@extra("svg-export.js is the one save/standalone; the showcase re-exports the same functions")
+def check_svg_export_leaf(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const S = await import('/site/svg-export.js');
+      const A = await import('/site/showcase/artifact.js');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.innerHTML = '<g data-pt-ui="tabindex" tabindex="0"><rect/></g><g data-pt-ui="*"/>';
+      document.body.append(svg);
+      const text = S.standalone(svg);
+      svg.remove();
+      return {same: A.save === S.save && A.standalone === S.standalone && A.saveSvg === S.saveSvg,
+              stripped: !text.includes('data-pt-ui') && !text.includes('tabindex'),
+              prolog: text.startsWith('<?xml')};
+    }""")
+    for k in ("same", "stripped", "prolog"):
+        if not r.get(k):
+            bad.append(f"svg-export: {k} is {r.get(k)!r}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
