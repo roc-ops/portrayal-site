@@ -8,6 +8,7 @@
 // method is a no-op, and the page says so - Save and Open still work.
 
 import {parseDoc, serialize} from './model.js';
+import {fileStem} from './export-data.js';
 
 const DB = 'portrayal-racks', STORE = 'docs';
 const done = req => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
@@ -63,7 +64,7 @@ export function autosaver(lib, delay = 500) {
   return {saveSoon(doc) { pending = doc; clearTimeout(timer); timer = setTimeout(flush, delay); }, flush};
 }
 
-const fileName = doc => `${(doc.racks[0]?.name || 'rack').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-|-$/g, '') || 'rack'}.rack.json`;
+const fileName = doc => `${fileStem(doc.racks[0]?.name)}.rack.json`;
 
 export function downloadDoc(doc) {
   const url = URL.createObjectURL(new Blob([serialize(doc)], {type: 'application/json'}));
