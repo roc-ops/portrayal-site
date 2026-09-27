@@ -4076,6 +4076,43 @@ def check_wide_tool_pages(page, base):
     return bad
 
 
+# THE DRAWING IS THERE ON A PHONE. Explorer and Annotate put the drawing beside
+# a 23rem side panel (Annotate adds a second at 28rem), and on a phone the
+# panels took the whole row - the stage was 7px wide at 375 and 0 at 360, so
+# the one thing both tools are for could not be seen. Below 720px they stack:
+# the drawing full width on top, the panels under it (roc-ops/portrayal-site#54).
+@extra("Explorer and Annotate show the drawing on a 360px phone")
+def check_phone_stage(page, base):
+    bad = []
+    page.set_viewport_size({"width": 360, "height": 740})
+    for name in ["explorer.html", "annotate.html"]:
+        page.goto(f"{base}/{name}", wait_until="load")
+        try:
+            page.wait_for_selector("#stage svg", timeout=15000)
+        except Exception:
+            bad.append(f"{name}: no drawing in the stage")
+            continue
+        r = page.evaluate("""() => {
+          const st = document.querySelector('#stage').getBoundingClientRect();
+          const panels = [...document.querySelectorAll('main > aside')].map(a => {
+            const b = a.getBoundingClientRect();
+            return {w: Math.round(b.width), h: Math.round(b.height), top: Math.round(b.top)};
+          });
+          return {w: Math.round(st.width), h: Math.round(st.height), bottom: Math.round(st.bottom),
+                  panels, sw: document.documentElement.scrollWidth,
+                  sh: document.documentElement.scrollHeight};
+        }""")
+        if r["w"] < 300 or r["h"] < 150:
+            bad.append(f"{name}: at 360x740 the stage is {r['w']}x{r['h']}px - too small to see the drawing")
+        for i, p in enumerate(r["panels"]):
+            if p["h"] < 80:
+                bad.append(f"{name}: side panel {i} is only {p['h']}px tall on a phone")
+            if p["top"] < r["bottom"] - 1:
+                bad.append(f"{name}: side panel {i} is beside the stage, not under it")
+        if r["sw"] > 360 or r["sh"] > 740:
+            bad.append(f"{name}: the page scrolls at 360x740 ({r['sw']}x{r['sh']}) - the tool should fit the screen")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

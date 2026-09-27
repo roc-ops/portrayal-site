@@ -50,6 +50,23 @@ body.tool > .fill { flex: 1; min-height: 0; display: flex; flex-direction: colum
   body.tool main > aside { min-width: 0; }
 }
 
+/* ON A PHONE THE DRAWING GOES ON TOP. Beside a 23rem panel - two, on the
+   Annotator - the stage was left 7px wide at 375px and nothing at 360px, so
+   the drawing, the point of both tools, could not be seen at all. Below 720px
+   the tool stacks: the stage full width on top with the larger share of the
+   height, each panel full width underneath, scrolling on its own. shell.js
+   fits the drawing to the stage's box, so it fills whatever this leaves it.
+   The panels' `width` would be a height in a column, so the basis is set
+   outright; the border moves from their left edge to their top. */
+@media (max-width: 719.98px) {
+  body.tool main { flex-direction: column; }
+  body.tool main > #stage { flex: 3 1 0; min-height: 0; }
+  body.tool main > aside {
+    flex: 2 1 0; width: auto; min-height: 0; overflow: auto;
+    border-left: none; border-top: 1px solid var(--line);
+  }
+}
+
 /* THE BAR GROWS WHEN ITS LINKS WRAP. On a phone the nav no longer fits beside
    the brand and wraps onto a second row, and a bar held at `height: 42px` left
    that row hanging over the page underneath - Export, Docs and GitHub drawn on
