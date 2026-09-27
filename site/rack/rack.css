@@ -9,6 +9,16 @@
 .rk-zoom { display: flex; align-items: center; gap: 0.4rem; margin-left: auto; }
 .rk-zoom button { min-width: 2rem; }
 #zoomLevel { color: var(--pt-ink-muted); font-size: 0.85rem; min-width: 3.2rem; text-align: center; }
+/* The 2D/3D switch, in the showcase's own #stageMode style (site/site.css's
+   .stage-mode) - the two toggles should read as the same control even though
+   they live on different pages. */
+.rk-mode { display: inline-flex; border: 1px solid var(--pt-line); border-radius: 6px; overflow: hidden; }
+.rk-mode button { background: none; border: none; color: var(--pt-ink-muted); cursor: pointer;
+  font: inherit; font-size: 0.85rem; padding: 0.3rem 0.7rem; }
+.rk-mode button + button { border-left: 1px solid var(--pt-line); }
+.rk-mode button:hover { color: var(--pt-ink); }
+.rk-mode button[aria-pressed="true"] { color: var(--pt-ink); background: var(--pt-surface-2); }
+.rk-mode button:focus-visible { outline: 2px solid var(--pt-brass); outline-offset: -2px; }
 .rk-menu { position: relative; }
 .rk-menu > summary { list-style: none; cursor: pointer; font-weight: 600; padding: 0.3rem 0.6rem;
   border: 1px solid var(--pt-line); border-radius: 6px; background: var(--pt-surface-2); }
@@ -25,6 +35,14 @@
 .rk-pane h2 { margin: 0 0 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--pt-ink-muted);
   text-transform: uppercase; letter-spacing: 0.06em; }
 .rk-pane svg { width: 100%; height: auto; display: block; }
+/* The 3D view, standing in the same grid cell #panes occupies (rack-page.js
+   toggles which of the two is shown, by inline style rather than [hidden] -
+   .rk-panes already sets its own `display`, which a plain [hidden] rule
+   would lose to). Filled by rack3d.js's own canvas, sized off this element. */
+.rk-stage3d { grid-column: 1; position: relative; overflow: hidden; background: var(--pt-ground); }
+.rk-stage3d canvas { display: block; }
+.rk-stage3d .rk-notice { position: absolute; inset: 0; margin: 0; padding: 1rem;
+  color: var(--pt-ink-muted); }
 .rk-u { cursor: pointer; }
 .rk-u:hover { fill: var(--pt-brass); fill-opacity: 0.12; }
 .rk-u-selected { fill: var(--pt-brass); fill-opacity: 0.22; }

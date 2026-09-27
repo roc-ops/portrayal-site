@@ -14,16 +14,76 @@ import {inspectorPanel} from './rack/inspector.js';
 import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
+import {mountRack3d} from './rack/scene3d.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
+const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
+function loadMode() {
+  try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
+  catch { return '2d'; }
+}
+function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  zoom: loadZoom(), svgs: [], undo: null,
+  zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null,
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
+
+// ── 3D ──────────────────────────────────────────────────────────────────
+// Rebuilt after every commit while in 3D (debounced) and whenever the frame
+// changes; the old scene's camera is saved and restored on the new one, so a
+// rebuild triggered by, say, a swap does not snap the view back to the
+// opening one. `epoch` drops a rebuild that was overtaken by a mode switch
+// or a faster-arriving one, the same guard rack3d.js's own build() uses.
+let stage3dEpoch = 0;
+async function rebuild3d() {
+  const mine = ++stage3dEpoch;
+  const old = S.scene3d;
+  const camera = old ? {position: old.three.camera.position.clone(),
+                        target: old.three.controls.target.clone()} : null;
+  if (old) { old.dispose(); S.scene3d = null; }
+  const built = await mountRack3d($('stage3d'), {rack: rack(), chassisOf, camera});
+  if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
+  S.scene3d = built;
+}
+let rebuild3dTimer = null;
+function scheduleRebuild3d() {
+  if (S.mode !== '3d') return;
+  clearTimeout(rebuild3dTimer);
+  rebuild3dTimer = setTimeout(rebuild3d, 300);
+}
+function paintMode() {
+  for (const b of document.querySelectorAll('#rkMode [data-mode]'))
+    b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode));
+}
+// Which container is shown. Both the `hidden` property AND an explicit
+// inline `display` are set on the one being hidden: `.rk-panes` sets its own
+// `display: grid`, an author rule, which always beats the UA's `[hidden] {
+// display: none }` regardless of which was written last or how specific it
+// is - so `hidden` alone does not hide it, and this needs the inline
+// override too. The element being shown has both cleared, falling back to
+// its ordinary class (`.rk-panes`'s grid, or a bare div's block).
+function showMode() {
+  const is3d = S.mode === '3d';
+  $('panes').hidden = is3d;
+  $('panes').style.display = is3d ? 'none' : '';
+  $('rkZoom').hidden = is3d;
+  $('rkZoom').style.display = is3d ? 'none' : '';
+  $('stage3d').hidden = !is3d;
+  $('stage3d').style.display = is3d ? '' : 'none';
+}
+function setMode(m) {
+  if ((m !== '2d' && m !== '3d') || m === S.mode) return;
+  S.mode = m;
+  saveMode(m);
+  paintMode();
+  showMode();
+  if (m === '3d') rebuild3d();
+  else if (S.scene3d) { S.scene3d.dispose(); S.scene3d = null; }
+}
 const rack = () => S.doc.racks[0];
 const itemById = id => rack().items.find(i => i.id === id) || null;
 
@@ -86,6 +146,7 @@ function commit(nextRack) {
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
   render();
+  scheduleRebuild3d();
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
@@ -93,6 +154,7 @@ function setDoc(doc) {
   try { localStorage.setItem(LAST, doc.id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
+  if (S.mode === '3d') rebuild3d();
 }
 
 // A frame change goes through commit() as usual, unless the height drops and
@@ -126,6 +188,7 @@ function commitFrame(patch) {
     S.doc = {...S.doc, racks: [next]};
     S.save.saveSoon(S.doc);
     render();
+    scheduleRebuild3d();
     return;
   }
   const next = withFrame(r, patch);
@@ -390,6 +453,10 @@ async function bootInner() {
   $('paneFront').addEventListener('pointerdown', drag.onPointerDown);
   $('paneRear').addEventListener('pointerdown', drag.onPointerDown);
   $('frameBtn').addEventListener('click', () => select(S.sel?.kind === 'frame' ? null : {kind: 'frame'}));
+  $('rkMode').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-mode]');
+    if (b) setMode(b.dataset.mode);
+  });
   $('zoomOut').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, -1)));
   $('zoomIn').addEventListener('click', () => setZoom(stepZoom($('panes'), S.svgs, S.zoom, 1)));
   $('zoomFit').addEventListener('click', () => setZoom('fit'));
@@ -442,10 +509,12 @@ async function bootInner() {
       }
     }
   });
+  paintMode();
+  showMode();
   setDoc(doc);
 }
 
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
-  window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush()};
+  window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d};
 }
