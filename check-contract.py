@@ -1049,7 +1049,7 @@ check(not _brit, "the kit page, its runner and its recipes are in American Engli
 
 # THE DOCS MENU: Schema and Using the kit, one menu, on every page with a nav.
 _DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "components.html",
-               "annotate.html", "drawio.html", "exporter.html", "drawings.html"]
+               "annotate.html", "drawio.html", "exporter.html", "drawings.html", "rack.html"]
 for _p in _DOCS_PAGES:
     _t = (HERE / _p).read_text()
     _m = re.search(r'<details class="navmenu"[^>]*data-docs[^>]*>(.*?)</details>', _t, re.S)
@@ -1192,7 +1192,7 @@ else:
 
 # ── every nav names the Rack Builder ───────────────────────────────────────
 for page_name in ("drawings.html", "explorer.html", "components.html", "schema.html",
-                  "annotate.html", "drawio.html", "exporter.html", "index.html", "rack.html"):
+                  "annotate.html", "drawio.html", "exporter.html", "index.html", "rack.html", "kit.html"):
     p = HERE / page_name
     check(p.is_file() and 'href="rack.html"' in p.read_text(),
           f"{page_name} links the Rack Builder", "the nav is copied by hand; add it there")
