@@ -237,3 +237,59 @@ export function dcimNotesText({rackName, target, date, notes}) {
     : `Every device and part in this rack matched a ${T} type.`;
   return `${T} types for ${rackName}, from the Portrayal Rack Builder, ${isoDate(date)}.\n\n${body}\n`;
 }
+
+// ── THE BILL OF MATERIALS (spec §8) ─────────────────────────────────────
+// A part counts when it is SEATED: a bay's module (`…/module`) or a cage's
+// occupant (`…-occupant` - an optic, a cap, a plug). Everything else in a
+// face that carries data-ref is the chassis itself (a door, a jack, every
+// port shape) and is already the device's line.
+export const isSeatedPath = path => /\/module$|-occupant$/.test(String(path));
+
+export const SECTIONS = [
+  ['device', 'Devices'], ['supervisor', 'Supervisors'], ['line-card', 'Line cards'], ['fabric', 'Fabric cards'],
+  ['expansion-card', 'Expansion cards'], ['nic', 'Network cards'], ['riser', 'Risers'], ['drive', 'Drives'],
+  ['psu', 'Power supplies'], ['fan', 'Fans'], ['filter', 'Filters'], ['cassette', 'Cassettes'],
+  ['adapter-panel', 'Adapter panels'], ['blank', 'Blanks'], ['transceiver', 'Optics'], ['port', 'Plugs'],
+  ['cap', 'Dust caps'], ['other', 'Other parts'], ['hardware', 'Mounting hardware']];
+const SECTION = new Map(SECTIONS);
+export const sectionOf = cls => SECTION.get(cls) ?? 'Other parts';
+const sectionOrder = label => SECTIONS.findIndex(([, l]) => l === label);
+
+export const firstSentence = text => String(text ?? '').split(/(?<=\.)\s/)[0];
+const titled = ns => ns.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+export function partManufacturer(comp, path) {
+  if (path) return vendorOf(path);
+  if (!comp || ['generic', 'std', 'common'].includes(comp.ns)) return '';
+  return titled(comp.ns);
+}
+
+export const BOM_COLUMNS = ['section', 'qty', 'manufacturer', 'model', 'description', 'ref'];
+
+export function bomRows({devices = [], parts = [], frame, railUs = []}) {
+  const lines = new Map();
+  const add = (key, row) => { const l = lines.get(key); if (l) l.qty++; else lines.set(key, {...row, qty: 1}); };
+  for (const d of devices)
+    add(`device|${d.ref}|${d.cfg}`, {section: 'Devices', manufacturer: d.manufacturer ?? '', model: d.model ?? d.ref,
+      description: d.cfg ? `Configuration ${d.cfg}` : '', ref: d.ref});
+  for (const p of parts)
+    add(`part|${p.ref}`, {section: sectionOf(p.cls), manufacturer: p.manufacturer ?? '', model: p.model ?? '',
+      description: p.description ?? '', ref: p.ref});
+  const rows = [...lines.values()].sort((a, b) => sectionOrder(a.section) - sectionOrder(b.section)
+    || String(a.model).localeCompare(String(b.model)) || String(a.ref).localeCompare(String(b.ref)));
+  return [...rows, ...hardwareRows(frame, railUs)];
+}
+
+// 2 ears x 2 screws x each U a rail item covers (Task 2 draws the same).
+export function hardwareRows(frame, railUs) {
+  const qty = 4 * railUs.reduce((s, u) => s + Math.max(1, u), 0);
+  if (!qty) return [];
+  const row = model => ({section: 'Mounting hardware', qty, manufacturer: '', model,
+    description: 'Two per ear for each U a device covers', ref: ''});
+  if (frame.holes?.style === 'tapped') return [row(`Screw, ${frame.holes.thread || 'thread not stated'}`)];
+  return [row('Cage nut, M6'), row('Screw, M6')];
+}
+export function hardwareNotes(frame) {
+  if (frame.holes?.style !== 'tapped')
+    return ["Cage nuts and screws are counted as M6, the usual size for square-hole rails; check your rack's own."];
+  return frame.holes.thread ? [] : ['The rail thread is not set under Frame, so the screws are listed without one.'];
+}
