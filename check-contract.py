@@ -1038,6 +1038,34 @@ for _p in _DOCS_PAGES:
           f"{_p}: the header has a Docs menu (Schema, Using the kit) in place of the Schema link",
           "no <details class=navmenu data-docs> with both links, or a bare Schema link left in the nav")
 
+# THE SOURCE MANIFEST, ONCE PER DEVICE (Portrayal #669). A face no longer embeds
+# its manifest; it names it by digest (source-sha256), and the manifest is
+# <device>.source.json beside the drawings. The kit page's "read the device"
+# recipe reads it, so every device in the index must have one, and a face's
+# digest must be that file's.
+import hashlib as _hl
+_devs = [d["name"] for d in jload("devices.json")["devices"]]
+_nosrc = [d for d in _devs if not (DIST / f"{d}.source.json").is_file()]
+check(not _nosrc, "every device in devices.json has its <device>.source.json",
+      f"{len(_nosrc)} missing, e.g. {_nosrc[:3]}")
+_s9 = DIST / "s9600-72xc.front.svg"
+_m = re.search(r"<metadata>(.*?)</metadata>", _s9.read_text(), re.S) if _s9.exists() else None
+_digest = json.loads(_m.group(1)).get("source-sha256") if _m else None
+_srcf = DIST / "s9600-72xc.source.json"
+check(bool(_digest) and _srcf.is_file() and _hl.sha256(_srcf.read_bytes()).hexdigest() == _digest,
+      "s9600-72xc's front face names its source.json by the file's sha256",
+      f"digest {_digest!r}")
+
+# THE DCIM EXPORTS COVER THE LIBRARY. refresh-assets.sh regenerates them by
+# running Portrayal's exporter; when a stale installed `portrayal` package
+# shadowed the clone's (Portrayal #561), the exporter could not find a single
+# manifest after #669 and index.json came out empty - with no failure anywhere.
+_ex = HERE / "assets" / "exports" / "index.json"
+_exi = json.loads(_ex.read_text()) if _ex.exists() else {}
+_nexp = [d for d in _devs if d not in _exi]
+check(not _nexp, "the DCIM exports index has an entry for every device in devices.json",
+      f"{len(_nexp)} of {len(_devs)} missing, e.g. {_nexp[:3]}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

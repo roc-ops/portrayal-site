@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="7.01mm" height="7.01mm" viewBox="0 0 7.01 7.01">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="din-1-0-2-3-jack" data-path="din-1-0-2-3-jack" data-class="port" data-ref="common/din-1-0-2-3-jack@1:1.0.0" data-media="coax-din-1-0-2-3" transform="translate(0,0)">
+    <title>din-1-0-2-3-jack</title>
+    <path id="din-1-0-2-3-jack--nut" fill="#c0c4c8" fill-rule="evenodd" d="M 0 3.505 A 3.505 3.505 0 1 0 7.01 3.505 A 3.505 3.505 0 1 0 0 3.505 Z        M 1.1375 3.505 A 2.3675 2.3675 0 1 0 5.8725 3.505 A 2.3675 2.3675 0 1 0 1.1375 3.505 Z" data-z-cyl="2.41" data-z-color="#c0c4c8" />
+    <g id="din-1-0-2-3-jack--jack" data-path="din-1-0-2-3-jack/jack" data-class="port" data-inner="1" data-ref="std/din-1-0-2-3@1:1.0.0" data-media="coax-din-1-0-2-3" transform="translate(0.71,0.71)">
+      <title>din-1-0-2-3-jack--jack</title>
+      <circle id="din-1-0-2-3-jack--jack--opening" cx="2.795" cy="2.795" r="2.795" fill="#8c9298" data-path="din-1-0-2-3-jack/jack/opening" data-class="cutout" />
+      <g id="din-1-0-2-3-jack--jack--collar" data-z-cyl="0.84" data-z-lift="2.41" data-z-color="#d7dade">
+        <circle cx="2.795" cy="2.795" r="2.3675" fill="#d7dade" stroke="#7d8388" stroke-width="0.08" />
+      </g>
+      <g id="din-1-0-2-3-jack--jack--barrel" data-z-cyl="3.95" data-z-lift="3.25" data-z-color="#d7dade">
+        <circle cx="2.795" cy="2.795" r="2.045" fill="#d7dade" stroke="#7d8388" stroke-width="0.08" />
+      </g>
+      <g id="din-1-0-2-3-jack--jack--groove" data-z-cyl="0.8" data-z-lift="7.2" data-z-color="#a9aeb3">
+        <circle cx="2.795" cy="2.795" r="1.8" fill="#a9aeb3" />
+      </g>
+      <g id="din-1-0-2-3-jack--jack--ring" data-z-cyl="1.4" data-z-lift="8.0" data-z-color="#d7dade">
+        <circle cx="2.795" cy="2.795" r="2.045" fill="#d7dade" stroke="#7d8388" stroke-width="0.08" />
+        <circle cx="2.795" cy="2.795" r="1.515" fill="#2b2f33" />
+        <circle cx="2.795" cy="2.795" r="1.38" fill="#8f8a7e" />
+        <circle cx="2.795" cy="2.795" r="0.4" fill="#c9a227" />
+      </g>
+      <g data-cp="mate" data-cp-at="2.795 2.795" data-cp-dir="front" />
+    </g>
+    <g data-cp="rf" data-cp-at="3.505 3.505" data-cp-dir="front" />
+  </g>
+</svg>

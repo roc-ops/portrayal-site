@@ -109,7 +109,7 @@
             <h2>Start here</h2>
             <p>A compiled device is one SVG per face (<code>&lt;device&gt;.&lt;config&gt;.&lt;view&gt;.svg</code>)
               plus <code>devices.json</code>, <code>components.json</code> and a
-              <code>&lt;device&gt;.configs.json</code> per device. The kit,
+              <code>&lt;device&gt;.configs.json</code> and a <code>&lt;device&gt;.source.json</code> per device. The kit,
               <code>@portrayal/kit</code>, is plain ES modules with no build step; three.js
               is needed only for 3D. The recipes below use the UfiSpace S9600-72XC.</p>
           </section>
@@ -139,9 +139,12 @@
           </section>
           <section class="kit-sec" id="metadata">
             <h2>Read the device from the drawing</h2>
-            <p>Each face carries its whole source manifest in <code>&lt;metadata&gt;</code>:
-              the device, its chassis in millimeters, its configurations. And
-              <code>devices.json</code> lists everything in the library.</p>
+            <p>Each device publishes its source manifest once, as
+              <code>&lt;device&gt;.source.json</code>: the device, its chassis in
+              millimeters, its configurations. Every face names that file by its
+              SHA-256 in <code>&lt;metadata&gt;</code>, so a drawing can be checked
+              against the source it was drawn from. And <code>devices.json</code>
+              lists everything in the library.</p>
             <figure class="kit-ex" data-example="03-metadata" data-run="view">
               <pre><code></code></pre>
               <div class="kit-result" aria-live="polite"></div>

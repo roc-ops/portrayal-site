@@ -166,7 +166,9 @@ cp "$SRC"/dist/labs.json "$HERE/assets/dist/"
 for f in vendors.json overlays.json gaps.json; do
   [ -f "$SRC/dist/$f" ] && cp "$SRC/dist/$f" "$HERE/assets/dist/"
 done
-for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json; do
+# <device>.source.json is the source manifest, published once per device since
+# Portrayal #669; a face names it by digest (source-sha256) instead of embedding it.
+for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json "$SRC"/dist/*.source.json; do
   cp "$f" "$HERE/assets/dist/"
 done
 
@@ -218,6 +220,13 @@ done
 # from the clone and the drawings from the live tree, which is how the partial
 # render above got in. Override only if you mean to mix them.
 TOOLS="${PORTRAYAL_TOOLS:-$SRC/../spec/tools/portrayal}"
+# THE CLONE'S OWN `portrayal` PACKAGE, NOT WHATEVER IS INSTALLED (Portrayal #561).
+# dcim_export.py imports `portrayal.*`, and running a script puts only its own
+# folder on sys.path - so an editable install pointing at some other checkout
+# won the import. After #669 moved the manifest out of the drawings, that stale
+# copy found no manifests at all and the exports came out empty, silently.
+PYTHONPATH="$(cd "$TOOLS/.." && pwd)${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONPATH
 INDEX="$EXPORTS/index.json"
 
 if [ -f "$TOOLS/dcim_export.py" ]; then

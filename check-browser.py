@@ -2185,7 +2185,7 @@ KIT_EXPECT = {
     "02-telemetry": lambda r: r.get("colored") == 5,
     "03-metadata": lambda r: r.get("device") == "UfiSpace S9600-72XC" and "base" in r.get("configs", [])
                    and r.get("chassis", {}).get("w") == 436 and r.get("chassis", {}).get("ru") == 2
-                   and r.get("devices", 0) >= 100,
+                   and r.get("devices", 0) >= 100 and r.get("verified") is True,
     "05-viewer3d": lambda r: True,     # clicked and asserted on its own below
     "04-seat": lambda r: r.get("seated", 0) >= 3 and r.get("refused") == [] and r.get("url", "").startswith("port-4~"),
     "06-marks": lambda r: r.get("marks") == 3 and r.get("svgBytes", 0) > 1000 and len(r.get("share", "")) > 10,
