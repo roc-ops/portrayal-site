@@ -164,6 +164,18 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
                     || group.classList.contains('rk-ears'))) return;
     const item = itemById(group.dataset.itemId);
     if (!item) return;
+    // A plain SVG shape counts as draggable content to Chromium's own,
+    // separate native drag-and-drop: with nothing telling it otherwise, a
+    // press-and-move over one can start a native drag instead of (really,
+    // as well as) this pointer-based one, and Chromium then fires a
+    // `pointercancel` for the gesture partway through the very first move -
+    // silently ending the drag before it ever reaches a drop. Calling
+    // preventDefault() on the pointer's down event is what the Pointer
+    // Events spec has browsers key that native drag/text-selection start on
+    // for a mouse press, so doing it here (once this press is confirmed to
+    // be on the item, not before) heads it off at the source instead of
+    // reacting after the fact.
+    ev.preventDefault();
     // A press on the ears group itself (fix round 1 #3) must still fade and
     // restore the item's own PANEL, not the small ear shapes - pointer
     // capture stays on whatever was actually pressed.

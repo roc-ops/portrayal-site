@@ -3464,6 +3464,23 @@ def check_rack_no_idb(page, base):
     return bad
 
 
+def wait_fn(page, label, expr, timeout=READY_MS):
+    # page.wait_for_function, but a timeout says which step it was - CI-only
+    # failures otherwise all look identical ("Timeout 60000ms exceeded.")
+    # with no clue which of a dozen waits in the check actually stalled.
+    try:
+        page.wait_for_function(expr, timeout=timeout)
+    except Exception as e:
+        raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
+
+
+def wait_sel(page, label, selector, timeout=READY_MS):
+    try:
+        return page.wait_for_selector(selector, timeout=timeout)
+    except Exception as e:
+        raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
+
+
 def u_center(page, face, u):
     box = page.eval_on_selector(
         f'svg[data-pane="{face}"] rect.rk-u[data-u="{u}"]',
@@ -3471,18 +3488,44 @@ def u_center(page, face, u):
     return box["x"], box["y"]
 
 
+def render_token(page):
+    # commit() (rack-page.js) writes the new ru/face onto window.__rack.doc()
+    # synchronously, then fires its `render()` WITHOUT awaiting it - render()
+    # is itself async (drawElevation awaits configuredFace per item), so the
+    # doc model can read as moved a tick before the DOM does. Locally that gap
+    # closes before Playwright's next command round-trips; on a loaded CI
+    # runner it doesn't, and a bare u_center()+mouse.down() right after the
+    # model wait grabs a stale (or momentarily missing) panel, so a fresh drag
+    # never even starts. render() replaces both pane <svg>s wholesale on every
+    # draw, so capturing the front one here and waiting for it to become a
+    # different node (below) is a precise, synchronous "the DOM caught up"
+    # signal - not a fixed sleep or frame count.
+    return page.evaluate_handle('() => document.querySelector(\'svg[data-pane="front"]\')')
+
+
+def wait_rendered(page, label, token, timeout=READY_MS):
+    try:
+        page.wait_for_function(
+            'old => document.querySelector(\'svg[data-pane="front"]\') !== old', arg=token, timeout=timeout)
+    except Exception as e:
+        raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
+    finally:
+        token.dispose()
+
+
 @extra("rack.html: drag a device to move it, across faces, with fit feedback and Esc to cancel")
 def check_rack_drag(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/rack.html?probe=1", wait_until="load")
-    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    wait_fn(page, "initial ready", "() => window.__rack && window.__rack.ready")
     page.evaluate("() => window.__rack.ready")
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    wait_fn(page, "new rack: items empty", "() => window.__rack.doc().racks[0].items.length === 0")
 
     pick(page, "front", 20, "AS7726", "as7726-32x")
-    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]', timeout=READY_MS)
+    wait_sel(page, "place as7726-32x on front U20",
+             'svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]')
 
     # Drag it from front U20 to front U25 - coordinates come from the U rects'
     # own boxes at the moment of each move, since the layout does not change
@@ -3505,10 +3548,11 @@ def check_rack_drag(page, base):
                                      "el => getComputedStyle(el).opacity")
     if float(opacity) >= 0.99:
         bad.append(f"drag: the dragged group is not dimmed mid-drag (opacity {opacity})")
+    tok = render_token(page)
     page.mouse.up()
-    page.wait_for_function(
-        "() => window.__rack.doc().racks[0].items[0].ru === 25 && window.__rack.doc().racks[0].items[0].face === 'front'",
-        timeout=READY_MS)
+    wait_fn(page, "same-pane drag front U20 -> U25",
+        "() => window.__rack.doc().racks[0].items[0].ru === 25 && window.__rack.doc().racks[0].items[0].face === 'front'")
+    wait_rendered(page, "same-pane drag front U20 -> U25: DOM settle", tok)
 
     # Drag it onto the rear pane: the face switches.
     x0, y0 = u_center(page, "front", 25)
@@ -3517,13 +3561,16 @@ def check_rack_drag(page, base):
     xr, yr = u_center(page, "rear", 25)
     page.mouse.move((x0 + xr) / 2, y0, steps=2)
     page.mouse.move(xr, yr, steps=3)
+    tok = render_token(page)
     page.mouse.up()
-    page.wait_for_function("() => window.__rack.doc().racks[0].items[0].face === 'rear'", timeout=READY_MS)
+    wait_fn(page, "cross-face drag front -> rear U25", "() => window.__rack.doc().racks[0].items[0].face === 'rear'")
+    wait_rendered(page, "cross-face drag front -> rear U25: DOM settle", tok)
 
     # A device already on rear U30 refuses a drop onto it, unchanged, and the
     # reason - not the whole side panel - is what tells the user why.
     pick(page, "rear", 30, "TM-280", "tm-280")
-    page.wait_for_selector('svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+    wait_sel(page, "place tm-280 on rear U30",
+             'svg[data-pane="rear"] [data-device-ref="tm-280"][data-panel="mounted"]')
     before = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     x0, y0 = u_center(page, "rear", before["ru"])
     page.mouse.move(x0, y0)
@@ -3532,7 +3579,7 @@ def check_rack_drag(page, base):
     page.mouse.move(x0, (y0 + y30) / 2, steps=2)
     page.mouse.move(x30, y30, steps=3)
     page.mouse.up()
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    wait_sel(page, "refused drop onto occupied rear U30 shows notice", ".rk-side .rk-notice")
     err = page.text_content(".rk-side .rk-notice") or ""
     after = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
     if "Taken by" not in err:
@@ -3556,11 +3603,11 @@ def check_rack_drag(page, base):
     # A real click right after that - on an empty U - still opens the picker:
     # the echo must not have swallowed this one instead.
     page.click('svg[data-pane="front"] rect.rk-u[data-u="1"]')
-    page.wait_for_selector("#catQuery", timeout=READY_MS)
+    wait_sel(page, "real click on empty front U1 opens picker", "#catQuery")
 
     # A short click (no movement) still selects.
     page.click('svg[data-pane="rear"] [data-device-ref="as7726-32x"]')
-    page.wait_for_selector("#iLabel", timeout=READY_MS)
+    wait_sel(page, "short click on rear device selects it", "#iLabel")
 
     # Esc mid-drag cancels: the item stays exactly where it was.
     before = page.evaluate("() => window.__rack.doc().racks[0].items[0]")
@@ -3577,18 +3624,20 @@ def check_rack_drag(page, base):
     # Two-post: front and rear are the same plane, so dragging one device onto
     # the other's U (even on the other face) is refused.
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    wait_fn(page, "two-post setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
     page.click("#frameBtn")
     page.select_option("#fKind", "two-post")
-    page.wait_for_function("() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
+    wait_fn(page, "two-post setup: frame kind switched", "() => window.__rack.doc().racks[0].frame.kind === 'two-post'")
     pick(page, "front", 10, "TM-280", "tm-280")
-    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="tm-280"][data-panel="mounted"]', timeout=READY_MS)
+    wait_sel(page, "two-post: place tm-280 on front U10",
+             'svg[data-pane="front"] [data-device-ref="tm-280"][data-panel="mounted"]')
     # The second device sits on the FRONT too (at U20): dragging the first
     # one onto the REAR at U20 makes the candidate's face differ from the
     # occupant's, which is exactly the two-post case ("one plane"), not a
     # same-face "Taken by" collision.
     pick(page, "front", 20, "TM-280", "tm-280")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 2")
+    wait_fn(page, "two-post: second tm-280 placed on front U20",
+            "() => window.__rack.doc().racks[0].items.length === 2")
     x0, y0 = u_center(page, "front", 10)
     page.mouse.move(x0, y0)
     page.mouse.down()
@@ -3596,7 +3645,7 @@ def check_rack_drag(page, base):
     page.mouse.move((x0 + x20) / 2, (y0 + y20) / 2, steps=2)
     page.mouse.move(x20, y20, steps=3)
     page.mouse.up()
-    page.wait_for_selector(".rk-side .rk-notice", timeout=READY_MS)
+    wait_sel(page, "two-post refused cross-face drop shows notice", ".rk-side .rk-notice")
     tp_err = page.text_content(".rk-side .rk-notice") or ""
     if "two-post rails are shared" not in tp_err:
         bad.append(f"drag: a two-post drop onto the other face's U was not refused as shared rails ({tp_err!r})")
@@ -3606,21 +3655,27 @@ def check_rack_drag(page, base):
     # highlight forever - a later drag of an unrelated device has to replace
     # the selection, on both a same-pane and a cross-pane drop.
     page.click("#libMenu > summary"); page.click("#libItems button:has-text('New rack')")
-    page.wait_for_function("() => window.__rack.doc().racks[0].items.length === 0")
+    wait_fn(page, "stale-selection setup: new rack empty", "() => window.__rack.doc().racks[0].items.length === 0")
     pick(page, "front", 20, "AS7726", "as7726-32x")
-    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]', timeout=READY_MS)
+    wait_sel(page, "stale-selection setup: place as7726-32x on front U20",
+             'svg[data-pane="front"] [data-device-ref="as7726-32x"][data-panel="mounted"]')
     page.click('svg[data-pane="rear"] rect.rk-u[data-u="12"]')
-    page.wait_for_selector("#catQuery", timeout=READY_MS)
+    wait_sel(page, "stale-selection: click empty rear U12 opens picker", "#catQuery")
     x0, y0 = u_center(page, "front", 20)
     page.mouse.move(x0, y0)
     page.mouse.down()
     xf, yf = u_center(page, "front", 7)
     page.mouse.move((x0 + xf) / 2, (y0 + yf) / 2, steps=2)
     page.mouse.move(xf, yf, steps=3)
+    tok = render_token(page)
     page.mouse.up()
-    page.wait_for_function(
-        "() => window.__rack.doc().racks[0].items[0].ru === 7 && window.__rack.doc().racks[0].items[0].face === 'front'",
-        timeout=READY_MS)
+    wait_fn(page, "same-pane drag front U20 -> U7 after stale selection",
+        "() => window.__rack.doc().racks[0].items[0].ru === 7 && window.__rack.doc().racks[0].items[0].face === 'front'")
+    # The stray-rect check below reads rk-u-selected, which drawElevation only
+    # sets during the (async) render triggered by this drop - without waiting
+    # for it, a stale pre-drop DOM could still show the old selection and be
+    # misread as the bug this block exists to catch.
+    wait_rendered(page, "same-pane drag front U20 -> U7 after stale selection: DOM settle", tok)
     stray = page.eval_on_selector_all("rect.rk-drop, rect.rk-u-selected", "els => els.length")
     if stray != 0:
         bad.append(f"drag: a stale rk-drop/rk-u-selected rect stayed after a same-pane drop ({stray} found)")
@@ -3628,16 +3683,18 @@ def check_rack_drag(page, base):
     # Repeat across a cross-pane drop: select empty rear U5 (opens the
     # catalog there), then drag the device from front to rear.
     page.click('svg[data-pane="rear"] rect.rk-u[data-u="5"]')
-    page.wait_for_selector("#catQuery", timeout=READY_MS)
+    wait_sel(page, "stale-selection: click empty rear U5 opens picker", "#catQuery")
     x0, y0 = u_center(page, "front", 7)
     page.mouse.move(x0, y0)
     page.mouse.down()
     xr, yr = u_center(page, "rear", 15)
     page.mouse.move((x0 + xr) / 2, y0, steps=2)
     page.mouse.move(xr, yr, steps=3)
+    tok = render_token(page)
     page.mouse.up()
-    page.wait_for_function(
-        "() => window.__rack.doc().racks[0].items[0].face === 'rear'", timeout=READY_MS)
+    wait_fn(page, "cross-pane drag front U7 -> rear U15 after stale selection",
+        "() => window.__rack.doc().racks[0].items[0].face === 'rear'")
+    wait_rendered(page, "cross-pane drag front U7 -> rear U15 after stale selection: DOM settle", tok)
     stray2 = page.eval_on_selector_all("rect.rk-drop, rect.rk-u-selected", "els => els.length")
     if stray2 != 0:
         bad.append(f"drag: a stale rk-drop/rk-u-selected rect stayed after a cross-pane drop ({stray2} found)")
