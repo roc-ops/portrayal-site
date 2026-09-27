@@ -996,6 +996,13 @@ check(re.search(r"try\s*\{(?:(?!catch).)*?await\s+mod\.run\(", _kps, re.S) is no
       "kit-page.js runs each example inside try/catch and records data-error",
       "no try { … await mod.run( … } with dataset.error")
 
+_frame = (HERE / "kit-frame.html")
+_fh = _frame.read_text() if _frame.exists() else ""
+_fm = re.search(r'<script type="importmap">\s*(\{.*?\})\s*</script>', _fh, re.S)
+check(bool(_fm) and json.loads(_fm.group(1))["imports"] == _imap and "<base" not in _fh,
+      "kit-frame.html sits beside kit.html and carries the same import map",
+      "the frame's import map differs from kit.html's, or it has a <base> (jdist resolves against location, not <base>)")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))

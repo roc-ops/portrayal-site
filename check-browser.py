@@ -2188,6 +2188,8 @@ KIT_EXPECT = {
                    and r.get("devices", 0) >= 100,
     "05-viewer3d": lambda r: True,     # clicked and asserted on its own below
     "04-seat": lambda r: r.get("seated", 0) >= 3 and r.get("refused") == [] and r.get("url", "").startswith("port-4~"),
+    "06-marks": lambda r: r.get("marks") == 3 and r.get("svgBytes", 0) > 1000 and len(r.get("share", "")) > 10,
+    "07-shell": lambda r: r.get("shell") is True and r.get("device") == "s9600-72xc",
 }
 
 @extra("kit.html: every recipe runs and returns what its section promises")
@@ -2195,6 +2197,7 @@ def check_kit_page(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"kit: uncaught {e}"))
     page.goto(f"{base}/kit.html", wait_until="load")
+    bg_before = page.evaluate("getComputedStyle(document.body).backgroundColor")   # before any recipe ran
     names = page.eval_on_selector_all("figure.kit-ex", "fs => fs.map(f => [f.dataset.example, f.dataset.run])")
     if sorted(n for n, _ in names) != sorted(KIT_EXPECT):
         bad.append(f"kit: figures {sorted(n for n, _ in names)} vs expected {sorted(KIT_EXPECT)}")
@@ -2212,6 +2215,12 @@ def check_kit_page(page, base):
         res = json.loads(page.get_attribute(fig, "data-result"))
         if not KIT_EXPECT.get(name, lambda r: True)(res):
             bad.append(f"kit: {name} returned {res}")
+    # the shell recipe runs in its own document: the guide's colors are untouched
+    page.locator('figure[data-example="07-shell"]').scroll_into_view_if_needed()
+    page.wait_for_selector('figure[data-example="07-shell"][data-result], figure[data-example="07-shell"][data-error]',
+                           timeout=READY_MS)
+    if page.evaluate("getComputedStyle(document.body).backgroundColor") != bg_before:
+        bad.append("kit: the shell recipe changed the guide page's own colors")
     # 01: a click on a port says its data-path
     page.click('figure[data-example="01-drawing"] .kit-result [data-path="port-12"]', force=True)
     said = page.text_content('figure[data-example="01-drawing"] .kit-result output') or ""

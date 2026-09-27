@@ -4,7 +4,7 @@
 //
 //   data-run="view"   runs when the figure first scrolls into view
 //   data-run="click"  runs only when asked (the 3D recipe: it is heavy)
-//   data-run="frame"  runs in site/kit-frame.html inside an iframe, for a
+//   data-run="frame"  runs in kit-frame.html inside an iframe, for a
 //                     recipe that styles :root (createShell does)
 //
 // A recipe that throws keeps its failure in its own pane (data-error) and the
@@ -64,7 +64,7 @@ function inFrame(pane, name) {
     const f = document.createElement('iframe');
     f.className = 'kit-frame';
     f.title = `${name} running on its own page`;
-    f.src = `site/kit-frame.html?ex=${encodeURIComponent(name)}`;
+    f.src = `kit-frame.html?ex=${encodeURIComponent(name)}`;
     const onMsg = e => {
       if (e.source !== f.contentWindow || e.data?.kitExample !== name) return;
       removeEventListener('message', onMsg);

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portrayal — a kit recipe on its own page</title>
+<link rel="stylesheet" href="brand/tokens.css">
+<style>html, body { margin: 0; height: 100%; background: var(--pt-ground); } #host { height: 100%; }</style>
+<!-- The same import map as kit.html. This page sits beside kit.html, at the
+     site root, so a recipe's relative URLs (DIST) resolve the same in both:
+     jdist resolves against location, which a base element would not move. -->
+<script type="importmap">
+{ "imports": {
+    "@portrayal/kit/dist": "./vendor/dist.js",
+    "@portrayal/kit/swap": "./vendor/swap.js",
+    "@portrayal/kit/viewer3d": "./vendor/viewer3d.js",
+    "@portrayal/kit/marks": "./vendor/marks.js",
+    "@portrayal/kit/shell": "./vendor/shell.js",
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+</head>
+<body>
+<div id="host"></div>
+<script type="module">
+// Runs one kit recipe in a document of its own, for a recipe that styles
+// :root (createShell does), and posts back what it returned. kit.html frames it.
+const name = new URLSearchParams(location.search).get('ex');
+const post = msg => parent.postMessage({kitExample: name, ...msg}, location.origin);
+try {
+  if (!/^\d\d-[a-z0-9-]+$/.test(name || '')) throw new Error(`not a recipe name: ${name}`);
+  const mod = await import(`./site/kit-examples/${name}.js`);
+  post({result: await mod.run(document.getElementById('host'))});
+} catch (err) {
+  post({error: String(err?.message || err)});
+}
+</script>
+</body>
+</html>
