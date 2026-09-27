@@ -3950,6 +3950,33 @@ def check_rack_mode_toggle_stable(page, base):
     return bad
 
 
+@extra("rack.html: rails, ears and screws are the same silver in light and dark")
+def check_rack_rails_metal(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    seen = {}
+    for scheme in ("light", "dark"):
+        page.emulate_media(color_scheme=scheme)
+        page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+        page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+        page.evaluate("() => window.__rack.ready")
+        page.wait_for_selector('svg[data-pane="front"] rect[data-rail]', timeout=READY_MS)
+        seen[scheme] = page.evaluate("""() => {
+          const rail = document.querySelector('svg[data-pane="front"] rect[data-rail]');
+          return getComputedStyle(rail).fill; }""")
+    if seen["light"] != seen["dark"]:
+        bad.append(f"rails change with the theme: light {seen['light']}, dark {seen['dark']}")
+    # The showcase keeps its themed rails.
+    page.goto(f"{base}/index.html", wait_until="load")
+    fill = page.evaluate("""async () => {
+      const {build2dElevation} = await import('/site/showcase/rack.js');
+      const svg = await build2dElevation({stack: [], heightRU: 2});
+      return svg.querySelector('rect[data-rail]').getAttribute('fill'); }""")
+    if fill != "var(--pt-surface-2)":
+        bad.append(f"the showcase's rails lost their theme color ({fill})")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

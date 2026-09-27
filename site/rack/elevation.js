@@ -20,12 +20,22 @@ import {uLabel} from './model.js';
 // front, unless it is turned; on the other face, the reverse.
 export const panelFor = (item, pane) => (((item.face === pane) !== !!item.turned) ? 'front' : 'rear');
 
-function drawRails(out, frame, baseRU, totalH) {
+// RAIL COLORS. The showcase draws its rails from the site's theme tokens, so
+// they follow light and dark mode. The Rack Builder draws them as metal:
+// fixed colors that stay silver in either theme, taken from site/rack3d.js's
+// own rail, hole, ear and screw materials so 2D and 3D agree.
+const THEMED = {rail: 'var(--pt-surface-2)', railLine: 'var(--pt-line)', hole: 'var(--pt-ground)',
+                num: 'var(--pt-ink-muted)', ear: 'var(--pt-ink-muted)', earOpacity: 0.35,
+                earLine: 'var(--pt-ink-muted)', screw: 'var(--pt-ink-muted)', screwLine: 'var(--pt-ink)'};
+const METAL = {rail: '#B9BFC6', railLine: '#8D949C', hole: '#15181B', num: '#2B3036',
+               ear: '#A8AEB5', earOpacity: 1, earLine: '#6F767E', screw: '#8D949C', screwLine: '#3A4047'};
+
+function drawRails(out, frame, baseRU, totalH, C = THEMED) {
   const X = x => x + OPENING / 2;
   const round = frame.holes?.style === 'tapped';
   for (const s of SIDES) {
     out.append(svgEl('rect', {x: X(Math.min(s.inner, s.outer)), y: 0, width: RAIL_W, height: totalH,
-      'data-rail': s.side, fill: 'var(--pt-surface-2)', stroke: 'var(--pt-line)', 'stroke-width': 1}));
+      'data-rail': s.side, fill: C.rail, stroke: C.railLine, 'stroke-width': 1}));
   }
   for (let i = 0; i < frame.heightRU; i++) {
     const u = baseRU + i;
@@ -33,9 +43,9 @@ function drawRails(out, frame, baseRU, totalH) {
     for (const s of SIDES) {
       const x0 = X(Math.min(s.inner, s.outer));
       out.append(svgEl('line', {x1: x0, y1: yBottom - RU, x2: x0 + RAIL_W, y2: yBottom - RU,
-        stroke: 'var(--pt-line)', 'stroke-width': 0.8}));
+        stroke: C.railLine, 'stroke-width': 0.8}));
       for (const dy of HOLE_DY) {
-        const hole = {fill: 'var(--pt-ground)', stroke: 'var(--pt-line)', 'stroke-width': 0.5,
+        const hole = {fill: C.hole, stroke: C.railLine, 'stroke-width': 0.5,
                       'data-rail-hole': s.side};
         out.append(round
           ? svgEl('circle', {cx: X(s.hole), cy: yBottom - dy, r: HOLE_ROUND / 2, ...hole})
@@ -44,7 +54,7 @@ function drawRails(out, frame, baseRU, totalH) {
       }
       const t = svgEl('text', {x: X(s.number), y: yBottom - RU / 2 + 4,
         'text-anchor': 'middle', 'font-family': 'IBM Plex Mono, monospace',
-        'font-size': 11, 'font-weight': 500, fill: 'var(--pt-ink-muted)', 'data-rail-num': s.side});
+        'font-size': 11, 'font-weight': 500, fill: C.num, 'data-rail-num': s.side});
       t.textContent = String(uLabel(frame, u));
       out.append(t);
     }
@@ -85,7 +95,7 @@ function outline(top, ruH, text, attrs) {
 const EAR_OVERHANG = 3; // mm the flange runs past the hole centre, so the screw head sits inside it
 const SCREW_SLOT = 1.6; // mm half-length of each screw head's slot line
 
-function drawEars(out, item, topOf, ruH) {
+function drawEars(out, item, topOf, ruH, C = THEMED) {
   const X = x => x + OPENING / 2;
   const top = topOf(ruH), bottom = topOf(0);
   const screwYs = [bottom - HOLE_DY[0], topOf(ruH - 1) - HOLE_DY[HOLE_DY.length - 1]];
@@ -96,12 +106,12 @@ function drawEars(out, item, topOf, ruH) {
     const x0 = s.side === 'left' ? holeX - EAR_OVERHANG : OPENING;
     const x1 = s.side === 'left' ? 0 : holeX + EAR_OVERHANG;
     g.append(svgEl('rect', {x: x0, y: top, width: x1 - x0, height: bottom - top,
-      fill: 'var(--pt-ink-muted)', 'fill-opacity': 0.35, stroke: 'var(--pt-ink-muted)', 'stroke-width': 1}));
+      fill: C.ear, 'fill-opacity': C.earOpacity, stroke: C.earLine, 'stroke-width': 1}));
     for (const cy of screwYs) {
       g.append(svgEl('circle', {cx: holeX, cy, r: HOLE_ROUND / 2,
-        fill: 'var(--pt-ink-muted)', stroke: 'var(--pt-ink)', 'stroke-width': 0.6}));
+        fill: C.screw, stroke: C.screwLine, 'stroke-width': 0.6}));
       g.append(svgEl('line', {x1: holeX - SCREW_SLOT, y1: cy, x2: holeX + SCREW_SLOT, y2: cy,
-        stroke: 'var(--pt-ink)', 'stroke-width': 0.5}));
+        stroke: C.screwLine, 'stroke-width': 0.5}));
     }
   }
   out.append(g);
@@ -120,11 +130,12 @@ export function uAtY(frame, y, baseRU = 1) {
 
 export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
-                                     placeholders = true, ears = false}) {
+                                     placeholders = true, ears = false, metal = false}) {
+  const C = metal ? METAL : THEMED;
   const totalH = frame.heightRU * RU;
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
     viewBox: `${-RAIL_W - 6} -18 ${OPENING + RAIL_W * 2 + 12} ${totalH + 30}`});
-  drawRails(out, frame, baseRU, totalH);
+  drawRails(out, frame, baseRU, totalH, C);
   // Under the devices, so a click on a device is the device's; a click on an
   // empty U lands here.
   if (hitTargets) {
@@ -186,7 +197,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     out.append(g);
     // Ears only on the face the item is actually mounted on, and only after
     // its own group, so they overlap its edges like a real ear.
-    if (!through && ears) drawEars(out, it, topOf, ruH);
+    if (!through && ears) drawEars(out, it, topOf, ruH, C);
     if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
   }
   for (const [top, ruH] of rings) out.append(ring(top, ruH));
