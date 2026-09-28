@@ -32,6 +32,14 @@ export const colorOf = l => l.media === 'copper'
 export const JACKETS = {mm: '#2bb3c8', sm: COLORS.os2, dac: '#15171a', cu: COLORS.copper.server};
 export const colorOfJacket = j => JACKETS[j] || JACKETS.sm;
 
+// PLUGS: what an LC plug's plastic looks like, by the fiber it carries, as in
+// a real rack - single-mode UPC is blue, OM3/OM4 multimode is aqua, the same
+// aqua as its jacket. The library draws every lc-plug neutral gray; the
+// front-page hero recolors the plugs it seats from this table. A jacket with
+// no plug color (a DAC, copper) has none to change.
+export const PLUGS = {sm: '#2a6fd4', mm: JACKETS.mm};
+export const plugColorOf = j => PLUGS[j] || null;
+
 export const WIDTH = 3;          // mm: a patch lead, to scale
 const MERGE = 10;                // mm below a duplex pair where the two strands join
 // How far a cable hangs below the lower of its two ends: a little always, more

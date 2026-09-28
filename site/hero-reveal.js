@@ -13,7 +13,7 @@
 import {applyFaceOverrides} from '../vendor/swap.js';
 import {jdist} from '../vendor/dist.js';
 import {cablePoints} from '../vendor/relief.js';
-import {WIDTH, sag2d, plugAt, colorOfJacket, JACKETS} from './showcase/cables.js';
+import {WIDTH, sag2d, plugAt, colorOfJacket, plugColorOf} from './showcase/cables.js';
 
 const SVG = 'assets/dist/s9600-72xc.front.svg';
 const PNG = 'assets/exports/netbox/elevation-images/UfiSpace/'
@@ -169,15 +169,10 @@ export const PORTS = {
 // 2D and in 3D alike. The showcase's WIDTH is left alone.
 export const cableScale = jacket => (jacket === 'dac' ? 2 : 1);
 
-// AN LC PLUG IS COLORED BY THE FIBER IT CARRIES, as it is in a real rack:
-// single-mode UPC is blue, and OM3/OM4 multimode is aqua, the same aqua as its
-// jacket. The library draws every lc-plug a neutral gray, and stays that way;
-// the hero recolors its own seated plugs. Only the plastic changes - the
-// ceramic ferrule and its bore keep their colors. APC green and OM1/OM2 beige
-// have no row here, so they are not listed.
-export const PLUG_COLORS = {sm: '#2a6fd4', mm: JACKETS.mm};
-export const plugColorOf = jacket => PLUG_COLORS[jacket] || null;
-
+// AN LC PLUG IS COLORED BY THE FIBER IT CARRIES, from cables.js's PLUGS
+// table beside the jackets. The library's lc-plug stays gray; the hero
+// recolors its own seated plugs, and only their plastic - the ceramic ferrule
+// and its bore keep their colors.
 // The plug's plastic, as the library draws it: the body, and the latch parts a
 // shade lighter. A recolor keeps that shade relationship, so the latch still
 // reads against the body.

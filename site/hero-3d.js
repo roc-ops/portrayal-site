@@ -19,9 +19,9 @@
 // its cables hung - and then only when the browser is next idle, so the front
 // page's first paint and the 2D hero never compete with three.js. On a narrow
 // screen the panel must be on screen, not merely near it, to start.
-import {PORTS, DEFAULT_PORT, captionOf, lampStates, cableScale, plugColorOf, plugPathsOf,
+import {PORTS, DEFAULT_PORT, captionOf, lampStates, cableScale, plugPathsOf,
         shadeHex, LATCH_SHADE} from './hero-reveal.js';
-import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket} from './showcase/cables.js';
+import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket, plugColorOf} from './showcase/cables.js';
 import {guard3d} from './webgl.js';
 
 const REF = 's9600-72xc';
@@ -519,7 +519,7 @@ function fade(THREE, geom, upto = FADE_FROM) {
 }
 
 // THE LC PLUGS, COLORED BY FIBER, as the 2D hero colors them (hero-reveal.js's
-// colorHeroPlugs, whose table this reads). A plug part is a few meshes tagged
+// colorHeroPlugs; both read cables.js's PLUGS). A plug part is a few meshes tagged
 // with its path: Lambert sides, which take the color outright, and a face
 // that is a small canvas rasterised from the library's gray drawing. The face
 // is repainted pixel by pixel - only the plug's neutral mid-grays, each kept
