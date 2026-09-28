@@ -1,0 +1,952 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.5mm" height="43.1mm" viewBox="0 0 438.5 43.1" data-device="ds4101" data-view="front" data-dimensions-note="W 438.5 x D 657.5 x H 43.1 mm (datasheet and guide)" data-switching-capacity="25.6 Tbps" data-port-speeds="10/25/40/50/100/200/400GbE capable; SKU text 32 x 2x400GbE" data-psu-rating-note="1+1 redundant hot-swap 2000 W PSUs" data-input-ac="100 ~ 240 VAC (50-60 Hz) (guide); 100-240 V nominal, 90-264 V max, 47-63 Hz (datasheet)" data-airflow-options="front-to-back only" data-operating-temp="0 to 40 C at 950 m" data-humidity="5% to 85% (guide); 5% to 95% non-condensing (datasheet)" data-switch-silicon="Broadcom StrataXGS Tomahawk 4-100 (TH4-100)" data-cpu="Intel Hewitt Lake (Xeon D) 4-core or 8-core, 2.9 GHz" data-memory="up to 32 GB ECC DDR4" data-storage="128 GB or 256 GB SSD" data-bmc="RunBMC option (OpenBMC)" data-software="SONiC; ONIE installer; ONL; Redfish" data-optics-osfp="up to 20 W transceivers, up to 28 W on ports 1, 2, 31 and 32 (guide); up to 20 W / 26 W (datasheet)" data-timing="IEEE 1588 1-step and 2-step time stamping; transparent and boundary clock; SyncE clock recovery (option)" data-emc="CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI" data-safety="UL/CSA/IEC/EN 60950-1/62368-1" data-environment="EU RoHS, SVHC requirements of REACH, China RoHS" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS4101","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"celestica/lug-tag-ridge-16@1":"1.0.0","common/led-dot@1":"1.1.0","common/led-indicator@1":"1.2.0","common/led-rect-sm@1":"1.0.0","common/rj45-ganged-eth@1":"1.2.0","std/osfp@1":"1.0.0","std/rj45-ganged@2":"2.1.0","std/sfp@1":"1.4.1","std/usb-a@1":"1.3.0"},"source-sha256":"84f0969e51e965a74f41e3b0560cb1e1cafbac1ba103bf70418d35a6c0bd9749","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS4101" data-sku="R4030-F9003-A1" data-part-number="R4030-F9003-A1" x="0" y="0" width="438.5" height="43.1" rx="1.2" fill="#161718" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-grille" width="12" height="12" patternUnits="userSpaceOnUse">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+    <pattern id="portrayal-slots-h" width="14" height="8" patternUnits="userSpaceOnUse">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-slots-h-o0-0-s0_178571-0_3625" width="14" height="8" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.178571 0.3625)">
+      <rect x="2.5" y="2.9" width="9" height="2.2" rx="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-grille-o0-0-s0_216667-0_3" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.216667 0.3)">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+    <pattern id="portrayal-grille-o0-0-s0_208333-0_25" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.208333 0.25)">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+    <pattern id="portrayal-grille-o0-0-s0_283333-0_2" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.283333 0.2)">
+      <rect x="0.9" y="0.9" width="10.2" height="10.2" rx="1.2" fill="#15181b" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="vent-top" data-kind="vent-field" data-aperture="air" x="4.5" y="0.15" width="409" height="2.9" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_178571-0_3625)" data-vent="20" />
+    <rect id="vent-bottom" data-kind="vent-field" data-aperture="air" x="12" y="39.35" width="401" height="2.9" rx="0.6" fill="url(#portrayal-slots-h-o0-0-s0_178571-0_3625)" data-vent="20" />
+    <rect id="vent-left" data-kind="vent-field" data-aperture="air" x="2.5" y="29.5" width="7.8" height="11" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_216667-0_3)" data-vent="20" />
+    <rect id="vent-right" data-kind="vent-field" data-aperture="air" x="432.6" y="3" width="5" height="37.5" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_208333-0_25)" data-vent="20" />
+    <rect id="vent-sfp-top" data-kind="vent-field" data-aperture="air" x="414.8" y="2.9" width="17" height="2.4" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_283333-0_2)" data-vent="20" />
+    <rect id="vent-sfp-bottom" data-kind="vent-field" data-aperture="air" x="414.8" y="34" width="17" height="2.4" rx="0.6" fill="url(#portrayal-grille-o0-0-s0_283333-0_2)" data-vent="20" />
+    <rect id="mgmt-shell" data-kind="port-shell" x="11.7" y="6.5" width="16.6" height="32.1" rx="0.8" fill="#c9cdd1" />
+  </g>
+  <rect id="region--optics" data-path="region:optics" data-class="region" data-members="port-1 port-2 port-3 port-4 port-5 port-6 port-7 port-8 port-9 port-10 port-11 port-12 port-13 port-14 port-15 port-16 port-17 port-18 port-19 port-20 port-21 port-22 port-23 port-24 port-25 port-26 port-27 port-28 port-29 port-30 port-31 port-32" x="31" y="4.5" width="383" height="33.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--management" data-path="region:management" data-class="region" data-members="led-stat led-fan led-pwr led-alm console usb mgmt-eth" x="0.5" y="6" width="28.5" height="33" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--out-of-band" data-path="region:out-of-band" data-class="region" data-members="mgmt-sfp-1 mgmt-sfp-2" x="415.5" y="6" width="17" height="29" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="31.72" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-1" data-path="cutout:port-1" data-class="cutout" />
+    <rect x="31.72" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-2" data-path="cutout:port-2" data-class="cutout" />
+    <rect x="54.93" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-3" data-path="cutout:port-3" data-class="cutout" />
+    <rect x="54.93" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-4" data-path="cutout:port-4" data-class="cutout" />
+    <rect x="78.15" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-5" data-path="cutout:port-5" data-class="cutout" />
+    <rect x="78.15" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-6" data-path="cutout:port-6" data-class="cutout" />
+    <rect x="101.36" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-7" data-path="cutout:port-7" data-class="cutout" />
+    <rect x="101.36" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-8" data-path="cutout:port-8" data-class="cutout" />
+    <rect x="127.92" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-9" data-path="cutout:port-9" data-class="cutout" />
+    <rect x="127.92" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-10" data-path="cutout:port-10" data-class="cutout" />
+    <rect x="151.13" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-11" data-path="cutout:port-11" data-class="cutout" />
+    <rect x="151.13" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-12" data-path="cutout:port-12" data-class="cutout" />
+    <rect x="174.34" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-13" data-path="cutout:port-13" data-class="cutout" />
+    <rect x="174.34" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-14" data-path="cutout:port-14" data-class="cutout" />
+    <rect x="197.56" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-15" data-path="cutout:port-15" data-class="cutout" />
+    <rect x="197.56" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-16" data-path="cutout:port-16" data-class="cutout" />
+    <rect x="224.11" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-17" data-path="cutout:port-17" data-class="cutout" />
+    <rect x="224.11" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-18" data-path="cutout:port-18" data-class="cutout" />
+    <rect x="247.33" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-19" data-path="cutout:port-19" data-class="cutout" />
+    <rect x="247.33" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-20" data-path="cutout:port-20" data-class="cutout" />
+    <rect x="270.54" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-21" data-path="cutout:port-21" data-class="cutout" />
+    <rect x="270.54" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-22" data-path="cutout:port-22" data-class="cutout" />
+    <rect x="293.76" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-23" data-path="cutout:port-23" data-class="cutout" />
+    <rect x="293.76" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-24" data-path="cutout:port-24" data-class="cutout" />
+    <rect x="320.31" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-25" data-path="cutout:port-25" data-class="cutout" />
+    <rect x="320.31" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-26" data-path="cutout:port-26" data-class="cutout" />
+    <rect x="343.52" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-27" data-path="cutout:port-27" data-class="cutout" />
+    <rect x="343.52" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-28" data-path="cutout:port-28" data-class="cutout" />
+    <rect x="366.74" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-29" data-path="cutout:port-29" data-class="cutout" />
+    <rect x="366.74" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-30" data-path="cutout:port-30" data-class="cutout" />
+    <rect x="389.95" y="5.2" width="23.1" height="13.5" fill="#101214" id="cutout--port-31" data-path="cutout:port-31" data-class="cutout" />
+    <rect x="389.95" y="23.58" width="23.1" height="13.5" fill="#101214" id="cutout--port-32" data-path="cutout:port-32" data-class="cutout" />
+    <rect x="34.75" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-1" data-path="cutout:led-win-1" data-class="cutout" />
+    <rect x="48.93" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-2" data-path="cutout:led-win-2" data-class="cutout" />
+    <rect x="51.94" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-3" data-path="cutout:led-win-3" data-class="cutout" />
+    <rect x="55.02" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-4" data-path="cutout:led-win-4" data-class="cutout" />
+    <rect x="57.97" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-5" data-path="cutout:led-win-5" data-class="cutout" />
+    <rect x="72.21" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-6" data-path="cutout:led-win-6" data-class="cutout" />
+    <rect x="75.16" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-7" data-path="cutout:led-win-7" data-class="cutout" />
+    <rect x="78.24" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-8" data-path="cutout:led-win-8" data-class="cutout" />
+    <rect x="81.19" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-9" data-path="cutout:led-win-9" data-class="cutout" />
+    <rect x="95.43" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-10" data-path="cutout:led-win-10" data-class="cutout" />
+    <rect x="98.38" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-11" data-path="cutout:led-win-11" data-class="cutout" />
+    <rect x="101.46" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-12" data-path="cutout:led-win-12" data-class="cutout" />
+    <rect x="104.41" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-13" data-path="cutout:led-win-13" data-class="cutout" />
+    <rect x="118.59" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-14" data-path="cutout:led-win-14" data-class="cutout" />
+    <rect x="121.61" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-15" data-path="cutout:led-win-15" data-class="cutout" />
+    <rect x="127.96" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-16" data-path="cutout:led-win-16" data-class="cutout" />
+    <rect x="131.03" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-17" data-path="cutout:led-win-17" data-class="cutout" />
+    <rect x="145.21" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-18" data-path="cutout:led-win-18" data-class="cutout" />
+    <rect x="148.23" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-19" data-path="cutout:led-win-19" data-class="cutout" />
+    <rect x="151.24" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-20" data-path="cutout:led-win-20" data-class="cutout" />
+    <rect x="154.26" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-21" data-path="cutout:led-win-21" data-class="cutout" />
+    <rect x="168.43" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-22" data-path="cutout:led-win-22" data-class="cutout" />
+    <rect x="171.45" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-23" data-path="cutout:led-win-23" data-class="cutout" />
+    <rect x="174.46" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-24" data-path="cutout:led-win-24" data-class="cutout" />
+    <rect x="177.48" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-25" data-path="cutout:led-win-25" data-class="cutout" />
+    <rect x="191.65" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-26" data-path="cutout:led-win-26" data-class="cutout" />
+    <rect x="194.67" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-27" data-path="cutout:led-win-27" data-class="cutout" />
+    <rect x="197.68" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-28" data-path="cutout:led-win-28" data-class="cutout" />
+    <rect x="200.7" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-29" data-path="cutout:led-win-29" data-class="cutout" />
+    <rect x="214.87" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-30" data-path="cutout:led-win-30" data-class="cutout" />
+    <rect x="217.89" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-31" data-path="cutout:led-win-31" data-class="cutout" />
+    <rect x="224.3" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-32" data-path="cutout:led-win-32" data-class="cutout" />
+    <rect x="227.25" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-33" data-path="cutout:led-win-33" data-class="cutout" />
+    <rect x="241.49" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-34" data-path="cutout:led-win-34" data-class="cutout" />
+    <rect x="244.44" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-35" data-path="cutout:led-win-35" data-class="cutout" />
+    <rect x="247.52" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-36" data-path="cutout:led-win-36" data-class="cutout" />
+    <rect x="250.47" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-37" data-path="cutout:led-win-37" data-class="cutout" />
+    <rect x="264.71" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-38" data-path="cutout:led-win-38" data-class="cutout" />
+    <rect x="267.73" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-39" data-path="cutout:led-win-39" data-class="cutout" />
+    <rect x="270.74" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-40" data-path="cutout:led-win-40" data-class="cutout" />
+    <rect x="273.69" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-41" data-path="cutout:led-win-41" data-class="cutout" />
+    <rect x="287.93" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-42" data-path="cutout:led-win-42" data-class="cutout" />
+    <rect x="290.95" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-43" data-path="cutout:led-win-43" data-class="cutout" />
+    <rect x="293.96" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-44" data-path="cutout:led-win-44" data-class="cutout" />
+    <rect x="296.92" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-45" data-path="cutout:led-win-45" data-class="cutout" />
+    <rect x="311.16" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-46" data-path="cutout:led-win-46" data-class="cutout" />
+    <rect x="314.11" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-47" data-path="cutout:led-win-47" data-class="cutout" />
+    <rect x="320.52" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-48" data-path="cutout:led-win-48" data-class="cutout" />
+    <rect x="323.54" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-49" data-path="cutout:led-win-49" data-class="cutout" />
+    <rect x="337.71" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-50" data-path="cutout:led-win-50" data-class="cutout" />
+    <rect x="340.73" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-51" data-path="cutout:led-win-51" data-class="cutout" />
+    <rect x="343.74" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-52" data-path="cutout:led-win-52" data-class="cutout" />
+    <rect x="346.76" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-53" data-path="cutout:led-win-53" data-class="cutout" />
+    <rect x="360.93" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-54" data-path="cutout:led-win-54" data-class="cutout" />
+    <rect x="364.01" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-55" data-path="cutout:led-win-55" data-class="cutout" />
+    <rect x="366.96" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-56" data-path="cutout:led-win-56" data-class="cutout" />
+    <rect x="369.98" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-57" data-path="cutout:led-win-57" data-class="cutout" />
+    <rect x="384.15" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-58" data-path="cutout:led-win-58" data-class="cutout" />
+    <rect x="387.23" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-59" data-path="cutout:led-win-59" data-class="cutout" />
+    <rect x="390.18" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-60" data-path="cutout:led-win-60" data-class="cutout" />
+    <rect x="393.26" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-61" data-path="cutout:led-win-61" data-class="cutout" />
+    <rect x="407.37" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-62" data-path="cutout:led-win-62" data-class="cutout" />
+    <rect x="410.45" y="20.33" width="2.8" height="1.6" fill="#101214" id="cutout--led-win-63" data-path="cutout:led-win-63" data-class="cutout" />
+    <rect x="416.55" y="9.65" width="14.5" height="10" fill="#101214" id="cutout--mgmt-sfp-1" data-path="cutout:mgmt-sfp-1" data-class="cutout" />
+    <rect x="416.55" y="22.95" width="14.5" height="10" fill="#101214" id="cutout--mgmt-sfp-2" data-path="cutout:mgmt-sfp-2" data-class="cutout" />
+    <ellipse cx="420.86" cy="7.91" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-1" data-path="cutout:led-sfp-1" data-class="cutout" />
+    <ellipse cx="426.76" cy="7.91" rx="1" ry="1" fill="#101214" id="cutout--led-sfp-2" data-path="cutout:led-sfp-2" data-class="cutout" />
+    <ellipse cx="7.7" cy="11.79" rx="2" ry="2" fill="#101214" id="cutout--led-stat" data-path="cutout:led-stat" data-class="cutout" />
+    <ellipse cx="7.7" cy="16.82" rx="2" ry="2" fill="#101214" id="cutout--led-fan" data-path="cutout:led-fan" data-class="cutout" />
+    <ellipse cx="7.7" cy="21.84" rx="2" ry="2" fill="#101214" id="cutout--led-pwr" data-path="cutout:led-pwr" data-class="cutout" />
+    <ellipse cx="7.7" cy="26.99" rx="2" ry="2" fill="#101214" id="cutout--led-alm" data-path="cutout:led-alm" data-class="cutout" />
+    <rect x="13.65" y="7.4" width="12.7" height="11" fill="#101214" id="cutout--console" data-path="cutout:console" data-class="cutout" />
+    <rect x="14" y="19.9" width="12" height="4.5" fill="#101214" id="cutout--usb" data-path="cutout:usb" data-class="cutout" />
+    <rect x="13.65" y="26.6" width="12.7" height="11" fill="#101214" id="cutout--mgmt-eth" data-path="cutout:mgmt-eth" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="41.37" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-1" data-path="silk:silk-port-1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1">1</text>
+    <text x="43.27" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-1-2" data-path="silk:silk-arrows-1-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-1 port-2">▲▼</text>
+    <text x="45.17" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-2" data-path="silk:silk-port-2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-2">2</text>
+    <text x="64.58" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-3" data-path="silk:silk-port-3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3">3</text>
+    <text x="66.48" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-3-4" data-path="silk:silk-arrows-3-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-3 port-4">▲▼</text>
+    <text x="68.38" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-4" data-path="silk:silk-port-4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-4">4</text>
+    <text x="87.8" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-5" data-path="silk:silk-port-5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5">5</text>
+    <text x="89.7" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-5-6" data-path="silk:silk-arrows-5-6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-5 port-6">▲▼</text>
+    <text x="91.6" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-6" data-path="silk:silk-port-6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-6">6</text>
+    <text x="111.01" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-7" data-path="silk:silk-port-7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7">7</text>
+    <text x="112.91" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-7-8" data-path="silk:silk-arrows-7-8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-7 port-8">▲▼</text>
+    <text x="114.81" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-8" data-path="silk:silk-port-8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-8">8</text>
+    <text x="137.57" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-9" data-path="silk:silk-port-9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9">9</text>
+    <text x="139.47" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-9-10" data-path="silk:silk-arrows-9-10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-9 port-10">▲▼</text>
+    <text x="141.37" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-10" data-path="silk:silk-port-10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-10">10</text>
+    <text x="160.78" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-11" data-path="silk:silk-port-11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11">11</text>
+    <text x="162.68" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-11-12" data-path="silk:silk-arrows-11-12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-11 port-12">▲▼</text>
+    <text x="164.58" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-12" data-path="silk:silk-port-12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-12">12</text>
+    <text x="184" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-13" data-path="silk:silk-port-13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13">13</text>
+    <text x="185.9" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-13-14" data-path="silk:silk-arrows-13-14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-13 port-14">▲▼</text>
+    <text x="187.8" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-14" data-path="silk:silk-port-14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-14">14</text>
+    <text x="207.21" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-15" data-path="silk:silk-port-15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15">15</text>
+    <text x="209.11" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-15-16" data-path="silk:silk-arrows-15-16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-15 port-16">▲▼</text>
+    <text x="211.01" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-16" data-path="silk:silk-port-16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-16">16</text>
+    <text x="233.76" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-17" data-path="silk:silk-port-17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17">17</text>
+    <text x="235.66" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-17-18" data-path="silk:silk-arrows-17-18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-17 port-18">▲▼</text>
+    <text x="237.56" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-18" data-path="silk:silk-port-18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-18">18</text>
+    <text x="256.98" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-19" data-path="silk:silk-port-19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19">19</text>
+    <text x="258.88" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-19-20" data-path="silk:silk-arrows-19-20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-19 port-20">▲▼</text>
+    <text x="260.78" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-20" data-path="silk:silk-port-20" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-20">20</text>
+    <text x="280.19" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-21" data-path="silk:silk-port-21" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21">21</text>
+    <text x="282.09" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-21-22" data-path="silk:silk-arrows-21-22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-21 port-22">▲▼</text>
+    <text x="283.99" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-22" data-path="silk:silk-port-22" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-22">22</text>
+    <text x="303.41" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-23" data-path="silk:silk-port-23" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23">23</text>
+    <text x="305.31" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-23-24" data-path="silk:silk-arrows-23-24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-23 port-24">▲▼</text>
+    <text x="307.21" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-24" data-path="silk:silk-port-24" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-24">24</text>
+    <text x="329.96" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-25" data-path="silk:silk-port-25" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25">25</text>
+    <text x="331.86" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-25-26" data-path="silk:silk-arrows-25-26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-25 port-26">▲▼</text>
+    <text x="333.76" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-26" data-path="silk:silk-port-26" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-26">26</text>
+    <text x="353.18" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-27" data-path="silk:silk-port-27" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27">27</text>
+    <text x="355.07" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-27-28" data-path="silk:silk-arrows-27-28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-27 port-28">▲▼</text>
+    <text x="356.97" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-28" data-path="silk:silk-port-28" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-28">28</text>
+    <text x="376.39" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-29" data-path="silk:silk-port-29" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29">29</text>
+    <text x="378.29" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-29-30" data-path="silk:silk-arrows-29-30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-29 port-30">▲▼</text>
+    <text x="380.19" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-30" data-path="silk:silk-port-30" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-30">30</text>
+    <text x="399.6" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="end" fill="#e8eaec" id="silk-port-31" data-path="silk:silk-port-31" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31">31</text>
+    <text x="401.5" y="21.73" font-family="sans-serif" font-size="1.9" text-anchor="middle" fill="#e8eaec" id="silk-arrows-31-32" data-path="silk:silk-arrows-31-32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-31 port-32">▲▼</text>
+    <text x="403.4" y="21.9" font-family="sans-serif" font-size="2.1" text-anchor="start" fill="#e8eaec" id="silk-port-32" data-path="silk:silk-port-32" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="port-32">32</text>
+    <text x="421.9" y="21.9" font-family="sans-serif" font-size="1.7" text-anchor="end" fill="#e8eaec" id="silk-sfp-m1" data-path="silk:silk-sfp-m1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-sfp-1">M1</text>
+    <text x="423.8" y="21.8" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#e8eaec" id="silk-sfp-arrows" data-path="silk:silk-sfp-arrows" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-sfp-1 mgmt-sfp-2">▲▼</text>
+    <text x="424.85" y="37.55" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e8eaec" id="silk-lug-tag" data-path="silk:silk-lug-tag" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="lug-tag">LUG TAG</text>
+    <text x="425.7" y="21.9" font-family="sans-serif" font-size="1.7" text-anchor="start" fill="#e8eaec" id="silk-sfp-m2" data-path="silk:silk-sfp-m2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-sfp-2">M2</text>
+    <text x="3" y="12.19" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e8eaec" transform="rotate(-45 3 12.19)" id="silk-stat" data-path="silk:silk-stat" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-stat">STAT</text>
+    <text x="3" y="17.22" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e8eaec" transform="rotate(-45 3 17.22)" id="silk-fan" data-path="silk:silk-fan" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-fan">FAN</text>
+    <text x="3" y="22.24" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e8eaec" transform="rotate(-45 3 22.24)" id="silk-pwr" data-path="silk:silk-pwr" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-pwr">PWR</text>
+    <text x="3" y="27.39" font-family="sans-serif" font-size="1.2" text-anchor="middle" fill="#e8eaec" transform="rotate(-45 3 27.39)" id="silk-alm" data-path="silk:silk-alm" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-alm">ALM</text>
+    <text x="2" y="4.6" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#e8eaec" id="silk-wordmark" data-path="silk:silk-wordmark" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">Celestica</text>
+    <text x="4.9" y="7.5" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" id="silk-console" data-path="silk:silk-console" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="console">IOIOI</text>
+    <text x="33.1" y="22.62" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e8eaec" id="silk-usb" data-path="silk:silk-usb" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb">SS</text>
+    <path d="M 1.5 0 L 1.5 0.9 M 0 0.9 L 3 0.9 M 0 0.9 L 0 1.6 M 3 0.9 L 3 1.6 M 0.9 -1.0 L 2.1 -1.0 L 2.1 0 L 0.9 0 Z M -0.6 1.6 L 0.6 1.6 L 0.6 2.6 L -0.6 2.6 Z M 2.4 1.6 L 3.6 1.6 L 3.6 2.6 L 2.4 2.6 Z" fill="none" stroke="#e8eaec" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(6.2 31.3)" id="silk-mgmt" data-path="silk:silk-mgmt" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="mgmt-eth" />
+  </g>
+  <g id="console" data-path="console" data-class="port" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45-serial" data-role="console" data-rel-pos="1" transform="translate(13.65,7.4) rotate(180 6.35 5.5)" data-group="mgmt" data-group-role="management">
+    <title>console</title>
+    <path id="console--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <path id="console--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="console/opening" data-class="cutout" />
+    <g id="console--pins" fill="#a8873c">
+      <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+      <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+      <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+      <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+      <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+      <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+      <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+      <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+    </g>
+    <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="usb" data-path="usb" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-role="storage" data-usb="3.0" data-rel-pos="2" transform="translate(14.0,19.9)" data-group="mgmt" data-group-role="management">
+    <title>usb</title>
+    <rect id="usb--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb/opening" data-class="cutout" />
+    <rect id="usb--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-eth" data-path="mgmt-eth" data-class="port" data-ref="common/rj45-ganged-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="3" transform="translate(13.65,26.6)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-eth</title>
+    <g id="mgmt-eth--jack" data-path="mgmt-eth/jack" data-class="port" data-inner="1" data-ref="std/rj45-ganged@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>mgmt-eth--jack</title>
+      <path id="mgmt-eth--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.12" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-eth--jack--cavity" fill="#0a0c0e" d="     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+      <path id="mgmt-eth--jack--opening" fill="none" d="M 0.395 0.5 h 11.91 v 10.5 h -11.91 z" data-path="mgmt-eth/jack/opening" data-class="cutout" />
+      <g id="mgmt-eth--jack--pins" fill="#a8873c">
+        <rect x="2.55" y="1.1" width="0.46" height="2.0" />
+        <rect x="3.57" y="1.1" width="0.46" height="2.0" />
+        <rect x="4.59" y="1.1" width="0.46" height="2.0" />
+        <rect x="5.61" y="1.1" width="0.46" height="2.0" />
+        <rect x="6.63" y="1.1" width="0.46" height="2.0" />
+        <rect x="7.65" y="1.1" width="0.46" height="2.0" />
+        <rect x="8.67" y="1.1" width="0.46" height="2.0" />
+        <rect x="9.69" y="1.1" width="0.46" height="2.0" />
+      </g>
+      <g data-cp="mate" data-cp-at="6.35 5.1" data-cp-dir="front" />
+    </g>
+    <path id="mgmt-eth--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.2 0 h 12.3 a 0.2 0.2 0 0 1 0.2 0.2 v 10.6 a 0.2 0.2 0 0 1 -0.2 0.2 h -12.3 a 0.2 0.2 0 0 1 -0.2 -0.2 v -10.6 a 0.2 0.2 0 0 1 0.2 -0.2 z     M 0.395 0.5 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 1.98 h -4.06 v -1.98 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="mgmt-eth--led-a" x="1.2" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-eth/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="mgmt-eth--led-b" x="9.5" y="9.63" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="mgmt-eth/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="6.35 5.1" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-sfp-1" data-path="mgmt-sfp-1" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-role="mgmt" data-speed="10g" data-rel-pos="4" transform="translate(416.55,9.65)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-sfp-1</title>
+    <rect id="mgmt-sfp-1--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="mgmt-sfp-1/opening" data-class="cutout" />
+    <rect id="mgmt-sfp-1--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="mgmt-sfp-1--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="mgmt-sfp-1--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="mgmt-sfp-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="mgmt-sfp-2" data-path="mgmt-sfp-2" data-class="port" data-ref="std/sfp@1:1.4.1" data-depth="41.0" data-wall="#aab0b7" data-cavity="cavity" data-media="sfp-plus" data-role="mgmt" data-speed="10g" data-rel-pos="5" transform="translate(416.55,22.95) rotate(180 7.25 5.0)" data-group="mgmt" data-group-role="management">
+    <title>mgmt-sfp-2</title>
+    <rect id="mgmt-sfp-2--opening" x="0" y="0" width="14.5" height="10" rx="0.3" fill="#17191c" data-path="mgmt-sfp-2/opening" data-class="cutout" />
+    <rect id="mgmt-sfp-2--cavity" x="0.5" y="0.75" width="13.5" height="8.5" rx="0.3" fill="#0a0c0e" />
+    <rect id="mgmt-sfp-2--cage-lip" x="1.0" y="7.6" width="12.5" height="1.2" rx="0.3" fill="#2b2f33" />
+    <rect id="mgmt-sfp-2--module-slot" x="1.0" y="3.6" width="12.5" height="2.6" rx="0.4" fill="#000000" />
+    <path id="mgmt-sfp-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 14.4 v 9.9 h -14.4 z M 0.75 0.75 h 13 v 8.5 h -13 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="7.25 5" data-cp-dir="front" />
+  </g>
+  <g id="led-sfp-1" data-path="led-sfp-1" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(419.86,6.91)" data-group="sfp-leds" data-group-role="indicator" data-states="off on" data-for="mgmt-sfp-1">
+    <title>led-sfp-1</title>
+    <circle id="led-sfp-1--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-1--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-1/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-sfp-2" data-path="led-sfp-2" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="2" transform="translate(425.76,6.91)" data-group="sfp-leds" data-group-role="indicator" data-states="off on" data-for="mgmt-sfp-2">
+    <title>led-sfp-2</title>
+    <circle id="led-sfp-2--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="led-sfp-2--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="led-sfp-2/lamp" data-class="led" data-states="off on" data-z-dome="0.3" />
+  </g>
+  <g id="led-stat" data-path="led-stat" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="1" transform="translate(5.7,9.79)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-stat</title>
+    <circle id="led-stat--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-stat--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-stat/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+  </g>
+  <g id="led-fan" data-path="led-fan" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="2" transform="translate(5.7,14.82)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-fan</title>
+    <circle id="led-fan--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-fan--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-fan/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+  </g>
+  <g id="led-pwr" data-path="led-pwr" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="3" transform="translate(5.7,19.84)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-pwr</title>
+    <circle id="led-pwr--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-pwr--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-pwr/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+  </g>
+  <g id="led-alm" data-path="led-alm" data-class="led" data-ref="common/led-indicator@1:1.2.0" data-rel-pos="4" transform="translate(5.7,24.99)" data-group="leds" data-group-role="indicator" data-states="off on" data-for="chassis">
+    <title>led-alm</title>
+    <circle id="led-alm--bezel" cx="2" cy="2" r="1.6" fill="#1c1f23" stroke="#4a4f55" stroke-width="0.2" />
+    <circle id="led-alm--lamp" cx="2" cy="2" r="1.0" fill="var(--led-color, #3a3f44)" data-path="led-alm/lamp" data-class="led" data-states="off on" data-z-dome="0.45" />
+  </g>
+  <g id="lug-tag" data-path="lug-tag" data-class="tab" data-behaviour="fills" data-ref="celestica/lug-tag-ridge-16@1:1.0.0" data-label="DS4101" data-role="info-tab" data-rel-pos="1" transform="translate(416.9,38.0)" data-group="furniture" data-group-role="furniture" data-description="the pull-out LUG TAG under the SFP+ pair.">
+    <title>lug-tag</title>
+    <rect id="lug-tag--slot" x="0" y="0" width="15.9" height="4" rx="0.4" fill="#0c0d0f" />
+    <g id="lug-tag--tab" data-path="lug-tag/tab" data-class="tab" data-z-out="1.2" data-z-color="#26292d">
+      <rect id="lug-tag--tab-card" x="0.3" y="0.3" width="15.3" height="3.4" rx="0.6" fill="#26292d" stroke="#3b3f44" stroke-width="0.15" />
+      <g id="lug-tag--silkscreen">
+        <text id="lug-tag--silk-label" x="7.95" y="3.35" font-family="sans-serif" font-size="1.35" text-anchor="middle" fill="#d9dde1" data-from="label">DS4101</text>
+      </g>
+      <g id="lug-tag--tab-ridge" data-z-out="2.4" data-z-color="#34383d">
+        <path d="M 3.1 1.3 L 3.6 0.35 H 12.6 L 13.1 1.3 Z" fill="#34383d" stroke="#1a1c1f" stroke-width="0.12" />
+      </g>
+    </g>
+  </g>
+  <g id="port-1" data-path="port-1" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="1" transform="translate(31.72,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-1</title>
+    <rect id="port-1--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-1/opening" data-class="cutout" />
+    <rect id="port-1--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-1--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-1--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-1--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-2" data-path="port-2" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="2" transform="translate(31.72,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-2</title>
+    <rect id="port-2--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-2/opening" data-class="cutout" />
+    <rect id="port-2--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-2--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-2--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-2--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-3" data-path="port-3" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="3" transform="translate(54.93,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-3</title>
+    <rect id="port-3--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-3/opening" data-class="cutout" />
+    <rect id="port-3--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-3--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-3--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-3--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-4" data-path="port-4" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="4" transform="translate(54.93,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-4</title>
+    <rect id="port-4--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-4/opening" data-class="cutout" />
+    <rect id="port-4--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-4--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-4--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-4--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-5" data-path="port-5" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="5" transform="translate(78.15,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-5</title>
+    <rect id="port-5--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-5/opening" data-class="cutout" />
+    <rect id="port-5--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-5--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-5--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-5--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-6" data-path="port-6" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="6" transform="translate(78.15,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-6</title>
+    <rect id="port-6--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-6/opening" data-class="cutout" />
+    <rect id="port-6--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-6--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-6--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-6--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-7" data-path="port-7" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="7" transform="translate(101.36,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-7</title>
+    <rect id="port-7--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-7/opening" data-class="cutout" />
+    <rect id="port-7--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-7--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-7--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-7--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-8" data-path="port-8" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="8" transform="translate(101.36,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-8</title>
+    <rect id="port-8--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-8/opening" data-class="cutout" />
+    <rect id="port-8--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-8--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-8--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-8--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-9" data-path="port-9" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="9" transform="translate(127.92,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-9</title>
+    <rect id="port-9--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-9/opening" data-class="cutout" />
+    <rect id="port-9--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-9--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-9--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-9--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-10" data-path="port-10" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="10" transform="translate(127.92,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-10</title>
+    <rect id="port-10--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-10/opening" data-class="cutout" />
+    <rect id="port-10--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-10--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-10--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-10--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-11" data-path="port-11" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="11" transform="translate(151.13,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-11</title>
+    <rect id="port-11--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-11/opening" data-class="cutout" />
+    <rect id="port-11--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-11--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-11--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-11--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-12" data-path="port-12" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="12" transform="translate(151.13,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-12</title>
+    <rect id="port-12--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-12/opening" data-class="cutout" />
+    <rect id="port-12--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-12--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-12--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-12--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-13" data-path="port-13" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="13" transform="translate(174.34,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-13</title>
+    <rect id="port-13--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-13/opening" data-class="cutout" />
+    <rect id="port-13--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-13--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-13--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-13--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-14" data-path="port-14" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="14" transform="translate(174.34,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-14</title>
+    <rect id="port-14--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-14/opening" data-class="cutout" />
+    <rect id="port-14--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-14--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-14--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-14--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-15" data-path="port-15" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="15" transform="translate(197.56,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-15</title>
+    <rect id="port-15--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-15/opening" data-class="cutout" />
+    <rect id="port-15--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-15--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-15--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-15--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-16" data-path="port-16" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="16" transform="translate(197.56,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-16</title>
+    <rect id="port-16--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-16/opening" data-class="cutout" />
+    <rect id="port-16--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-16--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-16--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-16--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-17" data-path="port-17" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="17" transform="translate(224.11,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-17</title>
+    <rect id="port-17--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-17/opening" data-class="cutout" />
+    <rect id="port-17--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-17--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-17--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-17--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-18" data-path="port-18" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="18" transform="translate(224.11,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-18</title>
+    <rect id="port-18--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-18/opening" data-class="cutout" />
+    <rect id="port-18--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-18--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-18--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-18--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-19" data-path="port-19" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="19" transform="translate(247.33,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-19</title>
+    <rect id="port-19--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-19/opening" data-class="cutout" />
+    <rect id="port-19--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-19--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-19--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-19--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-20" data-path="port-20" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="20" transform="translate(247.33,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-20</title>
+    <rect id="port-20--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-20/opening" data-class="cutout" />
+    <rect id="port-20--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-20--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-20--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-20--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-21" data-path="port-21" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="21" transform="translate(270.54,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-21</title>
+    <rect id="port-21--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-21/opening" data-class="cutout" />
+    <rect id="port-21--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-21--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-21--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-21--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-22" data-path="port-22" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="22" transform="translate(270.54,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-22</title>
+    <rect id="port-22--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-22/opening" data-class="cutout" />
+    <rect id="port-22--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-22--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-22--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-22--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-23" data-path="port-23" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="23" transform="translate(293.76,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-23</title>
+    <rect id="port-23--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-23/opening" data-class="cutout" />
+    <rect id="port-23--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-23--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-23--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-23--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-24" data-path="port-24" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="24" transform="translate(293.76,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-24</title>
+    <rect id="port-24--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-24/opening" data-class="cutout" />
+    <rect id="port-24--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-24--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-24--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-24--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-25" data-path="port-25" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="25" transform="translate(320.31,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-25</title>
+    <rect id="port-25--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-25/opening" data-class="cutout" />
+    <rect id="port-25--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-25--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-25--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-25--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-26" data-path="port-26" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="26" transform="translate(320.31,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-26</title>
+    <rect id="port-26--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-26/opening" data-class="cutout" />
+    <rect id="port-26--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-26--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-26--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-26--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-27" data-path="port-27" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="27" transform="translate(343.52,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-27</title>
+    <rect id="port-27--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-27/opening" data-class="cutout" />
+    <rect id="port-27--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-27--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-27--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-27--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-28" data-path="port-28" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="28" transform="translate(343.52,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-28</title>
+    <rect id="port-28--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-28/opening" data-class="cutout" />
+    <rect id="port-28--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-28--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-28--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-28--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-29" data-path="port-29" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="29" transform="translate(366.74,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-29</title>
+    <rect id="port-29--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-29/opening" data-class="cutout" />
+    <rect id="port-29--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-29--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-29--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-29--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-30" data-path="port-30" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="30" transform="translate(366.74,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-30</title>
+    <rect id="port-30--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-30/opening" data-class="cutout" />
+    <rect id="port-30--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-30--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-30--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-30--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-31" data-path="port-31" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="31" transform="translate(389.95,5.2)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-31</title>
+    <rect id="port-31--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-31/opening" data-class="cutout" />
+    <rect id="port-31--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-31--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-31--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-31--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="port-32" data-path="port-32" data-class="port" data-ref="std/osfp@1:1.0.0" data-depth="47.0" data-wall="#aab0b7" data-media="osfp" data-speed="800g" data-rel-pos="32" transform="translate(389.95,23.58) rotate(180 11.55 6.75)" data-group="osfp" data-group-role="traffic" data-description="the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.">
+    <title>port-32</title>
+    <rect id="port-32--opening" x="0" y="0" width="23.1" height="13.5" rx="0.3" fill="#17191c" data-path="port-32/opening" data-class="cutout" />
+    <rect id="port-32--cage-lip" x="1.4" y="1.4" width="20.3" height="1.6" rx="0.3" fill="#2b2f33" />
+    <rect id="port-32--module-slot" x="1.4" y="4.4" width="20.3" height="4.4" rx="0.4" fill="#000000" />
+    <rect id="port-32--latch-slot" x="8.6" y="10.4" width="5.9" height="1.5" rx="0.3" fill="#2b2f33" />
+    <path id="port-32--collar" fill-rule="evenodd" fill="#9aa0a8" d="M 0.05 0.05 h 23.0 v 13.4 h -23.0 z M 0.9 0.9 h 21.3 v 11.7 h -21.3 z" data-z-out="1.0" data-z-color="#7d848c" />
+    <g data-cp="mate" data-cp-at="11.55 6.75" data-cp-dir="front" />
+  </g>
+  <g id="led-win-1" data-path="led-win-1" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="1" transform="translate(34.75,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-1">
+    <title>led-win-1</title>
+    <rect id="led-win-1--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-1--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-1/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-2" data-path="led-win-2" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="2" transform="translate(48.93,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-2">
+    <title>led-win-2</title>
+    <rect id="led-win-2--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-2--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-2/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-3" data-path="led-win-3" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="3" transform="translate(51.94,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-2">
+    <title>led-win-3</title>
+    <rect id="led-win-3--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-3--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-3/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-4" data-path="led-win-4" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="4" transform="translate(55.02,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-3">
+    <title>led-win-4</title>
+    <rect id="led-win-4--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-4--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-4/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-5" data-path="led-win-5" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="5" transform="translate(57.97,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-3">
+    <title>led-win-5</title>
+    <rect id="led-win-5--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-5--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-5/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-6" data-path="led-win-6" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="6" transform="translate(72.21,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-4">
+    <title>led-win-6</title>
+    <rect id="led-win-6--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-6--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-6/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-7" data-path="led-win-7" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="7" transform="translate(75.16,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-4">
+    <title>led-win-7</title>
+    <rect id="led-win-7--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-7--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-7/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-8" data-path="led-win-8" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="8" transform="translate(78.24,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-5">
+    <title>led-win-8</title>
+    <rect id="led-win-8--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-8--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-8/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-9" data-path="led-win-9" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="9" transform="translate(81.19,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-5">
+    <title>led-win-9</title>
+    <rect id="led-win-9--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-9--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-9/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-10" data-path="led-win-10" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="10" transform="translate(95.43,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-6">
+    <title>led-win-10</title>
+    <rect id="led-win-10--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-10--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-10/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-11" data-path="led-win-11" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="11" transform="translate(98.38,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-6">
+    <title>led-win-11</title>
+    <rect id="led-win-11--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-11--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-11/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-12" data-path="led-win-12" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="12" transform="translate(101.46,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-7">
+    <title>led-win-12</title>
+    <rect id="led-win-12--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-12--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-12/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-13" data-path="led-win-13" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="13" transform="translate(104.41,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-7">
+    <title>led-win-13</title>
+    <rect id="led-win-13--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-13--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-13/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-14" data-path="led-win-14" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="14" transform="translate(118.59,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-8">
+    <title>led-win-14</title>
+    <rect id="led-win-14--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-14--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-14/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-15" data-path="led-win-15" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="15" transform="translate(121.61,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-8">
+    <title>led-win-15</title>
+    <rect id="led-win-15--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-15--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-15/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-16" data-path="led-win-16" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="16" transform="translate(127.96,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-9">
+    <title>led-win-16</title>
+    <rect id="led-win-16--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-16--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-16/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-17" data-path="led-win-17" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="17" transform="translate(131.03,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-9">
+    <title>led-win-17</title>
+    <rect id="led-win-17--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-17--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-17/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-18" data-path="led-win-18" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="18" transform="translate(145.21,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-10">
+    <title>led-win-18</title>
+    <rect id="led-win-18--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-18--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-18/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-19" data-path="led-win-19" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="19" transform="translate(148.23,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-10">
+    <title>led-win-19</title>
+    <rect id="led-win-19--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-19--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-19/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-20" data-path="led-win-20" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="20" transform="translate(151.24,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-11">
+    <title>led-win-20</title>
+    <rect id="led-win-20--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-20--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-20/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-21" data-path="led-win-21" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="21" transform="translate(154.26,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-11">
+    <title>led-win-21</title>
+    <rect id="led-win-21--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-21--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-21/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-22" data-path="led-win-22" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="22" transform="translate(168.43,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-12">
+    <title>led-win-22</title>
+    <rect id="led-win-22--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-22--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-22/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-23" data-path="led-win-23" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="23" transform="translate(171.45,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-12">
+    <title>led-win-23</title>
+    <rect id="led-win-23--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-23--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-23/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-24" data-path="led-win-24" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="24" transform="translate(174.46,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-13">
+    <title>led-win-24</title>
+    <rect id="led-win-24--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-24--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-24/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-25" data-path="led-win-25" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="25" transform="translate(177.48,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-13">
+    <title>led-win-25</title>
+    <rect id="led-win-25--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-25--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-25/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-26" data-path="led-win-26" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="26" transform="translate(191.65,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-14">
+    <title>led-win-26</title>
+    <rect id="led-win-26--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-26--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-26/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-27" data-path="led-win-27" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="27" transform="translate(194.67,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-14">
+    <title>led-win-27</title>
+    <rect id="led-win-27--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-27--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-27/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-28" data-path="led-win-28" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="28" transform="translate(197.68,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-15">
+    <title>led-win-28</title>
+    <rect id="led-win-28--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-28--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-28/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-29" data-path="led-win-29" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="29" transform="translate(200.7,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-15">
+    <title>led-win-29</title>
+    <rect id="led-win-29--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-29--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-29/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-30" data-path="led-win-30" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="30" transform="translate(214.87,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-16">
+    <title>led-win-30</title>
+    <rect id="led-win-30--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-30--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-30/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-31" data-path="led-win-31" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="31" transform="translate(217.89,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-16">
+    <title>led-win-31</title>
+    <rect id="led-win-31--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-31--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-31/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-32" data-path="led-win-32" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="32" transform="translate(224.3,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-17">
+    <title>led-win-32</title>
+    <rect id="led-win-32--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-32--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-32/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-33" data-path="led-win-33" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="33" transform="translate(227.25,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-17">
+    <title>led-win-33</title>
+    <rect id="led-win-33--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-33--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-33/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-34" data-path="led-win-34" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="34" transform="translate(241.49,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-18">
+    <title>led-win-34</title>
+    <rect id="led-win-34--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-34--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-34/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-35" data-path="led-win-35" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="35" transform="translate(244.44,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-18">
+    <title>led-win-35</title>
+    <rect id="led-win-35--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-35--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-35/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-36" data-path="led-win-36" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="36" transform="translate(247.52,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-19">
+    <title>led-win-36</title>
+    <rect id="led-win-36--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-36--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-36/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-37" data-path="led-win-37" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="37" transform="translate(250.47,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-19">
+    <title>led-win-37</title>
+    <rect id="led-win-37--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-37--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-37/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-38" data-path="led-win-38" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="38" transform="translate(264.71,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-20">
+    <title>led-win-38</title>
+    <rect id="led-win-38--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-38--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-38/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-39" data-path="led-win-39" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="39" transform="translate(267.73,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-20">
+    <title>led-win-39</title>
+    <rect id="led-win-39--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-39--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-39/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-40" data-path="led-win-40" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="40" transform="translate(270.74,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-21">
+    <title>led-win-40</title>
+    <rect id="led-win-40--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-40--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-40/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-41" data-path="led-win-41" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="41" transform="translate(273.69,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-21">
+    <title>led-win-41</title>
+    <rect id="led-win-41--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-41--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-41/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-42" data-path="led-win-42" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="42" transform="translate(287.93,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-22">
+    <title>led-win-42</title>
+    <rect id="led-win-42--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-42--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-42/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-43" data-path="led-win-43" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="43" transform="translate(290.95,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-22">
+    <title>led-win-43</title>
+    <rect id="led-win-43--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-43--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-43/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-44" data-path="led-win-44" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="44" transform="translate(293.96,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-23">
+    <title>led-win-44</title>
+    <rect id="led-win-44--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-44--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-44/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-45" data-path="led-win-45" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="45" transform="translate(296.92,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-23">
+    <title>led-win-45</title>
+    <rect id="led-win-45--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-45--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-45/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-46" data-path="led-win-46" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="46" transform="translate(311.16,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-24">
+    <title>led-win-46</title>
+    <rect id="led-win-46--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-46--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-46/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-47" data-path="led-win-47" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="47" transform="translate(314.11,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-24">
+    <title>led-win-47</title>
+    <rect id="led-win-47--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-47--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-47/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-48" data-path="led-win-48" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="48" transform="translate(320.52,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-25">
+    <title>led-win-48</title>
+    <rect id="led-win-48--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-48--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-48/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-49" data-path="led-win-49" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="49" transform="translate(323.54,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-25">
+    <title>led-win-49</title>
+    <rect id="led-win-49--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-49--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-49/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-50" data-path="led-win-50" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="50" transform="translate(337.71,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-26">
+    <title>led-win-50</title>
+    <rect id="led-win-50--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-50--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-50/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-51" data-path="led-win-51" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="51" transform="translate(340.73,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-26">
+    <title>led-win-51</title>
+    <rect id="led-win-51--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-51--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-51/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-52" data-path="led-win-52" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="52" transform="translate(343.74,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-27">
+    <title>led-win-52</title>
+    <rect id="led-win-52--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-52--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-52/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-53" data-path="led-win-53" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="53" transform="translate(346.76,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-27">
+    <title>led-win-53</title>
+    <rect id="led-win-53--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-53--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-53/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-54" data-path="led-win-54" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="54" transform="translate(360.93,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-28">
+    <title>led-win-54</title>
+    <rect id="led-win-54--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-54--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-54/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-55" data-path="led-win-55" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="55" transform="translate(364.01,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-28">
+    <title>led-win-55</title>
+    <rect id="led-win-55--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-55--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-55/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-56" data-path="led-win-56" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="56" transform="translate(366.96,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-29">
+    <title>led-win-56</title>
+    <rect id="led-win-56--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-56--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-56/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-57" data-path="led-win-57" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="57" transform="translate(369.98,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-29">
+    <title>led-win-57</title>
+    <rect id="led-win-57--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-57--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-57/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-58" data-path="led-win-58" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="58" transform="translate(384.15,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-30">
+    <title>led-win-58</title>
+    <rect id="led-win-58--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-58--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-58/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-59" data-path="led-win-59" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="59" transform="translate(387.23,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-30">
+    <title>led-win-59</title>
+    <rect id="led-win-59--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-59--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-59/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-60" data-path="led-win-60" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="60" transform="translate(390.18,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-31">
+    <title>led-win-60</title>
+    <rect id="led-win-60--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-60--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-60/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-61" data-path="led-win-61" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="61" transform="translate(393.26,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-31">
+    <title>led-win-61</title>
+    <rect id="led-win-61--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-61--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-61/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-62" data-path="led-win-62" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="62" transform="translate(407.37,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-32">
+    <title>led-win-62</title>
+    <rect id="led-win-62--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-62--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-62/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+  <g id="led-win-63" data-path="led-win-63" data-class="led" data-ref="common/led-rect-sm@1:1.0.0" data-rel-pos="63" transform="translate(410.45,20.33)" data-group="port-leds" data-group-role="indicator" data-description="the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap." data-states="off on" data-for="port-32">
+    <title>led-win-63</title>
+    <rect id="led-win-63--bezel" x="0" y="0" width="2.8" height="1.6" rx="0.25" fill="#17191c" />
+    <rect id="led-win-63--lamp" x="0.25" y="0.25" width="2.3" height="1.1" rx="0.15" fill="var(--led-color, #2a6b3f)" data-path="led-win-63/lamp" data-class="led" data-states="off on" data-z-dome="0.2" />
+  </g>
+</svg>

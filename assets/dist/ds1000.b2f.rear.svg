@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.5mm" height="43.6mm" viewBox="0 0 438.5 43.6" data-device="ds1000" data-view="rear" data-switching-capacity="128 Gbps" data-packet-buffer="4 MB" data-jumbo-frame="12,288 bytes" data-power-max-w="200" data-power-envelope="unstated" data-psus="2 x 550 W AC hot-swap CRPS, 1+1 redundant" data-input-ac="90-264 VAC, 47-63 Hz" data-fans="2+1 fixed 40 x 40 x 28 mm fans (not field-replaceable)" data-operating-temp="0 to 45 C at 900 m" data-humidity="5% to 90% non-condensing" data-storage-humidity="5% to 95%" data-mtbf="in excess of 150,000 hours" data-cpu="Intel Denverton 4-core" data-memory="4 GB ECC DDR4, configurable to 32 GB" data-storage="64 Gb iSLC M.2 SSD, configurable" data-onie="ONIE installer for third-party network operating systems" data-ocp="Open Compute Project accepted design" data-optics-sfp-plus="datasheet: '8 x SFP+ 10Gigabit fiber ports', 'SFP+ DAC Support: 7m', 'SFP+ Optical Module Support: Up to 2W power'. No optics list is published." data-mgmt-ports="1 x RJ45 10/100/1000 out-of-band management, 1 x RJ45 console (115200 8N1), 2 x USB 2.0 Type A (data only, no power)" data-safety="UL/CSA/IEC/EN 60950-1/62368-1" data-emc="Class A - USA, Canada, Europe, China, Japan, Korea, Australia, Brazil, South Africa" data-acoustic="EN300753" data-rohs="EU RoHS 2011/65/EU &amp; 2015/863" data-weee="2012/19/EU" data-reach="(EC) No. 1907/2006" data-psu-approvals="CE, CCC, KC, TUV, UL/cUL, BIS and BSMI" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/psu-r3059-f8001@'] .state-fail { --led-color: #ef4444; }
+    g[data-ref^='celestica/psu-r3059-f8001@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Celestica DS1000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"celestica/psu-r3059-f8001@1":"1.0.0","common/ground-symbol@1":"1.0.0","common/screw-head@1":"1.1.0","std/c14-inlet@1":"1.3.0"},"source-sha256":"41c8b3c054e8c72d7d92bbdeefc742460adc883a3e640b4691df20bafe4d4d12","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS1000" data-sku="R3059-F9022-A1" data-part-number="R3059-F9022-A1" x="0" y="0" width="438.5" height="43.6" rx="1.2" fill="#c4c8cc" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-holes" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+    <pattern id="portrayal-holes-o0-0-s0_78-0_72" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="translate(0 0) scale(0.78 0.72)">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="lid-seam" data-kind="seam" x="12" y="12.3" width="225" height="0.4" rx="0.6" fill="#9aa0a6" />
+    <rect id="bay-divider" data-kind="seam" x="236.8" y="11" width="0.5" height="32.4" rx="0.6" fill="#6f757b" />
+    <rect id="fan-grille-1" data-kind="vent-field" data-aperture="air" x="34" y="3.8" width="35" height="35" rx="17.5" fill="url(#portrayal-holes-o0-0-s0_78-0_72)" data-vent="28" />
+    <rect id="fan-grille-2" data-kind="vent-field" data-aperture="air" x="88.9" y="3.8" width="35" height="35" rx="17.5" fill="url(#portrayal-holes-o0-0-s0_78-0_72)" data-vent="28" />
+    <rect id="fan-grille-3" data-kind="vent-field" data-aperture="air" x="143.8" y="3.8" width="35" height="35" rx="17.5" fill="url(#portrayal-holes-o0-0-s0_78-0_72)" data-vent="28" />
+    <rect id="boss-1" data-kind="outline" x="19.9" y="28.9" width="5.2" height="5.2" rx="2.6" fill="none" stroke="#9aa0a6" stroke-width="0.35" />
+    <rect id="boss-2" data-kind="outline" x="74.4" y="28.9" width="5.2" height="5.2" rx="2.6" fill="none" stroke="#9aa0a6" stroke-width="0.35" />
+    <rect id="boss-3" data-kind="outline" x="128.9" y="28.9" width="5.2" height="5.2" rx="2.6" fill="none" stroke="#9aa0a6" stroke-width="0.35" />
+    <rect id="boss-4" data-kind="outline" x="183.4" y="28.9" width="5.2" height="5.2" rx="2.6" fill="none" stroke="#9aa0a6" stroke-width="0.35" />
+  </g>
+  <rect id="region--exhaust" data-path="region:exhaust" data-class="region" data-physical-context="Intake" x="30" y="1" width="166" height="41.6" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--power" data-path="region:power" data-class="region" data-members="psu-1 psu-2" x="253" y="0.5" width="168" height="42.6" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="26.6" y="22" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" transform="rotate(-90 26.6 22)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">3</text>
+    <text x="81.1" y="22" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" transform="rotate(-90 81.1 22)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">2</text>
+    <text x="135.6" y="22" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" transform="rotate(-90 135.6 22)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="chassis">1</text>
+    <text x="250.6" y="19" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" transform="rotate(-90 250.6 19)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2</text>
+    <text x="423.4" y="19" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#2b2f33" transform="rotate(-90 423.4 19)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+  </g>
+  <g id="ground-mark-1" data-path="ground-mark-1" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="3" transform="translate(219.9,32.3)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks" data-for="ground-screw-1">
+    <title>ground-mark-1</title>
+    <g id="ground-mark-1--symbol" stroke="#c7ccd1" fill="none" data-path="ground-mark-1/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="ground-mark-2" data-path="ground-mark-2" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="5" transform="translate(424.1,24.5)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks" data-for="ground-screw-2">
+    <title>ground-mark-2</title>
+    <g id="ground-mark-2--symbol" stroke="#c7ccd1" fill="none" data-path="ground-mark-2/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="255" y="1.8" width="73.5" height="40" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="celestica/psu-r3059-f8001@1:1.0.0" data-body-depth="185.0" data-wall="#3a3e43" data-form-factor="crps-1u" data-inlet="c14" data-input="ac" data-model="R3059-F8002-01" data-power-output-w="550" data-states="ok fail absent" transform="translate(291.75,21.8) translate(-36.75,-20)">
+      <title>psu-2--module</title>
+      <defs>
+        <pattern id="psu-2--module--psu-r3059-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#101214" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#101214" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#101214" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#101214" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#101214" />
+        </pattern>
+      </defs>
+      <rect id="psu-2--module--body" x="0" y="0" width="73.5" height="40" rx="0.5" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+      <rect id="psu-2--module--guard-plate" x="3.9" y="2.0" width="37.1" height="32.5" rx="1.2" fill="#4a4e53" />
+      <rect id="psu-2--module--fan-guard" x="3.9" y="2.0" width="37.1" height="32.5" rx="1.2" fill="url(#psu-2--module--psu-r3059-hex)" data-z-vent="20" />
+      <circle id="psu-2--module--fan-hub" cx="22.5" cy="18.5" r="9.0" fill="#b9bec4" stroke="#8d949b" stroke-width="0.3" />
+      <g id="psu-2--module--guard-screws" fill="#dfe2e5" stroke="#7a8087" stroke-width="0.25">
+        <circle cx="6.5" cy="3.5" r="2.3" />
+        <circle cx="38.5" cy="3.5" r="2.3" />
+      </g>
+      <g stroke="#7a8087" stroke-width="0.35">
+        <path d="M 5.4 3.5 H 7.6 M 6.5 2.4 V 4.6" />
+        <path d="M 37.4 3.5 H 39.6 M 38.5 2.4 V 4.6" />
+      </g>
+      <rect id="psu-2--module--inlet-block" x="42.6" y="1.3" width="24.0" height="34.5" rx="1.2" fill="#1f2124" stroke="#0e1012" stroke-width="0.3" />
+      <g id="psu-2--module--side-strip">
+        <rect x="67.4" y="1.3" width="5.4" height="37.4" rx="0.4" fill="#b3b8be" />
+        <rect x="68.6" y="12.2" width="3.2" height="1.4" rx="0.5" fill="#5c6167" />
+      </g>
+      <path id="psu-2--module--handle" d="M 3.6 28.5 V 38.4 H 40.9 V 28.5" fill="none" stroke="#2b2f33" stroke-width="2.2" stroke-linejoin="round" data-path="psu-2/module/handle" data-class="handle" data-z-uhandle="12.0" />
+      <rect id="psu-2--module--latch" x="52.3" y="35.8" width="5.5" height="4.0" rx="0.6" fill="#1a1c1f" stroke="#050607" stroke-width="0.25" data-path="psu-2/module/latch" data-class="latch" data-z-out="2.4" />
+      <circle id="psu-2--module--status-led" cx="68.1" cy="36.7" r="1.4" fill="var(--led-color, #22c55e)" stroke="#3a3f45" stroke-width="0.25" data-path="psu-2/module/status-led" data-class="led" data-states="off ok fail" data-description="DS2000 guide Table 4, PSU module row - Green all PSUs operating normally, Red PSU error(s) detected, Off PSU is off" data-z-dome="0.3" />
+      <g id="psu-2--module--inlet" data-path="psu-2/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(40.45,10.0) rotate(90 14.0 10.0)">
+        <title>psu-2--module--inlet</title>
+        <rect id="psu-2--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-2/module/inlet/opening" data-class="cutout" />
+        <path id="psu-2--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-2--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="54.45 20" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="344.8" y="1.8" width="73.5" height="40" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="celestica/psu-r3059-f8001@1:1.0.0" data-body-depth="185.0" data-wall="#3a3e43" data-form-factor="crps-1u" data-inlet="c14" data-input="ac" data-model="R3059-F8002-01" data-power-output-w="550" data-states="ok fail absent" transform="translate(381.55,21.8) translate(-36.75,-20)">
+      <title>psu-1--module</title>
+      <defs>
+        <pattern id="psu-1--module--psu-r3059-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#101214" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#101214" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#101214" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#101214" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#101214" />
+        </pattern>
+      </defs>
+      <rect id="psu-1--module--body" x="0" y="0" width="73.5" height="40" rx="0.5" fill="#c3c7cc" stroke="#7a8087" stroke-width="0.4" />
+      <rect id="psu-1--module--guard-plate" x="3.9" y="2.0" width="37.1" height="32.5" rx="1.2" fill="#4a4e53" />
+      <rect id="psu-1--module--fan-guard" x="3.9" y="2.0" width="37.1" height="32.5" rx="1.2" fill="url(#psu-1--module--psu-r3059-hex)" data-z-vent="20" />
+      <circle id="psu-1--module--fan-hub" cx="22.5" cy="18.5" r="9.0" fill="#b9bec4" stroke="#8d949b" stroke-width="0.3" />
+      <g id="psu-1--module--guard-screws" fill="#dfe2e5" stroke="#7a8087" stroke-width="0.25">
+        <circle cx="6.5" cy="3.5" r="2.3" />
+        <circle cx="38.5" cy="3.5" r="2.3" />
+      </g>
+      <g stroke="#7a8087" stroke-width="0.35">
+        <path d="M 5.4 3.5 H 7.6 M 6.5 2.4 V 4.6" />
+        <path d="M 37.4 3.5 H 39.6 M 38.5 2.4 V 4.6" />
+      </g>
+      <rect id="psu-1--module--inlet-block" x="42.6" y="1.3" width="24.0" height="34.5" rx="1.2" fill="#1f2124" stroke="#0e1012" stroke-width="0.3" />
+      <g id="psu-1--module--side-strip">
+        <rect x="67.4" y="1.3" width="5.4" height="37.4" rx="0.4" fill="#b3b8be" />
+        <rect x="68.6" y="12.2" width="3.2" height="1.4" rx="0.5" fill="#5c6167" />
+      </g>
+      <path id="psu-1--module--handle" d="M 3.6 28.5 V 38.4 H 40.9 V 28.5" fill="none" stroke="#2b2f33" stroke-width="2.2" stroke-linejoin="round" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="12.0" />
+      <rect id="psu-1--module--latch" x="52.3" y="35.8" width="5.5" height="4.0" rx="0.6" fill="#1a1c1f" stroke="#050607" stroke-width="0.25" data-path="psu-1/module/latch" data-class="latch" data-z-out="2.4" />
+      <circle id="psu-1--module--status-led" cx="68.1" cy="36.7" r="1.4" fill="var(--led-color, #22c55e)" stroke="#3a3f45" stroke-width="0.25" data-path="psu-1/module/status-led" data-class="led" data-states="off ok fail" data-description="DS2000 guide Table 4, PSU module row - Green all PSUs operating normally, Red PSU error(s) detected, Off PSU is off" data-z-dome="0.3" />
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(40.45,10.0) rotate(90 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="54.45 20" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="screw-l1" data-path="screw-l1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="1" transform="translate(7.7,23.5)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks">
+    <title>screw-l1</title>
+    <circle id="screw-l1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-l1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-l1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="screw-l2" data-path="screw-l2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(7.7,31.8)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks">
+    <title>screw-l2</title>
+    <circle id="screw-l2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-l2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-l2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="ground-screw-1" data-path="ground-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="4" transform="translate(228.5,33.5)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks">
+    <title>ground-screw-1</title>
+    <circle id="ground-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="ground-screw-2" data-path="ground-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="6" transform="translate(425.3,33.2)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks">
+    <title>ground-screw-2</title>
+    <circle id="ground-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="screw-r1" data-path="screw-r1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="7" transform="translate(425.3,9.7)" data-group="furniture" data-group-role="furniture" data-description="the lug tag, the printed port-type glyphs and the rear screws and grounding marks">
+    <title>screw-r1</title>
+    <circle id="screw-r1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="screw-r1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="screw-r1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

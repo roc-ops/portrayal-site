@@ -1,0 +1,867 @@
+{
+ "format": 1,
+ "listings": {
+  "arrcus/ais800-64o": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/ais800-64o",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 2, under Switching (XGS), the row 'DCS560 / AS9817-64O'.",
+   "version": "1.0.0"
+  },
+  "arrcus/as7326-56x": {
+   "dumps": [
+    "devices/edgecore/as7326-56x/dumps/arcos-openconfig-components.json"
+   ],
+   "entity-map": [
+    {
+     "match": "chassis",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "lc0",
+     "note": "fixed-config linecard == the chassis board",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "sfp{n}",
+     "note": "each carries SwPort/Status/Vendor/Model/Type/Module-Type/Media-Type/Module-Capability",
+     "range": "1-56",
+     "source": "openconfig",
+     "to": "port-{n}"
+    },
+    {
+     "match": "psu{n}",
+     "note": "names psu0/psu1; own labels say PSU-1/PSU-2",
+     "range": "0-1",
+     "source": "openconfig",
+     "to": "psu-{n+1}"
+    },
+    {
+     "match": "fan{n}",
+     "note": "desc 'Chassis Fan - n'",
+     "range": "1-6",
+     "source": "openconfig",
+     "to": "fan-{n}"
+    },
+    {
+     "match": "fan0",
+     "note": "desc 'PSU 2 - Fan 1' - rolls up to PSU-2",
+     "source": "openconfig",
+     "to": "psu-2"
+    },
+    {
+     "match": "led0",
+     "source": "openconfig",
+     "to": "led-diag"
+    },
+    {
+     "match": "led1",
+     "source": "openconfig",
+     "to": "led-loc"
+    },
+    {
+     "match": "led2",
+     "source": "openconfig",
+     "to": "led-fan"
+    },
+    {
+     "match": "led3",
+     "source": "openconfig",
+     "to": "led-psu1"
+    },
+    {
+     "match": "led4",
+     "note": "vendor desc bug: led3 and led4 both say 'Chassis LED 4'",
+     "source": "openconfig",
+     "to": "led-psu2"
+    },
+    {
+     "match": "thermal0",
+     "note": "CPU Core",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "thermal1",
+     "note": "LM75-1-48",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "thermal2",
+     "note": "LM75-2-49",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "thermal3",
+     "note": "LM75-3-4A",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "thermal4",
+     "note": "LM75-4-4B",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "thermal5",
+     "note": "PSU-2 Thermal Sensor 1",
+     "source": "openconfig",
+     "to": "psu-2"
+    }
+   ],
+   "format": 1,
+   "hardware": "edgecore/as7326-56x",
+   "interfaces": [
+    {
+     "name": "swp{n}",
+     "physical": "port-{n}",
+     "range": "1-56"
+    },
+    {
+     "name": "ma1",
+     "physical": "mgmt-eth"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=S8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'DCS203 / AS7326-56X'. The names below come from a live device: ArcOS S8.5.1A running on a lab unit of this model. The pairing is the one the AS7726-32X's `arcos-show-version.txt` states for its sibling - 'Software: Arrcus ArcOS' over 'Firmware MU: EdgeCore MU 1.2.3' - and the names below were read from this model's own running unit (see `dumps` and the note under it).",
+   "terms": {
+    "bay": "Slot"
+   },
+   "version": "1.0.2"
+  },
+  "arrcus/as7726-32x": {
+   "dumps": [
+    "devices/edgecore/as7726-32x/dumps/arcos-interface-names.json",
+    "devices/edgecore/as7726-32x/dumps/arcos-openconfig-components.json",
+    "devices/edgecore/as7726-32x/dumps/arcos-show-version.txt"
+   ],
+   "entity-map": [
+    {
+     "match": "chassis",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "lc0",
+     "note": "fixed-config linecard == the chassis board",
+     "source": "openconfig",
+     "to": "chassis"
+    },
+    {
+     "match": "sfp{n}",
+     "range": "1-32",
+     "source": "openconfig",
+     "to": "port-{n}"
+    },
+    {
+     "match": "sfp33",
+     "note": "assumed cage order; verify with inserted optic",
+     "source": "openconfig",
+     "to": "mgmt-sfp-1"
+    },
+    {
+     "match": "sfp34",
+     "note": "assumed cage order; verify with inserted optic",
+     "source": "openconfig",
+     "to": "mgmt-sfp-2"
+    },
+    {
+     "match": "psu{n}",
+     "note": "names psu0/psu1; own labels say PSU-1/PSU-2",
+     "range": "0-1",
+     "source": "openconfig",
+     "to": "psu-{n+1}"
+    },
+    {
+     "match": "fan{n}",
+     "note": "desc 'Chassis Fan - n'",
+     "range": "1-6",
+     "source": "openconfig",
+     "to": "fan-{n}"
+    },
+    {
+     "match": "fan0",
+     "note": "desc 'PSU 2 - Fan 1' \u2014 rolls up to PSU-2",
+     "source": "openconfig",
+     "to": "psu-2"
+    },
+    {
+     "match": "led0",
+     "source": "openconfig",
+     "to": "led-diag"
+    },
+    {
+     "match": "led1",
+     "source": "openconfig",
+     "to": "led-loc"
+    },
+    {
+     "match": "led2",
+     "source": "openconfig",
+     "to": "led-fan"
+    },
+    {
+     "match": "led3",
+     "source": "openconfig",
+     "to": "led-psu1"
+    },
+    {
+     "match": "led4",
+     "note": "vendor desc bug: led3 and led4 both say 'LED 4'",
+     "source": "openconfig",
+     "to": "led-psu2"
+    },
+    {
+     "match": "thermal{n}",
+     "note": "CPU core + LM75 board sensors; no faceplate component",
+     "range": "0-5",
+     "source": "openconfig",
+     "to": "region:internal"
+    },
+    {
+     "match": "thermal6",
+     "note": "PSU-2 thermal sensor",
+     "source": "openconfig",
+     "to": "psu-2"
+    }
+   ],
+   "format": 1,
+   "hardware": "edgecore/as7726-32x",
+   "interfaces": [
+    {
+     "breakout": {
+      "child-name": "swp{n}s{i}",
+      "modes": [
+       "4x25g",
+       "4x10g",
+       "2x50g",
+       "1x40g"
+      ]
+     },
+     "name": "swp{n}",
+     "physical": "port-{n}",
+     "range": "1-32"
+    },
+    {
+     "name": "ma1",
+     "physical": "mgmt-eth"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=S8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'DCS204 / AS7726-32X'. The names below were read from a running unit of this model (see `dumps`), whose `arcos-show-version.txt` reads 'Software: Arrcus ArcOS' over 'Firmware MU: EdgeCore MU 1.2.3' - the software house and the hardware one on consecutive lines.",
+   "terms": {
+    "bay": "Slot"
+   },
+   "version": "1.0.1"
+  },
+  "arrcus/as7946-30xb": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/as7946-30xb",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'AGR400 / AS7946-30XB'.",
+   "version": "1.0.0"
+  },
+  "arrcus/as7946-74xksb": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/as7946-74xksb",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'AGR420 / AS7946-74XKSB'.",
+   "version": "1.0.0"
+  },
+  "arrcus/cor550": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/cor550",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'COR550/AS7926-40XKFB'.",
+   "version": "1.0.0"
+  },
+  "arrcus/csr440": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/csr440",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'CSR440 / AS7535-28XB'.",
+   "version": "1.0.0"
+  },
+  "arrcus/dcs240": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs240",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 2, under Switching (XGS), the row 'DCS240 / AS9726-32DB'.",
+   "version": "1.0.0"
+  },
+  "arrcus/dcs510": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs510",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 2, under Switching (XGS), the row 'DCS510 / AS9716-32D'.",
+   "version": "1.0.0"
+  },
+  "arrcus/eps121": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/eps121",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'EPS121 / AS4625-54T'.",
+   "version": "1.0.0"
+  },
+  "arrcus/eps201": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/eps201",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'EPS201 / AS4630-54TE'.",
+   "version": "1.0.0"
+  },
+  "arrcus/eps202": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "edgecore/eps202",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'EPS202 / AS4630-54PE'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s6301-56st": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s6301-56st",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'S6301-56ST'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s8901-54xc": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s8901-54xc",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'S8901-54XC'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9110-32x": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9110-32x",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'S9110-32X'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9300-32d": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9300-32d",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'S9300-32D'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9301-32d": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9301-32d",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'S9301-32D'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9301-32db": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9301-32db",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 1, under Switching (XGS), the row 'S9301-32DB'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9321-64e": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9321-64e",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 2, under Switching (XGS), the row 'S9321-64E'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9321-64eo": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9321-64eo",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Switching (XGS)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 2, under Switching (XGS), the row 'S9321-64EO'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9510-28dc": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9510-28dc",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'S9510-28DC'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9600-30dx": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-30dx",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9600-30DX'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9600-32x": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-32x",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'S9600-32X'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9600-72xc": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-72xc",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 3, under Routing (DNX), the row 'S9600-72XC'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9610-36d": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-36d",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9610-36D'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9610-46dx": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-46dx",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9610-46DX'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9700-23d": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9700-23d",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "family": "VDR line card",
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9700-23D (VDR LC)'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9700-53dx": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9700-53dx",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "family": "VDR line card",
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9700-53DX (VDR LC)'.",
+   "version": "1.0.0"
+  },
+  "arrcus/s9705-48d": {
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The ArcOS S8.5.1A CLI Reference names front-panel ports swp<port number> and the management port ma1, and its Physical Interface section says the first port is swp1 - which the AS7726-32X and AS7326-56X confirm from live units. Its DNX sections disagree: 'Mapping of front panel ports to core' lists swp0 to swp71 on a 72-port system, and 'Breakout modes' puts breakout on the odd ports swp1 to swp39 of a 40-port Jericho 2 box while the same mapping page shows breakout on swp8, swp14 and swp20. None of the examples names its platform, so whether this box's first port is swp0 or swp1 is not stated anywhere we hold. Until it is, this listing exports the faceplate ids.",
+     "reason": "sources-disagree",
+     "wanted": "`show interface brief` (or `show interface swp* | select unit`) from a unit of this model running ArcOS 8.5, to fix the origin of the swp numbering and name the management port; with it, `interfaces` can map port-{n} to swp{n} or swp{n+1}.",
+     "what": "arcos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9705-48d",
+   "kind": "listing",
+   "manufacturer": "Arrcus",
+   "nos": "arcos",
+   "nos-versions": ">=8.5",
+   "ns": "arrcus",
+   "portfolio": {
+    "family": "VDR fabric card",
+    "line": "Routing (DNX)"
+   },
+   "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9705-48D (VDR FC)'.",
+   "version": "1.0.0"
+  }
+ }
+}

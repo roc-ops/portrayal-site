@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.0mm" height="712.2mm" viewBox="0 0 438.0 712.2" data-device="ds6000" data-view="top" data-weight-kg-note="35 kg (datasheet; configuration not stated)" data-rail-kit="optional rail kit (Foleon product page)" data-switching-capacity="102.4 Tbps" data-port-modes-osfp224="64 x 1.6TbE; 50/100/200/400/800GbE with breakouts; 128 x 800GbE, 256 x 400GbE, 512 x 200GbE" data-serdes="224 Gbps" data-psus="2+2 redundant hot-swap 3200 W, AC or DC" data-input-ac="180-240 VAC auto-ranging, 47-63 Hz" data-input-dc="40-72 VDC" data-fans="4+1 field-replaceable fan modules, dual-rotor, 9+1 rotor redundancy" data-operating-temp="0 to 40 C" data-humidity="5% to 95% non-condensing" data-mtbf="in excess of 150,000 hours" data-switch-silicon="Broadcom Tomahawk 6" data-cpu="Intel Xeon-D x86, 4C / 8C / 10C (COM Express)" data-memory="up to 64 GB DDR4" data-storage="up to 512 GB M.2 SSD" data-bmc="RunBMC, 2 GB DDR4, dual 128 MB flash for dual boot, OpenBMC, serial over LAN" data-software="SONiC; ONIE for compatible open-source and commercial NOS" data-optics-osfp="Up to 32 W / 40 W transceivers, up to 1 m DAC (datasheet OPTICS / Cables; not split by port type)" data-timing="IEEE 1588 1-step and 2-step time stamping; transparent and boundary clock; SyncE clock recovery; 1PPS, 10 MHz and ToD interfaces" data-mgmt-ports="2 x 50GbE SFP56 management, RJ45 console (CON0, CON1), RJ45 GbE OOB, USB 3.0 Type-A, USB-C console" data-emissions="AS/NZS CISPR32:2015+A1:2020 Class A; ICES-003 Issue 7:2020 Class A; EN55032:2015/AC:2016 Class A; VCCI-CISPR 32:2016 Class A; TEC/SD/DD/EMC-221/05/OCT-16 Class A; FCC CFR 47 Part 15 Subpart B Class A; EN/IEC61000-3-2; EN/IEC61000-3-3" data-immunity="EN 300 386 V1.6.1; EN 300 386 V2.2.1; EN 55035:2017/AC:2019; EN 61000-4-2/-3/-4/-5/-6/-8/-11" data-safety="IEC 62368-1:2014, :2018 and 2023 (CB Scheme, all country deviations); EN 62368-1:2014+A11:2017; EN IEC 62368-1:2020+A11:2020; EN IEC 62368-1:2024/A11:2024; UL 62368-1:2025; CSA C22.2 No. 62368-1:2025" data-green="WEEE 2012/19/EU; EU RoHS 2011/65/EU and 2015/863/EU; REACH (EC) 1907/2006; China RoHS" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS6000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"a06d279a4d58f42f362429bc3ce00ec366d488cada64b7840ef7b6fa348fa3c1","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS6000" data-sku="R4087-F9013-A1" data-part-number="R4087-F9013-A1" x="0" y="0" width="438" height="712.2" rx="1.2" fill="#c4c8cc" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

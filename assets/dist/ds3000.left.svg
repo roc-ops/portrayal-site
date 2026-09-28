@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="520.0mm" height="44.0mm" viewBox="0 0 520.0 44.0" data-device="ds3000" data-view="left" data-switching-capacity="3.2 Tbps" data-packet-buffer="32 MB" data-latency="under 500 ns port to port (cut-through)" data-forwarding-tables="up to 48K MPLS labels, 324K LPM, up to 128K ACL" data-power-max-w="500" data-power-envelope="fully-configured" data-input-ac="100-240 VAC auto-ranging, 47-63 Hz (datasheet); 90-264 VAC, 50-60 Hz, 3.4-7.1 A (guide)" data-input-hvdc="180-300 VDC auto input (datasheet)" data-fans="3+1 redundant hot-swap fans, front-to-back or back-to-front" data-operating-temp="0 to 45 C at 900 m" data-storage-temp="-40 to 70 C" data-humidity="operating 5% to 90% non-condensing; storage 5% to 95%" data-mtbf="in excess of 150,000 hours" data-cpu="Intel Atom C x86 (up to 8 core) on a COM-Express module" data-memory="8-32 GB ECC DDR4" data-storage="configurable M.2 SSD" data-bmc="BMC with IPMI 2.0, NC-SI shared management port, Serial over LAN" data-nos-installer="ONIE" data-breakout="each QSFP28 port breaks out to 4x25G or 4x10G; system maximums 128 x 10/25GbE or 64 x 50GbE (datasheet)" data-transceiver-power="QSFP28 up to 4.5 W / 5.5 W (partial) power; DAC to 5 m passive" data-timing="IEEE 1588 and SyncE timing option (datasheet)" data-optics-qsfp28="guide Table 1: 100GBASE-SR4 over OM3/OM4 parallel multimode, 100GBASE-LR4 (10 km) over single-mode, 100GBASE-CR4 copper DAC at 1 m 30AWG, 3 m 28AWG and 5 m 26AWG; 4x25G breakout by cable without a reboot" data-optics-sfp-plus="guide Table 1 (as printed): 10GBASE-SR over OM3/OM4, 10GBASE-LR (10 km) single-mode, 10G copper DAC at 1, 3, 5 and 7 m; the table writes the SFP+ modules as SR4/LR4/CR4, which is the QSFP row's wording copied" data-console="RJ-45, asynchronous, 8-N-1, 115200 baud (guide)" data-emc="CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI" data-safety="IEC60950-1, GB4943, UL/CSA, CB" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS3000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"e1f1d55471dd1d01056f05d2e9a16944d6b40fb77cc85d0404cadc89e7b9e1f3","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS3000" data-sku="R4039-F9002-A0" data-part-number="R4039-F9002-A0" x="0" y="0" width="520" height="44" rx="1.2" fill="#b4b8bc" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

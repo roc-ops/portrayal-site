@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="29.8mm" height="10.9mm" viewBox="0 0 29.8 10.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="multi-cord-hazard-label" data-path="multi-cord-hazard-label" data-class="marking" data-behaviour="mounts" data-ref="common/multi-cord-hazard-label@1:1.0.0" transform="translate(0,0)">
+    <title>multi-cord-hazard-label</title>
+    <rect id="multi-cord-hazard-label--field" x="0" y="0" width="29.8" height="10.9" rx="1.0" fill="#f2c619" />
+    <g id="multi-cord-hazard-label--shock-triangle">
+      <path d="M 8.0 1.4 L 13.0 9.6 H 3.0 Z" fill="none" stroke="#1a1a1a" stroke-width="0.7" stroke-linejoin="round" />
+      <path d="M 8.4 4.0 L 7.2 6.6 H 8.4 L 7.6 8.6 L 9.2 5.9 H 8.0 L 8.9 4.0 Z" fill="#1a1a1a" />
+    </g>
+    <g id="multi-cord-hazard-label--cords" fill="none" stroke="#1a1a1a" stroke-width="0.5">
+      <rect x="18.0" y="2.0" width="3.6" height="2.0" rx="0.3" />
+      <rect x="18.0" y="4.5" width="3.6" height="2.0" rx="0.3" />
+      <rect x="18.0" y="7.0" width="3.6" height="2.0" rx="0.3" />
+      <path d="M 22.4 5.5 L 26.6 5.5 M 25.2 4.3 L 26.6 5.5 L 25.2 6.7" />
+    </g>
+  </g>
+</svg>

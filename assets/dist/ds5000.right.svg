@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="750.0mm" height="87.0mm" viewBox="0 0 750.0 87.0" data-device="ds5000" data-view="right" data-weight-note="30 kg (datasheet and guide spec table; configuration not stated)" data-switching-capacity="51.2 Tbps IO bandwidth" data-power-draw-max-w="4000" data-power-input="100-240 VAC auto-ranging 47-63 Hz, or 180-300 VDC auto input" data-operating-temp="0 to 40 C (front-to-back airflow)" data-humidity="5% to 85% non-condensing" data-mtbf="in excess of 150,000 hours" data-switch-silicon="Broadcom StrataXGS Tomahawk 5" data-cpu="Intel Xeon D x86, 4-core (up to 8-core), 2.9 GHz, COM Express" data-memory="2 x 16 GB DDR4 with ECC" data-storage="128 GB / 256 GB M.2 SSD" data-software="SONiC; ONIE; ONL; Redfish" data-bmc="optional BMC system management - RunBMC, OpenBMC" data-breakout="guide, System Breakout Capabilities: 1 x 800G, 2 x 400G, 4 x 200G, 2 x 200G, 8 x 100G, 1 x 400G and 4 x 100G modes; odd-numbered front ports support up to 8x breakout and even-numbered up to 2x (&quot;due to ASIC limitation&quot;)." data-timing="IEEE 1588 1-step and 2-step time stamping; transparent and boundary clock; SyncE clock recovery (timing option)" data-optics-osfp="OSFP 800G optics and DAC: up to 20 W / 30 W transceivers, up to 4 m DAC, ZR/ZR+ coherent modules supported; up to 16 ports of 30 W optics on ports 1, 5, 9, 13, 49, 53, 57, 61 (upper row) and 4, 8, 12, 16, 52, 56, 60, 64 (bottom row). Tested in the guide's breakout table: OSFP 2x FR4 (dual duplex LC), OSFP 2x VR4 and 2x DR4 (dual MPO-8), OSFP DR8 (MPO-16) and a 400G OSFP AOC." data-optics-sfp28="SFP28 25G optics; the guide notes 1G transceivers are supported once speed and FEC are configured. No SFP28 module is listed in the tested table." data-emc="CE EMC, VCCI, FCC, ICES003" data-safety="UL, CB, CCC" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS5000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"ffc8f2c8ff83f33d6c70881299e46a6aa1af22b6d21b98c79ca5bfa8308acc0d","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS5000" data-sku="R4028-F9002-A1" data-part-number="R4028-F9002-A1" x="0" y="0" width="750" height="87" rx="1.2" fill="#d6d9dc" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

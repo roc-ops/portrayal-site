@@ -1,0 +1,7566 @@
+{
+ "attrs": {
+  "compliance": {
+   "emc": "CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI",
+   "safety": "IEC60950-1, GB4943, UL/CSA, CB"
+  },
+  "environmental": {
+   "humidity": "operating 5% to 90% non-condensing; storage 5% to 95%",
+   "mtbf": "in excess of 150,000 hours",
+   "operating-temp": "0 to 45 C at 900 m",
+   "storage-temp": "-40 to 70 C"
+  },
+  "features": {
+   "breakout": "each QSFP28 port breaks out to 4x25G or 4x10G; system maximums 128 x 10/25GbE or 64 x 50GbE (datasheet)",
+   "optics-qsfp28": "guide Table 1: 100GBASE-SR4 over OM3/OM4 parallel multimode, 100GBASE-LR4 (10 km) over single-mode, 100GBASE-CR4 copper DAC at 1 m 30AWG, 3 m 28AWG and 5 m 26AWG; 4x25G breakout by cable without a reboot",
+   "optics-sfp-plus": "guide Table 1 (as printed): 10GBASE-SR over OM3/OM4, 10GBASE-LR (10 km) single-mode, 10G copper DAC at 1, 3, 5 and 7 m; the table writes the SFP+ modules as SR4/LR4/CR4, which is the QSFP row's wording copied",
+   "timing": "IEEE 1588 and SyncE timing option (datasheet)",
+   "transceiver-power": "QSFP28 up to 4.5 W / 5.5 W (partial) power; DAC to 5 m passive"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "management": {
+   "console": "RJ-45, asynchronous, 8-N-1, 115200 baud (guide)"
+  },
+  "performance": {
+   "forwarding-tables": "up to 48K MPLS labels, 324K LPM, up to 128K ACL",
+   "latency": "under 500 ns port to port (cut-through)",
+   "packet-buffer": "32 MB",
+   "switching-capacity": "3.2 Tbps"
+  },
+  "platform": {
+   "bmc": "BMC with IPMI 2.0, NC-SI shared management port, Serial over LAN",
+   "cpu": "Intel Atom C x86 (up to 8 core) on a COM-Express module",
+   "memory": "8-32 GB ECC DDR4",
+   "nos-installer": "ONIE",
+   "storage": "configurable M.2 SSD"
+  },
+  "power": {
+   "input-ac": "100-240 VAC auto-ranging, 47-63 Hz (datasheet); 90-264 VAC, 50-60 Hz, 3.4-7.1 A (guide)",
+   "input-hvdc": "180-300 VDC auto input (datasheet)",
+   "power-envelope": "fully-configured",
+   "power-max-w": 500
+  },
+  "thermal": {
+   "fans": "3+1 redundant hot-swap fans, front-to-back or back-to-front"
+  }
+ },
+ "chassis": {
+  "color": "#b4b8bc",
+  "depth": 520.0,
+  "height": 44.0,
+  "power": "ac",
+  "ru": 1,
+  "weight-kg": 10.0,
+  "width": 438.0
+ },
+ "configurations": {
+  "b2f": {
+   "airflow": "back-to-front",
+   "component-attrs": {
+    "fan-40": {
+     "face-finish": "#9f450f",
+     "handle-finish": "#ce5510",
+     "latch-finish": "#ce5510"
+    }
+   },
+   "default": true,
+   "description": "R4039-F9002-A0: DS3000, 1U, 32x 100GbE, COMe 4C/16GB-DDR/64GB-SSD, back-to-front airflow (datasheet ordering information; the guide's What's in the Box repeats it). Listed first by both documents, so it is the default. Fan and supply finish for this airflow are not documented - see the airflow-finish gap.",
+   "kind": "base",
+   "part-numbers": {
+    "R4039-F9002-A0": {
+     "part": "R4039-F9002-A0"
+    }
+   }
+  },
+  "f2b": {
+   "airflow": "front-to-back",
+   "component-attrs": {
+    "fan-40": {
+     "face-finish": "#9f450f",
+     "handle-finish": "#ce5510",
+     "latch-finish": "#ce5510"
+    }
+   },
+   "description": "R4039-F9005-A0: DS3000, 1U, 32x 100GbE, COMe 4C/16GB-DDR/64GB-SSD, front-to-back airflow.",
+   "kind": "orderable",
+   "part-numbers": {
+    "R4039-F9005-A0": {
+     "part": "R4039-F9005-A0"
+    }
+   }
+  }
+ },
+ "description": "Celestica DS3000 - 1RU 32 x 100G QSFP28 data-center leaf/spine switch with one SFP+, an RJ-45 console, USB-A and RJ-45 management stack at the right, and two CRPS AC supplies and four hot-swap fans on the rear; front-to-back and back-to-front builds.",
+ "format": 1,
+ "gaps": [
+  {
+   "reason": "sources-disagree",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "Whether the DS3000's supply is the 550 W unit its face matches or a 500 W part. The DS3000 guide says 'dual 500W power supplies' and 'two 500W redundant power supply units'; the seated celestica/psu-r3059-f8001@1 is 550 W per the DS1000 datasheet's FRU line. The faces agree to about 0.5 mm feature by feature (DS3000 rear render against the DS2000's), which is why that part is seated, but the DS3000 documents never name a supply part number. The guide's '500W' may be the chassis draw ('Under 500W peak consumption') restated.",
+   "what": "psu-rating"
+  },
+  {
+   "reason": "sources-disagree",
+   "scope": [
+    "front"
+   ],
+   "wanted": "Which four indicators the front column is. The product render prints STAT, FAN, PWR, ALM; the guide's Table 2 lists PSU P1/P2, ALM and STAT. The printed set is drawn; a close photograph of a shipping unit settles it.",
+   "what": "status-lamp-names"
+  },
+  {
+   "reason": "sources-disagree",
+   "scope": [
+    "front"
+   ],
+   "wanted": "The datasheet's feature list says '1-2 SFP+ 10G'; the guide says '1 SFP+ port' and both renders draw one cage, lettered M1. Whether any build carries a second SFP+ is not stated.",
+   "what": "second-sfp-plus"
+  },
+  {
+   "reason": "sources-disagree",
+   "scope": [
+    "front"
+   ],
+   "wanted": "The docs-portal CAD render draws a grey, unlettered face and the product page's renders a black lettered one over the same layout. Black is drawn. A photograph of a shipping unit confirms it.",
+   "what": "face-colour"
+  },
+  {
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "What the plate between the two fan pairs is - a fixed part of the chassis or a filler over an unused fifth fan position. It has no handle, latch or screw in the render and the datasheet counts four fans (3+1), so it is drawn as panel decor.",
+   "what": "rear-blank"
+  },
+  {
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "How the F2B and B2F builds differ on the outside. The docs-portal rear render draws orange fans; the product page's three-quarter rear render draws black fans with blue handles. Neither says which airflow it is. Both configurations are drawn orange, from the orthographic figure (see the fan-finish provenance); a documented B2F or F2B finish would change one of them.",
+   "what": "airflow-finish"
+  },
+  {
+   "reason": "needs-drawing",
+   "scope": [
+    "top",
+    "bottom",
+    "left",
+    "right"
+   ],
+   "wanted": "A drawing of the lid, underside and side walls. Only three-quarter renders show them; see each face's empty sentence.",
+   "what": "side-faces"
+  }
+ ],
+ "groups": {
+  "fans": {
+   "attrs": {
+    "redundancy": "3+1",
+    "redundancy-note": "datasheet: 3+1 redundant fans"
+   },
+   "index-origin": 1,
+   "role": "service",
+   "term": "Fan"
+  },
+  "furniture": {
+   "description": "the pull-out lug tag and the printed port-type marks",
+   "index-origin": 1,
+   "role": "furniture",
+   "term": "Item"
+  },
+  "grounding": {
+   "index-origin": 1,
+   "role": "furniture",
+   "term": "Point"
+  },
+  "mgmt": {
+   "index-origin": 1,
+   "mixed": "the out-of-band stack at the right-hand end - an RJ-45 serial console over a USB-A over a 1000BASE-T RJ-45 management port, in one moulding.",
+   "role": "management",
+   "term": "Port"
+  },
+  "port-leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  },
+  "psus": {
+   "attrs": {
+    "redundancy": "1+1",
+    "redundancy-note": "datasheet: 1+1 redundant, hot swap PSUs"
+   },
+   "index-origin": 1,
+   "role": "service",
+   "term": "PSU"
+  },
+  "qsfp28": {
+   "attrs": {
+    "media": "qsfp28",
+    "speed": "100g"
+   },
+   "description": "the thirty-two QSFP28 ports, eight blocks of two ganged cages over two, odd over even down each column from 1 at the top left to 32 at the bottom right.",
+   "index-origin": 1,
+   "role": "traffic",
+   "term": "Port"
+  },
+  "sfp-plus": {
+   "attrs": {
+    "media": "sfp-plus",
+    "speed": "10g"
+   },
+   "description": "the single SFP+ cage at the far left, lettered M1 on the panel.",
+   "index-origin": 1,
+   "role": "traffic",
+   "term": "Port"
+  },
+  "status-leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  }
+ },
+ "kind": "device",
+ "manufacturer": "Celestica",
+ "maturity": "modelled",
+ "model": "DS3000",
+ "name": "ds3000",
+ "profile": "networking",
+ "provenance": {
+  "face-colour": {
+   "confidence": "photo-measured",
+   "note": "THE TWO VENDOR IMAGES DISAGREE ON THE FACE COLOUR AND THE BLACK ONE IS DRAWN. The docs-portal CAD render draws a plain grey face with no legends; the vendor's product-page renders draw the production face - black, legends in white, the Celestica wordmark above the management stack and DS3000 on the pull tab - over exactly the same layout: one SFP+ at the far left, eight blocks of four QSFP28, four lamps and a stacked RJ45 / USB / RJ45 at the right. Geometry is taken from the orthographic grey render, colour and printing from the black one. The grey render reads as an unbranded engineering render of the same chassis rather than a second build; see the face-colour gap. The housing colour is the grey sheet metal every other face shows (rear render, and the lid and side walls of the three-quarter renders); the black front is a full-face decor plate painted first, because a chassis carries one housing colour."
+  },
+  "fan-finish": {
+   "confidence": "photo-measured",
+   "note": "ORANGE, SAMPLED OFF THE ORTHOGRAPHIC REAR. On each of the four fans the face surround reads a median #9e440e-#a1460f (bottom strip, rows 205-212 px) and #8f3d0b-#953f0c in the shaded top corner, and the handle band across the middle #cc550f-#ce5510 (rows 118-138) along its whole length, the right-hand segments included. No latch of any other colour is drawn at the band's left end (it reads #a3430c-#a9470d, the face in shadow). celestica/fan-40@1's fields are set from those readings: face-finish #9f450f, handle-finish #ce5510, and latch-finish #ce5510 so no blue shows. The product page's rear render shows black fans with blue handles instead; see the airflow-finish gap."
+  },
+  "gate-1": {
+   "confidence": "measured",
+   "note": "FRONT: the body reads 1831 x 181 px between the side-wall edges (x 108-1939) and the top and bottom lips (y 22.5-203.5), aspect 10.12 against the datasheet's 438 x 44 = 9.955, 1.6% out. That is at the edge of usable, so the two axes are calibrated separately: 4.180 px/mm across from the stated width and 4.114 down from the stated height. THE ACROSS SCALE IS THEN PROVED BY A SECOND QUANTITY IT DID NOT USE: the dark QSFP openings read 77-78 px wide, 18.5 mm at 4.180 - std/qsfp-ganged@1's registry opening exactly - and the in-gang port pitch fits at 19.003 mm, the 19.0 of a ganged QSFP cage. REAR: the body reads 1954 x 196 px (x 115.5-2069.5, y 28.5-224.5), aspect 9.969 against 9.955, 0.15% - orthographic - so one scale, 4.461 px/mm, serves both axes. The ears are not drawn: they stand outside those edges on both faces."
+  },
+  "grounding": {
+   "confidence": "measured",
+   "note": "A SCREW OVER AN EARTH SYMBOL in the strip left of the left supply: a large pan-head screw at (11.5, 12.3) about 6.7 mm across, an earth-in-circle printed below it at (11.8, 19.4) and a round hole at (11.8, 35.8). The screw is common/screw-head@1 (3.6 mm) - the only fastener part - and the symbol common/ground-symbol@1. The guide's Ground Lug Installation page describes a two-stud lug assembly for DC builds only ('not applicable to the AC SKU versions'); both orderable SKUs are AC, so the lug is not drawn."
+  },
+  "management": {
+   "confidence": "measured",
+   "note": "ONE STACKED MOULDING: RJ-45 OVER USB-A OVER RJ-45, in a bright shell x 1772-1843 px, y 48-183 (17.0 x 32.7 mm). Column 1806 px crosses the top jack's dark interior at y 53-96, the USB tongue at 105-117 and the lower jack at 134-178; each std housing is centred on those. THE TOP JACK IS THE CONSOLE AND THE BOTTOM ONE THE MANAGEMENT ETHERNET: the product render prints IOIOI beside the upper jack, the USB trident beside the middle and the network mark beside the lower, and only the lower jack has link lamps (two green windows along its bottom edge, in both renders). The console's latch keyway is at the TOP - std/rj45@2 turned 180, since the std housing draws its keyway at the bottom when unturned - and the management jack's at the bottom with its two lamps on that side, which is common/rj45-eth@1 unturned. Both were checked against the render at 8x after placing. The guide: console RJ-45 asynchronous, 8-N-1, 115200 baud; the Ethernet port 10/100/1000 auto-negotiating; the datasheet adds that it is CPU/BMC shared (NC-SI) and the USB is Type A. No stacked RJ-45/USB part exists in this library, so the shell is decor under three standard parts."
+  },
+  "port-block": {
+   "confidence": "measured",
+   "note": "EIGHT BLOCKS OF TWO GANGED CAGES OVER TWO, FIT ON ALL SIXTEEN COLUMNS. The dark openings' centres read 307.5, 387.5, 487.5, 567, 667.5, 746.5, 846.5, 926.5, 1026.5, 1105.5, 1206, 1285.5, 1385.5, 1465, 1565.5, 1644.5 px on both rows. A least-squares fit x = first + block*k + pitch*j gives first column 47.82 mm, in-gang pitch 19.003 mm and block pitch 42.968 mm, worst residual 0.09 mm. Rows: the upper openings centre at y 13.98 and the lower at 27.83, read as the middle of the dark interior (y 62-98 and 119-155 px); the drawn interiors are about 9.0 mm tall against the registry's 9.58, so the registry height is drawn about the measured centre. Each ganged pair sits in a thin bright cage flange about 38.7 x 10.1 mm (x 267-429 px), drawn as a panel decor shell under the two apertures because std/qsfp-ganged@1 draws only the opening and a dark opening on a black face is otherwise invisible."
+  },
+  "port-lamps": {
+   "confidence": "measured",
+   "note": "FOUR LAMPS PER QSFP28 PORT, above the upper row and below the lower. The render draws each as a ring about 10 px (2.4 mm) across; the upper row centres at y 6.08 and the lower at 35.73, and port 1's four read at x 283, 299.5, 316.3 and 333 px - a 3.98 mm pitch centred 0.1 mm off the port's own centre - so every port's lamps are drawn at -6, -2, +2 and +6 mm from its centre. The guide's Table 4 says what they mean: first lamp green for 100 GbE, all four green for 4x25G and all four amber for 4x10G, blinking with activity - one lamp per lane. Lane 1 is taken as the LEFT lamp; the guide's 'first' does not say which end. common/led-dot@1 (2.0 mm, 1.4 mm window) is the part; the drawn ring is 0.4 mm larger, a compromise recorded rather than a new part cut."
+  },
+  "port-numbering": {
+   "confidence": "photo-measured",
+   "note": "Odd over even down each column, 1 to 32 left to right: the product-page three-quarter render prints '1 (up) (down) 2' in the band between the rows under the first column, '3 (up) (down) 4' under the second, and so on; the guide says only '32 QSFP28 ports'. The legend's x is the column centre and its y the middle of the band between the two rows, because the render it is read from is not orthographic; its size (1.6 mm type) is scaled from the same render against the 9.58 mm opening beside it."
+  },
+  "power": {
+   "confidence": "datasheet",
+   "note": "Datasheet: 'Under 500W peak consumption with maximum optics, 1+1 redundant, hot swap PSUs', '100-240VAC auto-ranging, 47-63Hz or 180-300VDC auto input'. The guide's spec table gives 'Power Consumption (W) 500W' and 'Power Input (VAC) 90~264VAC(50~60Hz)', and its rear-panel line says 'dual 500W power supplies'. The supply seated is celestica/psu-r3059-f8001@1, the CRPS face the DS1000 and DS2000 share, whose contract states 550 W from the DS1000 datasheet - see the psu-rating gap."
+  },
+  "rear": {
+   "confidence": "measured",
+   "note": "PSU, TWO FANS, A BLANK, TWO FANS, PSU - symmetric in kind but not in position. At 4.461 px/mm: the left supply's face spans x 17.4-90.2 and y 1.5-41.8, the 73.5 x 40 CRPS face; its lamp reads at x 490.5 px and the right supply's at 1988.5, 335.8 mm apart, which places the right bay. The four orange fan faces segment cleanly on colour (R-B): x 591-766, 803-977, 1227-1401 and 1438-1613 px, y 41-214, which is 39.2-39.4 x 38.8 mm faces at 106.59, 154.11, 249.15 and 296.45: two pairs on a 47.4 mm pitch, the block centred at 221.15 against the face's 219.0. Between the pairs a plain plate (201.2-240.9, y 2.2-42.2) with tabs top and bottom and no handle, screw or latch; drawn as panel decor, see the rear-blank gap. The datasheet: '3+1 redundant fans, front to back and back to front system cooling', '1+1 redundant, hot swap PSUs'."
+  },
+  "rear-numbering": {
+   "confidence": "estimated",
+   "note": "Neither rear render prints a bay number that can be read, and the guide's P1/P2 and FAN1-FAN4 (Tables 2 and 3) name the lamps without placing them. Supplies and fans are numbered 1 upward from the LEFT of the rear face as seen from behind, which is what the DS3001's own rear prints for its supplies. A reading of the real rear overturns it."
+  },
+  "sfp-plus": {
+   "confidence": "measured",
+   "note": "ONE SFP+ CAGE AT THE FAR LEFT, with one lamp above it and to its left. Opening centre x 24.76, y 13.86 (dark 183-240 px across, 63-96 down); the bright flange around it reads x 180-245 px and y 60-103, 15.6 x 10.5 mm, drawn as a shell decor under std/sfp@1. The lamp is at x 21.89, y 6.08 - 2.9 mm left of the cage centre, not over it. THE PANEL LETTERS IT 'M1' - the product render prints 'M1 (up)' beneath it. The guide's Table 4 gives it 10 GbE green and 1 GbE amber, and its port table calls it simply 'SFP+'. The datasheet says '1-2 SFP+ 10G'; both images show exactly one cage, so one is drawn and the second is a gap."
+  },
+  "sources": {
+   "confidence": "drawing",
+   "note": "TWO ORTHOGRAPHIC CAD RENDERS FROM THE VENDOR'S DOCUMENTATION PORTAL, AND TWO THREE-QUARTER MARKETING RENDERS FOR WHAT THEY PRINT. The DS3000 installation guide on documentationportal.celestica.com (Product Overview page) carries a front and a rear elevation. The rear was staged as ds3000--product-overview-1.jpg (2194 x 251). The FRONT was an inline SVG wrapper whose Heretto JWT had expired by modelling time, so it was re-fetched from the live page on 2026-09-26 as ds3000--product-overview-front.png (2053 x 233). Both are CAD renders with no legends. The vendor product page (cls.celestica.com/hardware-platforms/ds3000/) serves two three-quarter renders, staged as photos/ds3000-A.png (3840 x 1627) and ds3000-AA.png (front and rear side by side); they cannot be measured but they carry the printed legends, which is what they are used for. No square-on photograph exists on either site. The datasheet (ds3000-datasheet.pdf) carries the spec table and ordering codes. THE GUIDE'S FAN AND PSU PAGES ARE COPIED FROM A STORAGE ENCLOSURE - they speak of drives, canisters, DC-DC modules and 'five (5) fan modules ... for drive cooling', and their four figures show a different product - so only the Product Overview page's facts are taken from the guide."
+  },
+  "stack-orientation": {
+   "confidence": "drawing",
+   "note": "The library's stack convention (docs/pluggables-3d-design.md, S1-S4): upper cage upright (rotate 0) over the lower turned 180. Here it is also what the render draws: the upper row's connector card slot is at the BOTTOM of each opening and the lower row's at the TOP, a mirrored pair about the band between them, on all sixteen columns."
+  },
+  "status-lamps": {
+   "confidence": "measured",
+   "note": "FOUR LAMPS IN A COLUMN LEFT OF THE STACK, x 393.03, at y 11.55, 16.65, 21.88 and 27.10 (the green centres at 1751 px across, 70 / 91 / 112.5 / 134 down). The product render prints STAT, FAN, PWR and ALM against them top to bottom, set on end and reading upward to the left of each lamp, which is how they are drawn. THE GUIDE'S TABLE 2 NAMES A DIFFERENT SET - PSU 'P1/P2', ALM and STAT, with no FAN - which is also four lamps. The printed legends are drawn and the conflict is a gap."
+  },
+  "vents": {
+   "confidence": "measured",
+   "note": "TWO ROWS OF SLOTS ALONG THE TOP AND BOTTOM EDGES, read off the render as dark runs rather than drawn as a pattern. Top: 68 slots about 4.0 x 1.7 mm on a 5.0 mm pitch, whose dark cores sit at y 24-31 px; bottom: 80 slots about 2.9 x 1.9 mm on a 4.0 mm pitch at y 187-195. Each is one decor rect at its measured x, so the irregular gaps the render draws (over the SFP+ and between some blocks) are kept rather than smoothed. The product render draws the same rows as bracket-shaped louvres; the outline is not reproduced. The 8 mm cavity depth is not measured - it only makes the slots read as holes in 3D."
+  },
+  "wordmark-and-tag": {
+   "confidence": "photo-measured",
+   "note": "'Celestica' is printed as a plain-text wordmark above the management stack and 'DS3000' on the pull tab (product render). The wordmark is set in sans-serif text, never traced (no logo mark is drawn). The pull tab is celestica/lug-tag@1 turned on end (rotate 270, so its text reads upward, as rendered, which puts the part's grip end at the top), in a slot at x 429.39, y 17.14-40.48 on the grey render."
+  }
+ },
+ "references": [
+  {
+   "title": "Celestica DS3000 Installation Guide, documentationportal.celestica.com/en/networking/ds3000"
+  },
+  {
+   "title": "Celestica DS3000 1U 32-port 100GbE Data Center Switch datasheet"
+  },
+  {
+   "title": "Celestica DS3000 product page, cls.celestica.com/hardware-platforms/ds3000/"
+  }
+ ],
+ "version": "0.1.0",
+ "views": {
+  "bottom": {
+   "empty": "Not drawn by any source held. A face that sits on rails and carries no connectors gets no figure.",
+   "size": {
+    "h": 520.0,
+    "w": 438.0
+   }
+  },
+  "front": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       38.57,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-1",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       38.57,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-2",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 2,
+      "rotate": 180
+     },
+     {
+      "at": [
+       57.57,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-3",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       57.57,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-4",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 4,
+      "rotate": 180
+     },
+     {
+      "at": [
+       81.53,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-5",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 5
+     },
+     {
+      "at": [
+       81.53,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-6",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 6,
+      "rotate": 180
+     },
+     {
+      "at": [
+       100.54,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-7",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 7
+     },
+     {
+      "at": [
+       100.54,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-8",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 8,
+      "rotate": 180
+     },
+     {
+      "at": [
+       124.5,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-9",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 9
+     },
+     {
+      "at": [
+       124.5,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-10",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 10,
+      "rotate": 180
+     },
+     {
+      "at": [
+       143.5,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-11",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 11
+     },
+     {
+      "at": [
+       143.5,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-12",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 12,
+      "rotate": 180
+     },
+     {
+      "at": [
+       167.47,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-13",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 13
+     },
+     {
+      "at": [
+       167.47,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-14",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 14,
+      "rotate": 180
+     },
+     {
+      "at": [
+       186.47,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-15",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 15
+     },
+     {
+      "at": [
+       186.47,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-16",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 16,
+      "rotate": 180
+     },
+     {
+      "at": [
+       210.44,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-17",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 17
+     },
+     {
+      "at": [
+       210.44,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-18",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 18,
+      "rotate": 180
+     },
+     {
+      "at": [
+       229.44,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-19",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 19
+     },
+     {
+      "at": [
+       229.44,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-20",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 20,
+      "rotate": 180
+     },
+     {
+      "at": [
+       253.41,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-21",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 21
+     },
+     {
+      "at": [
+       253.41,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-22",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 22,
+      "rotate": 180
+     },
+     {
+      "at": [
+       272.41,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-23",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 23
+     },
+     {
+      "at": [
+       272.41,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-24",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 24,
+      "rotate": 180
+     },
+     {
+      "at": [
+       296.37,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-25",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 25
+     },
+     {
+      "at": [
+       296.37,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-26",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 26,
+      "rotate": 180
+     },
+     {
+      "at": [
+       315.38,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-27",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 27
+     },
+     {
+      "at": [
+       315.38,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-28",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 28,
+      "rotate": 180
+     },
+     {
+      "at": [
+       339.34,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-29",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 29
+     },
+     {
+      "at": [
+       339.34,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-30",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 30,
+      "rotate": 180
+     },
+     {
+      "at": [
+       358.34,
+       9.19
+      ],
+      "group": "qsfp28",
+      "id": "port-31",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 31
+     },
+     {
+      "at": [
+       358.34,
+       23.04
+      ],
+      "group": "qsfp28",
+      "id": "port-32",
+      "ref": "std/qsfp-ganged@1",
+      "rel-pos": 32,
+      "rotate": 180
+     },
+     {
+      "at": [
+       40.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "1"
+      },
+      "for": "port-1",
+      "group": "port-leds",
+      "id": "led-port-1-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       44.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "1"
+      },
+      "for": "port-1",
+      "group": "port-leds",
+      "id": "led-port-1-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 2
+     },
+     {
+      "at": [
+       48.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "1"
+      },
+      "for": "port-1",
+      "group": "port-leds",
+      "id": "led-port-1-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       52.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "1"
+      },
+      "for": "port-1",
+      "group": "port-leds",
+      "id": "led-port-1-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 4
+     },
+     {
+      "at": [
+       40.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "2"
+      },
+      "for": "port-2",
+      "group": "port-leds",
+      "id": "led-port-2-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 5
+     },
+     {
+      "at": [
+       44.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "2"
+      },
+      "for": "port-2",
+      "group": "port-leds",
+      "id": "led-port-2-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 6
+     },
+     {
+      "at": [
+       48.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "2"
+      },
+      "for": "port-2",
+      "group": "port-leds",
+      "id": "led-port-2-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 7
+     },
+     {
+      "at": [
+       52.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "2"
+      },
+      "for": "port-2",
+      "group": "port-leds",
+      "id": "led-port-2-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 8
+     },
+     {
+      "at": [
+       59.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "3"
+      },
+      "for": "port-3",
+      "group": "port-leds",
+      "id": "led-port-3-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 9
+     },
+     {
+      "at": [
+       63.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "3"
+      },
+      "for": "port-3",
+      "group": "port-leds",
+      "id": "led-port-3-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 10
+     },
+     {
+      "at": [
+       67.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "3"
+      },
+      "for": "port-3",
+      "group": "port-leds",
+      "id": "led-port-3-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 11
+     },
+     {
+      "at": [
+       71.82,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "3"
+      },
+      "for": "port-3",
+      "group": "port-leds",
+      "id": "led-port-3-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 12
+     },
+     {
+      "at": [
+       59.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "4"
+      },
+      "for": "port-4",
+      "group": "port-leds",
+      "id": "led-port-4-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 13
+     },
+     {
+      "at": [
+       63.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "4"
+      },
+      "for": "port-4",
+      "group": "port-leds",
+      "id": "led-port-4-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 14
+     },
+     {
+      "at": [
+       67.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "4"
+      },
+      "for": "port-4",
+      "group": "port-leds",
+      "id": "led-port-4-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 15
+     },
+     {
+      "at": [
+       71.82,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "4"
+      },
+      "for": "port-4",
+      "group": "port-leds",
+      "id": "led-port-4-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 16
+     },
+     {
+      "at": [
+       83.78,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "5"
+      },
+      "for": "port-5",
+      "group": "port-leds",
+      "id": "led-port-5-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 17
+     },
+     {
+      "at": [
+       87.78,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "5"
+      },
+      "for": "port-5",
+      "group": "port-leds",
+      "id": "led-port-5-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 18
+     },
+     {
+      "at": [
+       91.78,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "5"
+      },
+      "for": "port-5",
+      "group": "port-leds",
+      "id": "led-port-5-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 19
+     },
+     {
+      "at": [
+       95.78,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "5"
+      },
+      "for": "port-5",
+      "group": "port-leds",
+      "id": "led-port-5-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 20
+     },
+     {
+      "at": [
+       83.78,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "6"
+      },
+      "for": "port-6",
+      "group": "port-leds",
+      "id": "led-port-6-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 21
+     },
+     {
+      "at": [
+       87.78,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "6"
+      },
+      "for": "port-6",
+      "group": "port-leds",
+      "id": "led-port-6-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 22
+     },
+     {
+      "at": [
+       91.78,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "6"
+      },
+      "for": "port-6",
+      "group": "port-leds",
+      "id": "led-port-6-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 23
+     },
+     {
+      "at": [
+       95.78,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "6"
+      },
+      "for": "port-6",
+      "group": "port-leds",
+      "id": "led-port-6-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 24
+     },
+     {
+      "at": [
+       102.79,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "7"
+      },
+      "for": "port-7",
+      "group": "port-leds",
+      "id": "led-port-7-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 25
+     },
+     {
+      "at": [
+       106.79,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "7"
+      },
+      "for": "port-7",
+      "group": "port-leds",
+      "id": "led-port-7-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 26
+     },
+     {
+      "at": [
+       110.79,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "7"
+      },
+      "for": "port-7",
+      "group": "port-leds",
+      "id": "led-port-7-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 27
+     },
+     {
+      "at": [
+       114.79,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "7"
+      },
+      "for": "port-7",
+      "group": "port-leds",
+      "id": "led-port-7-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 28
+     },
+     {
+      "at": [
+       102.79,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "8"
+      },
+      "for": "port-8",
+      "group": "port-leds",
+      "id": "led-port-8-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 29
+     },
+     {
+      "at": [
+       106.79,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "8"
+      },
+      "for": "port-8",
+      "group": "port-leds",
+      "id": "led-port-8-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 30
+     },
+     {
+      "at": [
+       110.79,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "8"
+      },
+      "for": "port-8",
+      "group": "port-leds",
+      "id": "led-port-8-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 31
+     },
+     {
+      "at": [
+       114.79,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "8"
+      },
+      "for": "port-8",
+      "group": "port-leds",
+      "id": "led-port-8-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 32
+     },
+     {
+      "at": [
+       126.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "9"
+      },
+      "for": "port-9",
+      "group": "port-leds",
+      "id": "led-port-9-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 33
+     },
+     {
+      "at": [
+       130.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "9"
+      },
+      "for": "port-9",
+      "group": "port-leds",
+      "id": "led-port-9-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 34
+     },
+     {
+      "at": [
+       134.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "9"
+      },
+      "for": "port-9",
+      "group": "port-leds",
+      "id": "led-port-9-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 35
+     },
+     {
+      "at": [
+       138.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "9"
+      },
+      "for": "port-9",
+      "group": "port-leds",
+      "id": "led-port-9-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 36
+     },
+     {
+      "at": [
+       126.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "10"
+      },
+      "for": "port-10",
+      "group": "port-leds",
+      "id": "led-port-10-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 37
+     },
+     {
+      "at": [
+       130.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "10"
+      },
+      "for": "port-10",
+      "group": "port-leds",
+      "id": "led-port-10-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 38
+     },
+     {
+      "at": [
+       134.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "10"
+      },
+      "for": "port-10",
+      "group": "port-leds",
+      "id": "led-port-10-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 39
+     },
+     {
+      "at": [
+       138.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "10"
+      },
+      "for": "port-10",
+      "group": "port-leds",
+      "id": "led-port-10-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 40
+     },
+     {
+      "at": [
+       145.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "11"
+      },
+      "for": "port-11",
+      "group": "port-leds",
+      "id": "led-port-11-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 41
+     },
+     {
+      "at": [
+       149.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "11"
+      },
+      "for": "port-11",
+      "group": "port-leds",
+      "id": "led-port-11-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 42
+     },
+     {
+      "at": [
+       153.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "11"
+      },
+      "for": "port-11",
+      "group": "port-leds",
+      "id": "led-port-11-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 43
+     },
+     {
+      "at": [
+       157.75,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "11"
+      },
+      "for": "port-11",
+      "group": "port-leds",
+      "id": "led-port-11-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 44
+     },
+     {
+      "at": [
+       145.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "12"
+      },
+      "for": "port-12",
+      "group": "port-leds",
+      "id": "led-port-12-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 45
+     },
+     {
+      "at": [
+       149.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "12"
+      },
+      "for": "port-12",
+      "group": "port-leds",
+      "id": "led-port-12-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 46
+     },
+     {
+      "at": [
+       153.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "12"
+      },
+      "for": "port-12",
+      "group": "port-leds",
+      "id": "led-port-12-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 47
+     },
+     {
+      "at": [
+       157.75,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "12"
+      },
+      "for": "port-12",
+      "group": "port-leds",
+      "id": "led-port-12-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 48
+     },
+     {
+      "at": [
+       169.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "13"
+      },
+      "for": "port-13",
+      "group": "port-leds",
+      "id": "led-port-13-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 49
+     },
+     {
+      "at": [
+       173.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "13"
+      },
+      "for": "port-13",
+      "group": "port-leds",
+      "id": "led-port-13-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 50
+     },
+     {
+      "at": [
+       177.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "13"
+      },
+      "for": "port-13",
+      "group": "port-leds",
+      "id": "led-port-13-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 51
+     },
+     {
+      "at": [
+       181.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "13"
+      },
+      "for": "port-13",
+      "group": "port-leds",
+      "id": "led-port-13-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 52
+     },
+     {
+      "at": [
+       169.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "14"
+      },
+      "for": "port-14",
+      "group": "port-leds",
+      "id": "led-port-14-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 53
+     },
+     {
+      "at": [
+       173.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "14"
+      },
+      "for": "port-14",
+      "group": "port-leds",
+      "id": "led-port-14-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 54
+     },
+     {
+      "at": [
+       177.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "14"
+      },
+      "for": "port-14",
+      "group": "port-leds",
+      "id": "led-port-14-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 55
+     },
+     {
+      "at": [
+       181.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "14"
+      },
+      "for": "port-14",
+      "group": "port-leds",
+      "id": "led-port-14-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 56
+     },
+     {
+      "at": [
+       188.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "15"
+      },
+      "for": "port-15",
+      "group": "port-leds",
+      "id": "led-port-15-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 57
+     },
+     {
+      "at": [
+       192.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "15"
+      },
+      "for": "port-15",
+      "group": "port-leds",
+      "id": "led-port-15-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 58
+     },
+     {
+      "at": [
+       196.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "15"
+      },
+      "for": "port-15",
+      "group": "port-leds",
+      "id": "led-port-15-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 59
+     },
+     {
+      "at": [
+       200.72,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "15"
+      },
+      "for": "port-15",
+      "group": "port-leds",
+      "id": "led-port-15-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 60
+     },
+     {
+      "at": [
+       188.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "16"
+      },
+      "for": "port-16",
+      "group": "port-leds",
+      "id": "led-port-16-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 61
+     },
+     {
+      "at": [
+       192.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "16"
+      },
+      "for": "port-16",
+      "group": "port-leds",
+      "id": "led-port-16-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 62
+     },
+     {
+      "at": [
+       196.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "16"
+      },
+      "for": "port-16",
+      "group": "port-leds",
+      "id": "led-port-16-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 63
+     },
+     {
+      "at": [
+       200.72,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "16"
+      },
+      "for": "port-16",
+      "group": "port-leds",
+      "id": "led-port-16-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 64
+     },
+     {
+      "at": [
+       212.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "17"
+      },
+      "for": "port-17",
+      "group": "port-leds",
+      "id": "led-port-17-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 65
+     },
+     {
+      "at": [
+       216.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "17"
+      },
+      "for": "port-17",
+      "group": "port-leds",
+      "id": "led-port-17-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 66
+     },
+     {
+      "at": [
+       220.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "17"
+      },
+      "for": "port-17",
+      "group": "port-leds",
+      "id": "led-port-17-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 67
+     },
+     {
+      "at": [
+       224.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "17"
+      },
+      "for": "port-17",
+      "group": "port-leds",
+      "id": "led-port-17-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 68
+     },
+     {
+      "at": [
+       212.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "18"
+      },
+      "for": "port-18",
+      "group": "port-leds",
+      "id": "led-port-18-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 69
+     },
+     {
+      "at": [
+       216.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "18"
+      },
+      "for": "port-18",
+      "group": "port-leds",
+      "id": "led-port-18-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 70
+     },
+     {
+      "at": [
+       220.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "18"
+      },
+      "for": "port-18",
+      "group": "port-leds",
+      "id": "led-port-18-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 71
+     },
+     {
+      "at": [
+       224.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "18"
+      },
+      "for": "port-18",
+      "group": "port-leds",
+      "id": "led-port-18-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 72
+     },
+     {
+      "at": [
+       231.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "19"
+      },
+      "for": "port-19",
+      "group": "port-leds",
+      "id": "led-port-19-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 73
+     },
+     {
+      "at": [
+       235.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "19"
+      },
+      "for": "port-19",
+      "group": "port-leds",
+      "id": "led-port-19-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 74
+     },
+     {
+      "at": [
+       239.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "19"
+      },
+      "for": "port-19",
+      "group": "port-leds",
+      "id": "led-port-19-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 75
+     },
+     {
+      "at": [
+       243.69,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "19"
+      },
+      "for": "port-19",
+      "group": "port-leds",
+      "id": "led-port-19-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 76
+     },
+     {
+      "at": [
+       231.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "20"
+      },
+      "for": "port-20",
+      "group": "port-leds",
+      "id": "led-port-20-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 77
+     },
+     {
+      "at": [
+       235.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "20"
+      },
+      "for": "port-20",
+      "group": "port-leds",
+      "id": "led-port-20-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 78
+     },
+     {
+      "at": [
+       239.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "20"
+      },
+      "for": "port-20",
+      "group": "port-leds",
+      "id": "led-port-20-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 79
+     },
+     {
+      "at": [
+       243.69,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "20"
+      },
+      "for": "port-20",
+      "group": "port-leds",
+      "id": "led-port-20-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 80
+     },
+     {
+      "at": [
+       255.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "21"
+      },
+      "for": "port-21",
+      "group": "port-leds",
+      "id": "led-port-21-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 81
+     },
+     {
+      "at": [
+       259.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "21"
+      },
+      "for": "port-21",
+      "group": "port-leds",
+      "id": "led-port-21-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 82
+     },
+     {
+      "at": [
+       263.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "21"
+      },
+      "for": "port-21",
+      "group": "port-leds",
+      "id": "led-port-21-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 83
+     },
+     {
+      "at": [
+       267.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "21"
+      },
+      "for": "port-21",
+      "group": "port-leds",
+      "id": "led-port-21-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 84
+     },
+     {
+      "at": [
+       255.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "22"
+      },
+      "for": "port-22",
+      "group": "port-leds",
+      "id": "led-port-22-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 85
+     },
+     {
+      "at": [
+       259.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "22"
+      },
+      "for": "port-22",
+      "group": "port-leds",
+      "id": "led-port-22-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 86
+     },
+     {
+      "at": [
+       263.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "22"
+      },
+      "for": "port-22",
+      "group": "port-leds",
+      "id": "led-port-22-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 87
+     },
+     {
+      "at": [
+       267.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "22"
+      },
+      "for": "port-22",
+      "group": "port-leds",
+      "id": "led-port-22-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 88
+     },
+     {
+      "at": [
+       274.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "23"
+      },
+      "for": "port-23",
+      "group": "port-leds",
+      "id": "led-port-23-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 89
+     },
+     {
+      "at": [
+       278.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "23"
+      },
+      "for": "port-23",
+      "group": "port-leds",
+      "id": "led-port-23-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 90
+     },
+     {
+      "at": [
+       282.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "23"
+      },
+      "for": "port-23",
+      "group": "port-leds",
+      "id": "led-port-23-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 91
+     },
+     {
+      "at": [
+       286.66,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "23"
+      },
+      "for": "port-23",
+      "group": "port-leds",
+      "id": "led-port-23-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 92
+     },
+     {
+      "at": [
+       274.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "24"
+      },
+      "for": "port-24",
+      "group": "port-leds",
+      "id": "led-port-24-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 93
+     },
+     {
+      "at": [
+       278.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "24"
+      },
+      "for": "port-24",
+      "group": "port-leds",
+      "id": "led-port-24-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 94
+     },
+     {
+      "at": [
+       282.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "24"
+      },
+      "for": "port-24",
+      "group": "port-leds",
+      "id": "led-port-24-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 95
+     },
+     {
+      "at": [
+       286.66,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "24"
+      },
+      "for": "port-24",
+      "group": "port-leds",
+      "id": "led-port-24-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 96
+     },
+     {
+      "at": [
+       298.62,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "25"
+      },
+      "for": "port-25",
+      "group": "port-leds",
+      "id": "led-port-25-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 97
+     },
+     {
+      "at": [
+       302.62,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "25"
+      },
+      "for": "port-25",
+      "group": "port-leds",
+      "id": "led-port-25-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 98
+     },
+     {
+      "at": [
+       306.62,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "25"
+      },
+      "for": "port-25",
+      "group": "port-leds",
+      "id": "led-port-25-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 99
+     },
+     {
+      "at": [
+       310.62,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "25"
+      },
+      "for": "port-25",
+      "group": "port-leds",
+      "id": "led-port-25-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 100
+     },
+     {
+      "at": [
+       298.62,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "26"
+      },
+      "for": "port-26",
+      "group": "port-leds",
+      "id": "led-port-26-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 101
+     },
+     {
+      "at": [
+       302.62,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "26"
+      },
+      "for": "port-26",
+      "group": "port-leds",
+      "id": "led-port-26-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 102
+     },
+     {
+      "at": [
+       306.62,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "26"
+      },
+      "for": "port-26",
+      "group": "port-leds",
+      "id": "led-port-26-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 103
+     },
+     {
+      "at": [
+       310.62,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "26"
+      },
+      "for": "port-26",
+      "group": "port-leds",
+      "id": "led-port-26-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 104
+     },
+     {
+      "at": [
+       317.63,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "27"
+      },
+      "for": "port-27",
+      "group": "port-leds",
+      "id": "led-port-27-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 105
+     },
+     {
+      "at": [
+       321.63,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "27"
+      },
+      "for": "port-27",
+      "group": "port-leds",
+      "id": "led-port-27-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 106
+     },
+     {
+      "at": [
+       325.63,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "27"
+      },
+      "for": "port-27",
+      "group": "port-leds",
+      "id": "led-port-27-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 107
+     },
+     {
+      "at": [
+       329.63,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "27"
+      },
+      "for": "port-27",
+      "group": "port-leds",
+      "id": "led-port-27-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 108
+     },
+     {
+      "at": [
+       317.63,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "28"
+      },
+      "for": "port-28",
+      "group": "port-leds",
+      "id": "led-port-28-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 109
+     },
+     {
+      "at": [
+       321.63,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "28"
+      },
+      "for": "port-28",
+      "group": "port-leds",
+      "id": "led-port-28-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 110
+     },
+     {
+      "at": [
+       325.63,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "28"
+      },
+      "for": "port-28",
+      "group": "port-leds",
+      "id": "led-port-28-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 111
+     },
+     {
+      "at": [
+       329.63,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "28"
+      },
+      "for": "port-28",
+      "group": "port-leds",
+      "id": "led-port-28-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 112
+     },
+     {
+      "at": [
+       341.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "29"
+      },
+      "for": "port-29",
+      "group": "port-leds",
+      "id": "led-port-29-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 113
+     },
+     {
+      "at": [
+       345.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "29"
+      },
+      "for": "port-29",
+      "group": "port-leds",
+      "id": "led-port-29-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 114
+     },
+     {
+      "at": [
+       349.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "29"
+      },
+      "for": "port-29",
+      "group": "port-leds",
+      "id": "led-port-29-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 115
+     },
+     {
+      "at": [
+       353.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "29"
+      },
+      "for": "port-29",
+      "group": "port-leds",
+      "id": "led-port-29-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 116
+     },
+     {
+      "at": [
+       341.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "30"
+      },
+      "for": "port-30",
+      "group": "port-leds",
+      "id": "led-port-30-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 117
+     },
+     {
+      "at": [
+       345.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "30"
+      },
+      "for": "port-30",
+      "group": "port-leds",
+      "id": "led-port-30-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 118
+     },
+     {
+      "at": [
+       349.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "30"
+      },
+      "for": "port-30",
+      "group": "port-leds",
+      "id": "led-port-30-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 119
+     },
+     {
+      "at": [
+       353.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "30"
+      },
+      "for": "port-30",
+      "group": "port-leds",
+      "id": "led-port-30-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 120
+     },
+     {
+      "at": [
+       360.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "31"
+      },
+      "for": "port-31",
+      "group": "port-leds",
+      "id": "led-port-31-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 121
+     },
+     {
+      "at": [
+       364.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "31"
+      },
+      "for": "port-31",
+      "group": "port-leds",
+      "id": "led-port-31-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 122
+     },
+     {
+      "at": [
+       368.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "31"
+      },
+      "for": "port-31",
+      "group": "port-leds",
+      "id": "led-port-31-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 123
+     },
+     {
+      "at": [
+       372.59,
+       5.08
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "31"
+      },
+      "for": "port-31",
+      "group": "port-leds",
+      "id": "led-port-31-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 124
+     },
+     {
+      "at": [
+       360.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "1",
+       "port": "32"
+      },
+      "for": "port-32",
+      "group": "port-leds",
+      "id": "led-port-32-l1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 125
+     },
+     {
+      "at": [
+       364.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "2",
+       "port": "32"
+      },
+      "for": "port-32",
+      "group": "port-leds",
+      "id": "led-port-32-l2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 126
+     },
+     {
+      "at": [
+       368.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "3",
+       "port": "32"
+      },
+      "for": "port-32",
+      "group": "port-leds",
+      "id": "led-port-32-l3",
+      "ref": "common/led-dot@1",
+      "rel-pos": 127
+     },
+     {
+      "at": [
+       372.59,
+       34.73
+      ],
+      "attrs": {
+       "lane": "4",
+       "port": "32"
+      },
+      "for": "port-32",
+      "group": "port-leds",
+      "id": "led-port-32-l4",
+      "ref": "common/led-dot@1",
+      "rel-pos": 128
+     },
+     {
+      "at": [
+       17.51,
+       8.86
+      ],
+      "attrs": {
+       "label": "M1"
+      },
+      "group": "sfp-plus",
+      "id": "m1",
+      "ref": "std/sfp@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       20.89,
+       5.08
+      ],
+      "for": "m1",
+      "group": "port-leds",
+      "id": "led-m1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 129
+     },
+     {
+      "at": [
+       398.3,
+       6.3
+      ],
+      "attrs": {
+       "media": "rj45-serial",
+       "role": "console"
+      },
+      "group": "mgmt",
+      "id": "console",
+      "ref": "std/rj45@2",
+      "rel-pos": 1,
+      "rotate": 180
+     },
+     {
+      "at": [
+       400.2,
+       19.6
+      ],
+      "attrs": {
+       "role": "storage"
+      },
+      "group": "mgmt",
+      "id": "usb",
+      "ref": "std/usb-a@1",
+      "rel-pos": 2
+     },
+     {
+      "at": [
+       398.3,
+       25.9
+      ],
+      "attrs": {
+       "media": "rj45",
+       "role": "mgmt",
+       "speed": "1g"
+      },
+      "group": "mgmt",
+      "id": "mgmt",
+      "ref": "common/rj45-eth@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       392.03,
+       10.55
+      ],
+      "attrs": {
+       "label": "STAT"
+      },
+      "for": "chassis",
+      "group": "status-leds",
+      "id": "led-stat",
+      "ref": "common/led-dot@1",
+      "rel-pos": 1,
+      "states": [
+       "off",
+       {
+        "color": "#22c55e",
+        "name": "onie"
+       },
+       {
+        "color": "#f59e0b",
+        "name": "fault"
+       }
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       15.65
+      ],
+      "attrs": {
+       "label": "FAN"
+      },
+      "for": "chassis",
+      "group": "status-leds",
+      "id": "led-fan",
+      "ref": "common/led-dot@1",
+      "rel-pos": 2,
+      "states": [
+       "off",
+       {
+        "color": "#22c55e",
+        "name": "ok"
+       },
+       {
+        "color": "#f59e0b",
+        "name": "fault"
+       }
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       20.88
+      ],
+      "attrs": {
+       "label": "PWR"
+      },
+      "for": "chassis",
+      "group": "status-leds",
+      "id": "led-pwr",
+      "ref": "common/led-dot@1",
+      "rel-pos": 3,
+      "states": [
+       "off",
+       {
+        "color": "#22c55e",
+        "name": "ok"
+       },
+       {
+        "color": "#f59e0b",
+        "name": "fault"
+       }
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       26.1
+      ],
+      "attrs": {
+       "label": "ALM"
+      },
+      "for": "chassis",
+      "group": "status-leds",
+      "id": "led-alm",
+      "ref": "common/led-dot@1",
+      "rel-pos": 4,
+      "states": [
+       "off",
+       {
+        "color": "#22c55e",
+        "name": "ok"
+       },
+       {
+        "color": "#f59e0b",
+        "name": "alarm"
+       }
+      ]
+     },
+     {
+      "at": [
+       417.8,
+       19.9
+      ],
+      "for": "usb",
+      "group": "furniture",
+      "id": "usb-mark",
+      "ref": "common/usb-symbol@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       417.89,
+       26.81
+      ],
+      "attrs": {
+       "label": "DS3000"
+      },
+      "group": "furniture",
+      "id": "lug-tag",
+      "ref": "celestica/lug-tag@1",
+      "rel-pos": 2,
+      "rotate": 270
+     }
+    ]
+   },
+   "panel": {
+    "cutouts": [
+     {
+      "at": [
+       38.57,
+       9.19
+      ],
+      "id": "port-1",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       40.82,
+       5.08
+      ],
+      "id": "led-port-1-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       44.82,
+       5.08
+      ],
+      "id": "led-port-1-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       48.82,
+       5.08
+      ],
+      "id": "led-port-1-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       52.82,
+       5.08
+      ],
+      "id": "led-port-1-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       38.57,
+       23.04
+      ],
+      "id": "port-2",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       40.82,
+       34.73
+      ],
+      "id": "led-port-2-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       44.82,
+       34.73
+      ],
+      "id": "led-port-2-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       48.82,
+       34.73
+      ],
+      "id": "led-port-2-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       52.82,
+       34.73
+      ],
+      "id": "led-port-2-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       57.57,
+       9.19
+      ],
+      "id": "port-3",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       59.82,
+       5.08
+      ],
+      "id": "led-port-3-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       63.82,
+       5.08
+      ],
+      "id": "led-port-3-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       67.82,
+       5.08
+      ],
+      "id": "led-port-3-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       71.82,
+       5.08
+      ],
+      "id": "led-port-3-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       57.57,
+       23.04
+      ],
+      "id": "port-4",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       59.82,
+       34.73
+      ],
+      "id": "led-port-4-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       63.82,
+       34.73
+      ],
+      "id": "led-port-4-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       67.82,
+       34.73
+      ],
+      "id": "led-port-4-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       71.82,
+       34.73
+      ],
+      "id": "led-port-4-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       81.53,
+       9.19
+      ],
+      "id": "port-5",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       83.78,
+       5.08
+      ],
+      "id": "led-port-5-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       87.78,
+       5.08
+      ],
+      "id": "led-port-5-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       91.78,
+       5.08
+      ],
+      "id": "led-port-5-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       95.78,
+       5.08
+      ],
+      "id": "led-port-5-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       81.53,
+       23.04
+      ],
+      "id": "port-6",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       83.78,
+       34.73
+      ],
+      "id": "led-port-6-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       87.78,
+       34.73
+      ],
+      "id": "led-port-6-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       91.78,
+       34.73
+      ],
+      "id": "led-port-6-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       95.78,
+       34.73
+      ],
+      "id": "led-port-6-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       100.54,
+       9.19
+      ],
+      "id": "port-7",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       102.79,
+       5.08
+      ],
+      "id": "led-port-7-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       106.79,
+       5.08
+      ],
+      "id": "led-port-7-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       110.79,
+       5.08
+      ],
+      "id": "led-port-7-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       114.79,
+       5.08
+      ],
+      "id": "led-port-7-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       100.54,
+       23.04
+      ],
+      "id": "port-8",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       102.79,
+       34.73
+      ],
+      "id": "led-port-8-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       106.79,
+       34.73
+      ],
+      "id": "led-port-8-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       110.79,
+       34.73
+      ],
+      "id": "led-port-8-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       114.79,
+       34.73
+      ],
+      "id": "led-port-8-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       124.5,
+       9.19
+      ],
+      "id": "port-9",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       126.75,
+       5.08
+      ],
+      "id": "led-port-9-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       130.75,
+       5.08
+      ],
+      "id": "led-port-9-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       134.75,
+       5.08
+      ],
+      "id": "led-port-9-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       138.75,
+       5.08
+      ],
+      "id": "led-port-9-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       124.5,
+       23.04
+      ],
+      "id": "port-10",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       126.75,
+       34.73
+      ],
+      "id": "led-port-10-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       130.75,
+       34.73
+      ],
+      "id": "led-port-10-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       134.75,
+       34.73
+      ],
+      "id": "led-port-10-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       138.75,
+       34.73
+      ],
+      "id": "led-port-10-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       143.5,
+       9.19
+      ],
+      "id": "port-11",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       145.75,
+       5.08
+      ],
+      "id": "led-port-11-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       149.75,
+       5.08
+      ],
+      "id": "led-port-11-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       153.75,
+       5.08
+      ],
+      "id": "led-port-11-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       157.75,
+       5.08
+      ],
+      "id": "led-port-11-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       143.5,
+       23.04
+      ],
+      "id": "port-12",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       145.75,
+       34.73
+      ],
+      "id": "led-port-12-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       149.75,
+       34.73
+      ],
+      "id": "led-port-12-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       153.75,
+       34.73
+      ],
+      "id": "led-port-12-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       157.75,
+       34.73
+      ],
+      "id": "led-port-12-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       167.47,
+       9.19
+      ],
+      "id": "port-13",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       169.72,
+       5.08
+      ],
+      "id": "led-port-13-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       173.72,
+       5.08
+      ],
+      "id": "led-port-13-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       177.72,
+       5.08
+      ],
+      "id": "led-port-13-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       181.72,
+       5.08
+      ],
+      "id": "led-port-13-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       167.47,
+       23.04
+      ],
+      "id": "port-14",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       169.72,
+       34.73
+      ],
+      "id": "led-port-14-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       173.72,
+       34.73
+      ],
+      "id": "led-port-14-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       177.72,
+       34.73
+      ],
+      "id": "led-port-14-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       181.72,
+       34.73
+      ],
+      "id": "led-port-14-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       186.47,
+       9.19
+      ],
+      "id": "port-15",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       188.72,
+       5.08
+      ],
+      "id": "led-port-15-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       192.72,
+       5.08
+      ],
+      "id": "led-port-15-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       196.72,
+       5.08
+      ],
+      "id": "led-port-15-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       200.72,
+       5.08
+      ],
+      "id": "led-port-15-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       186.47,
+       23.04
+      ],
+      "id": "port-16",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       188.72,
+       34.73
+      ],
+      "id": "led-port-16-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       192.72,
+       34.73
+      ],
+      "id": "led-port-16-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       196.72,
+       34.73
+      ],
+      "id": "led-port-16-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       200.72,
+       34.73
+      ],
+      "id": "led-port-16-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       210.44,
+       9.19
+      ],
+      "id": "port-17",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       212.69,
+       5.08
+      ],
+      "id": "led-port-17-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       216.69,
+       5.08
+      ],
+      "id": "led-port-17-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       220.69,
+       5.08
+      ],
+      "id": "led-port-17-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       224.69,
+       5.08
+      ],
+      "id": "led-port-17-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       210.44,
+       23.04
+      ],
+      "id": "port-18",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       212.69,
+       34.73
+      ],
+      "id": "led-port-18-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       216.69,
+       34.73
+      ],
+      "id": "led-port-18-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       220.69,
+       34.73
+      ],
+      "id": "led-port-18-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       224.69,
+       34.73
+      ],
+      "id": "led-port-18-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       229.44,
+       9.19
+      ],
+      "id": "port-19",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       231.69,
+       5.08
+      ],
+      "id": "led-port-19-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       235.69,
+       5.08
+      ],
+      "id": "led-port-19-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       239.69,
+       5.08
+      ],
+      "id": "led-port-19-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       243.69,
+       5.08
+      ],
+      "id": "led-port-19-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       229.44,
+       23.04
+      ],
+      "id": "port-20",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       231.69,
+       34.73
+      ],
+      "id": "led-port-20-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       235.69,
+       34.73
+      ],
+      "id": "led-port-20-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       239.69,
+       34.73
+      ],
+      "id": "led-port-20-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       243.69,
+       34.73
+      ],
+      "id": "led-port-20-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       253.41,
+       9.19
+      ],
+      "id": "port-21",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       255.66,
+       5.08
+      ],
+      "id": "led-port-21-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       259.66,
+       5.08
+      ],
+      "id": "led-port-21-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       263.66,
+       5.08
+      ],
+      "id": "led-port-21-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       267.66,
+       5.08
+      ],
+      "id": "led-port-21-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       253.41,
+       23.04
+      ],
+      "id": "port-22",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       255.66,
+       34.73
+      ],
+      "id": "led-port-22-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       259.66,
+       34.73
+      ],
+      "id": "led-port-22-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       263.66,
+       34.73
+      ],
+      "id": "led-port-22-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       267.66,
+       34.73
+      ],
+      "id": "led-port-22-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       272.41,
+       9.19
+      ],
+      "id": "port-23",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       274.66,
+       5.08
+      ],
+      "id": "led-port-23-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       278.66,
+       5.08
+      ],
+      "id": "led-port-23-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       282.66,
+       5.08
+      ],
+      "id": "led-port-23-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       286.66,
+       5.08
+      ],
+      "id": "led-port-23-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       272.41,
+       23.04
+      ],
+      "id": "port-24",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       274.66,
+       34.73
+      ],
+      "id": "led-port-24-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       278.66,
+       34.73
+      ],
+      "id": "led-port-24-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       282.66,
+       34.73
+      ],
+      "id": "led-port-24-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       286.66,
+       34.73
+      ],
+      "id": "led-port-24-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       296.37,
+       9.19
+      ],
+      "id": "port-25",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       298.62,
+       5.08
+      ],
+      "id": "led-port-25-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       302.62,
+       5.08
+      ],
+      "id": "led-port-25-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       306.62,
+       5.08
+      ],
+      "id": "led-port-25-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       310.62,
+       5.08
+      ],
+      "id": "led-port-25-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       296.37,
+       23.04
+      ],
+      "id": "port-26",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       298.62,
+       34.73
+      ],
+      "id": "led-port-26-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       302.62,
+       34.73
+      ],
+      "id": "led-port-26-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       306.62,
+       34.73
+      ],
+      "id": "led-port-26-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       310.62,
+       34.73
+      ],
+      "id": "led-port-26-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       315.38,
+       9.19
+      ],
+      "id": "port-27",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       317.63,
+       5.08
+      ],
+      "id": "led-port-27-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       321.63,
+       5.08
+      ],
+      "id": "led-port-27-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       325.63,
+       5.08
+      ],
+      "id": "led-port-27-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       329.63,
+       5.08
+      ],
+      "id": "led-port-27-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       315.38,
+       23.04
+      ],
+      "id": "port-28",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       317.63,
+       34.73
+      ],
+      "id": "led-port-28-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       321.63,
+       34.73
+      ],
+      "id": "led-port-28-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       325.63,
+       34.73
+      ],
+      "id": "led-port-28-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       329.63,
+       34.73
+      ],
+      "id": "led-port-28-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       339.34,
+       9.19
+      ],
+      "id": "port-29",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       341.59,
+       5.08
+      ],
+      "id": "led-port-29-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       345.59,
+       5.08
+      ],
+      "id": "led-port-29-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       349.59,
+       5.08
+      ],
+      "id": "led-port-29-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       353.59,
+       5.08
+      ],
+      "id": "led-port-29-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       339.34,
+       23.04
+      ],
+      "id": "port-30",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       341.59,
+       34.73
+      ],
+      "id": "led-port-30-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       345.59,
+       34.73
+      ],
+      "id": "led-port-30-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       349.59,
+       34.73
+      ],
+      "id": "led-port-30-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       353.59,
+       34.73
+      ],
+      "id": "led-port-30-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       358.34,
+       9.19
+      ],
+      "id": "port-31",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       360.59,
+       5.08
+      ],
+      "id": "led-port-31-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       364.59,
+       5.08
+      ],
+      "id": "led-port-31-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       368.59,
+       5.08
+      ],
+      "id": "led-port-31-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       372.59,
+       5.08
+      ],
+      "id": "led-port-31-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       358.34,
+       23.04
+      ],
+      "id": "port-32",
+      "shape": "rect",
+      "size": [
+       18.5,
+       9.58
+      ]
+     },
+     {
+      "at": [
+       360.59,
+       34.73
+      ],
+      "id": "led-port-32-l1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       364.59,
+       34.73
+      ],
+      "id": "led-port-32-l2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       368.59,
+       34.73
+      ],
+      "id": "led-port-32-l3",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       372.59,
+       34.73
+      ],
+      "id": "led-port-32-l4",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       17.51,
+       8.86
+      ],
+      "id": "m1",
+      "shape": "rect",
+      "size": [
+       14.5,
+       10.0
+      ]
+     },
+     {
+      "at": [
+       20.89,
+       5.08
+      ],
+      "id": "led-m1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       398.3,
+       6.3
+      ],
+      "id": "console",
+      "shape": "rect",
+      "size": [
+       15.8,
+       13.2
+      ]
+     },
+     {
+      "at": [
+       400.2,
+       19.6
+      ],
+      "id": "usb",
+      "shape": "rect",
+      "size": [
+       12.0,
+       4.5
+      ]
+     },
+     {
+      "at": [
+       398.3,
+       25.9
+      ],
+      "id": "mgmt",
+      "shape": "rect",
+      "size": [
+       15.8,
+       13.2
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       10.55
+      ],
+      "id": "led-stat",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       15.65
+      ],
+      "id": "led-fan",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       20.88
+      ],
+      "id": "led-pwr",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       392.03,
+       26.1
+      ],
+      "id": "led-alm",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       427.39,
+       17.31
+      ],
+      "id": "lug-tag",
+      "shape": "rect",
+      "size": [
+       4.0,
+       23.0
+      ]
+     }
+    ],
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#1d1f22",
+      "id": "bezel",
+      "kind": "bezel",
+      "size": [
+       438.0,
+       44.0
+      ]
+     },
+     {
+      "at": [
+       18.78,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-1",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       23.8,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-2",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       38.87,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-3",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       43.9,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-4",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       48.92,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-5",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       53.94,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-6",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       58.73,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-7",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       63.75,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-8",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       68.77,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-9",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       73.8,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-10",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       78.82,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-11",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       83.84,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-12",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       88.87,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-13",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       93.89,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-14",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       98.91,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-15",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       103.7,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-16",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       108.72,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-17",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       113.75,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-18",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       118.77,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-19",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       123.79,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-20",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       128.82,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-21",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       133.84,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-22",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       138.86,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-23",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       143.89,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-24",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       148.67,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-25",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       153.69,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-26",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       158.72,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-27",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       163.74,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-28",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       168.77,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-29",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       173.79,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-30",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       178.81,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-31",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       183.84,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-32",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       188.62,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-33",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       193.64,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-34",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       198.67,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-35",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       203.69,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-36",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       208.71,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-37",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       213.74,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-38",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       218.76,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-39",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       223.78,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-40",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       228.81,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-41",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       233.59,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-42",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       238.62,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-43",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       243.64,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-44",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       248.66,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-45",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       253.69,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-46",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       258.71,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-47",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       263.73,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-48",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       268.76,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-49",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       273.78,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-50",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       278.56,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-51",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       283.59,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-52",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       288.61,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-53",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       293.63,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-54",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       298.66,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-55",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       303.68,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-56",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       308.71,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-57",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       313.73,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-58",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       318.75,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-59",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       323.54,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-60",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       328.56,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-61",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       333.58,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-62",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       338.61,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-63",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       343.63,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-64",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       348.65,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-65",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       353.68,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-66",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       358.7,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-67",
+      "size": [
+       3.83,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       363.48,
+       0.35
+      ],
+      "fill": "#030304",
+      "id": "vent-top-68",
+      "size": [
+       4.07,
+       1.75
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       21.89,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-1",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       25.95,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-2",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       41.74,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-3",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       45.81,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-4",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       49.88,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-5",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       53.94,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-6",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       57.77,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-7",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       61.84,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-8",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       65.9,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-9",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       69.73,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-10",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       73.8,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-11",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       77.86,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-12",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       81.69,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-13",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       85.76,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-14",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       89.82,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-15",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       93.89,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-16",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       97.72,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-17",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       101.79,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-18",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       105.85,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-19",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       109.68,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-20",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       113.75,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-21",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       117.81,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-22",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       121.88,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-23",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       125.71,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-24",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       129.77,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-25",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       133.84,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-26",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       137.67,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-27",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       142.45,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-28",
+      "size": [
+       2.39,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       145.8,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-29",
+      "size": [
+       2.39,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       150.35,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-30",
+      "size": [
+       2.39,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       153.69,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-31",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       157.76,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-32",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       161.83,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-33",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       165.66,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-34",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       169.72,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-35",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       173.79,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-36",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       177.86,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-37",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       181.68,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-38",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       185.75,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-39",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       189.82,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-40",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       197.71,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-41",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       201.78,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-42",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       205.6,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-43",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       209.67,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-44",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       213.74,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-45",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       217.8,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-46",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       221.63,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-47",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       225.7,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-48",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       229.76,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-49",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       233.59,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-50",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       237.66,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-51",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       245.79,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-52",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       249.62,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-53",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       253.69,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-54",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       257.75,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-55",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       261.58,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-56",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       265.65,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-57",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       269.71,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-58",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       273.78,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-59",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       277.61,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-60",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       285.74,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-61",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       293.63,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-62",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       297.7,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-63",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       301.53,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-64",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       305.6,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-65",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       309.66,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-66",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       313.73,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-67",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       317.56,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-68",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       321.62,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-69",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       325.69,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-70",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       333.58,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-71",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       337.65,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-72",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       341.72,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-73",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       349.61,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-74",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       353.68,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-75",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       357.5,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-76",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       361.57,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-77",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       365.64,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-78",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       369.7,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-79",
+      "size": [
+       2.87,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       373.53,
+       39.87
+      ],
+      "fill": "#030304",
+      "id": "vent-bottom-80",
+      "size": [
+       3.11,
+       2.0
+      ],
+      "vent": 8
+     },
+     {
+      "at": [
+       37.97,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-1-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       37.97,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-1-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       80.93,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-2-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       80.93,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-2-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       123.9,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-3-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       123.9,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-3-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       166.87,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-4-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       166.87,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-4-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       209.84,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-5-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       209.84,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-5-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       252.81,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-6-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       252.81,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-6-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       295.77,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-7-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       295.77,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-7-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       338.74,
+       8.89
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-8-upper",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       338.74,
+       22.74
+      ],
+      "fill": "#c3c7cc",
+      "id": "cage-shell-8-lower",
+      "kind": "port-shell",
+      "size": [
+       38.7,
+       10.18
+      ]
+     },
+     {
+      "at": [
+       16.96,
+       8.61
+      ],
+      "fill": "#c3c7cc",
+      "id": "sfp-shell",
+      "kind": "port-shell",
+      "size": [
+       15.6,
+       10.5
+      ]
+     },
+     {
+      "at": [
+       398.1,
+       6.2
+      ],
+      "fill": "#d6d9dc",
+      "id": "mgmt-stack",
+      "kind": "port-shell",
+      "size": [
+       17.0,
+       33.0
+      ]
+     }
+    ]
+   },
+   "regions": [
+    {
+     "at": [
+      37.82,
+      0.0
+     ],
+     "id": "port-block",
+     "label": "32 x QSFP28",
+     "size": {
+      "h": 44.0,
+      "w": 339.78
+     }
+    },
+    {
+     "at": [
+      388.0,
+      0.0
+     ],
+     "id": "mgmt-block",
+     "label": "Status and management",
+     "size": {
+      "h": 44.0,
+      "w": 38.0
+     }
+    }
+   ],
+   "silkscreen": [
+    {
+     "anchor": "middle",
+     "at": [
+      47.82,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-1",
+      "port-2"
+     ],
+     "text": "1 \u25b2\u25bc 2"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      66.82,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-3",
+      "port-4"
+     ],
+     "text": "3 \u25b2\u25bc 4"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      90.78,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-5",
+      "port-6"
+     ],
+     "text": "5 \u25b2\u25bc 6"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      109.79,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-7",
+      "port-8"
+     ],
+     "text": "7 \u25b2\u25bc 8"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      133.75,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-9",
+      "port-10"
+     ],
+     "text": "9 \u25b2\u25bc 10"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      152.75,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-11",
+      "port-12"
+     ],
+     "text": "11 \u25b2\u25bc 12"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      176.72,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-13",
+      "port-14"
+     ],
+     "text": "13 \u25b2\u25bc 14"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      195.72,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-15",
+      "port-16"
+     ],
+     "text": "15 \u25b2\u25bc 16"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      219.69,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-17",
+      "port-18"
+     ],
+     "text": "17 \u25b2\u25bc 18"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      238.69,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-19",
+      "port-20"
+     ],
+     "text": "19 \u25b2\u25bc 20"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      262.66,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-21",
+      "port-22"
+     ],
+     "text": "21 \u25b2\u25bc 22"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      281.66,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-23",
+      "port-24"
+     ],
+     "text": "23 \u25b2\u25bc 24"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      305.62,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-25",
+      "port-26"
+     ],
+     "text": "25 \u25b2\u25bc 26"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      324.63,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-27",
+      "port-28"
+     ],
+     "text": "27 \u25b2\u25bc 28"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      348.59,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-29",
+      "port-30"
+     ],
+     "text": "29 \u25b2\u25bc 30"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      367.59,
+      21.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "port-31",
+      "port-32"
+     ],
+     "text": "31 \u25b2\u25bc 32"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      24.76,
+      21.01
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": "m1",
+     "text": "M1 \u25b2"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      390.93,
+      11.55
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.3,
+     "for": "led-stat",
+     "rotate": -90,
+     "text": "STAT"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      390.93,
+      16.65
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.3,
+     "for": "led-fan",
+     "rotate": -90,
+     "text": "FAN"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      390.93,
+      21.88
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.3,
+     "for": "led-pwr",
+     "rotate": -90,
+     "text": "PWR"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      390.93,
+      27.1
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.3,
+     "for": "led-alm",
+     "rotate": -90,
+     "text": "ALM"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      421.0,
+      13.5
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.0,
+     "for": "console",
+     "id": "console-mark",
+     "text": "IOIOI"
+    },
+    {
+     "at": [
+      421.0,
+      30.4
+     ],
+     "fill": "#e8eaec",
+     "for": "mgmt",
+     "id": "mgmt-mark",
+     "path": "M -0.90 0.00 L 0.90 0.00 L 0.90 1.10 L -0.90 1.10 Z M 0.00 1.10 L 0.00 2.20 M -2.20 2.20 L 2.20 2.20 M -2.20 2.20 L -2.20 3.10 M 0.00 2.20 L 0.00 3.10 M 2.20 2.20 L 2.20 3.10 M -2.90 3.10 L -1.50 3.10 L -1.50 4.20 L -2.90 4.20 Z M -0.70 3.10 L 0.70 3.10 L 0.70 4.20 L -0.70 4.20 Z M 1.50 3.10 L 2.90 3.10 L 2.90 4.20 L 1.50 4.20 Z",
+     "stroke-width": 0.3
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      406.6,
+      5.2
+     ],
+     "fill": "#f2f3f4",
+     "font-size": 3.0,
+     "for": "chassis",
+     "id": "wordmark",
+     "text": "Celestica"
+    }
+   ],
+   "size": {
+    "h": 44.0,
+    "w": 438.0
+   }
+  },
+  "left": {
+   "empty": "No figure of this face is held. The docs-portal guide draws only the front and rear; the product page's three-quarter renders show a plain side wall with rail screws and no perforation, which cannot be measured.",
+   "size": {
+    "h": 44.0,
+    "w": 520.0
+   }
+  },
+  "rear": {
+   "components": {
+    "bays": [
+     {
+      "accepts": [
+       "celestica/psu-r3059-f8001@1"
+      ],
+      "at": [
+       17.0,
+       1.8
+      ],
+      "default": "celestica/psu-r3059-f8001@1",
+      "group": "psus",
+      "id": "psu-1",
+      "rel-pos": 1,
+      "size": {
+       "h": 40.0,
+       "w": 73.5
+      }
+     },
+     {
+      "accepts": [
+       "celestica/psu-r3059-f8001@1"
+      ],
+      "at": [
+       352.79,
+       1.8
+      ],
+      "default": "celestica/psu-r3059-f8001@1",
+      "group": "psus",
+      "id": "psu-2",
+      "rel-pos": 2,
+      "size": {
+       "h": 40.0,
+       "w": 73.5
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       106.59,
+       2.8
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-1",
+      "rel-pos": 1,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       154.11,
+       2.8
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-2",
+      "rel-pos": 2,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       249.15,
+       2.8
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-3",
+      "rel-pos": 3,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       296.45,
+       2.8
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-4",
+      "rel-pos": 4,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     }
+    ],
+    "placements": [
+     {
+      "at": [
+       9.68,
+       10.48
+      ],
+      "attrs": {
+       "role": "ground"
+      },
+      "group": "grounding",
+      "id": "ground-screw",
+      "ref": "common/screw-head@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       8.48,
+       16.39
+      ],
+      "for": "ground-screw",
+      "group": "grounding",
+      "id": "ground-mark",
+      "ref": "common/ground-symbol@1",
+      "rel-pos": 2
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       201.18,
+       2.2
+      ],
+      "fill": "#a9aeb3",
+      "id": "rear-blank",
+      "kind": "blank-plate",
+      "size": [
+       39.68,
+       40.0
+      ]
+     },
+     {
+      "at": [
+       10.64,
+       34.62
+      ],
+      "fill": "#2a2d31",
+      "id": "ground-hole",
+      "kind": "hole",
+      "rx": 1.2,
+      "size": [
+       2.4,
+       2.4
+      ]
+     },
+     {
+      "at": [
+       427.4,
+       18.3
+      ],
+      "fill": "#9ea3a8",
+      "id": "label-strip-right",
+      "kind": "label-plate",
+      "size": [
+       6.0,
+       23.5
+      ]
+     }
+    ]
+   },
+   "regions": [
+    {
+     "at": [
+      105.59,
+      1.0
+     ],
+     "id": "fan-block",
+     "label": "3+1 fans",
+     "members": [
+      "fan-1",
+      "fan-2",
+      "fan-3",
+      "fan-4"
+     ],
+     "size": {
+      "h": 42.0,
+      "w": 231.16
+     }
+    }
+   ],
+   "size": {
+    "h": 44.0,
+    "w": 438.0
+   }
+  },
+  "right": {
+   "empty": "No figure of this face is held. The docs-portal guide draws only the front and rear; the product page's three-quarter renders show a plain side wall with rail screws and no perforation, which cannot be measured.",
+   "size": {
+    "h": 44.0,
+    "w": 520.0
+   }
+  },
+  "top": {
+   "empty": "No figure of the lid is held; the three-quarter renders show a plain cover that cannot be measured.",
+   "size": {
+    "h": 520.0,
+    "w": 438.0
+   }
+  }
+ }
+}

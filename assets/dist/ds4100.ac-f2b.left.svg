@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="657.5mm" height="43.1mm" viewBox="0 0 657.5 43.1" data-device="ds4100" data-view="left" data-dimensions-note="W 438.5 x D 657.5 x H 43.1 mm (datasheet and guide)" data-switching-capacity="12.8 Tbps" data-packet-buffer="56.83 MB integrated SmartBuffer" data-serdes="112G PAM4" data-jumbo-frames="up to 9416 bytes" data-power-draw-max-w="1310" data-psu-rating-note="1+1 redundant hot-swap 1500 W PSUs" data-input-ac="AC 100 ~ 127 V / 200 ~ 240 V nominal (90-264 V max) at 47-63 Hz" data-airflow-options="front-to-back and back-to-front (separate SKUs)" data-operating-temp="0 to 40 C at 900 m (datasheet); 0 to 40 C at 950 m (guide)" data-humidity="5% to 95% non-condensing" data-cpu="Intel Xeon-D class, 4 or 8 core, on a COM-E module" data-memory="up to 32 GB ECC DDR4" data-storage="128 GB or 256 GB SSD" data-bmc="RunBMC option (OpenBMC, 2 GB DDR4, dual 128 MB flash)" data-software="ONIE installer for third-party NOS" data-breakout="8 x 100GbE, 4 x 200GbE or 2 x 400GbE per 800G port" data-optics-osfp="up to 30 W OSFP optics; LPO/LRO support; DAC up to 2.5 m" data-timing="precise timing option (datasheet, unspecified)" data-emc="EMC CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI" data-safety="UL/CSA/IEC/EN 60950-1/62368-1" data-environment="EU RoHS, SVHC requirements of REACH, China RoHS" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS4100","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"d7b74404f818ff4a2327f65971c6f8942c027b5b3384ed8e3d1c481ff3e2964e","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS4100" data-sku="R4035-F9001-A1" data-part-number="R4035-F9001-A1" x="0" y="0" width="657.5" height="43.1" rx="1.2" fill="#2a2a2a" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.5mm" height="657.5mm" viewBox="0 0 438.5 657.5" data-device="ds4000" data-view="top" data-switching-capacity="12.8 Tbps" data-packet-buffer="64 MB" data-latency="less than 700 ns port to port (cut-through)" data-power-max-w="1100" data-power-envelope="fully-configured" data-input-ac="100-240 VAC auto-ranging, 47-63 Hz" data-input-dc="180-300 VDC auto input" data-psu-redundancy="1+1 hot-swappable, 1500 W each" data-fan-redundancy="6+1 hot-swappable" data-port-power-f2b="28 x 15 W + 4 x 20 W (ports 1, 2, 31, 32)" data-port-power-b2f="24 x 5 W + 8 x 12 W (ports 25-32)" data-operating-temp="0 to 45 C at 900 m" data-operating-humidity="5 to 90% non-condensing" data-operating-temp-guide="5 to 40 C, either airflow" data-operating-humidity-guide="40 to 60% RH" data-storage-humidity="5 to 95% RH" data-mtbf="in excess of 150,000 hours" data-cpu="Intel Xeon D-1627 4-core or D-1649N 8-core on a COMe module (per SKU)" data-memory="16 or 32 GB DDR4 ECC (per SKU)" data-storage="64, 128 or 256 GB M.2 SSD (per SKU)" data-bmc="BMC management option (DDR3, SPI flash dual boot, NC-SI shared port, IPMI 2.0)" data-breakout="144 sub-rate ports maximum (10/25/50GbE) or 128 at 40/100GbE using breakout cables" data-timing="IEEE 1588 1-step and 2-step, TC and BC, SyncE (timing option)" data-optics-qsfp-dd="10GBASE-CR/SR/LR/ER, 25GBASE-CR/SR/LR/ER, 40GBASE-CR4/SR4/LR4/ER4, 100GBASE-CR4/SR4/LR4/ER4/DR1/PSM4/CWDM4, 400GBASE-CR4/SR4/FR4/DR4/LR8 (guide Port Descriptions); DAC up to 3 m (datasheet)" data-optics-sfp-plus="10GbE (guide Port Descriptions)" data-console="RJ45 RS-232, 115200 8N1, flow control XON/XOFF (labelled IOIOI)" data-oob="RJ45 10/100/1000, CPU/BMC shared" data-usb="USB 2.0 host type A, data only (does not supply power)" data-emc="CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI" data-safety="IEC60950-1, GB4943, UL/CSA, CB" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS4000","device-version":"0.2.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"7830075d0290034c0e7325d358ce1a0ce4e5f17f26f1aa6d87847d47fe6604ff","view":"top"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS4000" x="0" y="0" width="438.5" height="657.5" rx="1.2" fill="#c4c8cc" stroke="#22262a" stroke-width="0.5" />
+  <defs>
+    <pattern id="portrayal-holes" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.1" fill="#3c4046" />
+    </pattern>
+  </defs>
+  <g id="--decor" data-class="decor">
+    <rect id="holes-field-0" data-kind="holes-field" x="2" y="368" width="70" height="42" rx="0.6" fill="url(#portrayal-holes)" />
+    <rect id="holes-field-1" data-kind="holes-field" x="366.5" y="250" width="70" height="42" rx="0.6" fill="url(#portrayal-holes)" />
+    <rect id="holes-field-2" data-kind="holes-field" x="2" y="457.5" width="8" height="196" rx="0.6" fill="url(#portrayal-holes)" />
+    <rect id="holes-field-3" data-kind="holes-field" x="428.5" y="457.5" width="8" height="196" rx="0.6" fill="url(#portrayal-holes)" />
+    <rect id="lid-latch-recess-0" data-kind="lid-latch-recess" x="196" y="110" width="46" height="22" rx="2" fill="#c9ced3" data-groove="0.8" />
+  </g>
+</svg>

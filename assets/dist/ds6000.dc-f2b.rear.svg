@@ -1,0 +1,941 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.0mm" height="129.8mm" viewBox="0 0 438.0 129.8" data-device="ds6000" data-view="rear" data-weight-kg-note="35 kg (datasheet; configuration not stated)" data-rail-kit="optional rail kit (Foleon product page)" data-switching-capacity="102.4 Tbps" data-port-modes-osfp224="64 x 1.6TbE; 50/100/200/400/800GbE with breakouts; 128 x 800GbE, 256 x 400GbE, 512 x 200GbE" data-serdes="224 Gbps" data-psus="2+2 redundant hot-swap 3200 W, AC or DC" data-input-ac="180-240 VAC auto-ranging, 47-63 Hz" data-input-dc="40-72 VDC" data-fans="4+1 field-replaceable fan modules, dual-rotor, 9+1 rotor redundancy" data-operating-temp="0 to 40 C" data-humidity="5% to 95% non-condensing" data-mtbf="in excess of 150,000 hours" data-switch-silicon="Broadcom Tomahawk 6" data-cpu="Intel Xeon-D x86, 4C / 8C / 10C (COM Express)" data-memory="up to 64 GB DDR4" data-storage="up to 512 GB M.2 SSD" data-bmc="RunBMC, 2 GB DDR4, dual 128 MB flash for dual boot, OpenBMC, serial over LAN" data-software="SONiC; ONIE for compatible open-source and commercial NOS" data-optics-osfp="Up to 32 W / 40 W transceivers, up to 1 m DAC (datasheet OPTICS / Cables; not split by port type)" data-timing="IEEE 1588 1-step and 2-step time stamping; transparent and boundary clock; SyncE clock recovery; 1PPS, 10 MHz and ToD interfaces" data-mgmt-ports="2 x 50GbE SFP56 management, RJ45 console (CON0, CON1), RJ45 GbE OOB, USB 3.0 Type-A, USB-C console" data-emissions="AS/NZS CISPR32:2015+A1:2020 Class A; ICES-003 Issue 7:2020 Class A; EN55032:2015/AC:2016 Class A; VCCI-CISPR 32:2016 Class A; TEC/SD/DD/EMC-221/05/OCT-16 Class A; FCC CFR 47 Part 15 Subpart B Class A; EN/IEC61000-3-2; EN/IEC61000-3-3" data-immunity="EN 300 386 V1.6.1; EN 300 386 V2.2.1; EN 55035:2017/AC:2019; EN 61000-4-2/-3/-4/-5/-6/-8/-11" data-safety="IEC 62368-1:2014, :2018 and 2023 (CB Scheme, all country deviations); EN 62368-1:2014+A11:2017; EN IEC 62368-1:2020+A11:2020; EN IEC 62368-1:2024/A11:2024; UL 62368-1:2025; CSA C22.2 No. 62368-1:2025" data-green="WEEE 2012/19/EU; EU RoHS 2011/65/EU and 2015/863/EU; REACH (EC) 1907/2006; China RoHS" data-eol="none-announced" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/fan-module-82@'] .state-fail { --led-color: #f59e0b; }
+    g[data-ref^='celestica/fan-module-82@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Celestica DS6000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"celestica/fan-module-82@1":"1.0.0","common/ground-symbol@1":"1.0.0","common/multi-cord-hazard-label@1":"1.0.0","common/screw-head@1":"1.1.0"},"source-sha256":"a06d279a4d58f42f362429bc3ce00ec366d488cada64b7840ef7b6fa348fa3c1","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS6000" data-sku="R4087-F9005-A1" data-part-number="R4087-F9005-A1" x="0" y="0" width="438" height="129.8" rx="1.2" fill="#c4c8cc" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="legend-panel-left" data-kind="plate" x="5.5" y="88" width="57.1" height="41.4" rx="0.6" fill="#cfd3d7" />
+    <rect id="legend-panel-right" data-kind="plate" x="375.6" y="88" width="57.1" height="41.4" rx="0.6" fill="#cfd3d7" />
+  </g>
+  <rect id="region--exhaust" data-path="region:exhaust" data-class="region" data-physical-context="Exhaust" data-members="fan-1 fan-2 fan-3 fan-4 fan-5" x="7" y="2.5" width="424.5" height="84.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--power" data-path="region:power" data-class="region" data-members="psu-1 psu-2 psu-3 psu-4" x="65.5" y="88" width="309.5" height="41.4" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="--silkscreen" data-class="silkscreen">
+    <text x="14.2" y="93.4" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-1">✣1▲</text>
+    <text x="29.9" y="93.4" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-2">✣2▶▶</text>
+    <text x="46.4" y="93.4" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking">✣3▶▶▶</text>
+    <path d="M 0 0 L 3.6 0 L 3.6 3.6 L 0 3.6 Z M 2.1 0.5 L 1.1 1.8 L 2.4 1.8 L 1.4 3.1" fill="none" stroke="#1b1e21" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(46.4 97.4)" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="52.1" y="100.5" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1▶</text>
+    <path d="M 0 0 L 3.6 0 L 3.6 3.6 L 0 3.6 Z M 2.1 0.5 L 1.1 1.8 L 2.4 1.8 L 1.4 3.1" fill="none" stroke="#1b1e21" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(46.4 105.2)" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" />
+    <text x="52.1" y="108.3" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking">2▶▶</text>
+    <text x="379.3" y="93.4" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-4">◀◀✣4</text>
+    <text x="395.4" y="93.4" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="fan-5">▲✣5</text>
+    <text x="379.3" y="100.5" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking">◀◀</text>
+    <path d="M 0 0 L 3.6 0 L 3.6 3.6 L 0 3.6 Z M 2.1 0.5 L 1.1 1.8 L 2.4 1.8 L 1.4 3.1" fill="none" stroke="#1b1e21" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(385.1 97.4)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" />
+    <text x="389.8" y="100.5" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking">3</text>
+    <text x="381.4" y="108.3" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-4">◀</text>
+    <path d="M 0 0 L 3.6 0 L 3.6 3.6 L 0 3.6 Z M 2.1 0.5 L 1.1 1.8 L 2.4 1.8 L 1.4 3.1" fill="none" stroke="#1b1e21" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(385.1 105.2)" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-4" />
+    <text x="389.8" y="108.3" font-family="sans-serif" font-size="3.6" text-anchor="start" fill="#1b1e21" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-4">4</text>
+  </g>
+  <g id="earth-symbol" data-path="earth-symbol" data-class="ground" data-ref="common/ground-symbol@1:1.0.0" data-rel-pos="1" transform="translate(6.1,89.8)" data-group="earth" data-group-role="service" data-for="chassis">
+    <title>earth-symbol</title>
+    <g id="earth-symbol--symbol" stroke="#c7ccd1" fill="none" data-path="earth-symbol/symbol" data-class="silkscreen">
+      <circle cx="3" cy="3" r="2.6" stroke-width="0.3" />
+      <line x1="3" y1="1.4" x2="3" y2="2.9" stroke-width="0.32" />
+      <line x1="1.6" y1="2.9" x2="4.4" y2="2.9" stroke-width="0.32" />
+      <line x1="2.1" y1="3.75" x2="3.9" y2="3.75" stroke-width="0.32" />
+      <line x1="2.55" y1="4.6" x2="3.45" y2="4.6" stroke-width="0.32" />
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="7.56" y="3" width="81.8" height="83.4" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-module-82@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-rotors="2" data-states="ok fail absent" transform="translate(48.46,44.7) translate(-40.9,-41.7)">
+      <title>fan-1--module</title>
+      <rect id="fan-1--module--body" x="0.2" y="0.2" width="81.4" height="83.0" rx="1.0" fill="#c4c8cc" stroke="#7d848c" stroke-width="0.4" />
+      <g id="fan-1--module--grille" data-z-vent="20">
+        <rect x="10.95" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+      </g>
+      <circle cx="3.0" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="80.5" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <g id="fan-1--module--screw" data-path="fan-1/module/screw" data-class="screw">
+        <circle cx="4.2" cy="80.0" r="1.9" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.3" />
+        <path d="M 3.2 80.0 L 5.2 80.0 M 4.2 79.0 L 4.2 81.0" stroke="#6e747c" stroke-width="0.3" />
+      </g>
+      <g id="fan-1--module--handle" data-path="fan-1/module/handle" data-class="handle" data-z-uhandle="16">
+        <rect x="37.7" y="5.5" width="6.5" height="71.2" rx="3.2" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" />
+      </g>
+      <rect id="fan-1--module--latch" x="3.9" y="35.3" width="3.3" height="14.6" rx="0.8" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" data-path="fan-1/module/latch" data-class="latch" data-z-out="2.0" />
+      <circle cx="12.3" cy="77.9" r="2.4" fill="#1b1e21" />
+      <rect id="fan-1--module--status-led" x="11.1" y="76.7" width="2.4" height="2.4" rx="1.2" fill="var(--led-color, #2c6b35)" data-path="fan-1/module/status-led" data-class="led" data-states="off ok fail" />
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="93.03" y="3" width="81.8" height="83.4" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-module-82@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-rotors="2" data-states="ok fail absent" transform="translate(133.93,44.7) translate(-40.9,-41.7)">
+      <title>fan-2--module</title>
+      <rect id="fan-2--module--body" x="0.2" y="0.2" width="81.4" height="83.0" rx="1.0" fill="#c4c8cc" stroke="#7d848c" stroke-width="0.4" />
+      <g id="fan-2--module--grille" data-z-vent="20">
+        <rect x="10.95" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+      </g>
+      <circle cx="3.0" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="80.5" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <g id="fan-2--module--screw" data-path="fan-2/module/screw" data-class="screw">
+        <circle cx="4.2" cy="80.0" r="1.9" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.3" />
+        <path d="M 3.2 80.0 L 5.2 80.0 M 4.2 79.0 L 4.2 81.0" stroke="#6e747c" stroke-width="0.3" />
+      </g>
+      <g id="fan-2--module--handle" data-path="fan-2/module/handle" data-class="handle" data-z-uhandle="16">
+        <rect x="37.7" y="5.5" width="6.5" height="71.2" rx="3.2" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" />
+      </g>
+      <rect id="fan-2--module--latch" x="3.9" y="35.3" width="3.3" height="14.6" rx="0.8" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" data-path="fan-2/module/latch" data-class="latch" data-z-out="2.0" />
+      <circle cx="12.3" cy="77.9" r="2.4" fill="#1b1e21" />
+      <rect id="fan-2--module--status-led" x="11.1" y="76.7" width="2.4" height="2.4" rx="1.2" fill="var(--led-color, #2c6b35)" data-path="fan-2/module/status-led" data-class="led" data-states="off ok fail" />
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="178.5" y="3" width="81.8" height="83.4" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-module-82@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-rotors="2" data-states="ok fail absent" transform="translate(219.4,44.7) translate(-40.9,-41.7)">
+      <title>fan-3--module</title>
+      <rect id="fan-3--module--body" x="0.2" y="0.2" width="81.4" height="83.0" rx="1.0" fill="#c4c8cc" stroke="#7d848c" stroke-width="0.4" />
+      <g id="fan-3--module--grille" data-z-vent="20">
+        <rect x="10.95" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+      </g>
+      <circle cx="3.0" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="80.5" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <g id="fan-3--module--screw" data-path="fan-3/module/screw" data-class="screw">
+        <circle cx="4.2" cy="80.0" r="1.9" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.3" />
+        <path d="M 3.2 80.0 L 5.2 80.0 M 4.2 79.0 L 4.2 81.0" stroke="#6e747c" stroke-width="0.3" />
+      </g>
+      <g id="fan-3--module--handle" data-path="fan-3/module/handle" data-class="handle" data-z-uhandle="16">
+        <rect x="37.7" y="5.5" width="6.5" height="71.2" rx="3.2" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" />
+      </g>
+      <rect id="fan-3--module--latch" x="3.9" y="35.3" width="3.3" height="14.6" rx="0.8" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" data-path="fan-3/module/latch" data-class="latch" data-z-out="2.0" />
+      <circle cx="12.3" cy="77.9" r="2.4" fill="#1b1e21" />
+      <rect id="fan-3--module--status-led" x="11.1" y="76.7" width="2.4" height="2.4" rx="1.2" fill="var(--led-color, #2c6b35)" data-path="fan-3/module/status-led" data-class="led" data-states="off ok fail" />
+    </g>
+  </g>
+  <g id="fan-4" data-path="fan-4" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="4">
+    <title>fan-4</title>
+    <rect id="fan-4--opening" x="263.97" y="3" width="81.8" height="83.4" fill="#101214" />
+    <g id="fan-4--module" data-path="fan-4/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-module-82@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-rotors="2" data-states="ok fail absent" transform="translate(304.87,44.7) translate(-40.9,-41.7)">
+      <title>fan-4--module</title>
+      <rect id="fan-4--module--body" x="0.2" y="0.2" width="81.4" height="83.0" rx="1.0" fill="#c4c8cc" stroke="#7d848c" stroke-width="0.4" />
+      <g id="fan-4--module--grille" data-z-vent="20">
+        <rect x="10.95" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+      </g>
+      <circle cx="3.0" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="80.5" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <g id="fan-4--module--screw" data-path="fan-4/module/screw" data-class="screw">
+        <circle cx="4.2" cy="80.0" r="1.9" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.3" />
+        <path d="M 3.2 80.0 L 5.2 80.0 M 4.2 79.0 L 4.2 81.0" stroke="#6e747c" stroke-width="0.3" />
+      </g>
+      <g id="fan-4--module--handle" data-path="fan-4/module/handle" data-class="handle" data-z-uhandle="16">
+        <rect x="37.7" y="5.5" width="6.5" height="71.2" rx="3.2" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" />
+      </g>
+      <rect id="fan-4--module--latch" x="3.9" y="35.3" width="3.3" height="14.6" rx="0.8" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" data-path="fan-4/module/latch" data-class="latch" data-z-out="2.0" />
+      <circle cx="12.3" cy="77.9" r="2.4" fill="#1b1e21" />
+      <rect id="fan-4--module--status-led" x="11.1" y="76.7" width="2.4" height="2.4" rx="1.2" fill="var(--led-color, #2c6b35)" data-path="fan-4/module/status-led" data-class="led" data-states="off ok fail" />
+    </g>
+  </g>
+  <g id="fan-5" data-path="fan-5" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="5">
+    <title>fan-5</title>
+    <rect id="fan-5--opening" x="349.44" y="3" width="81.8" height="83.4" fill="#101214" />
+    <g id="fan-5--module" data-path="fan-5/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-module-82@1:1.0.0" data-airflow="front-to-back" data-power-absent="not-published" data-rotors="2" data-states="ok fail absent" transform="translate(390.34,44.7) translate(-40.9,-41.7)">
+      <title>fan-5--module</title>
+      <rect id="fan-5--module--body" x="0.2" y="0.2" width="81.4" height="83.0" rx="1.0" fill="#c4c8cc" stroke="#7d848c" stroke-width="0.4" />
+      <g id="fan-5--module--grille" data-z-vent="20">
+        <rect x="10.95" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="5.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="11.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="17.70" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="23.80" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="29.90" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="36.00" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="42.10" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="48.20" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="54.30" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="60.40" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="4.80" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="10.95" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="72.45" y="66.50" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="17.10" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="23.25" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="29.40" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="35.55" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="41.70" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="47.85" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="54.00" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="60.15" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+        <rect x="66.30" y="72.60" width="4.4" height="4.4" rx="0.4" fill="#4a4f55" />
+      </g>
+      <circle cx="3.0" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="2.9" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <circle cx="78.8" cy="80.5" r="1.3" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.25" />
+      <g id="fan-5--module--screw" data-path="fan-5/module/screw" data-class="screw">
+        <circle cx="4.2" cy="80.0" r="1.9" fill="#d5d9dd" stroke="#6e747c" stroke-width="0.3" />
+        <path d="M 3.2 80.0 L 5.2 80.0 M 4.2 79.0 L 4.2 81.0" stroke="#6e747c" stroke-width="0.3" />
+      </g>
+      <g id="fan-5--module--handle" data-path="fan-5/module/handle" data-class="handle" data-z-uhandle="16">
+        <rect x="37.7" y="5.5" width="6.5" height="71.2" rx="3.2" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" />
+      </g>
+      <rect id="fan-5--module--latch" x="3.9" y="35.3" width="3.3" height="14.6" rx="0.8" fill="#d32f2f" data-fill-from="handle-finish" stroke="#811d1d" data-stroke-derive="handle-finish" stroke-width="0.3" data-path="fan-5/module/latch" data-class="latch" data-z-out="2.0" />
+      <circle cx="12.3" cy="77.9" r="2.4" fill="#1b1e21" />
+      <rect id="fan-5--module--status-led" x="11.1" y="76.7" width="2.4" height="2.4" rx="1.2" fill="var(--led-color, #2c6b35)" data-path="fan-5/module/status-led" data-class="led" data-states="off ok fail" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="66.33" y="88.7" width="73.5" height="40" fill="#101214" />
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="143.82" y="88.7" width="73.5" height="40" fill="#101214" />
+  </g>
+  <g id="psu-3" data-path="psu-3" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="3">
+    <title>psu-3</title>
+    <rect id="psu-3--opening" x="221.31" y="88.7" width="73.5" height="40" fill="#101214" />
+  </g>
+  <g id="psu-4" data-path="psu-4" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="4">
+    <title>psu-4</title>
+    <rect id="psu-4--opening" x="298.8" y="88.7" width="73.5" height="40" fill="#101214" />
+  </g>
+  <g id="ground-stud-1" data-path="ground-stud-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(8.3,107.4)" data-group="earth" data-group-role="service" data-for="chassis">
+    <title>ground-stud-1</title>
+    <circle id="ground-stud-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-stud-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-stud-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="ground-stud-2" data-path="ground-stud-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(8.3,117.2)" data-group="earth" data-group-role="service" data-for="chassis">
+    <title>ground-stud-2</title>
+    <circle id="ground-stud-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-stud-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-stud-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="hazard-label-left" data-path="hazard-label-left" data-class="marking" data-behaviour="mounts" data-ref="common/multi-cord-hazard-label@1:1.0.0" data-rel-pos="2" transform="translate(27.3,113.2)" data-group="furniture" data-group-role="furniture" data-description="the luggage tag and the two hazard labels">
+    <title>hazard-label-left</title>
+    <rect id="hazard-label-left--field" x="0" y="0" width="29.8" height="10.9" rx="1.0" fill="#f2c619" />
+    <g id="hazard-label-left--shock-triangle">
+      <path d="M 8.0 1.4 L 13.0 9.6 H 3.0 Z" fill="none" stroke="#1a1a1a" stroke-width="0.7" stroke-linejoin="round" />
+      <path d="M 8.4 4.0 L 7.2 6.6 H 8.4 L 7.6 8.6 L 9.2 5.9 H 8.0 L 8.9 4.0 Z" fill="#1a1a1a" />
+    </g>
+    <g id="hazard-label-left--cords" fill="none" stroke="#1a1a1a" stroke-width="0.5">
+      <rect x="18.0" y="2.0" width="3.6" height="2.0" rx="0.3" />
+      <rect x="18.0" y="4.5" width="3.6" height="2.0" rx="0.3" />
+      <rect x="18.0" y="7.0" width="3.6" height="2.0" rx="0.3" />
+      <path d="M 22.4 5.5 L 26.6 5.5 M 25.2 4.3 L 26.6 5.5 L 25.2 6.7" />
+    </g>
+  </g>
+  <g id="hazard-label-right" data-path="hazard-label-right" data-class="marking" data-behaviour="mounts" data-ref="common/multi-cord-hazard-label@1:1.0.0" data-rel-pos="3" transform="translate(381.1,113.2)" data-group="furniture" data-group-role="furniture" data-description="the luggage tag and the two hazard labels">
+    <title>hazard-label-right</title>
+    <rect id="hazard-label-right--field" x="0" y="0" width="29.8" height="10.9" rx="1.0" fill="#f2c619" />
+    <g id="hazard-label-right--shock-triangle">
+      <path d="M 8.0 1.4 L 13.0 9.6 H 3.0 Z" fill="none" stroke="#1a1a1a" stroke-width="0.7" stroke-linejoin="round" />
+      <path d="M 8.4 4.0 L 7.2 6.6 H 8.4 L 7.6 8.6 L 9.2 5.9 H 8.0 L 8.9 4.0 Z" fill="#1a1a1a" />
+    </g>
+    <g id="hazard-label-right--cords" fill="none" stroke="#1a1a1a" stroke-width="0.5">
+      <rect x="18.0" y="2.0" width="3.6" height="2.0" rx="0.3" />
+      <rect x="18.0" y="4.5" width="3.6" height="2.0" rx="0.3" />
+      <rect x="18.0" y="7.0" width="3.6" height="2.0" rx="0.3" />
+      <path d="M 22.4 5.5 L 26.6 5.5 M 25.2 4.3 L 26.6 5.5 L 25.2 6.7" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="80.0mm" height="80.8mm" viewBox="0 0 80.0 80.8">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/fan-80@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='celestica/fan-80@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="fan-80" data-path="fan-80" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-80@1:1.0.0" data-airflow="front-to-back" data-states="ok fail absent" transform="translate(0,0)">
+    <title>fan-80</title>
+    <defs>
+      <pattern id="fan-80--mesh-fan80" x="2.5" y="2.5" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect x="0.55" y="0.55" width="2.9" height="2.9" fill="#23262a" />
+      </pattern>
+    </defs>
+    <rect id="fan-80--body" x="0" y="0" width="80" height="80.8" rx="0.8" fill="#d3d6da" stroke="#9ea3a9" stroke-width="0.35" />
+    <path id="fan-80--mesh" fill="url(#fan-80--mesh-fan80)" d="M 10.5 2.5 H 70.5 V 10.5 H 77.6 V 69.6 H 70.5 V 77.6 H 10.5 V 69.6 H 2.5 V 49 H 7 V 30.5 H 2.5 V 10.5 H 10.5 Z" data-path="fan-80/mesh" data-class="grille" />
+    <circle id="fan-80--screw-tl" cx="5.1" cy="4.4" r="2.9" fill="#e4e7ea" stroke="#9ea3a9" stroke-width="0.3" />
+    <circle id="fan-80--screw-tr" cx="75.7" cy="4.4" r="2.9" fill="#e4e7ea" stroke="#9ea3a9" stroke-width="0.3" />
+    <circle id="fan-80--screw-br" cx="75.7" cy="74.8" r="2.9" fill="#e4e7ea" stroke="#9ea3a9" stroke-width="0.3" />
+    <path d="M 3.6 4.4 H 6.6 M 5.1 2.9 V 5.9 M 74.2 4.4 H 77.2 M 75.7 2.9 V 5.9 M 74.2 74.8 H 77.2 M 75.7 73.3 V 76.3" stroke="#8d9298" stroke-width="0.45" fill="none" />
+    <g id="fan-80--handle" data-path="fan-80/handle" data-class="handle" data-z-uhandle="14">
+      <rect x="37.0" y="4.8" width="6.1" height="69.8" rx="3.05" fill="#e6e9ec" stroke="#a3a8ae" stroke-width="0.35" />
+      <rect x="38.4" y="8.0" width="1.2" height="63.4" rx="0.6" fill="#f7f8f9" />
+    </g>
+    <rect id="fan-80--latch" x="2.3" y="32.4" width="2.9" height="14.6" rx="1.0" fill="#f0a030" stroke="#92621d" stroke-width="0.3" data-fill-from="latch-finish" data-stroke-derive="latch-finish" data-path="fan-80/latch" data-class="latch" data-z-out="1.5" />
+    <circle id="fan-80--status-led" cx="6.0" cy="74.4" r="1.4" fill="var(--led-color, #2fa64a)" stroke="#6b7076" stroke-width="0.3" data-path="fan-80/status-led" data-class="led" data-states="off ok fault" data-z-dome="0.4" />
+  </g>
+</svg>

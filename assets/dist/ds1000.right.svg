@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="370mm" height="43.6mm" viewBox="0 0 370 43.6" data-device="ds1000" data-view="right" data-switching-capacity="128 Gbps" data-packet-buffer="4 MB" data-jumbo-frame="12,288 bytes" data-power-max-w="200" data-power-envelope="unstated" data-psus="2 x 550 W AC hot-swap CRPS, 1+1 redundant" data-input-ac="90-264 VAC, 47-63 Hz" data-fans="2+1 fixed 40 x 40 x 28 mm fans (not field-replaceable)" data-operating-temp="0 to 45 C at 900 m" data-humidity="5% to 90% non-condensing" data-storage-humidity="5% to 95%" data-mtbf="in excess of 150,000 hours" data-cpu="Intel Denverton 4-core" data-memory="4 GB ECC DDR4, configurable to 32 GB" data-storage="64 Gb iSLC M.2 SSD, configurable" data-onie="ONIE installer for third-party network operating systems" data-ocp="Open Compute Project accepted design" data-optics-sfp-plus="datasheet: '8 x SFP+ 10Gigabit fiber ports', 'SFP+ DAC Support: 7m', 'SFP+ Optical Module Support: Up to 2W power'. No optics list is published." data-mgmt-ports="1 x RJ45 10/100/1000 out-of-band management, 1 x RJ45 console (115200 8N1), 2 x USB 2.0 Type A (data only, no power)" data-safety="UL/CSA/IEC/EN 60950-1/62368-1" data-emc="Class A - USA, Canada, Europe, China, Japan, Korea, Australia, Brazil, South Africa" data-acoustic="EN300753" data-rohs="EU RoHS 2011/65/EU &amp; 2015/863" data-weee="2012/19/EU" data-reach="(EC) No. 1907/2006" data-psu-approvals="CE, CCC, KC, TUV, UL/cUL, BIS and BSMI" data-eol="none-announced" data-airflow="front-to-back" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS1000","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"41c8b3c054e8c72d7d92bbdeefc742460adc883a3e640b4691df20bafe4d4d12","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS1000" data-sku="R3059-F9021-A1" data-part-number="R3059-F9021-A1" x="0" y="0" width="370" height="43.6" rx="1.2" fill="#c4c8cc" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

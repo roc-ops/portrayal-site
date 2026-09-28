@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="438.5mm" height="43.1mm" viewBox="0 0 438.5 43.1" data-device="ds4100" data-view="rear" data-dimensions-note="W 438.5 x D 657.5 x H 43.1 mm (datasheet and guide)" data-switching-capacity="12.8 Tbps" data-packet-buffer="56.83 MB integrated SmartBuffer" data-serdes="112G PAM4" data-jumbo-frames="up to 9416 bytes" data-power-draw-max-w="1310" data-psu-rating-note="1+1 redundant hot-swap 1500 W PSUs" data-input-ac="AC 100 ~ 127 V / 200 ~ 240 V nominal (90-264 V max) at 47-63 Hz" data-airflow-options="front-to-back and back-to-front (separate SKUs)" data-operating-temp="0 to 40 C at 900 m (datasheet); 0 to 40 C at 950 m (guide)" data-humidity="5% to 95% non-condensing" data-cpu="Intel Xeon-D class, 4 or 8 core, on a COM-E module" data-memory="up to 32 GB ECC DDR4" data-storage="128 GB or 256 GB SSD" data-bmc="RunBMC option (OpenBMC, 2 GB DDR4, dual 128 MB flash)" data-software="ONIE installer for third-party NOS" data-breakout="8 x 100GbE, 4 x 200GbE or 2 x 400GbE per 800G port" data-optics-osfp="up to 30 W OSFP optics; LPO/LRO support; DAC up to 2.5 m" data-timing="precise timing option (datasheet, unspecified)" data-emc="EMC CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI" data-safety="UL/CSA/IEC/EN 60950-1/62368-1" data-environment="EU RoHS, SVHC requirements of REACH, China RoHS" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/fan-40@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='celestica/fan-40@'] .state-ok { --led-color: #22c55e; }
+    g[data-ref^='celestica/psu-1500-ac@'] .state-fail { --led-color: #ef4444; }
+    g[data-ref^='celestica/psu-1500-ac@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"Celestica DS4100","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"celestica/fan-40@1":"1.0.0","celestica/psu-1500-ac@1":"1.0.0","common/screw-head@1":"1.1.0","std/c14-inlet@1":"1.3.0"},"source-sha256":"d7b74404f818ff4a2327f65971c6f8942c027b5b3384ed8e3d1c481ff3e2964e","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS4100" data-sku="R4035-F9005-A1" data-part-number="R4035-F9005-A1" x="0" y="0" width="438.5" height="43.1" rx="1.2" fill="#2a2a2a" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="rear-plate" data-kind="plate" x="0" y="0" width="438.5" height="43.1" rx="0.3" fill="#a7a9ac" />
+  </g>
+  <rect id="region--power-1" data-path="region:power-1" data-class="region" data-members="psu-1" x="10" y="1.3" width="57" height="40.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--exhaust" data-path="region:exhaust" data-class="region" data-physical-context="Intake" data-members="fan-1 fan-2 fan-3 fan-4 fan-5 fan-6 fan-7" x="68.5" y="1.3" width="306.5" height="40.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <rect id="region--power-2" data-path="region:power-2" data-class="region" data-members="psu-2" x="376.5" y="1.3" width="57" height="40.5" rx="0.8" fill="none" stroke="none" pointer-events="all" />
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="10.85" y="2.05" width="55.2" height="39" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="celestica/psu-1500-ac@1:1.0.0" data-input="ac" data-latch-finish="#1f2124" data-power-output-w="1500" data-states="absent" transform="translate(38.45,21.55) translate(-27.6,-19.5)">
+      <title>psu-1--module</title>
+      <defs>
+        <pattern id="psu-1--module--psu1500-mesh" width="3.6" height="3.6" patternUnits="userSpaceOnUse">
+          <rect x="0.45" y="0.45" width="2.7" height="2.7" fill="#2a2e33" />
+        </pattern>
+      </defs>
+      <rect id="psu-1--module--body" x="0" y="0" width="55.2" height="39" rx="0.6" fill="#b9bec4" stroke="#7a8087" stroke-width="0.3" />
+      <rect id="psu-1--module--grille" x="1.0" y="1.0" width="27.4" height="37.0" fill="url(#psu-1--module--psu1500-mesh)" data-z-vent="20" />
+      <rect id="psu-1--module--lamp-plate" x="1.0" y="21.6" width="15.6" height="16.4" fill="#b9bec4" stroke="#8a9098" stroke-width="0.2" />
+      <circle id="psu-1--module--lamp-fault-ring" cx="6.5" cy="25.4" r="2.8" fill="#9aa0a7" stroke="#6c727a" stroke-width="0.25" />
+      <circle id="psu-1--module--lamp-ok-ring" cx="6.5" cy="32.1" r="2.8" fill="#9aa0a7" stroke="#6c727a" stroke-width="0.25" />
+      <g id="psu-1--module--silkscreen">
+        <path d="M 11.2 23.4 L 11.2 26.0" stroke="#3a3f45" stroke-width="0.5" fill="none" />
+        <circle cx="11.2" cy="27.0" r="0.3" fill="#3a3f45" />
+        <path d="M 10.6 31.9 L 11.4 32.9 L 13.0 30.8" stroke="#3a3f45" stroke-width="0.45" fill="none" />
+      </g>
+      <path id="psu-1--module--inlet-frame" fill-rule="evenodd" fill="#9ea4ab" stroke="#6c727a" stroke-width="0.3" d="M 29.9 1.8 H 50.4 A 0.8 0.8 0 0 1 51.2 2.6 V 30.8 A 0.8 0.8 0 0 1 50.4 31.6 H 29.9 A 1.0 1.0 0 0 1 28.9 30.6 V 2.8 A 1.0 1.0 0 0 1 29.9 1.8 Z        M 30.75 2.7 V 30.7 H 50.75 V 2.7 Z" data-z-out="2.0" />
+      <rect id="psu-1--module--handle" x="19.5" y="1.0" width="6.3" height="37.5" rx="3.1" fill="#1c1f23" stroke="#0b0d0f" stroke-width="0.25" data-fill-from="handle-finish" data-path="psu-1/module/handle" data-class="handle" data-z-uhandle="22" />
+      <rect id="psu-1--module--latch" x="51.3" y="24.6" width="3.9" height="14.1" rx="1.2" fill="#1f2124" stroke="#9a5f10" stroke-width="0.25" data-fill-from="latch-finish" data-path="psu-1/module/latch" data-class="latch" data-z-out="3.0" />
+      <circle id="psu-1--module--lamp-fault" cx="6.5" cy="25.4" r="1.5" fill="var(--led-color, #d4d8dc)" data-path="psu-1/module/lamp-fault" data-class="led" data-states="off fail" data-description="the lamp beside the printed '!' - guide Rear Panel Status LEDs, PSU module row, Red (PSU error(s) detected), Off (PSU off)" data-z-dome="0.4" />
+      <circle id="psu-1--module--lamp-ok" cx="6.5" cy="32.1" r="1.5" fill="var(--led-color, #d4d8dc)" data-path="psu-1/module/lamp-ok" data-class="led" data-states="off ok" data-description="the lamp beside the printed check mark - guide Rear Panel Status LEDs, PSU module row, Green (all PSUs operating normally), Off (PSU off)" data-z-dome="0.4" />
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(26.75,6.7) rotate(90 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="40.75 16.7" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="fan-1" data-path="fan-1" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="1">
+    <title>fan-1</title>
+    <rect id="fan-1--opening" x="69.85" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-1--module" data-path="fan-1/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(89.5,21.55) translate(-19.65,-19.5)">
+      <title>fan-1--module</title>
+      <defs>
+        <pattern id="fan-1--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-1--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-1--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-1--module--grille-mesh" fill="url(#fan-1--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-1--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-1/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-1--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-1/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-1--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-1/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="fan-2" data-path="fan-2" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="2">
+    <title>fan-2</title>
+    <rect id="fan-2--opening" x="113.87" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-2--module" data-path="fan-2/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(133.52,21.55) translate(-19.65,-19.5)">
+      <title>fan-2--module</title>
+      <defs>
+        <pattern id="fan-2--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-2--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-2--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-2--module--grille-mesh" fill="url(#fan-2--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-2--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-2/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-2--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-2/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-2--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-2/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="fan-3" data-path="fan-3" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="3">
+    <title>fan-3</title>
+    <rect id="fan-3--opening" x="157.89" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-3--module" data-path="fan-3/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(177.54,21.55) translate(-19.65,-19.5)">
+      <title>fan-3--module</title>
+      <defs>
+        <pattern id="fan-3--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-3--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-3--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-3--module--grille-mesh" fill="url(#fan-3--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-3--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-3/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-3--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-3/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-3--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-3/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="fan-4" data-path="fan-4" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="4">
+    <title>fan-4</title>
+    <rect id="fan-4--opening" x="201.91" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-4--module" data-path="fan-4/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(221.56,21.55) translate(-19.65,-19.5)">
+      <title>fan-4--module</title>
+      <defs>
+        <pattern id="fan-4--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-4--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-4--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-4--module--grille-mesh" fill="url(#fan-4--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-4--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-4/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-4--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-4/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-4--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-4/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="fan-5" data-path="fan-5" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="5">
+    <title>fan-5</title>
+    <rect id="fan-5--opening" x="245.93" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-5--module" data-path="fan-5/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(265.58,21.55) translate(-19.65,-19.5)">
+      <title>fan-5--module</title>
+      <defs>
+        <pattern id="fan-5--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-5--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-5--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-5--module--grille-mesh" fill="url(#fan-5--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-5--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-5/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-5--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-5/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-5--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-5/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="fan-6" data-path="fan-6" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="6">
+    <title>fan-6</title>
+    <rect id="fan-6--opening" x="289.95" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-6--module" data-path="fan-6/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(309.6,21.55) translate(-19.65,-19.5)">
+      <title>fan-6--module</title>
+      <defs>
+        <pattern id="fan-6--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-6--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-6--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-6--module--grille-mesh" fill="url(#fan-6--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-6--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-6/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-6--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-6/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-6--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-6/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="fan-7" data-path="fan-7" data-class="bay" data-group="fans" data-group-role="service" data-rel-pos="7">
+    <title>fan-7</title>
+    <rect id="fan-7--opening" x="333.97" y="2.05" width="39.3" height="39" fill="#101214" />
+    <g id="fan-7--module" data-path="fan-7/module" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40@1:1.0.0" data-face-finish="#dd8817" data-handle-finish="#d68415" data-latch-finish="#be7515" data-power-absent="not-published" transform="translate(353.62,21.55) translate(-19.65,-19.5)">
+      <title>fan-7--module</title>
+      <defs>
+        <pattern id="fan-7--module--fan40-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+          <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+          <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+          <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+          <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+        </pattern>
+      </defs>
+      <rect id="fan-7--module--body" x="0" y="0" width="39.3" height="39" rx="1.6" fill="#dd8817" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+      <path id="fan-7--module--grille-wire" fill="#a3a9b0" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" />
+      <path id="fan-7--module--grille-mesh" fill="url(#fan-7--module--fan40-hex)" d="M 8.7 2.1 H 30.6 L 37.1 8.6 V 30.8 L 30.6 37.3 H 8.7 L 2.2 30.8 V 8.6 Z" data-z-vent="20" />
+      <rect id="fan-7--module--handle" x="0.4" y="16.2" width="38.5" height="6.7" rx="0.8" fill="#d68415" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-7/module/handle" data-class="handle" data-z-out="5.0" />
+      <rect id="fan-7--module--latch" x="0.3" y="16.9" width="1.7" height="5.3" rx="0.6" fill="#be7515" data-fill-from="latch-finish" data-path="fan-7/module/latch" data-class="latch" data-z-out="5.4" />
+      <circle id="fan-7--module--status-led" cx="3.7" cy="3.6" r="1.2" fill="var(--led-color, #c9ced3)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-7/module/status-led" data-class="led" data-states="off ok fault" data-description="DS4000/DS4001 installation guide, Rear Panel Status LEDs, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="377.45" y="2.05" width="55.2" height="39" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="psu" data-behaviour="fills" data-ref="celestica/psu-1500-ac@1:1.0.0" data-input="ac" data-latch-finish="#1f2124" data-power-output-w="1500" data-states="absent" transform="translate(405.05,21.55) translate(-27.6,-19.5)">
+      <title>psu-2--module</title>
+      <defs>
+        <pattern id="psu-2--module--psu1500-mesh" width="3.6" height="3.6" patternUnits="userSpaceOnUse">
+          <rect x="0.45" y="0.45" width="2.7" height="2.7" fill="#2a2e33" />
+        </pattern>
+      </defs>
+      <rect id="psu-2--module--body" x="0" y="0" width="55.2" height="39" rx="0.6" fill="#b9bec4" stroke="#7a8087" stroke-width="0.3" />
+      <rect id="psu-2--module--grille" x="1.0" y="1.0" width="27.4" height="37.0" fill="url(#psu-2--module--psu1500-mesh)" data-z-vent="20" />
+      <rect id="psu-2--module--lamp-plate" x="1.0" y="21.6" width="15.6" height="16.4" fill="#b9bec4" stroke="#8a9098" stroke-width="0.2" />
+      <circle id="psu-2--module--lamp-fault-ring" cx="6.5" cy="25.4" r="2.8" fill="#9aa0a7" stroke="#6c727a" stroke-width="0.25" />
+      <circle id="psu-2--module--lamp-ok-ring" cx="6.5" cy="32.1" r="2.8" fill="#9aa0a7" stroke="#6c727a" stroke-width="0.25" />
+      <g id="psu-2--module--silkscreen">
+        <path d="M 11.2 23.4 L 11.2 26.0" stroke="#3a3f45" stroke-width="0.5" fill="none" />
+        <circle cx="11.2" cy="27.0" r="0.3" fill="#3a3f45" />
+        <path d="M 10.6 31.9 L 11.4 32.9 L 13.0 30.8" stroke="#3a3f45" stroke-width="0.45" fill="none" />
+      </g>
+      <path id="psu-2--module--inlet-frame" fill-rule="evenodd" fill="#9ea4ab" stroke="#6c727a" stroke-width="0.3" d="M 29.9 1.8 H 50.4 A 0.8 0.8 0 0 1 51.2 2.6 V 30.8 A 0.8 0.8 0 0 1 50.4 31.6 H 29.9 A 1.0 1.0 0 0 1 28.9 30.6 V 2.8 A 1.0 1.0 0 0 1 29.9 1.8 Z        M 30.75 2.7 V 30.7 H 50.75 V 2.7 Z" data-z-out="2.0" />
+      <rect id="psu-2--module--handle" x="19.5" y="1.0" width="6.3" height="37.5" rx="3.1" fill="#1c1f23" stroke="#0b0d0f" stroke-width="0.25" data-fill-from="handle-finish" data-path="psu-2/module/handle" data-class="handle" data-z-uhandle="22" />
+      <rect id="psu-2--module--latch" x="51.3" y="24.6" width="3.9" height="14.1" rx="1.2" fill="#1f2124" stroke="#9a5f10" stroke-width="0.25" data-fill-from="latch-finish" data-path="psu-2/module/latch" data-class="latch" data-z-out="3.0" />
+      <circle id="psu-2--module--lamp-fault" cx="6.5" cy="25.4" r="1.5" fill="var(--led-color, #d4d8dc)" data-path="psu-2/module/lamp-fault" data-class="led" data-states="off fail" data-description="the lamp beside the printed '!' - guide Rear Panel Status LEDs, PSU module row, Red (PSU error(s) detected), Off (PSU off)" data-z-dome="0.4" />
+      <circle id="psu-2--module--lamp-ok" cx="6.5" cy="32.1" r="1.5" fill="var(--led-color, #d4d8dc)" data-path="psu-2/module/lamp-ok" data-class="led" data-states="off ok" data-description="the lamp beside the printed check mark - guide Rear Panel Status LEDs, PSU module row, Green (all PSUs operating normally), Off (PSU off)" data-z-dome="0.4" />
+      <g id="psu-2--module--inlet" data-path="psu-2/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(26.75,6.7) rotate(90 14.0 10.0)">
+        <title>psu-2--module--inlet</title>
+        <rect id="psu-2--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-2/module/inlet/opening" data-class="cutout" />
+        <path id="psu-2--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-2--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-2--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <g data-cp="power" data-cp-at="40.75 16.7" data-cp-dir="rear" />
+    </g>
+  </g>
+  <g id="ground-screw-1" data-path="ground-screw-1" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="2" transform="translate(3.9,22.3)" data-group="furniture" data-group-role="furniture" data-description="the pull-out LUG TAG at the foot of the front panel and the two ground-lug bracket screws at the rear left corner - things you neither connect to nor read.">
+    <title>ground-screw-1</title>
+    <circle id="ground-screw-1--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-1--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-1--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+  <g id="ground-screw-2" data-path="ground-screw-2" data-class="screw" data-behaviour="mounts" data-ref="common/screw-head@1:1.1.0" data-depth="0.7" data-wall="#15181b" data-cavity="head" data-round="1" data-rel-pos="3" transform="translate(3.9,31.6)" data-group="furniture" data-group-role="furniture" data-description="the pull-out LUG TAG at the foot of the front panel and the two ground-lug bracket screws at the rear left corner - things you neither connect to nor read.">
+    <title>ground-screw-2</title>
+    <circle id="ground-screw-2--head" cx="1.8" cy="1.8" r="1.6" fill="#8a9099" stroke="#4a4f55" stroke-width="0.22" />
+    <rect id="ground-screw-2--slot-h" x="0.8" y="1.64" width="2.0" height="0.32" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+    <rect id="ground-screw-2--slot-v" x="1.64" y="0.8" width="0.32" height="2.0" fill="#4a4f55" data-z-sink="0.5" data-z-color="#111417" />
+  </g>
+</svg>

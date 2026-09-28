@@ -1,0 +1,4283 @@
+{
+ "attrs": {
+  "compliance": {
+   "emc": "CN (GB9254-2008), EU (EN55022, EN55024), FCC, VCCI",
+   "environment": "EU RoHS, SVHC requirements of REACH, China RoHS",
+   "safety": "UL/CSA/IEC/EN 60950-1/62368-1"
+  },
+  "environmental": {
+   "humidity": "5% to 85% (guide); 5% to 95% non-condensing (datasheet)",
+   "operating-temp": "0 to 40 C at 950 m"
+  },
+  "features": {
+   "optics-osfp": "up to 20 W transceivers, up to 28 W on ports 1, 2, 31 and 32 (guide); up to 20 W / 26 W (datasheet)",
+   "timing": "IEEE 1588 1-step and 2-step time stamping; transparent and boundary clock; SyncE clock recovery (option)"
+  },
+  "lifecycle": {
+   "eol": "none-announced"
+  },
+  "performance": {
+   "port-speeds": "10/25/40/50/100/200/400GbE capable; SKU text 32 x 2x400GbE",
+   "switching-capacity": "25.6 Tbps"
+  },
+  "physical": {
+   "dimensions-note": "W 438.5 x D 657.5 x H 43.1 mm (datasheet and guide)"
+  },
+  "platform": {
+   "bmc": "RunBMC option (OpenBMC)",
+   "cpu": "Intel Hewitt Lake (Xeon D) 4-core or 8-core, 2.9 GHz",
+   "memory": "up to 32 GB ECC DDR4",
+   "software": "SONiC; ONIE installer; ONL; Redfish",
+   "storage": "128 GB or 256 GB SSD",
+   "switch-silicon": "Broadcom StrataXGS Tomahawk 4-100 (TH4-100)"
+  },
+  "power": {
+   "input-ac": "100 ~ 240 VAC (50-60 Hz) (guide); 100-240 V nominal, 90-264 V max, 47-63 Hz (datasheet)",
+   "psu-rating-note": "1+1 redundant hot-swap 2000 W PSUs"
+  },
+  "thermal": {
+   "airflow-options": "front-to-back only"
+  }
+ },
+ "chassis": {
+  "airflow": "front-to-back",
+  "color": "#161718",
+  "depth": 657.5,
+  "height": 43.1,
+  "power": "ac",
+  "ru": 1,
+  "width": 438.5
+ },
+ "configurations": {
+  "ac-f2b": {
+   "component-attrs": {
+    "fan-40": {
+     "latch-finish": "#050506"
+    },
+    "psu-2000-ac": {
+     "latch-finish": "#facc02"
+    }
+   },
+   "default": true,
+   "description": "Two 2000 W AC supplies and seven fan modules, front-to-back - the only airflow the DS4101 is sold in - with the COMe 4C / 32 GB DDR4 / 128 GB SSD control plane (R4030-F9001-A1).",
+   "kind": "base",
+   "part-numbers": {
+    "R4030-F9001-A1": {
+     "part": "R4030-F9001-A1"
+    }
+   }
+  },
+  "ac-f2b-16g": {
+   "component-attrs": {
+    "fan-40": {
+     "latch-finish": "#050506"
+    },
+    "psu-2000-ac": {
+     "latch-finish": "#facc02"
+    }
+   },
+   "description": "The same chassis, supplies and fans with the COMe 4C / 16 GB DDR4 / 64 GB SSD control plane (R4030-F9003-A1). The faces are identical; only the ordering code differs.",
+   "kind": "orderable",
+   "part-numbers": {
+    "R4030-F9003-A1": {
+     "part": "R4030-F9003-A1"
+    }
+   }
+  }
+ },
+ "description": "Celestica DS4101 - a 1RU 32-port 800G data-centre switch on a Broadcom Tomahawk 4-100 (25.6 Tbps): thirty-two OSFP ports in four blocks of four stacked columns across a black front panel, with the system lamps and one silver housing stacking an RJ45 console, a USB 3.0 Type-A and an RJ45 1000BASE-T management port at the LEFT end, and a stacked pair of 10G SFP+ cages (M1/M2) at the right. The rear carries two 2000 W hot-swap AC supplies at the ends and seven hot-swap black fan modules between them (6+1). The mirror image of its sibling celestica/ds4100's layout, which puts the management housing at the right.",
+ "format": 1,
+ "gaps": [
+  {
+   "reason": "vendor-silent",
+   "scope": [
+    "front"
+   ],
+   "wanted": "What the sixty-three windows between the port rows show and which port each serves. The DS4101 guide has no LED table; the sibling DS4100's table gives one bicolour lamp per OSFP port and the DS4100 face has no such windows at all, so it is no guide here. Each column's left pair is assigned to its upper port and its right pair to the lower port as an assumption, and column 1 has a single left window. A port-LED table or a photograph of a powered unit settles it.",
+   "what": "port-lamp-meaning"
+  },
+  {
+   "reason": "sources-disagree",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "Which supply the DS4101 ships. The overview rear elevation draws a black grip, a C20 inlet and a yellow latch, and the box ships a C20-C21 cord; the same guide's PSU Removal figures draw a silver module with a grey grip, a black latch and a C14. The overview and the cord agree and are modelled; see celestica/psu-2000-ac@1.",
+   "what": "psu-artwork-disagrees"
+  },
+  {
+   "reason": "sources-disagree",
+   "scope": [
+    "front"
+   ],
+   "wanted": "The guide gives 5-85% humidity and 20 W optics (28 W on ports 1, 2, 31, 32); the datasheet gives 5-95% and \"20W/26W\". Both are recorded in attrs; neither is preferred.",
+   "what": "humidity-and-optics-power"
+  },
+  {
+   "reason": "vendor-silent",
+   "scope": [
+    "rear"
+   ],
+   "wanted": "Which end FAN1 and PSU1 are. No figure labels a bay and this guide has no LED table naming them. Bays are numbered left to right as seen from the rear; nothing is printed.",
+   "what": "fan-and-psu-numbering"
+  },
+  {
+   "reason": "needs-drawing",
+   "scope": [
+    "top",
+    "bottom",
+    "left",
+    "right"
+   ],
+   "wanted": "Orthographic drawings of the lid, underside and side walls. Figure 2 is a side view in perspective and the renders show a plain lid with a recessed plate towards the rear; neither can be measured.",
+   "what": "the-four-undrawn-faces"
+  }
+ ],
+ "groups": {
+  "fans": {
+   "attrs": {
+    "redundancy": "6+1",
+    "redundancy-note": "datasheet and guide: \"6+1 redundant fans\"; the rear figure counts seven (\"Fan Module 7x\")."
+   },
+   "index-origin": 1,
+   "role": "service",
+   "term": "Fan"
+  },
+  "furniture": {
+   "description": "the pull-out LUG TAG under the SFP+ pair.",
+   "index-origin": 1,
+   "role": "furniture",
+   "term": "Part"
+  },
+  "leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  },
+  "mgmt": {
+   "index-origin": 1,
+   "mixed": "the out-of-band ports: the RJ45 console, the USB 3.0 Type-A and the 1GbE RJ45 management jack in one stacked housing at the left, and the two 10GbE SFP+ cages at the right that the panel legends M1 and M2.",
+   "role": "management",
+   "term": "Port"
+  },
+  "osfp": {
+   "attrs": {
+    "media": "osfp",
+    "speed": "800g"
+   },
+   "description": "the thirty-two 800G OSFP ports, four blocks of four stacked columns on a 23.214 mm pitch with a 3.34 mm gutter, odd ports the upper row and even the lower, as the render's `N (up)(down) N+1` legends say; sold as 32 x 2x400GbE.",
+   "index-origin": 1,
+   "role": "traffic",
+   "term": "Port"
+  },
+  "port-leds": {
+   "description": "the sixty-three unlabelled lamp windows between the port rows - two per side of each column wall; which port each serves is assumed, see the port-lamp-meaning gap.",
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  },
+  "psus": {
+   "attrs": {
+    "redundancy": "1+1",
+    "redundancy-note": "datasheet: \"1+1 redundant, hot swappable 2000W PSUs\", and the guide: \"1+1 redundant, hot swappable 2000W PSUs\"; the rear figure counts two."
+   },
+   "index-origin": 1,
+   "role": "service",
+   "term": "PSU"
+  },
+  "sfp-leds": {
+   "index-origin": 1,
+   "role": "indicator",
+   "term": "LED"
+  }
+ },
+ "kind": "device",
+ "manufacturer": "Celestica",
+ "maturity": "modelled",
+ "model": "DS4101",
+ "name": "ds4101",
+ "profile": "networking",
+ "provenance": {
+  "colour": {
+   "confidence": "photo-measured",
+   "note": "Front #161718 from the product render's flat bands (the guide's CAD is untextured grey). Rear sheet metal #c3c5c8 from Figure 3's frame, which the rear render agrees is silver."
+  },
+  "gate-1": {
+   "confidence": "measured",
+   "note": "BOTH OVERVIEW ELEVATIONS ARE ORTHOGRAPHIC. Figure 1 (front) is 8246 x 2225 px and its face box reads 6836 x 673 px (x 1049-7884, y 1016-1688): aspect 10.158 against the stated 438.5 x 43.1 mm, 0.16% out, 15.59 px/mm across and 15.62 down. Figure 3 (rear) reads 5986 x 589 px, aspect 10.163, 0.11% out, 13.65 px/mm. Both JPEGs are upscales - edges are two to three pixels soft - so positions are good to roughly 0.2 mm, not to the pixel."
+  },
+  "legends": {
+   "confidence": "estimated",
+   "note": "FROM THE PERSPECTIVE RENDER, SO POSITIONS ARE ESTIMATED. ds4101-A.png prints `N (up)(down) N+1` between each column's cages (it appears right of centre, but the cages stand proud of the plate and the render looks from the left, and a right-shifted legend would sit on the column's right-hand windows - so it is centred); STAT, FAN, PWR and ALM beside the four lamps, printed on a slant (about 45-50 degrees, read through the render's shear); the Celestica wordmark across the top-left corner; a serial \"IOIOI\" console mark under it; the USB SuperSpeed mark at the left end of the band; a network-tree mark under the ALM lamp for the management jack; and `M1 (up)(down) M2` between the SFP+ cages. The trident beside SS is not drawn. Sizes are scaled from the render against the columns."
+  },
+  "lifecycle": {
+   "confidence": "datasheet",
+   "note": "Listed as a current platform on cls.celestica.com/hardware-platforms/ds4101/ when fetched on 2026-09-26; no end-of-life notice was found there or on the documentation portal."
+  },
+  "power": {
+   "confidence": "datasheet",
+   "note": "Datasheet Power and Cooling: \"1+1 redundant, hot swappable 2000W PSUs\", \"AC 47~63Hz, 100~240 V nominal, 90~264V max\", \"6+1 redundant fans, front to back\". THE GUIDE'S POWER CONSUMPTION CELL IS EMPTY (it reads \"\\\") and the datasheet gives no chassis draw, so no power-draw figure is recorded."
+  },
+  "rear": {
+   "confidence": "measured",
+   "note": "Figure 3 at 13.65 px/mm. Two supplies, same orientation, frames x 10.4-66.6 and 376.8-433.0 by y 1.8-41.8 - celestica/psu-2000-ac@1, the same supply the DS5000 seats (one contract, #696), whose latch is a field: yellow here, #facc02 sampled at the latch on this figure, where the DS5000's is black. Seven black fan faces: across the handle bar they read 69.23-110.25, 113.18-154.20 ... 333.16-374.33 (41.0 wide) on a 43.99 pitch, and y 1.83-40.61; the green lamps at upper left read x 73.65, 117.69 ... 337.67 at y 5.86. Bays use celestica/fan-40@1's 39.3 x 39.0 centred on those - the same fan module as the DS4000's and the DS4100's (lamp at module (3.6, 4.2) against the part's (3.7, 3.6), pitch 43.99 against 43.96), in its default black. THE LATCH IS SET BLACK, NOT THE PART'S BLUE: the Fan Removal figure names a \"blue latch\", but it is recessed under the handle and the rear elevation shows none at the handle band's end - sampled #000002 to #020202 there, with at most a sub-millimetre dark-blue sliver on edge - so latch-finish is #050506 on this face (reviewer's call). At the far left two empty round holes (x 6.0, y 23.8 and 33.6), the ground-lug bracket's two M3 holes; the AC build ships without the bracket."
+  },
+  "sources": {
+   "confidence": "datasheet",
+   "note": "Two documents and two vendor renders. The DS4101 installation guide (Celestica documentation portal, HTML) carries the Product Specifications table, four Product Overview figures (front elevation, side view, rear elevation, rear three-quarter), the PSU and fan removal figures, the What's in the Box SKU table and the Ground Lug Installation photographs. It has NO LED table. The DS4101 datasheet carries the features, silicon, power, dimensions and approvals. cls.celestica.com/hardware-platforms/ ds4101/ serves three-quarter renders saved as working/intake/celestica/photos/ds4101-A.png, -AB.png and -social.png; they are perspective and are used for colour, legends and counts only."
+  },
+  "the-guide-figure-is-untextured-cad": {
+   "confidence": "photo-measured",
+   "note": "THE GUIDE DRAWS A LIGHT GREY FACE AND THE PRODUCT IS BLACK. Figure 1 is a flat-shaded CAD render: pale grey plate (#c3c1be sampled), no printing at all, not even port numbers. The product-page render draws the same face black (#080808 in the flat bands) with white legends. The CAD carries the geometry and the render the finish: the chassis colour and every legend on this face are the render's, and every position is the CAD's. DS4100's own guide figure is textured and black, which is what the DS4101 render shows too."
+  },
+  "the-management-housing": {
+   "confidence": "measured",
+   "note": "ONE SILVER HOUSING, x 11.7-28.3 by y 6.5-38.6 on Figure 1, stacking console (top, keyway up), USB Type-A and MGMT (bottom, latch and its two lamps at the bottom - two green-white squares at (15.3, 37.1) and (26.1, 37.1) on the figure) - the guide's callout reads \"Top: 1xConsole Serial, Middle: 1xUSB Type A 3.0, Bottom: 1xEthernet RJ45\". Jacks are std/rj45-ganged@2 cells and std/usb-a@1 centred on the housing; the console cell is turned 180 so its latch slot is at the top, as drawn, and MGMT is common/rj45-ganged-eth@1 upright, whose lamps sit in its latch-side (bottom) corners."
+  },
+  "the-osfp-wall": {
+   "confidence": "measured",
+   "note": "FOUR BLOCKS OF FOUR STACKED COLUMNS. Profiling the thin cage walls inside the lower openings (y 27) puts the inner dividers at 54.88, 78.10, 101.32 | 150.97, 174.19, 197.41 | 247.41, 270.60, 293.82 | 343.50, 366.69, 389.91: an in-block pitch of 23.214 (23.22, 23.22, 23.205, 23.205 per block) and a block pitch of 96.197 from the middle dividers (96.09, 96.41, 96.09), a 3.34 mm gutter. Column 1 is centred at 43.27, its left cage wall reading 31.59. Aperture rows read 5.89-18.00 and 24.27-36.38 (12.1 tall), so std/osfp@1 is centred at y 11.95 and 30.33, a row pitch of 18.38. Odd ports upper, even lower, left to right - the render prints `1 (up)(down) 2` through `31 (up)(down) 32`. Upper cages rotate 0 and lower 180 by the library's belly-to-belly rule (L108)."
+  },
+  "the-port-lamp-windows": {
+   "confidence": "measured",
+   "note": "SIXTY-THREE SMALL WINDOWS IN THE BAND BETWEEN THE ROWS. Figure 1 draws dark 2.0 x 1.5 mm squares at y 20.37-21.90, two each side of every column wall on a 3.03 mm pitch - groups of four straddling each divider, two at each block end - and the render shows the same squares, unlit, beside its legends. Column 1's left end has one where every other column end has two; the render prints the USB SuperSpeed mark in the missing one's place, so it is recorded as absent, not added. WHAT THEY MEAN IS NOT DOCUMENTED - the DS4101 guide has no LED table. Two windows per port fits the SKU's \"32x 2x400GbE\" description (one lamp per 400G half), and each column's left pair is assigned to its upper (odd) port and its right pair to the lower (even) port. THAT ASSIGNMENT IS AN ASSUMPTION, recorded in the port-lamp-meaning gap. common/led-rect-sm@1 (2.8 x 1.6) is seated on each measured centre; the windows are 2.0 x 1.5, and the library's nearest part is used at the right pitch rather than a new part drawn for a guess."
+  },
+  "the-sfp-pair": {
+   "confidence": "measured",
+   "note": "Two SFP+ cages at x 416.5-431.4 - openings x 418.36- 429.23 - frames about y 9.3-20.0 and 22.6-33.3; std/sfp@1 centred on x 423.8, y 14.65 and 27.95, upper 0 and lower 180. BOTH LAMPS ARE ABOVE THE UPPER CAGE, green, at (420.86, 7.91) and (426.76, 7.91), 2.4 mm across; the render prints M1 under the left one and M2 under the right, so left is M1's and right M2's. Below the pair a two-row vent patch and, at the foot, the LUG TAG - celestica/lug-tag-ridge-16@1, the top-ridge card, printed DS4101; the render prints LUG TAG on the PANEL just above it, not on the card."
+  },
+  "the-system-lamps": {
+   "confidence": "measured",
+   "note": "Four green domes 3.6 mm across at x 7.70, y 11.79, 16.82, 21.84 and 26.99 (5.07 pitch), callouts Sys, Fan, PSU and Alarm Status; the render prints STAT, FAN, PWR and ALM. common/led-indicator@1 on the centres. With no LED table in this guide the states are off/on only; the DS4100's table (SYS/FAN/PSU/ALM) is a different panel and is not borrowed."
+  },
+  "vent-fields": {
+   "confidence": "measured",
+   "note": "A row of short slots along the top edge (y 1.2-2.0, about 1.6 long on a 2.5 pitch) and another along the bottom (y 40.7-41.6), a 3 x 3 patch below the lamps (x 2.5-10.3, y 29.5-40.5), a column down the right edge (x 432.6-437.6) and short rows above and below the SFP+ pair. The render draws the same bands as larger square perforations; the CAD's extents are used."
+  }
+ },
+ "references": [
+  {
+   "title": "Celestica DS4101 Installation Guide (documentation portal)"
+  },
+  {
+   "title": "Celestica DS4101 1U 32-port 800G Data Center Switch datasheet"
+  }
+ ],
+ "version": "0.1.0",
+ "views": {
+  "bottom": {
+   "empty": "Not drawn by any staged source; neither the guide's four overview figures nor the product-page renders show the underside.",
+   "size": {
+    "h": 657.5,
+    "w": 438.5
+   }
+  },
+  "front": {
+   "components": {
+    "placements": [
+     {
+      "at": [
+       13.65,
+       7.4
+      ],
+      "attrs": {
+       "media": "rj45-serial",
+       "role": "console"
+      },
+      "group": "mgmt",
+      "id": "console",
+      "ref": "std/rj45-ganged@2",
+      "rel-pos": 1,
+      "rotate": 180
+     },
+     {
+      "at": [
+       14.0,
+       19.9
+      ],
+      "attrs": {
+       "media": "usb-a",
+       "role": "storage",
+       "usb": "3.0"
+      },
+      "group": "mgmt",
+      "id": "usb",
+      "ref": "std/usb-a@1",
+      "rel-pos": 2
+     },
+     {
+      "at": [
+       13.65,
+       26.6
+      ],
+      "attrs": {
+       "media": "rj45",
+       "role": "mgmt",
+       "speed": "1g"
+      },
+      "group": "mgmt",
+      "id": "mgmt-eth",
+      "ref": "common/rj45-ganged-eth@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       416.55,
+       9.65
+      ],
+      "attrs": {
+       "media": "sfp-plus",
+       "role": "mgmt",
+       "speed": "10g"
+      },
+      "group": "mgmt",
+      "id": "mgmt-sfp-1",
+      "ref": "std/sfp@1",
+      "rel-pos": 4
+     },
+     {
+      "at": [
+       416.55,
+       22.95
+      ],
+      "attrs": {
+       "media": "sfp-plus",
+       "role": "mgmt",
+       "speed": "10g"
+      },
+      "group": "mgmt",
+      "id": "mgmt-sfp-2",
+      "ref": "std/sfp@1",
+      "rel-pos": 5,
+      "rotate": 180
+     },
+     {
+      "at": [
+       419.86,
+       6.91
+      ],
+      "for": "mgmt-sfp-1",
+      "group": "sfp-leds",
+      "id": "led-sfp-1",
+      "ref": "common/led-dot@1",
+      "rel-pos": 1,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       425.76,
+       6.91
+      ],
+      "for": "mgmt-sfp-2",
+      "group": "sfp-leds",
+      "id": "led-sfp-2",
+      "ref": "common/led-dot@1",
+      "rel-pos": 2,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       9.79
+      ],
+      "for": "chassis",
+      "group": "leds",
+      "id": "led-stat",
+      "ref": "common/led-indicator@1",
+      "rel-pos": 1,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       14.82
+      ],
+      "for": "chassis",
+      "group": "leds",
+      "id": "led-fan",
+      "ref": "common/led-indicator@1",
+      "rel-pos": 2,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       19.84
+      ],
+      "for": "chassis",
+      "group": "leds",
+      "id": "led-pwr",
+      "ref": "common/led-indicator@1",
+      "rel-pos": 3,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       24.99
+      ],
+      "for": "chassis",
+      "group": "leds",
+      "id": "led-alm",
+      "ref": "common/led-indicator@1",
+      "rel-pos": 4,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       416.9,
+       38.0
+      ],
+      "attrs": {
+       "label": "DS4101"
+      },
+      "group": "furniture",
+      "id": "lug-tag",
+      "ref": "celestica/lug-tag-ridge-16@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       31.72,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-1",
+      "ref": "std/osfp@1",
+      "rel-pos": 1
+     },
+     {
+      "at": [
+       31.72,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-2",
+      "ref": "std/osfp@1",
+      "rel-pos": 2,
+      "rotate": 180
+     },
+     {
+      "at": [
+       54.93,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-3",
+      "ref": "std/osfp@1",
+      "rel-pos": 3
+     },
+     {
+      "at": [
+       54.93,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-4",
+      "ref": "std/osfp@1",
+      "rel-pos": 4,
+      "rotate": 180
+     },
+     {
+      "at": [
+       78.15,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-5",
+      "ref": "std/osfp@1",
+      "rel-pos": 5
+     },
+     {
+      "at": [
+       78.15,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-6",
+      "ref": "std/osfp@1",
+      "rel-pos": 6,
+      "rotate": 180
+     },
+     {
+      "at": [
+       101.36,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-7",
+      "ref": "std/osfp@1",
+      "rel-pos": 7
+     },
+     {
+      "at": [
+       101.36,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-8",
+      "ref": "std/osfp@1",
+      "rel-pos": 8,
+      "rotate": 180
+     },
+     {
+      "at": [
+       127.92,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-9",
+      "ref": "std/osfp@1",
+      "rel-pos": 9
+     },
+     {
+      "at": [
+       127.92,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-10",
+      "ref": "std/osfp@1",
+      "rel-pos": 10,
+      "rotate": 180
+     },
+     {
+      "at": [
+       151.13,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-11",
+      "ref": "std/osfp@1",
+      "rel-pos": 11
+     },
+     {
+      "at": [
+       151.13,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-12",
+      "ref": "std/osfp@1",
+      "rel-pos": 12,
+      "rotate": 180
+     },
+     {
+      "at": [
+       174.34,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-13",
+      "ref": "std/osfp@1",
+      "rel-pos": 13
+     },
+     {
+      "at": [
+       174.34,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-14",
+      "ref": "std/osfp@1",
+      "rel-pos": 14,
+      "rotate": 180
+     },
+     {
+      "at": [
+       197.56,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-15",
+      "ref": "std/osfp@1",
+      "rel-pos": 15
+     },
+     {
+      "at": [
+       197.56,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-16",
+      "ref": "std/osfp@1",
+      "rel-pos": 16,
+      "rotate": 180
+     },
+     {
+      "at": [
+       224.11,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-17",
+      "ref": "std/osfp@1",
+      "rel-pos": 17
+     },
+     {
+      "at": [
+       224.11,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-18",
+      "ref": "std/osfp@1",
+      "rel-pos": 18,
+      "rotate": 180
+     },
+     {
+      "at": [
+       247.33,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-19",
+      "ref": "std/osfp@1",
+      "rel-pos": 19
+     },
+     {
+      "at": [
+       247.33,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-20",
+      "ref": "std/osfp@1",
+      "rel-pos": 20,
+      "rotate": 180
+     },
+     {
+      "at": [
+       270.54,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-21",
+      "ref": "std/osfp@1",
+      "rel-pos": 21
+     },
+     {
+      "at": [
+       270.54,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-22",
+      "ref": "std/osfp@1",
+      "rel-pos": 22,
+      "rotate": 180
+     },
+     {
+      "at": [
+       293.76,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-23",
+      "ref": "std/osfp@1",
+      "rel-pos": 23
+     },
+     {
+      "at": [
+       293.76,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-24",
+      "ref": "std/osfp@1",
+      "rel-pos": 24,
+      "rotate": 180
+     },
+     {
+      "at": [
+       320.31,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-25",
+      "ref": "std/osfp@1",
+      "rel-pos": 25
+     },
+     {
+      "at": [
+       320.31,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-26",
+      "ref": "std/osfp@1",
+      "rel-pos": 26,
+      "rotate": 180
+     },
+     {
+      "at": [
+       343.52,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-27",
+      "ref": "std/osfp@1",
+      "rel-pos": 27
+     },
+     {
+      "at": [
+       343.52,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-28",
+      "ref": "std/osfp@1",
+      "rel-pos": 28,
+      "rotate": 180
+     },
+     {
+      "at": [
+       366.74,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-29",
+      "ref": "std/osfp@1",
+      "rel-pos": 29
+     },
+     {
+      "at": [
+       366.74,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-30",
+      "ref": "std/osfp@1",
+      "rel-pos": 30,
+      "rotate": 180
+     },
+     {
+      "at": [
+       389.95,
+       5.2
+      ],
+      "group": "osfp",
+      "id": "port-31",
+      "ref": "std/osfp@1",
+      "rel-pos": 31
+     },
+     {
+      "at": [
+       389.95,
+       23.58
+      ],
+      "group": "osfp",
+      "id": "port-32",
+      "ref": "std/osfp@1",
+      "rel-pos": 32,
+      "rotate": 180
+     },
+     {
+      "at": [
+       34.75,
+       20.33
+      ],
+      "for": "port-1",
+      "group": "port-leds",
+      "id": "led-win-1",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 1,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       48.93,
+       20.33
+      ],
+      "for": "port-2",
+      "group": "port-leds",
+      "id": "led-win-2",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 2,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       51.94,
+       20.33
+      ],
+      "for": "port-2",
+      "group": "port-leds",
+      "id": "led-win-3",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 3,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       55.02,
+       20.33
+      ],
+      "for": "port-3",
+      "group": "port-leds",
+      "id": "led-win-4",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 4,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       57.97,
+       20.33
+      ],
+      "for": "port-3",
+      "group": "port-leds",
+      "id": "led-win-5",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 5,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       72.21,
+       20.33
+      ],
+      "for": "port-4",
+      "group": "port-leds",
+      "id": "led-win-6",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 6,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       75.16,
+       20.33
+      ],
+      "for": "port-4",
+      "group": "port-leds",
+      "id": "led-win-7",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 7,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       78.24,
+       20.33
+      ],
+      "for": "port-5",
+      "group": "port-leds",
+      "id": "led-win-8",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 8,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       81.19,
+       20.33
+      ],
+      "for": "port-5",
+      "group": "port-leds",
+      "id": "led-win-9",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 9,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       95.43,
+       20.33
+      ],
+      "for": "port-6",
+      "group": "port-leds",
+      "id": "led-win-10",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 10,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       98.38,
+       20.33
+      ],
+      "for": "port-6",
+      "group": "port-leds",
+      "id": "led-win-11",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 11,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       101.46,
+       20.33
+      ],
+      "for": "port-7",
+      "group": "port-leds",
+      "id": "led-win-12",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 12,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       104.41,
+       20.33
+      ],
+      "for": "port-7",
+      "group": "port-leds",
+      "id": "led-win-13",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 13,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       118.59,
+       20.33
+      ],
+      "for": "port-8",
+      "group": "port-leds",
+      "id": "led-win-14",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 14,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       121.61,
+       20.33
+      ],
+      "for": "port-8",
+      "group": "port-leds",
+      "id": "led-win-15",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 15,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       127.96,
+       20.33
+      ],
+      "for": "port-9",
+      "group": "port-leds",
+      "id": "led-win-16",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 16,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       131.03,
+       20.33
+      ],
+      "for": "port-9",
+      "group": "port-leds",
+      "id": "led-win-17",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 17,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       145.21,
+       20.33
+      ],
+      "for": "port-10",
+      "group": "port-leds",
+      "id": "led-win-18",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 18,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       148.23,
+       20.33
+      ],
+      "for": "port-10",
+      "group": "port-leds",
+      "id": "led-win-19",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 19,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       151.24,
+       20.33
+      ],
+      "for": "port-11",
+      "group": "port-leds",
+      "id": "led-win-20",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 20,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       154.26,
+       20.33
+      ],
+      "for": "port-11",
+      "group": "port-leds",
+      "id": "led-win-21",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 21,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       168.43,
+       20.33
+      ],
+      "for": "port-12",
+      "group": "port-leds",
+      "id": "led-win-22",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 22,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       171.45,
+       20.33
+      ],
+      "for": "port-12",
+      "group": "port-leds",
+      "id": "led-win-23",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 23,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       174.46,
+       20.33
+      ],
+      "for": "port-13",
+      "group": "port-leds",
+      "id": "led-win-24",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 24,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       177.48,
+       20.33
+      ],
+      "for": "port-13",
+      "group": "port-leds",
+      "id": "led-win-25",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 25,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       191.65,
+       20.33
+      ],
+      "for": "port-14",
+      "group": "port-leds",
+      "id": "led-win-26",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 26,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       194.67,
+       20.33
+      ],
+      "for": "port-14",
+      "group": "port-leds",
+      "id": "led-win-27",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 27,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       197.68,
+       20.33
+      ],
+      "for": "port-15",
+      "group": "port-leds",
+      "id": "led-win-28",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 28,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       200.7,
+       20.33
+      ],
+      "for": "port-15",
+      "group": "port-leds",
+      "id": "led-win-29",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 29,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       214.87,
+       20.33
+      ],
+      "for": "port-16",
+      "group": "port-leds",
+      "id": "led-win-30",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 30,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       217.89,
+       20.33
+      ],
+      "for": "port-16",
+      "group": "port-leds",
+      "id": "led-win-31",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 31,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       224.3,
+       20.33
+      ],
+      "for": "port-17",
+      "group": "port-leds",
+      "id": "led-win-32",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 32,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       227.25,
+       20.33
+      ],
+      "for": "port-17",
+      "group": "port-leds",
+      "id": "led-win-33",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 33,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       241.49,
+       20.33
+      ],
+      "for": "port-18",
+      "group": "port-leds",
+      "id": "led-win-34",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 34,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       244.44,
+       20.33
+      ],
+      "for": "port-18",
+      "group": "port-leds",
+      "id": "led-win-35",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 35,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       247.52,
+       20.33
+      ],
+      "for": "port-19",
+      "group": "port-leds",
+      "id": "led-win-36",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 36,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       250.47,
+       20.33
+      ],
+      "for": "port-19",
+      "group": "port-leds",
+      "id": "led-win-37",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 37,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       264.71,
+       20.33
+      ],
+      "for": "port-20",
+      "group": "port-leds",
+      "id": "led-win-38",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 38,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       267.73,
+       20.33
+      ],
+      "for": "port-20",
+      "group": "port-leds",
+      "id": "led-win-39",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 39,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       270.74,
+       20.33
+      ],
+      "for": "port-21",
+      "group": "port-leds",
+      "id": "led-win-40",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 40,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       273.69,
+       20.33
+      ],
+      "for": "port-21",
+      "group": "port-leds",
+      "id": "led-win-41",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 41,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       287.93,
+       20.33
+      ],
+      "for": "port-22",
+      "group": "port-leds",
+      "id": "led-win-42",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 42,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       290.95,
+       20.33
+      ],
+      "for": "port-22",
+      "group": "port-leds",
+      "id": "led-win-43",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 43,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       293.96,
+       20.33
+      ],
+      "for": "port-23",
+      "group": "port-leds",
+      "id": "led-win-44",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 44,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       296.92,
+       20.33
+      ],
+      "for": "port-23",
+      "group": "port-leds",
+      "id": "led-win-45",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 45,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       311.16,
+       20.33
+      ],
+      "for": "port-24",
+      "group": "port-leds",
+      "id": "led-win-46",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 46,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       314.11,
+       20.33
+      ],
+      "for": "port-24",
+      "group": "port-leds",
+      "id": "led-win-47",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 47,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       320.52,
+       20.33
+      ],
+      "for": "port-25",
+      "group": "port-leds",
+      "id": "led-win-48",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 48,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       323.54,
+       20.33
+      ],
+      "for": "port-25",
+      "group": "port-leds",
+      "id": "led-win-49",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 49,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       337.71,
+       20.33
+      ],
+      "for": "port-26",
+      "group": "port-leds",
+      "id": "led-win-50",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 50,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       340.73,
+       20.33
+      ],
+      "for": "port-26",
+      "group": "port-leds",
+      "id": "led-win-51",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 51,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       343.74,
+       20.33
+      ],
+      "for": "port-27",
+      "group": "port-leds",
+      "id": "led-win-52",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 52,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       346.76,
+       20.33
+      ],
+      "for": "port-27",
+      "group": "port-leds",
+      "id": "led-win-53",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 53,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       360.93,
+       20.33
+      ],
+      "for": "port-28",
+      "group": "port-leds",
+      "id": "led-win-54",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 54,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       364.01,
+       20.33
+      ],
+      "for": "port-28",
+      "group": "port-leds",
+      "id": "led-win-55",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 55,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       366.96,
+       20.33
+      ],
+      "for": "port-29",
+      "group": "port-leds",
+      "id": "led-win-56",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 56,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       369.98,
+       20.33
+      ],
+      "for": "port-29",
+      "group": "port-leds",
+      "id": "led-win-57",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 57,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       384.15,
+       20.33
+      ],
+      "for": "port-30",
+      "group": "port-leds",
+      "id": "led-win-58",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 58,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       387.23,
+       20.33
+      ],
+      "for": "port-30",
+      "group": "port-leds",
+      "id": "led-win-59",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 59,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       390.18,
+       20.33
+      ],
+      "for": "port-31",
+      "group": "port-leds",
+      "id": "led-win-60",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 60,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       393.26,
+       20.33
+      ],
+      "for": "port-31",
+      "group": "port-leds",
+      "id": "led-win-61",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 61,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       407.37,
+       20.33
+      ],
+      "for": "port-32",
+      "group": "port-leds",
+      "id": "led-win-62",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 62,
+      "states": [
+       "off",
+       "on"
+      ]
+     },
+     {
+      "at": [
+       410.45,
+       20.33
+      ],
+      "for": "port-32",
+      "group": "port-leds",
+      "id": "led-win-63",
+      "ref": "common/led-rect-sm@1",
+      "rel-pos": 63,
+      "states": [
+       "off",
+       "on"
+      ]
+     }
+    ]
+   },
+   "panel": {
+    "cutouts": [
+     {
+      "at": [
+       31.72,
+       5.2
+      ],
+      "id": "port-1",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       31.72,
+       23.58
+      ],
+      "id": "port-2",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       54.93,
+       5.2
+      ],
+      "id": "port-3",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       54.93,
+       23.58
+      ],
+      "id": "port-4",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       78.15,
+       5.2
+      ],
+      "id": "port-5",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       78.15,
+       23.58
+      ],
+      "id": "port-6",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       101.36,
+       5.2
+      ],
+      "id": "port-7",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       101.36,
+       23.58
+      ],
+      "id": "port-8",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       127.92,
+       5.2
+      ],
+      "id": "port-9",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       127.92,
+       23.58
+      ],
+      "id": "port-10",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       151.13,
+       5.2
+      ],
+      "id": "port-11",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       151.13,
+       23.58
+      ],
+      "id": "port-12",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       174.34,
+       5.2
+      ],
+      "id": "port-13",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       174.34,
+       23.58
+      ],
+      "id": "port-14",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       197.56,
+       5.2
+      ],
+      "id": "port-15",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       197.56,
+       23.58
+      ],
+      "id": "port-16",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       224.11,
+       5.2
+      ],
+      "id": "port-17",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       224.11,
+       23.58
+      ],
+      "id": "port-18",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       247.33,
+       5.2
+      ],
+      "id": "port-19",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       247.33,
+       23.58
+      ],
+      "id": "port-20",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       270.54,
+       5.2
+      ],
+      "id": "port-21",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       270.54,
+       23.58
+      ],
+      "id": "port-22",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       293.76,
+       5.2
+      ],
+      "id": "port-23",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       293.76,
+       23.58
+      ],
+      "id": "port-24",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       320.31,
+       5.2
+      ],
+      "id": "port-25",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       320.31,
+       23.58
+      ],
+      "id": "port-26",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       343.52,
+       5.2
+      ],
+      "id": "port-27",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       343.52,
+       23.58
+      ],
+      "id": "port-28",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       366.74,
+       5.2
+      ],
+      "id": "port-29",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       366.74,
+       23.58
+      ],
+      "id": "port-30",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       389.95,
+       5.2
+      ],
+      "id": "port-31",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       389.95,
+       23.58
+      ],
+      "id": "port-32",
+      "shape": "rect",
+      "size": [
+       23.1,
+       13.5
+      ]
+     },
+     {
+      "at": [
+       34.75,
+       20.33
+      ],
+      "id": "led-win-1",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       48.93,
+       20.33
+      ],
+      "id": "led-win-2",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       51.94,
+       20.33
+      ],
+      "id": "led-win-3",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       55.02,
+       20.33
+      ],
+      "id": "led-win-4",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       57.97,
+       20.33
+      ],
+      "id": "led-win-5",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       72.21,
+       20.33
+      ],
+      "id": "led-win-6",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       75.16,
+       20.33
+      ],
+      "id": "led-win-7",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       78.24,
+       20.33
+      ],
+      "id": "led-win-8",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       81.19,
+       20.33
+      ],
+      "id": "led-win-9",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       95.43,
+       20.33
+      ],
+      "id": "led-win-10",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       98.38,
+       20.33
+      ],
+      "id": "led-win-11",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       101.46,
+       20.33
+      ],
+      "id": "led-win-12",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       104.41,
+       20.33
+      ],
+      "id": "led-win-13",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       118.59,
+       20.33
+      ],
+      "id": "led-win-14",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       121.61,
+       20.33
+      ],
+      "id": "led-win-15",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       127.96,
+       20.33
+      ],
+      "id": "led-win-16",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       131.03,
+       20.33
+      ],
+      "id": "led-win-17",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       145.21,
+       20.33
+      ],
+      "id": "led-win-18",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       148.23,
+       20.33
+      ],
+      "id": "led-win-19",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       151.24,
+       20.33
+      ],
+      "id": "led-win-20",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       154.26,
+       20.33
+      ],
+      "id": "led-win-21",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       168.43,
+       20.33
+      ],
+      "id": "led-win-22",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       171.45,
+       20.33
+      ],
+      "id": "led-win-23",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       174.46,
+       20.33
+      ],
+      "id": "led-win-24",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       177.48,
+       20.33
+      ],
+      "id": "led-win-25",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       191.65,
+       20.33
+      ],
+      "id": "led-win-26",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       194.67,
+       20.33
+      ],
+      "id": "led-win-27",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       197.68,
+       20.33
+      ],
+      "id": "led-win-28",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       200.7,
+       20.33
+      ],
+      "id": "led-win-29",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       214.87,
+       20.33
+      ],
+      "id": "led-win-30",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       217.89,
+       20.33
+      ],
+      "id": "led-win-31",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       224.3,
+       20.33
+      ],
+      "id": "led-win-32",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       227.25,
+       20.33
+      ],
+      "id": "led-win-33",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       241.49,
+       20.33
+      ],
+      "id": "led-win-34",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       244.44,
+       20.33
+      ],
+      "id": "led-win-35",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       247.52,
+       20.33
+      ],
+      "id": "led-win-36",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       250.47,
+       20.33
+      ],
+      "id": "led-win-37",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       264.71,
+       20.33
+      ],
+      "id": "led-win-38",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       267.73,
+       20.33
+      ],
+      "id": "led-win-39",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       270.74,
+       20.33
+      ],
+      "id": "led-win-40",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       273.69,
+       20.33
+      ],
+      "id": "led-win-41",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       287.93,
+       20.33
+      ],
+      "id": "led-win-42",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       290.95,
+       20.33
+      ],
+      "id": "led-win-43",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       293.96,
+       20.33
+      ],
+      "id": "led-win-44",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       296.92,
+       20.33
+      ],
+      "id": "led-win-45",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       311.16,
+       20.33
+      ],
+      "id": "led-win-46",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       314.11,
+       20.33
+      ],
+      "id": "led-win-47",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       320.52,
+       20.33
+      ],
+      "id": "led-win-48",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       323.54,
+       20.33
+      ],
+      "id": "led-win-49",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       337.71,
+       20.33
+      ],
+      "id": "led-win-50",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       340.73,
+       20.33
+      ],
+      "id": "led-win-51",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       343.74,
+       20.33
+      ],
+      "id": "led-win-52",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       346.76,
+       20.33
+      ],
+      "id": "led-win-53",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       360.93,
+       20.33
+      ],
+      "id": "led-win-54",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       364.01,
+       20.33
+      ],
+      "id": "led-win-55",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       366.96,
+       20.33
+      ],
+      "id": "led-win-56",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       369.98,
+       20.33
+      ],
+      "id": "led-win-57",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       384.15,
+       20.33
+      ],
+      "id": "led-win-58",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       387.23,
+       20.33
+      ],
+      "id": "led-win-59",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       390.18,
+       20.33
+      ],
+      "id": "led-win-60",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       393.26,
+       20.33
+      ],
+      "id": "led-win-61",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       407.37,
+       20.33
+      ],
+      "id": "led-win-62",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       410.45,
+       20.33
+      ],
+      "id": "led-win-63",
+      "shape": "rect",
+      "size": [
+       2.8,
+       1.6
+      ]
+     },
+     {
+      "at": [
+       416.55,
+       9.65
+      ],
+      "id": "mgmt-sfp-1",
+      "shape": "rect",
+      "size": [
+       14.5,
+       10.0
+      ]
+     },
+     {
+      "at": [
+       416.55,
+       22.95
+      ],
+      "id": "mgmt-sfp-2",
+      "shape": "rect",
+      "size": [
+       14.5,
+       10.0
+      ]
+     },
+     {
+      "at": [
+       419.86,
+       6.91
+      ],
+      "id": "led-sfp-1",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       425.76,
+       6.91
+      ],
+      "id": "led-sfp-2",
+      "shape": "circle",
+      "size": [
+       2.0,
+       2.0
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       9.79
+      ],
+      "id": "led-stat",
+      "shape": "circle",
+      "size": [
+       4.0,
+       4.0
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       14.82
+      ],
+      "id": "led-fan",
+      "shape": "circle",
+      "size": [
+       4.0,
+       4.0
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       19.84
+      ],
+      "id": "led-pwr",
+      "shape": "circle",
+      "size": [
+       4.0,
+       4.0
+      ]
+     },
+     {
+      "at": [
+       5.7,
+       24.99
+      ],
+      "id": "led-alm",
+      "shape": "circle",
+      "size": [
+       4.0,
+       4.0
+      ]
+     },
+     {
+      "at": [
+       13.65,
+       7.4
+      ],
+      "id": "console",
+      "shape": "rect",
+      "size": [
+       12.7,
+       11.0
+      ]
+     },
+     {
+      "at": [
+       14.0,
+       19.9
+      ],
+      "id": "usb",
+      "shape": "rect",
+      "size": [
+       12.0,
+       4.5
+      ]
+     },
+     {
+      "at": [
+       13.65,
+       26.6
+      ],
+      "id": "mgmt-eth",
+      "shape": "rect",
+      "size": [
+       12.7,
+       11.0
+      ]
+     }
+    ],
+    "decor": [
+     {
+      "at": [
+       4.5,
+       0.15
+      ],
+      "id": "vent-top",
+      "pattern": "slots-h",
+      "pattern-pitch": [
+       2.5,
+       2.9
+      ],
+      "size": [
+       409.0,
+       2.9
+      ],
+      "vent": 20
+     },
+     {
+      "at": [
+       12.0,
+       39.35
+      ],
+      "id": "vent-bottom",
+      "pattern": "slots-h",
+      "pattern-pitch": [
+       2.5,
+       2.9
+      ],
+      "size": [
+       401.0,
+       2.9
+      ],
+      "vent": 20
+     },
+     {
+      "at": [
+       2.5,
+       29.5
+      ],
+      "id": "vent-left",
+      "pattern": "grille",
+      "pattern-pitch": [
+       2.6,
+       3.6
+      ],
+      "size": [
+       7.8,
+       11.0
+      ],
+      "vent": 20
+     },
+     {
+      "at": [
+       432.6,
+       3.0
+      ],
+      "id": "vent-right",
+      "pattern": "grille",
+      "pattern-pitch": [
+       2.5,
+       3.0
+      ],
+      "size": [
+       5.0,
+       37.5
+      ],
+      "vent": 20
+     },
+     {
+      "at": [
+       414.8,
+       2.9
+      ],
+      "id": "vent-sfp-top",
+      "pattern": "grille",
+      "pattern-pitch": [
+       3.4,
+       2.4
+      ],
+      "size": [
+       17.0,
+       2.4
+      ],
+      "vent": 20
+     },
+     {
+      "at": [
+       414.8,
+       34.0
+      ],
+      "id": "vent-sfp-bottom",
+      "pattern": "grille",
+      "pattern-pitch": [
+       3.4,
+       2.4
+      ],
+      "size": [
+       17.0,
+       2.4
+      ],
+      "vent": 20
+     },
+     {
+      "at": [
+       11.7,
+       6.5
+      ],
+      "fill": "#c9cdd1",
+      "id": "mgmt-shell",
+      "kind": "port-shell",
+      "rx": 0.8,
+      "size": [
+       16.6,
+       32.1
+      ]
+     }
+    ]
+   },
+   "regions": [
+    {
+     "at": [
+      31.0,
+      4.5
+     ],
+     "id": "optics",
+     "label": "32 x 800G OSFP",
+     "members": [
+      "port-1",
+      "port-2",
+      "port-3",
+      "port-4",
+      "port-5",
+      "port-6",
+      "port-7",
+      "port-8",
+      "port-9",
+      "port-10",
+      "port-11",
+      "port-12",
+      "port-13",
+      "port-14",
+      "port-15",
+      "port-16",
+      "port-17",
+      "port-18",
+      "port-19",
+      "port-20",
+      "port-21",
+      "port-22",
+      "port-23",
+      "port-24",
+      "port-25",
+      "port-26",
+      "port-27",
+      "port-28",
+      "port-29",
+      "port-30",
+      "port-31",
+      "port-32"
+     ],
+     "size": {
+      "h": 33.5,
+      "w": 383.0
+     }
+    },
+    {
+     "at": [
+      0.5,
+      6.0
+     ],
+     "id": "management",
+     "label": "System LEDs, console, USB and management",
+     "members": [
+      "led-stat",
+      "led-fan",
+      "led-pwr",
+      "led-alm",
+      "console",
+      "usb",
+      "mgmt-eth"
+     ],
+     "size": {
+      "h": 33.0,
+      "w": 28.5
+     }
+    },
+    {
+     "at": [
+      415.5,
+      6.0
+     ],
+     "id": "out-of-band",
+     "label": "2 x 10G SFP+ (M1, M2)",
+     "members": [
+      "mgmt-sfp-1",
+      "mgmt-sfp-2"
+     ],
+     "size": {
+      "h": 29.0,
+      "w": 17.0
+     }
+    }
+   ],
+   "silkscreen": [
+    {
+     "anchor": "end",
+     "at": [
+      41.37,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-1",
+     "id": "silk-port-1",
+     "text": "1"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      43.27,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-1",
+      "port-2"
+     ],
+     "id": "silk-arrows-1-2",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      45.17,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-2",
+     "id": "silk-port-2",
+     "text": "2"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      64.58,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-3",
+     "id": "silk-port-3",
+     "text": "3"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      66.48,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-3",
+      "port-4"
+     ],
+     "id": "silk-arrows-3-4",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      68.38,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-4",
+     "id": "silk-port-4",
+     "text": "4"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      87.8,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-5",
+     "id": "silk-port-5",
+     "text": "5"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      89.7,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-5",
+      "port-6"
+     ],
+     "id": "silk-arrows-5-6",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      91.6,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-6",
+     "id": "silk-port-6",
+     "text": "6"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      111.01,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-7",
+     "id": "silk-port-7",
+     "text": "7"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      112.91,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-7",
+      "port-8"
+     ],
+     "id": "silk-arrows-7-8",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      114.81,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-8",
+     "id": "silk-port-8",
+     "text": "8"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      137.57,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-9",
+     "id": "silk-port-9",
+     "text": "9"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      139.47,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-9",
+      "port-10"
+     ],
+     "id": "silk-arrows-9-10",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      141.37,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-10",
+     "id": "silk-port-10",
+     "text": "10"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      160.78,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-11",
+     "id": "silk-port-11",
+     "text": "11"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      162.68,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-11",
+      "port-12"
+     ],
+     "id": "silk-arrows-11-12",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      164.58,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-12",
+     "id": "silk-port-12",
+     "text": "12"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      184.0,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-13",
+     "id": "silk-port-13",
+     "text": "13"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      185.9,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-13",
+      "port-14"
+     ],
+     "id": "silk-arrows-13-14",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      187.8,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-14",
+     "id": "silk-port-14",
+     "text": "14"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      207.21,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-15",
+     "id": "silk-port-15",
+     "text": "15"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      209.11,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-15",
+      "port-16"
+     ],
+     "id": "silk-arrows-15-16",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      211.01,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-16",
+     "id": "silk-port-16",
+     "text": "16"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      233.76,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-17",
+     "id": "silk-port-17",
+     "text": "17"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      235.66,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-17",
+      "port-18"
+     ],
+     "id": "silk-arrows-17-18",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      237.56,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-18",
+     "id": "silk-port-18",
+     "text": "18"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      256.98,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-19",
+     "id": "silk-port-19",
+     "text": "19"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      258.88,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-19",
+      "port-20"
+     ],
+     "id": "silk-arrows-19-20",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      260.78,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-20",
+     "id": "silk-port-20",
+     "text": "20"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      280.19,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-21",
+     "id": "silk-port-21",
+     "text": "21"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      282.09,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-21",
+      "port-22"
+     ],
+     "id": "silk-arrows-21-22",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      283.99,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-22",
+     "id": "silk-port-22",
+     "text": "22"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      303.41,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-23",
+     "id": "silk-port-23",
+     "text": "23"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      305.31,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-23",
+      "port-24"
+     ],
+     "id": "silk-arrows-23-24",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      307.21,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-24",
+     "id": "silk-port-24",
+     "text": "24"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      329.96,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-25",
+     "id": "silk-port-25",
+     "text": "25"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      331.86,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-25",
+      "port-26"
+     ],
+     "id": "silk-arrows-25-26",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      333.76,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-26",
+     "id": "silk-port-26",
+     "text": "26"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      353.18,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-27",
+     "id": "silk-port-27",
+     "text": "27"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      355.07,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-27",
+      "port-28"
+     ],
+     "id": "silk-arrows-27-28",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      356.97,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-28",
+     "id": "silk-port-28",
+     "text": "28"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      376.39,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-29",
+     "id": "silk-port-29",
+     "text": "29"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      378.29,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-29",
+      "port-30"
+     ],
+     "id": "silk-arrows-29-30",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      380.19,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-30",
+     "id": "silk-port-30",
+     "text": "30"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      399.6,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-31",
+     "id": "silk-port-31",
+     "text": "31"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      401.5,
+      21.73
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.9,
+     "for": [
+      "port-31",
+      "port-32"
+     ],
+     "id": "silk-arrows-31-32",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      403.4,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 2.1,
+     "for": "port-32",
+     "id": "silk-port-32",
+     "text": "32"
+    },
+    {
+     "anchor": "end",
+     "at": [
+      421.9,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.7,
+     "for": "mgmt-sfp-1",
+     "id": "silk-sfp-m1",
+     "text": "M1"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      423.8,
+      21.8
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.6,
+     "for": [
+      "mgmt-sfp-1",
+      "mgmt-sfp-2"
+     ],
+     "id": "silk-sfp-arrows",
+     "text": "\u25b2\u25bc"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      424.85,
+      37.55
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.4,
+     "for": "lug-tag",
+     "id": "silk-lug-tag",
+     "text": "LUG TAG"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      425.7,
+      21.9
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.7,
+     "for": "mgmt-sfp-2",
+     "id": "silk-sfp-m2",
+     "text": "M2"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      3.0,
+      12.19
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.2,
+     "for": "led-stat",
+     "id": "silk-stat",
+     "rotate": -45,
+     "text": "STAT"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      3.0,
+      17.22
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.2,
+     "for": "led-fan",
+     "id": "silk-fan",
+     "rotate": -45,
+     "text": "FAN"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      3.0,
+      22.24
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.2,
+     "for": "led-pwr",
+     "id": "silk-pwr",
+     "rotate": -45,
+     "text": "PWR"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      3.0,
+      27.39
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.2,
+     "for": "led-alm",
+     "id": "silk-alm",
+     "rotate": -45,
+     "text": "ALM"
+    },
+    {
+     "anchor": "start",
+     "at": [
+      2.0,
+      4.6
+     ],
+     "fill": "#e8eaec",
+     "font-size": 3.6,
+     "for": "chassis",
+     "id": "silk-wordmark",
+     "text": "Celestica"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      4.9,
+      7.5
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.5,
+     "for": "console",
+     "id": "silk-console",
+     "text": "IOIOI"
+    },
+    {
+     "anchor": "middle",
+     "at": [
+      33.1,
+      22.62
+     ],
+     "fill": "#e8eaec",
+     "font-size": 1.5,
+     "for": "usb",
+     "id": "silk-usb",
+     "text": "SS"
+    },
+    {
+     "at": [
+      6.2,
+      31.3
+     ],
+     "fill": "#e8eaec",
+     "for": "mgmt-eth",
+     "id": "silk-mgmt",
+     "path": "M 1.5 0 L 1.5 0.9 M 0 0.9 L 3 0.9 M 0 0.9 L 0 1.6 M 3 0.9 L 3 1.6 M 0.9 -1.0 L 2.1 -1.0 L 2.1 0 L 0.9 0 Z M -0.6 1.6 L 0.6 1.6 L 0.6 2.6 L -0.6 2.6 Z M 2.4 1.6 L 3.6 1.6 L 3.6 2.6 L 2.4 2.6 Z",
+     "stroke-width": 0.25
+    }
+   ],
+   "size": {
+    "h": 43.1,
+    "w": 438.5
+   }
+  },
+  "left": {
+   "empty": "Not drawn orthographically. The renders show a plain side wall with slide-rail screws and no perforation - the chassis breathes end to end.",
+   "size": {
+    "h": 43.1,
+    "w": 657.5
+   }
+  },
+  "rear": {
+   "components": {
+    "bays": [
+     {
+      "accepts": [
+       "celestica/psu-2000-ac@1"
+      ],
+      "at": [
+       10.4,
+       1.8
+      ],
+      "default": "celestica/psu-2000-ac@1",
+      "group": "psus",
+      "id": "psu-1",
+      "rel-pos": 1,
+      "size": {
+       "h": 40.0,
+       "w": 56.2
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       70.08,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-1",
+      "rel-pos": 1,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       114.07,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-2",
+      "rel-pos": 2,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       158.06,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-3",
+      "rel-pos": 3,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       202.05,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-4",
+      "rel-pos": 4,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       246.04,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-5",
+      "rel-pos": 5,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       290.03,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-6",
+      "rel-pos": 6,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/fan-40@1"
+      ],
+      "at": [
+       334.02,
+       1.7
+      ],
+      "default": "celestica/fan-40@1",
+      "group": "fans",
+      "id": "fan-7",
+      "rel-pos": 7,
+      "size": {
+       "h": 39.0,
+       "w": 39.3
+      }
+     },
+     {
+      "accepts": [
+       "celestica/psu-2000-ac@1"
+      ],
+      "at": [
+       376.8,
+       1.8
+      ],
+      "default": "celestica/psu-2000-ac@1",
+      "group": "psus",
+      "id": "psu-2",
+      "rel-pos": 2,
+      "size": {
+       "h": 40.0,
+       "w": 56.2
+      }
+     }
+    ]
+   },
+   "panel": {
+    "decor": [
+     {
+      "at": [
+       0.0,
+       0.0
+      ],
+      "fill": "#c3c5c8",
+      "id": "rear-plate",
+      "kind": "plate",
+      "rx": 0.3,
+      "size": [
+       438.5,
+       43.1
+      ]
+     },
+     {
+      "at": [
+       2.8,
+       20.6
+      ],
+      "id": "ground-hole-1",
+      "rx": 3.2,
+      "size": [
+       6.4,
+       6.4
+      ],
+      "stroke": "#7d8185",
+      "stroke-width": 0.35
+     },
+     {
+      "at": [
+       2.8,
+       30.4
+      ],
+      "id": "ground-hole-2",
+      "rx": 3.2,
+      "size": [
+       6.4,
+       6.4
+      ],
+      "stroke": "#7d8185",
+      "stroke-width": 0.35
+     }
+    ]
+   },
+   "regions": [
+    {
+     "at": [
+      10.0,
+      1.3
+     ],
+     "id": "power-1",
+     "label": "Power supply 1",
+     "members": [
+      "psu-1"
+     ],
+     "size": {
+      "h": 41.0,
+      "w": 57.0
+     }
+    },
+    {
+     "at": [
+      69.0,
+      1.3
+     ],
+     "id": "exhaust",
+     "label": "6+1 fan modules",
+     "members": [
+      "fan-1",
+      "fan-2",
+      "fan-3",
+      "fan-4",
+      "fan-5",
+      "fan-6",
+      "fan-7"
+     ],
+     "size": {
+      "h": 41.0,
+      "w": 306.0
+     }
+    },
+    {
+     "at": [
+      376.4,
+      1.3
+     ],
+     "id": "power-2",
+     "label": "Power supply 2",
+     "members": [
+      "psu-2"
+     ],
+     "size": {
+      "h": 41.0,
+      "w": 57.0
+     }
+    }
+   ],
+   "size": {
+    "h": 43.1,
+    "w": 438.5
+   }
+  },
+  "right": {
+   "empty": "Not drawn orthographically. The other side wall, plain as the left in every render.",
+   "size": {
+    "h": 43.1,
+    "w": 657.5
+   }
+  },
+  "top": {
+   "empty": "Not drawn orthographically by any staged source. Figures 2 and 4 and the product-page renders show a plain lid with a recessed plate towards the rear, in perspective only.",
+   "size": {
+    "h": 657.5,
+    "w": 438.5
+   }
+  }
+ }
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="81.4mm" height="81.0mm" viewBox="0 0 81.4 81.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/fan-2u-81@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='celestica/fan-2u-81@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="fan-2u-81" data-path="fan-2u-81" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-2u-81@1:1.0.0" data-wall="#15181b" data-airflow="front-to-back" data-power-absent="not-published" data-states="absent" transform="translate(0,0)">
+    <title>fan-2u-81</title>
+    <defs>
+      <pattern id="fan-2u-81--fan-2u-81-mesh" x="3.0" y="4.0" width="1.8" height="3.118" patternUnits="userSpaceOnUse">
+        <circle cx="0" cy="0" r="0.62" fill="#1a1d20" />
+        <circle cx="1.8" cy="0" r="0.62" fill="#1a1d20" />
+        <circle cx="0.9" cy="1.559" r="0.62" fill="#1a1d20" />
+        <circle cx="0" cy="3.118" r="0.62" fill="#1a1d20" />
+        <circle cx="1.8" cy="3.118" r="0.62" fill="#1a1d20" />
+      </pattern>
+      <pattern id="fan-2u-81--fan-2u-81-cells" x="3.0" y="4.0" width="7.5" height="7.44" patternUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="7.5" height="0.8" fill="#dfe2e5" />
+        <rect x="0" y="0" width="0.8" height="7.44" fill="#dfe2e5" />
+      </pattern>
+    </defs>
+    <rect id="fan-2u-81--body" x="0" y="0" width="81.4" height="81" rx="0.5" fill="#cfd3d6" stroke="#8d939a" stroke-width="0.4" />
+    <rect x="0.7" y="0.7" width="80.0" height="79.6" rx="0.35" fill="none" stroke="#e2e5e7" stroke-width="0.2" />
+    <g id="fan-2u-81--grille" data-path="fan-2u-81/grille" data-class="rotor" data-z-vent="60">
+      <rect id="fan-2u-81--grille-back" x="3.00" y="4.00" width="75.00" height="74.40" fill="#7c828a" />
+      <circle id="fan-2u-81--rotor-disc" cx="40.50" cy="41.20" r="35.00" fill="#646a71" />
+      <circle id="fan-2u-81--rotor-hub" cx="40.50" cy="41.20" r="12.00" fill="#565c63" stroke="#8a9198" stroke-width="0.3" />
+      <rect id="fan-2u-81--grille-mesh" x="3.00" y="4.00" width="75.00" height="74.40" fill="url(#fan-2u-81--fan-2u-81-mesh)" />
+      <rect id="fan-2u-81--grille-cells" x="3.00" y="4.00" width="75.00" height="74.40" fill="url(#fan-2u-81--fan-2u-81-cells)" />
+      <rect x="3.00" y="4.00" width="75.00" height="74.40" fill="none" stroke="#dfe2e5" stroke-width="0.8" />
+    </g>
+    <g id="fan-2u-81--screws">
+      <circle cx="4.50" cy="5.40" r="2.40" fill="#2e3135" stroke="#17191c" stroke-width="0.25" />
+      <circle cx="4.50" cy="5.40" r="1.20" fill="#3f4247" />
+      <circle cx="76.20" cy="76.50" r="2.40" fill="#2e3135" stroke="#17191c" stroke-width="0.25" />
+      <circle cx="76.20" cy="76.50" r="1.20" fill="#3f4247" />
+    </g>
+    <g id="fan-2u-81--status" data-path="fan-2u-81/status" data-class="led" data-states="off ok fault" data-z-dome="0.3">
+      <circle cx="5.90" cy="69.00" r="1.95" fill="#1c1f22" stroke="#43484e" stroke-width="0.25" />
+      <circle id="fan-2u-81--status-lens" cx="5.90" cy="69.00" r="1.40" fill="var(--led-color, #3a3f44)" />
+    </g>
+    <g id="fan-2u-81--handle" data-path="fan-2u-81/handle" data-class="handle">
+      <line x1="4.45" y1="76.10" x2="76.65" y2="4.90" stroke="#b9bdc2" stroke-width="4.10" stroke-linecap="round" data-stroke-from="handle-finish" />
+      <line x1="5.60" y1="75.00" x2="75.50" y2="6.00" stroke="#ffffff" stroke-opacity="0.35" stroke-width="0.9" stroke-linecap="round" />
+    </g>
+    <g id="fan-2u-81--latch" data-path="fan-2u-81/latch" data-class="latch" data-z-out="0.8">
+      <rect x="76.65" y="64.40" width="3.20" height="7.70" rx="0.5" fill="#c7cbcf" stroke="#6f757b" stroke-width="0.25" />
+    </g>
+  </g>
+</svg>

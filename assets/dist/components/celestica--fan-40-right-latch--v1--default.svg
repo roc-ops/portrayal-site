@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="39.1mm" height="39.0mm" viewBox="0 0 39.1 39.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='celestica/fan-40-right-latch@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='celestica/fan-40-right-latch@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="fan-40-right-latch" data-path="fan-40-right-latch" data-class="fan" data-behaviour="fills" data-ref="celestica/fan-40-right-latch@1:1.0.0" data-power-absent="not-published" data-states="ok fault absent" transform="translate(0,0)">
+    <title>fan-40-right-latch</title>
+    <defs>
+      <pattern id="fan-40-right-latch--fan40r-hex" width="3.3" height="1.905" patternUnits="userSpaceOnUse">
+        <path d="M 0.95 0 L 0.475 0.823 L -0.475 0.823 L -0.95 0 L -0.475 -0.823 L 0.475 -0.823 Z" fill="#0b0d0f" />
+        <path d="M 4.25 0 L 3.775 0.823 L 2.825 0.823 L 2.35 0 L 2.825 -0.823 L 3.775 -0.823 Z" fill="#0b0d0f" />
+        <path d="M 2.6 0.9525 L 2.125 1.7755 L 1.175 1.7755 L 0.7 0.9525 L 1.175 0.1295 L 2.125 0.1295 Z" fill="#0b0d0f" />
+        <path d="M 0.95 1.905 L 0.475 2.728 L -0.475 2.728 L -0.95 1.905 L -0.475 1.082 L 0.475 1.082 Z" fill="#0b0d0f" />
+        <path d="M 4.25 1.905 L 3.775 2.728 L 2.825 2.728 L 2.35 1.905 L 2.825 1.082 L 3.775 1.082 Z" fill="#0b0d0f" />
+      </pattern>
+    </defs>
+    <rect id="fan-40-right-latch--body" x="0" y="0" width="39.1" height="39" rx="1.6" fill="#1b1d20" stroke="#0b0d0f" stroke-width="0.3" data-fill-from="face-finish" />
+    <path id="fan-40-right-latch--grille-wire" fill="#a3a9b0" d="M 8.4 1.7 H 30.8 L 37.3 8.2 V 30.7 L 30.8 37.2 H 8.4 L 1.9 30.7 V 8.2 Z" />
+    <path id="fan-40-right-latch--grille-mesh" fill="url(#fan-40-right-latch--fan40r-hex)" d="M 8.4 1.7 H 30.8 L 37.3 8.2 V 30.7 L 30.8 37.2 H 8.4 L 1.9 30.7 V 8.2 Z" data-z-vent="20" />
+    <rect id="fan-40-right-latch--handle" x="0.4" y="16.05" width="38.3" height="6.8" rx="0.8" fill="#0e1012" stroke="#050607" stroke-width="0.25" data-fill-from="handle-finish" data-path="fan-40-right-latch/handle" data-class="handle" data-z-out="5.0" />
+    <rect id="fan-40-right-latch--latch" x="28.2" y="15.9" width="5.6" height="6.9" rx="0.5" fill="#d8292f" stroke="#7a1418" stroke-width="0.25" data-fill-from="latch-finish" data-path="fan-40-right-latch/latch" data-class="latch" data-z-out="5.4" />
+    <circle id="fan-40-right-latch--status-led" cx="3.5" cy="3.15" r="1.95" fill="var(--led-color, #0b0d0f)" stroke="#4a4f55" stroke-width="0.2" data-path="fan-40-right-latch/status-led" data-class="led" data-states="off ok fault" data-description="DS2000 guide Table 4, Fan module row - Green (all fans operating normally), Amber (fan(s) operating abnormally), Off (fan absent)" data-z-dome="0.4" />
+  </g>
+</svg>

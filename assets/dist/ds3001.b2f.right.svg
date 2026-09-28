@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="520.0mm" height="87.0mm" viewBox="0 0 520.0 87.0" data-device="ds3001" data-view="right" data-switching-capacity="6.4 Tbps" data-packet-buffer="70 MB" data-latency="low-latency cut-through mode support" data-power-envelope="unstated" data-input-ac="AC 47-63 Hz, 100~127 V / 200~240 V nominal (datasheet); 100-240 VAC (guide)" data-input-hvdc="240 VDC, China only (guide)" data-fans="3+1 redundant hot-swap fan trays, front-to-back or back-to-front (four in the standard configuration)" data-operating-temp="0 to 45 C at 900 m (datasheet); 15-35 C long term, 0-45 C short term (guide)" data-humidity="5% to 90% non-condensing (datasheet); 40-65% long term, 10-90% short term (guide)" data-cpu="Intel Denverton / Hewitt Lake-DE, 4 or 8 core, on a COM-Express module" data-memory="up to 32 GB ECC DDR4" data-storage="up to 1 TB M.2 SSD" data-bmc="BMC with 1 GB DDR4, dual 32 MB flash, NC-SI shared management port, IPMI 2.0" data-nos-installer="ONIE" data-breakout="each QSFP28 splits to 4x25G; system maximum 168 x 10/25GbE, physically 128 x 50GbE or 64 x 100GbE (datasheet)" data-transceiver-power="QSFP28 modules up to 5 W; DAC to 5 m (guide) or 3 m (datasheet)" data-optics-qsfp28="guide Port Description: 100GBASE-CR4/SR4/LR4 and 40GBASE-CR4/SR4/LR4, any QSFP28-compliant module up to 5 W; qualified list Avago AFBR-89CDDZ and Innolight TR-FC85S-N00 (100GBASE-SR4), Molex and TE DAC at 1, 3 and 5 m" data-optics-sfp-plus="10GbE (guide Port Description); no module list" data-console="RJ-45 serial, 9600 and 115200 baud, 8-N-1; cable G400-10199-01 RJ45 to DB9" data-usb="USB 2.0 host, Type A, not for charging" data-acoustic="EN300753" data-weee="Directive 2012/19/E (as printed)" data-rohs="2011/65/EU &amp; 2015/863" data-reach="(EC) No. 1907/2006" data-emc="Class A - USA, Canada, Europe, China, Japan" data-safety="UL/CSA/IEC/EN 60950-1/62368-1" data-psu-approvals="CE, CCC, KC, TUV, UL/cUL, BIS and BSMI" data-eol="none-announced" data-airflow="back-to-front" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Celestica DS3001","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"313e57b20d2d09c3defdca8dfacd5eecb865d98c3ed3cf6f90f7fc113574f21f","view":"right"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="DS3001" data-sku="R3250-F9102-A0" data-part-number="R3250-F9102-A0" x="0" y="0" width="520" height="87" rx="1.2" fill="#c3c7cb" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>
