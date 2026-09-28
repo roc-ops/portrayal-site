@@ -11,7 +11,8 @@
 # its own $id is one a validator resolves to the wrong place. v1/ is permanent;
 # a format 2 goes under /schemas/v2/ beside it.
 #
-#   --to DIR   where schemas/ lives (default: the folder wrangler.jsonc deploys)
+#   --to DIR   where schemas/ lives (default: publish/, which
+#              tools/build-public.py copies into the deployed folder)
 #   --force    replace a published v1 schema whose content differs; without it
 #              the run refuses, because v1/ is permanent
 set -eu
@@ -27,9 +28,7 @@ while [ $# -gt 0 ]; do
     *) REF="$1"; shift ;;
   esac
 done
-if [ -z "$TO" ]; then
-  TO="$HERE/$(python3 -c 'import json,re,sys; print(json.loads(re.sub(r"(?m)^\s*//.*$", "", open(sys.argv[1]).read()))["assets"]["directory"])' "$HERE/wrangler.jsonc")/schemas"
-fi
+[ -n "$TO" ] || TO="$HERE/publish/schemas"
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT INT TERM
 if [ -n "$FROM_DIR" ]; then

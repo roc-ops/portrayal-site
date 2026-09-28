@@ -1,0 +1,1187 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://portrayal.dev/schemas/v1/component.schema.json",
+ "title": "Portrayal component/module contract (v1)",
+ "type": "object",
+ "required": [
+  "format",
+  "kind",
+  "name",
+  "version",
+  "class",
+  "size"
+ ],
+ "additionalProperties": false,
+ "dependentRequired": {
+  "interface-at": [
+   "interface"
+  ]
+ },
+ "properties": {
+  "format": {
+   "const": 1
+  },
+  "kind": {
+   "enum": [
+    "component",
+    "module"
+   ]
+  },
+  "name": {
+   "$ref": "#/$defs/segment"
+  },
+  "version": {
+   "type": "string",
+   "pattern": "^\\d+\\.\\d+\\.\\d+$"
+  },
+  "behaviour": {
+   "enum": [
+    "fills",
+    "occupies",
+    "mounts"
+   ],
+   "description": "HOW THIS PART MOVES, which is what a renderer needs and what a catalogue class cannot say. `fills` slides into a chassis aperture - a PSU, a fan, a line card, a blank, a pull-out tab; this is what `bays` holds. `occupies` mates into a receptacle - an optic, a DAC end, a power cord. `mounts` attaches to a surface - a rack ear, a label, a ground lug, a bolted panel. ABSENT means fixed: a cage, a lamp, a button and a printed mark do not come out, and saying nothing is how they say so. Behaviour is per COMPONENT and not per class because two classes are already mixed - `filter` holds five slide-out air filters and one snap-on cover, `inlet` holds two receptacles and one bolted panel - so a class list cannot express what the library already contains. Optic against DAC against AOC stays in `attrs`, where it belongs: those differ in what they are, not in how they move",
+   "$comment": "roc-ops/Portrayal#3"
+  },
+  "class": {
+   "$ref": "#/$defs/segment",
+   "description": "WHAT KIND OF PART THIS IS, from a closed vocabulary that lives in spec/schemas/power-roles.yaml - not repeated here as an enum, because the same list in two files drifts and only one of them would be the one lint reads. Every class sits in exactly one power role there, and L51 refuses a class that sits in none: that is how a class invented today gets its power question asked today rather than by a totalling tool falling over months later. The vocabulary is deliberately small and synonyms are merged rather than admitted - `cooling` became `fan`, `fastener` became `screw`, `panel` became `display` and `connector` became `inlet` in #173, because each pair was one kind of part split by who happened to model it."
+  },
+  "profile": {
+   "$ref": "#/$defs/segment"
+  },
+  "conforms": {
+   "$ref": "#/$defs/segment",
+   "description": "standards-registry key; size is lint-enforced against schemas/standards.yaml"
+  },
+  "interface": {
+   "$ref": "#/$defs/segment",
+   "description": "this component IS a receptacle presenting this mating interface, e.g. sfp, qsfp, rj45, iec-c14. Occupants declare the same key via `mates`. Deliberately not an enum - a new interface is a new key, not a schema change."
+  },
+  "default": {
+   "type": "string",
+   "description": "what this component's OWN presented slot ships holding - a ref its accept list contains (L114). Requires the component to be a slot (an `interface` in spec/schemas/pluggables.yaml or connectors.yaml). A composer's `parts:` entry `default:` overrides it; a configuration's `occupants:` overrides both."
+  },
+  "interface-at": {
+   "$ref": "#/$defs/segment",
+   "description": "WHICH connection point the `interface` is presented at; default `mate`. Allowed only beside `interface`. A plug mates INTO its receptacle at `mate` and presents its own interface to a boot at its REAR (`boot`), which is a different point: this names it. Paired with that point's `on:`, it is how a part seated on a plug lands on the plug's rear face rather than inside it."
+  },
+  "mates": {
+   "$ref": "#/$defs/segment",
+   "description": "this component mates INTO a receptacle presenting this interface. Requires a `mate` connection-point, which is what aligns it to its host."
+  },
+  "optical": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "THE GLASS. A connector states `positions` - how many fibre positions it presents, 2 for an LC duplex, 12 for an MPO-12 - and states nothing else. A module that CONTAINS fibre states `paths` between `<part-id>.<n>` endpoints, and `unused` for any position no path reaches. See docs/optical-paths-design.md: the reason to model strands rather than a port-to-port table is that a table cannot express a tap, a splice, a conversion or a mesh, which are two thirds of the FS FHD catalogue.",
+   "properties": {
+    "positions": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "fibre positions this CONNECTOR presents. Stated once here and inherited by every module that composes it; a module never restates it."
+    },
+    "media": {
+     "$ref": "#/$defs/segment",
+     "description": "fibre type every path uses unless it overrides: os2, om3, om4, om5"
+    },
+    "polarity": {
+     "$ref": "#/$defs/segment",
+     "description": "the vendor's polarity name (a, af, b, universal). CHECKED against the paths, never a substitute for them - it is the claim, the paths are the evidence."
+    },
+    "polish": {
+     "enum": ["upc", "apc"],
+     "description": "THE FERRULE END FACE, where the port-type enum spells a family two ways. `lc` and `sc` have both a `-upc` and an `-apc` form and cannot name a type without this; `fc` and `lsh` appear only as APC; `mpo`, `st`, `mdc` and `splice` have one form and want nothing here. L86 asks for it exactly where it changes the answer. It is a claim about the connector this module presents, not about the glass - `media` is the glass."
+    },
+    "rear-kind": {
+     "enum": ["splice"],
+     "description": "WHAT THE BACK OF THIS MODULE IS, when it is not a connector. A splice cassette's trunk fibres are fusion-spliced to its pigtails, so there is nothing on the rear face to draw and no adapter to compose - `splice` is a real rear-port type upstream, shipping in the devicetype-library's ADC PPP-SC-SM. Omitted on every module whose rear carries an adapter, which is all of them so far. L87 checks that a module claiming one has a rear face to claim it about."
+    },
+    "front-order": {
+     "type": "array",
+     "minItems": 1,
+     "items": {"$ref": "#/$defs/segment"},
+     "description": "THE VENDOR'S OWN SEQUENCE, because a silkscreen is a fact about the printing and placement cannot supply it. For one row, left to right by `at.x` is a safe reading - the position on the face IS the numbering, and every single-row module in this library is projected that way with nothing stated here. A face with more than one row of fibre parts is a different question: whether the vendor numbers row then row, or column then column, and which row comes first, is a fact about the silkscreen, not a fact `at.x` and `at.y` can be sorted into - guessing a rule from the one multi-row sample this library happens to hold is exactly how the 12.90-vs-13.2 pitch confusion started. Required only where geometry genuinely cannot answer (L88): list every fibre-bearing part id in the order the vendor numbers it, and the projection numbers front ports in that order instead of sorting on position. Say in `provenance.optical` where the order was read, the same way `polarity` and `polish` name their source."
+    },
+    "paths": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+       "from": {"$ref": "#/$defs/optical-endpoint"},
+       "to": {
+        "oneOf": [
+         {"$ref": "#/$defs/optical-endpoint"},
+         {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+           "type": "object",
+           "additionalProperties": false,
+           "required": ["at", "ratio"],
+           "properties": {
+            "at": {"$ref": "#/$defs/optical-endpoint"},
+            "ratio": {"type": "number", "exclusiveMinimum": 0, "maximum": 100}
+           }
+          }
+         }
+        ],
+        "description": "one endpoint, or a list of endpoints with ratios summing to 100 - which is what a tap or a coupler is"
+       },
+       "media": {"$ref": "#/$defs/segment"},
+       "band": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["centre-nm"],
+        "description": "this path carries only this band; absent means it carries whatever is left. An add/drop filter is two paths off one endpoint, one banded and one not.",
+        "properties": {
+         "centre-nm": {"type": "number", "exclusiveMinimum": 0},
+         "width-nm": {"type": "number", "exclusiveMinimum": 0}
+        }
+       }
+      }
+     }
+    },
+    "unused": {
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/optical-endpoint"},
+     "additionalProperties": {"type": "string", "minLength": 20},
+     "description": "positions no path reaches, and WHY - prose long enough that a bare marker will not validate, because the claim is about the hardware. L80 checks both ways: an unreached position with no entry is an error, and an entry for a position a path DOES reach is an error."
+    }
+   }
+  },
+  "body": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "depth"
+   ],
+   "description": "3D body for FRU modules: box depth behind the face; per-side art via skins/body-{left,right,top,bottom,rear}.svg, each drawn as photographed from outside that side (right: face at image left; left: face at image right; rear as seen from behind)",
+   "properties": {
+    "depth": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "color": {
+     "type": "string",
+     "description": "side color where no art exists"
+    },
+    "travel": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "description": "captive module: pulls out this far and stays in the chassis (omit for removable FRUs)"
+    },
+    "boxes": {
+     "type": "array",
+     "minItems": 1,
+     "description": "A BODY THAT IS NOT ONE BOX. A riser is a bracket plate with a thin PCB standing behind it and connectors on the PCB's inboard face; a card is a bracket and a PCB slab beside it. One box the size of the face hid the interior, and a box cut to the plate left the PCB behind when the riser was ejected. Each entry is a box in the face's own frame: `at`/`size` in mm from the face's top-left, `from` mm behind the face plane where the box starts (0: at the plane), `depth` how far it runs on from there. A box may stand outside the face rect - the riser's PCB is at the bay's outer edge and reaches below the bracket to the board. When `boxes` is given the single box is not drawn, `footprint` is ignored, and an EMPTY bay leaves no dark hole: what is behind an unseated riser is the chassis interior. `depth` on the body remains the reach, for the pull distance.",
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "at",
+       "size",
+       "depth"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "at": {
+        "$ref": "#/$defs/xy"
+       },
+       "size": {
+        "$ref": "#/$defs/xy"
+       },
+       "from": {
+        "type": "number",
+        "minimum": 0,
+        "description": "mm behind the face plane where the box starts"
+       },
+       "depth": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       "color": {
+        "type": "string"
+       },
+       "confidence": {
+        "$ref": "#/$defs/confidence"
+       },
+       "source": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "footprint": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "at",
+      "size"
+     ],
+     "description": "body box smaller than the face (mounting tabs exist only on the thin faceplate)",
+     "properties": {
+      "at": {
+       "$ref": "#/$defs/xy"
+      },
+      "size": {
+       "$ref": "#/$defs/xy"
+      }
+     }
+    },
+    "plate": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "at",
+      "size"
+     ],
+     "description": "faceplate slab bounds (defaults to the full face) - trim to the art so no bare plate edge shows",
+     "properties": {
+      "at": {
+       "$ref": "#/$defs/xy"
+      },
+      "size": {
+       "$ref": "#/$defs/xy"
+      }
+     }
+    }
+   }
+  },
+  "relief": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "3D interior model: cavity wall color, cavity shape node and cross-section, and per-node features",
+   "properties": {
+    "wall": {
+     "type": "string",
+     "description": "cavity wall color (CSS)"
+    },
+    "walls": {
+     "type": "string",
+     "enum": [
+      "both",
+      "inside"
+     ],
+     "description": "which side of a cavity's walls is drawn. `both` (the default) draws them double-sided: the recess from inside and, from outside, the housing of a port cage seen through a neighbouring vent. `inside` draws the recess only. For a well whose sides ARE the chassis - the R740xd's system board is 80 mm deep and runs to the rear metal - a double-sided wall stands 0.07 mm behind the rear panel and cuts off every cavity that looks in from that face, the C14 inlet's pins included."
+    },
+    "cavity": {
+     "$ref": "#/$defs/segment",
+     "description": "skin node id whose bbox is the recess; default = whole component"
+    },
+    "size": {
+     "$ref": "#/$defs/wh",
+     "description": "cavity cross-section bbox in mm; default = the aperture (size). Set when the opening steps in - the aperture is the hole in the panel, the cavity is the box behind it."
+    },
+    "round": {
+     "type": "boolean",
+     "description": "cavity is circular: shape-punched from the cavity node's art, cylindrical walls"
+    },
+    "features": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "node"
+      ],
+      "if": {
+       "required": [
+        "facet"
+       ]
+      },
+      "else": {
+       "properties": {
+        "lift": {
+         "exclusiveMinimum": 0
+        }
+       }
+      },
+      "properties": {
+       "node": {
+        "$ref": "#/$defs/segment",
+        "description": "skin node id"
+       },
+       "confidence": {
+        "$ref": "#/$defs/confidence"
+       },
+       "source": {
+        "type": "string",
+        "description": "where precisely, in one phrase - the part a `borrowed` figure came from, the figure a `drawing` one was read off, the photograph behind a `photo-measured` one. The machine-readable half is `confidence`; this is the half that lets the next reader go and check, and it is what stops twenty features sharing one reading from reading as twenty readings."
+       },
+       "top": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "mm the feature rises above the cavity floor"
+       },
+       "sink": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "mm the feature recesses beyond the cavity floor"
+       },
+       "out": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "mm the feature protrudes outward from the panel face"
+       },
+       "dome": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "domed LED: apex protrudes this many mm, rim slightly inset"
+       },
+       "cyl": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "cylindrical protrusion this many mm tall (radius from the node's bbox); combine with lift to stack"
+       },
+       "bar": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "round tube of this diameter lying along the node's long axis, spanning lift..lift+bar off the face (U-handle crossbars)"
+       },
+       "uhandle": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "complete U-shaped tube handle this many mm proud: legs at the node's long-axis ends, continuous 90-degree bends, crossbar; tube diameter = node's short axis"
+       },
+       "dia": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "tube diameter for `uhandle`, when the node's short axis is not it. A handle's node has to be the WHOLE of its 2D art, because the face texture hides exactly the node that carries the relief attribute and the geometry takes over from there - so on a part that draws its handle as a wide loop, the node's short axis is the loop's height rather than the tube. Without this the choice was between a 22 mm tube and a flat handle left painted on the face underneath the real one"
+       },
+       "lift": {
+        "type": "number",
+        "description": "standoff: the feature starts this many mm off the face (floating handle bars, stacked washers). Greater than 0, except on a feature that declares `facet`, where a negative lift sinks the facet's root edge that far below the plate, into a `pocket` at least that deep (L117; docs/superpowers/specs/2026-09-24-tilted-facets-design.md, Recessed facets)."
+       },
+       "knurl": {
+        "type": "boolean",
+        "description": "knurled side surface (thumbscrews) - rendered as fine grip ridges around a cyl"
+       },
+       "thread": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "threaded side surface - value is the thread pitch in mm (e.g. 1/4-36 UNS = 25.4/36 = 0.706). Rendered as a single-start helix around a cyl. Use instead of knurl for coax bushings and screw barrels."
+       },
+       "vent": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "air vent: the node's dark cells become real holes into a cavity this deep"
+       },
+       "color": {
+        "type": "string",
+        "description": "side/body color (CSS)"
+       },
+       "hole-color": {
+        "type": "string",
+        "description": "side colour of the WALLS OF HOLES in a `shape` outline, where they differ from `color`. A bezel with windows cut through it has two kinds of wall: its outer edge, in the bezel's own colour, and each window's edge - on the MaiaEdge PBC-2000 the amber bead you look past into the window. Only read beside `shape` with a `profile`; absent, the holes take `color`."
+       },
+       "shape": {
+        "type": "boolean",
+        "description": "extrude the node's own OUTLINE rather than its bounding box. `out` builds a box, which is right for a lamp or a boss and wrong for anything with a contour: the rear handle's face was its real art and its sides were the bbox, so a curved moulding read as three cardboard boxes stood on end. Opt-in rather than inferred, because the box is cheaper and is the right answer for most protrusions, and guessing would silently reshape every one in the library. Companion to `round` on a cavity, which shape-punches from the node's art the same way. BESIDE `profile` / `profile-y` it cuts the sloped surface to the outline too, and drops its walls along the outline rather than the box: the MaiaEdge PBC-2000's centre pane is 15 proud with ends that ARE its windows' ends, and a box ran into the windows. Holes in the outline ARE cut - the same bezel is one sloped plate with two octagonal windows through it - and their walls take `hole-color`."
+       },
+       "profile": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+         "type": "array",
+         "minItems": 2,
+         "maxItems": 2,
+         "items": {
+          "type": "number"
+         }
+        },
+        "description": "how far the node stands off the face AS IT VARIES ACROSS ITS WIDTH: [x, out] pairs, x in mm from the node's left edge, out in mm proud of the face. A box has one depth and an outline extrusion has one depth; the R740xd's front bezel has none of those - Dell's model is a honeycomb field 20 proud with end caps that fall away to 9 at the tips, a section like a football sliced a third through. With `profile-y` beside it the surface at any point is the LESSER of the two, so a part can bulge both ways; alone, the section is swept straight down the height. The kit builds the surface as a height field with the node's own art on it and skirts down to the face. `out` still names the greatest figure, so everything that reads a single depth keeps working. Not shifted by `in:` and not flipped on a mirrored face."
+       },
+       "profile-y": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+         "type": "array",
+         "minItems": 2,
+         "maxItems": 2,
+         "items": {
+          "type": "number"
+         }
+        },
+        "description": "the same as `profile`, DOWN the node: [y, out] pairs, y in mm from the node's top edge. The bezel's front is 20 to 21 proud over most of its height and falls to 15 at the bottom rail with a lip at the edge, which is what looking up at it shows. Combined with `profile` by taking the lesser at every point."
+       },
+       "pocket": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "mm this node is sunk INTO an otherwise solid face - a window cut through a drive carrier, a button pressed into it. Distinct from `sink`, which measures from a cavity floor and so needs the part to be a hole already: a carrier is solid except where it is pocketed, and had no way to say so. The floor is the node's own art, so what is drawn behind a window is what shows down it."
+       },
+       "facet": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["deg", "facing"],
+        "properties": {
+         "deg": {"type": "number", "minimum": 1, "maximum": 89,
+                 "description": "the facet's angle away from face-on, in degrees"},
+         "facing": {"enum": ["up", "down", "left", "right"],
+                    "description": "which way the facet looks. `up`: the upper edge (the root) sits on the plate and the lower edge stands proud, so ports on it look upward; `down` the reverse; `left`: the left-hand edge is the root and the right-hand edge stands proud, so ports on it look left; `right` the reverse"}
+        },
+        "description": "THIS NODE IS A SURFACE ANGLED OFF THE PANEL, and composed parts may sit `on` it. The node's own art and its `elements` rectangle are its FOOTPRINT AS SEEN FROM THE FRONT - what you measure off a front figure. The proud edge stands off by projected extent x tan(deg); the renderer derives the wedge, so a feature with `facet` declares no `out`, `profile` or `profile-y` (L117). The Nokia 7360 ISAM FX NT cards carry their SMA jacks and QSFP28 cages in a housing angled about 30 degrees up, and the NT I/O cards put every cage on a 45 degree sawtooth - drawn face-on, both were wrong in 2D and in 3D. docs/superpowers/specs/2026-09-24-tilted-facets-design.md."
+       }
+      }
+     }
+    }
+   }
+  },
+  "description": {
+   "type": "string"
+  },
+  "unplaced": {
+   "type": "string",
+   "minLength": 40,
+   "description": "WHY NOTHING SEATS THIS PART. A component nothing references is either work in progress or dead weight, and from the outside the two look identical. Saying which, here, is what lets L89 fail on the next one instead of on all of them. The sentence is for a reader who has just found the part and is deciding whether to use it, extend it or delete it: say what would seat it and what is missing, and name the issue if the work is tracked. Not a waiver and not a silence - a part that IS seated must not carry this."
+  },
+  "superseded-by": {
+   "type": "string",
+   "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$",
+   "description": "THIS PART IS RETIRED, in favour of the `ns/name@major` named here. That is a different question from `unplaced:`, which says why nothing seats a part and is also true of live parts - every `generic/` contract carries one, and it means the opposite of retirement: those are seated by configurations downstream of this library, on purpose, and are not going anywhere. `superseded-by` is the fact a reader cannot get from `unplaced:` prose, however it starts: a specific successor exists, this part should not gain new occupants, and a consumer offering parts to a user must not offer this one. Lint checks the ref names a component major that exists; it does not check that anything still references this major - that is L89's question, not this one's."
+  },
+  "size": {
+   "$ref": "#/$defs/wh",
+   "description": "faceplate footprint in mm"
+  },
+  "size-confidence": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "where each of w/h/d came from, per dimension. Keyed by dimension ON PURPOSE: a part can have a measured width and an impossible depth, and one scalar could not say that. Absent means unstated, which is what most of the library is; the component index counts the gap so it cannot go quiet.",
+   "properties": {
+    "w": {
+     "$ref": "#/$defs/confidence"
+    },
+    "h": {
+     "$ref": "#/$defs/confidence"
+    },
+    "d": {
+     "$ref": "#/$defs/confidence"
+    }
+   }
+  },
+  "size-notes": {
+   "type": "string",
+   "description": "one phrase per the `source` convention - what rules a known-wrong value out, or where a sourced one came from. The long argument belongs in provenance; this is the pointer beside the number."
+  },
+  "insert": {
+   "$ref": "#/$defs/wh",
+   "description": "the envelope a bay must reserve, in mm, when it differs from `size`. `size` is what the skin DRAWS - the faceplate as depicted. `insert` is what the slot has to accommodate, which on a card with ejector brackets is longer than the plate: Cisco states both, sometimes in one sheet ('Physical dimensions (includes ejector bracket/lever)') and sometimes without saying which it means. Absent means the two are the same, which is the common case. Never a guess: state it only where a source gives both figures, and say in provenance which is which."
+  },
+  "attrs": {
+   "type": "object",
+   "description": "default data-* attributes for instances. Free-form, except that the power figures below are typed: they are the terms of a sum, and a term that is a string is not a number no matter how it reads, and `inlet` is a closed vocabulary",
+   "properties": {
+    "inlet": {
+     "enum": ["c14", "c20", "dc-terminal", "other", "none"],
+     "description": "WHERE POWER ENTERS THIS MODULE, when no inlet part is composed. The strong form is a composed part - std/c14-inlet and its siblings carry a panel cutout, a standard and a size - and a module that draws one needs nothing here. Half the PSU catalogue draws none: a DC supply's entry is a screw-terminal block, the library has one DC terminal component against two IEC ones, so the studs were drawn as elements in the skin and the connector was named only in prose. The element's own name is a spelling convention (`terminal-block`, `terminals`, `dc-input`) and reading it would be the `port-` prefix defect again, so the module says it once, here, from a closed list. `none` is a CLAIM and not a blank: it says the CHASSIS carries the inlet, which is true of the MX960, whose four C20 receptacles sit on a strip above the supplies. `other` is for a real inlet upstream has no type for - an HVDC connector - and NOT for one nobody has identified: a supply whose guide says 'a C-type appliance inlet' is some IEC 60320 receptacle, so it stays unanswered and L95 counts it rather than claiming `other`, which would be a wrong answer dressed as a modest one. L95 asks every `class: psu` component for one of these or a part."
+    },
+    "power-draw-typical-w": {
+     "$ref": "#/$defs/watts",
+     "description": "load this module IMPOSES in normal operation. Draw and supply are opposite signs of one unit and must never share a key: summing a chassis's `watts` over two PSUs and eight line cards yields a plausible number that is neither"
+    },
+    "power-draw-max-w": {
+     "$ref": "#/$defs/watts",
+     "description": "load at its worst rated case. Where a vendor states one figure per ambient - Cisco gives 25/40/55 C per card - this is the highest, which is what `max` means"
+    },
+    "power-draw-min-w": {
+     "$ref": "#/$defs/watts",
+     "description": "load at idle, with nothing populated"
+    },
+    "power-output-w": {
+     "$ref": "#/$defs/watts",
+     "description": "continuous output this module is rated to PROVIDE - a PSU or a power-entry module. Deliberately not `power-output-max-w`: draw has a distribution and supply has a rating, and a symmetric name would advertise a `power-output-typical-w` that means nothing"
+    },
+    "power-absent": {
+     "description": "WHY this part states no wattage, when the answer is settled rather than pending. Absent means the question is still open, which is what L27's standing warning is for - so writing this key is a claim, and L52 makes it carry provenance saying what was searched. `not-published`: the vendor does not state it in any document held; the part draws power and the figure is genuinely missing, so a chassis total containing it is a floor. `not-applicable`: a wattage does not belong on this part. Two reasons so far. A power tray or entry module only CARRIES current, so its rating bounds what may pass through rather than describing an output, and deriving watts means multiplying two figures across an input range. Or the part is one half of a pair the vendor measures together: Casa's rear I/O modules have no figure of their own because every Casa number is scoped to the front card WITH its I/O module, and that partner already carries it under `power-draw-scope: module-with-paired-io`. Or the contract is a GENERIC - a shape that stands in for many real parts rather than being one - and the figure belongs on the placement that knows which part is actually fitted: a 40GBASE-SR4 is about 1.5 W and a 400G ZR about 20 W and they are the same drawing, so a number on the drawing would be a fiction dressed as a fact. All three reasons share the consequence that distinguishes this value from `not-published` - a chassis total is COMPLETE without a number here, rather than a floor. For the generic case the completeness is conditional on the consumer sourcing the figure from the placement, which is the same division of labour L18 draws for `media`. The distinction is data and not prose because the two mean opposite things to something adding up a chassis: `not-published` is a hole in the total, `not-applicable` is not",
+     "enum": [
+      "not-published",
+      "not-applicable"
+     ]
+    },
+    "power-draw-scope": {
+     "description": "WHAT the power-draw-* figures on this contract cover. Absent means `module` - this module and nothing else - so every figure written before this key existed keeps meaning exactly what it meant. `module-with-paired-io` is for a vendor who measures the pair and publishes no bare figure: Casa heads its C100G table 'Maximum consumption WITH I/O module' and gives the same US16x8 200 W or 220 W depending on which rear module it sits behind, so a bare-card figure may not exist to be divided out. The scope is DATA and not a provenance sentence because it changes the arithmetic: a consumer summing a chassis must not add the rear partner of a card already scoped to include it, and a consumer asking what one card draws must be able to see that the answer contains another card. A prose note is true, well written, and invisible to both of them",
+     "enum": [
+      "module",
+      "module-with-paired-io"
+     ]
+    }
+   },
+   "additionalProperties": true
+  },
+  "stack-exceptions": {
+   "type": "array",
+   "description": "A BELLY-TO-BELLY CAGE STACK THAT IS NOT DRAWN THE LIBRARY'S WAY, and why. Lint L108 holds every stacked SFP/QSFP/QSFP-DD cage pair to one convention - a row pair upper rotate 0 over lower rotate 180, a column pair (cages turned on their side) left 270 beside right 90, so both bails face outward - and this is the one place a device, its layout.yaml, or a component contract says a pair is otherwise. Each entry names the pair (or several pairs that share one reason) by id and carries the reading that overturns the convention. The pairing is spec/tools/portrayal/stacks.py; OSFP stacks are not checked. See docs/pluggables-3d-design.md, the stacked-cage decisions.",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "reason"
+    ],
+    "oneOf": [
+     {
+      "required": [
+       "pair"
+      ]
+     },
+     {
+      "required": [
+       "pairs"
+      ]
+     }
+    ],
+    "properties": {
+     "pair": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "the two cage ids, upper then lower (or left then right)"
+     },
+     "pairs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "description": "several pairs that share one reason"
+     },
+     "reason": {
+      "type": "string",
+      "minLength": 40,
+      "description": "the recorded reading that overturns the convention - a photograph, a drawing, the lamps - cited, not a preference"
+     }
+    }
+   }
+  },
+  "provenance": {
+   "$ref": "#/$defs/provenance"
+  },
+  "elements": {
+   "type": "object",
+   "description": "contracted sub-elements; key = element segment id",
+   "propertyNames": {
+    "$ref": "#/$defs/segment"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "at",
+     "size"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "at": {
+      "$ref": "#/$defs/xy",
+      "description": "mm offset from component origin (top-left, y-down)"
+     },
+     "size": {
+      "$ref": "#/$defs/xy",
+      "description": "[w, h] in mm"
+     },
+     "class": {
+      "$ref": "#/$defs/segment"
+     },
+     "states": {
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/state"
+      },
+      "minItems": 1
+     },
+     "characters": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "HOW MANY CHARACTER CELLS THIS DISPLAY HAS, across one row - every display in this library is one row, and Cisco's RSP matrix is \"one row of four characters\" in the guide's own words, so there is no `rows` key until a device needs one. A display is not a lamp: a lamp has a colour vocabulary and `states` says it, and a four-character LED matrix reading INIT, BOOT and IMEM has a MESSAGE vocabulary that no list of colours can express. `characters` is the capacity - what a reading has to fit in - and it is the one number that makes `messages` checkable, because a five-character message on a four-character display is a transcription error a reader cannot see and a rule can. A seven-segment cell is `characters: 1` and carries its glyph set in `states`, each naming the segments it lights; a whole-display readout carries its strings in `messages`. Both are `class: display`, and which vocabulary fits is the difference."
+     },
+     "messages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "WHAT THIS DISPLAY CAN READ, and what each reading means - the string equivalent of a lamp's `states`. Only for `class: display`, and only for a display showing whole readings rather than per-cell glyphs. Each entry is the text as the hardware prints it beside the vendor's own sentence about it, so a reader can answer \"it says PSEQ, what is wrong\" without leaving the manifest. TEXT CARRIES NO WHITESPACE, for the reason `data-states` does not: the compiled drawing publishes these on one attribute and a consumer splits them, so a reading with a space in it would arrive as two.",
+      "items": {
+       "type": "object",
+       "required": [
+        "text"
+       ],
+       "additionalProperties": false,
+       "properties": {
+        "text": {
+         "type": "string",
+         "minLength": 1,
+         "pattern": "^\\S+$",
+         "description": "the reading, exactly as the display prints it"
+        },
+        "meaning": {
+         "type": "string",
+         "description": "the vendor's own sentence about this reading, kept beside the text and never instead of it"
+        }
+       }
+      }
+     },
+     "description": {
+      "type": "string",
+      "description": "the vendor's own sentence about this element, kept beside the state tokens - never instead of them"
+     },
+     "label-anchor": {
+      "enum": [
+       "above",
+       "below",
+       "left",
+       "right",
+       "center"
+      ]
+     },
+     "provenance": {
+      "$ref": "#/$defs/provenance"
+     }
+    }
+   }
+  },
+  "groups": {
+   "type": "object",
+   "description": "THE PORT GROUPS OF THIS COMPONENT, declared once, in the same shape as a device's `groups:` (term, role, index-origin, mixed, attrs, states, description; `$defs/group` is kept identical to device.schema.json's group item and a test holds the two equal). A part joins one with `group:`. Names are LOCAL to the component: `mgmt` on a routing engine and `mgmt` on the chassis it seats in are different groups, and a device never overrides a card's. When the card is drawn inside a device - at any depth, a device bay's module or a module in a nested bay - every grouped part carries exactly what a device placement in that group carries (`data-group`, `data-group-role`, the group's attrs and description; the part's own attrs win), and a cage in the group publishes the same map as its `occupant-attrs`. Lint L17, L22, L23 and L37 read these as they read a device's, as warnings",
+   "propertyNames": {
+    "$ref": "#/$defs/segment"
+   },
+   "additionalProperties": {
+    "$ref": "#/$defs/group"
+   }
+  },
+  "parts": {
+   "type": "array",
+   "description": "sub-components composed into this component (compile-time flattened); e.g. a std/ cutout core inside a bezel",
+   "items": {
+    "type": "object",
+    "required": [
+     "ref",
+     "id",
+     "at"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "ref": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$"
+     },
+     "id": {
+      "$ref": "#/$defs/segment"
+     },
+     "at": {
+      "$ref": "#/$defs/xy"
+     },
+     "rotate": {
+      "type": "number"
+     },
+     "skin": {
+      "$ref": "#/$defs/segment"
+     },
+     "attrs": {
+      "type": "object"
+     },
+     "interfaces": {
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/segment"
+      },
+      "minItems": 2,
+      "uniqueItems": true,
+      "description": "THE INTERFACES THIS PART PRESENTS, when it is more than one and is not itself an interface - the component twin of a device placement's `interfaces:`. A Compact SFP (CSFP) module fits a standard SFP cage and carries two independent BiDi fibre connections, each its own interface; a line card whose cages number two ports each (cage n = ports 2n-1 and 2n) has both whether or not a module is seated, and cards here ship unpopulated, so the two belong to the HOST CAGE and are declared on it: `interfaces: [port-1, port-2]`. The DCIM export (build_module) then emits one interface per id, typed from the cage, and none for the part. Not breakout: breakout is a MODE a port is configured into. Ids must be unique in the component and not name a part, element or bay, and only a port presents interfaces. Lint L105. roc-ops/Portrayal#443"
+     },
+     "group": {
+      "$ref": "#/$defs/segment",
+      "description": "the component group (top-level `groups:`) this part belongs to. Declared there with its role and shared attrs, exactly as a device placement joins a device group; lint L17 flags a name the component does not declare"
+     },
+     "lift": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "mm this composed part sits proud of the parent's face. Use when the parent itself protrudes (a transceiver body, a raised bezel) and the part's cavity should recess from THAT surface rather than from the panel."
+     },
+     "behind": {
+      "type": "boolean",
+      "description": "draw this composed part BENEATH this component's own skin instead of over it. The default is over, which is right for a bezel framing an aperture - the aperture belongs on top of the plate. A blanking plate is the other way round: it composes a bracket for its outline and then covers the connector opening with vented metal, and drawn over, the bracket's own dark opening lands back on the vents and the plate renders as an empty slot."
+     },
+     "mirror": {
+      "type": "boolean",
+      "description": "flip the occupant horizontally about its own centre line; handedness, not rotation - a riser whose cards face the other way"
+     },
+     "default": {
+      "type": "string",
+      "description": "what this slot SHIPS HOLDING - a component ref its accept list contains (L114), or \"\" for nothing. The product's shipped state, like a bay's blank: drawn in every configuration unless that configuration's `occupants:` keys this slot. Overrides the placed component's own top-level `default:` and nothing inside it (docs/pluggables-caps-design.md, The shipped default)."
+     },
+     "states": {
+      "type": "object",
+      "description": "what this part's lamps MEAN here, as {element-id: states}. A component declares what a lamp IS - a 2 mm round lamp, a jack with two indicators - and can only guess what it signifies; the thing composing it knows. The same override device placements already take, one level down, so a card can compose a generic jack and attach its own indicator table rather than redrawing the lamps over the ones it composed. Addresses one element at a time, because a jack's two lamps routinely do NOT share a vocabulary.",
+      "additionalProperties": {
+       "type": "array",
+       "minItems": 1
+      }
+     },
+     "on": {
+      "$ref": "#/$defs/segment",
+      "description": "the relief feature (its `node`) on THIS contract that declares a `facet`, which this part sits on. `at` stays the part's front-view top-left and `size` its TRUE size; the renderer foreshortens it by cos(deg) along the facet's axis, and the 3D viewer builds its cavity along the slope. An occupant seated in it inherits the tilt. L117 checks the facet exists and the projected part lies within it."
+     }
+    }
+   }
+  },
+  "connection-points": {
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/segment"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "at"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "at": {
+      "$ref": "#/$defs/xy"
+     },
+     "direction": {
+      "enum": [
+       "front",
+       "rear",
+       "up",
+       "down",
+       "left",
+       "right"
+      ]
+     },
+     "on": {
+      "$ref": "#/$defs/segment",
+      "description": "the `relief.features[]` node this point sits on. A part seated at this point stands off by that feature's `out` - ABSOLUTE from this part's own face, so a feature's `lift` does not add to it. Read on the point the `interface` is presented at (`interface-at`, default `mate`), where it sets how far a part seated there stands off, and on a `cable` point, where it sets the depth the cable leaves from (render.py writes it as `data-cp-on` for the viewer's cable points); lint L106 requires the node to exist and to carry an `out`."
+     },
+     "seat-out": {
+      "type": "number",
+      "minimum": 0,
+      "description": "mm a part seated at this point stands off, ABSOLUTE from this part's own face, where no drawn feature has its rear at that plane. A coax jack presents at the plane a mated plug's coupling front sits on - the jack's front face less the mated engagement the standard gives - which lies partway along a plain collar, barrel or thread. Read only on the presented point - the one `interface-at` names, default `mate` - by manifest._seat_out, and mutually exclusive with `on:`: lint L106 refuses a point with both, a value that is not a number at or above 0, and a `seat-out` on any other point (a `cable` point reads `on:` but never `seat-out`). State the source figures and the arithmetic in the contract's provenance."
+     }
+    }
+   },
+   "$comment": "A `cable` point must additionally declare `direction`, layered on as an allOf branch rather than a `properties.cable` entry: `properties` and `additionalProperties` are mutually exclusive per key in JSON Schema, so naming `cable` under `properties` here would stop `additionalProperties` (the type, the direction enum, additionalProperties:false, the xy shape of `at`) from applying to it at all, leaving only `required` in force. Do not \"simplify\" this back into a plain `properties.cable` entry - that is the broken form this replaced.",
+   "allOf": [
+    {
+     "properties": {
+      "cable": {
+       "required": [
+        "at",
+        "direction"
+       ],
+       "description": "Where a cable lands. `direction` is REQUIRED here and optional elsewhere: a cable point whose whole job is to say which way the cable leaves says nothing without it."
+      }
+     }
+    }
+   ]
+  },
+  "states": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/state"
+   },
+   "description": "states of the component as a whole"
+  },
+  "skins": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/segment"
+   },
+   "minItems": 1,
+   "default": [
+    "default"
+   ]
+  },
+  "head": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "the box a pluggable occupies OUTSIDE its cage - the section the MSAs call the enlarged section outside the cage. `at` is the top-left of its front outline in face coordinates (may be negative), `size.d` its length outside the cage. Checked by L121 against the registry entry the part `conforms:` to. docs/pluggables-heads-design.md",
+   "required": ["at", "size"],
+   "properties": {
+    "at": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+    "size": {"type": "object", "additionalProperties": false, "required": ["w", "h", "d"],
+             "properties": {"w": {"type": "number", "exclusiveMinimum": 0},
+                            "h": {"type": "number", "exclusiveMinimum": 0},
+                            "d": {"type": "number", "exclusiveMinimum": 0}}},
+    "size-confidence": {"$ref": "#/properties/size-confidence"},
+    "node": {"type": "string", "description": "the skin node that draws the head's front outline"},
+    "type": {"type": "integer", "enum": [1, 2], "description": "QSFP-DD module type; selects the registry's length-max"},
+    "exceeds": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+                "required": ["dimension", "source"],
+                "properties": {"dimension": {"enum": ["width", "above", "below", "length"]},
+                               "source": {"type": "string", "minLength": 1}}}}
+   }
+  },
+  "faces": {
+   "type": "object",
+   "additionalProperties": false,
+   "minProperties": 1,
+   "description": "THIS PART SEEN FROM ANOTHER DIRECTION, each as its own component. A face is a drawing, and a drawing from another direction is a different drawing at a different size - so it is a different part, not a variant of this one. `plan` is the top view, which a device bay lands with its own `plan:` key; `rear` is the back of the part, which renders as a component preview rather than in any device view. The legacy top-level `plan:` means exactly `faces.plan` and stays legal; declaring both is an error (L82). `faces: {}` is rejected outright - it passes every check downstream (L82, L83, the index) while saying nothing, so the schema is the only place left to catch it.",
+   "properties": {
+    "plan": {"$ref": "#/$defs/face"},
+    "rear": {"$ref": "#/$defs/face"}
+   }
+  },
+  "fields": {
+   "type": "object",
+   "description": "WHAT A FORM CAN CHANGE ON THIS PART WITHOUT IT BECOMING ANOTHER PART. A different shape is a different component; a different property - a supply's wattage, a DIMM's capacity and speed, a drive's capacity and interface - is a field on the same one. Each key names a `data-from` text node in every skin, which carries the default the drawing shows when nothing says otherwise; a placement's `attrs`, a configuration's `bay-attrs`, or the kit's setFields put a value there. The consumer building the form reads this from components.json.",
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+     "label": {"type": "string", "description": "what the form calls it"},
+     "type": {"enum": ["text", "number", "choice"], "description": "text unless said otherwise; a choice needs options"},
+     "default": {"type": ["string", "number"], "description": "what the skin shows; stated here so a form can reset to it without reading the drawing"},
+     "options": {"type": "array", "items": {"type": ["string", "number"]}, "description": "the values a choice offers"},
+     "pattern": {"type": "string", "description": "a regex a text value must match"},
+     "unit": {"type": "string", "description": "printed after a number, or the unit a text value is understood in"},
+     "description": {"type": "string"}
+    }
+   }
+  },
+  "plan": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": ["ref"],
+   "description": "SUGAR FOR `faces.plan`, kept because 11 components and one device still use it - see `spec/tools/portrayal/faces.py` for why that count matters. THIS PART SEEN FROM ABOVE, as another component. A riser's face is its bracket plate; from above it is a thin PCB with connectors, which is a different drawing at a different size, so it is its own part - dell/riser-card-14g@1 for the full-height risers. A device bay that seats this part says where the plan lands in its top view (`plan:` on the bay). Do not declare this and `faces.plan` together - L82 reports it.",
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$"
+    }
+   }
+  },
+  "bays": {
+   "type": "object",
+   "description": "MODULES THAT THEMSELVES HOST BAYS - a PCIe riser, a SIP carrying SPAs. Was `additionalProperties: true` and described as unused while 51 bays across 25 components already relied on it, so a malformed one validated and was found, if at all, by a tree that read wrong. Same shape as a device's bay minus the fields that only mean something on a face: no `group` or `rel-pos`, because a nested bay numbers within its carrier, and no `only-in`, because a configuration varies a chassis and not a card. Lint L48 checks that a skin actually draws each one.",
+   "propertyNames": {
+    "$ref": "#/$defs/segment"
+   },
+   "additionalProperties": {
+    "type": "object",
+    "required": [
+     "at",
+     "size",
+     "accepts"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "at": {
+      "$ref": "#/$defs/xy",
+      "description": "mm offset from the carrier's origin (top-left, y-down)"
+     },
+     "size": {
+      "$ref": "#/$defs/xy",
+      "description": "[w,h] in mm"
+     },
+     "accepts": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 1,
+      "description": "component refs this bay takes. Required, as on a device: a bay that names nothing offers nothing, and the four SPA bays on a9k-sip-700-8g sat empty for exactly that reason while its 4 GB twin listed 22 cards in each"
+     },
+     "default": {
+      "type": [
+       "string",
+       "null"
+      ],
+      "description": "ref populated by default; null = open"
+     },
+     "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["at"],
+      "description": "where this bay's occupant lies in the PLAN of this module, relative to the module's own plan origin - a riser's card lies inboard of its PCB. Used when the module is projected into another view.",
+      "properties": {"at": {"$ref": "#/$defs/xy"}}
+     },
+     "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["connector", "lanes", "height", "length"],
+      "description": "WHAT KIND OF EXPANSION SLOT THIS BAY IS, for a card feature that has to say whether a card fits and at what width it will run. `connector` is the MECHANICAL edge connector the riser presents (x16 on every full-height slot of Dell's 14G risers - the model measures 91 mm connectors on riser 1 whatever the wiring); `lanes` is the ELECTRICAL link width the vendor publishes (Technical Guide Table 11's x8 / x16). A card whose edge is wider than the connector does not fit; one narrower runs at its own width; one equal to the connector but wider than the lanes fits and runs at the lanes. `height` and `length` are what the opening takes, and `accepts` already enforces them by bracket; they are restated here so a consumer need not resolve every bracket ref. `processor` is which CPU the slot is wired to, when the vendor says. Prose attrs like `slot-1: 'x8, full height, ...'` stay for readers; L75 checks the two agree.",
+      "properties": {
+       "connector": {"enum": ["x1", "x4", "x8", "x16"], "description": "mechanical edge connector"},
+       "lanes": {"type": "integer", "enum": [1, 2, 4, 8, 16], "description": "electrical link width"},
+       "height": {"enum": ["full", "low"]},
+       "length": {"enum": ["full", "half"]},
+       "processor": {"type": "integer", "minimum": 1, "description": "the CPU this slot is wired to, per the vendor"},
+       "generation": {"type": "number", "description": "PCI Express generation, when the vendor states it"}
+      }
+     },
+     "behind": {
+      "type": "boolean",
+      "description": "seat this bay's occupant BEHIND the module's own skin instead of on top of it. For a faceplate the occupant shows through: a PCIe card sits behind its riser's sheet metal and only its working area, through a punched window, and its retention tab, clear of the plate, are visible - the flange end is covered. Requires the skin to have real holes; a stroked outline is a drawing of a window, not a window, and with `behind` the occupant simply disappears behind it. Same word and same mechanism as `behind` on `parts:`."
+     },
+     "mirror": {
+      "type": "boolean",
+      "description": "flip this bay's occupant horizontally about its own centre line. HANDEDNESS, NOT ROTATION: a riser at the far end of a chassis presents its cards facing out the other way - tapered end toward the chassis edge, flange toward the middle - and `rotate: 180` gets that wrong by also turning the card upside down, putting a bracket's louvre row at the top and its retention tab at the bottom. Mirroring the BAY rather than authoring a mirrored component is what lets the same bay still accept either a vendor filler or a std/ bracket."
+     },
+     "rotate": {
+      "type": "number",
+      "description": "degrees to rotate the OCCUPANT where it sits - the carrier's own plate, windows and printing do not move. The device-side bay has had this since it was written and a component bay did not, so a riser at the far end of a chassis could not say that its cards face the other way. Prefer this over `mirror` for anything with relief: a reflection puts a bracket's raised tab on the inside of the box, where a half-turn keeps it facing out at the viewer, which is what the metal does."
+     }
+    }
+   }
+  },
+  "presents": {
+   "enum": [
+    "wh",
+    "wd",
+    "hd"
+   ],
+   "default": "wh",
+   "description": "WHICH TWO of the conformed standard's three dimensions this contract's own `size.w` and `size.h` are; the remaining one is its `size.d`. `wh` (the default) is the elevation a front or rear panel shows; `wd` and `hd` are the other two projections of the same box. A component's `elements` and `relief.features` describe ONE presented face - they are a single block shared by every skin - so a part seen from another direction is a different contract, not a different skin. This key exists so that second contract can still be anchored to the standard instead of restating its numbers and drifting. ORDER WITHIN THE PAIR IS NOT CHECKED: which way round a part is turned is a property of how it is placed, not of the standard it conforms to, and the registry already fixes an orientation of its own (drive-35 is described lying flat, drive-25 standing on edge) that a bay is free to disagree with."
+  }
+ },
+ "$defs": {
+  "group": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "index-origin": {
+     "enum": [
+      0,
+      1
+     ]
+    },
+    "term": {
+     "type": "string",
+     "description": "vendor display word, e.g. 'Port', 'Slot', 'Bay'"
+    },
+    "role": {
+     "enum": [
+      "traffic",
+      "fabric",
+      "management",
+      "service",
+      "indicator",
+      "furniture"
+     ],
+     "description": "what this block is FOR - the one thing the drawing cannot work out for itself. A PSU bay, a fan bay and a line-card bay are all data-class `bay`, the same hole with a module in it, so anything ranking the tree by class cannot tell which of them is why the box exists and which two keep it alive. Only the group knows. `traffic` is the work the device is bought to do - line-card slots and the ports that carry user traffic. `fabric` is the cell or chassis interconnect of a distributed chassis - the ports on a DDC or VDR line-card box that lead to its fabric boxes, and every port on the fabric box itself. PORTS ONLY: it is not a customer port, which is `traffic`, and it is not a fabric CARD, which is a control-plane board in `service` below; an exporter still lists these ports as interfaces, because they are cabled like any other. It is its own bucket so that a filter on `traffic` means the ports a customer plugs into, and so that one on `fabric` finds the interconnect on every such box, whatever the vendor called the bank. `management` is how you reach and discipline it - the OOB jack, the console, the craft port, the timing and sync interfaces; a separate bucket rather than part of traffic because on five devices the management block is written FIRST in the manifest, so leaving it in with the traffic ports still opened the tree with a console socket. `service` is what keeps it running - PSUs, fans, filters, power shelves, AND THE CONTROL-PLANE CARDS: routing engines, route processors, supervisors, fabric and switch-control boards. They are named here because leaving them unnamed let the convention drift both ways - nine devices had routing engines in `service` and two in `management`, and the ASR 9912 and 9922 had their ROUTE PROCESSORS in `traffic`, which made the first base configuration built for a 9922 empty both of them. An RE is not `management`: that bucket is jacks and ports, the things you plug into, not the cards behind them. `indicator` is what you read - LEDs, displays. `furniture` is what you neither connect to nor read - ears, rivets, labels, grounding points, doors. Ordering WITHIN a role stays document order, which already reads correctly; this only says which bucket the block falls in. Lint L37"
+    },
+    "physical-context": {
+     "type": "string",
+     "description": "Redfish PhysicalContext value shared by everything in this block, e.g. 'PowerSupply' for the PSU bays. A whole group is the natural place to say it once"
+    },
+    "mixed": {
+     "type": "string",
+     "description": "the job these ports do together, when they do NOT share a media or a speed and that is deliberate: a management cluster of SFP+, USB and RJ45, a timing block of RJ45 and coax. The default shape of a port group is one family - one media, one speed - because that is what lets the block declare its facts once in `attrs`; a group spanning families is normally a bucket nobody has sorted yet, and lint L23 says so. This field is the author's answer: the vendor's faceplate calls these one thing, and splitting them by media would be a worse drawing. State the function, e.g. 'management cluster' or 'timing inputs and outputs' - it is a reason, not a switch, and L23 also objects if it is set on a group that is in fact one family"
+    },
+    "attrs": {
+     "type": "object"
+    },
+    "states": {
+     "description": "what this indicator's states MEAN on this device. Overrides the component's own vocabulary, which can only be generic - the same led-dot is a speed lamp on one port and a link lamp on the next. A block of eighteen speed lamps shares one vocabulary and says it once; a placement inside it may still override",
+     "oneOf": [
+      {
+       "type": "array",
+       "minItems": 1,
+       "items": {
+        "$ref": "#/$defs/state"
+       }
+      },
+      {
+       "type": "object",
+       "minProperties": 1,
+       "description": "per contracted element, when one component carries two lamps that do NOT share a vocabulary - a management jack whose left lamp is green for 1G and whose right is amber for 10M/100M. Keys are element ids of the referenced component; lint L20 rejects one that names no element",
+       "propertyNames": {
+        "$ref": "#/$defs/segment"
+       },
+       "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "$ref": "#/$defs/state"
+        }
+       }
+      }
+     ]
+    },
+    "description": {
+     "type": "string",
+     "description": "the vendor's own sentence about this block of indicators, kept beside the tokens"
+    }
+   }
+  },
+  "face": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": ["ref"],
+   "properties": {
+    "ref": {
+     "type": "string",
+     "pattern": "^[a-z0-9-]+/[a-z0-9-]+@\\d+$",
+     "description": "the component that IS this part seen from that direction"
+    }
+   }
+  },
+  "watts": {
+   "type": "number",
+   "exclusiveMinimum": 0,
+   "description": "watts, as a number. `watts: '650'` was a string, and that is not cosmetic: '650' + '400' is '650400' in more than one language a consumer might use, and max('650', '1600') is '650' in all of them"
+  },
+  "state": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/segment"
+    },
+    {
+     "type": "object",
+     "required": [
+      "name"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "$ref": "#/$defs/segment"
+      },
+      "behavior": {
+       "description": "how the lamp is lit, as opposed to what colour it is lit. Omitted means solid. A state is colour AND behaviour: solid green and blinking green are different facts on real hardware. `rate` is the blink frequency in hertz, because a lamp blinking twice a second and one blinking four times a second are two different documented conditions on the same drive and flattening both to `blinking` throws the distinction away. `sequence` is for a pattern no single colour and rate can express - Dell's drive status lamp blinks green three seconds, amber three seconds, then off for six, which is three phases with durations rather than a blink of anything.",
+       "oneOf": [
+        {
+         "enum": [
+          "solid",
+          "blinking",
+          "alternating",
+          "sequence"
+         ]
+        },
+        {
+         "type": "object",
+         "required": [
+          "mode"
+         ],
+         "additionalProperties": false,
+         "properties": {
+          "mode": {
+           "enum": [
+            "solid",
+            "blinking",
+            "alternating",
+            "sequence"
+           ]
+          },
+          "color": {
+           "type": "string",
+           "description": "the second colour, for `alternating` - the lamp flashes between `color` and this one"
+          },
+          "rate": {
+           "type": "number",
+           "exclusiveMinimum": 0,
+           "description": "blink frequency in hertz, for `blinking` and `alternating`. Omitted means once a second, which is what every state written before this property existed meant by `blinking`."
+          },
+          "phases": {
+           "type": "array",
+           "minItems": 2,
+           "description": "for `sequence`: the cycle in order. Each phase names a colour and how long it holds; a phase with NO colour is the lamp off, which is a phase like any other and is how 'blinks green, amber, and turns off' gets said. Durations are seconds and may be omitted, in which case the phases divide the cycle evenly - some vendors give the order without the timing, and recording that as an even division is more honest than inventing durations.",
+           "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+             "color": {
+              "type": "string",
+              "description": "the colour this phase holds; absent means the lamp is off for it"
+             },
+             "seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "how long this phase holds"
+             }
+            }
+           }
+          }
+         }
+        }
+       ]
+      },
+      "color": {
+       "type": "string",
+       "description": "LED color for this state, emitted as scoped CSS"
+      },
+      "lights": {
+       "type": "array",
+       "items": {
+        "$ref": "#/$defs/segment"
+       },
+       "minItems": 0,
+       "description": "the sub-elements this state lights, by their `data-seg` name. A lamp state changes what COLOUR one element is; a segment display changes WHICH elements are lit, and a seven-segment digit showing '4' is not a colour at all. Naming the lit segments lets the same state machinery drive both: the renderer emits one rule per state setting every named segment opaque and every other one transparent. The skin draws the default character, so a reader that applies no CSS still sees a sensible face rather than every segment lit at once. An EMPTY list is a real state and not an omission: a blank digit and an unlit decimal point are both `lights: []`, and without it the only way to turn a segment off would be to remove the class rather than to set a state."
+      }
+     }
+    }
+   ]
+  },
+  "segment": {
+   "type": "string",
+   "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+  },
+  "optical-endpoint": {
+   "type": "string",
+   "pattern": "^(?:[a-z0-9-]+:)?[a-z0-9-]+\\.[1-9][0-9]*$",
+   "description": "`<part-id>.<n>`, or `<face>:<part-id>.<n>` - a composed part's id and a 1-based fibre position within it. The optional face prefix names a key of this component's `faces:`, so a module's paths can reach a part drawn on its rear: a cassette's rear MTP is a part of the rear face component, not of the cassette's own `parts:`. Unprefixed means this face."
+  },
+  "xy": {
+   "type": "array",
+   "items": {
+    "type": "number"
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "wh": {
+   "type": "object",
+   "required": [
+    "w",
+    "h"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "w": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "h": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "d": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "description": "recess depth behind the panel face in mm (3D); optional"
+    }
+   }
+  },
+  "provenance": {
+   "type": "object",
+   "description": "WHERE EACH FIGURE CAME FROM, keyed by the figure it explains. THE KEY IS A FIELD NAME, NOT A HEADLINE FOR THE NOTE. That distinction is the whole difference between a block a rule can ask questions of and one it can only read: the library reached 579 distinct keys across 584 contracts, 495 of them used fewer than five times and some of them whole sentences, and the cost was that L52 had to be loosened to accept `any power-named key` after convicting eighteen contracts that had done the work, while nothing could ask about `size` at all. The core keys are `size` for the face dimensions (L92), `depth` for the third axis, `power` for a wattage (L52) and `relief` for a raised or recessed magnitude (L35, L36). An axis or a figure that needs its own note takes a key that STARTS with the core one - `size-width`, `power-output` - so it still answers the question the core key is asked. A finding that explains something no figure holds is welcome under a name of its own; it is an addition to the core keys, never a substitute for one.",
+   "additionalProperties": {
+    "type": "string",
+    "description": "the source, in the words this library uses: datasheet, drawing, measured, photo-measured, registry, borrowed (naming the part the figure came from), estimated, known-wrong"
+   }
+  },
+  "confidence": {
+   "enum": [
+    "measured",
+    "photo-measured",
+    "drawing",
+    "datasheet",
+    "registry",
+    "borrowed",
+    "estimated",
+    "known-wrong"
+   ],
+   "description": "where a NUMBER came from. One vocabulary for the library, shared by relief features and by size-confidence: measured (off this part's own hardware), photo-measured, drawing (off this part's own artwork or a vendor figure of it), datasheet, registry (from standards.yaml), borrowed (another Portrayal part's MEASURED figure for the same class of hardware, reused because nobody publishes one for this part - an estimate, but not a free one, and `source` must name the part), estimated (a plausible figure with no source), and `known-wrong`. KNOWN-WRONG IS THE TERMINAL STATE AND IT IS NOT A CONFIDENCE LEVEL: it says the value is not merely unmeasured but IMPOSSIBLE - contradicted by something checkable - and is being carried only because removing it would break the model and no sourced replacement exists. A value that cannot be true must not sit in the same bucket as one nobody has measured. `source` must say what rules it out. Note the enum omits standards.yaml's `verified`, which answers a different question - whether a CUTOUT matches its governing standard."
+  }
+ }
+}

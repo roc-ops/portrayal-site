@@ -1,14 +1,10 @@
 # Publishes the site to Cloudflare (Workers static assets, which is what
 # Cloudflare Pages became) on every push to main. wrangler.jsonc says which
-# folder: assets.directory.
+# folder: assets.directory, which is public/ - built here, from tracked files
+# only, by tools/build-public.py. The repo root is never served as-is.
 #
-# Until launch that folder is coming-soon/, a self-contained teaser that holds
-# the domain. The full site is not deployed from here yet: assets/dist and
-# vendor/ are a snapshot of Portrayal, which is still private, and the repo
-# root also carries prototypes, harness pages and check scripts that were
-# never meant to be served. Going live means building a publish folder that
-# holds only the public pages, then pointing assets.directory at it - and
-# PUBLISH_DIR below, which only narrows the checkout, at the same folder.
+# Rolling back to the teaser is wrangler.jsonc's directory set to
+# ./coming-soon; the build step then does no harm.
 name: deploy
 
 on:
@@ -20,13 +16,10 @@ concurrency:
   group: deploy
   cancel-in-progress: false   # never abandon a deploy halfway
 
-env:
-  PUBLISH_DIR: coming-soon
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25   # the first full-site upload is ~6,600 files; later ones send only changes
     permissions:
       contents: read
     env:
@@ -34,20 +27,23 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      # Only the publish folder is needed, and assets/dist is ~286 MB of
-      # committed build output, so check out that one folder.
+      # The whole tree: the build copies pages, site/, brand/, assets/ and
+      # vendor/. Depth 1 - assets/dist is ~286 MB of committed build output,
+      # and the build needs no history, only `git ls-files`.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          sparse-checkout: ${{ env.PUBLISH_DIR }}   # root files, wrangler.jsonc among them, always come too
+
+      - name: build public/
+        run: python3 tools/build-public.py
 
       # Until the Cloudflare account exists this says so and passes, rather
       # than turning every push to main red.
       - name: say so if Cloudflare is not configured
         if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''
-        run: echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set - skipping deploy of $PUBLISH_DIR"
+        run: echo "::notice::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set - skipping deploy"
 
-      - name: deploy ${{ env.PUBLISH_DIR }} to Cloudflare
+      - name: deploy to Cloudflare
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         uses: cloudflare/wrangler-action@v3
         with:

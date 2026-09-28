@@ -1,0 +1,30 @@
+# Response headers for the full site. Cloudflare's Workers static assets read
+# this file from the root of the folder wrangler.jsonc deploys (public/, built
+# by tools/build-public.py); it is not served itself.
+#
+# CACHING: nothing here sets Cache-Control for pages, scripts, styles or the
+# compiled library, so they keep Cloudflare's default - revalidate on every
+# load against the ETag. None of those URLs is content-hashed: a drawing and
+# the configs.json that names it must never be served from two different
+# deploys. Only media/, whose files are replaced rarely, caches for a day.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# The teaser's media, kept at permanent URLs: the Portrayal README links the
+# 3D video (roc-ops/portrayal-site#61).
+/media/*
+  Cache-Control: public, max-age=86400
+
+# The Portrayal JSON schemas (roc-ops/portrayal-site#58), published by
+# tools/publish-schemas.sh. Each is served at the URL its $id names, as JSON,
+# and readable cross-origin, since validators and editors fetch them from
+# anywhere. v1/ is permanent; a format 2 goes under /schemas/v2/ beside it.
+# The files only, not /schemas/*: a missing schema's 404 page is HTML, and a
+# JSON label on it would be a lie.
+/schemas/v1/*.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600

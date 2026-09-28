@@ -1,9 +1,11 @@
 // portrayal.dev on Cloudflare: static files only, no Worker script.
 //
-// assets.directory is WHAT GOES LIVE. Until launch it is coming-soon/, the
-// self-contained teaser; the repo root must never be published as-is, since
-// it carries the vendored Portrayal snapshot, prototypes and check scripts.
-// Going live is a public-only folder and a change to this one line.
+// assets.directory is WHAT GOES LIVE: public/, which tools/build-public.py
+// assembles from tracked files (the deploy workflow runs it; it is never
+// committed). The repo root must never be published as-is - it carries
+// prototypes, harness pages and check scripts beside the site.
+//
+// ROLLBACK: "./coming-soon", the self-contained teaser, kept whole in the repo.
 //
 // An unknown path is a 404 (404.html), never the teaser with a 200: validators
 // dereference the schemas' $ids here, and HTML served as a schema is worse than
@@ -12,7 +14,7 @@
   "name": "portrayal",
   "compatibility_date": "2026-09-25",
   "assets": {
-    "directory": "./coming-soon",
+    "directory": "./public",
     "not_found_handling": "404-page"
   },
   "routes": [
