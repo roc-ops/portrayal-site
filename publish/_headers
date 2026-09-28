@@ -19,12 +19,12 @@
   Cache-Control: public, max-age=86400
 
 # The Portrayal JSON schemas (roc-ops/portrayal-site#58), published by
-# tools/publish-schemas.sh. Each is served at the URL its $id names, as JSON,
-# and readable cross-origin, since validators and editors fetch them from
+# tools/publish-schemas.sh. Each is served at the URL its $id names, and
+# readable cross-origin, since validators and editors fetch them from
 # anywhere. v1/ is permanent; a format 2 goes under /schemas/v2/ beside it.
-# The files only, not /schemas/*: a missing schema's 404 page is HTML, and a
-# JSON label on it would be a lie.
+# NO Content-Type here: Cloudflare types a .json file as application/json from
+# its extension, and a rule here also applies to the 404 page served for a
+# missing schema - it labeled that HTML page application/json (seen live).
 /schemas/v1/*.json
-  Content-Type: application/json
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600

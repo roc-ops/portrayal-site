@@ -1250,11 +1250,11 @@ check(_wr["assets"].get("not_found_handling") == "404-page" and "404.html" in _s
 # cross-origin. Published from a Portrayal release by tools/publish-schemas.sh.
 _hd = _srv["_headers"].read_text() if "_headers" in _srv else ""
 _sb = re.search(r"^/schemas/v1/\*\.json[ \t]*\n((?:[ \t]+.*\n?)*)", _hd, re.M)
-check(bool(_sb) and re.search(r"Content-Type:\s*application/json", _sb.group(1)) is not None
+check(bool(_sb) and re.search(r"Content-Type:", _sb.group(1)) is None
       and re.search(r"Access-Control-Allow-Origin:\s*\*", _sb.group(1)) is not None
       and not re.search(r"^/schemas/\*\s*$", _hd, re.M),
-      "/schemas/v1/*.json is served as application/json and readable from any origin - and only the files, not a 404 page",
-      "no /schemas/v1/*.json block with both headers, or a broad /schemas/* block that would label a 404 as JSON")
+      "/schemas/v1/*.json is readable from any origin, typed by its extension - no Content-Type rule to mislabel a 404",
+      "no /schemas/v1/*.json block with Access-Control-Allow-Origin, a Content-Type override in it, or a broad /schemas/* block")
 _schemas = sorted(d for d in _srv if d.startswith("schemas/") and d.endswith(".json"))
 check({"schemas/v1/device.schema.json", "schemas/v1/component.schema.json"} <= set(_schemas),
       "the device and component schemas are served under /schemas/v1/", f"{_schemas}")
