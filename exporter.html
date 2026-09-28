@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Portrayal — DCIM export</title>
-<meta name="description" content="The Nautobot and NetBox device type a modeled device produces, per network operating system.">
+<meta name="description" content="The Nautobot and NetBox device types a modeled device produces: its maker's, and each NOS vendor's that lists it.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="portrayal.dev">
 <meta property="og:url" content="https://portrayal.dev/exporter.html">
 <meta property="og:title" content="Portrayal — DCIM export">
-<meta property="og:description" content="The Nautobot and NetBox device type a modeled device produces, per network operating system.">
+<meta property="og:description" content="The Nautobot and NetBox device types a modeled device produces: its maker's, and each NOS vendor's that lists it.">
 <meta property="og:image" content="https://portrayal.dev/brand/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@portrayaldev">
 <meta name="twitter:title" content="Portrayal — DCIM export">
-<meta name="twitter:description" content="The Nautobot and NetBox device type a modeled device produces, per network operating system.">
+<meta name="twitter:description" content="The Nautobot and NetBox device types a modeled device produces: its maker's, and each NOS vendor's that lists it.">
 <meta name="twitter:image" content="https://portrayal.dev/brand/og-card.png">
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,10 +89,9 @@
     <option value="vendor">this vendor</option>
     <option value="all">everything</option>
   </select></label>
-  <label>NOS <select id="bnos">
-    <option value="">no NOS variants</option>
-    <option value="arcos">arcos</option>
-    <option value="sonic">sonic</option>
+  <label>NOS listings <select id="blist">
+    <option value="1">included</option>
+    <option value="">left out</option>
   </select></label>
   <label><input type="checkbox" id="bimg" checked> images</label>
   <button id="bdl">Download bundle</button>
@@ -105,9 +104,10 @@
   schema shared by <code>netbox-community/devicetype-library</code> and
   <code>nautobot/devicetype-library</code>. One device type per SKU, so an AC front-to-back
   and a DC back-to-front are separate entries with their own part numbers and images.
-  Interface names come from a NOS profile where one applies &mdash; they are a property of the
-  network OS rather than the hardware &mdash; and a device that runs no NOS still gets a device
-  type.
+  A NOS vendor that lists a box exports it again under its own name, with its own part numbers
+  and interface names: the same UfiSpace switch is <code>UfiSpace/S9510-28DC-BN0B</code> as its
+  maker sells it and <code>Arrcus/S9510-28DC-BN0B</code> as Arrcus sells it with ArcOS. Both
+  describe one copy of the metal, which is how NetBox and Nautobot file a disaggregated box.
 </p>
 <p class="note">
   Shown here is one device type. The bundle carries more than the page can show: module types,
@@ -135,12 +135,49 @@ let DEVICES = [], INDEX = {}, text = '', file = '', DEV = '';
 // actually produced, so this reads that instead of predicting it.
 const filesFor = () => (INDEX[DEV] || {})[$('target').value] || [];
 
-// device-types/Edgecore/7726-32X-O-AC-F-arcos.yaml -> 7726-32X-O-AC-F · arcos
+// netbox/device-types/Arrcus/S9510-28DC-BN0B.yaml -> Arrcus · S9510-28DC-BN0B · NOS listing
+//
+// Named by manufacturer AND model (Portrayal #677): a NOS vendor that lists a
+// box exports it under its own folder with the same model name as the maker's,
+// so the file name alone is two identical rows. A type whose manufacturer is
+// not the device's maker is a NOS vendor's listing of it.
 function label(rel) {
-  const base = rel.split('/').pop().replace(/\.yaml$/, '');
-  const m = base.match(/^(.*)-(arcos|sonic)$/);
-  return m ? `${m[1]} · ${m[2]}` : `${base} · no NOS`;
+  const parts = rel.split('/');
+  const base = parts.at(-1).replace(/\.yaml$/, '');
+  const maker = (DEVICES.find(d => d.name === DEV) || {}).manufacturer;
+  return `${parts[2]} · ${base}` + (maker && parts[2] !== maker ? ' · NOS listing' : '');
 }
+
+// WHICH FILES ARE LISTINGS: a device type exported under a manufacturer other
+// than the device's maker is a NOS vendor's listing of that hardware. Keyed by
+// path, valued with the hardware maker, so a vendor bundle can take the
+// listings of that vendor's boxes.
+function listingsOf(target) {
+  const out = new Map();
+  for (const d of DEVICES)
+    for (const rel of (INDEX[d.name] || {})[target] || []) {
+      const parts = rel.split('/');
+      if (parts[1] === 'device-types' && parts[2] !== d.manufacturer) out.set(rel, d.manufacturer);
+    }
+  return out;
+}
+
+// What a bundle carries, before images and fibre maps: the target's types for
+// this vendor (and, with listings, the NOS vendors' listings of its hardware),
+// or for everyone.
+function planBundle(target, scope, listings, man) {
+  const listed = listingsOf(target);
+  return (FILES[target] || []).filter(rel => {
+    const parts = rel.split('/');
+    // Images are never taken from FILES - they are rendered below from the
+    // compiled drawings, so they are not carried in the repository at all.
+    if (parts[1].endsWith('-images')) return false;
+    if (listed.has(rel))
+      return listings && !(scope === 'vendor' && man && listed.get(rel) !== man);
+    return !(scope === 'vendor' && man && parts[2] !== man);
+  });
+}
+window.__exporter = {planBundle};
 
 function paintVariants() {
   const sel = $('variant');
@@ -195,28 +232,11 @@ let FILES = {}, ENRICH = null, COMPONENTS = [];
 async function buildBundle(btn) {
   const target = $('target').value;
   const scope = $('scope').value;
-  const nos = $('bnos').value;
+  const listings = !!$('blist').value;
   const withImages = $('bimg').checked;
   const man = (DEVICES.find(d => d.name === DEV) || {}).manufacturer;
 
-  const keep = rel => {
-    const parts = rel.split('/');
-    const kind = parts[1];
-    // Images are never taken from FILES - they are rendered below from the
-    // compiled drawings, so they are not carried in the repository at all.
-    if (kind.endsWith('-images')) return false;
-    if (scope === 'vendor' && man && parts[2] !== man) return false;
-    if (kind === 'device-types') {
-      const m = parts.at(-1).match(/-(arcos|sonic)\.yaml$/);
-      // A NOS variant is one device type per SKU per OS. Taking both would put
-      // two entries in the DCIM for one physical switch.
-      if (m) return m[1] === nos;
-      return true;                       // NOS-neutral types always travel
-    }
-    return true;
-  };
-
-  const wanted = (FILES[target] || []).filter(keep);
+  const wanted = planBundle(target, scope, listings, man);
   if (!wanted.length) { $('bnote').textContent = 'nothing matches that selection'; return; }
 
   // THE FIBRE MAPS TRAVEL WITH BOTH TARGETS, and their paths keep their own
@@ -308,12 +328,12 @@ async function buildBundle(btn) {
   const counts = {};
   for (const e of entries) counts[e.name.split('/')[0]] = (counts[e.name.split('/')[0]] || 0) + 1;
   entries.push({name: 'MANIFEST.json', bytes: enc.encode(JSON.stringify({
-    target, scope, nos: nos || null, images: withImages,
+    target, scope, listings, images: withImages,
     snapshot: day, vendor: scope === 'vendor' ? man : null,
     contents: counts, files: entries.length,
   }, null, 1))});
   entries.push({name: 'README.md',
-                bytes: enc.encode(readme(target, nos, man, scope, day, maps.length))});
+                bytes: enc.encode(readme(target, listings, man, scope, day, maps.length))});
 
   $('bnote').textContent = 'compressing…';
   const blob = await makeZip(entries, stamp);
@@ -330,10 +350,10 @@ async function buildBundle(btn) {
 // most vendor bundles carry no fibre maps at all and a tree listing that names
 // a directory the zip does not have is the kind of small lie that costs someone
 // ten minutes.
-const readme = (target, nos, man, scope, day, nmaps) => `# Portrayal DCIM bundle
+const readme = (target, listings, man, scope, day, nmaps) => `# Portrayal DCIM bundle
 
 Snapshot ${day}. Target: ${target}. Scope: ${scope === 'vendor' ? man : 'all vendors'}.
-Interface names: ${nos ? nos : 'none - NOS-neutral device types only'}.
+NOS vendor listings: ${listings ? 'included - each NOS vendor that lists a box exports it again under its own name' : "left out - the makers' device types only"}.
 
 ## What is here
 
@@ -405,9 +425,12 @@ that is true of the part by itself.
 ## Interface names are OS-dependent
 
 There is no single source of truth for an interface name: it depends on what is
-installed. A NOS-neutral device type carries the physical facts - console ports,
+installed. The maker's device type carries the physical facts - console ports,
 module bays, power, images - and no switch interface names, because a bare
-switch has none until an OS is on it.
+switch has none until an OS is on it. A NOS vendor that lists the box exports
+it again under its own name, with the interface names (breakouts included) and
+part numbers of that OS: one copy of the metal, filed by each company that
+sells it.
 
 ## Nothing is written without --commit
 

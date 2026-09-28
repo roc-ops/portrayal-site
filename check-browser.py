@@ -2404,6 +2404,41 @@ DOCS_PAGES = ["index.html", "schema.html", "kit.html", "explorer.html", "compone
 # schema file the site carries and none for one it does not, so it is right on
 # both sides of the change. After: served with the overlay schema gone and a
 # listing schema in its place.
+
+# THE DCIM EXPORT PAGE AFTER PORTRAYAL #677. A NOS vendor lists the hardware
+# it supports, and each listing exports as a device type under that vendor's
+# own folder: UfiSpace's S9510-28DC-BN0B and Arrcus's S9510-28DC-BN0B are the
+# same switch, filed by the two companies that sell it. The page named options
+# by file name alone (two identical "S9510-28DC-BN0B · no NOS" rows) and kept a
+# NOS picker that matched nothing.
+@extra("exporter.html: a NOS vendor's listing is its own labeled type, and bundles take listings or leave them")
+def check_exporter_listings(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"exporter: uncaught {e}"))
+    page.goto(f"{base}/exporter.html?device=s9510-28dc", wait_until="load")
+    page.wait_for_function("() => document.querySelectorAll('#variant option').length >= 2", timeout=READY_MS)
+    labels = page.eval_on_selector_all("#variant option", "os => os.map(o => o.textContent)")
+    if len(set(labels)) != len(labels): bad.append(f"exporter: duplicate labels {labels}")
+    for want in ("UfiSpace · S9510-28DC-BN0B", "Arrcus · S9510-28DC-BN0B"):
+        if not any(l.startswith(want) for l in labels): bad.append(f"exporter: no option {want!r} in {labels}")
+    if any("no NOS" in l for l in labels): bad.append(f"exporter: 'no NOS' labels {labels}")
+    if page.query_selector("#bnos"): bad.append("exporter: the NOS picker that matches nothing is still there")
+    plan = lambda scope, listings: page.evaluate(
+        "([s, l]) => window.__exporter.planBundle('netbox', s, l, 'UfiSpace')", [scope, listings])
+    lis = "netbox/device-types/Arrcus/S9510-28DC-BN0B.yaml"
+    own = "netbox/device-types/UfiSpace/S9510-28DC-BN0B.yaml"
+    try:
+        with_l, without = plan("vendor", True), plan("vendor", False)
+        if lis not in with_l or own not in with_l:
+            bad.append("exporter: a UfiSpace bundle with listings lacks the Arrcus listing or the UfiSpace type")
+        if lis in without or own not in without:
+            bad.append("exporter: a UfiSpace bundle without listings still carries the Arrcus listing")
+        if any("/device-types/Arrcus/" in r for r in plan("all", False)):
+            bad.append("exporter: 'everything' without listings still carries NOS vendor types")
+    except Exception as e:
+        bad.append(f"exporter: no window.__exporter.planBundle ({str(e).splitlines()[0]})")
+    return bad
+
 @extra("schema.html shows a NOS tab for the NOS schema the site carries - overlay before #677, listing after")
 def check_schema_nos_tab(page, base):
     bad = []
