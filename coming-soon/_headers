@@ -1,5 +1,5 @@
-# Cloudflare Pages response headers for the teaser. Pages reads this file
-# from the root of whatever folder is deployed; it is not served itself.
+# Response headers for the teaser. Cloudflare's Workers static assets read this
+# file from the root of the folder wrangler.jsonc deploys; it is not served itself.
 
 /*
   X-Content-Type-Options: nosniff
@@ -28,7 +28,9 @@
 # by tools/publish-schemas.sh. Each is served at the URL its $id names, as JSON,
 # and readable cross-origin, since validators and editors fetch them from
 # anywhere. v1/ is permanent; a format 2 goes under /schemas/v2/ beside it.
-/schemas/*
+# The files only, not /schemas/*: a missing schema's 404 page is HTML, and a
+# JSON label on it would be a lie.
+/schemas/v1/*.json
   Content-Type: application/json
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600

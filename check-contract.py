@@ -1212,17 +1212,21 @@ _rd = (_live / "_redirects").read_text() if (_live / "_redirects").exists() else
 check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, re.M) for m in _MEDIA),
       "the old root media paths 301 to /media/", "_redirects lacks a 301 for one of " + ", ".join(_MEDIA))
 _ci = (_live / "index.html").read_text()
-check(not re.search(r'(?:src|poster)="(?!media/)[^"]*hero-(?:3d|switch)', _ci),
-      "the teaser loads its hero media from media/", "a hero src/poster outside media/")
+check(re.search(r'<video[^>]*>\s*(?:<source[^>]*src="/?media/hero-3d\.(?:webm|mp4)"[^>]*>\s*)+', _ci) is not None
+      and not re.search(r'(?:src|poster)="(?!/?media/)[^"]*hero-(?:3d|switch)', _ci),
+      "the live page shows the 3D video, loading its hero media from media/", "no <video> sourced from media/, or a hero src/poster outside media/")
 check(_wr["assets"].get("not_found_handling") == "404-page" and (_live / "404.html").is_file(),
       "an unknown path is a 404, not the teaser page with a 200 (validators read that as a schema)",
       f"not_found_handling={_wr['assets'].get('not_found_handling')!r}, 404.html present={(_live / '404.html').is_file()}")
 # THE SCHEMAS, WHEN THEY ARE SERVED: each at the URL its own $id names, as JSON,
 # readable cross-origin. Published at the flip by tools/publish-schemas.sh.
 _hd = (_live / "_headers").read_text()
-check(re.search(r"^/schemas/\*\s*\n(?:\s+.*\n)*?\s+Content-Type:\s*application/json", _hd, re.M) is not None
-      and re.search(r"^/schemas/\*\s*\n(?:\s+.*\n)*?\s+Access-Control-Allow-Origin:\s*\*", _hd, re.M) is not None,
-      "/schemas/* is served as application/json and readable from any origin", "no /schemas/* block with both headers in _headers")
+_sb = re.search(r"^/schemas/v1/\*\.json[ \t]*\n((?:[ \t]+.*\n?)*)", _hd, re.M)
+check(bool(_sb) and re.search(r"Content-Type:\s*application/json", _sb.group(1)) is not None
+      and re.search(r"Access-Control-Allow-Origin:\s*\*", _sb.group(1)) is not None
+      and not re.search(r"^/schemas/\*\s*$", _hd, re.M),
+      "/schemas/v1/*.json is served as application/json and readable from any origin - and only the files, not a 404 page",
+      "no /schemas/v1/*.json block with both headers, or a broad /schemas/* block that would label a 404 as JSON")
 for _sf in sorted((_live / "schemas").rglob("*.json")) if (_live / "schemas").exists() else []:
     _rel = _sf.relative_to(_live).as_posix()
     check(json.loads(_sf.read_text()).get("$id") == f"https://portrayal.dev/{_rel}",
@@ -1237,6 +1241,26 @@ def _pubrun(ids):
         return _r.returncode, sorted(p.name for p in (Path(_dst) / "v1").glob("*.json")) if (Path(_dst) / "v1").exists() else []
 _ok = {"device.schema.json": "https://portrayal.dev/schemas/v1/device.schema.json"}
 _bad = {"device.schema.json": "https://example.com/device.schema.json"}
+def _pubref(ref):
+    with _tf.TemporaryDirectory() as _dst:
+        _r = _sp.run(["sh", str(_pub), ref, "--to", _dst], capture_output=True, text=True)
+        return _r.returncode, (Path(_dst) / "v1").exists()
+def _pubtwice(force):
+    with _tf.TemporaryDirectory() as _src, _tf.TemporaryDirectory() as _dst:
+        _f = Path(_src) / "device.schema.json"
+        _f.write_text(json.dumps({"$id": _ok["device.schema.json"], "type": "object"}))
+        _sp.run(["sh", str(_pub), "--from-dir", _src, "--to", _dst], capture_output=True)
+        _f.write_text(json.dumps({"$id": _ok["device.schema.json"], "type": "array"}))
+        _r = _sp.run(["sh", str(_pub), "--from-dir", _src, "--to", _dst] + (["--force"] if force else []),
+                     capture_output=True, text=True)
+        return _r.returncode, json.loads((Path(_dst) / "v1" / "device.schema.json").read_text())["type"]
+check(_pub.exists() and _pubref("no-such-ref-xyz") == (_pubref("no-such-ref-xyz")[0] or 1, False)
+      and _pubref("no-such-ref-xyz")[0] != 0,
+      "tools/publish-schemas.sh fails on a ref that does not exist, and leaves no schemas/v1 behind",
+      f"{_pubref('no-such-ref-xyz') if _pub.exists() else 'no script'}")
+check(_pub.exists() and _pubtwice(False)[0] != 0 and _pubtwice(False)[1] == "object" and _pubtwice(True) == (0, "array"),
+      "v1/ is permanent: tools/publish-schemas.sh will not change a published schema without --force",
+      f"{(_pubtwice(False), _pubtwice(True)) if _pub.exists() else 'no script'}")
 check(_pub.exists() and _pubrun(_ok) == (0, ["device.schema.json"]) and _pubrun(_bad)[0] != 0,
       "tools/publish-schemas.sh publishes a schema whose $id is its URL and refuses one whose is not",
       f"{(_pubrun(_ok), _pubrun(_bad)) if _pub.exists() else 'no tools/publish-schemas.sh'}")
