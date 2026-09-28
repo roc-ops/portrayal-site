@@ -15,7 +15,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile} from './rack/exports.js';
 import {save} from './svg-export.js';
 
 const $ = id => document.getElementById(id);
@@ -239,6 +239,7 @@ const BUILD = {
   'front-svg': () => sheetSvg(rack(), chassisOf, {faces: ['front']}),
   'rear-svg': () => sheetSvg(rack(), chassisOf, {faces: ['rear']}),
   'sheet-png': () => sheetPng(rack(), chassisOf),
+  drawio: () => drawioFile(rack(), chassisOf),
 };
 let exporting = false;
 async function runExport(kind) {
@@ -272,6 +273,8 @@ function renderExports() {
     act('front-svg', 'Front only (.svg)'),
     act('rear-svg', 'Rear only (.svg)'),
     act('sheet-png', 'Sheet as a picture (.png)'),
+    el('hr'),
+    act('drawio', 'draw.io diagram (.drawio)'),
     el('hr'),
     act('json', 'Rack file (.json)'),
   );

@@ -41,6 +41,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+import xml.etree.ElementTree as ET
 
 HERE = pathlib.Path(__file__).resolve().parent
 
@@ -2972,6 +2973,75 @@ def check_drawio_covers(page, base):
     # ONE tag: draw.io hides a cell only when every tag on it is hidden.
     if r.get("tags") != "bezel":
         bad.append(f"draw.io covers: tags are {r.get('tags')!r}, expected 'bezel'")
+    return bad
+
+
+@extra("draw.io: a group may name its own faces, a device its own id, a rack its numbering - defaults unchanged")
+def check_drawio_group_faces(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const D = await import('/vendor/drawio.js');
+      const F = await import('/site/rack/face.js');
+      const f = await F.configuredFace({ref: 'tm-280', cfg: 'base', view: 'front'});
+      const b = await F.configuredFace({ref: 'tm-280', cfg: 'base', view: 'rear'});
+      const face = x => ({svg: x.text, vb: x.vb, ports: x.ports});
+      const mk = (extra = {}, m = {}) => [{label: 'P', ...extra, racks: [{label: 'R', units: 4,
+        mounted: [{name: 'TM', u: 2, ru: 1, faces: {front: face(f), rear: face(b)}, ...m}]}]}];
+      const a = D.rackDiagram(mk(), {faces: ['front', 'rear']});
+      return {
+        same: a === D.rackDiagram(mk({faces: ['front', 'rear']}), {faces: ['front']}),
+        rearOnly: (x => !x.includes('value="R · front"') && x.includes('value="R · rear"'))(
+          D.rackDiagram(mk({faces: ['rear']}), {faces: ['front', 'rear']})),
+        nameIds: a.includes('id="TM-g0r0-front"'),
+        ownIds: (x => x.includes('id="i7-g0r0-front"') && !x.includes('id="TM-g0r0-front"'))(
+          D.rackDiagram(mk({}, {id: 'i7'}))),
+        ascend: a.includes('numDisp=ascend;'),
+        descend: D.rackDiagram([{label: 'P', racks: [{label: 'R', units: 4, numDisp: 'descend', mounted: []}]}])
+          .includes('numDisp=descend;'),
+      };
+    }""")
+    for k in ("same", "rearOnly", "nameIds", "ownIds", "ascend", "descend"):
+        if not r.get(k):
+            bad.append(f"rackDiagram: {k} is {r.get(k)!r}")
+    return bad
+
+
+@extra("rack.html: Export - draw.io has a page per face, only what shows from each side, and a seated card's ports")
+def check_rack_export_drawio(page, base):
+    from collections import Counter
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    dl = export_file(page, "drawio")
+    if dl.suggested_filename != "Export-test.drawio":
+        bad.append(f"draw.io: named {dl.suggested_filename!r}")
+    text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError as e:
+        return bad + [f"draw.io: not well-formed XML ({e})"]
+    pages = {d.get("name"): d for d in root.findall("diagram")}
+    if set(pages) != {"Front", "Rear"}:
+        return bad + [f"draw.io: pages {sorted(pages)}, expected Front and Rear"]
+    values = {n: [e.get("value") for e in p.iter() if e.get("value") is not None] for n, p in pages.items()}
+    for n, p in pages.items():
+        dup = [i for i, c in Counter(e.get("id") for e in p.iter() if e.get("id")).items() if c > 1]
+        if dup:
+            bad.append(f"draw.io {n}: duplicate cell ids {dup[:5]}")
+    if values["Front"].count("demarc") != 1:
+        bad.append("draw.io Front: expected one demarc (U20's, from behind); U14's is behind leaf-1")
+    if "leaf-1" in values["Rear"]:
+        bad.append("draw.io Rear: leaf-1 is drawn, but demarc is mounted in front of it there")
+    if values["Rear"].count("demarc") != 2 or "core-1" not in values["Rear"]:
+        bad.append("draw.io Rear: expected both demarcs and core-1's rear")
+    if 'portrayal-path="slot-2/module/p0"' not in ET.tostring(pages["Front"], encoding="unicode"):
+        bad.append("draw.io Front: no port cell for core-1's seated card")
+    if "numDisp=descend;" not in text:
+        bad.append("draw.io: a bottom-up rack is not numbered from the bottom")
+    if "is behind leaf-1" not in text:
+        bad.append("draw.io: the notes comment does not list the device hidden behind leaf-1")
     return bad
 
 

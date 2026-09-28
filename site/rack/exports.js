@@ -18,7 +18,9 @@ import {uLabel} from './model.js';
 import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
-import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes} from './export-data.js';
+import {rackDiagram} from '../../vendor/drawio.js';
+import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes,
+        xmlComment, perFaceItems, drawioU} from './export-data.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -112,6 +114,37 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   } finally {
     host.remove();
   }
+}
+
+// DRAW.IO (spec §8): one page per face. Each cabinet holds what is mounted
+// on that side and the far panel of whatever nothing mounted there covers
+// (perFaceItems); a device hidden behind another is listed in the notes.
+// Each face is the configured face that side shows (panelFor), so a seated
+// card's ports are connection points carrying portrayal-path.
+export async function drawioFile(rack, chassisOf) {
+  const items = itemsWithU(rack, chassisOf);
+  const H = rack.frame.heightRU;
+  const lists = perFaceItems(items);
+  const notes = await faceNotesFor(rack, items, ['front', 'rear']);
+  for (const h of lists.hidden)
+    notes.push(`${h.pane === 'front' ? 'Front' : 'Rear'} page: ${h.item.label} is behind ${h.by.label} and is not drawn there.`);
+  const numDisp = rack.frame.numbering === 'top-down' ? 'ascend' : 'descend';
+  const groups = [];
+  for (const pane of ['front', 'rear']) {
+    const mounted = await Promise.all(lists[pane].map(async it => {
+      const f = await faceOf(it, panelFor(it, pane));
+      return {id: it.id, name: it.label, u: drawioU(H, it.ru, it.u), ru: it.u,
+              faces: f ? {[pane]: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
+    }));
+    groups.push({label: pane === 'front' ? 'Front' : 'Rear', faces: [pane],
+                 racks: [{label: rack.name, units: H, numDisp, mounted}]});
+  }
+  const all = uniq(notes);
+  // The notes go INSIDE <mxfile>: draw.io reads its <diagram> children and
+  // skips a comment there, and nothing is put before the root element.
+  const xml = rackDiagram(groups, {labels: true})
+    .replace('<mxfile host="portrayal">', m => m + xmlComment(all));
+  return {name: `${fileStem(rack.name)}.drawio`, data: xml, type: 'application/xml', notes: all};
 }
 
 // rasterize() only takes a URL, so the sheet goes through a blob URL.
