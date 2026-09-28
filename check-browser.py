@@ -31,6 +31,7 @@ import argparse
 import contextlib
 import json
 import math
+import os
 import pathlib
 import re
 import socket
@@ -94,6 +95,17 @@ def cast_cfgs():
         if ref and cfg:
             out[ref.group(1)] = cfg.group(1)
     return out
+
+
+# TIME, AS IT GOES. Each check prints how long it took the moment it ends, with
+# the machine's load: a check that times out on CI is then legible as slow on
+# its own or slow because the box was busy, rather than as a bare Timeout.
+CLOCK = [time.time()]
+def took(label):
+    now = time.time()
+    load = os.getloadavg()[0] if hasattr(os, "getloadavg") else float("nan")
+    print(f"  {now - CLOCK[0]:6.1f}s  load {load:5.2f}  {label}", flush=True)
+    CLOCK[0] = now
 
 
 def free_port():
@@ -2127,6 +2139,7 @@ def run_extra(browser, base, only, problems, notes):
     for label, fn in EXTRA_CHECKS:
         if only and fn.__name__ not in only:
             continue
+        CLOCK[0] = time.time()
         page = browser.new_page()
         try:
             bad = fn(page, base)
@@ -2140,6 +2153,7 @@ def run_extra(browser, base, only, problems, notes):
             problems += [f"        {b}" for b in dict.fromkeys(bad)]
         else:
             notes.append(f"ok    {label}")
+        took(label)
     return failed
 
 
@@ -4140,6 +4154,7 @@ def main():
             return 1
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
+            CLOCK[0] = time.time()
             only = set(filter(None, (args.only or "").split(",")))
             if only:
                 failed_things += run_extra(browser, base, only, problems, notes)
@@ -4165,6 +4180,7 @@ def main():
                     problems += [f"        {b}" for b in dict.fromkeys(bad)]
                 else:
                     notes.append(f"ok    {name}")
+                took(f"{name}")
 
             if hero_cables:
                 failed_things += 1
@@ -4172,6 +4188,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(hero_cables)]
             else:
                 notes.append("ok    the hero's cables and caption")
+            took("the hero's cables and caption")
 
             bad = check_hero_fallbacks(browser, base)
             if bad:
@@ -4180,6 +4197,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append("ok    the 2D hero stands on its own")
+            took("the 2D hero stands on its own")
 
             bad, skipped = check_hero_3d(browser, base)
             unexercised += skipped
@@ -4189,6 +4207,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append("ok    the hero in 3D")
+            took("the hero in 3D")
 
             page = browser.new_page()
             try:
@@ -4201,6 +4220,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    the stage rail: 7 stages")
+            took(f"the stage rail: 7 stages")
 
             page = browser.new_page()
             try:
@@ -4213,6 +4233,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    stage 4: a loose end on the rear is named")
+            took(f"stage 4: a loose end on the rear is named")
 
             page = browser.new_page()
             try:
@@ -4225,6 +4246,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    schema.html shows every property in the schemas")
+            took(f"schema.html shows every property in the schemas")
 
             page = browser.new_page()
             try:
@@ -4237,6 +4259,7 @@ def main():
                 problems += [f"        {b}" for b in dict.fromkeys(bad)]
             else:
                 notes.append(f"ok    explorer embed mode")
+            took(f"explorer embed mode")
 
             failed_things += run_extra(browser, base, None, problems, notes)
 
@@ -4245,6 +4268,7 @@ def main():
                 passed, failed = run_marks_harness(page, base)
             finally:
                 page.close()
+            took("the marks harness")
             browser.close()
     finally:
         if server:
