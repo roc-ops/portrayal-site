@@ -104,8 +104,28 @@ CLOCK = [time.time()]
 def took(label):
     now = time.time()
     load = os.getloadavg()[0] if hasattr(os, "getloadavg") else float("nan")
-    print(f"  {now - CLOCK[0]:6.1f}s  load {load:5.2f}  {label}", flush=True)
+    print(f"  {now - CLOCK[0]:6.1f}s  load {load:5.2f}{memory()}  {label}", flush=True)
     CLOCK[0] = now
+
+
+# On Linux (CI), what the browser holds and what the box has left, in MB - so
+# a late check that times out can be told apart from a browser that has grown
+# across the run. Elsewhere, nothing.
+def memory():
+    try:
+        rss = 0
+        for d in pathlib.Path("/proc").iterdir():
+            if d.name.isdigit():
+                try:
+                    st = (d / "status").read_text()
+                except OSError:
+                    continue
+                if "chrom" in st.split("\n", 1)[0] or "headless" in st.split("\n", 1)[0]:
+                    rss += int(next((l.split()[1] for l in st.splitlines() if l.startswith("VmRSS:")), 0))
+        avail = next(int(l.split()[1]) for l in open("/proc/meminfo") if l.startswith("MemAvailable:"))
+        return f"  browser {rss // 1024:5d} MB  free {avail // 1024:5d} MB"
+    except (OSError, StopIteration, ValueError):
+        return ""
 
 
 def free_port():
@@ -255,6 +275,21 @@ def z_order_problems(page, view):
     return [f"stage cable in 2D, {view}: a lower cable is painted over a higher one: {bad[:4]}"] if bad else []
 
 
+# THE RAIL IS LIVE ONLY ONCE IT HAS BOOTED. showcase.js awaits the drawing
+# (a fetch, which the load event does not wait for) before stage-rail.js's
+# boot() gives the rungs their onclick, and boot() then enters stage 0 and
+# marks it ready. A rung clicked between `load` and that is a button with no
+# handler: the click is dropped, the page stays on rails, and the check waits
+# out READY_MS for a stage nobody asked for. A fast machine boots before the
+# first click lands; a 2-CPU CI runner often does not - which is why each run
+# failed a different stage check (roc-ops/portrayal-site#59). So a check that
+# drives the rail opens the page through here, and clicks only once the rail
+# has said it is ready - the same signal every stage after it is waited on by.
+def open_showcase(page, base, query=""):
+    page.goto(f"{base}/index.html{query}", wait_until="load")
+    page.wait_for_selector(f'[data-stage-ready="{STAGES[0]}"]', state="attached", timeout=READY_MS)
+
+
 def check_rear_loose(page, base):
     """A loose end on the REAR is named, whichever face is showing - even when
     Rear is clicked while the first face is still building.
@@ -286,7 +321,7 @@ def check_rear_loose(page, base):
             if len(page.query_selector_all('#sidePanel [data-loose]')) != 1:
                 bad.append(f"stage cable: loose lines other than the rear iDRAC end {when}")
             return got
-        page.goto(f"{base}/index.html", wait_until="load")
+        open_showcase(page, base)
         # Entered as usual, on the front: the rear end is still judged.
         page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
         page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
@@ -2730,7 +2765,7 @@ def check_drawio_port_paths(page, base):
 def check_takeaway_drawio(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
-    page.goto(f"{base}/index.html", wait_until="load")
+    open_showcase(page, base)
     # Stage 4 fills the plan's seats (the ASR-9006's slot-2 line card) into
     # the shared overrides; stage 6 must export them.
     page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
@@ -2751,7 +2786,7 @@ def check_takeaway_drawio(page, base):
 def check_takeaway_cables_2d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
-    page.goto(f"{base}/index.html", wait_until="load")
+    open_showcase(page, base)
     # Straight to stage 6: it must apply the plan's seats itself.
     page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
     page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
@@ -2800,7 +2835,7 @@ def check_explorer_configured_download(page, base):
 def check_takeaway_cables_3d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
-    page.goto(f"{base}/index.html", wait_until="load")
+    open_showcase(page, base)
     page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
     page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
     page.click('#stageMode [data-mode="3d"]')
