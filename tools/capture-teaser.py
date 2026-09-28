@@ -5,11 +5,11 @@ The teaser (coming-soon/) is public and self-contained: it must not ship the
 vendored Portrayal kit or assets/ while Portrayal is private. So it shows
 pixels captured from the real renderer instead of running it:
 
-  coming-soon/hero-switch.png   the 2D hero with the divider fully open - the
+  coming-soon/media/hero-switch.png   the 2D hero with the divider fully open - the
                                 whole S9600-72XC, every seated part, every cable
-  coming-soon/hero-3d.webm/.mp4 the 3D hero over exactly one sway period, so it
+  coming-soon/media/hero-3d.webm/.mp4 the 3D hero over exactly one sway period, so it
                                 loops seamlessly (VP9 WebM + H.264 MP4)
-  coming-soon/hero-3d-poster.jpg the video's first frame, for loading and for
+  coming-soon/media/hero-3d-poster.jpg the video's first frame, for loading and for
                                 reduced motion
 
 Run from the repo root:  python3 tools/capture-teaser.py
@@ -25,7 +25,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 HERE = Path(__file__).resolve().parent.parent
-OUT = HERE / "coming-soon"
+OUT = HERE / "coming-soon" / "media"   # permanent URLs: the Portrayal README links the video (#61)
 PERIOD = 20.0          # seconds for one full left-right-left sway
 FPS = 30
 WIDTH = 1120           # the teaser's content width, CSS px

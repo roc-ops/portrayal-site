@@ -1197,6 +1197,50 @@ for page_name in ("drawings.html", "explorer.html", "components.html", "schema.h
     check(p.is_file() and 'href="rack.html"' in p.read_text(),
           f"{page_name} links the Rack Builder", "the nav is copied by hand; add it there")
 
+# ── what portrayal.dev serves (roc-ops/portrayal-site#58, #61) ────────────────
+# wrangler.jsonc's assets.directory is what goes live. Whatever folder that is -
+# coming-soon/ now, the public site after launch - carries these, because the
+# Portrayal README links to the hero video and validators dereference the
+# schemas' $ids.
+_wr = json.loads(re.sub(r"^\s*//.*$", "", (HERE / "wrangler.jsonc").read_text(), flags=re.M))
+_live = HERE / _wr["assets"]["directory"]
+_MEDIA = ["hero-3d.mp4", "hero-3d.webm", "hero-3d-poster.jpg", "hero-switch.png"]
+check(all((_live / "media" / m).is_file() for m in _MEDIA),
+      f"the live folder ({_wr['assets']['directory']}) serves the hero media at /media/ - the README links there",
+      f"missing {[m for m in _MEDIA if not (_live / 'media' / m).is_file()]}")
+_rd = (_live / "_redirects").read_text() if (_live / "_redirects").exists() else ""
+check(all(re.search(rf"^/{re.escape(m)}\s+/media/{re.escape(m)}\s+301\b", _rd, re.M) for m in _MEDIA),
+      "the old root media paths 301 to /media/", "_redirects lacks a 301 for one of " + ", ".join(_MEDIA))
+_ci = (_live / "index.html").read_text()
+check(not re.search(r'(?:src|poster)="(?!media/)[^"]*hero-(?:3d|switch)', _ci),
+      "the teaser loads its hero media from media/", "a hero src/poster outside media/")
+check(_wr["assets"].get("not_found_handling") == "404-page" and (_live / "404.html").is_file(),
+      "an unknown path is a 404, not the teaser page with a 200 (validators read that as a schema)",
+      f"not_found_handling={_wr['assets'].get('not_found_handling')!r}, 404.html present={(_live / '404.html').is_file()}")
+# THE SCHEMAS, WHEN THEY ARE SERVED: each at the URL its own $id names, as JSON,
+# readable cross-origin. Published at the flip by tools/publish-schemas.sh.
+_hd = (_live / "_headers").read_text()
+check(re.search(r"^/schemas/\*\s*\n(?:\s+.*\n)*?\s+Content-Type:\s*application/json", _hd, re.M) is not None
+      and re.search(r"^/schemas/\*\s*\n(?:\s+.*\n)*?\s+Access-Control-Allow-Origin:\s*\*", _hd, re.M) is not None,
+      "/schemas/* is served as application/json and readable from any origin", "no /schemas/* block with both headers in _headers")
+for _sf in sorted((_live / "schemas").rglob("*.json")) if (_live / "schemas").exists() else []:
+    _rel = _sf.relative_to(_live).as_posix()
+    check(json.loads(_sf.read_text()).get("$id") == f"https://portrayal.dev/{_rel}",
+          f"{_rel}: its $id is the URL it is served at", f"$id {json.loads(_sf.read_text()).get('$id')!r}")
+# tools/publish-schemas.sh copies in only schemas whose $id matches, and refuses the rest.
+_pub = HERE / "tools" / "publish-schemas.sh"
+def _pubrun(ids):
+    with _tf.TemporaryDirectory() as _src, _tf.TemporaryDirectory() as _dst:
+        for _n, _id in ids.items():
+            (Path(_src) / _n).write_text(json.dumps({"$id": _id, "type": "object"}))
+        _r = _sp.run(["sh", str(_pub), "--from-dir", _src, "--to", _dst], capture_output=True, text=True)
+        return _r.returncode, sorted(p.name for p in (Path(_dst) / "v1").glob("*.json")) if (Path(_dst) / "v1").exists() else []
+_ok = {"device.schema.json": "https://portrayal.dev/schemas/v1/device.schema.json"}
+_bad = {"device.schema.json": "https://example.com/device.schema.json"}
+check(_pub.exists() and _pubrun(_ok) == (0, ["device.schema.json"]) and _pubrun(_bad)[0] != 0,
+      "tools/publish-schemas.sh publishes a schema whose $id is its URL and refuses one whose is not",
+      f"{(_pubrun(_ok), _pubrun(_bad)) if _pub.exists() else 'no tools/publish-schemas.sh'}")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
