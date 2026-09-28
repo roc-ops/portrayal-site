@@ -15,6 +15,8 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
+import {sheetSvg, sheetPng} from './rack/exports.js';
+import {save} from './svg-export.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -97,6 +99,7 @@ function setMode(m) {
   S.mode = m;
   saveMode(m);
   paintMode();
+  if ($('exportMenu').open) renderExports();   // the 3D entries follow the mode
   showMode();
   if (m === '3d') { rebuild3d(); return; }
   disposeScene3d();
@@ -225,6 +228,53 @@ function undoShrink() {
   S.save.saveSoon(S.doc);
   render();
   scheduleRebuild3d();
+}
+
+// ── Export (spec §8) ────────────────────────────────────────────────────
+// Every export is built from S.doc by exports.js, never from the panes. A
+// builder resolves to {name, data, type, notes}, or {error: sentence}; the
+// notes travel inside the file, and the status line only counts them.
+const BUILD = {
+  'sheet-svg': () => sheetSvg(rack(), chassisOf),
+  'front-svg': () => sheetSvg(rack(), chassisOf, {faces: ['front']}),
+  'rear-svg': () => sheetSvg(rack(), chassisOf, {faces: ['rear']}),
+  'sheet-png': () => sheetPng(rack(), chassisOf),
+};
+let exporting = false;
+async function runExport(kind) {
+  if (kind === 'json') { downloadDoc(S.doc); return; }
+  if (kind === 'to-3d') { setMode('3d'); return; }
+  if (exporting || !BUILD[kind]) return;
+  exporting = true;
+  const status = $('exportStatus');
+  status.textContent = 'Preparing…';
+  try {
+    const out = await BUILD[kind]();
+    if (out.error) { status.textContent = out.error; return; }
+    save(out.data, out.name, out.type);
+    const n = out.notes?.length || 0;
+    status.textContent = n ? `Downloaded, with ${n} note${n === 1 ? '' : 's'} in the file.` : 'Downloaded.';
+  } catch (err) {
+    console.warn('[portrayal] export', kind, err);
+    status.textContent = "That export didn't work. Try again.";
+  } finally {
+    exporting = false;
+  }
+}
+function renderExports() {
+  const act = (kind, text, title = '') => {
+    const b = el('button', {type: 'button', 'data-export': kind, text, ...(title ? {title} : {})});
+    b.addEventListener('click', () => { $('exportMenu').open = false; runExport(kind); });
+    return b;
+  };
+  $('exportItems').replaceChildren(
+    act('sheet-svg', 'Sheet, front and rear (.svg)'),
+    act('front-svg', 'Front only (.svg)'),
+    act('rear-svg', 'Rear only (.svg)'),
+    act('sheet-png', 'Sheet as a picture (.png)'),
+    el('hr'),
+    act('json', 'Rack file (.json)'),
+  );
 }
 
 async function render() {
@@ -511,6 +561,7 @@ async function bootInner() {
   window.addEventListener('resize', () => { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); });
   setZoom(S.zoom);
   $('libMenu').addEventListener('toggle', () => { if ($('libMenu').open) renderLibrary(); });
+  $('exportMenu').addEventListener('toggle', () => { if ($('exportMenu').open) renderExports(); });
   $('openFile').addEventListener('change', async () => {
     const file = $('openFile').files[0]; $('openFile').value = '';
     if (!file) return;

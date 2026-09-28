@@ -3096,6 +3096,51 @@ def pick(page, face, u, query, ref, cfg=None, dispatch=False):
     page.click("#catPlace")
 
 
+# THE EXPORT FIXTURE: a 24U four-post rack holding the cases every export
+# has to get right - a seated card (core-1's slot-2), an optic with a label
+# (leaf-1's port-1), a U shared front and rear (U14), and two devices with
+# the same label (demarc).
+EXPORT_FIXTURE = {
+    "format": "portrayal-rack", "version": 1, "id": "doc-export-fixture",
+    "racks": [{
+        "id": "r1", "name": "Export test",
+        "frame": {"kind": "four-post", "heightRU": 24, "numbering": "bottom-up",
+                  "holes": {"style": "square", "thread": None},
+                  "railDepth": 740, "usableDepth": 1000, "ref": None},
+        "items": [
+            {"id": "i1", "ref": "asr-9006", "cfg": "base", "label": "core-1", "ru": 2, "face": "front",
+             "turned": False, "swaps": {"slot-2": "cisco/a9k-16x100ge-tr@1"}, "fields": {}},
+            {"id": "i2", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "leaf-1", "ru": 14, "face": "front",
+             "turned": False, "swaps": {"port-1": "generic/qsfp-lc@2"},
+             "fields": {"port-1-occupant": {"label": "LR4"}}},
+            {"id": "i3", "ref": "tm-280", "cfg": "base", "label": "demarc", "ru": 14, "face": "rear",
+             "turned": False, "swaps": {}, "fields": {}},
+            {"id": "i4", "ref": "tm-280", "cfg": "base", "label": "demarc", "ru": 20, "face": "rear",
+             "turned": False, "swaps": {}, "fields": {}},
+        ],
+        "zeroU": [], "cables": []}]}
+
+
+def open_fixture(page, base, fixture=EXPORT_FIXTURE):
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    rack = fixture["racks"][0]
+    page.set_input_files("#openFile", files=[{"name": "fixture.rack.json", "mimeType": "application/json",
+                                              "buffer": json.dumps(fixture).encode()}])
+    page.wait_for_function("(n) => window.__rack.doc().racks[0].name === n", arg=rack["name"], timeout=READY_MS)
+    page.wait_for_function(
+        """(n) => document.querySelectorAll('svg[data-pane="front"] [data-item-id][data-panel]').length >= n""",
+        arg=len(rack["items"]), timeout=READY_MS)
+
+
+def export_file(page, kind, timeout=READY_MS):
+    page.click("#exportMenu > summary")
+    with page.expect_download(timeout=timeout) as dl:
+        page.click(f'#exportItems [data-export="{kind}"]')
+    return dl.value
+
+
 @extra("rack.html: place from the picker; both faces show it; a device that won't fit says why")
 def check_rack_place(page, base):
     bad = []
@@ -4906,6 +4951,70 @@ def check_svg_export_leaf(page, base):
     for k in ("same", "stripped", "prolog"):
         if not r.get(k):
             bad.append(f"svg-export: {k} is {r.get(k)!r}")
+    return bad
+
+
+@extra("rack.html: Export - the SVG sheet and PNG carry both faces as configured, a title block and notes, no screen UI")
+def check_rack_export_sheet(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    root_tag = lambda t: (re.search(r"<svg[^>]*>", t) or [""])[0]
+
+    dl = export_file(page, "sheet-svg")
+    if dl.suggested_filename != "Export-test-sheet.svg":
+        bad.append(f"sheet: named {dl.suggested_filename!r}")
+    text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    for ref, want in (("asr-9006", 2), ("as7726-32x", 2), ("tm-280", 4)):   # once per face per item
+        got = text.count(f'data-device-ref="{ref}"')
+        if got != want:
+            bad.append(f"sheet: {ref} drawn {got} times, expected {want}")
+    for bit in ('data-pane="front"', 'data-pane="rear"', 'data-ref="cisco/a9k-16x100ge-tr@1',
+                'data-ref="generic/qsfp-lc@2', ">Export test<", "Four-post frame, 24U, U1 at the bottom",
+                "Rail depth 740 mm · usable depth 1000 mm", "Square holes (cage nuts)"):
+        if bit not in text:
+            bad.append(f"sheet: missing {bit!r}")
+    if not re.search(r"Drawn \d{4}-\d{2}-\d{2} with the Portrayal Rack Builder", text):
+        bad.append("sheet: no dated title line")
+    for ui_bit in ('class="rk-u', "data-pt-ui", "rk-selected", "rk-sel-ring"):
+        if ui_bit in text:
+            bad.append(f"sheet: screen UI in the file ({ui_bit})")
+    root = root_tag(text)
+    if ' width="' not in root or ' height="' not in root:
+        bad.append(f"sheet: the root <svg> has no width and height ({root[:120]!r})")
+
+    dl = export_file(page, "front-svg")
+    front = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    if dl.suggested_filename != "Export-test-front.svg" or 'data-pane="rear"' in front \
+            or 'data-pane="front"' not in front:
+        bad.append(f"front only: {dl.suggested_filename!r} is not the front face alone")
+
+    dl = export_file(page, "sheet-png")
+    png = pathlib.Path(dl.path()).read_bytes()
+    if dl.suggested_filename != "Export-test-sheet.png" or png[:8] != b"\x89PNG\r\n\x1a\n":
+        bad.append(f"sheet PNG: {dl.suggested_filename!r} is not a PNG")
+    else:
+        w, h = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
+        if w < 2000 or h < 2000 or len(png) < 50_000:
+            bad.append(f"sheet PNG: {w}x{h}, {len(png)} bytes - not the sheet at 2x")
+
+    dl = export_file(page, "json")
+    if dl.suggested_filename != "Export-test.rack.json":
+        bad.append(f"rack file: named {dl.suggested_filename!r}")
+
+    # A face nobody drew is listed in the sheet's notes block.
+    notes_fixture = json.loads(json.dumps(EXPORT_FIXTURE))
+    notes_fixture["id"] = "doc-export-notes"
+    notes_fixture["racks"][0]["name"] = "Export notes"
+    notes_fixture["racks"][0]["items"].append(
+        {"id": "i5", "ref": "no-such-device", "cfg": "base", "label": "mystery", "ru": 22, "face": "front",
+         "turned": False, "swaps": {}, "fields": {}})
+    open_fixture(page, base, notes_fixture)
+    text = pathlib.Path(export_file(page, "sheet-svg").path()).read_text(encoding="utf-8")
+    for bit in (">Notes<", "mystery at U22: no front drawing, so the front shows an outline.",
+                "mystery at U22: no rear drawing, so the rear shows an outline."):
+        if bit not in text:
+            bad.append(f"sheet notes: missing {bit!r}")
     return bad
 
 
