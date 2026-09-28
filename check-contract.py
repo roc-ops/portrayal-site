@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What this site needs from Portrayal, asserted rather than assumed.
 
-The schemas are at v0 and the drawings are rebuilt over there constantly. When
+The drawings are rebuilt over there constantly. When
 something this site reads goes away, the failure is silent: a tab renders
 slightly wrong, or a download comes out empty, and nobody notices until someone
 looks. This turns that into a build failure.
@@ -1029,7 +1029,9 @@ check(bool(_fm) and json.loads(_fm.group(1))["imports"] == _imap and "<base" not
 # @portrayal/kit/<module> a recipe imports is a key of the snippet's map, and
 # each maps to a .js file. A folder mapping ("@portrayal/kit/": "…/") resolves
 # @portrayal/kit/dist to …/dist, with no .js - a 404 for anyone who copies it.
-_snip = re.search(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)
+# The snippet that IS the import map: the section also shows `npm install`.
+_snip = next((m for m in re.finditer(r'<pre class="kit-snippet"><code>(.*?)</code></pre>', _kit_html, re.S)
+              if "importmap" in m.group(1)), None)
 _snipmap = {}
 if _snip:
     _raw = _snip.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")

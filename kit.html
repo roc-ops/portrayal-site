@@ -214,29 +214,38 @@
           </section>
           <section class="kit-sec" id="files">
             <h2>Getting the files</h2>
-            <p>Two things: the kit's modules, and the compiled files they read. Today you
-              copy both - the kit is a dozen plain ES modules with no build step, and the
-              compiled files are static - and serve them beside your page. Point an import
-              map at the kit, and at three.js if you use 3D:</p>
+            <p>Two things: the kit's modules, and the compiled files they read.</p>
+            <p><strong>The kit is on npm</strong> as
+              <a href="https://www.npmjs.com/package/@portrayal/kit"><code>@portrayal/kit</code></a>.
+              three.js is a peer dependency, needed only for 3D:</p>
+            <pre class="kit-snippet"><code>npm install @portrayal/kit three@0.161</code></pre>
+            <p>With a bundler, import <code>@portrayal/kit/viewer3d</code> and the
+              rest by name; the package's exports resolve them. Without one, the
+              modules are plain ES modules with no build step, so an import map
+              pointing at a CDN is enough. List each module you use, pinned to a
+              version:</p>
             <pre class="kit-snippet"><code>&lt;script type="importmap"&gt;
 { "imports": {
-    "@portrayal/kit/dist": "/vendor/portrayal-kit/dist.js",
-    "@portrayal/kit/swap": "/vendor/portrayal-kit/swap.js",
-    "@portrayal/kit/viewer3d": "/vendor/portrayal-kit/viewer3d.js",
-    "@portrayal/kit/marks": "/vendor/portrayal-kit/marks.js",
-    "@portrayal/kit/shell": "/vendor/portrayal-kit/shell.js",
-    "three": "/vendor/three/three.module.js",
-    "three/addons/": "/vendor/three/addons/"
+    "@portrayal/kit/dist": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/dist.js",
+    "@portrayal/kit/swap": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/swap.js",
+    "@portrayal/kit/viewer3d": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/viewer3d.js",
+    "@portrayal/kit/marks": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/marks.js",
+    "@portrayal/kit/shell": "https://cdn.jsdelivr.net/npm/@portrayal/kit@0.1.0/shell.js",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
 } }
 &lt;/script&gt;</code></pre>
-            <p>and set <code>DIST</code> in each recipe to wherever the compiled files are.
-              The 2D recipes don't need three.js at all. List each kit module you
-              use, as above; once the kit is on npm, a bundler or an import map generator
-              resolves <code>@portrayal/kit/viewer3d</code> through the package's exports.</p>
-            <p class="kit-note">How the kit and the compiled files are distributed is being
-              settled: <code>@portrayal/kit</code> on npm, and a registry for the compiled
-              files (roc-ops/Portrayal #526, #527, #528). This section will change when
-              those land.</p>
+            <p>The 2D recipes don't need three.js at all.</p>
+            <p><strong>The compiled files are built, not downloaded.</strong> Clone
+              <a href="https://github.com/roc-ops/Portrayal">Portrayal</a> and run
+              <code>./build.sh</code>, which writes every device into
+              <code>library/dist/</code>. The files are static, so serve that folder
+              beside your page and set <code>DIST</code> in each recipe to where it is.</p>
+            <p class="kit-note">The compiled files are not on npm yet. Publishing them
+              through a registry, split per device, is roc-ops/Portrayal
+              <a href="https://github.com/roc-ops/Portrayal/issues/526">#526</a> and
+              <a href="https://github.com/roc-ops/Portrayal/issues/528">#528</a>; this
+              section will change when that lands.</p>
           </section>
         </div>
       </div>

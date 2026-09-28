@@ -2,7 +2,7 @@
 # Re-vendor the compiled output and viewer modules this site depends on.
 #
 # The site holds a *snapshot* of Portrayal's build artifacts, not a live link:
-# the schemas are at v0 and the drawings change under us. Re-run this after a
+# the drawings are rebuilt over there constantly and change under us. Re-run this after a
 # ./build.sh over there, then check the showcase still behaves.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -460,7 +460,7 @@ du -sh "$HERE/assets/dist" "$HERE/vendor"
 
 # What we just vendored, checked against what the pages actually read.
 #
-# The schemas are v0 and the drawings are rebuilt over there constantly; when
+# The drawings are rebuilt over there constantly; when
 # something this site depends on goes away the failure is SILENT - a tab renders
 # slightly wrong, or a download comes out empty. This is the only thing that
 # turns that into a noise. Non-zero exit fails the refresh.
