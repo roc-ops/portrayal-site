@@ -13,7 +13,7 @@
 import {applyFaceOverrides} from '../vendor/swap.js';
 import {jdist} from '../vendor/dist.js';
 import {cablePoints} from '../vendor/relief.js';
-import {WIDTH, sag2d, plugAt, colorOfJacket} from './showcase/cables.js';
+import {WIDTH, sag2d, plugAt, colorOfJacket, JACKETS} from './showcase/cables.js';
 
 const SVG = 'assets/dist/s9600-72xc.front.svg';
 const PNG = 'assets/exports/netbox/elevation-images/UfiSpace/'
@@ -163,6 +163,59 @@ export const PORTS = {
 // A CABLE'S COLOR COMES FROM cables.js's colorOfJacket, the showcase's one
 // table, so the hero and the showcase cannot disagree about what a jacket
 // looks like.
+
+// A DAC IS THICKER THAN A PATCH LEAD. Twinax runs about twice the diameter of
+// a duplex fiber or a copper lead, so the hero draws it at twice the width, in
+// 2D and in 3D alike. The showcase's WIDTH is left alone.
+export const cableScale = jacket => (jacket === 'dac' ? 2 : 1);
+
+// AN LC PLUG IS COLORED BY THE FIBER IT CARRIES, as it is in a real rack:
+// single-mode UPC is blue, and OM3/OM4 multimode is aqua, the same aqua as its
+// jacket. The library draws every lc-plug a neutral gray, and stays that way;
+// the hero recolors its own seated plugs. Only the plastic changes - the
+// ceramic ferrule and its bore keep their colors. APC green and OM1/OM2 beige
+// have no row here, so they are not listed.
+export const PLUG_COLORS = {sm: '#2a6fd4', mm: JACKETS.mm};
+export const plugColorOf = jacket => PLUG_COLORS[jacket] || null;
+
+// The plug's plastic, as the library draws it: the body, and the latch parts a
+// shade lighter. A recolor keeps that shade relationship, so the latch still
+// reads against the body.
+const PLUG_GRAY = {body: 0x7b818a, latch: 0x8a9099};
+const lum = hex => ((hex >> 16) + ((hex >> 8) & 255) + (hex & 255)) / 3;
+// `target` scaled by `k`, clamped: how a color reads at another brightness.
+export const shadeHex = (target, k) => {
+  const t = parseInt(target.slice(1), 16);
+  const c = [t >> 16, (t >> 8) & 255, t & 255].map(v => Math.min(255, Math.round(v * k)));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+};
+export const LATCH_SHADE = lum(PLUG_GRAY.latch) / lum(PLUG_GRAY.body);
+
+// The LC plugs a row seats, as the kit names them: `port-4-occupant/tx`
+// seats one at `port-4-occupant/tx-occupant`.
+export const plugPathsOf = row => Object.entries(row.seat || {})
+  .filter(([, ref]) => ref.startsWith('generic/lc-plug@'))
+  .map(([key]) => `${key}-occupant`);
+
+// Recolor the seated LC plugs in the 2D hero. Returns how many were colored.
+export function colorHeroPlugs(svg) {
+  let n = 0;
+  for (const row of Object.values(PORTS)) {
+    const color = plugColorOf(row.jacket);
+    if (!color) continue;
+    for (const path of plugPathsOf(row)) {
+      for (const el of svg.querySelectorAll(`[data-path^="${path}/"]`)) {
+        const cls = el.getAttribute('data-class');
+        if (cls === 'port') el.setAttribute('fill', color);
+        else if (cls === 'latch') el.setAttribute('fill', shadeHex(color, LATCH_SHADE));
+        else continue;
+        n++;
+      }
+    }
+  }
+  svg.setAttribute('data-hero-plugs', String(n));
+  return n;
+}
 
 // The port the caption names when nothing is hovered, focused or tapped, so
 // the caption line is never empty.
@@ -481,7 +534,7 @@ export function drawHeroCables(svg) {
     // cable would go into the clone and be lost.
     const art = node('g', {id: `hero-cable-${port}-art`});
     for (const d of strands) stroke(art, d, color, WIDTH * 0.4);
-    stroke(art, sweep(start, rank.get(port)), color, WIDTH * 0.6, true);
+    stroke(art, sweep(start, rank.get(port)), color, WIDTH * 0.6 * cableScale(row.jacket), true);
     g.append(art);
     // THE HIT PATH LIVES OUTSIDE THE DRAWING the front <use> copies. It sets
     // pointer-events: stroke itself, and an explicit value is not overridden
@@ -673,6 +726,7 @@ export async function heroReveal(host) {
     if (res.refused.length || res.failed.length) {
       console.warn('hero: not seated', {refused: res.refused, failed: res.failed});
     }
+    colorHeroPlugs(svg);
   } catch (err) {
     console.error('hero: seating failed', err);
   }

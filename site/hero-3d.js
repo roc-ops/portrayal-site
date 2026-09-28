@@ -19,7 +19,8 @@
 // its cables hung - and then only when the browser is next idle, so the front
 // page's first paint and the 2D hero never compete with three.js. On a narrow
 // screen the panel must be on screen, not merely near it, to start.
-import {PORTS, DEFAULT_PORT, captionOf, lampStates} from './hero-reveal.js';
+import {PORTS, DEFAULT_PORT, captionOf, lampStates, cableScale, plugColorOf, plugPathsOf,
+        shadeHex, LATCH_SHADE} from './hero-reveal.js';
 import {hangPoints3d, LEAD, WIDTH, clearOf, colorOfJacket} from './showcase/cables.js';
 import {guard3d} from './webgl.js';
 
@@ -174,7 +175,8 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
       if (o.isMesh && o !== floor && !o.userData.heroCable) o.castShadow = true;
     });
     casts();
-    s.complete().then(casts)       // the relief pass, when it lands
+    colorPlugs3d(THREE, scene);
+    s.complete().then(() => { casts(); colorPlugs3d(THREE, scene); })   // the relief pass, when it lands
       .catch(err => console.warn('hero 3D: relief pass', err));
 
     // THE CABLES. Every row's connector points first: how far a lead reaches
@@ -219,7 +221,8 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
       const color = new THREE.Color(colorOfJacket(f.row.jacket));
       const mat = new THREE.MeshStandardMaterial({color, roughness: 0.55, metalness: 0,
         vertexColors: true, transparent: true});
-      const main = new THREE.Mesh(fade(THREE, new THREE.TubeGeometry(curve, 160, WIDTH / 2, 8, false)), mat);
+      const w = WIDTH * cableScale(f.row.jacket);
+      const main = new THREE.Mesh(fade(THREE, new THREE.TubeGeometry(curve, 160, w / 2, 8, false)), mat);
       main.userData = {heroCable: f.port};
       group.add(main);
       // An optic's two strands, from each plug into where they join: the
@@ -234,7 +237,7 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
       }
       // What the pointer hits: a fatter, unseen tube along the same curve,
       // because a 3 mm tube is a hard thing to land a pointer on.
-      const pick = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, WIDTH * 2, 6, false),
+      const pick = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, w * 2, 6, false),
                                   new THREE.MeshBasicMaterial({visible: false}));
       pick.userData = {heroCable: f.port, pick: true};
       group.add(pick);
@@ -513,4 +516,62 @@ function fade(THREE, geom, upto = FADE_FROM) {
   }
   geom.setAttribute('color', new THREE.BufferAttribute(col, 4));
   return geom;
+}
+
+// THE LC PLUGS, COLORED BY FIBER, as the 2D hero colors them (hero-reveal.js's
+// colorHeroPlugs, whose table this reads). A plug part is a few meshes tagged
+// with its path: Lambert sides, which take the color outright, and a face
+// that is a small canvas rasterised from the library's gray drawing. The face
+// is repainted pixel by pixel - only the plug's neutral mid-grays, each kept
+// at its own brightness - so the white ferrule and its dark bore survive.
+// Materials are cloned before they change: the kit may share one between
+// parts. Safe to run twice; a part already colored is skipped.
+const PLUG_BASE = 0x7b818a, PLUG_LATCH = 0x8a9099;
+function colorPlugs3d(THREE, scene) {
+  const want = new Map();
+  for (const row of Object.values(PORTS)) {
+    const color = plugColorOf(row.jacket);
+    if (color) for (const path of plugPathsOf(row)) want.set(path, color);
+  }
+  scene.traverse(o => {
+    const color = o.isMesh && want.get(o.userData.portrayalPath);
+    if (!color || o.userData.heroPlug) return;
+    o.userData.heroPlug = true;
+    const mats = [].concat(o.material).map(m => {
+      const c = m.clone();
+      if (c.map && c.map.image instanceof HTMLCanvasElement) {
+        c.map = c.map.clone();
+        c.map.image = repaint(c.map.image, color);
+        c.map.needsUpdate = true;
+      } else if (c.color) {
+        // body or latch: keep the library's shade between them
+        c.color.set(shadeHex(color, c.color.getHex() === PLUG_LATCH ? LATCH_SHADE : 1));
+      }
+      return c;
+    });
+    o.material = Array.isArray(o.material) ? mats : mats[0];
+  });
+}
+
+// A copy of `src` with its plastic grays in `hex`: a pixel that is neutral
+// (its channels within 24 of each other) and mid-bright is scaled from the
+// body gray to the plug color at the same relative brightness. The ferrule is
+// brighter and the bore darker than that band, so neither moves.
+function repaint(src, hex) {
+  const cv = document.createElement('canvas');
+  cv.width = src.width; cv.height = src.height;
+  const cx = cv.getContext('2d');
+  cx.drawImage(src, 0, 0);
+  const img = cx.getImageData(0, 0, cv.width, cv.height), d = img.data;
+  const t = parseInt(hex.slice(1), 16), tc = [t >> 16, (t >> 8) & 255, t & 255];
+  const base = ((PLUG_BASE >> 16) + ((PLUG_BASE >> 8) & 255) + (PLUG_BASE & 255)) / 3;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const hi = Math.max(r, g, b), lo = Math.min(r, g, b), l = (r + g + b) / 3;
+    if (!d[i + 3] || hi - lo > 24 || l < 0x55 || l > 0xa8) continue;
+    const k = l / base;
+    for (let j = 0; j < 3; j++) d[i + j] = Math.min(255, Math.round(tc[j] * k));
+  }
+  cx.putImageData(img, 0, 0);
+  return cv;
 }
