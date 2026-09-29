@@ -407,6 +407,17 @@ for f in glob.glob(os.path.join(dist, '*.configs.json')):
     except Exception:
         pass
 
+# NOS vendor listings (Portrayal #677): each is one box a NOS vendor supports.
+# Counted apart from `vendors`, which stays the makers of the metal - a listing
+# is never drawn, so Arrcus listing a UfiSpace box adds no hardware vendor.
+# A build from before #677 has no listings.json and counts none.
+listings = {}
+try:
+    listings = json.load(open(os.path.join(dist, 'listings.json'))).get('listings') or {}
+except Exception:
+    pass
+nos_vendors = sorted({l.get('manufacturer') for l in listings.values() if l.get('manufacturer')})
+
 schema = 'v0'
 try:
     sid = json.load(open(os.path.join(src, '..', 'spec', 'schemas',
@@ -423,12 +434,16 @@ stats = {
     'components': len(comps),
     'byClass': by_class.most_common(),          # ranked pairs; a dict would be re-sorted
     'configurations': configs,
+    'listings': len(listings),
+    'nosVendors': len(nos_vendors),
+    'nosVendorNames': nos_vendors,
     'generated': datetime.date.today().isoformat(),
 }
 out = os.path.join(here, 'assets', 'dist', 'stats.json')
 json.dump(stats, open(out, 'w'), indent=1)
 print(f"stats: {stats['devices']} devices, {stats['vendors']} vendors, "
       f"{stats['components']} components, {stats['configurations']} configurations, "
+      f"{stats['listings']} listings from {stats['nosVendors']} NOS vendors, "
       f"schema {stats['schema']}")
 PYEOF
 

@@ -862,6 +862,2550 @@
    },
    "source": "Arrcus Hardware Compatibility List (External), June 2026, for ArcOS 8.5 - page 4, under Routing (DNX), the row 'S9705-48D (VDR FC)'.",
    "version": "1.0.0"
+  },
+  "drivenets/ais800-64o": {
+   "description": "DNOS accepts this box as NCP hardware, but the reference lists three 64 x 800G NCP models (NCP-64E-X, NCP-64E-XS, NCP-64E-XD) and does not say which this is, so no DriveNets name is given.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "edgecore/ais800-64o",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: AIS800-64O-AF and AS9817-64O is among the hardware models DNOS accepts for an NCP.",
+   "version": "1.0.0"
+  },
+  "drivenets/cor550": {
+   "description": "Sold by DriveNets as the NCP-40C: the NCP-40C name spells the layout - 40 x 100G service ports, with 13 x 400G fabric - which this box has; the reference also accepts the S9700-53DX and the Delta AGCXD40S ('DNI NCP 40C platform') as NCP-40C hardware.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "edgecore/cor550",
+   "interfaces": [
+    {
+     "breakout": {
+      "child-name": "ge10-0/0/{n}/{i}",
+      "modes": [
+       "4x10g"
+      ]
+     },
+     "name": "ge100-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "0-19"
+    },
+    {
+     "name": "ge100-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "20-39"
+    },
+    {
+     "name": "fab-ncp400-0/0/{n}",
+     "physical": "fab-{n}",
+     "range": "0-12"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-40C",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: AS7926-40XKFB is among the hardware models DNOS accepts for an NCP. Port names from the same reference: a service port is ge<speed>-<ncp>/<slot>/<port> and a fabric port fab-ncp400-<ncp>/0/<port>, the port being the id printed on the box ('as shown at the WB') and counted from 0 on each NCP. Named here for a standalone box, NCP 0 and slot 0; in a cluster DNOS renames every port with the NCP id the deployment gives this box.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9600-72xc": {
+   "description": "Sold by DriveNets as the NCP-64X8C-S: the NCP-64X8C-S name spells the layout - 64 x 10/25G and 8 x 100G - which this box has.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-72xc",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-64X8C-S",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9600-72XC is among the hardware models DNOS accepts for an NCP.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9601-102xc": {
+   "description": "Sold by DriveNets as the NCP-96X6C-S: the NCP-96X6C-S name spells the layout - 96 x 10/25G and 6 x 100G - which this box has (the reference lists an NCP-96X6C beside it and does not say how the two differ).",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9601-102xc",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-96X6C-S",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9601-102XC-R and S9601-102XC-D is among the hardware models DNOS accepts for an NCP.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9610-36d": {
+   "description": "Sold by DriveNets as the NCP-36CD-S-SA: NCP-36CD-S-SA is the standalone 36 x 400G NCP, and this is a 36 x 400G box with no fabric ports.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-36d",
+   "interfaces": [
+    {
+     "name": "ge400-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "0-35"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-36CD-S-SA",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9610-36D is among the hardware models DNOS accepts for an NCP. Port names from the same reference: a service port is ge<speed>-<ncp>/<slot>/<port> and a fabric port fab-ncp400-<ncp>/0/<port>, the port being the id printed on the box ('as shown at the WB') and counted from 0 on each NCP. Named here for a standalone box, NCP 0 and slot 0; in a cluster DNOS renames every port with the NCP id the deployment gives this box.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9610-46dx": {
+   "description": "Sold by DriveNets as the NCP-40C6CD-S: the NCP-40C6CD-S name spells the layout - 40 x 100G and 6 x 400G - which this box has.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-46dx",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-40C6CD-S",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9610-46DX is among the hardware models DNOS accepts for an NCP.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9610-48dx": {
+   "description": "Sold by DriveNets as the NCP-40C8CD: the NCP-40C8CD name spells the layout - 40 x 100G and 8 x 400G - which this box has.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-48dx",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-40C8CD",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9610-48DX is among the hardware models DNOS accepts for an NCP.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9611-36d": {
+   "description": "Sold by DriveNets as the NCP-36CD-S-SA: NCP-36CD-S-SA is the standalone 36 x 400G NCP, and this is a 36 x 400G box with no fabric ports.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The sfp-0, sfp-1 SFP cages are traffic ports outside the 400G run, and the reference does not say what DNOS calls them. They are left out of `interfaces`, so the DriveNets type does not list them; the UfiSpace one still does.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS.",
+     "what": "dnos-extra-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9611-36d",
+   "interfaces": [
+    {
+     "name": "ge400-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "0-35"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-36CD-S-SA",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9611-36D is among the hardware models DNOS accepts for an NCP. Port names from the same reference: a service port is ge<speed>-<ncp>/<slot>/<port> and a fabric port fab-ncp400-<ncp>/0/<port>, the port being the id printed on the box ('as shown at the WB') and counted from 0 on each NCP. Named here for a standalone box, NCP 0 and slot 0; in a cluster DNOS renames every port with the NCP id the deployment gives this box.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9620-32e": {
+   "description": "Sold by DriveNets as the NCP-32E-S: the NCP-32E-S name spells the layout - 32 x 800G - which this box has.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9620-32e",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-32E-S",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9620-32E is among the hardware models DNOS accepts for an NCP.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9700-23d": {
+   "description": "Sold by DriveNets as the NCP-10CD: the NCP-10CD name spells the layout - 10 x 400G service ports - which this box has beside its 13 fabric ports.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9700-23d",
+   "interfaces": [
+    {
+     "name": "ge400-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "0-9"
+    },
+    {
+     "name": "fab-ncp400-0/0/{n}",
+     "physical": "fabric-{n}",
+     "range": "0-12"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-10CD",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9700-23D is among the hardware models DNOS accepts for an NCP. Port names from the same reference: a service port is ge<speed>-<ncp>/<slot>/<port> and a fabric port fab-ncp400-<ncp>/0/<port>, the port being the id printed on the box ('as shown at the WB') and counted from 0 on each NCP. Named here for a standalone box, NCP 0 and slot 0; in a cluster DNOS renames every port with the NCP id the deployment gives this box.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9700-53dx": {
+   "description": "Sold by DriveNets as the NCP-40C: the reference's own example configures `model NCP-40C hw-model S9700-53DX`.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9700-53dx",
+   "interfaces": [
+    {
+     "breakout": {
+      "child-name": "ge10-0/0/{n}/{i}",
+      "modes": [
+       "4x10g"
+      ]
+     },
+     "name": "ge100-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "0-19"
+    },
+    {
+     "name": "ge100-0/0/{n}",
+     "physical": "port-{n}",
+     "range": "20-39"
+    },
+    {
+     "name": "fab-ncp400-0/0/{n}",
+     "physical": "fab-{n}",
+     "range": "0-12"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-40C",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9700-53DX is among the hardware models DNOS accepts for an NCP. Port names from the same reference: a service port is ge<speed>-<ncp>/<slot>/<port> and a fabric port fab-ncp400-<ncp>/0/<port>, the port being the id printed on the box ('as shown at the WB') and counted from 0 on each NCP. Named here for a standalone box, NCP 0 and slot 0; in a cluster DNOS renames every port with the NCP id the deployment gives this box.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9701-82dc": {
+   "description": "Sold by DriveNets as the NCP-64X12C-S: the NCP-64X12C-S name spells the layout - 64 x 10/25G and 12 x 100G service ports - which this box has beside its 6 fabric ports.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has service ports of more than one speed. The DNOS CLI reference numbers each NCP's ports from 0 (its breakout section: '100GE ports 0..19 of each NCP-40C', '400GE ports 0..35 of each NCP-36cd') but never for a mixed box, so whether the count runs across the speed groups, and in what order, is not stated anywhere held here.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces` from this box running DNOS, standalone - it settles the count.",
+     "what": "dnos-port-names"
+    },
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9701-82dc",
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-64X12C-S",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9701-82DC is among the hardware models DNOS accepts for an NCP.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "drivenets/s9710-76d": {
+   "description": "Sold by DriveNets as the NCP-36CD-S: the NCP-36CD-S name spells the layout - 36 x 400G service ports - which this box has beside its 40 fabric ports.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "DNOS names management ports mgmt-ncp-<ncp>/<n> and IPMI ports ipmi-ncp-<ncp>/<n> (show interfaces management), but not which jack on this box is which n, so the management jacks are left out of `interfaces` and the DriveNets type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces management` from this box running DNOS.",
+     "what": "dnos-management-names"
+    }
+   ],
+   "hardware": "ufispace/s9710-76d",
+   "interfaces": [
+    {
+     "name": "ge400-0/0/{n}",
+     "physical": "svc-{n}",
+     "range": "0-35"
+    },
+    {
+     "name": "fab-ncp400-0/0/{n}",
+     "physical": "fab-{n}",
+     "range": "0-39"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "DriveNets",
+   "model": "NCP-36CD-S",
+   "nos": "dnos",
+   "nos-versions": ">=26.2",
+   "ns": "drivenets",
+   "portfolio": {
+    "family": "Network Cloud Packet Forwarder (NCP)",
+    "line": "Network Cloud"
+   },
+   "source": "DNOS CLI Reference Guide 26.2, `system ncp model`: S9710-76D is among the hardware models DNOS accepts for an NCP. Port names from the same reference: a service port is ge<speed>-<ncp>/<slot>/<port> and a fabric port fab-ncp400-<ncp>/0/<port>, the port being the id printed on the box ('as shown at the WB') and counted from 0 on each NCP. Named here for a standalone box, NCP 0 and slot 0; in a cluster DNOS renames every port with the NCP id the deployment gives this box.",
+   "type-name": "{model} ({sku})",
+   "version": "1.0.0"
+  },
+  "ipinfusion/agr110": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-800, OcNOS-SP-MPLS-800, OcNOS-CSR-800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS5916-54XL counts, and in what order its port groups fall, is in the 'AS5916-54XL Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS5916-54XL Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/agr110",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS5916-54XL, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/agr130": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-800, OcNOS-SP-MPLS-800, OcNOS-CSR-800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS5916-54XKS counts, and in what order its port groups fall, is in the 'AS5916-54XKS Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS5916-54XKS Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/agr130",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS5916-54XKS, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/agr560": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-7200, OcNOS-SP-MPLS-7200, OcNOS-SP-PLUS-7200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS9947-36XKB counts, and in what order its port groups fall, is in the 'AS9947-36XKB Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS9947-36XKB Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/agr560",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS9947-36XKB, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/ais800-64d": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-51200, OcNOS-DC-PLUS-51200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AIS800-64D counts, and in what order its port groups fall, is in the 'AIS800-64D Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here. No OcNOS document held here names an 800G port either.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AIS800-64D Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/ais800-64d",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AIS800-64D, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/as7326-56x": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-2000, OcNOS-DC-PLUS-2000. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7326-56X counts, and in what order its port groups fall, is in the 'AS7326-56X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7326-56X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/as7326-56x",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7326-56X, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/as7726-32x": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-3200, OcNOS-DC-PLUS-3200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7726-32X counts, and in what order its port groups fall, is in the 'AS7726-32X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7726-32X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/as7726-32x",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7726-32X, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/as7946-30xb": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-2400, OcNOS-SP-MPLS-2400, OcNOS-SP-PLUS-2400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7946-30XB counts, and in what order its port groups fall, is in the 'AS7946-30XB Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7946-30XB Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/as7946-30xb",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7946-30XB, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/as7946-74xksb": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-2400, OcNOS-SP-MPLS-2400, OcNOS-SP-PLUS-2400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7946-74XKSB counts, and in what order its port groups fall, is in the 'AS7946-74XKSB Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7946-74XKSB Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/as7946-74xksb",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7946-74XKSB, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/csr180": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-32, OcNOS-SP-MPLS-32, OcNOS-SP-CSR-32. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS5915-16X counts, and in what order its port groups fall, is in the 'AS5915-16X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS5915-16X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/csr180",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS5915-16X, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/csr200": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-64, OcNOS-SP-MPLS-64, OcNOS-CSR-64. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS5915-18X counts, and in what order its port groups fall, is in the 'AS5915-18X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS5915-18X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/csr200",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS5915-18X, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/csr310": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-300, OcNOS-SP-MPLS-300, OcNOS-CSR-300. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7315-27X counts, and in what order its port groups fall, is in the 'AS7315-27X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7315-27X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/csr310",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7315-27X, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/csr430": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-300, OcNOS-SP-MPLS-300, OcNOS-SP-PLUS-300. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7515-24X counts, and in what order its port groups fall, is in the 'AS7515-24X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7515-24X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/csr430",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7515-24X, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/csr440": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-800, OcNOS-SP-MPLS-800, OcNOS-SP-PLUS-800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7535-28XB counts, and in what order its port groups fall, is in the 'AS7535-28XB Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7535-28XB Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/csr440",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7535-28XB, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/dcs201": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-1080, OcNOS-DC-PLUS-1080. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS5835-54X counts, and in what order its port groups fall, is in the 'AS5835-54X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS5835-54X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs201",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS5835-54X, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/dcs202": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-1080, OcNOS-DC-PLUS-1080. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS5835-54T counts, and in what order its port groups fall, is in the 'AS5835-54T Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS5835-54T Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs202",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS5835-54T, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/dcs240": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-12800, OcNOS-DC-PLUS-12800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS9726-32DB counts, and in what order its port groups fall, is in the 'AS9726-32DB Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS9726-32DB Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs240",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS9726-32DB, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/dcs500": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-6400, OcNOS-DC-PLUS-6400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS7816-64X counts, and in what order its port groups fall, is in the 'AS7816-64X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS7816-64X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs500",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS7816-64X, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/dcs510": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-12800, OcNOS-DC-PLUS-12800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS9716-32D counts, and in what order its port groups fall, is in the 'AS9716-32D Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS9716-32D Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs510",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS9716-32D, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/dcs520": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-25600, OcNOS-DC-PLUS-25600. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS9736-64D counts, and in what order its port groups fall, is in the 'AS9736-64D Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS9736-64D Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/dcs520",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS9736-64D, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/ds1000": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-MGMT-120, OcNOS-DC-IPBASE-120. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way DS1000 counts, and in what order its port groups fall, is in the 'DS1000 Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'DS1000 Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "celestica/ds1000",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for DS1000, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/eps121": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-MGMT-120, OcNOS-DC-IPBASE-120. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way AS4625-54T counts, and in what order its port groups fall, is in the 'AS4625-54T Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'AS4625-54T Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "edgecore/eps121",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for AS4625-54T, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s6301-56st": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-MGMT-120, OcNOS-DC-IPBASE-120. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s6301-56st",
+   "interfaces": [
+    {
+     "name": "ge{n}",
+     "physical": "port-{n}",
+     "range": "0-47"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "48-55"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S6301-56ST, current supported 'DC 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s8901-54xc": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-2000, OcNOS-DC-PLUS-2000. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s8901-54xc",
+   "interfaces": [
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "0-47"
+    },
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "48-53"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S8901-54XC, current supported 'DC 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9110-32x": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-3200, OcNOS-DC-PLUS-3200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The mgmt-sfp SFP cage(s) sit outside the numbered front-panel run, and no OcNOS document held here names them. They are left out of `interfaces`, so the IP Infusion device type does not list them; the UfiSpace one still does.",
+     "reason": "vendor-silent",
+     "wanted": "The Port Mapping chapter of the OcNOS UfiSpace Installation Guide for this box, or `show interface brief` from a unit - whatever OcNOS calls these cages.",
+     "what": "ocnos-management-sfp-names"
+    }
+   ],
+   "hardware": "ufispace/s9110-32x",
+   "interfaces": [
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "0-31"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9110-32X, current supported 'DC 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9300-32d": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-12800, OcNOS-DC-PLUS-12800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The oob-sfp-0, oob-sfp-1, port-sfp-0, port-sfp-1 SFP cage(s) sit outside the numbered front-panel run, and no OcNOS document held here names them. They are left out of `interfaces`, so the IP Infusion device type does not list them; the UfiSpace one still does.",
+     "reason": "vendor-silent",
+     "wanted": "The Port Mapping chapter of the OcNOS UfiSpace Installation Guide for this box, or `show interface brief` from a unit - whatever OcNOS calls these cages.",
+     "what": "ocnos-management-sfp-names"
+    }
+   ],
+   "hardware": "ufispace/s9300-32d",
+   "interfaces": [
+    {
+     "name": "cd{n}",
+     "physical": "port-{n}",
+     "range": "0-31"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9300-32D, current supported 'DC 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9321-64e": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-51200, OcNOS-DC-PLUS-51200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9321-64E counts, and in what order its port groups fall, is in the 'S9321-64E Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here. No OcNOS document held here names an 800G port either.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9321-64E Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9321-64e",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9321-64E, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9321-64eo": {
+   "description": "Supported by OcNOS DC 7.0.1, licensed per switching capacity as OcNOS-DC-IPBASE-51200, OcNOS-DC-PLUS-51200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9321-64EO counts, and in what order its port groups fall, is in the 'S9321-64EO Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here. No OcNOS document held here names an 800G port either.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9321-64EO Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS DC 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9321-64eo",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS DC"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9321-64EO, current supported 'DC 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9500-22xst": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-300, OcNOS-SP-MPLS-300, OcNOS-CSR-300. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9500-22xst",
+   "interfaces": [
+    {
+     "name": "ge{n}",
+     "physical": "port-{n}",
+     "range": "0-3"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "4-19"
+    },
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "20-21"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9500-22XST, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9500-30xs": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-300, OcNOS-SP-MPLS-300, OcNOS-CSR-300. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9500-30XS counts, and in what order its port groups fall, is in the 'S9500-30XS Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9500-30XS Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9500-30xs",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9500-30XS, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9501-18smt": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-64, OcNOS-SP-MPLS-64, OcNOS-CSR-64. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9501-18smt",
+   "interfaces": [
+    {
+     "name": "ge{n}",
+     "physical": "port-{n}",
+     "range": "0-11"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "12-17"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9501-18SMT, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9501-28smt": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-120, OcNOS-SP-MPLS-120, OcNOS-CSR-120. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9501-28smt",
+   "interfaces": [
+    {
+     "name": "ge{n}",
+     "physical": "port-{n}",
+     "range": "0-19"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "20-27"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9501-28SMT, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9502-12sm": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-32, OcNOS-SP-MPLS-32, OcNOS-CSR-32. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9502-12sm",
+   "interfaces": [
+    {
+     "name": "ge{n}",
+     "physical": "port-{n}",
+     "range": "0-7"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "8-11"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9502-12SM, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9502-16smt": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-32, OcNOS-SP-MPLS-32, OcNOS-CSR-32. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9502-16smt",
+   "interfaces": [
+    {
+     "name": "ge{n}",
+     "physical": "port-{n}",
+     "range": "0-11"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "12-15"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9502-16SMT, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9510-28dc": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-800, OcNOS-SP-MPLS-800, OcNOS-SP-PLUS-800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9510-28dc",
+   "interfaces": [
+    {
+     "name": "cd{n}",
+     "physical": "port-{n}",
+     "range": "0-1"
+    },
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "2-3"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "4-27"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9510-28DC, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9510-30xc": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-300, OcNOS-SP-MPLS-300, OcNOS-SP-PLUS-300. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "hardware": "ufispace/s9510-30xc",
+   "interfaces": [
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "0-1"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "2-29"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9510-30XC, current supported 'SP 7.0.1'. The names are the ones IP Infusion's own S9510-30XC running configuration uses in the OcNOS SP 7.0 Segment Routing Guide (edge-node snapshot, software version UFI_S9510-30XC-OcNOS-SP-PLUS-6.6.0): ce0 and ce1, then xe2 to xe29, and eth0 for management - which is this faceplate's own numbering, port for port.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9600-28dx": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-2400, OcNOS-SP-MPLS-2400, OcNOS-SP-PLUS-2400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9600-28DX counts, and in what order its port groups fall, is in the 'S9600-28DX Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9600-28DX Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-28dx",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9600-28DX, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9600-32x": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-2400, OcNOS-SP-MPLS-2400, OcNOS-SP-PLUS-2400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9600-32X counts, and in what order its port groups fall, is in the 'S9600-32X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9600-32X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-32x",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9600-32X, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9600-56dx": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-4800, OcNOS-SP-MPLS-4800, OcNOS-SP-PLUS-4800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9600-56DX counts, and in what order its port groups fall, is in the 'S9600-56DX Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9600-56DX Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-56dx",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9600-56DX, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9600-64x": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-4800, OcNOS-SP-MPLS-4800, OcNOS-SP-PLUS-4800. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "OcNOS names a front-panel port by its speed class and a 0-based number - ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G, eth0 for management - but it does not count the same way on every platform. IP Infusion's own S9510-30XC configuration counts once across the panel (ce0, ce1, xe2 to xe29); its AS7316-26XB example restarts at xe0 after ce0 and ce1. Which way S9600-64X counts, and in what order its port groups fall, is in the 'S9600-64X Port Mapping' chapter of IP Infusion's OcNOS installation guide, which is not in the public 7.0 documentation library and is not held here.",
+     "reason": "vendor-silent",
+     "wanted": "The 'S9600-64X Port Mapping' chapter of the OcNOS installation guide, Release 7.0, or `show interface brief` from a unit running OcNOS SP 7.0 - with it, `interfaces` can name each port the way OcNOS does.",
+     "what": "ocnos-port-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-64x",
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9600-64X, current supported 'SP 7.0.1'.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9600-72xc": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-2400, OcNOS-SP-MPLS-2400, OcNOS-SP-PLUS-2400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The mgmt-sfp-0, mgmt-sfp-1 SFP cage(s) sit outside the numbered front-panel run, and no OcNOS document held here names them. They are left out of `interfaces`, so the IP Infusion device type does not list them; the UfiSpace one still does.",
+     "reason": "vendor-silent",
+     "wanted": "The Port Mapping chapter of the OcNOS UfiSpace Installation Guide for this box, or `show interface brief` from a unit - whatever OcNOS calls these cages.",
+     "what": "ocnos-management-sfp-names"
+    }
+   ],
+   "hardware": "ufispace/s9600-72xc",
+   "interfaces": [
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "0-63"
+    },
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "64-71"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9600-72XC, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9610-36d": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-14400, OcNOS-SP-MPLS-14400, OcNOS-SP-PLUS-14400. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The sfp-0, sfp-1 SFP cage(s) sit outside the numbered front-panel run, and no OcNOS document held here names them. They are left out of `interfaces`, so the IP Infusion device type does not list them; the UfiSpace one still does.",
+     "reason": "vendor-silent",
+     "wanted": "The Port Mapping chapter of the OcNOS UfiSpace Installation Guide for this box, or `show interface brief` from a unit - whatever OcNOS calls these cages.",
+     "what": "ocnos-management-sfp-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-36d",
+   "interfaces": [
+    {
+     "name": "cd{n}",
+     "physical": "port-{n}",
+     "range": "0-35"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9610-36D, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "ipinfusion/s9610-46dx": {
+   "description": "Supported by OcNOS SP 7.0.1, licensed per switching capacity as OcNOS-SP-IPBASE-7200, OcNOS-SP-MPLS-7200, OcNOS-SP-PLUS-7200. Those are software licences shared by every box of the same capacity, not part numbers for this one.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "The mgmt-sfp-0, mgmt-sfp-1, mgmt-sfp-2, mgmt-sfp-3 SFP cage(s) sit outside the numbered front-panel run, and no OcNOS document held here names them. They are left out of `interfaces`, so the IP Infusion device type does not list them; the UfiSpace one still does.",
+     "reason": "vendor-silent",
+     "wanted": "The Port Mapping chapter of the OcNOS UfiSpace Installation Guide for this box, or `show interface brief` from a unit - whatever OcNOS calls these cages.",
+     "what": "ocnos-management-sfp-names"
+    }
+   ],
+   "hardware": "ufispace/s9610-46dx",
+   "interfaces": [
+    {
+     "name": "ce{n}",
+     "physical": "port-{n}",
+     "range": "0-39"
+    },
+    {
+     "name": "cd{n}",
+     "physical": "port-{n}",
+     "range": "40-45"
+    },
+    {
+     "name": "xe{n}",
+     "physical": "port-{n}",
+     "range": "46-49"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "IP Infusion",
+   "nos": "ocnos",
+   "nos-versions": ">=7.0.1",
+   "ns": "ipinfusion",
+   "portfolio": {
+    "line": "OcNOS SP"
+   },
+   "source": "OcNOS 7.0.1 MR Hardware Compatibility List (IP Infusion, July 2026), the row for S9610-46DX, current supported 'SP 7.0.1'. The names follow OcNOS's pattern rather than a table for this box: the port's speed class as prefix (ge 1G, xe 10G and 25G, ce 40G and 100G, cd 400G) and one 0-based count across the whole front panel, with eth0 for management. That is how the S9510-30XC's own configuration in the OcNOS SP 7.0 Segment Routing Guide names its ports - ce0, ce1, xe2 to xe29 - and it is exactly the UfiSpace silkscreen numbering, which this box shares. Not every platform counts this way: the AS7316-26XB example in the Layer 3 Guide restarts at xe0 after ce0 and ce1, so the rule is applied to UfiSpace boxes whose ports are numbered in one run from 0, and nowhere else.",
+   "version": "1.0.0"
+  },
+  "sonic/as7326-56x": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS7326-56X, on platform x86_64-accton_as7326_56x-r0.",
+   "format": 1,
+   "hardware": "edgecore/as7326-56x",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-49"
+    },
+    {
+     "name": "Ethernet{4*n-148}",
+     "physical": "port-{n}",
+     "range": "50-56"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt-eth"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS7326-56X. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as7326_56x-r0/Accton-AS7326-56X/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/as7726-32x": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS7726-32X, on platform x86_64-accton_as7726_32x-r0.",
+   "format": 1,
+   "hardware": "edgecore/as7726-32x",
+   "interfaces": [
+    {
+     "name": "Ethernet{4*n-4}",
+     "physical": "port-{n}",
+     "range": "1-32"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt-eth"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS7726-32X. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as7726_32x-r0/Accton-AS7726-32X/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/dcs201": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS5835-54X, on platform x86_64-accton_as5835_54x-r0.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has two management jacks (mgmt-1, mgmt-2) and SONiC has one eth0; the platform files do not say which jack it is, so neither is named and the SONiC type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces status` or `ip link` from this box running SONiC, with one jack cabled.",
+     "what": "sonic-management-name"
+    }
+   ],
+   "hardware": "edgecore/dcs201",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-49"
+    },
+    {
+     "name": "Ethernet{4*n-148}",
+     "physical": "port-{n}",
+     "range": "50-54"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS5835-54X. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as5835_54x-r0/Accton-AS5835-54X/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/dcs202": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS5835-54T, on platform x86_64-accton_as5835_54t-r0.",
+   "format": 1,
+   "gaps": [
+    {
+     "note": "This box has two management jacks (mgmt-1, mgmt-2) and SONiC has one eth0; the platform files do not say which jack it is, so neither is named and the SONiC type does not list them.",
+     "reason": "vendor-silent",
+     "wanted": "`show interfaces status` or `ip link` from this box running SONiC, with one jack cabled.",
+     "what": "sonic-management-name"
+    }
+   ],
+   "hardware": "edgecore/dcs202",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-49"
+    },
+    {
+     "name": "Ethernet{4*n-148}",
+     "physical": "port-{n}",
+     "range": "50-54"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS5835-54T. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as5835_54t-r0/Accton-AS5835-54T/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/dcs500": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS7816-64X, on platform x86_64-accton_as7816_64x-r0.",
+   "format": 1,
+   "hardware": "edgecore/dcs500",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet0",
+     "physical": "port-0"
+    },
+    {
+     "name": "Ethernet4",
+     "physical": "port-1"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet8",
+     "physical": "port-2"
+    },
+    {
+     "name": "Ethernet12",
+     "physical": "port-3"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet16",
+     "physical": "port-4"
+    },
+    {
+     "name": "Ethernet20",
+     "physical": "port-5"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet24",
+     "physical": "port-6"
+    },
+    {
+     "name": "Ethernet28",
+     "physical": "port-7"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet32",
+     "physical": "port-8"
+    },
+    {
+     "name": "Ethernet36",
+     "physical": "port-9"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet40",
+     "physical": "port-10"
+    },
+    {
+     "name": "Ethernet44",
+     "physical": "port-11"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet48",
+     "physical": "port-12"
+    },
+    {
+     "name": "Ethernet52",
+     "physical": "port-13"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet56",
+     "physical": "port-14"
+    },
+    {
+     "name": "Ethernet60",
+     "physical": "port-15"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet64",
+     "physical": "port-16"
+    },
+    {
+     "name": "Ethernet68",
+     "physical": "port-17"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet72",
+     "physical": "port-18"
+    },
+    {
+     "name": "Ethernet76",
+     "physical": "port-19"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet80",
+     "physical": "port-20"
+    },
+    {
+     "name": "Ethernet84",
+     "physical": "port-21"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet88",
+     "physical": "port-22"
+    },
+    {
+     "name": "Ethernet92",
+     "physical": "port-23"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet96",
+     "physical": "port-24"
+    },
+    {
+     "name": "Ethernet100",
+     "physical": "port-25"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet104",
+     "physical": "port-26"
+    },
+    {
+     "name": "Ethernet108",
+     "physical": "port-27"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet112",
+     "physical": "port-28"
+    },
+    {
+     "name": "Ethernet116",
+     "physical": "port-29"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet120",
+     "physical": "port-30"
+    },
+    {
+     "name": "Ethernet{4*n}",
+     "physical": "port-{n}",
+     "range": "31-63"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt-eth"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS7816-64X. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as7816_64x-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF). SONiC's aliases count this faceplate from 1 and this model's ids from 0; the two run over the same cages in the same order, so each is mapped to its counterpart by position.",
+   "version": "1.0.0"
+  },
+  "sonic/dcs510": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS9716-32D, on platform x86_64-accton_as9716_32d-r0.",
+   "format": 1,
+   "hardware": "edgecore/dcs510",
+   "interfaces": [
+    {
+     "name": "Ethernet{8*n-8}",
+     "physical": "port-{n}",
+     "range": "1-32"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt-eth"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS9716-32D. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as9716_32d-r0/Accton-AS9716-32D/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/ds1000": {
+   "description": "SONiC's hardware SKU for this box is DS1000, on platform x86_64-cel_ds1000-r0.",
+   "format": 1,
+   "hardware": "celestica/ds1000",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-48"
+    },
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "49-56"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "sonic-net/sonic-buildimage at d5c2e3b32ffa builds SONiC for this box: device/celestica/x86_64-cel_ds1000-r0. It is not on SONiC's Supported Devices and Platforms page, which predates it; the build tree is taken as SONiC's list. Port names from the platform's own table, device/celestica/x86_64-cel_ds1000-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/ds2000": {
+   "description": "SONiC's hardware SKU for this box is DS2000, on platform x86_64-cel_ds2000-r0.",
+   "format": 1,
+   "hardware": "celestica/ds2000",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-48"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "1x40g"
+      ]
+     },
+     "name": "Ethernet{4*n-148}",
+     "physical": "port-{n}",
+     "range": "49-56"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "sonic-net/sonic-buildimage at d5c2e3b32ffa builds SONiC for this box: device/celestica/x86_64-cel_ds2000-r0. It is not on SONiC's Supported Devices and Platforms page, which predates it; the build tree is taken as SONiC's list. Port names from the platform's own table, device/celestica/x86_64-cel_ds2000-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/ds3000": {
+   "description": "SONiC's hardware SKU for this box is DS3000, on platform x86_64-cel_ds3000-r0.",
+   "format": 1,
+   "hardware": "celestica/ds3000",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "1x40g"
+      ]
+     },
+     "name": "Ethernet{4*n-4}",
+     "physical": "port-{n}",
+     "range": "1-32"
+    },
+    {
+     "name": "Ethernet128",
+     "physical": "m1"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "sonic-net/sonic-buildimage at d5c2e3b32ffa builds SONiC for this box: device/celestica/x86_64-cel_ds3000-r0. It is not on SONiC's Supported Devices and Platforms page, which predates it; the build tree is taken as SONiC's list. Port names from the platform's own table, device/celestica/x86_64-cel_ds3000-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/eps201": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS4630-54TE, on platform x86_64-accton_as4630_54te-r0.",
+   "format": 1,
+   "hardware": "edgecore/eps201",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-53"
+    },
+    {
+     "name": "Ethernet56",
+     "physical": "port-54"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "sonic-net/sonic-buildimage at d5c2e3b32ffa builds SONiC for this box: device/accton/x86_64-accton_as4630_54te-r0. It is not on SONiC's Supported Devices and Platforms page, which predates it; the build tree is taken as SONiC's list. Port names from the platform's own table, device/accton/x86_64-accton_as4630_54te-r0/Accton-AS4630-54TE/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/eps202": {
+   "description": "SONiC's hardware SKU for this box is Accton-AS4630-54PE, on platform x86_64-accton_as4630_54pe-r0.",
+   "format": 1,
+   "hardware": "edgecore/eps202",
+   "interfaces": [
+    {
+     "name": "Ethernet{n-1}",
+     "physical": "port-{n}",
+     "range": "1-53"
+    },
+    {
+     "name": "Ethernet56",
+     "physical": "port-54"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for AS4630-54PE. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/accton/x86_64-accton_as4630_54pe-r0/Accton-AS4630-54PE/port_config.ini: each SONiC name with the front-panel port its alias names. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s6301-56st": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S6301-56ST, on platform x86_64-ufispace_s6301_56st-r0.",
+   "format": 1,
+   "hardware": "ufispace/s6301-56st",
+   "interfaces": [
+    {
+     "name": "Ethernet{n}",
+     "physical": "port-{n}",
+     "range": "0-47"
+    },
+    {
+     "name": "Ethernet{n}",
+     "physical": "port-{n}",
+     "range": "48-55"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S6301-56ST. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s6301_56st-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s7801-54xs": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S7801-54XS, on platform x86_64-ufispace_s7801_54xs-r0.",
+   "format": 1,
+   "hardware": "ufispace/s7801-54xs",
+   "interfaces": [
+    {
+     "name": "Ethernet{n}",
+     "physical": "port-{n}",
+     "range": "0-47"
+    },
+    {
+     "name": "Ethernet{4*n-144}",
+     "physical": "port-{n}",
+     "range": "48-51"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet{4*n-144}",
+     "physical": "port-{n}",
+     "range": "52-53"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt-oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S7801-54XS. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s7801_54xs-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s8901-54xc": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S8901-54XC, on platform x86_64-ufispace_s8901_54xc-r0.",
+   "format": 1,
+   "hardware": "ufispace/s8901-54xc",
+   "interfaces": [
+    {
+     "name": "Ethernet{n}",
+     "physical": "port-{n}",
+     "range": "0-47"
+    },
+    {
+     "name": "Ethernet{4*n-144}",
+     "physical": "port-{n}",
+     "range": "48-51"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet{4*n-144}",
+     "physical": "port-{n}",
+     "range": "52-53"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S8901-54XC. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s8901_54xc-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9110-32x": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9110-32X, on platform x86_64-ufispace_s9110_32x-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9110-32x",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "2x50g",
+       "4x10g",
+       "4x25g"
+      ]
+     },
+     "name": "Ethernet{4*n}",
+     "physical": "port-{n}",
+     "range": "0-31"
+    },
+    {
+     "name": "Ethernet128",
+     "physical": "mgmt-sfp"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9110-32X. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9110_32x-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9300-32d": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9300-32D, on platform x86_64-ufispace_s9300_32d-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9300-32d",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "1x200g",
+       "1x25g",
+       "1x400g",
+       "1x40g",
+       "1x50g",
+       "2x100g",
+       "2x200g",
+       "2x40g",
+       "2x50g",
+       "4x100g",
+       "4x10g",
+       "4x25g",
+       "8x25g",
+       "8x50g"
+      ]
+     },
+     "name": "Ethernet{8*n}",
+     "physical": "port-{n}",
+     "range": "0-31"
+    },
+    {
+     "name": "Ethernet256",
+     "physical": "port-sfp-0"
+    },
+    {
+     "name": "Ethernet257",
+     "physical": "port-sfp-1"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9300-32D. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9300_32d-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9301-32d": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9301-32D, on platform x86_64-ufispace_s9301_32d-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9301-32d",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x400g",
+       "2x200g",
+       "4x100g",
+       "8x50g"
+      ]
+     },
+     "name": "Ethernet{8*n}",
+     "physical": "port-{n}",
+     "range": "0-31"
+    },
+    {
+     "name": "Ethernet256",
+     "physical": "port-sfp-0"
+    },
+    {
+     "name": "Ethernet257",
+     "physical": "port-sfp-1"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9301-32D. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9301_32d-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9301-32db": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9301-32DB, on platform x86_64-ufispace_s9301_32db-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9301-32db",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "1x200g",
+       "1x25g",
+       "1x40g",
+       "1x50g",
+       "2x100g",
+       "2x25g",
+       "2x50g",
+       "4x10g",
+       "4x25g",
+       "4x50g"
+      ]
+     },
+     "name": "Ethernet{4*n}",
+     "physical": "port-{n}",
+     "range": "0-23"
+    },
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "1x200g",
+       "1x25g",
+       "1x400g",
+       "1x40g",
+       "1x50g",
+       "2x100g",
+       "2x200g",
+       "2x40g",
+       "2x50g",
+       "4x100g",
+       "4x10g",
+       "4x25g",
+       "8x25g",
+       "8x50g"
+      ]
+     },
+     "name": "Ethernet{8*n-96}",
+     "physical": "port-{n}",
+     "range": "24-31"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9301-32DB. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9301_32db-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9311-64d": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9311-64D, on platform x86_64-ufispace_s9311_64d-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9311-64d",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x100g",
+       "1x200g",
+       "1x400g",
+       "2x100g",
+       "2x200g",
+       "4x100g"
+      ]
+     },
+     "name": "Ethernet{8*n}",
+     "physical": "port-{n}",
+     "range": "0-63"
+    },
+    {
+     "name": "Ethernet{n+448}",
+     "physical": "port-{n}",
+     "range": "64-65"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9311-64D. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9311_64d-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9321-64e": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9321-64E, on platform x86_64-ufispace_s9321_64e-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9321-64e",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x400g",
+       "1x800g",
+       "2x400g",
+       "4x200g"
+      ]
+     },
+     "name": "Ethernet{8*n}",
+     "physical": "port-{n}",
+     "range": "0-63"
+    },
+    {
+     "name": "eth0",
+     "physical": "mgmt"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9321-64E. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9321_64e-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
+  },
+  "sonic/s9321-64eo": {
+   "description": "SONiC's hardware SKU for this box is UFISPACE-S9321-64EO, on platform x86_64-ufispace_s9321_64eo-r0.",
+   "format": 1,
+   "hardware": "ufispace/s9321-64eo",
+   "interfaces": [
+    {
+     "breakout": {
+      "modes": [
+       "1x400g",
+       "1x800g",
+       "2x400g",
+       "4x200g"
+      ]
+     },
+     "name": "Ethernet{8*n}",
+     "physical": "port-{n}",
+     "range": "0-63"
+    },
+    {
+     "name": "eth0",
+     "physical": "oob"
+    }
+   ],
+   "kind": "listing",
+   "manufacturer": "SONiC",
+   "nos": "sonic",
+   "nos-versions": "master",
+   "ns": "sonic",
+   "source": "SONiC Supported Devices and Platforms (sonic-net.github.io/SONiC), the row for S9321-64EO. Port names from the platform's own table in sonic-net/sonic-buildimage at d5c2e3b32ffa, device/ufispace/x86_64-ufispace_s9321_64eo-r0/platform.json: each SONiC name with the front-panel port its alias names and the breakout modes it allows. eth0 is SONiC's management port (the SONiC command reference, Management VRF).",
+   "version": "1.0.0"
   }
  }
 }
