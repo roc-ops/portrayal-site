@@ -16,8 +16,9 @@
 //
 // IT WAITS ITS TURN. The build starts only after `after` - the 2D hero's own
 // promise, which settles (resolved or failed) once its parts are seated and
-// its cables hung - and then only when the browser is next idle, so the front
-// page's first paint and the 2D hero never compete with three.js. On a narrow
+// its cables hung - and then only after the page's load event, when the
+// browser is next idle, so the front page's first paint, its load and the 2D
+// hero never compete with three.js. On a narrow
 // screen the panel must be on screen, not merely near it, to start.
 import {PORTS, DEFAULT_PORT, captionOf, lampStates, cableScale, plugPathsOf,
         shadeHex, LATCH_SHADE} from './hero-reveal.js';
@@ -67,6 +68,20 @@ const idle = () => new Promise(done => {
   else setTimeout(done, 200);
 });
 
+// AFTER THE PAGE'S OWN LOAD EVENT, NEVER BEFORE IT. The build rasterizes every
+// face through an <img> on a blob: URL - about 600 of them for this switch - and
+// an image that starts loading before `load` fires holds `load` back until it is
+// done. Idle comes before `load` whenever the page's last fetch is slow (a web
+// font, a busy machine), and then the whole 3D build ran inside the page's load:
+// measured on a loaded Mac, 9 of 25 fresh opens of index.html fired `load` 26 to
+// 30 s late, each exactly when the last of the 595 face rasters finished, where
+// the other 16 fired it in 0.2 s. Each Page.goto timeout in
+// roc-ops/portrayal-site#72 was an open of index.html.
+const loaded = () => new Promise(done => {
+  if (document.readyState === 'complete') done();
+  else addEventListener('load', () => done(), {once: true});
+});
+
 // What the scene shows, for a screen reader: the stage is one image.
 const LABEL = 'The UfiSpace S9600-72XC with its optics and cables, in 3D';
 
@@ -100,8 +115,9 @@ export async function heroThree(host, {after = Promise.resolve()} = {}) {
   io.observe(host);
 
   async function build() {
-    // After the 2D hero, and when the browser is idle (see the top).
+    // After the 2D hero and the page's load, when the browser is idle (see the top).
     await after.catch(() => {});
+    await loaded();
     await idle();
     if (!host.isConnected) return;
     const made = await guard3d(async () => {

@@ -2510,6 +2510,45 @@ def check_faces_after_670(page, base):
     if missed: bad.append(f"670: {len(missed)} face requests 404d, e.g. {sorted(set(missed))[:4]}")
     return bad
 
+
+# THE PAGE'S LOAD IS NOT THE 3D HERO'S TO HOLD. The hero's 3D build rasterizes
+# every face through an <img> on a blob: URL, about 600 of them, and an image
+# that starts before `load` holds `load` back until it is done. It used to start
+# when the 2D hero had settled and the browser was idle, which comes before
+# `load` whenever the page's last fetch is slow - and then `load` waited for the
+# whole build: 26-30 s on a busy machine, and the Page.goto timeouts of
+# roc-ops/portrayal-site#72. So: hold one of the page's own images (the footer's
+# sponsor logo) past the point where the 2D hero has settled and idle has come,
+# and the 3D build may not start until that image is let go and `load` fires.
+@extra("the 3D hero starts only after the page's load event, so it never holds load back")
+def check_hero_after_load(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    held = []
+    page.route("**/brand/sponsor/RocNet-Primary-Logo.svg", lambda r: held.append(r))
+    page.goto(f"{base}/index.html", wait_until="domcontentloaded")
+    page.wait_for_function("() => document.querySelector('#hero-reveal .reveal-rich svg[data-hero-seated]')"
+                           " && document.querySelectorAll('#hero-reveal [data-hero-cable]').length === 21",
+                           timeout=READY_MS)
+    page.wait_for_timeout(3000)       # past hero-3d.js's IDLE_MS, so idle has certainly come
+    if not held:
+        return bad + ["the sponsor logo was never requested, so nothing held the page's load"]
+    if page.evaluate("document.readyState") == "complete":
+        bad.append("the page fired load with its sponsor logo still loading")
+    # The scene's canvas is the build's first act. (Not the blob: requests
+    # themselves: with a route in place Playwright does not report them.)
+    if page.query_selector("#hero-3d canvas"):
+        bad.append("the 3D hero started building before the page's load event")
+    for r in held:
+        r.continue_()
+    page.wait_for_function("document.readyState === 'complete'", timeout=READY_MS)
+    if not webgl_trouble(page):
+        try:
+            page.wait_for_function("() => document.querySelector('#hero-3d canvas')", timeout=READY_MS)
+        except Exception:
+            bad.append("the 3D hero did not start once the page had loaded")
+    return bad
+
 @extra("the Docs menu opens on every page, level with its neighbors, and Escape closes it")
 def check_docs_menu(page, base):
     bad = []
