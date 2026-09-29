@@ -17,6 +17,8 @@ fetch('assets/dist/stats.json')
       components: s.components,
       lineCards: lineCards ? lineCards[1] : null,
       configurations: s.configurations,
+      listings: s.listings,
+      nosVendors: s.nosVendors,
       generated: s.generated,
     };
     for (const [key, value] of Object.entries(values)) {
@@ -28,6 +30,11 @@ fetch('assets/dist/stats.json')
     if (s.vendorNames?.length) {
       for (const el of document.querySelectorAll('[data-stat="vendors"]')) {
         el.title = s.vendorNames.join(', ');
+      }
+    }
+    if (s.nosVendorNames?.length) {
+      for (const el of document.querySelectorAll('[data-stat="nosVendors"]')) {
+        el.title = s.nosVendorNames.join(', ');
       }
     }
   })
