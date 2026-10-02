@@ -1,7 +1,7 @@
 // The draw.io export page: pick a scope, get a library.
 import { createDevicePicker } from '../vendor/devsel.js';
 import { jdist } from '../vendor/dist.js';
-import { entry, library, rackDiagram, RACK, SCALE } from '../vendor/drawio.js';
+import { entry, library, rackDiagram, connectable, RACK, SCALE } from '../vendor/drawio.js';
 import { loadFace, portsOf } from '../vendor/zones.js';
 import { buildStencil, rasterize } from '../vendor/omnigraffle.js';
 
@@ -247,15 +247,20 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false, opti
   return {loaded: out, missing};
 }
 
-function report(el, loaded, missing, extra = '') {
-  const ports = loaded.reduce((a, f) => a + f.ports.length, 0);
+// WHAT CAN BE CONNECTED TO, which is not the same count in the two formats. In
+// draw.io a bay holding a card is a container of its card's ports and takes no
+// line itself, so the library counts connectable() - ports and empty bays. In
+// OmniGraffle every port and every bay is a shape with a magnet, a populated bay
+// included, so the stencil counts them all and calls them magnets.
+function report(el, loaded, missing, extra = '', {magnets = false} = {}) {
+  const ports = loaded.reduce((a, f) => a + (magnets ? f.ports.length : connectable(f.ports)), 0);
   const dev = loaded.filter(f => f.kind === 'device').length;
   const opt = loaded.filter(f => f.kind === 'optic').length;
   const mod = loaded.length - dev - opt;
   const parts = [`${dev} face${dev === 1 ? '' : 's'}`];
   if (mod) parts.push(`${mod} card${mod === 1 ? '' : 's'}`);
   if (opt) parts.push(`${opt} optic${opt === 1 ? '' : 's'}`);
-  parts.push(`${ports} connectable`);
+  parts.push(magnets ? `${ports} magnets` : `${ports} connectable`);
   el.textContent = parts.join(', ') + extra +
     (missing.length ? ` — ${missing.length} skipped (no compiled front)` : '');
 }
@@ -341,7 +346,8 @@ async function buildOmniGraffle() {
     const bytes = buildStencil(sheets, {tinted: $('otint').checked});
     save(bytes, `${vendorTag(scope)}-portrayal.gstencil`, 'application/octet-stream');
     report(stat, loaded, missing, `, ${(bytes.length / 1048576).toFixed(1)} MB` +
-      (reduced.length ? `, ${reduced.length} drawn below ${pxmm} px/mm to fit a browser image` : ''));
+      (reduced.length ? `, ${reduced.length} drawn below ${pxmm} px/mm to fit a browser image` : ''),
+      {magnets: true});
   } catch (err) {
     stat.textContent = `failed: ${err.message}`;
   } finally {

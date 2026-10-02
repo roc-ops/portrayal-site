@@ -1279,10 +1279,9 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
         const d = toDrawio(exportRoot(), doc);
         const name = marks.filename(doc, 'drawio');
         save(d.text, name, 'application/vnd.jgraph.mxfile');
-        // Counted from the file, as port cells. d.ports counts bays too, and a
-        // bay holding a card is a container that takes no line of its own.
-        const n = (d.text.match(/portrayal-path="/g) || []).length;
-        say('#expmsg', `${name} — ${n} ports to connect to, ${kb(d.text.length)}`, 'good');
+        // d.ports is what a line can be drawn to: every port and every empty
+        // bay, not a bay holding a card (the kit's connectable()).
+        say('#expmsg', `${name} — ${d.ports} connection points, ${kb(d.text.length)}`, 'good');
       } else {
         const g = await toGraffle(exportRoot(), doc, {pxmm: 8});
         const name = marks.filename(doc, 'gstencil');
