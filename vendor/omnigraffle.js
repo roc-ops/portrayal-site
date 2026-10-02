@@ -4,7 +4,7 @@
 // as one picture, plus one invisible shape over every port and bay, so a line
 // drawn to a port attaches to THAT port rather than to a point on a picture.
 // Worked out on a one-device prototype and tested in OmniGraffle 7 before it
-// came here - prototypes/omnigraffle/README.md has every round of it.
+// was generalised.
 //
 // What each piece is, and why:
 //
@@ -30,6 +30,9 @@
 // A FACE THAT DRAWS BLANK is almost certainly a document open READ ONLY:
 // OmniGraffle will not paint images there, though it still shows them in the
 // sidebar thumbnails. That cost three rounds of the prototype.
+
+import { readDrawing } from './zones.js';
+import { normalise } from './marks.js';
 
 const PT = 72 / 25.4;             // points per millimetre - faces are true size
 const GAP = 36;                   // points between stencil items
@@ -262,4 +265,28 @@ export function buildStencil(sheets, {tinted = false, generated = new Date()} = 
     UseEntirePage: false, useNotesKey: true,
   };
   return zipStore([{name: 'data.plist', data: enc.encode(plist(doc))}, ...images], generated);
+}
+
+/**
+ * A live drawing, as it stands, as a one-item OmniGraffle stencil.
+ *
+ * `doc` is a marks document, as for drawio.toDrawio: what is highlighted, lit,
+ * labelled or cropped is in the picture, and ports outside a crop are left out.
+ * The picture is PNG, so a blinking lamp is held at its lit phase - the one
+ * marks.toSvg freezes every lamp at.
+ *
+ * @returns {Promise<{bytes, name, ports, density}>}  the .gstencil's bytes, a
+ *   name for it, how many ports it carries, and the px/mm the face was drawn at
+ *   (less than asked when the face would not fit a canvas at that density)
+ */
+export async function toGraffle(svgRoot, doc = {}, {pxmm = 8, name, tinted = false,
+                                                    generated = new Date()} = {}) {
+  const d = normalise(doc);
+  const {text, vb, ports} = readDrawing(svgRoot, d);
+  const title = name || [d.device, d.config, d.view].filter(Boolean).join(' ') || 'drawing';
+  const r = await rasterize(text, vb, pxmm);
+  const bytes = buildStencil([{title, items: [{
+    label: title, png: r.png, vb, ports, face: d.view || undefined, ref: d.device || undefined,
+  }]}], {tinted, generated});
+  return {bytes, name: title, ports: ports.length, density: r.density};
 }

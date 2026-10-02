@@ -12,8 +12,11 @@
 // stencil CAN carry named connection points, draw.io writes exitX/exitY into the
 // edge and never the name. One cell per element is addressable but needs path
 // conversion to look right and runs to hundreds of cells a device.
+//
+// Finding the ports is zones.js's; this file only writes cells.
 
-const MM = 25.4;
+import { readDrawing } from './zones.js';
+import { normalise } from './marks.js';
 
 // Standalone entries are drawn at 2 px/mm, which is legible on a blank canvas.
 export const SCALE = 2;
@@ -32,188 +35,6 @@ const esc = s => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;');
 
-// ── reading the compiled drawing ─────────────────────────────────────────
-// A real transform stack, because the compiled output is not only translates.
-// A C40G mounts its supervisors on their side -
-//   transform="translate(214.75,118.645) rotate(90) translate(-15.235,-172.75)"
-// - and reading just the first translate put twelve of its ports 80 mm below
-// the chassis. 65 rotates and 8 scales across the current faces.
-//
-// Matrices are SVG's [a b c d e f]: x' = a·x + c·y + e, y' = b·x + d·y + f.
-const I = [1, 0, 0, 1, 0, 0];
-const mul = (m, n) => [
-  m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
-  m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
-  m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5],
-];
-const apply = (m, x, y) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
-
-function parseTransform(str) {
-  let m = I;
-  if (!str) return m;
-  const re = /(matrix|translate|scale|rotate|skewX|skewY)\s*\(([^)]*)\)/g;
-  let t;
-  while ((t = re.exec(str))) {
-    const n = t[2].split(/[\s,]+/).map(Number).filter(Number.isFinite);
-    const rad = d => d * Math.PI / 180;
-    switch (t[1]) {
-      case 'matrix':    if (n.length >= 6) m = mul(m, n.slice(0, 6)); break;
-      case 'translate': m = mul(m, [1, 0, 0, 1, n[0] || 0, n[1] || 0]); break;
-      case 'scale':     m = mul(m, [n[0] ?? 1, 0, 0, n[1] ?? n[0] ?? 1, 0, 0]); break;
-      case 'skewX':     m = mul(m, [1, 0, Math.tan(rad(n[0] || 0)), 1, 0, 0]); break;
-      case 'skewY':     m = mul(m, [1, Math.tan(rad(n[0] || 0)), 0, 1, 0, 0]); break;
-      case 'rotate': {
-        const c = Math.cos(rad(n[0] || 0)), s2 = Math.sin(rad(n[0] || 0));
-        const R = [c, s2, -s2, c, 0, 0];
-        // rotate(a cx cy) is translate(cx cy) rotate(a) translate(-cx -cy)
-        m = (n.length >= 3)
-          ? mul(mul(mul(m, [1, 0, 0, 1, n[1], n[2]]), R), [1, 0, 0, 1, -n[1], -n[2]])
-          : mul(m, R);
-        break;
-      }
-    }
-  }
-  return m;
-}
-
-// THE REAL OUTLINE, NOT THE RECTANGLES INSIDE IT. The walk in readSvg measures
-// rects and circles and nothing else, because a path has no box until something
-// lays it out. That was right for an SFP cage, which is one rect, and wrong for
-// every jack drawn as a housing: an RJ45 is mostly path with one small latch
-// rect in it, so on the S9510-28DC the TOD, BITS and console jacks came out as
-// 7.6 x 2.3 mm strips across the top of a 15.8 x 13.2 mm jack - 8% of it - and
-// a line could not be landed on them in draw.io or in OmniGraffle. The coax
-// timing inputs fared little better, at about 55%. A port whose art is ALL path
-// had no box at all and was dropped.
-//
-// The browser can measure a whole group, so where there is a browser it does,
-// with the same CTM arithmetic relief.js uses and all four corners so a rotated
-// card still gets its full box. Where there is no document - a test runner, a
-// worker - the walked box stands, which is what every export had before.
-function layoutZones(text, zones) {
-  if (typeof document === 'undefined' || !zones.length) return;
-  const div = document.createElement('div');
-  div.style.cssText = 'position:absolute;left:-10000px;top:0;width:1000px;visibility:hidden';
-  div.innerHTML = text;
-  document.body.append(div);
-  try {
-    const svg = div.querySelector('svg');
-    const rootCtm = svg && svg.getScreenCTM();
-    if (!rootCtm) return;
-    const inv = rootCtm.inverse();
-    for (const z of zones) {
-      const el = svg.querySelector(`[id="${CSS.escape(z.id)}"]`);
-      if (!el || typeof el.getBBox !== 'function') continue;
-      let b;
-      try { b = el.getBBox(); } catch (e) { continue; }
-      if (!(b.width > 0 && b.height > 0)) continue;
-      const m = inv.multiply(el.getScreenCTM());
-      let x = Infinity, y = Infinity, x1 = -Infinity, y1 = -Infinity;
-      for (const [px, py] of [[b.x, b.y], [b.x + b.width, b.y],
-                              [b.x + b.width, b.y + b.height], [b.x, b.y + b.height]]) {
-        const ax = m.a * px + m.c * py + m.e, ay = m.b * px + m.d * py + m.f;
-        x = Math.min(x, ax); y = Math.min(y, ay); x1 = Math.max(x1, ax); y1 = Math.max(y1, ay);
-      }
-      Object.assign(z, {x, y, x1, y1});
-    }
-  } finally { div.remove(); }
-}
-
-/** `layout: false` keeps the rect-and-circle walk alone - the old answer, kept
- *  so the two can be compared, and used wherever there is no document. */
-export function readSvg(text, {layout = true} = {}) {
-  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
-  const root = doc.documentElement;
-  if (root.querySelector('parsererror')) throw new Error('unparseable SVG');
-  const vb = (root.getAttribute('viewBox') || '0 0 0 0').split(/\s+/).map(Number);
-  const zones = [];
-  const num = (el, a, d = 0) => {
-    const v = parseFloat(el.getAttribute(a));
-    return Number.isFinite(v) ? v : d;
-  };
-  // A rotated rectangle's bounds are the bounds of its transformed corners.
-  const grow = (z, ctm, x, y, w, h) => {
-    if (!z) return;
-    for (const [px, py] of [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]) {
-      const [ax, ay] = apply(ctm, px, py);
-      z.x = Math.min(z.x, ax); z.y = Math.min(z.y, ay);
-      z.x1 = Math.max(z.x1, ax); z.y1 = Math.max(z.y1, ay);
-    }
-  };
-  (function walk(el, ctm, zone) {
-    ctm = mul(ctm, parseTransform(el.getAttribute?.('transform')));
-    const tag = el.tagName;
-    // What a thing IS comes from the model, not from the shape of its id.
-    // Guessing by name found 1 port on an ASR 9001 (whose ports are named tod,
-    // svc-lan, sync-0) and none at all on a C100G, whose 44 ports live on
-    // seated modules and are named front-6--module--xg0.
-    const cls = el.getAttribute?.('data-class');
-    let {port, bay} = zone;
-    // Outermost wins WITHIN a class, not across classes. A cage inside a port
-    // is part of that port - not a second thing to plug into - but a port on a
-    // card seated in a bay is very much its own port: that is where the 44
-    // ports of a C100G live, named front-6--module--xg0, and nesting them
-    // under their bay loses every one of them.
-    if (tag === 'g' && el.id) {
-      // The model's own words about the thing, carried through. A miniature
-      // symbol needs to know which bay a port belongs to and what kind of port
-      // it is; geometry alone cannot say either.
-      const meta = {
-        path: el.getAttribute('data-path') || el.id,
-        group: el.getAttribute('data-group') || null,
-        media: el.getAttribute('data-media') || null,
-        speed: el.getAttribute('data-speed') || null,
-        model: el.getAttribute('data-model') || null,
-      };
-      if (cls === 'port' && !port) {
-        port = {id: el.id, cls, ...meta,
-                x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
-        zones.push(port);
-      } else if (cls === 'bay' && !bay) {
-        bay = {id: el.id, cls, ...meta,
-               x: Infinity, y: Infinity, x1: -Infinity, y1: -Infinity};
-        zones.push(bay);
-      }
-    }
-    const z = port || bay;
-    if (tag === 'rect') {
-      const x = num(el, 'x'), y = num(el, 'y');
-      const w = num(el, 'width'), h = num(el, 'height');
-      grow(port, ctm, x, y, w, h); if (bay !== port) grow(bay, ctm, x, y, w, h);
-    } else if (tag === 'circle') {
-      const r = num(el, 'r');
-      const x = num(el, 'cx') - r, y = num(el, 'cy') - r;
-      grow(port, ctm, x, y, 2 * r, 2 * r); if (bay !== port) grow(bay, ctm, x, y, 2 * r, 2 * r);
-    } else if (tag === 'path' || tag === 'line' || tag === 'polygon') {
-      // No bbox without laying it out; a port is never only a path, so its
-      // rects carry it. Noted so the count stays honest if that changes.
-      if (z) z.hasPath = true;
-    }
-    for (const c of el.children) walk(c, ctm, {port, bay});
-  })(root, I, {port: null, bay: null});
-  if (layout) layoutZones(text, zones);
-  const sized = zones
-    .filter(z => Number.isFinite(z.x))
-    .map(z => ({id: z.id, cls: z.cls, path: z.path, group: z.group,
-                media: z.media, speed: z.speed, model: z.model,
-                x: z.x, y: z.y, w: z.x1 - z.x, h: z.y1 - z.y}));
-  return {vb, zones: sized};
-}
-
-/** The things a cable can be drawn to: ports, and optionally the bays that hold
- *  the cards whose ports they are. Sorted so port-2 precedes port-10. */
-export function portsOf(zones, {bays = false} = {}) {
-  return zones
-    .filter(z => z.cls === 'port' || (bays && z.cls === 'bay'))
-    // Bays FIRST, then ports. A later sibling draws on top in draw.io, and a
-    // bay is a big cell containing the ports of whatever is seated in it - so
-    // sorting the two together by id lets a slot land above its own card's
-    // ports and swallow every click meant for them.
-    .sort((a, b) =>
-      (a.cls === b.cls ? 0 : a.cls === 'bay' ? -1 : 1) ||
-      a.id.length - b.id.length || a.id.localeCompare(b.id));
-}
-
 // ── cells ────────────────────────────────────────────────────────────────
 const cell = (id, value, style, x, y, w, h, parent = '1') =>
   `<mxCell id="${esc(id)}" value="${esc(value)}" style="${style}" vertex="1" ` +
@@ -224,7 +45,7 @@ const cell = (id, value, style, x, y, w, h, parent = '1') =>
 // A PORT names the drawing path it came from. The cell id is a slug of the
 // SVG id, which is namespaced for a port on a seated card
 // (slot-2--module--p0); the path (slot-2/module/p0) is what a cable plan,
-// Explorer's swaps and the Rack Builder all speak, so a connector drawn later
+// Explorer's swaps and a rack plan all speak, so a connector drawn later
 // finds its port by this attribute instead of reversing the slug.
 const portCell = (id, path, style, x, y, w, h, parent) =>
   `<object label="" portrayal-path="${esc(path)}" id="${esc(id)}"><mxCell style="${style}" ` +
@@ -278,6 +99,11 @@ export const COVER_SELECTOR = '[data-class="bezel"][data-behaviour="mounts"][dat
 /** The face split into a drawing without its covers, and each cover alone on
  *  the same canvas (so it lands exactly where it was). Outermost covers only. */
 export function splitCovers(svgText) {
+  // No bezel, nothing to split - and no parse. A face is parsed once for the
+  // base and once more per cover, which is three copies of a large chassis to
+  // find nothing on most of them, and it lets a face with no cover be written
+  // where there is no DOMParser at all.
+  if (!/data-class=["']bezel["']/.test(svgText)) return {base: svgText, covers: []};
   const parse = () => new DOMParser().parseFromString(svgText, 'image/svg+xml').documentElement;
   const outermost = root => [...root.querySelectorAll(COVER_SELECTOR)]
     .filter(el => !el.parentElement.closest(COVER_SELECTOR));
@@ -316,6 +142,12 @@ export function splitCovers(svgText) {
  */
 export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false, covers = true} = {}) {
   const sx = w / vb[2], sy = h / vb[3];
+  // FROM THE VIEWBOX'S CORNER, not from 0,0. A device face starts at the
+  // origin, so the two were the same thing until the faces that do not: an
+  // optic's face stands its bail above y=0 (`0 -4.5 18.35 14.6`), and a cropped
+  // export is a viewBox over the middle of a faceplate. Measured from 0,0, the
+  // ports of either land off the picture by the viewBox's offset.
+  const X = v => (v - vb[0]) * sx, Y = v => (v - vb[1]) * sy;
   const tint = c => visible
     ? (c === 'bay' ? 'fillColor=#F5A623;opacity=16;strokeColor=#F5A623;'
                    : 'fillColor=#00A0FF;opacity=22;strokeColor=#00A0FF;')
@@ -351,7 +183,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
       && String(p.path || p.id).startsWith(`${b.id}/`));
     if (!mine.length) continue;
     mine.forEach(p => owned.add(p));
-    const bx = b.x * sx, by = b.y * sy;
+    const bx = X(b.x), by = Y(b.y);
     const bw = Math.max(b.w * sx, 1.5), bh = Math.max(b.h * sy, 1.5);
     out.push(
       `<object label="" portrayal-bay="${esc(b.id)}"` +
@@ -363,14 +195,14 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
     for (const p of mine) {
       out.push(portCell(`${id}-${p.id}`, p.path || p.id,
         `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
-        p.x * sx - bx, p.y * sy - by,
+        X(p.x) - bx, Y(p.y) - by,
         Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), `${id}-${b.id}`));
     }
   }
   for (const p of ports) {
     if (owned.has(p) || p.cls === 'bay') continue;
     out.push(portCell(`${id}-${p.id}`, p.path || p.id, `${tint(p.cls)}html=1;connectable=1;${PORT_POINT}`,
-      p.x * sx, p.y * sy, Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), id));
+      X(p.x), Y(p.y), Math.max(p.w * sx, 1.5), Math.max(p.h * sy, 1.5), id));
   }
   // A bay with no ports of its own is still worth being a cell - it is an empty
   // slot - so it keeps the behaviour it had before this change.
@@ -378,7 +210,7 @@ export function deviceCells(id, svgText, vb, ports, x, y, w, h, {visible = false
     if (ports.some(p => p.cls === 'port'
         && String(p.path || p.id).startsWith(`${b.id}/`))) continue;
     out.push(cell(`${id}-${b.id}`, '', `${tint('bay')}html=1;connectable=1;${PORT_POINT}`,
-      b.x * sx, b.y * sy, Math.max(b.w * sx, 1.5), Math.max(b.h * sy, 1.5), id));
+      X(b.x), Y(b.y), Math.max(b.w * sx, 1.5), Math.max(b.h * sy, 1.5), id));
   }
   return out;
 }
@@ -417,7 +249,6 @@ export function library(entries, provenance = null) {
   // an old library can disagree with the current drawing about where a port is.
   // The comment is the only place to say so: an mxlibrary has no metadata slot,
   // and putting it in a shape's title would put it in the shape picker.
-  // roc-ops/portrayal-site#14.
   const head = provenance ? `<!--\n${String(provenance)
     .replace(/--+/g, '-')}\n-->\n` : '';
   return `${head}<mxlibrary>${payload}</mxlibrary>`;
@@ -573,16 +404,43 @@ export function rackDiagram(groups, {faces = ['front'], labels = true} = {}) {
   return `<mxfile host="portrayal">${pages.join('')}</mxfile>`;
 }
 
-/** Fetch a compiled face and read it, once per url. */
-const SEEN = new Map();
-export async function loadFace(url) {
-  if (!SEEN.has(url)) {
-    SEEN.set(url, fetch(url).then(async r => {
-      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
-      const text = await r.text();
-      const {vb, zones} = readSvg(text);
-      return {text, vb, zones};
-    }).catch(e => { SEEN.delete(url); throw e; }));
-  }
-  return SEEN.get(url);
+
+/**
+ * One device as a .drawio document: the face at SCALE px/mm on a page of its
+ * own, its ports connectable, nothing else on the canvas.
+ *
+ * The form to OPEN, where a library is the form to keep. A person who set a
+ * device up the way a project needs it - optics seated, lamps lit, one region
+ * cropped - wants to draw on that device now, and a library makes them import a
+ * file, find the shape and drag it out first.
+ */
+export function diagram(name, svgText, vb, ports, opts = {}) {
+  const e = entry(name, svgText, vb, ports, opts);
+  return `<mxfile host="portrayal"><diagram name="${esc(name)}" id="page0">` +
+    e.xml.replace('<mxGraphModel>', '<mxGraphModel grid="0" page="0">') +
+    `</diagram></mxfile>`;
+}
+
+/**
+ * A live drawing, as it stands, for draw.io.
+ *
+ *   form: 'diagram'  a .drawio to open and draw on (the default)
+ *         'library'  a one-shape library to keep beside the others
+ *
+ * `doc` is a marks document - the highlights, labels, lamp states and crop a
+ * page has applied - and goes into the picture exactly as marks.toSvg would
+ * write it. Ports outside a crop are left out rather than left floating.
+ *
+ * @returns {{text, name, ports}}  the file's text, a name for it, and how many
+ *                                 connection points it carries
+ */
+export function toDrawio(svgRoot, doc = {}, {form = 'diagram', name, visible = false} = {}) {
+  const d = normalise(doc);
+  const {text, vb, ports} = readDrawing(svgRoot, d);
+  const title = name || [d.device, d.config, d.view].filter(Boolean).join(' ') || 'drawing';
+  const out = form === 'library'
+    ? library([entry(title, text, vb, ports, {visible})],
+        `Portrayal ${title} - ${d.marks.length} mark(s)${d.crop ? ', cropped' : ''}`)
+    : diagram(title, text, vb, ports, {visible});
+  return {text: out, name: title, ports: ports.length};
 }

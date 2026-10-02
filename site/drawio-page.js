@@ -1,8 +1,9 @@
 // The draw.io export page: pick a scope, get a library.
 import { createDevicePicker } from '../vendor/devsel.js';
 import { jdist } from '../vendor/dist.js';
-import { entry, library, rackDiagram, loadFace, portsOf, RACK, SCALE } from './drawio.js';
-import { buildStencil, rasterize } from './omnigraffle.js';
+import { entry, library, rackDiagram, RACK, SCALE } from '../vendor/drawio.js';
+import { loadFace, portsOf } from '../vendor/zones.js';
+import { buildStencil, rasterize } from '../vendor/omnigraffle.js';
 
 const $ = id => document.getElementById(id);
 const DIST = 'assets/dist/';
@@ -252,7 +253,7 @@ async function buildLibrary({rack}) {
 
 // ── OmniGraffle ──────────────────────────────────────────────────────────
 // The same scope, faces and modules as the shape library, drawn by the browser
-// into images and packed as a single-file stencil. See omnigraffle.js for why
+// into images and packed as a single-file stencil. See vendor/omnigraffle.js for why
 // each piece is the way it is; prototypes/omnigraffle has the tests behind it.
 async function buildOmniGraffle() {
   const btn = $('dl-og'), stat = $('stat-og');

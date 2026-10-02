@@ -2812,7 +2812,7 @@ def check_drawio_port_paths(page, base):
     page.goto(f"{base}/index.html", wait_until="load")
     r = page.evaluate("""async () => {
       const F = await import('/site/rack/face.js');
-      const D = await import('/site/drawio.js');
+      const D = await import('/vendor/drawio.js');
       const f = await F.configuredFace({ref: 'asr-9006', cfg: 'base', view: 'front',
         swaps: {'slot-2': 'cisco/a9k-16x100ge-tr@1'}});
       const xml = D.deviceCells('dev', f.text, f.vb, f.ports, 0, 0, 200, 200).join('');
@@ -2930,7 +2930,7 @@ def check_drawio_covers(page, base):
     page.goto(f"{base}/index.html", wait_until="load")
     r = page.evaluate("""async () => {
       const F = await import('/site/rack/face.js');
-      const D = await import('/site/drawio.js');
+      const D = await import('/vendor/drawio.js');
       const svgOf = cell => {
         const b64 = cell.getAttribute('style').split('image=data:image/svg+xml,')[1].split(';')[0];
         return new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));

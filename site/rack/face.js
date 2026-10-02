@@ -12,7 +12,7 @@
 //      plugs and PSUs went missing from the rear elevation.)
 //   2. paints `fields` (an optic's latch color, its label) the way Explorer
 //      does: shortest path first, on the part and on its projections.
-//   3. reads ports and bays with drawio.js's readSvg, so a port on a seated
+//   3. reads ports and bays with zones.js's readSvg, so a port on a seated
 //      card or optic is a port like any other.
 //
 // `turned` means the device's other panel faces out, so front and rear swap.
@@ -27,7 +27,7 @@ import {faceUrl} from '../faces.js';
 import {jdist} from '../../vendor/dist.js';
 import {seatFace} from '../../vendor/swap.js';
 import {paintFields} from '../../vendor/fields.js';
-import {readSvg, portsOf} from '../drawio.js';
+import {readSvg, portsOf} from '../../vendor/zones.js';
 
 export const DIST = 'assets/dist/';
 const OPPOSITE = {front: 'rear', rear: 'front'};

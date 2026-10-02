@@ -27,7 +27,7 @@ The line runs between the modules and the pages built on them.
 
 | | Owner |
 |---|---|
-| `vendor/*.js` — `shell.js`, `viewer3d.js`, `relief.js`, `lamps.js`, `states.js`, `fields.js`, `swap.js`, `devsel.js`, `dist.js`, `share.js`, `marks.js`, `gif.js` | **Portrayal.** How you talk to a drawing. Vendored here, changed there. |
+| `vendor/*.js` — `shell.js`, `viewer3d.js`, `relief.js`, `lamps.js`, `states.js`, `fields.js`, `swap.js`, `devsel.js`, `dist.js`, `share.js`, `marks.js`, `gif.js`, `zones.js`, `drawio.js`, `omnigraffle.js` | **Portrayal.** How you talk to a drawing. Vendored here, changed there. |
 | `explorer.html`, `components.html`, `exporter.html`, `index.html`, `schema.html`, `site/*` | **This repository.** What you do with it. |
 
 `shell.js` makes that line a real one rather than a convention: it is the whole

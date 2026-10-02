@@ -42,7 +42,7 @@
 import {stage3d, stageRack, el, title, lead, kv, save} from '../artifact.js';
 import {CAST, RACK_U, overrides} from '../rack.js';
 import {enterPatched, cabledElevationSvg} from '../patch-view.js';
-import {rackDiagram} from '../../drawio.js';
+import {rackDiagram} from '../../../vendor/drawio.js';
 import {configuredFace} from '../../rack/face.js';
 import {rasterize} from '../../raster.js';
 // A circular import (the rail imports this stage); setMode is only read inside
