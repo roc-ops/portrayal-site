@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Portrayal — annotate</title>
-<meta name="description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF or a share URL.">
+<meta name="description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF, draw.io, OmniGraffle or a share URL.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="portrayal.dev">
 <meta property="og:url" content="https://portrayal.dev/annotate.html">
 <meta property="og:title" content="Portrayal — annotate">
-<meta property="og:description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF or a share URL.">
+<meta property="og:description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF, draw.io, OmniGraffle or a share URL.">
 <meta property="og:image" content="https://portrayal.dev/brand/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@portrayaldev">
 <meta name="twitter:title" content="Portrayal — annotate">
-<meta name="twitter:description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF or a share URL.">
+<meta name="twitter:description" content="Select parts of a device, highlight them, set lamp states, and export the result as SVG, PNG, GIF, draw.io, OmniGraffle or a share URL.">
 <meta name="twitter:image" content="https://portrayal.dev/brand/og-card.png">
 <link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -268,6 +268,8 @@
 <script type="module">
 import { createShell, esc } from './vendor/shell.js';
 import * as marks from './vendor/marks.js';
+import { toDrawio } from './vendor/drawio.js';
+import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
 // The analysis of what a drawing says about its own lamps is not this page's -
 // the gaps register asks the same questions of the same drawings offline. What
@@ -336,6 +338,8 @@ panel.innerHTML = `
     <button data-act="png-8">8</button>
     <button data-act="png-16">16 px/mm</button>
     <button data-act="gif-4" title="Animated GIF at 4 px/mm. Raster and unaddressable — for a slide or a ticket, where a blinking lamp has to be seen blinking. The SVG stays the file worth keeping.">GIF ▸</button>
+    <button data-act="drawio" title="A .drawio file to open and draw on: this drawing as you have it - optics seated, lamps lit, marks and crop - with a named connection point on every port">draw.io</button>
+    <button data-act="graffle" title="An OmniGraffle stencil of this drawing as you have it, with a named, magnetised shape on every port. The picture is PNG at 8 px/mm, so a blinking lamp is shown lit">OmniGraffle</button>
     <button data-act="share">share URL</button>
     <label class="f" style="margin-left:auto"><input type="checkbox" id="legend" checked> legend</label>
   </div>
@@ -1264,6 +1268,27 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
         (g.still ? 'one frame: nothing in this drawing is blinking'
                  : `${g.frames} frames at ${g.delay} ms — raster, for presentation`),
         g.still ? '' : 'good');
+    } else if (act === 'drawio' || act === 'graffle') {
+      // THE DRAWING AS IT STANDS, for a diagram. The kit reads the same export
+      // the SVG button writes - so what is seated, lit, marked or cropped here
+      // is the picture - and puts a connectable shape over each port in it,
+      // leaving out the ports a crop cuts away. That is the difference from
+      // importing the SVG itself, where every path becomes a shape.
+      const kb = n => `${(n / 1024).toFixed(0)} KB`;
+      if (act === 'drawio') {
+        const d = toDrawio(exportRoot(), doc);
+        const name = marks.filename(doc, 'drawio');
+        save(d.text, name, 'application/vnd.jgraph.mxfile');
+        say('#expmsg', `${name} — ${d.ports} connection points, ${kb(d.text.length)}`, 'good');
+      } else {
+        const g = await toGraffle(exportRoot(), doc, {pxmm: 8});
+        const name = marks.filename(doc, 'gstencil');
+        save(g.bytes, name, 'application/octet-stream');
+        // Said when the face was too big for a canvas at 8 px/mm, rather than
+        // leaving a reader to find a softer picture than they asked for.
+        const at = g.density < 8 ? `, drawn at ${g.density.toFixed(1)} px/mm to fit` : '';
+        say('#expmsg', `${name} — ${g.ports} magnets, ${kb(g.bytes.length)}${at}`, 'good');
+      }
     } else if (act === 'share') {
       const enc = marks.encode(doc);
       // this page may be running in the tab shell's iframe, so the URL that is

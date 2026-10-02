@@ -4237,6 +4237,73 @@ def check_phone_stage(page, base):
             bad.append(f"{name}: the page scrolls at 360x740 ({r['sw']}x{r['sh']}) - the tool should fit the screen")
     return bad
 
+
+# ANNOTATE'S DIAGRAM EXPORTS ARE THE DRAWING AS IT STANDS. The point of the two
+# buttons is that what was set up here - an optic seated, a lamp lit, a crop -
+# reaches draw.io and OmniGraffle with a connection point on every port, and
+# not one on a port the crop cut away. Downloads are caught as blobs, not saved.
+@extra("Annotate's draw.io and OmniGraffle exports carry the seated optic, the lamp and the crop")
+def check_annotate_diagram_exports(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    for crop in (None, {"x": 170, "y": 5, "w": 120, "h": 35}):
+        page.evaluate("""async crop => {
+          const m = await import('/vendor/marks.js');
+          location.hash = m.encode({v: 1, device: 's9510-28dc', config: 'dc', view: 'front',
+            legend: false, crop, swaps: {'port-0': 'generic/qsfp-cable@1'},
+            marks: [{select: '#led-gnss', state: 'antenna-short'}]});
+        }""", crop)
+        page.reload(wait_until="load")
+        page.wait_for_selector("#stage svg [id='port-0-occupant']", state="attached", timeout=20000)
+        r = page.evaluate("""async () => {
+          const blobs = [];
+          const orig = URL.createObjectURL.bind(URL);
+          URL.createObjectURL = b => { blobs.push(b); return orig(b); };
+          HTMLAnchorElement.prototype.click = function () {};
+          // By type: toGraffle rasterises its face through a blob URL of its
+          // own, so the first blob after the click is the SVG, not the file.
+          const press = async (act, type) => {
+            const n = blobs.length;
+            document.querySelector(`button[data-act="${act}"]`).click();
+            for (let i = 0; i < 100; i++) {
+              const hit = blobs.slice(n).find(b => b.type === type);
+              if (hit) return hit;
+              await new Promise(ok => setTimeout(ok, 100));
+            }
+          };
+          const dio = await press('drawio', 'application/vnd.jgraph.mxfile');
+          const og = await press('graffle', 'application/octet-stream');
+          if (!dio || !og) return {missing: true, msg: document.querySelector('#expmsg').textContent};
+          const x = new DOMParser().parseFromString(await dio.text(), 'text/xml');
+          const face = x.querySelector('mxCell[id$="-face"]')?.getAttribute('style') || '';
+          const b64 = (face.match(/image=data:image\\/svg\\+xml,([^;]+)/) || [])[1] || '';
+          const svg = new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+          const zip = new Uint8Array(await og.arrayBuffer());
+          return {parses: !x.querySelector('parsererror'),
+                  ports: x.querySelectorAll('object[portrayal-path]').length,
+                  optic: svg.includes('id="port-0-occupant'), lit: /#eab308/i.test(svg),
+                  zip: zip[0] === 0x50 && zip[1] === 0x4b,
+                  plist: new TextDecoder().decode(zip).includes('portrayal-path')};
+        }""")
+        what = "cropped" if crop else "whole"
+        if r.get("missing"):
+            bad.append(f"annotate ({what}): an export produced no file - {r['msg']}")
+            continue
+        if not r["parses"]:
+            bad.append(f"annotate ({what}): the .drawio is not well-formed XML")
+        if not crop and r["ports"] != 36:
+            bad.append(f"annotate (whole): {r['ports']} port cells, expected the S9510-28DC's 36")
+        if crop and not 0 < r["ports"] < 36:
+            bad.append(f"annotate (cropped): {r['ports']} port cells - the crop did not drop the ports it cut away")
+        if not r["optic"]:
+            bad.append(f"annotate ({what}): the seated optic is not in the draw.io picture")
+        if not r["lit"]:
+            bad.append(f"annotate ({what}): the GNSS lamp's antenna-short colour is not in the draw.io picture")
+        if not (r["zip"] and r["plist"]):
+            bad.append(f"annotate ({what}): the .gstencil is not a zip with named port shapes")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
