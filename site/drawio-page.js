@@ -15,6 +15,12 @@ let DEVICES = [], DEV = null, COMPONENTS = [], SIZES = {};
 // the same reason the DCIM exporter refuses to give them a manufacturer.
 const NORM = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 const nsOf = man => NORM(String(man).split(/\s+/)[0]);
+// THE DEVICE'S OWN NAMESPACE, which devices.json carries. Derived from the
+// manufacturer's first word it was wrong for two vendors: "FS.com" became
+// `fscom` and "Telco Systems" `telco`, against the `fs` and `telco-systems`
+// their components live under - so neither vendor's modules were ever offered,
+// and their stencil shapes named a namespace that does not exist.
+const nsOfDevice = d => d.ns || nsOf(d.manufacturer);
 
 /** The default face for a device: the NOS-neutral front if there is one, else
  *  the first configuration's. The picture is the same either way; the
@@ -26,9 +32,37 @@ const faceUrl = (d, face) => `${DIST}${d.name}.${face}.svg`;
  *  eight Cisco devices against 128 Cisco components. */
 function modulesFor(key) {
   const devs = inScope(key);
-  const wanted = new Set(devs.map(d => nsOf(d.manufacturer)));
-  return COMPONENTS.filter(c => c.kind === 'module' && wanted.has(c.ns) && c.files?.default);
+  const wanted = new Set(devs.map(nsOfDevice));
+  return COMPONENTS.filter(c => c.kind === 'module' && c.class !== 'transceiver'
+    && wanted.has(c.ns) && c.files?.default);
 }
+
+/** Every optic and cable end, whoever makes it: an SFP from FS goes in a cage
+ *  on a UfiSpace box, so these are not any one vendor's modules, and the
+ *  generic ones - most of them, and the only ones with ports drawn on - belong
+ *  to no vendor at all. The newest major of each, as a library offers the part
+ *  you would place today. Drawn at the same scale as a standalone face, so one
+ *  dropped on a cage lines up with it. */
+function opticsAll() {
+  const newest = new Map();
+  for (const c of COMPONENTS) {
+    if (c.class !== 'transceiver' || !c.files?.default) continue;
+    const k = `${c.ns}/${c.name}`, major = parseInt(String(c.major).replace(/^v/, ''), 10) || 0;
+    const had = newest.get(k);
+    if (!had || major > had.m) newest.set(k, {c, m: major});
+  }
+  return [...newest.values()].map(v => v.c)
+    .sort((a, b) => (a.ns === 'generic' ? -1 : 0) - (b.ns === 'generic' ? -1 : 0)
+      || a.ns.localeCompare(b.ns) || a.name.localeCompare(b.name));
+}
+
+/** What an optic is called in a library: the part, then its model where it
+ *  has one. A model alone - `74752`, `Q1Q28F` - says nothing in a shape picker
+ *  about what will be dropped; `molex/sfp-plus-passive-dac (74752)` says both. */
+const opticLabel = c => {
+  const m = (c.attrs || {}).model;
+  return `${c.ns}/${c.name}${m ? ` (${m})` : ''}`;
+};
 
 function save(text, name, type) {
   const a = document.createElement('a');
@@ -153,7 +187,7 @@ const vendorTag = key => {
 
 /** Load every device in scope, skipping any whose face is missing rather than
  *  failing the whole download - a library with a hole in it beats no library. */
-async function gather(scope, statusEl, {faces = ['front'], modules = false,
+async function gather(scope, statusEl, {faces = ['front'], modules = false, optics = false,
                                          bays = $('bays')?.checked} = {}) {
   const want = inScope(scope);
   const out = [], missing = [];
@@ -167,7 +201,7 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false,
         const f = await loadFace(faceUrl(d, face));
         out.push({label: faces.length > 1 ? `${d.model || d.name} (${face})` : (d.model || d.name),
                   ru, face, kind: 'device', device: d.name,
-                  ref: `${nsOf(d.manufacturer)}/${d.name}`,
+                  ref: `${nsOfDevice(d)}/${d.name}`,
                   model: d.model || d.name, version: d.version ?? null, ...f,
                   ports: portsOf(f.zones, {bays})});
       } catch {
@@ -194,15 +228,33 @@ async function gather(scope, statusEl, {faces = ['front'], modules = false,
       }
     }
   }
+  if (optics) {
+    const parts = opticsAll();
+    let k = 0;
+    for (const c of parts) {
+      statusEl.textContent = `reading optic ${++k}/${parts.length}…`;
+      try {
+        const f = await loadFace(`${DIST}${c.files.default}`);
+        out.push({label: opticLabel(c), ru: 1, face: 'front', kind: 'optic', cls: c.class,
+                  ref: `${c.ns}/${c.name}@${String(c.major).replace(/^v/, '')}`,
+                  version: c.version ?? null, ...f,
+                  ports: portsOf(f.zones, {bays})});
+      } catch {
+        missing.push(c.name);
+      }
+    }
+  }
   return {loaded: out, missing};
 }
 
 function report(el, loaded, missing, extra = '') {
   const ports = loaded.reduce((a, f) => a + f.ports.length, 0);
   const dev = loaded.filter(f => f.kind === 'device').length;
-  const mod = loaded.length - dev;
+  const opt = loaded.filter(f => f.kind === 'optic').length;
+  const mod = loaded.length - dev - opt;
   const parts = [`${dev} face${dev === 1 ? '' : 's'}`];
   if (mod) parts.push(`${mod} card${mod === 1 ? '' : 's'}`);
+  if (opt) parts.push(`${opt} optic${opt === 1 ? '' : 's'}`);
   parts.push(`${ports} connectable`);
   el.textContent = parts.join(', ') + extra +
     (missing.length ? ` — ${missing.length} skipped (no compiled front)` : '');
@@ -217,7 +269,7 @@ async function buildLibrary({rack}) {
     const faces = rack ? ['front'] : ($('faces').value === 'both'
       ? ['front', 'rear'] : [$('faces').value]);
     const {loaded, missing} = await gather(scope, stat,
-      {faces, modules: !rack && $('mods').checked});
+      {faces, modules: !rack && $('mods').checked, optics: !rack && !!$('optics')?.checked});
     if (!loaded.length) { stat.textContent = 'nothing to export'; return; }
     const entries = loaded.map(f => entry(f.label, f.text, f.vb, f.ports,
       // A card is not rack-mountable on its own, so it keeps its drawn size
@@ -262,7 +314,8 @@ async function buildOmniGraffle() {
   try {
     const faces = $('ofaces').value === 'both' ? ['front', 'rear'] : [$('ofaces').value];
     const {loaded, missing} = await gather(scope, stat,
-      {faces, modules: $('omods').checked, bays: $('obays').checked});
+      {faces, modules: $('omods').checked, optics: !!$('ooptics')?.checked,
+       bays: $('obays').checked});
     if (!loaded.length) { stat.textContent = 'nothing to export'; return; }
     const pxmm = +$('ores').value || 8;
     const reduced = [];
@@ -278,6 +331,7 @@ async function buildOmniGraffle() {
     const sheets = [
       {title: name, items: loaded.filter(f => f.kind === 'device')},
       {title: `${name} — modules`, items: loaded.filter(f => f.kind === 'module')},
+      {title: 'optics', items: loaded.filter(f => f.kind === 'optic')},
     ].filter(sh => sh.items.length);
     const bytes = buildStencil(sheets, {tinted: $('otint').checked});
     save(bytes, `${vendorTag(scope)}-portrayal.gstencil`, 'application/octet-stream');
@@ -415,15 +469,14 @@ const plural = (w, n) => n === 1 ? w : (w.endsWith('h') ? `${w}es` : `${w}s`);
  * MX10016 front alone is 9.5 MB of SVG. Before Juniper the whole library was
  * 5 MB and nobody needed telling.
  */
-function estimate(key, {faces, modules}) {
+function estimate(key, {faces, modules, optics}) {
   let bytes = 0;
   for (const d of inScope(key)) {
     for (const f of faces) bytes += SIZES[`${d.name}.${f}.svg`] || 0;
   }
-  if (modules) {
-    for (const c of modulesFor(key)) bytes += SIZES[c.files.default.replace(/^.*?dist\//, '')]
-      || SIZES[c.files.default] || 0;
-  }
+  const sizeOf = c => SIZES[c.files.default.replace(/^.*?dist\//, '')] || SIZES[c.files.default] || 0;
+  if (modules) for (const c of modulesFor(key)) bytes += sizeOf(c);
+  if (optics) for (const c of opticsAll()) bytes += sizeOf(c);
   return bytes * 4 / 3;
 }
 
@@ -434,7 +487,8 @@ function showEstimate() {
   const el = $('estimate');
   if (!el || !Object.keys(SIZES).length) return;
   const faces = $('faces').value === 'both' ? ['front', 'rear'] : [$('faces').value];
-  const b = estimate($('scope').value, {faces, modules: $('mods').checked});
+  const b = estimate($('scope').value, {faces, modules: $('mods').checked,
+                                        optics: !!$('optics')?.checked});
   el.textContent = b ? `about ${human(b)}` : '';
   // Past roughly 20 MB draw.io starts to labour on import, and the browser has
   // to hold the whole thing in memory to build it.
@@ -471,6 +525,12 @@ function describe() {
   const omods = modulesFor($('oscope')?.value);
   if ($('omods-count')) $('omods-count').textContent = omods.length ? ` (${omods.length})` : '';
   if ($('omods')) $('omods').disabled = !omods.length;
+  // Optics are everyone's, so one count for both cards and every scope.
+  const nopt = opticsAll().length;
+  for (const id of ['optics', 'ooptics']) {
+    if ($(`${id}-count`)) $(`${id}-count`).textContent = nopt ? ` (${nopt})` : '';
+    if ($(id)) $(id).disabled = !nopt;
+  }
   const ml = $('mods-label');
   if (ml) ml.title = breakdown ? `The things that go in the chassis: ${breakdown}.`
                                : 'This vendor has no modelled modules.';
@@ -495,7 +555,7 @@ function describe() {
   createDevicePicker({mount: $('pick'), devices: DEVICES, value: DEV,
                       onchange: name => { DEV = name; fillScopes(); describe(); }});
   for (const id of ['scope', 'rscope', 'dscope', 'oscope']) $(id).addEventListener('change', describe);
-  for (const id of ['faces', 'mods']) $(id).addEventListener('change', showEstimate);
+  for (const id of ['faces', 'mods', 'optics']) $(id)?.addEventListener('change', showEstimate);
   $('allven').addEventListener('change', describe);
   fillScopes();
   describe();

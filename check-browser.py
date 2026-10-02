@@ -4304,6 +4304,56 @@ def check_annotate_diagram_exports(page, base):
             bad.append(f"annotate ({what}): the .gstencil is not a zip with named port shapes")
     return bad
 
+
+# OPTICS ARE THEIR OWN SECTION OF THE LIBRARY, AND THEY LAND ON THEIR BORES.
+# An optic is no one vendor's module, so the draw.io page offers every one under
+# its own checkbox (#78). The generic QSFP LC optic's face starts at -0.325,-1.4,
+# and its two port cells sit where the bores are only if the cells are measured
+# from that corner (Portrayal #722) - 8.05,4.70 and 20.55,4.70 at 2 px/mm.
+# FS is the scope because it was the vendor whose modules a derived namespace
+# lost (`fscom` for `fs`), so its cards being offered at all is half the check.
+@extra("draw.io: the optics library, with the LC optic's ports on its bores")
+def check_drawio_optics_library(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/drawio.html?device=fhd-1ube", wait_until="load")
+    page.wait_for_function("document.getElementById('optics-count').textContent !== ''", timeout=15000)
+    r = page.evaluate("""async () => {
+      const $ = id => document.getElementById(id);
+      const mods = $('mods-count').textContent, optics = $('optics-count').textContent;
+      $('optics').checked = true;
+      const blobs = [];
+      const orig = URL.createObjectURL.bind(URL);
+      URL.createObjectURL = b => { blobs.push(b); return orig(b); };
+      HTMLAnchorElement.prototype.click = function () {};
+      $('dl-lib').click();
+      let lib;
+      for (let i = 0; i < 300 && !(lib = blobs.find(b => b.type === 'application/xml')); i++)
+        await new Promise(ok => setTimeout(ok, 100));
+      if (!lib) return {missing: true, stat: $('stat-lib').textContent};
+      const xml = await lib.text();
+      const entries = JSON.parse(xml.slice(xml.indexOf('<mxlibrary>') + 11, xml.lastIndexOf('</mxlibrary>'))
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
+      const lc = entries.find(e => e.title === 'generic/qsfp-lc');
+      const cells = lc ? Object.fromEntries([...lc.xml.matchAll(
+        /portrayal-path="([^"]+)"[^>]*><mxCell[^>]*><mxGeometry x="([^"]+)" y="([^"]+)"/g)]
+        .map(m => [m[1], [+m[2], +m[3]]])) : {};
+      return {mods, optics, cells, titles: entries.map(e => e.title)};
+    }""")
+    if r.get("missing"):
+        return bad + [f"draw.io optics: no library was produced - {r['stat']}"]
+    if not r["mods"].strip(" ()").isdigit():
+        bad.append("draw.io: FS offers no modules - its namespace is derived again, not read from devices.json")
+    if not r["optics"].strip(" ()").isdigit():
+        bad.append("draw.io: the optics checkbox has no count")
+    if "generic/qsfp-lc" not in r["titles"]:
+        bad.append("draw.io optics: no generic/qsfp-lc entry in the library")
+    for port, want in {"qsfp-lc/tx": [8.05, 4.7], "qsfp-lc/rx": [20.55, 4.7]}.items():
+        got = r["cells"].get(port)
+        if not got or any(abs(a - b) > 0.01 for a, b in zip(got, want)):
+            bad.append(f"draw.io optics: {port} cell at {got}, expected {want} - on the bore")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
