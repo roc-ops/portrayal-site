@@ -23,7 +23,7 @@ BROWSER="check-browser.py"
 # WHAT A PUSH HAS TO EARN. The contract check reads files and takes under a
 # second, so it runs always. The browser pass opens every page, walks the
 # showcase and the rack builder in 2D and 3D, and presses Run on the marks
-# harness: six to seven minutes, which is worth paying when the push can break a
+# harness: six to nine minutes, which is worth paying when the push can break a
 # page and is worth skipping when it plainly cannot. A pre-push hook that costs
 # that on a README fix is a hook that gets --no-verify'd into retirement, and
 # then neither check runs.
@@ -98,7 +98,7 @@ if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
       echo "          push will likely fail after the checks pass. Once per clone:" >&2
       echo "            git config core.sshCommand \"ssh -o ServerAliveInterval=30\"" >&2
     fi
-    echo "pre-push: $BROWSER (six to seven minutes; --no-verify skips it)"
+    echo "pre-push: $BROWSER (six to nine minutes; --no-verify skips it)"
     python3 "$BROWSER"
   else
     # NOT FATAL BY DEFAULT, and loud. A hook that refuses to push because an

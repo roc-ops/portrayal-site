@@ -98,7 +98,7 @@ if it is missing.
 `hooks/pre-push` then runs the contract check on every push — under a second —
 and the browser pass when the push touches anything a page loads: `vendor/`,
 `site/`, `assets/`, `brand/`, a top-level `.html`, or the server itself. A
-README fix does not pay the six or seven minutes, which is the difference between a hook
+README fix does not pay the six to nine minutes, which is the difference between a hook
 people keep and one they retire with `--no-verify`. Missing Playwright is a
 loud skip rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
 
