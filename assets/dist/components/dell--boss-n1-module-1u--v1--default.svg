@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="29.9mm" height="38.9mm" viewBox="0 0 29.9 38.9">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-activity { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-failed { --led-color: #eab308; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-failed { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-identify { --led-color: #22c55e; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-identify { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/boss-n1-m2-carrier@'] .state-online { --led-color: #22c55e; }</style>
+  <g id="boss-n1-module-1u" data-path="boss-n1-module-1u" data-class="expansion-card" data-behaviour="fills" data-ref="dell/boss-n1-module-1u@1:1.1.0" data-body-depth="185.1" data-form-factor="1u-rear" data-raid="hardware RAID 1 across two M.2 NVMe" transform="translate(0,0)">
+    <title>boss-n1-module-1u</title>
+    <rect id="boss-n1-module-1u--plate" x="0.15" y="0.15" width="29.6" height="38.6" rx="0.6" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.3" />
+    <g id="boss-n1-module-1u--vents">
+      <rect x="6.2" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="6.2" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="10.5" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="10.5" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="17.9" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="17.9" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="22.4" y="2.2" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+      <rect x="22.4" y="34.4" width="2.6" height="2.3" rx="0.35" fill="#1b1e21" />
+    </g>
+    <g id="boss-n1-module-1u--carrier-0" data-path="boss-n1-module-1u/carrier-0" data-class="bay">
+      <rect id="boss-n1-module-1u--carrier-0--opening" x="4.4" y="7.3" width="10.0" height="26.0" rx="0.4" fill="#1b1e21" />
+      <g id="boss-n1-module-1u--carrier-0--module" data-path="boss-n1-module-1u/carrier-0/module" data-class="drive" data-behaviour="fills" data-ref="dell/boss-n1-m2-carrier@1:1.0.0" data-body-depth="108.9" data-wall="#2a2d30" data-media="m2-nvme" transform="translate(-3.5999999999999996,15.3) rotate(270 13.0 5.0)">
+        <title>boss-n1-module-1u--carrier-0--module</title>
+        <rect id="boss-n1-module-1u--carrier-0--module--body" x="0.1" y="0.1" width="25.8" height="9.8" rx="0.4" fill="#5f6366" stroke="#3b3f42" stroke-width="0.2" />
+        <rect id="boss-n1-module-1u--carrier-0--module--plate" x="6.82" y="2.27" width="10.71" height="5.47" rx="0.3" fill="#6d7175" />
+        <path id="boss-n1-module-1u--carrier-0--module--grip" d="M17.58 2.71 H23.96 V7.70 L22.99 8.67 H17.58 Z" fill="#45494c" />
+        <rect id="boss-n1-module-1u--carrier-0--module--tab" x="0.0" y="1.97" width="4.33" height="6.07" rx="0.3" fill="#e8781e" stroke="#a9520f" stroke-width="0.2" data-path="boss-n1-module-1u/carrier-0/module/tab" data-class="latch" data-description="the orange release tab, pulled to swing the carrier out" data-z-out="1.0" data-z-color="#e8781e" />
+        <path d="M1.0 4.1 L2.2 5.0 L1.0 5.9 Z" fill="#b5560d" />
+        <rect id="boss-n1-module-1u--carrier-0--module--led-status" x="9.95" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss-n1-module-1u/carrier-0/module/led-status" data-class="led" data-states="off online failed identify" data-description="the drive's status lamp, beside the drive icon. BOSS-N1 User's Guide table 1 - see provenance/lamp-states." />
+        <rect id="boss-n1-module-1u--carrier-0--module--led-activity" x="14.80" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss-n1-module-1u/carrier-0/module/led-activity" data-class="led" data-states="off activity" data-description="the activity lamp, beside the activity icon; blinks green on I/O and rebuild" />
+        <g id="boss-n1-module-1u--carrier-0--module--silkscreen" fill="none" stroke="#f2f3f4" stroke-width="0.22">
+          <path d="M7.95 4.25 v1.6 a0.7 0.3 0 0 0 1.4 0 v-1.6 M7.95 4.25 a0.7 0.3 0 0 0 1.4 0 a0.7 0.3 0 0 0 -1.4 0" />
+          <path d="M11.95 5.0 h0.7 l0.35 -0.9 l0.45 1.8 l0.35 -0.9 h0.45" />
+        </g>
+      </g>
+    </g>
+    <g id="boss-n1-module-1u--carrier-1" data-path="boss-n1-module-1u/carrier-1" data-class="bay">
+      <rect id="boss-n1-module-1u--carrier-1--opening" x="17.5" y="7.3" width="10.0" height="26.0" rx="0.4" fill="#1b1e21" />
+      <g id="boss-n1-module-1u--carrier-1--module" data-path="boss-n1-module-1u/carrier-1/module" data-class="drive" data-behaviour="fills" data-ref="dell/boss-n1-m2-carrier@1:1.0.0" data-body-depth="108.9" data-wall="#2a2d30" data-media="m2-nvme" transform="translate(9.5,15.3) rotate(90 13.0 5.0)">
+        <title>boss-n1-module-1u--carrier-1--module</title>
+        <rect id="boss-n1-module-1u--carrier-1--module--body" x="0.1" y="0.1" width="25.8" height="9.8" rx="0.4" fill="#5f6366" stroke="#3b3f42" stroke-width="0.2" />
+        <rect id="boss-n1-module-1u--carrier-1--module--plate" x="6.82" y="2.27" width="10.71" height="5.47" rx="0.3" fill="#6d7175" />
+        <path id="boss-n1-module-1u--carrier-1--module--grip" d="M17.58 2.71 H23.96 V7.70 L22.99 8.67 H17.58 Z" fill="#45494c" />
+        <rect id="boss-n1-module-1u--carrier-1--module--tab" x="0.0" y="1.97" width="4.33" height="6.07" rx="0.3" fill="#e8781e" stroke="#a9520f" stroke-width="0.2" data-path="boss-n1-module-1u/carrier-1/module/tab" data-class="latch" data-description="the orange release tab, pulled to swing the carrier out" data-z-out="1.0" data-z-color="#e8781e" />
+        <path d="M1.0 4.1 L2.2 5.0 L1.0 5.9 Z" fill="#b5560d" />
+        <rect id="boss-n1-module-1u--carrier-1--module--led-status" x="9.95" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss-n1-module-1u/carrier-1/module/led-status" data-class="led" data-states="off online failed identify" data-description="the drive's status lamp, beside the drive icon. BOSS-N1 User's Guide table 1 - see provenance/lamp-states." />
+        <rect id="boss-n1-module-1u--carrier-1--module--led-activity" x="14.80" y="4.36" width="1.3" height="1.3" rx="0.15" fill="var(--led-color, #8a8e92)" data-path="boss-n1-module-1u/carrier-1/module/led-activity" data-class="led" data-states="off activity" data-description="the activity lamp, beside the activity icon; blinks green on I/O and rebuild" />
+        <g id="boss-n1-module-1u--carrier-1--module--silkscreen" fill="none" stroke="#f2f3f4" stroke-width="0.22">
+          <path d="M7.95 4.25 v1.6 a0.7 0.3 0 0 0 1.4 0 v-1.6 M7.95 4.25 a0.7 0.3 0 0 0 1.4 0 a0.7 0.3 0 0 0 -1.4 0" />
+          <path d="M11.95 5.0 h0.7 l0.35 -0.9 l0.45 1.8 l0.35 -0.9 h0.45" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="77.65mm" height="7.75mm" viewBox="0 0 77.65 7.75">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='dell/e3s-carrier@'] .state-activity { --led-color: #22c55e; }
+    g[data-ref^='dell/e3s-carrier@'] .state-activity { animation: portrayal-blink 0.25s linear infinite; }
+    @keyframes portrayal-seq-dell-e3s-carrier-fault {
+      0%, 66.5667% { opacity: 1; fill: #f59e0b; }
+      66.6667%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/e3s-carrier@'] .state-fault { animation: portrayal-seq-dell-e3s-carrier-fault 3s steps(1, end) infinite; }
+    @keyframes portrayal-seq-dell-e3s-carrier-locate {
+      0%, 49.9% { opacity: 1; fill: #3b82f6; }
+      50%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/e3s-carrier@'] .state-locate { animation: portrayal-seq-dell-e3s-carrier-locate 2s steps(1, end) infinite; }
+    g[data-ref^='dell/e3s-carrier@'] .state-power { --led-color: #22c55e; }</style>
+  <g id="e3s-carrier" data-path="e3s-carrier" data-class="drive" data-behaviour="fills" data-ref="dell/e3s-carrier@1:1.0.0" data-body-depth="112.75" data-media="e3s" transform="translate(0,0)">
+    <title>e3s-carrier</title>
+    <rect id="e3s-carrier--body" x="0.1" y="0.1" width="77.45" height="7.55" rx="0.5" fill="#3c4247" stroke="#22272b" stroke-width="0.2" />
+    <rect id="e3s-carrier--release" x="1.5" y="0.3" width="20.9" height="7.15" rx="0.4" fill="#4a5056" data-path="e3s-carrier/release" data-class="control" data-description="the release handle; lift the release button and swing it out" />
+    <rect x="3.9" y="0.78" width="3.0" height="6.15" rx="0.5" fill="#33383d" />
+    <path d="M12.37 1.05 L10.77 3.84 L12.37 6.63 H11.27 L9.67 3.84 L11.27 1.05 Z" fill="#e8642a" />
+    <path d="M14.43 1.05 L12.83 3.84 L14.43 6.63 H13.33 L11.73 3.84 L13.33 1.05 Z" fill="#e8642a" />
+    <path d="M16.47 1.05 L14.87 3.84 L16.47 6.63 H15.37 L13.77 3.84 L15.37 1.05 Z" fill="#e8642a" />
+    <path d="M22.4 0.3 V7.45" stroke="#2a2f33" stroke-width="0.25" />
+    <rect id="e3s-carrier--label" x="53.38" y="1.45" width="15.88" height="4.75" rx="0.4" fill="#2a2f33" data-path="e3s-carrier/label" data-class="label" data-description="the capacity label" />
+    <rect x="72.2" y="0.6" width="3.1" height="6.55" rx="0.3" fill="#33383d" />
+    <rect id="e3s-carrier--lamp-locate-fault" x="41.1" y="3.02" width="1.6" height="1.6" rx="0.8" fill="var(--led-color, #5b5f63)" data-path="e3s-carrier/lamp-locate-fault" data-class="led" data-states="off locate fault" data-description="the blue/amber lamp - ISM table 138; locate overrides fault" />
+    <rect id="e3s-carrier--lamp-activity" x="49.1" y="3.02" width="1.6" height="1.6" rx="0.8" fill="var(--led-color, #5b5f63)" data-path="e3s-carrier/lamp-activity" data-class="led" data-states="off power activity" data-description="the green lamp - ISM table 139; on when powered, 4 Hz on host I/O" />
+    <g id="e3s-carrier--silkscreen">
+      <text x="25.92" y="4.85" font-family="sans-serif" font-size="2.7" fill="#e6e8ea">SSD</text>
+      <path d="M44.3 3.85 h0.9 l0.45 -1.2 l0.6 2.6 l0.45 -1.4 h0.9" fill="none" stroke="#e6e8ea" stroke-width="0.25" />
+      <text id="e3s-carrier--capacity" data-from="capacity" x="60.3" y="4.75" font-family="sans-serif" font-size="2.6" fill="#e6e8ea" text-anchor="middle">7.68TB</text>
+      <path d="M66.9 3.4 v-0.5 a0.6 0.6 0 0 1 1.2 0 v0.5 M66.6 3.4 h1.8 v1.6 h-1.8 Z" fill="none" stroke="#e6e8ea" stroke-width="0.22" />
+    </g>
+  </g>
+</svg>

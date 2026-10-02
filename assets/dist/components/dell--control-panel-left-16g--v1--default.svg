@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="10.1mm" height="38.13mm" viewBox="0 0 10.1 38.13">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    @keyframes portrayal-seq-dell-control-panel-left-16g-disabled {
+      0%, 3.25196% { opacity: 1; fill: #f8fafc; }
+      3.35196%, 6.60391% { opacity: 0; }
+      6.70391%, 9.95587% { opacity: 1; fill: #f8fafc; }
+      10.0559%, 13.3078% { opacity: 0; }
+      13.4078%, 16.6598% { opacity: 1; fill: #f8fafc; }
+      16.7598%, 20.0117% { opacity: 0; }
+      20.1117%, 23.3637% { opacity: 1; fill: #f8fafc; }
+      23.4637%, 26.7156% { opacity: 0; }
+      26.8156%, 30.0676% { opacity: 1; fill: #f8fafc; }
+      30.1676%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-disabled { animation: portrayal-seq-dell-control-panel-left-16g-disabled 3.58s steps(1, end) infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-fail-safe { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-healthy { --led-color: #2563eb; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-identify { --led-color: #2563eb; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-identify { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-ready { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-transfer { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-transfer { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-unresponsive { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-unresponsive { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-updating { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-updating { animation: portrayal-blink 2s linear infinite; }</style>
+  <g id="control-panel-left-16g" data-path="control-panel-left-16g" data-class="control-panel" data-behaviour="fills" data-ref="dell/control-panel-left-16g@1:1.0.0" data-body-depth="22.8" transform="translate(0,0)">
+    <title>control-panel-left-16g</title>
+    <rect x="0" y="0" width="10.1" height="38.13" rx="0.5" fill="#15181b" />
+    <g transform="translate(0.90 5.50)">
+      <g id="control-panel-left-16g--lamp-drive" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.26" stroke-linejoin="round" data-path="control-panel-left-16g/lamp-drive" data-class="led" data-states="off fault" data-description="the drive glyph, lit. ISM table 4 - solid amber if there is a drive error.">
+        <ellipse cx="2.45" cy="1.97" rx="1.02" ry="0.40" />
+        <path d="M1.43 1.97 v1.56 a1.02 0.40 0 0 0 2.04 0 v-1.56" />
+        <path d="M1.43 2.77 a1.02 0.40 0 0 0 2.04 0" stroke-width="0.20" />
+      </g>
+    </g>
+    <g transform="translate(0.90 6.42)">
+      <g id="control-panel-left-16g--lamp-temperature" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linecap="round" stroke-linejoin="round" data-path="control-panel-left-16g/lamp-temperature" data-class="led" data-states="off fault" data-description="the thermometer glyph. Solid amber on a thermal error - ambient out of range, or a fan failure.">
+        <path d="M2.03 7.65 V6.17 a0.42 0.42 0 0 1 0.84 0 V7.65" />
+        <circle cx="2.45" cy="8.21" r="0.66" />
+        <path d="M2.87 6.63 h0.44 M2.87 7.15 h0.44 M2.87 7.67 h0.44" stroke-width="0.18" />
+        <circle cx="2.45" cy="8.21" r="0.26" fill="var(--led-color, #8b9299)" stroke="none" />
+      </g>
+    </g>
+    <g transform="translate(0.90 6.89)">
+      <g id="control-panel-left-16g--lamp-electrical" data-path="control-panel-left-16g/lamp-electrical" data-class="led" data-states="off fault" data-description="the lightning glyph. Solid amber on voltage out of range, a failed PSU or a failed voltage regulator.">
+        <rect x="1.35" y="10.85" width="2.20" height="2.20" rx="0.38" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" />
+        <path d="M2.75 11.23 L1.93 12.07 h0.52 l-0.30 0.72 l0.86 -0.94 h-0.56 Z" fill="var(--led-color, #8b9299)" />
+      </g>
+    </g>
+    <g transform="translate(0.90 7.76)">
+      <g id="control-panel-left-16g--lamp-memory" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linejoin="round" data-path="control-panel-left-16g/lamp-memory" data-class="led" data-states="off fault" data-description="the memory glyph. Solid amber on a memory error.">
+        <path d="M1.21 15.63 h2.48 v1.30 h-2.48 Z" />
+        <path d="M1.21 16.93 h0.86 v0.34 h0.76 v-0.34 h0.86" stroke-width="0.22" />
+        <path d="M1.83 15.97 v0.62 M2.45 15.97 v0.62 M3.07 15.97 v0.62" stroke-width="0.18" />
+      </g>
+    </g>
+    <g transform="translate(0.90 8.13)">
+      <g id="control-panel-left-16g--lamp-pcie" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linejoin="round" data-path="control-panel-left-16g/lamp-pcie" data-class="led" data-states="off fault" data-description="the PCIe glyph. Solid amber when a PCIe card errors.">
+        <path d="M1.25 20.09 h1.92 v1.72 h-1.92 Z" />
+        <path d="M1.73 21.81 h0.62 v0.42 h-0.62 Z" fill="var(--led-color, #8b9299)" stroke="none" />
+        <path d="M3.17 19.85 v2.60" stroke-width="0.34" />
+      </g>
+    </g>
+    <rect x="6.55" y="9.9" width="2.95" height="18.25" rx="1.2" fill="#0c0e10" stroke="#4a5157" stroke-width="0.2" />
+    <rect id="control-panel-left-16g--lamp-health" x="7.0" y="10.48" width="2.05" height="8.52" rx="0.9" fill="var(--led-color, #1e3a5f)" data-path="control-panel-left-16g/lamp-health" data-class="led" data-states="off healthy identify fail-safe fault" data-description="the system health and system ID bar, and the button that switches between the two modes. ISM table 5 in full: solid blue - on, healthy, ID mode not active; blinking blue - ID mode active; solid amber - fail-safe mode; blinking amber - a fault, check the event log. NO RATE IS PUBLISHED for either blink, so 1 Hz is this library's reading and is not a figure Dell states - unlike the drive lamp, where the article gives twice and four times a second and the model carries them." />
+    <rect id="control-panel-left-16g--lamp-quicksync" x="7.0" y="19.0" width="2.05" height="8.58" rx="0.9" fill="var(--led-color, #3a3f44)" data-path="control-panel-left-16g/lamp-quicksync" data-class="led" data-states="off ready transfer updating disabled fail-safe unresponsive" data-description="the iDRAC Quick Sync 2 bar, and the button that turns the feature on and off. Every code in ISM table 6, at the shape that table gives. `disabled` IS WHY THE SEQUENCE MECHANISM EXISTS: Dell's wording is 'blinks white five times rapidly and then turns off', which is five on-phases, five off-phases and a long dark tail - a pattern no colour and rate can say. The 2.5 second tail is this library's reading of 'and then turns off'; the five blinks are Dell's own count." />
+    <g fill="none" stroke="#8b9299" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8.40 5.35 L7.95 6.85 C8.0 7.2 8.5 7.25 8.78 6.95" stroke-width="0.55" />
+    </g>
+    <ellipse cx="8.50" cy="4.75" rx="0.36" ry="0.28" fill="#8b9299" transform="rotate(-16 8.50 4.75)" />
+    <g fill="none" stroke="#8b9299" stroke-linecap="round">
+      <path d="M6.55 31.6 A1.95 1.95 0 0 1 9.45 31.6" stroke-width="0.3" />
+      <path d="M7.05 32.0 A1.3 1.3 0 0 1 8.95 32.0" stroke-width="0.28" />
+      <path d="M7.55 32.4 A0.65 0.65 0 0 1 8.45 32.4" stroke-width="0.26" />
+    </g>
+  </g>
+</svg>

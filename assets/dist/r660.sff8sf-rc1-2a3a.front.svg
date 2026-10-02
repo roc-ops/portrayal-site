@@ -1,0 +1,1290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="482.6mm" height="42.8mm" viewBox="0 0 482.6 42.8" data-device="r660" data-view="front" data-ru="1" data-weight-max-kg="22.51" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    @keyframes portrayal-seq-dell-control-panel-left-16g-disabled {
+      0%, 3.25196% { opacity: 1; fill: #f8fafc; }
+      3.35196%, 6.60391% { opacity: 0; }
+      6.70391%, 9.95587% { opacity: 1; fill: #f8fafc; }
+      10.0559%, 13.3078% { opacity: 0; }
+      13.4078%, 16.6598% { opacity: 1; fill: #f8fafc; }
+      16.7598%, 20.0117% { opacity: 0; }
+      20.1117%, 23.3637% { opacity: 1; fill: #f8fafc; }
+      23.4637%, 26.7156% { opacity: 0; }
+      26.8156%, 30.0676% { opacity: 1; fill: #f8fafc; }
+      30.1676%, 99.9% { opacity: 0; }
+    }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-disabled { animation: portrayal-seq-dell-control-panel-left-16g-disabled 3.58s steps(1, end) infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-fail-safe { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-fault { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-fault { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-healthy { --led-color: #2563eb; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-identify { --led-color: #2563eb; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-identify { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-ready { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-transfer { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-transfer { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-unresponsive { --led-color: #eab308; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-unresponsive { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-updating { --led-color: #f8fafc; }
+    g[data-ref^='dell/control-panel-left-16g@'] .state-updating { animation: portrayal-blink 2s linear infinite; }
+    g[data-ref^='dell/power-button-14g@'] .state-on { --led-color: #22c55e; }
+    #idrac-direct-led.state-connected, #idrac-direct-led .state-connected { --led-color: #22c55e; }
+    #idrac-direct-led.state-recognised, #idrac-direct-led .state-recognised { --led-color: #22c55e; }
+    #idrac-direct-led.state-recognised [data-class='led'], #idrac-direct-led .state-recognised { animation: portrayal-blink 4s linear infinite; }
+</style>
+  <metadata>{"device":"Dell PowerEdge R660","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/drive-blank-25@2":"2.0.0","common/led-dot@1":"1.1.0","common/vga-symbol@1":"1.0.0","dell/bezel-1u-16g@1":"1.0.0","dell/control-panel-left-16g@1":"1.0.0","dell/information-tag-1u-16g@1":"1.0.0","dell/power-button-14g@1":"1.0.1","std/micro-usb@1":"1.0.0","std/usb-a@1":"1.3.0","std/vga@1":"1.1.0"},"source-sha256":"53ecb631113b4f2885c6e881796f39ae1f382fc0c329a2d3984da86ff3d01d9f","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="PowerEdge R660" x="0" y="0" width="482.6" height="42.8" rx="1.2" fill="#2f3439" stroke="#1d2125" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="14.2" height="42.8" rx="0.6" fill="#22262a" />
+    <rect id="plate-1" data-kind="plate" x="468.88" y="0" width="13.72" height="42.8" rx="0.6" fill="#22262a" />
+    <rect id="plate-2" data-kind="plate" x="24.3" y="0" width="433.35" height="2.09" rx="0.6" fill="#9aa0a6" />
+    <rect id="plate-3" data-kind="plate" x="24.3" y="40.71" width="433.35" height="2.09" rx="0.6" fill="#9aa0a6" />
+    <rect id="plate-4" data-kind="plate" x="24.3" y="2.09" width="412.65" height="4.32" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-5" data-kind="plate" x="50.48" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-6" data-kind="plate" x="55.92" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-7" data-kind="plate" x="61.4" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-8" data-kind="plate" x="72.33" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-9" data-kind="plate" x="77.8" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-10" data-kind="plate" x="83.25" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-11" data-kind="plate" x="88.72" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-12" data-kind="plate" x="94.2" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-13" data-kind="plate" x="99.65" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-14" data-kind="plate" x="117.15" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-15" data-kind="plate" x="122.62" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-16" data-kind="plate" x="128.07" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-17" data-kind="plate" x="133.53" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-18" data-kind="plate" x="139" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-19" data-kind="plate" x="144.47" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-20" data-kind="plate" x="155.4" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-21" data-kind="plate" x="160.85" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-22" data-kind="plate" x="166.32" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-23" data-kind="plate" x="171.8" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-24" data-kind="plate" x="177.25" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-25" data-kind="plate" x="182.72" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-26" data-kind="plate" x="200.2" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-27" data-kind="plate" x="205.68" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-28" data-kind="plate" x="211.15" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-29" data-kind="plate" x="216.6" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-30" data-kind="plate" x="222.05" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-31" data-kind="plate" x="227.53" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-32" data-kind="plate" x="238.45" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-33" data-kind="plate" x="243.93" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-34" data-kind="plate" x="249.38" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-35" data-kind="plate" x="254.85" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-36" data-kind="plate" x="260.32" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-37" data-kind="plate" x="265.77" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-38" data-kind="plate" x="288.75" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-39" data-kind="plate" x="294.2" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-40" data-kind="plate" x="299.65" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-41" data-kind="plate" x="305.12" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-42" data-kind="plate" x="310.6" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-43" data-kind="plate" x="321.52" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-44" data-kind="plate" x="326.98" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-45" data-kind="plate" x="332.45" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-46" data-kind="plate" x="337.93" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-47" data-kind="plate" x="343.38" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-48" data-kind="plate" x="348.85" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-49" data-kind="plate" x="370.93" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-50" data-kind="plate" x="376.4" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-51" data-kind="plate" x="381.85" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-52" data-kind="plate" x="387.32" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-53" data-kind="plate" x="392.77" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-54" data-kind="plate" x="403.73" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-55" data-kind="plate" x="409.18" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-56" data-kind="plate" x="414.65" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-57" data-kind="plate" x="420.1" y="3.08" width="4.05" height="2.33" rx="0.6" fill="#141719" />
+    <rect id="plate-58" data-kind="plate" x="436.95" y="2.09" width="20.2" height="38.62" rx="0.6" fill="#3d4348" />
+    <rect id="plate-59" data-kind="plate" x="457.65" y="2.09" width="11.2" height="38.62" rx="0.6" fill="#2a2e32" />
+    <rect id="plate-60" data-kind="plate" x="1.5" y="14.07" width="12.15" height="24.41" rx="0.6" fill="#4a5056" />
+    <rect id="plate-61" data-kind="plate" x="469.4" y="14.07" width="12.15" height="24.41" rx="0.6" fill="#4a5056" />
+    <rect id="plate-62" data-kind="plate" x="195.6" y="6.96" width="78.25" height="33.26" rx="0.6" fill="#5f656b" />
+    <rect id="plate-63" data-kind="plate" x="201.7" y="9.69" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-64" data-kind="plate" x="201.7" y="24.36" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-65" data-kind="plate" x="218.55" y="9.69" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-66" data-kind="plate" x="218.55" y="24.36" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-67" data-kind="plate" x="235.4" y="9.69" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-68" data-kind="plate" x="235.4" y="24.36" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-69" data-kind="plate" x="252.25" y="9.69" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+    <rect id="plate-70" data-kind="plate" x="252.25" y="24.36" width="15.5" height="13.12" rx="0.6" fill="#141719" />
+  </g>
+  <g id="--cutouts" data-class="cutouts">
+    <rect x="459.13" y="2.36" width="8.34" height="8.31" fill="#101214" id="cutout--power-btn" data-path="cutout:power-btn" data-class="cutout" />
+    <rect x="460.31" y="12.57" width="4.5" height="12" fill="#101214" id="cutout--usb-1" data-path="cutout:usb-1" data-class="cutout" />
+    <rect x="462.97" y="28.83" width="2.75" height="7.5" fill="#101214" id="cutout--idrac-direct" data-path="cutout:idrac-direct" data-class="cutout" />
+    <ellipse cx="460.45" cy="36.76" rx="1" ry="1" fill="#101214" id="cutout--idrac-direct-led" data-path="cutout:idrac-direct-led" data-class="cutout" />
+    <path d="M437.913 21.342 A3.350 3.350 0 0 1 441.212 17.410 L453.698 17.410 A3.350 3.350 0 0 1 456.997 21.342 L456.168 26.042 A3.350 3.350 0 0 1 452.869 28.810 L442.041 28.810 A3.350 3.350 0 0 1 438.742 26.042 Z" transform="rotate(270 447.455 23.11)" fill="#101214" id="cutout--vga" data-path="cutout:vga" data-class="cutout" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0.85 0.35 V 2.5 M 0.85 1.9 L 0.3 1.45 V 1.1 M 0.85 2.2 L 1.42 1.75 V 1.3 M 0.12 1.02 H 0.48 M 0.3 0.84 V 1.2" fill="none" stroke="#e6e8ea" stroke-width="0.16" stroke-linecap="round" stroke-linejoin="round" transform="translate(466.65 16.83)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-1" />
+    <path d="M 0.6 0.42 L 0.85 0 L 1.1 0.42 Z M 0.63 2.42 H 1.07 V 2.83 H 0.63 Z M 1.26 1.0 H 1.58 V 1.32 H 1.26 Z" fill="#e6e8ea" stroke="none" stroke-linejoin="round" transform="translate(466.65 16.83)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-1" />
+    <path d="M -0.06 0.38 L 0.32 0.58 L 0.26 0.16 M 0.32 0.58 L 0.95 1.22 M 1.42 1.36 L 0.95 1.22 L 1.06 1.66" fill="none" stroke="#e6e8ea" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" transform="translate(466.65 31.85)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="idrac-direct" />
+    <text x="28.13" y="13.87" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-0">0</text>
+    <text x="28.13" y="16.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-0">▶</text>
+    <text x="28.13" y="30.36" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-1">1</text>
+    <text x="28.13" y="32.81" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-1">▶</text>
+    <text x="110.43" y="13.87" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-2">2</text>
+    <text x="110.43" y="16.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-2">▶</text>
+    <text x="110.43" y="30.36" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-3">3</text>
+    <text x="110.43" y="32.81" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-3">▶</text>
+    <text x="276.2" y="13.87" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-4">4</text>
+    <text x="276.2" y="16.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-4">▶</text>
+    <text x="276.2" y="30.36" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-5">5</text>
+    <text x="276.2" y="32.81" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-5">▶</text>
+    <text x="359" y="13.87" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-6">6</text>
+    <text x="359" y="16.2" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-6">▶</text>
+    <text x="359" y="30.36" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-7">7</text>
+    <text x="359" y="32.81" font-family="sans-serif" font-size="2.2" text-anchor="middle" fill="#c9ced3" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="drive-7">▶</text>
+  </g>
+  <g id="power-btn" data-path="power-btn" data-class="button" data-ref="dell/power-button-14g@1:1.0.1" data-rel-pos="1" transform="translate(459.13,2.36)" data-group="mgmt" data-group-role="management" data-description="the power button" data-for="chassis">
+    <title>power-btn</title>
+    <rect x="0.12" y="0.12" width="8.10" height="8.07" rx="0.7" fill="#22262a" stroke="#4a5157" stroke-width="0.22" />
+    <g id="power-btn--lamp" fill="none" stroke="var(--led-color, #39b54a)" stroke-width="0.62" stroke-linecap="round" data-path="power-btn/lamp" data-class="led" data-states="off on" data-description="the power symbol itself, lit from behind. It is the glyph that lights, not a separate indicator beside it, which is why the element is the symbol's own box rather than a dot.">
+      <path d="M2.60 2.35 A2.55 2.55 0 1 0 5.74 2.35" />
+      <path d="M4.17 1.15 V4.05" />
+    </g>
+  </g>
+  <g id="usb-1" data-path="usb-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="2.0" data-rel-pos="1" transform="translate(456.56,16.32) rotate(90 6.0 2.25)" data-group="ports" data-group-role="management" data-description="the front VGA, the USB-A and the iDRAC Direct micro-AB USB">
+    <title>usb-1</title>
+    <rect id="usb-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-1/opening" data-class="cutout" />
+    <rect id="usb-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#d5d9de" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="idrac-direct" data-path="idrac-direct" data-class="port" data-ref="std/micro-usb@1:1.0.0" data-depth="5.9" data-wall="#8d949c" data-media="micro-usb-b" data-rel-pos="2" transform="translate(460.59,31.2) rotate(90 3.75 1.375)" data-group="ports" data-group-role="management" data-description="the front VGA, the USB-A and the iDRAC Direct micro-AB USB">
+    <title>idrac-direct</title>
+    <rect id="idrac-direct--shell" x="0" y="0" width="7.5" height="2.75" rx="0.5" fill="#c9cbcd" stroke="#5f6469" stroke-width="0.14" />
+    <path id="idrac-direct--opening" d="M 0.33 0.78 L 0.86 0.48 H 6.62 L 7.18 0.78 V 1.98 L 6.62 2.28 H 0.86 L 0.33 1.98 Z" fill="#1c2024" stroke="#5f6469" stroke-width="0.1" data-path="idrac-direct/opening" data-class="cutout" />
+    <rect x="1.5" y="1.15" width="4.5" height="0.5" fill="#3a4046" />
+  </g>
+  <g id="vga" data-path="vga" data-class="port" data-ref="std/vga@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" data-rel-pos="3" transform="translate(437.22,17.41) rotate(270 10.235 5.7)" data-group="ports" data-group-role="management" data-description="the front VGA, the USB-A and the iDRAC Direct micro-AB USB">
+    <title>vga</title>
+    <path id="vga--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="vga/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+    <g id="vga--socket-floor">
+      <circle cx="5.66" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="7.93" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="10.2" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="12.47" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="14.74" cy="3.49" r="0.42" fill="#0b1526" />
+      <circle cx="6.25" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="8.32" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="10.4" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="12.47" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="14.55" cy="7.91" r="0.42" fill="#0b1526" />
+      <circle cx="7.04" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="9.21" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="11.39" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="13.56" cy="5.7" r="0.42" fill="#0b1526" />
+      <circle cx="15.73" cy="5.7" r="0.42" fill="#0b1526" />
+    </g>
+    <path id="vga--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M5.240 3.490 A0.420 0.420 0 1 0 6.080 3.490 A0.420 0.420 0 1 0 5.240 3.490 Z M7.510 3.490 A0.420 0.420 0 1 0 8.350 3.490 A0.420 0.420 0 1 0 7.510 3.490 Z M9.780 3.490 A0.420 0.420 0 1 0 10.620 3.490 A0.420 0.420 0 1 0 9.780 3.490 Z M12.050 3.490 A0.420 0.420 0 1 0 12.890 3.490 A0.420 0.420 0 1 0 12.050 3.490 Z M14.320 3.490 A0.420 0.420 0 1 0 15.160 3.490 A0.420 0.420 0 1 0 14.320 3.490 Z M5.830 7.910 A0.420 0.420 0 1 0 6.670 7.910 A0.420 0.420 0 1 0 5.830 7.910 Z M7.900 7.910 A0.420 0.420 0 1 0 8.740 7.910 A0.420 0.420 0 1 0 7.900 7.910 Z M9.980 7.910 A0.420 0.420 0 1 0 10.820 7.910 A0.420 0.420 0 1 0 9.980 7.910 Z M12.050 7.910 A0.420 0.420 0 1 0 12.890 7.910 A0.420 0.420 0 1 0 12.050 7.910 Z M14.130 7.910 A0.420 0.420 0 1 0 14.970 7.910 A0.420 0.420 0 1 0 14.130 7.910 Z M6.620 5.700 A0.420 0.420 0 1 0 7.460 5.700 A0.420 0.420 0 1 0 6.620 5.700 Z M8.790 5.700 A0.420 0.420 0 1 0 9.630 5.700 A0.420 0.420 0 1 0 8.790 5.700 Z M10.970 5.700 A0.420 0.420 0 1 0 11.810 5.700 A0.420 0.420 0 1 0 10.970 5.700 Z M13.140 5.700 A0.420 0.420 0 1 0 13.980 5.700 A0.420 0.420 0 1 0 13.140 5.700 Z M15.310 5.700 A0.420 0.420 0 1 0 16.150 5.700 A0.420 0.420 0 1 0 15.310 5.700 Z" fill="#1f4f9e" stroke="#16376e" stroke-width="0.2" data-z-out="6.73" data-z-color="#1f4f9e" data-z-shape="1" />
+    <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+  </g>
+  <g id="mark-vga" data-path="mark-vga" data-class="silkscreen" data-ref="common/vga-symbol@1:1.0.0" data-rel-pos="1" transform="translate(444.45,9.56)" data-group="marks" data-group-role="furniture" data-description="printed marks seated as parts - the VGA symbol" data-for="vga">
+    <title>mark-vga</title>
+    <g id="mark-vga--symbol" fill="none" stroke="#c7ccd1" stroke-width="0.34" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="1.55" y="0.55" width="2.90" height="2.30" rx="0.30" />
+      <path d="M0.55 1.20 V2.20" />
+      <path d="M5.45 1.20 V2.20" />
+    </g>
+  </g>
+  <g id="info-tag" data-path="info-tag" data-class="tab" data-behaviour="fills" data-ref="dell/information-tag-1u-16g@1:1.0.0" data-role="info-tab" data-rel-pos="1" transform="translate(393.6,40.75)" data-group="tags" data-group-role="furniture" data-description="the slide-out information tag under the right-hand drive columns. The E3.S fronts seat it where the 2.5 inch fronts do: their ISM figures list it, and no master of an E3.S front is held.">
+    <title>info-tag</title>
+    <path id="info-tag--tab" d="M2.50 0 H63.55 V2.03 H0 V0.77 Z" fill="#404040" data-path="info-tag/tab" data-class="tab" />
+    <rect x="24.18" y="0.47" width="15.20" height="0.33" rx="0.15" fill="#83a7e2" />
+  </g>
+  <g id="idrac-direct-led" data-path="idrac-direct-led" data-class="led" data-ref="common/led-dot@1:1.1.0" data-rel-pos="1" transform="translate(459.45,35.76)" data-group="leds" data-group-role="indicator" data-description="R660 ISM table 131: solid green for two seconds when a laptop is connected, flashing green (two on, two off) when recognised, off when unplugged - the R740xd's table 8 word for word." data-states="off connected recognised" data-for="idrac-direct">
+    <title>idrac-direct-led</title>
+    <circle id="idrac-direct-led--bezel" cx="1" cy="1" r="0.95" fill="#17191c" />
+    <circle id="idrac-direct-led--lamp" cx="1" cy="1" r="0.7" fill="var(--led-color, #3a3f44)" data-path="idrac-direct-led/lamp" data-class="led" data-states="off connected recognised" data-z-dome="0.3" />
+  </g>
+  <g id="panel-left" data-path="panel-left" data-class="bay" data-group="panels" data-group-role="indicator" data-rel-pos="1">
+    <title>panel-left</title>
+    <rect id="panel-left--opening" x="14.2" y="2.34" width="10.1" height="38.13" fill="#101214" />
+    <g id="panel-left--module" data-path="panel-left/module" data-class="control-panel" data-behaviour="fills" data-ref="dell/control-panel-left-16g@1:1.0.0" data-body-depth="22.8" transform="translate(19.25,21.405) translate(-5.05,-19.065)">
+      <title>panel-left--module</title>
+      <rect x="0" y="0" width="10.1" height="38.13" rx="0.5" fill="#15181b" />
+      <g transform="translate(0.90 5.50)">
+        <g id="panel-left--module--lamp-drive" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.26" stroke-linejoin="round" data-path="panel-left/module/lamp-drive" data-class="led" data-states="off fault" data-description="the drive glyph, lit. ISM table 4 - solid amber if there is a drive error.">
+          <ellipse cx="2.45" cy="1.97" rx="1.02" ry="0.40" />
+          <path d="M1.43 1.97 v1.56 a1.02 0.40 0 0 0 2.04 0 v-1.56" />
+          <path d="M1.43 2.77 a1.02 0.40 0 0 0 2.04 0" stroke-width="0.20" />
+        </g>
+      </g>
+      <g transform="translate(0.90 6.42)">
+        <g id="panel-left--module--lamp-temperature" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linecap="round" stroke-linejoin="round" data-path="panel-left/module/lamp-temperature" data-class="led" data-states="off fault" data-description="the thermometer glyph. Solid amber on a thermal error - ambient out of range, or a fan failure.">
+          <path d="M2.03 7.65 V6.17 a0.42 0.42 0 0 1 0.84 0 V7.65" />
+          <circle cx="2.45" cy="8.21" r="0.66" />
+          <path d="M2.87 6.63 h0.44 M2.87 7.15 h0.44 M2.87 7.67 h0.44" stroke-width="0.18" />
+          <circle cx="2.45" cy="8.21" r="0.26" fill="var(--led-color, #8b9299)" stroke="none" />
+        </g>
+      </g>
+      <g transform="translate(0.90 6.89)">
+        <g id="panel-left--module--lamp-electrical" data-path="panel-left/module/lamp-electrical" data-class="led" data-states="off fault" data-description="the lightning glyph. Solid amber on voltage out of range, a failed PSU or a failed voltage regulator.">
+          <rect x="1.35" y="10.85" width="2.20" height="2.20" rx="0.38" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" />
+          <path d="M2.75 11.23 L1.93 12.07 h0.52 l-0.30 0.72 l0.86 -0.94 h-0.56 Z" fill="var(--led-color, #8b9299)" />
+        </g>
+      </g>
+      <g transform="translate(0.90 7.76)">
+        <g id="panel-left--module--lamp-memory" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linejoin="round" data-path="panel-left/module/lamp-memory" data-class="led" data-states="off fault" data-description="the memory glyph. Solid amber on a memory error.">
+          <path d="M1.21 15.63 h2.48 v1.30 h-2.48 Z" />
+          <path d="M1.21 16.93 h0.86 v0.34 h0.76 v-0.34 h0.86" stroke-width="0.22" />
+          <path d="M1.83 15.97 v0.62 M2.45 15.97 v0.62 M3.07 15.97 v0.62" stroke-width="0.18" />
+        </g>
+      </g>
+      <g transform="translate(0.90 8.13)">
+        <g id="panel-left--module--lamp-pcie" fill="none" stroke="var(--led-color, #8b9299)" stroke-width="0.24" stroke-linejoin="round" data-path="panel-left/module/lamp-pcie" data-class="led" data-states="off fault" data-description="the PCIe glyph. Solid amber when a PCIe card errors.">
+          <path d="M1.25 20.09 h1.92 v1.72 h-1.92 Z" />
+          <path d="M1.73 21.81 h0.62 v0.42 h-0.62 Z" fill="var(--led-color, #8b9299)" stroke="none" />
+          <path d="M3.17 19.85 v2.60" stroke-width="0.34" />
+        </g>
+      </g>
+      <rect x="6.55" y="9.9" width="2.95" height="18.25" rx="1.2" fill="#0c0e10" stroke="#4a5157" stroke-width="0.2" />
+      <rect id="panel-left--module--lamp-health" x="7.0" y="10.48" width="2.05" height="8.52" rx="0.9" fill="var(--led-color, #1e3a5f)" data-path="panel-left/module/lamp-health" data-class="led" data-states="off healthy identify fail-safe fault" data-description="the system health and system ID bar, and the button that switches between the two modes. ISM table 5 in full: solid blue - on, healthy, ID mode not active; blinking blue - ID mode active; solid amber - fail-safe mode; blinking amber - a fault, check the event log. NO RATE IS PUBLISHED for either blink, so 1 Hz is this library's reading and is not a figure Dell states - unlike the drive lamp, where the article gives twice and four times a second and the model carries them." />
+      <rect id="panel-left--module--lamp-quicksync" x="7.0" y="19.0" width="2.05" height="8.58" rx="0.9" fill="var(--led-color, #3a3f44)" data-path="panel-left/module/lamp-quicksync" data-class="led" data-states="off ready transfer updating disabled fail-safe unresponsive" data-description="the iDRAC Quick Sync 2 bar, and the button that turns the feature on and off. Every code in ISM table 6, at the shape that table gives. `disabled` IS WHY THE SEQUENCE MECHANISM EXISTS: Dell's wording is 'blinks white five times rapidly and then turns off', which is five on-phases, five off-phases and a long dark tail - a pattern no colour and rate can say. The 2.5 second tail is this library's reading of 'and then turns off'; the five blinks are Dell's own count." />
+      <g fill="none" stroke="#8b9299" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.40 5.35 L7.95 6.85 C8.0 7.2 8.5 7.25 8.78 6.95" stroke-width="0.55" />
+      </g>
+      <ellipse cx="8.50" cy="4.75" rx="0.36" ry="0.28" fill="#8b9299" transform="rotate(-16 8.50 4.75)" />
+      <g fill="none" stroke="#8b9299" stroke-linecap="round">
+        <path d="M6.55 31.6 A1.95 1.95 0 0 1 9.45 31.6" stroke-width="0.3" />
+        <path d="M7.05 32.0 A1.3 1.3 0 0 1 8.95 32.0" stroke-width="0.28" />
+        <path d="M7.55 32.4 A0.65 0.65 0 0 1 8.45 32.4" stroke-width="0.26" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-0" data-path="drive-0" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="0">
+    <title>drive-0</title>
+    <rect id="drive-0--opening" x="32.5" y="7.71" width="73" height="15.3" fill="#101214" />
+    <g id="drive-0--module" data-path="drive-0/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(69,15.36) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-0--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-0--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-0--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-0--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-0--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-0/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-0--module--window-1" clip-path="url(#drive-0--module--w0)" data-path="drive-0/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-0--module--window-2" clip-path="url(#drive-0--module--w1)" data-path="drive-0/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-0--module--window-3" clip-path="url(#drive-0--module--w2)" data-path="drive-0/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-0--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-1" data-path="drive-1" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="1">
+    <title>drive-1</title>
+    <rect id="drive-1--opening" x="32.5" y="24.21" width="73" height="15.3" fill="#101214" />
+    <g id="drive-1--module" data-path="drive-1/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(69,31.86) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-1--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-1--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-1--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-1--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-1--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-1/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-1--module--window-1" clip-path="url(#drive-1--module--w0)" data-path="drive-1/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-1--module--window-2" clip-path="url(#drive-1--module--w1)" data-path="drive-1/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-1--module--window-3" clip-path="url(#drive-1--module--w2)" data-path="drive-1/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-1--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-2" data-path="drive-2" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="2">
+    <title>drive-2</title>
+    <rect id="drive-2--opening" x="115.35" y="7.71" width="73" height="15.3" fill="#101214" />
+    <g id="drive-2--module" data-path="drive-2/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(151.85,15.36) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-2--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-2--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-2--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-2--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-2--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-2/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-2--module--window-1" clip-path="url(#drive-2--module--w0)" data-path="drive-2/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-2--module--window-2" clip-path="url(#drive-2--module--w1)" data-path="drive-2/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-2--module--window-3" clip-path="url(#drive-2--module--w2)" data-path="drive-2/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-2--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-3" data-path="drive-3" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="3">
+    <title>drive-3</title>
+    <rect id="drive-3--opening" x="115.35" y="24.21" width="73" height="15.3" fill="#101214" />
+    <g id="drive-3--module" data-path="drive-3/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(151.85,31.86) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-3--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-3--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-3--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-3--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-3--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-3/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-3--module--window-1" clip-path="url(#drive-3--module--w0)" data-path="drive-3/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-3--module--window-2" clip-path="url(#drive-3--module--w1)" data-path="drive-3/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-3--module--window-3" clip-path="url(#drive-3--module--w2)" data-path="drive-3/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-3--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-4" data-path="drive-4" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="4">
+    <title>drive-4</title>
+    <rect id="drive-4--opening" x="281.1" y="7.71" width="73" height="15.3" fill="#101214" />
+    <g id="drive-4--module" data-path="drive-4/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(317.6,15.36) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-4--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-4--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-4--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-4--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-4--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-4/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-4--module--window-1" clip-path="url(#drive-4--module--w0)" data-path="drive-4/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-4--module--window-2" clip-path="url(#drive-4--module--w1)" data-path="drive-4/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-4--module--window-3" clip-path="url(#drive-4--module--w2)" data-path="drive-4/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-4--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-5" data-path="drive-5" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="5">
+    <title>drive-5</title>
+    <rect id="drive-5--opening" x="281.1" y="24.21" width="73" height="15.3" fill="#101214" />
+    <g id="drive-5--module" data-path="drive-5/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(317.6,31.86) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-5--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-5--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-5--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-5--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-5--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-5/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-5--module--window-1" clip-path="url(#drive-5--module--w0)" data-path="drive-5/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-5--module--window-2" clip-path="url(#drive-5--module--w1)" data-path="drive-5/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-5--module--window-3" clip-path="url(#drive-5--module--w2)" data-path="drive-5/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-5--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-6" data-path="drive-6" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="6">
+    <title>drive-6</title>
+    <rect id="drive-6--opening" x="363.95" y="7.71" width="73" height="15.3" fill="#101214" />
+    <g id="drive-6--module" data-path="drive-6/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(400.45,15.36) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-6--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-6--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-6--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-6--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-6--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-6/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-6--module--window-1" clip-path="url(#drive-6--module--w0)" data-path="drive-6/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-6--module--window-2" clip-path="url(#drive-6--module--w1)" data-path="drive-6/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-6--module--window-3" clip-path="url(#drive-6--module--w2)" data-path="drive-6/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-6--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="drive-7" data-path="drive-7" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="7">
+    <title>drive-7</title>
+    <rect id="drive-7--opening" x="363.95" y="24.21" width="73" height="15.3" fill="#101214" />
+    <g id="drive-7--module" data-path="drive-7/module" data-class="blank" data-behaviour="fills" data-ref="common/drive-blank-25@2:2.0.0" data-body-depth="25.0" data-wall="#1b1e21" data-form-factor="2.5-inch SFF" data-media="sff-2.5" transform="translate(400.45,31.86) rotate(270) translate(-7.65,-36.5)">
+      <title>drive-7--module</title>
+      <g transform="matrix(1.02961 0 0 0.91940 -1.54441 0)">
+        <defs>
+          <clipPath id="drive-7--module--w0">
+            <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-7--module--w1">
+            <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" />
+          </clipPath>
+          <clipPath id="drive-7--module--w2">
+            <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" />
+          </clipPath>
+        </defs>
+        <rect x="1.50" y="0" width="14.86" height="79.4" rx="0.5" fill="#3c4247" stroke="#2a2e32" stroke-width="0.25" />
+        <rect x="1.50" y="0" width="14.86" height="7.15" rx="0.5" fill="#33383d" />
+        <rect x="1.75" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect x="14.96" y="18.34" width="1.15" height="59.71" rx="0.5" fill="#c9ced3" stroke="#9aa0a6" stroke-width="0.15" />
+        <rect id="drive-7--module--release" x="4.53" y="9.45" width="8.8" height="6.75" rx="0.8" fill="#22262a" stroke="#4a5157" stroke-width="0.25" data-path="drive-7/module/release" data-class="control" data-depth="4.2" data-wall="#1b1e21" />
+        <circle cx="8.93" cy="12.78" r="2.55" fill="none" stroke="#e2761b" stroke-width="0.85" />
+        <g id="drive-7--module--window-1" clip-path="url(#drive-7--module--w0)" data-path="drive-7/module/window-1" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="27.31" width="12.20" height="10.88" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 25.16 L1.59 26.73 L-0.22 26.73 L-1.12 25.16 L-0.22 23.60 L1.59 23.60 Z" />
+            <path d="M2.49 28.89 L1.59 30.45 L-0.22 30.45 L-1.12 28.89 L-0.22 27.32 L1.59 27.32 Z" />
+            <path d="M2.49 32.61 L1.59 34.18 L-0.22 34.18 L-1.12 32.61 L-0.22 31.05 L1.59 31.05 Z" />
+            <path d="M2.49 36.34 L1.59 37.90 L-0.22 37.90 L-1.12 36.34 L-0.22 34.77 L1.59 34.77 Z" />
+            <path d="M2.49 40.06 L1.59 41.62 L-0.22 41.62 L-1.12 40.06 L-0.22 38.50 L1.59 38.50 Z" />
+            <path d="M5.71 27.03 L4.81 28.59 L3.01 28.59 L2.10 27.03 L3.01 25.46 L4.81 25.46 Z" />
+            <path d="M5.71 30.75 L4.81 32.31 L3.01 32.31 L2.10 30.75 L3.01 29.19 L4.81 29.19 Z" />
+            <path d="M5.71 34.47 L4.81 36.04 L3.01 36.04 L2.10 34.47 L3.01 32.91 L4.81 32.91 Z" />
+            <path d="M5.71 38.20 L4.81 39.76 L3.01 39.76 L2.10 38.20 L3.01 36.63 L4.81 36.63 Z" />
+            <path d="M8.94 25.16 L8.04 26.73 L6.23 26.73 L5.33 25.16 L6.23 23.60 L8.04 23.60 Z" />
+            <path d="M8.94 28.89 L8.04 30.45 L6.23 30.45 L5.33 28.89 L6.23 27.32 L8.04 27.32 Z" />
+            <path d="M8.94 32.61 L8.04 34.18 L6.23 34.18 L5.33 32.61 L6.23 31.05 L8.04 31.05 Z" />
+            <path d="M8.94 36.34 L8.04 37.90 L6.23 37.90 L5.33 36.34 L6.23 34.77 L8.04 34.77 Z" />
+            <path d="M8.94 40.06 L8.04 41.62 L6.23 41.62 L5.33 40.06 L6.23 38.50 L8.04 38.50 Z" />
+            <path d="M12.16 27.03 L11.26 28.59 L9.46 28.59 L8.55 27.03 L9.46 25.46 L11.26 25.46 Z" />
+            <path d="M12.16 30.75 L11.26 32.31 L9.46 32.31 L8.55 30.75 L9.46 29.19 L11.26 29.19 Z" />
+            <path d="M12.16 34.47 L11.26 36.04 L9.46 36.04 L8.55 34.47 L9.46 32.91 L11.26 32.91 Z" />
+            <path d="M12.16 38.20 L11.26 39.76 L9.46 39.76 L8.55 38.20 L9.46 36.63 L11.26 36.63 Z" />
+            <path d="M15.39 25.16 L14.49 26.73 L12.68 26.73 L11.78 25.16 L12.68 23.60 L14.49 23.60 Z" />
+            <path d="M15.39 28.89 L14.49 30.45 L12.68 30.45 L11.78 28.89 L12.68 27.32 L14.49 27.32 Z" />
+            <path d="M15.39 32.61 L14.49 34.18 L12.68 34.18 L11.78 32.61 L12.68 31.05 L14.49 31.05 Z" />
+            <path d="M15.39 36.34 L14.49 37.90 L12.68 37.90 L11.78 36.34 L12.68 34.77 L14.49 34.77 Z" />
+            <path d="M15.39 40.06 L14.49 41.62 L12.68 41.62 L11.78 40.06 L12.68 38.50 L14.49 38.50 Z" />
+            <path d="M18.61 27.03 L17.71 28.59 L15.91 28.59 L15.00 27.03 L15.91 25.46 L17.71 25.46 Z" />
+            <path d="M18.61 30.75 L17.71 32.31 L15.91 32.31 L15.00 30.75 L15.91 29.19 L17.71 29.19 Z" />
+            <path d="M18.61 34.47 L17.71 36.04 L15.91 36.04 L15.00 34.47 L15.91 32.91 L17.71 32.91 Z" />
+            <path d="M18.61 38.20 L17.71 39.76 L15.91 39.76 L15.00 38.20 L15.91 36.63 L17.71 36.63 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="27.31" width="12.20" height="10.88" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-7--module--window-2" clip-path="url(#drive-7--module--w1)" data-path="drive-7/module/window-2" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="39.62" width="12.20" height="10.96" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 37.47 L1.59 39.03 L-0.22 39.03 L-1.12 37.47 L-0.22 35.91 L1.59 35.91 Z" />
+            <path d="M2.49 41.19 L1.59 42.76 L-0.22 42.76 L-1.12 41.19 L-0.22 39.63 L1.59 39.63 Z" />
+            <path d="M2.49 44.92 L1.59 46.48 L-0.22 46.48 L-1.12 44.92 L-0.22 43.35 L1.59 43.35 Z" />
+            <path d="M2.49 48.64 L1.59 50.21 L-0.22 50.21 L-1.12 48.64 L-0.22 47.08 L1.59 47.08 Z" />
+            <path d="M2.49 52.37 L1.59 53.93 L-0.22 53.93 L-1.12 52.37 L-0.22 50.80 L1.59 50.80 Z" />
+            <path d="M5.71 39.33 L4.81 40.90 L3.01 40.90 L2.10 39.33 L3.01 37.77 L4.81 37.77 Z" />
+            <path d="M5.71 43.06 L4.81 44.62 L3.01 44.62 L2.10 43.06 L3.01 41.49 L4.81 41.49 Z" />
+            <path d="M5.71 46.78 L4.81 48.34 L3.01 48.34 L2.10 46.78 L3.01 45.22 L4.81 45.22 Z" />
+            <path d="M5.71 50.50 L4.81 52.07 L3.01 52.07 L2.10 50.50 L3.01 48.94 L4.81 48.94 Z" />
+            <path d="M8.94 37.47 L8.04 39.03 L6.23 39.03 L5.33 37.47 L6.23 35.91 L8.04 35.91 Z" />
+            <path d="M8.94 41.19 L8.04 42.76 L6.23 42.76 L5.33 41.19 L6.23 39.63 L8.04 39.63 Z" />
+            <path d="M8.94 44.92 L8.04 46.48 L6.23 46.48 L5.33 44.92 L6.23 43.35 L8.04 43.35 Z" />
+            <path d="M8.94 48.64 L8.04 50.21 L6.23 50.21 L5.33 48.64 L6.23 47.08 L8.04 47.08 Z" />
+            <path d="M8.94 52.37 L8.04 53.93 L6.23 53.93 L5.33 52.37 L6.23 50.80 L8.04 50.80 Z" />
+            <path d="M12.16 39.33 L11.26 40.90 L9.46 40.90 L8.55 39.33 L9.46 37.77 L11.26 37.77 Z" />
+            <path d="M12.16 43.06 L11.26 44.62 L9.46 44.62 L8.55 43.06 L9.46 41.49 L11.26 41.49 Z" />
+            <path d="M12.16 46.78 L11.26 48.34 L9.46 48.34 L8.55 46.78 L9.46 45.22 L11.26 45.22 Z" />
+            <path d="M12.16 50.50 L11.26 52.07 L9.46 52.07 L8.55 50.50 L9.46 48.94 L11.26 48.94 Z" />
+            <path d="M15.39 37.47 L14.49 39.03 L12.68 39.03 L11.78 37.47 L12.68 35.91 L14.49 35.91 Z" />
+            <path d="M15.39 41.19 L14.49 42.76 L12.68 42.76 L11.78 41.19 L12.68 39.63 L14.49 39.63 Z" />
+            <path d="M15.39 44.92 L14.49 46.48 L12.68 46.48 L11.78 44.92 L12.68 43.35 L14.49 43.35 Z" />
+            <path d="M15.39 48.64 L14.49 50.21 L12.68 50.21 L11.78 48.64 L12.68 47.08 L14.49 47.08 Z" />
+            <path d="M15.39 52.37 L14.49 53.93 L12.68 53.93 L11.78 52.37 L12.68 50.80 L14.49 50.80 Z" />
+            <path d="M18.61 39.33 L17.71 40.90 L15.91 40.90 L15.00 39.33 L15.91 37.77 L17.71 37.77 Z" />
+            <path d="M18.61 43.06 L17.71 44.62 L15.91 44.62 L15.00 43.06 L15.91 41.49 L17.71 41.49 Z" />
+            <path d="M18.61 46.78 L17.71 48.34 L15.91 48.34 L15.00 46.78 L15.91 45.22 L17.71 45.22 Z" />
+            <path d="M18.61 50.50 L17.71 52.07 L15.91 52.07 L15.00 50.50 L15.91 48.94 L17.71 48.94 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="39.62" width="12.20" height="10.96" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <g id="drive-7--module--window-3" clip-path="url(#drive-7--module--w2)" data-path="drive-7/module/window-3" data-class="vent" data-depth="7.6" data-wall="#1b1e21">
+          <rect x="2.83" y="52.09" width="12.20" height="9.13" fill="#585f66" />
+          <g fill="#0a0c0e">
+            <path d="M2.49 49.94 L1.59 51.50 L-0.22 51.50 L-1.12 49.94 L-0.22 48.37 L1.59 48.37 Z" />
+            <path d="M2.49 53.66 L1.59 55.22 L-0.22 55.22 L-1.12 53.66 L-0.22 52.10 L1.59 52.10 Z" />
+            <path d="M2.49 57.38 L1.59 58.95 L-0.22 58.95 L-1.12 57.38 L-0.22 55.82 L1.59 55.82 Z" />
+            <path d="M2.49 61.11 L1.59 62.67 L-0.22 62.67 L-1.12 61.11 L-0.22 59.54 L1.59 59.54 Z" />
+            <path d="M5.71 51.80 L4.81 53.36 L3.01 53.36 L2.10 51.80 L3.01 50.23 L4.81 50.23 Z" />
+            <path d="M5.71 55.52 L4.81 57.09 L3.01 57.09 L2.10 55.52 L3.01 53.96 L4.81 53.96 Z" />
+            <path d="M5.71 59.25 L4.81 60.81 L3.01 60.81 L2.10 59.25 L3.01 57.68 L4.81 57.68 Z" />
+            <path d="M5.71 62.97 L4.81 64.53 L3.01 64.53 L2.10 62.97 L3.01 61.41 L4.81 61.41 Z" />
+            <path d="M8.94 49.94 L8.04 51.50 L6.23 51.50 L5.33 49.94 L6.23 48.37 L8.04 48.37 Z" />
+            <path d="M8.94 53.66 L8.04 55.22 L6.23 55.22 L5.33 53.66 L6.23 52.10 L8.04 52.10 Z" />
+            <path d="M8.94 57.38 L8.04 58.95 L6.23 58.95 L5.33 57.38 L6.23 55.82 L8.04 55.82 Z" />
+            <path d="M8.94 61.11 L8.04 62.67 L6.23 62.67 L5.33 61.11 L6.23 59.54 L8.04 59.54 Z" />
+            <path d="M12.16 51.80 L11.26 53.36 L9.46 53.36 L8.55 51.80 L9.46 50.23 L11.26 50.23 Z" />
+            <path d="M12.16 55.52 L11.26 57.09 L9.46 57.09 L8.55 55.52 L9.46 53.96 L11.26 53.96 Z" />
+            <path d="M12.16 59.25 L11.26 60.81 L9.46 60.81 L8.55 59.25 L9.46 57.68 L11.26 57.68 Z" />
+            <path d="M12.16 62.97 L11.26 64.53 L9.46 64.53 L8.55 62.97 L9.46 61.41 L11.26 61.41 Z" />
+            <path d="M15.39 49.94 L14.49 51.50 L12.68 51.50 L11.78 49.94 L12.68 48.37 L14.49 48.37 Z" />
+            <path d="M15.39 53.66 L14.49 55.22 L12.68 55.22 L11.78 53.66 L12.68 52.10 L14.49 52.10 Z" />
+            <path d="M15.39 57.38 L14.49 58.95 L12.68 58.95 L11.78 57.38 L12.68 55.82 L14.49 55.82 Z" />
+            <path d="M15.39 61.11 L14.49 62.67 L12.68 62.67 L11.78 61.11 L12.68 59.54 L14.49 59.54 Z" />
+            <path d="M18.61 51.80 L17.71 53.36 L15.91 53.36 L15.00 51.80 L15.91 50.23 L17.71 50.23 Z" />
+            <path d="M18.61 55.52 L17.71 57.09 L15.91 57.09 L15.00 55.52 L15.91 53.96 L17.71 53.96 Z" />
+            <path d="M18.61 59.25 L17.71 60.81 L15.91 60.81 L15.00 59.25 L15.91 57.68 L17.71 57.68 Z" />
+            <path d="M18.61 62.97 L17.71 64.53 L15.91 64.53 L15.00 62.97 L15.91 61.41 L17.71 61.41 Z" />
+          </g>
+        </g>
+        <rect x="2.83" y="52.09" width="12.20" height="9.13" rx="0.35" fill="none" stroke="#2a2e32" stroke-width="0.3" />
+        <rect id="drive-7--module--label" x="5.13" y="62.73" width="7.60" height="7.60" rx="0.25" fill="#8f959b" stroke="#787f85" stroke-width="0.16" />
+      </g>
+    </g>
+  </g>
+  <g id="bezel" data-path="bezel" data-class="bezel" data-behaviour="mounts" data-ref="dell/bezel-1u-16g@1:1.0.0" data-body-depth="13.84" data-power-absent="not-applicable" data-rel-pos="3" transform="translate(24.3,0.0)" data-group="covers" data-group-role="furniture" data-description="the system cover and the backplane cover on top, and the optional security bezel on the front. The bezel is DRAWN FITTED, as on the R740xd: it is `mounts`, so the viewer takes it off to show the drives, and `for:` names what it covers." data-for="drive-0 drive-1 drive-2 drive-3 drive-4 drive-5 drive-6 drive-7 vga mark-vga">
+    <title>bezel</title>
+    <path id="bezel--plate" fill-rule="evenodd" fill="#8f8b85" d="M0 0 H433.35 V42.8 H0 Z M240.26 4.02 L269.34 4.02 L267.90 1.15 L241.70 1.15 Z M236.08 1.15 L196.01 1.15 L197.45 4.02 L234.64 4.02 Z M190.40 1.15 L164.20 1.15 L162.76 4.02 L191.84 4.02 Z M158.58 1.15 L118.51 1.15 L119.95 4.02 L157.14 4.02 Z M112.90 1.15 L86.70 1.15 L85.26 4.02 L114.34 4.02 Z M81.08 1.15 L41.01 1.15 L42.45 4.02 L79.64 4.02 Z M35.40 1.15 L19.50 1.15 L19.50 4.02 L36.84 4.02 Z M19.50 41.66 L35.41 41.66 L36.84 38.79 L19.50 38.79 Z M19.50 35.62 L38.43 35.62 L42.76 26.97 L42.73 26.96 L42.20 26.64 L41.70 26.27 L41.25 25.85 L40.83 25.40 L40.46 24.90 L40.14 24.37 L39.88 23.81 L39.67 23.23 L39.52 22.63 L39.43 22.02 L39.40 21.40 L39.43 20.78 L39.52 20.17 L39.67 19.57 L39.88 18.99 L40.14 18.43 L40.46 17.90 L40.83 17.40 L41.25 16.95 L41.70 16.53 L42.20 16.16 L42.73 15.84 L42.76 15.83 L38.42 7.18 L19.50 7.18 Z M41.02 41.66 L81.08 41.66 L79.64 38.79 L42.46 38.79 Z M44.05 35.62 L78.05 35.62 L73.23 26.01 L70.53 24.21 L51.58 24.21 L51.20 24.47 L50.94 24.90 L50.57 25.40 L50.15 25.85 L49.70 26.27 L49.20 26.64 L48.67 26.96 L48.32 27.12 Z M86.69 41.66 L112.91 41.66 L114.34 38.79 L85.26 38.79 Z M83.67 35.62 L115.93 35.62 L122.15 23.21 L122.58 21.41 L122.15 19.61 L115.92 7.18 L83.68 7.18 L77.44 19.61 L77.03 21.41 L77.44 23.21 Z M118.52 41.66 L158.58 41.66 L157.14 38.79 L119.96 38.79 Z M121.55 35.62 L155.55 35.62 L150.73 26.01 L148.03 24.21 L129.08 24.21 L126.38 26.01 Z M164.19 41.66 L190.41 41.66 L191.84 38.79 L162.76 38.79 Z M161.17 35.62 L193.43 35.62 L199.65 23.21 L200.08 21.41 L199.65 19.61 L193.42 7.18 L161.18 7.18 L154.94 19.61 L154.53 21.41 L154.94 23.21 Z M232.03 21.41 L232.44 23.21 L238.67 35.62 L270.93 35.62 L277.15 23.21 L277.58 21.41 L277.15 19.61 L270.92 7.18 L238.68 7.18 L232.44 19.61 Z M276.54 7.18 L281.38 16.81 L284.08 18.61 L303.03 18.61 L305.73 16.81 L310.56 7.18 Z M316.18 7.18 L309.94 19.61 L309.53 21.41 L309.94 23.21 L316.17 35.62 L348.43 35.62 L354.65 23.21 L355.08 21.41 L354.65 19.61 L348.42 7.18 Z M354.04 7.18 L358.88 16.81 L361.58 18.61 L380.53 18.61 L383.23 16.81 L388.06 7.18 Z M393.68 7.18 L387.44 19.61 L387.03 21.41 L387.44 23.21 L393.67 35.62 L408.70 35.62 L408.70 7.18 Z M408.70 4.02 L408.70 1.15 L396.70 1.15 L395.26 4.02 Z M389.64 4.02 L391.08 1.15 L351.01 1.15 L352.45 4.02 Z M346.84 4.02 L345.40 1.15 L319.20 1.15 L317.76 4.02 Z M312.14 4.02 L313.58 1.15 L273.51 1.15 L274.95 4.02 Z M150.73 16.81 L155.56 7.18 L121.54 7.18 L126.38 16.81 L129.08 18.61 L148.03 18.61 Z M228.23 16.81 L233.06 7.18 L199.04 7.18 L203.88 16.81 L206.58 18.61 L225.53 18.61 Z M70.53 18.61 L73.23 16.81 L78.06 7.18 L44.04 7.18 L48.31 15.67 L48.67 15.84 L49.20 16.16 L49.70 16.53 L50.15 16.95 L50.57 17.40 L50.94 17.90 L51.22 18.37 L51.58 18.61 Z M234.64 38.79 L197.46 38.79 L196.02 41.66 L236.08 41.66 Z M269.34 38.79 L240.26 38.79 L241.69 41.66 L267.91 41.66 Z M312.14 38.79 L274.96 38.79 L273.52 41.66 L313.58 41.66 Z M346.84 38.79 L317.76 38.79 L319.19 41.66 L345.41 41.66 Z M389.64 38.79 L352.46 38.79 L351.02 41.66 L391.08 41.66 Z M408.70 38.79 L395.26 38.79 L396.69 41.66 L408.70 41.66 Z M354.05 35.62 L388.05 35.62 L383.23 26.01 L380.53 24.21 L361.58 24.21 L358.88 26.01 Z M276.55 35.62 L310.55 35.62 L305.73 26.01 L303.03 24.21 L284.08 24.21 L281.38 26.01 Z M199.05 35.62 L233.05 35.62 L228.23 26.01 L225.53 24.21 L206.58 24.21 L203.88 26.01 Z" data-path="bezel/plate" data-class="bezel" data-description="the bezel - rails, wings and end sections - over an open ground" data-z-out="13.84" data-z-color="#8f8b85" data-z-shape="1" />
+    <g id="bezel--dark">
+      <rect x="0" y="1.15" width="19.5" height="40.51" fill="#33373b" />
+      <rect x="19.5" y="4.02" width="389.2" height="3.16" fill="#2e3236" />
+      <rect x="19.5" y="35.62" width="389.2" height="3.17" fill="#2e3236" />
+    </g>
+    <path id="bezel--wings-lit" fill="#aaa69f" d="M35.40 1.15 L41.01 1.15 L48.88 16.81 L51.58 18.61 L70.53 18.61 L73.23 16.81 L81.08 1.15 L86.70 1.15 L77.44 19.61 L77.03 21.41 L45.08 21.41 L44.65 19.61 Z M112.90 1.15 L118.51 1.15 L126.38 16.81 L129.08 18.61 L148.03 18.61 L150.73 16.81 L158.58 1.15 L164.20 1.15 L154.94 19.61 L154.53 21.41 L122.58 21.41 L122.15 19.61 Z M190.40 1.15 L196.01 1.15 L203.88 16.81 L206.58 18.61 L225.53 18.61 L228.23 16.81 L236.08 1.15 L241.70 1.15 L232.44 19.61 L232.03 21.41 L200.08 21.41 L199.65 19.61 Z M267.90 1.15 L273.51 1.15 L281.38 16.81 L284.08 18.61 L303.03 18.61 L305.73 16.81 L313.58 1.15 L319.20 1.15 L309.94 19.61 L309.53 21.41 L277.58 21.41 L277.15 19.61 Z M345.40 1.15 L351.01 1.15 L358.88 16.81 L361.58 18.61 L380.53 18.61 L383.23 16.81 L391.08 1.15 L396.70 1.15 L387.44 19.61 L387.03 21.41 L355.08 21.41 L354.65 19.61 Z" data-path="bezel/wings-lit" data-class="bezel" data-description="the five wings' upper halves, lit lighter" />
+    <path id="bezel--wings-low" fill="#8f8b85" d="M35.40 41.67 L41.01 41.67 L48.88 26.01 L51.58 24.21 L70.53 24.21 L73.23 26.01 L81.08 41.67 L86.70 41.67 L77.44 23.21 L77.03 21.41 L45.08 21.41 L44.65 23.21 Z M112.90 41.67 L118.51 41.67 L126.38 26.01 L129.08 24.21 L148.03 24.21 L150.73 26.01 L158.58 41.67 L164.20 41.67 L154.94 23.21 L154.53 21.41 L122.58 21.41 L122.15 23.21 Z M190.40 41.67 L196.01 41.67 L203.88 26.01 L206.58 24.21 L225.53 24.21 L228.23 26.01 L236.08 41.67 L241.70 41.67 L232.44 23.21 L232.03 21.41 L200.08 21.41 L199.65 23.21 Z M267.90 41.67 L273.51 41.67 L281.38 26.01 L284.08 24.21 L303.03 24.21 L305.73 26.01 L313.58 41.67 L319.20 41.67 L309.94 23.21 L309.53 21.41 L277.58 21.41 L277.15 23.21 Z M345.40 41.67 L351.01 41.67 L358.88 26.01 L361.58 24.21 L380.53 24.21 L383.23 26.01 L391.08 41.67 L396.70 41.67 L387.44 23.21 L387.03 21.41 L355.08 21.41 L354.65 23.21 Z" />
+    <rect id="bezel--end-r" x="408.7" y="1.15" width="24.65" height="40.51" fill="#2a2d31" data-path="bezel/end-r" data-class="bezel" data-description="the dark right end, over the VGA module" />
+    <rect id="bezel--end-l" x="1.0" y="11.5" width="18.1" height="19.9" rx="1.2" fill="#9a9c9e" data-path="bezel/end-l" data-class="bezel" data-description="the lighter square on the plain left end" />
+    <g id="bezel--lock" data-path="bezel/lock" data-class="control" data-description="the keylock - unlocked with the bezel key before the bezel comes off">
+      <circle cx="45.7" cy="21.4" r="6.3" fill="#a7a8a6" />
+      <circle cx="45.7" cy="21.4" r="4.6" fill="#2b2d30" />
+      <path d="M44.3 19.9 A2.1 2.1 0 1 0 47.1 19.9 M45.7 18.4 V20.6" fill="none" stroke="#c7c9cb" stroke-width="0.45" stroke-linecap="round" />
+    </g>
+    <rect id="bezel--logo-zone" x="191.0" y="12.0" width="52.0" height="18.9" fill="none" stroke="none" data-path="bezel/logo-zone" data-class="bezel" data-description="where Dell's wordmark sits; reserved and left empty" />
+  </g>
+</svg>
