@@ -284,11 +284,16 @@ async function buildLibrary({rack}) {
         seen.set(f.device, `  ${(f.model || f.device).padEnd(22)} ${f.version || '?'}`);
       }
     }
+    // An optic's major moves its ports as a device's does, so the optics are
+    // stamped too - by ref, which names the major the shape was drawn from.
+    for (const f of loaded) {
+      if (f.kind === 'optic') seen.set(f.ref, `  ${f.ref.padEnd(32)} ${f.version || '?'}`);
+    }
     const xml = library(entries, [
       `Portrayal shape library - ${allVendors() ? 'all vendors' : (scopeOf(scope)?.label || 'portrayal')}`,
       `generated ${new Date().toISOString().slice(0, 10)} from portrayal.dev`,
       '',
-      'Drawn from these device versions. A major bump means a slot moved or an',
+      'Drawn from these device and optic versions. A major bump means a slot moved or an',
       'id was renamed, so shapes placed from this file may disagree with the',
       'current drawing about where a port is.',
       '',
