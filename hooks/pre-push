@@ -21,15 +21,38 @@ CONTRACT="check-contract.py"
 BROWSER="check-browser.py"
 
 # WHAT A PUSH HAS TO EARN. The contract check reads files and takes under a
-# second, so it runs always. The browser pass opens twelve pages and presses Run
-# on the marks harness: two minutes, which is worth paying when the push can
-# break a page and is worth skipping when it plainly cannot. A pre-push hook
-# that costs two minutes on a README fix is a hook that gets --no-verify'd into
-# retirement, and then neither check runs.
+# second, so it runs always. The browser pass opens every page, walks the
+# showcase and the rack builder in 2D and 3D, and presses Run on the marks
+# harness: six to seven minutes, which is worth paying when the push can break a
+# page and is worth skipping when it plainly cannot. A pre-push hook that costs
+# that on a README fix is a hook that gets --no-verify'd into retirement, and
+# then neither check runs.
 touches_the_site() {
   # Anything the pages load, are, or are served by. assets/ is in the list
   # because a drawing that goes away is a page that fetches a 404.
   grep -qE '^(vendor/|site/|assets/|brand/|tests/|[^/]+\.html$|check-browser\.py$|serve\.py$)'
+}
+
+# GIT OPENS THE CONNECTION BEFORE IT RUNS THIS HOOK, and over SSH that
+# connection sits idle until the hook is done. GitHub closes an idle one after a
+# few minutes, so a browser pass that passes is followed by
+# "Connection to github.com closed by remote host" and a push that failed
+# (portrayal-site#79). Measured with a hook that only slept for seven minutes:
+# plain SSH was dropped, SSH with ServerAliveInterval=30 pushed, HTTPS pushed -
+# it asks again after the hook rather than holding a session open. So the fix
+# is a keepalive, set once per clone, and this says so BEFORE the long pass
+# rather than after it. A warning and not a refusal: a machine that finishes
+# under GitHub's limit pushes fine without one.
+remote_url="${2:-}"
+keepalive_ok() {
+  case "$remote_url" in
+    http://*|https://*|file://*|/*|.*) return 0 ;;      # not SSH: nothing to keep alive
+  esac
+  printf %s "${GIT_SSH_COMMAND:-} $(git config core.sshCommand 2>/dev/null)" \
+    | grep -qE 'ServerAliveInterval[= ]*[1-9]' && return 0
+  host=$(printf %s "$remote_url" | sed -E 's#^ssh://##; s#^[^@/]*@##; s#[:/].*$##')
+  [ -n "$host" ] || return 0
+  ssh -G "$host" 2>/dev/null | grep -qE '^serveraliveinterval [1-9]'
 }
 
 z=0000000000000000000000000000000000000000
@@ -69,7 +92,13 @@ fi
 
 if [ "$full" = 1 ] || printf %s "$changed" | touches_the_site; then
   if python3 -c "import playwright" 2>/dev/null; then
-    echo "pre-push: $BROWSER (about two minutes; --no-verify skips it)"
+    if ! keepalive_ok; then
+      echo "pre-push: WARNING - this push is over SSH with no keepalive, and GitHub" >&2
+      echo "          drops an idle connection before the browser pass ends, so the" >&2
+      echo "          push will likely fail after the checks pass. Once per clone:" >&2
+      echo "            git config core.sshCommand \"ssh -o ServerAliveInterval=30\"" >&2
+    fi
+    echo "pre-push: $BROWSER (six to seven minutes; --no-verify skips it)"
     python3 "$BROWSER"
   else
     # NOT FATAL BY DEFAULT, and loud. A hook that refuses to push because an

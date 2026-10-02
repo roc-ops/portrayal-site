@@ -85,12 +85,20 @@ refresh should run anywhere a build does.
 
 ```sh
 git config core.hooksPath hooks
+git config core.sshCommand "ssh -o ServerAliveInterval=30"
 ```
+
+The second line matters over SSH. Git opens the connection before it runs the
+hook and holds it idle until the hook is done, and GitHub closes an idle SSH
+connection before the browser pass ends - so without a keepalive a push that
+passed every check still fails, with "Connection to github.com closed by remote
+host" (#79). An HTTPS remote does not need it. The hook warns before the pass
+if it is missing.
 
 `hooks/pre-push` then runs the contract check on every push — under a second —
 and the browser pass when the push touches anything a page loads: `vendor/`,
 `site/`, `assets/`, `brand/`, a top-level `.html`, or the server itself. A
-README fix does not pay the two minutes, which is the difference between a hook
+README fix does not pay the six or seven minutes, which is the difference between a hook
 people keep and one they retire with `--no-verify`. Missing Playwright is a
 loud skip rather than a refusal; `PORTRAYAL_HOOK_STRICT=1` makes it a failure.
 
