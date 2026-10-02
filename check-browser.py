@@ -4317,10 +4317,22 @@ def check_drawio_optics_library(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     page.goto(f"{base}/drawio.html?device=fhd-1ube", wait_until="load")
-    page.wait_for_function("document.getElementById('optics-count').textContent !== ''", timeout=15000)
+    # NULL-SAFE, AND SAID OUT LOUD WHEN IT IS NULL. A predicate that reads
+    # `.textContent` off a missing element throws, and wait_for_function gives
+    # up on a throw instead of polling - which failed this check once in a full
+    # pass. The checkbox is static markup, so if it never appears the page that
+    # was served is not this tree's drawio.html, and the message says that.
+    try:
+        page.wait_for_function(
+            "(document.getElementById('optics-count')?.textContent || '') !== ''", timeout=15000)
+    except Exception:
+        has = page.evaluate("!!document.getElementById('optics')")
+        return bad + ["draw.io optics: " + (
+            "the optics count never filled in" if has else
+            f"{page.url} has no optics checkbox - is the server serving this tree?")]
     r = page.evaluate("""async () => {
       const $ = id => document.getElementById(id);
-      const mods = $('mods-count').textContent, optics = $('optics-count').textContent;
+      const mods = $('mods-count')?.textContent || '', optics = $('optics-count')?.textContent || '';
       $('optics').checked = true;
       const blobs = [];
       const orig = URL.createObjectURL.bind(URL);
