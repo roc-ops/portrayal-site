@@ -424,7 +424,11 @@ function about(box) {
   h += capability(meta.capability || d.capability, meta.gaps || d.gaps);
 
   h += `<h3>Dimensions</h3>`;
-  h += row('rack units', ch.ru != null ? `${ch.ru} RU` : '—');
+  // A box that is not racked says how it is installed instead (Portrayal #734):
+  // the HLX-TGV is a desktop unit and the GL-8xEP a wall mount, and a "rack
+  // units —" row told a reader neither. Upstream's kit/index.html does the same.
+  if (ch.mount && ch.mount !== 'rack') h += row('mount', ch.mount);
+  else h += row('rack units', ch.ru != null ? `${ch.ru} RU` : '—');
   h += row('W × H × D', `${dim(ch.w)} × ${dim(ch.h)} × ${dim(ch.d)}`);
   h += cite('chassis', 'dimensions', 'width', 'height', 'depth', 'ru');
 
