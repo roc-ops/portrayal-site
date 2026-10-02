@@ -169,6 +169,14 @@ for f in vendors.json overlays.json listings.json gaps.json; do
 done
 # <device>.source.json is the source manifest, published once per device since
 # Portrayal #669; a face names it by digest (source-sha256) instead of embedding it.
+#
+# NOT <face>.elements.json (Portrayal #727/#740), deliberately, like
+# components-detail.json above: one per face, for a server that wants a face's
+# tree without a DOM. No page here and no vendored module fetches one - the
+# Explorer builds the same tree from the SVG with swap.js faceTree - so copying
+# them would add 3222 files and 49 MB (at Portrayal dd5fc85a) that nobody
+# downloads. The glob below names *.svg, *.configs.json and *.source.json, so
+# it cannot pick them up by accident; copy them here the day a page reads one.
 for f in "$SRC"/dist/*.svg "$SRC"/dist/*.configs.json "$SRC"/dist/*.source.json; do
   cp "$f" "$HERE/assets/dist/"
 done
