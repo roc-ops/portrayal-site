@@ -12,7 +12,8 @@
 
 import {RU, RAIL_W, OPENING} from './rails.js';
 import {drawElevation, panelFor} from './elevation.js';
-import {configuredFace} from './face.js';
+import {makeZip} from '../bundle.js';
+import {configuredFace, components, findComp} from './face.js';
 import {itemsWithU} from './fit.js';
 import {uLabel} from './model.js';
 import {el, svgEl} from './dom.js';
@@ -20,7 +21,8 @@ import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes, threeDNotes,
-        xmlComment, perFaceItems, drawioU} from './export-data.js';
+        xmlComment, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
+        stemOf, vendorOf, dcimNotesText, isSeatedPath, TARGET_NAME} from './export-data.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -171,4 +173,107 @@ export async function sheetPng(rack, chassisOf, opts = {}) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+// ── DCIM (spec §8) ─────────────────────────────────────────────────────
+const EXPORTS_BASE = 'assets/exports/';
+const TEXT = new Map();
+function fetchText(url) {
+  if (!TEXT.has(url)) {
+    TEXT.set(url, fetch(url)
+      .then(r => { if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`); return r.text(); })
+      .catch(err => { TEXT.delete(url); throw err; }));
+  }
+  return TEXT.get(url);
+}
+const fetchJson = async url => JSON.parse(await fetchText(url));
+// index.json and files.json paths already start with the target folder.
+const exportUrl = path => EXPORTS_BASE + path.split('/').map(encodeURIComponent).join('/');
+
+// What a face has SEATED: a bay's module or a cage's occupant. Default
+// parts carry data-ref exactly as swapped ones do, so this is the rack as
+// configured - defaults, swaps, and a swapped carrier's own defaults - with
+// no swap logic re-derived here.
+export function seatedParts(svgText) {
+  const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml');
+  return [...doc.querySelectorAll('[data-ref][data-path]')]
+    .map(n => ({path: n.getAttribute('data-path'), ref: n.getAttribute('data-ref').split(':')[0]}))
+    .filter(p => isSeatedPath(p.path));
+}
+
+// Both of the device's own panels (not the panes': turned does not change
+// what is in it), one part per path.
+async function seatedPartsOf(items) {
+  const parts = [], notes = [];
+  for (const it of items) {
+    const seen = new Set();
+    for (const view of ['front', 'rear']) {
+      const f = await faceOf(it, view);
+      if (!f) { notes.push(`${it.label}: no ${view} drawing, so parts seen only from the ${view} are not listed.`); continue; }
+      for (const p of seatedParts(f.text)) {
+        if (seen.has(p.path)) continue;
+        seen.add(p.path);
+        parts.push({...p, itemId: it.id, label: it.label});
+      }
+    }
+  }
+  return {parts, notes};
+}
+
+export async function dcimContext(rack, chassisOf, target, {modules = true} = {}) {
+  const T = TARGET_NAME[target];
+  const [index, files, comps] = await Promise.all([
+    fetchJson(`${EXPORTS_BASE}index.json`), fetchJson(`${EXPORTS_BASE}files.json`), components()]);
+  const items = itemsWithU(rack, chassisOf);
+  const notes = [...rackNotes(rack)];
+  const types = new Map();
+  for (const it of items) {
+    const manufacturer = chassisOf(it.ref)?.manufacturer;
+    const m = matchDeviceType({cfg: it.cfg, manufacturer, paths: index[it.ref]?.[target] || []});
+    if (!m) { types.set(it.id, null); notes.push(`${it.label} (${it.ref}): no ${T} device type.`); continue; }
+    const head = yamlHead(await fetchText(exportUrl(m.path)));
+    // matchDeviceType falls back past the manufacturer filter when no file is in
+    // the chassis's own folder; that shows as a file from another vendor's.
+    const otherVendor = vendorOf(m.path) !== manufacturer;
+    types.set(it.id, {...m, otherVendor, manufacturer: head.manufacturer ?? '', model: head.model ?? '',
+                      isFullDepth: head.isFullDepth});
+    if (otherVendor)
+      notes.push(`${it.label} (${it.ref}): no ${T} device type from ${manufacturer || 'its manufacturer'}, so ` +
+                 `${stemOf(m.path)} is another vendor's (${vendorOf(m.path)}) file, a best guess.`);
+    else if (m.guess)
+      notes.push(`${it.label} (${it.ref}, configuration ${it.cfg || 'default'}): ${stemOf(m.path)} is a best guess ` +
+                 `among ${m.candidates} ${T} device types; none names this configuration.`);
+  }
+  const out = {items, types, modules: [], parts: [], notes};
+  if (modules) {
+    const {parts, notes: partNotes} = await seatedPartsOf(items);
+    notes.push(...partNotes);
+    const users = new Map();
+    for (const p of parts) users.set(p.ref, [...(users.get(p.ref) || []), p.label]);
+    for (const [ref, labels] of users) {
+      const comp = findComp(comps, ref);
+      const model = partNumber(comp);
+      const path = moduleTypePath(files[target] || [], model);
+      out.modules.push({ref, comp, model, path});
+      if (!path) notes.push(`${ref}${model ? ` (${model})` : ''}: no ${T} module type; seated in ${uniq(labels).join(', ')}.`);
+    }
+    out.parts = parts;
+  }
+  out.notes = uniq(notes);
+  return out;
+}
+
+export async function dcimTypesZip(rack, chassisOf, target, {date = new Date()} = {}) {
+  const ctx = await dcimContext(rack, chassisOf, target);
+  const enc = new TextEncoder();
+  const paths = uniq([...ctx.types.values()].filter(Boolean).map(t => t.path)
+    .concat(ctx.modules.map(m => m.path).filter(Boolean))).sort();
+  const entries = [];
+  for (const p of paths) {
+    try { entries.push({name: p.split('/').slice(1).join('/'), bytes: enc.encode(await fetchText(exportUrl(p)))}); }
+    catch { ctx.notes.push(`${p} couldn't be fetched, so it is not in this zip.`); }
+  }
+  entries.push({name: 'NOTES.txt', bytes: enc.encode(dcimNotesText({rackName: rack.name, target, date, notes: ctx.notes}))});
+  return {name: `${fileStem(rack.name)}-${target}-types.zip`, data: await makeZip(entries, date),
+          type: 'application/zip', notes: ctx.notes};
 }

@@ -41,6 +41,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+import zipfile
 import xml.etree.ElementTree as ET
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -3238,6 +3239,38 @@ def export_file(page, kind, timeout=READY_MS):
     with page.expect_download(timeout=timeout) as dl:
         page.click(f'#exportItems [data-export="{kind}"]')
     return dl.value
+
+
+@extra("rack.html: Export - NetBox and Nautobot device types zip every device and part, with NOTES.txt")
+def check_rack_export_dcim_types(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    want = {"device-types/Cisco/ASR-9006-AC-V2.yaml", "device-types/Edgecore/7726-32X-O-AC-F.yaml",
+            "device-types/Telco Systems/TM-280.yaml", "module-types/Cisco/A9K-16X100GE-TR.yaml",
+            "module-types/Cisco/A9K-3KW-AC.yaml", "module-types/Cisco/ASR-9006-FAN.yaml",
+            "module-types/Cisco/A9K Slot Cover.yaml", "NOTES.txt"}
+    for target, T in (("netbox", "NetBox"), ("nautobot", "Nautobot")):
+        dl = export_file(page, f"{target}-types")
+        if dl.suggested_filename != f"Export-test-{target}-types.zip":
+            bad.append(f"{T} types: named {dl.suggested_filename!r}")
+        with zipfile.ZipFile(dl.path()) as z:
+            names = set(z.namelist())
+            notes = z.read("NOTES.txt").decode() if "NOTES.txt" in names else ""
+            head = z.read("device-types/Edgecore/7726-32X-O-AC-F.yaml").decode() \
+                if "device-types/Edgecore/7726-32X-O-AC-F.yaml" in names else ""
+        if want - names:
+            bad.append(f"{T} types: missing {sorted(want - names)}")
+        devices = sorted(n for n in names if n.startswith("device-types/"))
+        if len(devices) != 3:
+            bad.append(f"{T} types: {len(devices)} device types, expected 3 (two TM-280s share one): {devices}")
+        if "ASR-9006-AC-V2 is a best guess" not in notes:
+            bad.append(f"{T} types: NOTES.txt does not flag the ASR-9006's guessed type")
+        if "generic/qsfp-lc@2" not in notes or f"no {T} module type" not in notes:
+            bad.append(f"{T} types: NOTES.txt does not list the optic with no module type")
+        if "model: 7726-32X-O-AC-F" not in head:
+            bad.append(f"{T} types: the Edgecore YAML is not the exported file")
+    return bad
 
 
 @extra("rack.html: place from the picker; both faces show it; a device that won't fit says why")

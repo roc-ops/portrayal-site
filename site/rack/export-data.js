@@ -205,7 +205,7 @@ export const NETBOX_COLUMNS = ['name', 'role', 'manufacturer', 'device_type', 's
   'position', 'face', 'comments'];
 export const NAUTOBOT_COLUMNS = ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model',
   'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments'];
-const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
+export const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
 
 // One row per rail item, top down. Role and site/location are left blank on
 // purpose: both are required, and this rack knows neither - a blank one

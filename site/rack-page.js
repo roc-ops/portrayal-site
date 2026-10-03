@@ -15,7 +15,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng, drawioFile, modelFile} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip} from './rack/exports.js';
 import {save} from './svg-export.js';
 
 const $ = id => document.getElementById(id);
@@ -252,6 +252,8 @@ const BUILD = {
   'rear-svg': () => sheetSvg(rack(), chassisOf, {faces: ['rear']}),
   'sheet-png': () => sheetPng(rack(), chassisOf),
   drawio: () => drawioFile(rack(), chassisOf),
+  'netbox-types': () => dcimTypesZip(rack(), chassisOf, 'netbox'),
+  'nautobot-types': () => dcimTypesZip(rack(), chassisOf, 'nautobot'),
   glb: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'glb') : NO_SCENE; },
   usdz: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'usdz') : NO_SCENE; },
 };
@@ -294,6 +296,9 @@ function renderExports() {
       ? [act('glb', '3D model (.glb)'), act('usdz', '3D model for Apple devices (.usdz)')]
       : [act('to-3d', '3D model (GLB, USDZ): switch to 3D',
              'GLB and USDZ export the 3D view, which 2D does not build')]),
+    el('hr'),
+    act('netbox-types', 'NetBox device types (.zip)'),
+    act('nautobot-types', 'Nautobot device types (.zip)'),
     el('hr'),
     act('json', 'Rack file (.json)'),
   );
