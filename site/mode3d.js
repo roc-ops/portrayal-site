@@ -176,6 +176,11 @@ export function createMode3d(shell, opts = {}) {
     loadedKey = key;                // only once it is actually the thing on screen
     fruBar(v);
     if (state.sel) v.select(state.sel);
+    // AND ONCE MORE ON THE BUILT SCENE. A page that re-syncs on every edit can
+    // land a setMarks while the load is still building, after the viewer's own
+    // redraw - and then the last report it holds says every mark is missing.
+    // Sent again here, the last draw is always against the finished scene.
+    if (afterSync) await afterSync(v);
   }
 
   function pushStates() {

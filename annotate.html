@@ -99,6 +99,14 @@
 <style>
   /* The shell brings its own stylesheet. Everything here is the Annotator's own:
      the marks panel down the right of the tree, and the export bar under it. */
+  /* The legend in 3D: a panel over the stage, the 2D strip's rows. */
+  #legend3d { position:absolute; top:0.6rem; right:0.7rem; z-index:5; max-width:40%;
+              background:color-mix(in srgb, var(--pt-ground) 85%, transparent);
+              border:1px solid var(--pt-line); border-radius:4px; padding:0.35rem 0.5rem;
+              font-size:0.72rem; display:grid; gap:0.2rem; }
+  #legend3d[hidden] { display:none; }
+  #legend3d .row { display:flex; align-items:center; gap:0.4rem; }
+  #legend3d .sw { width:0.8rem; height:0.8rem; border-radius:50%; border:2px solid; flex:none; }
   #marks { width:28rem; border-left:1px solid var(--line); background:var(--panel);
            display:flex; flex-direction:column; min-height:0; }
   #marks section { border-bottom:1px solid var(--line); padding:0.5rem 0.65rem; }
@@ -298,12 +306,46 @@ const m3d = createMode3d(shell, {
     const s = lastScene || (lastScene = docToScene(doc, facesNow()));
     v.setMarks(s.marks);
     await v.setLampColors(s.lamps);
+    drawLegend3d();
+    paintRows();
   },
   // A CLICK IN 3D IS A CLICK. Annotate's own select handler decides what a
   // second click on the same part means - it takes the mark off - so a pick is
   // handed over as the path itself; Explorer's "again clears" would toggle twice.
   onPick: p => shell.select(p || null, false),
+  // THE VIEWER'S REPORT COMES AFTER ITS BUILD. Marks are sent before the scene
+  // has loaded, so the first report says every path is missing; the clean one
+  // is announced once the build has drawn them, and the rows repaint on it.
+  extras: v => v.on('marks', () => { if (state.svg) paintRows(); }),
 });
+// THE LEGEND IN 3D IS A PANEL, NOT A STRIP IN THE SCENE: the same rows as the
+// 2D strip, readable at any camera angle, and shown or hidden by the same box.
+const legend3d = document.createElement('div');
+legend3d.id = 'legend3d';
+legend3d.hidden = true;
+m3d.el.host3d.appendChild(legend3d);
+function drawLegend3d() {
+  const s = scene3d();
+  const rows = s && doc.legend ? legendItems(doc, s) : [];
+  legend3d.hidden = m3d.mode() !== '3d' || !rows.length;
+  legend3d.innerHTML = rows.map(r =>
+    `<div class="row"><span class="sw" style="border-color:${r.color};background:${
+      r.hollow ? 'transparent' : r.color}"></span>${esc(r.label)}</div>`).join('');
+}
+m3d.on('mode', () => { drawLegend3d(); if (state.svg) paintRows(); });
+
+// A mark the scene cannot show: it matched nothing on any face, or every path
+// it reached is one the viewer could not find (silkscreen is drawn, not built).
+function missing3d(i) {
+  const s = scene3d(), v = m3d.viewer();
+  if (m3d.mode() !== '3d' || !s || !s.byMark[i]) return false;
+  const paths = s.byMark[i].paths;
+  if (!paths.length) return true;
+  const gone = new Set((v && v.markReport && v.markReport.missing) || []);
+  const m = doc.marks[i];
+  return !!m.color && paths.every(p => gone.has(p));
+}
+
 const sync3d = () => {
   if (m3d.mode() === '3d') m3d.sync().catch(err => console.warn('[portrayal] 3D annotate sync', err));
 };
@@ -605,6 +647,9 @@ const cntHtml = r => `<b>${r.count}</b> part${r.count === 1 ? '' : 's'}` +
 
 function notesHtml(m, r) {
   const notes = [];
+  const i = doc.marks.indexOf(m);
+  if (i >= 0 && missing3d(i))
+    notes.push(`<div class="note warn">not in 3D: nothing the scene builds matches this mark.</div>`);
   if (r.error) notes.push(`<div class="note err">skipped — ${esc(r.error)}</div>`);
   else if (!r.count) notes.push(`<div class="note warn">matches nothing in this
     ${esc(state.view)} view of ${esc(state.device)}${m.label

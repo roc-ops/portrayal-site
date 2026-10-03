@@ -4391,8 +4391,8 @@ def check_explorer_three_lazy(page, base):
 
 
 # ANNOTATE IN 3D SHOWS THE DOCUMENT (portrayal-site#46). On the S9510-28DC:
-# three marks in three colours, a lamp colour, a lamp state, a mark the scene
-# cannot build, a mark on a rear-only fan while the front is the drawing, a
+# three marks in three colours, a lamp colour, a lamp state, a mark that
+# matches no face, a mark on a rear-only fan while the front is the drawing, a
 # click, an optic seated in 3D and a mode round trip - all read back from the
 # viewer itself.
 @extra("Annotate in 3D: marks, lamps, states, legend, picks, swaps and exports reach the scene")
@@ -4408,7 +4408,8 @@ def check_annotate_3d(page, base):
                {"select": "[data-path='fan-2']", "color": "#9b5de5", "label": "exhaust fan"},
                {"select": "#led-gnss", "lamp": "#ff00ff"},
                {"select": "[data-path='led-sync']", "state": "synced"},
-               {"select": "[data-class='silkscreen']", "color": "#ffd400"},
+               # a PSU this device does not have: nothing on any face to place in 3D
+               {"select": "[data-path='psu-9']", "color": "#ffd400"},
            ]}
     page.goto(f"{base}/annotate.html?debug=1", wait_until="load")
     page.wait_for_selector("#stage svg", timeout=READY_MS)
@@ -4424,6 +4425,15 @@ def check_annotate_3d(page, base):
         return bad
     page.click('#mode [data-mode="3d"]')
     page.wait_for_function("() => window.__viewer && window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
+    # SETTLED, NOT JUST STARTED: marks are sent before the build and again on
+    # the built scene, and the rows repaint on the viewer's report. Read once the
+    # report has found the ports; if it never does, the assertions below say so.
+    try:
+        page.wait_for_function("""() => { const r = window.__viewer.markReport;
+            return r && !['port-0', 'port-4', 'fan-2'].some(p => r.missing.includes(p)); }""", timeout=READY_MS)
+    except Exception:
+        pass
+    page.wait_for_timeout(300)
     r = page.evaluate("""() => { const v = window.__viewer;
       return {marks: v.marks().map(m => [m.path, m.color]).sort(),
               lamps: v.lampColors(), states: v.states(),
@@ -4464,7 +4474,12 @@ def check_annotate_3d(page, base):
 
     # AN OPTIC SEATED IN 3D KEEPS EVERY MARK. Through the inspector, as a
     # reader does it: select the cage in the tree, choose the first optic.
+    # Click highlights go off for the select - with them on, a click on port-4's
+    # row is a click that takes port-4's mark off, which is Annotate's 2D
+    # behaviour and not what this step is about.
+    page.click("#clickadd")
     page.click(".node[data-path='port-4']")
+    page.click("#clickadd")
     page.wait_for_selector("#optic", timeout=READY_MS)
     optic = page.evaluate("() => [...document.querySelectorAll('#optic option')].map(o => o.value).find(Boolean)")
     page.select_option("#optic", optic)
