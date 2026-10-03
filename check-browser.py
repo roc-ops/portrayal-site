@@ -3278,7 +3278,8 @@ def check_rack_export_dcim_types(page, base):
 
 
 def read_csv(dl):
-    text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    # read_bytes: read_text would turn the file's CRLF into LF and the Notes split would never match
+    text = pathlib.Path(dl.path()).read_bytes().decode("utf-8")
     data = text.partition("\r\n\r\nNotes\r\n")[0]
     reader = csv.DictReader(io.StringIO(data, newline=""))
     return reader.fieldnames, list(reader), text
@@ -3377,6 +3378,55 @@ def check_rack_export_emptied_slot(page, base):
         bad.append("emptied slot: slot-5 is still a part after a null swap")
     if "slot-4/module" not in got["emptied"]:
         bad.append(f"emptied slot: slot-4's default went missing too: {got['emptied']}")
+    return bad
+
+
+@extra("rack.html: Export - the BOM counts devices, modules, optics and 4 x U of mounting hardware")
+def check_rack_export_bom(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+
+    def qty(rows, section, key):
+        return next((int(r["qty"]) for r in rows if r["section"] == section and key in (r["model"], r["ref"])), None)
+
+    dl = export_file(page, "bom")
+    if dl.suggested_filename != "Export-test-bom.csv":
+        bad.append(f"BOM: named {dl.suggested_filename!r}")
+    cols, rows, text = read_csv(dl)
+    if cols != ["section", "qty", "manufacturer", "model", "description", "ref"]:
+        bad.append(f"BOM: columns {cols}")
+    for section, key, n in (("Devices", "ASR 9006", 1), ("Devices", "AS7726-32X", 1), ("Devices", "TM-280", 2),
+                            ("Line cards", "A9K-16X100GE-TR", 1), ("Blanks", "A9K Slot Cover", 5),
+                            ("Power supplies", "A9K-3KW-AC", 3), ("Fans", "ASR-9006-FAN", 2),
+                            ("Optics", "generic/qsfp-lc@2", 1),
+                            ("Mounting hardware", "Cage nut, M6", 52), ("Mounting hardware", "Screw, M6", 52)):
+        got = qty(rows, section, key)
+        if got != n:
+            bad.append(f"BOM: {section} / {key} is {got}, expected {n}")
+    if "\r\nNotes\r\n" not in text or "M6" not in text.partition("\r\nNotes\r\n")[2]:
+        bad.append(f"BOM: no notes section naming the M6 assumption: {text[-300:]!r}")
+
+    # A cell that opens as a formula is apostrophe-guarded (a model from the
+    # ref, a note from the label), through the same builder the menu uses.
+    guarded = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js');
+      const r = window.__rack.doc().racks[0];
+      const item = {...r.items[0], id: 'x1', ref: '=evil', label: '=lbl', swaps: {}};
+      return (await X.bomCsv({...r, items: [item]}, () => null)).data;
+    }""")
+    if "'=evil" not in guarded or "'=lbl" not in guarded or re.search(r"(^|\n)=", guarded):
+        bad.append(f"BOM: a formula-like cell is not apostrophe-guarded: {guarded[:300]!r}")
+
+    # Tapped rails: screws of the chosen thread, no cage nuts.
+    page.click("#frameBtn")
+    page.select_option("#fHoles", "tapped")
+    page.wait_for_selector("#fThread", timeout=READY_MS)
+    page.select_option("#fThread", "12-24")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.holes.thread === '12-24'", timeout=READY_MS)
+    _, rows, _ = read_csv(export_file(page, "bom"))
+    if qty(rows, "Mounting hardware", "Screw, 12-24") != 52 or qty(rows, "Mounting hardware", "Cage nut, M6"):
+        bad.append(f"BOM tapped: hardware rows {[(r['model'], r['qty']) for r in rows if r['section'] == 'Mounting hardware']}")
     return bad
 
 

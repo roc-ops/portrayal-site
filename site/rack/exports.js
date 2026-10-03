@@ -22,7 +22,8 @@ import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes, threeDNotes,
         xmlComment, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
-        stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME} from './export-data.js';
+        stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
+        bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence} from './export-data.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -284,4 +285,33 @@ export async function deviceImportCsv(rack, chassisOf, target) {
   const {columns, rows} = deviceImportRows({rack, items: ctx.items, types: ctx.types, target});
   return {name: `${fileStem(rack.name)}-${target}-devices.csv`, data: toCsv(columns, rows),
           type: 'text/csv', notes: ctx.notes};
+}
+
+// THE BILL OF MATERIALS (spec §8): each device by configuration, each
+// seated part by reference (as configured - defaults and swaps alike, read
+// off the configured faces by the reader the DCIM exports use), and the
+// mounting hardware, 4 x U per device. A spreadsheet opens this one, so
+// its cells go through bomCell (formula guard); the DCIM CSVs stay verbatim.
+export async function bomCsv(rack, chassisOf) {
+  const items = itemsWithU(rack, chassisOf);
+  const [files, comps] = await Promise.all([
+    fetchJson(`${EXPORTS_BASE}files.json`).catch(() => null), components()]);
+  const {parts, notes} = await seatedPartsOf(items);
+  notes.unshift(...rackNotes(rack));
+  const devices = items.map(it => ({ref: it.ref, cfg: it.cfg,
+    manufacturer: chassisOf(it.ref)?.manufacturer ?? '', model: chassisOf(it.ref)?.model ?? it.ref}));
+  const lines = parts.map(p => {
+    const comp = findComp(comps, p.ref);
+    if (!comp) notes.push(`${p.ref} in ${p.label} is not in the component index; it is listed by its reference.`);
+    const model = partNumber(comp);
+    return {ref: p.ref, cls: comp?.class ?? 'other', model, description: firstSentence(comp?.description),
+            manufacturer: partManufacturer(comp, moduleTypePath(files?.netbox || [], model))};
+  });
+  for (const it of items)
+    if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
+  notes.push(...hardwareNotes(rack.frame));
+  const all = uniq(notes);
+  const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: items.map(i => i.u)});
+  return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
+          type: 'text/csv', notes: all};
 }
