@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="44.0mm" height="58.0mm" viewBox="0 0 44.0 58.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="din-clip-ts35" data-path="din-clip-ts35" data-class="mount" data-ref="common/din-clip-ts35@1:1.0.0" data-din-profiles="ts35x7.5 ts35x15" data-rail-centre-y="29.5" transform="translate(0,0)">
+    <title>din-clip-ts35</title>
+    <rect id="din-clip-ts35--plate" x="0" y="0" width="44.0" height="58.0" rx="0.8" fill="#474c52" stroke="#2b2f33" stroke-width="0.3" data-path="din-clip-ts35/plate" data-class="mechanical" data-z-out="2.0" data-z-color="#474c52" data-z-shape="1" />
+    <rect id="din-clip-ts35--hook" x="0" y="1.5" width="44.0" height="8.5" fill="#2c3035" data-path="din-clip-ts35/hook" data-class="mechanical" data-z-out="5.0" data-z-lift="2.0" data-z-color="#2c3035" />
+    <rect id="din-clip-ts35--hook-lip" x="0" y="10.0" width="44.0" height="3.0" fill="#3a3f44" data-path="din-clip-ts35/hook-lip" data-class="mechanical" data-z-out="5.0" data-z-lift="3.4" data-z-color="#3a3f44" />
+    <path d="M 0 13.0 H 44.0" stroke="#1d2024" stroke-width="0.4" />
+    <circle id="din-clip-ts35--screw-1" cx="22.0" cy="28.4" r="2.1" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="din-clip-ts35/screw-1" data-class="mechanical" data-z-cyl="0.8" data-z-lift="2.0" data-z-color="#1f2226" />
+    <circle id="din-clip-ts35--screw-2" cx="15.5" cy="39.2" r="2.1" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="din-clip-ts35/screw-2" data-class="mechanical" data-z-cyl="0.8" data-z-lift="2.0" data-z-color="#1f2226" />
+    <circle id="din-clip-ts35--screw-3" cx="28.5" cy="39.2" r="2.1" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="din-clip-ts35/screw-3" data-class="mechanical" data-z-cyl="0.8" data-z-lift="2.0" data-z-color="#1f2226" />
+    <path d="M 21.0 28.4 H 23.0 M 22.0 27.4 V 29.4 M 14.5 39.2 H 16.5 M 15.5 38.2 V 40.2 M 27.5 39.2 H 29.5 M 28.5 38.2 V 40.2" stroke="#8a9096" stroke-width="0.35" />
+    <path d="M 0 46.0 H 44.0" stroke="#1d2024" stroke-width="0.4" />
+    <rect id="din-clip-ts35--latch-lip" x="0" y="46.0" width="44.0" height="4.0" fill="#6a7076" data-path="din-clip-ts35/latch-lip" data-class="mechanical" data-z-out="5.0" data-z-lift="3.4" data-z-color="#6a7076" />
+    <g id="din-clip-ts35--latch" data-path="din-clip-ts35/latch" data-class="mechanical" data-z-out="5.0" data-z-lift="2.0" data-z-color="#5e646a">
+      <rect x="0" y="50.0" width="44.0" height="7.0" fill="#5e646a" stroke="#3a3f44" stroke-width="0.3" />
+      <circle cx="22.0" cy="53.5" r="0.6" fill="#15181b" />
+    </g>
+  </g>
+</svg>

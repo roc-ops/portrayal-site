@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="83.8mm" height="145.0mm" viewBox="0 0 83.8 145.0" data-device="ais2003" data-view="rear" data-dimensions-in="5.71 x 4.33 x 3.30 (L x W x H, datasheet)" data-enclosure="fanless all-aluminium, finned" data-mounting="DIN rail (TS35) or wall" data-accessories="two pluggable terminal plugs (power and relay), console cable" data-switching-capacity="24 Gbps" data-forwarding-rate="17.85 Mpps" data-mac-table="8K" data-power-max-w="16.65" data-power-envelope="fully-configured" data-power-idle-w="5.43" data-power-input="DC 12-55 V, dual feed" data-cooling="fanless (finned housing)" data-operating-temp-c="-40 to 75" data-storage-temp-c="-40 to 80" data-surge-protection="differential mode 2 kV, common mode 4 kV" data-esd="contact 6 kV, air 8 kV" data-flash-mb="32" data-memory="128 MB" data-optics-sfp="vendor optics listed under AurCore Accessories - AOM01M-S550 (1G, multimode, 550 m) and AOM01S-K10 (1G, single-mode, 10 km); the datasheet states no compatibility list or third-party policy" data-layer="L2+ (static routing, ERPS ring recovery 20 ms or less)" data-interfaces="console, Telnet, SSH, SNMP v1/v2c/v3, web, ACC/ACN cloud" data-interface-naming="Ethernet1/0/N (Command Manual - 2000 Series)" data-eol="none-announced" data-airflow="passive" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"AurCore AIS2003","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/din-clip-ts35@1":"1.0.0","common/wall-plate-keyhole-2@1":"1.0.0"},"source-sha256":"d7b2cc99c062224aaf6698832c774f5daa49142ddbce1e64e25f4647c26977ae","view":"rear"}</metadata>
+  <path id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="AIS2003" data-sku="AIS2003" data-part-number="" fill="#63696f" stroke="#3f4449" stroke-width="0.5" d="M0.000,16.000 L11.000,0.000 L72.800,0.000 L83.800,16.000 L83.800,129.000 L72.800,145.000 L11.000,145.000 L0.000,129.000 Z" />
+  <g id="chassis-bevels" data-path="chassis/bevels">
+    <polygon data-edge="left-rear" points="83.800,129.000 83.800,16.000 72.800,0.000 71.200,0.000 71.200,145.000 72.800,145.000" fill="#ffffff" fill-opacity="0.08" stroke="#3f4449" stroke-width="0.25" />
+    <polygon data-edge="rear-right" points="12.600,0.000 11.000,0.000 0.000,16.000 0.000,129.000 11.000,145.000 12.600,145.000" fill="#ffffff" fill-opacity="0.08" stroke="#3f4449" stroke-width="0.25" />
+  </g>
+  <g id="--decor" data-class="decor" />
+  <g id="wall-plate-upper" data-path="wall-plate-upper" data-class="mount" data-ref="common/wall-plate-keyhole-2@1:1.0.0" data-rel-pos="1" transform="translate(13.9,3.75)" data-group="mounting" data-group-role="furniture" data-for="chassis">
+    <title>wall-plate-upper</title>
+    <path id="wall-plate-upper--plate" fill-rule="evenodd" fill="#3d4247" stroke="#2a2e32" stroke-width="0.3" d="M 1.5 0 H 54.5 A 1.5 1.5 0 0 1 56 1.5 V 28.5 A 1.5 1.5 0 0 1 54.5 30 H 1.5 A 1.5 1.5 0 0 1 0 28.5 V 1.5 A 1.5 1.5 0 0 1 1.5 0 Z M 12.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z M 40.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-upper/plate" data-class="mechanical" data-z-out="1.5" data-z-color="#3d4247" data-z-shape="1" />
+    <path id="wall-plate-upper--keyhole-1" fill="#15181b" d="M 12.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-upper/keyhole-1" data-class="mechanical" data-z-out="0.2" data-z-color="#15181b" />
+    <path id="wall-plate-upper--keyhole-2" fill="#15181b" d="M 40.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-upper/keyhole-2" data-class="mechanical" data-z-out="0.2" data-z-color="#15181b" />
+    <circle id="wall-plate-upper--screw-1" cx="14.0" cy="4.0" r="1.9" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="wall-plate-upper/screw-1" data-class="mechanical" data-z-cyl="0.8" data-z-lift="1.5" data-z-color="#1f2226" />
+    <circle id="wall-plate-upper--screw-2" cx="42.0" cy="4.0" r="1.9" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="wall-plate-upper/screw-2" data-class="mechanical" data-z-cyl="0.8" data-z-lift="1.5" data-z-color="#1f2226" />
+    <path d="M 13.1 4.0 H 14.9 M 14.0 3.1 V 4.9 M 41.1 4.0 H 42.9 M 42.0 3.1 V 4.9" stroke="#8a9096" stroke-width="0.35" />
+  </g>
+  <g id="rail-clip" data-path="rail-clip" data-class="mount" data-ref="common/din-clip-ts35@1:1.0.0" data-din-profiles="ts35x7.5 ts35x15" data-rail-centre-y="29.5" data-rel-pos="2" transform="translate(19.9,49.3)" data-group="mounting" data-group-role="furniture" data-for="chassis">
+    <title>rail-clip</title>
+    <rect id="rail-clip--plate" x="0" y="0" width="44.0" height="58.0" rx="0.8" fill="#474c52" stroke="#2b2f33" stroke-width="0.3" data-path="rail-clip/plate" data-class="mechanical" data-z-out="2.0" data-z-color="#474c52" data-z-shape="1" />
+    <rect id="rail-clip--hook" x="0" y="1.5" width="44.0" height="8.5" fill="#2c3035" data-path="rail-clip/hook" data-class="mechanical" data-z-out="5.0" data-z-lift="2.0" data-z-color="#2c3035" />
+    <rect id="rail-clip--hook-lip" x="0" y="10.0" width="44.0" height="3.0" fill="#3a3f44" data-path="rail-clip/hook-lip" data-class="mechanical" data-z-out="5.0" data-z-lift="3.4" data-z-color="#3a3f44" />
+    <path d="M 0 13.0 H 44.0" stroke="#1d2024" stroke-width="0.4" />
+    <circle id="rail-clip--screw-1" cx="22.0" cy="28.4" r="2.1" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="rail-clip/screw-1" data-class="mechanical" data-z-cyl="0.8" data-z-lift="2.0" data-z-color="#1f2226" />
+    <circle id="rail-clip--screw-2" cx="15.5" cy="39.2" r="2.1" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="rail-clip/screw-2" data-class="mechanical" data-z-cyl="0.8" data-z-lift="2.0" data-z-color="#1f2226" />
+    <circle id="rail-clip--screw-3" cx="28.5" cy="39.2" r="2.1" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="rail-clip/screw-3" data-class="mechanical" data-z-cyl="0.8" data-z-lift="2.0" data-z-color="#1f2226" />
+    <path d="M 21.0 28.4 H 23.0 M 22.0 27.4 V 29.4 M 14.5 39.2 H 16.5 M 15.5 38.2 V 40.2 M 27.5 39.2 H 29.5 M 28.5 38.2 V 40.2" stroke="#8a9096" stroke-width="0.35" />
+    <path d="M 0 46.0 H 44.0" stroke="#1d2024" stroke-width="0.4" />
+    <rect id="rail-clip--latch-lip" x="0" y="46.0" width="44.0" height="4.0" fill="#6a7076" data-path="rail-clip/latch-lip" data-class="mechanical" data-z-out="5.0" data-z-lift="3.4" data-z-color="#6a7076" />
+    <g id="rail-clip--latch" data-path="rail-clip/latch" data-class="mechanical" data-z-out="5.0" data-z-lift="2.0" data-z-color="#5e646a">
+      <rect x="0" y="50.0" width="44.0" height="7.0" fill="#5e646a" stroke="#3a3f44" stroke-width="0.3" />
+      <circle cx="22.0" cy="53.5" r="0.6" fill="#15181b" />
+    </g>
+  </g>
+  <g id="wall-plate-lower" data-path="wall-plate-lower" data-class="mount" data-ref="common/wall-plate-keyhole-2@1:1.0.0" data-rel-pos="3" transform="translate(13.9,111.25)" data-group="mounting" data-group-role="furniture" data-for="chassis">
+    <title>wall-plate-lower</title>
+    <path id="wall-plate-lower--plate" fill-rule="evenodd" fill="#3d4247" stroke="#2a2e32" stroke-width="0.3" d="M 1.5 0 H 54.5 A 1.5 1.5 0 0 1 56 1.5 V 28.5 A 1.5 1.5 0 0 1 54.5 30 H 1.5 A 1.5 1.5 0 0 1 0 28.5 V 1.5 A 1.5 1.5 0 0 1 1.5 0 Z M 12.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z M 40.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-lower/plate" data-class="mechanical" data-z-out="1.5" data-z-color="#3d4247" data-z-shape="1" />
+    <path id="wall-plate-lower--keyhole-1" fill="#15181b" d="M 12.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-lower/keyhole-1" data-class="mechanical" data-z-out="0.2" data-z-color="#15181b" />
+    <path id="wall-plate-lower--keyhole-2" fill="#15181b" d="M 40.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-lower/keyhole-2" data-class="mechanical" data-z-out="0.2" data-z-color="#15181b" />
+    <circle id="wall-plate-lower--screw-1" cx="14.0" cy="26.0" r="1.9" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="wall-plate-lower/screw-1" data-class="mechanical" data-z-cyl="0.8" data-z-lift="1.5" data-z-color="#1f2226" />
+    <circle id="wall-plate-lower--screw-2" cx="42.0" cy="26.0" r="1.9" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="wall-plate-lower/screw-2" data-class="mechanical" data-z-cyl="0.8" data-z-lift="1.5" data-z-color="#1f2226" />
+    <path d="M 13.1 26.0 H 14.9 M 14.0 25.1 V 26.9 M 41.1 26.0 H 42.9 M 42.0 25.1 V 26.9" stroke="#8a9096" stroke-width="0.35" />
+  </g>
+</svg>

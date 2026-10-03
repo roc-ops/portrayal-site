@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="56.0mm" height="30.0mm" viewBox="0 0 56.0 30.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="wall-plate-keyhole-2" data-path="wall-plate-keyhole-2" data-class="mount" data-ref="common/wall-plate-keyhole-2@1:1.0.0" transform="translate(0,0)">
+    <title>wall-plate-keyhole-2</title>
+    <path id="wall-plate-keyhole-2--plate" fill-rule="evenodd" fill="#3d4247" stroke="#2a2e32" stroke-width="0.3" d="M 1.5 0 H 54.5 A 1.5 1.5 0 0 1 56 1.5 V 28.5 A 1.5 1.5 0 0 1 54.5 30 H 1.5 A 1.5 1.5 0 0 1 0 28.5 V 1.5 A 1.5 1.5 0 0 1 1.5 0 Z M 12.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z M 40.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-keyhole-2/plate" data-class="mechanical" data-z-out="1.5" data-z-color="#3d4247" data-z-shape="1" />
+    <path id="wall-plate-keyhole-2--keyhole-1" fill="#15181b" d="M 12.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-keyhole-2/keyhole-1" data-class="mechanical" data-z-out="0.2" data-z-color="#15181b" />
+    <path id="wall-plate-keyhole-2--keyhole-2" fill="#15181b" d="M 40.3 9.8 a 1.7 1.7 0 0 1 3.4 0 V 15.6 a 3.4 3.4 0 1 1 -3.4 0 Z" data-path="wall-plate-keyhole-2/keyhole-2" data-class="mechanical" data-z-out="0.2" data-z-color="#15181b" />
+    <circle id="wall-plate-keyhole-2--screw-1" cx="14.0" cy="26.0" r="1.9" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="wall-plate-keyhole-2/screw-1" data-class="mechanical" data-z-cyl="0.8" data-z-lift="1.5" data-z-color="#1f2226" />
+    <circle id="wall-plate-keyhole-2--screw-2" cx="42.0" cy="26.0" r="1.9" fill="#1f2226" stroke="#6b7177" stroke-width="0.25" data-path="wall-plate-keyhole-2/screw-2" data-class="mechanical" data-z-cyl="0.8" data-z-lift="1.5" data-z-color="#1f2226" />
+    <path d="M 13.1 26.0 H 14.9 M 14.0 25.1 V 26.9 M 41.1 26.0 H 42.9 M 42.0 25.1 V 26.9" stroke="#8a9096" stroke-width="0.35" />
+  </g>
+</svg>
