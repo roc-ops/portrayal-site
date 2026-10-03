@@ -58,6 +58,11 @@ function readEnd(end, item, panel, list) {
   return {facts, info, seats: isPort ? plugSeats(end.path, slots, item.swaps || {}) : {}};
 }
 
+// What the page falls back to when reading the cables' faces fails: no plugs,
+// and no end judged, so none is marked loose. Frozen, like every answer.
+export const UNCHECKED = Object.freeze({seats: Object.freeze({}), ends: new Map(), unchecked: true});
+const NONE = Object.freeze({seats: Object.freeze({}), ends: new Map()});
+
 // The last answer, kept: render() asks on every redraw, and most redraws (a
 // selection, a zoom) change neither the cables nor what is seated.
 let memo = {key: '', value: null};
@@ -70,8 +75,8 @@ let memo = {key: '', value: null};
 export async function cableFacts(rack, extra = []) {
   const cabled = (rack.cables || []).flatMap(c => [c.a, c.b]);
   const ends = [...cabled, ...extra];
+  if (!ends.length) return NONE;
   const out = {seats: {}, ends: new Map()};
-  if (!ends.length) return out;
   const items = new Map(rack.items.map(i => [i.id, i]));
   const key = JSON.stringify([cabled.map(endKey), extra.map(endKey),
     [...new Set(ends.map(e => e.item))].map(id => items.get(id) || null)

@@ -5122,11 +5122,11 @@ def check_rack_dev_note(page, base):
         bad.append("dev note: the note is open before it is clicked")
     page.click("#devNote > summary")
     body = page.text_content("#devNote .rk-devnote-body") or ""
-    for want in ("still being built", "Coming next: cabling."):
+    for want in ("still being built", "You can cable ports in 2D", "Coming next: cables in the exports and in 3D."):
         if want not in body:
             bad.append(f"dev note: the note doesn't mention {want!r}")
-    if "exports" in body.lower():
-        bad.append("dev note: it still lists exports as coming, and they have shipped")
+    if "Coming next: cabling." in body:
+        bad.append("dev note: it still lists cabling as coming, and it has shipped")
     box = page.evaluate("""() => { const r = document.querySelector('#devNote .rk-devnote-body').getBoundingClientRect();
                               return [Math.round(r.left), Math.round(r.right), innerWidth]; }""")
     if box[0] < 0 or box[1] > box[2]:
@@ -6508,6 +6508,22 @@ def check_rack_cable_form(page, base):
     page.click("#cSave")
     if (page.text_content("#cError") or "") != "Enter a length above 0, or leave it empty." or saved() is not None:
         bad.append(f"cable form: a bad length gave {page.text_content('#cError')!r} and saved {saved()}")
+    if page.evaluate("() => document.activeElement.id") != "cLength":
+        bad.append("cable form: after a refused save focus is not on the length field")
+    ties = page.evaluate("() => [cMedia, cLength].map(e => e.getAttribute('aria-describedby'))")
+    if ties != ["cWarn", "cError"]:
+        bad.append(f"cable form: the media and length fields point at {ties}, expected the warning and the error")
+    # The error goes when the user corrects the field (typing, or the unit), not at the next save.
+    page.fill("#cLength", "abcd")
+    if page.text_content("#cError") != "":
+        bad.append(f"cable form: the length error stays after typing ({page.text_content('#cError')!r})")
+    page.click("#cSave")
+    if not page.text_content("#cError"):
+        bad.append("cable form: a second bad length gave no error")
+    page.select_option("#cUnit", "ft")
+    if page.text_content("#cError") != "":
+        bad.append(f"cable form: the length error stays after a unit change ({page.text_content('#cError')!r})")
+    page.select_option("#cUnit", "m")
     # A warning does not: the mismatched cable saves.
     page.fill("#cPurpose", " uplink ")
     page.fill("#cLabel", "A7")
@@ -6517,6 +6533,13 @@ def check_rack_cable_form(page, base):
     want = {"media": "", "purpose": "uplink", "label": "A7", "length": {"value": 2.5, "unit": "ft", "source": "entered"}}
     if saved() != want:
         bad.append(f"cable form: saved {saved()}, expected {want}")
+    # Markup characters come back as the literal text, not parsed.
+    page.fill("#cPurpose", "<b>&\"'")
+    page.fill("#cLabel", "<b>&\"'")
+    page.click("#cSave")
+    got = saved()
+    if (got or {}).get("purpose") != "<b>&\"'" or (got or {}).get("label") != "<b>&\"'":
+        bad.append(f"cable form: markup characters came back as {got}")
     page.click("#cCancel")
     if page.evaluate("() => window.__form.cancelled") != 1:
         bad.append("cable form: Cancel did not report")
@@ -6537,6 +6560,32 @@ def check_rack_cable_form(page, base):
     want = {"media": "om9", "purpose": "core", "label": "B1", "length": None}
     if saved() != want:
         bad.append(f"cable form: Enter saved {saved()}, expected {want}")
+
+    # A hand-edited length the form's own rule would refuse is kept as it was
+    # while the user leaves the length alone, and never blocks Save.
+    for odd, label in (({"value": 1e-7, "unit": "m", "source": "routed", "note": "kept"}, "a tiny value"),
+                       ({"value": 3, "unit": "yd", "source": "entered"}, "an unknown unit")):
+        page.evaluate(FORM_JS, {
+            "title": "Edit cable", "endA": "a", "endB": "b",
+            "cable": {"id": "c1", "media": "os2", "purpose": "", "label": "", "length": odd},
+            "infoA": None, "infoB": None, "purposes": []})
+        if page.input_value("#cUnit") != odd["unit"]:
+            bad.append(f"cable form: {label} opens with the unit {page.input_value('#cUnit')!r}, expected {odd['unit']!r}")
+        page.fill("#cLabel", "touched")             # something else changes; the length does not
+        page.click("#cSave")
+        got = saved()
+        if not got or got.get("length") != odd or page.text_content("#cError"):
+            bad.append(f"cable form: {label} was rewritten on Save: {got}, error {page.text_content('#cError')!r}")
+    # Once the user does change it, the rule applies: a value that is refused is refused,
+    # and an unknown unit is not quietly turned into meters.
+    page.fill("#cLength", "4")
+    page.click("#cSave")
+    if not page.text_content("#cError") or saved().get("length") != {"value": 3, "unit": "yd", "source": "entered"}:
+        bad.append(f"cable form: a changed length on an unknown unit gave {page.text_content('#cError')!r}, saved {saved()}")
+    page.select_option("#cUnit", "ft")
+    page.click("#cSave")
+    if saved().get("length") != {"value": 4, "unit": "ft", "source": "entered"}:
+        bad.append(f"cable form: a changed length saved {saved()}")
     return bad
 
 
@@ -7200,6 +7249,168 @@ def check_rack_cable_undo(page, base):
     wait_fn(page, "undo: leaf-1 moved", "() => window.__rack.doc().racks[0].items[1].ru === 15")
     if page.query_selector("#undoShrink"):
         bad.append("undo: an Undo outlived the next change")
+    return bad
+
+
+@extra("rack.html: when the cables' faces cannot be read, the rack still draws, no end is marked loose, and the panel says so; the answers are frozen")
+def check_rack_cable_facts_fallback(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cable facts: {e}"]
+    notice = lambda: (page.text_content(".rk-side .rk-notice") or "") if page.query_selector(".rk-side .rk-notice") else ""
+    redraw = lambda: page.evaluate("() => window.__rack.replaceRack(window.__rack.doc().racks[0])")
+    loose = lambda: page.eval_on_selector_all(
+        '[data-loose], svg[data-pane] [data-cable-tags] .not-connected', "els => els.length")
+
+    # The normal answer: c3's A end is an empty cage, and says so.
+    wait_fn(page, "cable facts: a loose end is read",
+            "() => Object.values(window.__rack.cableFacts().reasons).some(r => r)")
+    if not loose() or notice():
+        bad.append(f"cable facts: normally {loose()} loose marks and the notice {notice()!r}")
+
+    # Reading fails: the cables stay drawn as they were, none is marked loose,
+    # and the panel says why. A redraw that fails again keeps saying it.
+    page.evaluate("() => window.__rack.failCableFacts(true)")
+    redraw()
+    wait_fn(page, "cable facts: the notice",
+            "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('could not be checked')")
+    if notice() != "Cable ends could not be checked, so loose ends are not marked.":
+        bad.append(f"cable facts: the notice reads {notice()!r}")
+    if loose():
+        bad.append(f"cable facts: {loose()} ends are still marked loose though none was checked")
+    facts = page.evaluate("() => window.__rack.cableFacts()")
+    if facts["seats"] or any(facts["reasons"].values()):
+        bad.append(f"cable facts: the fallback carries seats or reasons ({facts})")
+    if not page.query_selector('svg[data-pane="front"] [data-cables] [data-cable-id="c1"]'):
+        bad.append("cable facts: the cables are not drawn when their faces cannot be read")
+
+    # It recovers by itself on the next redraw.
+    page.evaluate("() => window.__rack.failCableFacts(false)")
+    redraw()
+    wait_fn(page, "cable facts: the notice goes", "() => !document.querySelector('.rk-side .rk-notice')")
+    wait_fn(page, "cable facts: loose ends are marked again",
+            "() => !!document.querySelector('[data-loose]')")
+
+    # Every answer is frozen: shared by the memo, the page and the probe.
+    frozen = page.evaluate("""async () => {
+      const {cableFacts, UNCHECKED} = await import('/site/rack/cable-plugs.js');
+      const none = await cableFacts({items: [], cables: []});
+      const real = await cableFacts(window.__rack.doc().racks[0]);
+      return [none, UNCHECKED, real].map(f => [Object.isFrozen(f), Object.isFrozen(f.seats)]);
+    }""")
+    if frozen != [[True, True]] * 3:
+        bad.append(f"cable facts: frozen (answer, seats) for no cables, the fallback, a real answer: {frozen}")
+    return bad
+
+
+CABLES_2D = "Cables are drawn in 2D for now. Switch to 2D to see them or to add one."
+
+
+@extra("rack.html: in 3D, Cable mode is off with a sentence saying why; the list still selects, edits and deletes; no export carries cables yet")
+def check_rack_cables_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cables 3D: {e}"]
+    cables = lambda: page.evaluate("() => window.__rack.doc().racks[0].cables")
+
+    # 2a draws no cable into a file: the sheet has no cable and no derived
+    # plug, and its notes say how many cables it leaves out.
+    sheet = pathlib.Path(export_file(page, "sheet-svg").path()).read_text(encoding="utf-8")
+    for bit in ("data-cable", "data-cable-tags", "generic/lc-plug@2", "generic/rj45-plug@1", "rk-end-pick"):
+        if bit in sheet:
+            bad.append(f"cables 3D: the sheet carries {bit!r}, and cables are not in the exports yet")
+    if "3 cables are not in this export yet." not in sheet:
+        bad.append("cables 3D: the sheet's notes do not say its 3 cables are left out")
+    # The BOM says the same, through the same notes.
+    bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
+    if "3 cables are not in this export yet." not in bom:
+        bad.append("cables 3D: the BOM's notes do not say its 3 cables are left out")
+
+    no_webgl = webgl_trouble(page)
+    page.click("#cableBtn")
+    wait_fn(page, "cables 3D: Cable mode on in 2D",
+            "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'true'")
+    page.click('#rkMode [data-mode="3d"]')
+    btn = page.eval_on_selector("#cableBtn", "b => ({disabled: b.disabled, pressed: b.getAttribute('aria-pressed'), title: b.title})")
+    if btn != {"disabled": True, "pressed": "false", "title": CABLES_2D}:
+        bad.append(f"cables 3D: in 3D the Cable button is {btn}")
+    try:
+        wait_sel(page, "cables 3D: the sentence", "#cable3dNote")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    if (page.text_content("#cable3dNote") or "") != CABLES_2D:
+        bad.append(f"cables 3D: the note reads {page.text_content('#cable3dNote')!r}")
+
+    # The list still works: select, edit, delete.
+    pressed = lambda cid: (f"""() => document.querySelector('#cableList [data-cable-row="{cid}"]')"""
+                           f"""?.getAttribute('aria-pressed') === 'true'""")
+    page.click('#cableList [data-cable-row="c1"]')
+    wait_fn(page, "cables 3D: a row selects", pressed("c1"))
+    page.click("#cableEdit")
+    wait_sel(page, "cables 3D: the edit form", "#cableForm")
+    page.fill("#cLabel", "B9")
+    page.click("#cSave")
+    wait_fn(page, "cables 3D: the edit saved", "() => window.__rack.doc().racks[0].cables[0].label === 'B9'")
+
+    # A cable edit changes nothing the 3D view shows, so it does not rebuild the scene.
+    scene = None
+    if not no_webgl:
+        wait_fn(page, "cables 3D: the scene", "() => !!window.__rack.scene()", timeout=READY_3D_MS)
+        scene = page.evaluate_handle("() => window.__rack.scene()")
+    page.click('#cableList [data-cable-row="c3"]')
+    wait_fn(page, "cables 3D: row c3 selects", pressed("c3"))
+    page.click("#cableDelete")
+    wait_fn(page, "cables 3D: the delete", "() => window.__rack.doc().racks[0].cables.length === 2")
+    if scene:
+        page.wait_for_timeout(800)          # past the 300 ms a rebuild would wait
+        if not page.evaluate("s => window.__rack.scene() === s", scene):
+            bad.append("cables 3D: deleting a cable rebuilt the 3D scene")
+        # The kept scene is still good for an export: the guard compares it
+        # with the rack as it is now, and a cables-only commit re-pointed it.
+        try:
+            glb = export_file(page, "glb", timeout=READY_3D_MS)
+            if pathlib.Path(glb.path()).stat().st_size < 100:
+                bad.append("cables 3D: the GLB exported after a cable delete is empty")
+        except Exception as e:
+            bad.append(f"cables 3D: no GLB after a cable delete ({str(e).splitlines()[0]})")
+        if not page.evaluate("s => window.__rack.scene() === s", scene):
+            bad.append("cables 3D: exporting after a cable delete rebuilt the 3D scene")
+        scene.dispose()
+    else:
+        print("[check_rack_cables_3d] WebGL unavailable - the no-rebuild step was not exercised")
+
+    # Back in 2D: the button works again and what is left is drawn.
+    page.click('#rkMode [data-mode="2d"]')
+    wait_sel(page, "cables 3D: cables back in 2D", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
+    if page.query_selector("#cable3dNote") or page.eval_on_selector("#cableBtn", "b => b.disabled || !!b.title"):
+        bad.append("cables 3D: back in 2D the note is still shown or the button is still off")
+    if page.query_selector('svg[data-pane="rear"] [data-cable-id="c3"]') or len(cables()) != 2:
+        bad.append("cables 3D: the cable deleted in 3D is still drawn in 2D")
+
+    # With no cable left, the empty state tells the truth of the mode it is in:
+    # in 3D there is no Cable mode to use, so it says only that there are none.
+    page.click('#rkMode [data-mode="3d"]')
+    for cid in [c["id"] for c in cables()]:
+        wait_sel(page, f"cables 3D: row {cid}", f'#cableList [data-cable-row="{cid}"]')
+        page.click(f'#cableList [data-cable-row="{cid}"]')
+        wait_fn(page, f"cables 3D: row {cid} selects", pressed(cid))
+        page.click("#cableDelete")
+        wait_fn(page, f"cables 3D: {cid} deleted",
+                f"() => !window.__rack.doc().racks[0].cables.some(c => c.id === '{cid}')")
+    wait_sel(page, "cables 3D: the empty state", "#cableEmpty")
+    if (page.text_content("#cableEmpty") or "") != "No cables yet.":
+        bad.append(f"cables 3D: in 3D the empty state reads {page.text_content('#cableEmpty')!r}")
+    page.click('#rkMode [data-mode="2d"]')
+    wait_fn(page, "cables 3D: the 2D empty state",
+            "() => document.getElementById('cableEmpty')?.textContent.includes('Use Cable mode')")
+    if (page.text_content("#cableEmpty") or "") != "No cables yet. Use Cable mode and click a port at each end.":
+        bad.append(f"cables 3D: in 2D the empty state reads {page.text_content('#cableEmpty')!r}")
     return bad
 
 

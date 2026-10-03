@@ -109,6 +109,12 @@ function readItems(list) {
 // kept as they are.
 const readEnd = e => ({...(e && typeof e === 'object' && !Array.isArray(e) ? e : {}), item: String(e?.item ?? ''), path: String(e?.path ?? ''),
                        view: e?.view === 'rear' ? 'rear' : 'front'});
+// A length is a number, or a string of plain decimal digits: Number() would
+// also read "0x10" as 16, "1e3" as 1000 and true as 1. 0 means no usable length.
+const lengthValue = v => {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && /^\d+(\.\d+)?$/.test(v) ? Number(v) : 0;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
 export function readCables(list) {
   const declared = list.map(c => ({id: String(c?.id ?? '')}));
   const out = [];
@@ -118,8 +124,9 @@ export function readCables(list) {
     let id = c.id == null ? '' : String(c.id);
     if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
     seen.add(id);
-    const length = len && Number(len.value) > 0
-      ? {...len, value: Number(len.value), unit: len.unit === 'ft' ? 'ft' : 'm', source: String(len.source ?? 'entered')}
+    const value = lengthValue(len?.value);
+    const length = value
+      ? {...len, value, unit: len.unit === 'ft' ? 'ft' : 'm', source: String(len.source ?? 'entered')}
       : null;
     out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),

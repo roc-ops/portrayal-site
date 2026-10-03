@@ -1,7 +1,7 @@
 # Rack Builder: the showcase's rack, as a tool people drive
 
 **Date:** 2026-09-26
-**Status:** design approved; Phase 0 implemented; Phase 1a implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase1a-build-a-rack.md); Phase 1b implemented (plan: docs/superpowers/plans/2026-09-27-rack-builder-phase1b-exports.md); Phase 2 (cabling) next
+**Status:** design approved; Phase 0 implemented; Phase 1a implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase1a-build-a-rack.md); Phase 1b implemented (plan: docs/superpowers/plans/2026-09-27-rack-builder-phase1b-exports.md); Phase 2a (cabling on the page) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2a-cabling.md); Phase 2b (cables in the exports and in 3D) next
 **Builds on:** `2026-09-24-showcase-staged-rack-design.md`, `2026-09-25-showcase-inspect-is-explorer-design.md`, `2026-09-25-showcase-patching-plan-design.md`
 **Upstream:** roc-ops/Portrayal issue (filed 2026-09-26) for a `{module}` naming token on module-type ports; §9.4 depends on it
 

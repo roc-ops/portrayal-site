@@ -232,3 +232,16 @@ test('the loader keeps unknown fields on an end, and a malformed length never th
   assert.equal(cs.length, 4);
   assert.ok(cs.every(c => !('length' in c)));
 });
+
+test('a loaded length is a number or a plain decimal string; anything else drops the length, not the cable', () => {
+  const read = value => M.readCables([{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i1', path: 'q'},
+    length: {value, unit: 'm'}}])[0];
+  assert.equal(read(16).length.value, 16);
+  assert.equal(read('2.5').length.value, 2.5);
+  assert.equal(read('2').length.value, 2);
+  for (const bad of ['0x10', '1e3', ' 2', '2 ', '.5', '-1', '', '0', 'abc', null, true, [3], {}, Infinity, NaN, 0]) {
+    const c = read(bad);
+    assert.ok(!('length' in c), `${JSON.stringify(bad)} drops the length`);
+    assert.equal(c.id, 'c1', 'the cable is kept');
+  }
+});

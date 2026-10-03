@@ -18,7 +18,7 @@ import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
-import {cableFacts} from './rack/cable-plugs.js';
+import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
         cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy} from './rack/cable-rules.js';
 import {widenForCables, drawRackCables, portAt, markPort, paintCables} from './rack/cable-view.js';
@@ -29,6 +29,7 @@ const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
+const CABLES_2D = 'Cables are drawn in 2D for now. Switch to 2D to see them or to add one.';
 function loadMode() {
   try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
   catch { return '2d'; }
@@ -77,7 +78,12 @@ async function rebuild3d() {
   disposeScene3d();
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
-  S.scene3d = built; S.scene3dRack = forRack;
+  // Cables edited while this was building left the items and the frame as
+  // they were (commit() could not re-point a scene that did not exist yet):
+  // the scene is current for the rack as it is now.
+  const now = rack();
+  S.scene3d = built;
+  S.scene3dRack = now.items === forRack.items && now.frame === forRack.frame ? now : forRack;
 }
 let rebuild3dTimer = null;
 function scheduleRebuild3d() {
@@ -104,6 +110,9 @@ function showMode() {
   // removed - so the 2D/3D switch beside them never moves when it is used.
   $('rkZoom').style.visibility = is3d ? 'hidden' : '';
   $('rkZoom').inert = is3d;
+  // Cable mode needs the panes (Phase 2 ruling 7): in 3D the button is off, and says why.
+  $('cableBtn').disabled = is3d;
+  $('cableBtn').title = is3d ? CABLES_2D : '';
   $('stage3d').hidden = !is3d;
   $('stage3d').style.display = is3d ? '' : 'none';
 }
@@ -193,12 +202,23 @@ async function explore(id) {
 // was is kept whole in S.undo and the notice says what happened. Any other
 // change retires it, so only one Undo is ever pending.
 function commit(nextRack, undoable = null) {
-  S.undo = undoable ? rack() : null;
+  // A cable edit (cable-rules.js returns {...rack, cables}) leaves the items
+  // array and the frame the very same objects, as a rename does. The 3D view
+  // draws neither cables nor the name, so such a commit has nothing to
+  // rebuild there. The scene is kept and re-pointed at the new rack, but only
+  // if it was current: one that a device edit already made stale (its rebuild
+  // still pending) stays stale, so an export still rebuilds it first. An
+  // export already running holds the old rack and is discarded by
+  // modelExport's guard, as for any commit.
+  const prev = rack();
+  const sameScene = nextRack.items === prev.items && nextRack.frame === prev.frame;
+  S.undo = undoable ? prev : null;
   if (undoable) S.notice = {text: undoable.text, kind: 'note'};
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
   render();
-  scheduleRebuild3d();
+  if (!sameScene) scheduleRebuild3d();
+  else if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = nextRack;
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
@@ -230,6 +250,7 @@ function setCableMode(on) {
 // changes under Cable mode (a frame shrink removes a device, Undo brings it
 // back, a taken port) the pick is dropped, and a new-cable form whose end's
 // device is gone is closed with a sentence. Run at the top of every render.
+const UNCHECKED_TEXT = 'Cable ends could not be checked, so loose ends are not marked.';
 const NOT_ADDED = 'The cable was not added because a device it ran to was removed.';
 function addNotice(text, kind = 'error') {
   const old = S.notice && (typeof S.notice === 'string' ? {text: S.notice, kind: 'error'} : S.notice);
@@ -316,7 +337,7 @@ function cableListPanel() {
   const r = rack();
   pruneFilter();
   const on = S.cableFilter;
-  return cableList({rack: r, ends: S.cableFacts.ends, on, selectedId: selectedCable(),
+  return cableList({rack: r, ends: S.cableFacts.ends, on, selectedId: selectedCable(), mode3d: S.mode === '3d',
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
@@ -333,8 +354,11 @@ function cableListPanel() {
 }
 // What the side panel shows with nothing selected, or with a cable selected:
 // the summary (or Cable mode's help), then the cable list.
-const homePanel = () =>
-  el('div', {}, [S.cable.on ? cableModePanel() : summary(), cableListPanel()].filter(Boolean));
+const homePanel = () => el('div', {}, [
+  S.cable.on ? cableModePanel() : summary(),
+  // In 3D the list still selects, edits and deletes; nothing is drawn or lit.
+  S.mode === '3d' ? el('p', {id: 'cable3dNote', class: 'rk-muted', role: 'status', text: CABLES_2D}) : null,
+  cableListPanel()].filter(Boolean));
 
 // A frame change goes through commit() as usual, unless the height drops and
 // some device no longer fits: shrinkRack (fit.js) compacts, then trims from
@@ -513,10 +537,13 @@ async function render() {
     // port takes, laid over the item's own swaps for this drawing only. The
     // document, Explorer and the exports keep reading item.swaps.
     // Cables are an overlay: if reading them fails, the rack still draws, unplugged.
-    facts = await cableFacts(r, pendingEnds()).catch(err => {
-      console.warn('[portrayal] could not read the cables\' faces', err);
-      return {seats: {}, ends: new Map()};
-    });
+    // Then the ends are drawn as they are, none marked loose, and the panel says so.
+    facts = await (S.probeFactsFail ? Promise.reject(new Error('probe: cableFacts fails')) : cableFacts(r, pendingEnds()))
+      .catch(err => {
+        console.warn('[portrayal] could not read the cables\' faces', err);
+        return UNCHECKED;
+      });
+    if (facts.unchecked && r.cables.length && mine === S.draws) addNotice(UNCHECKED_TEXT, 'note');
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
@@ -921,6 +948,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
   window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d,
     // Probe only: put a rack in through commit(), as any edit that changes the rack under the page does.
     replaceRack: next => commit(next),
+    // Probe only: make reading the cables' faces fail, to see the page without it.
+    failCableFacts: on => { S.probeFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per
     // item, and each cabled end's loose-end reason (null when it lands).
     cableFacts: () => ({seats: S.cableFacts.seats,

@@ -27,7 +27,7 @@ const button = (id, text, fn, type = 'button') => {
 // length null when the field is empty.
 export function cableForm({title, endA, endB, cable, infoA = null, infoB = null, purposes = [],
                            onSave, onCancel}) {
-  const media = el('select', {id: 'cMedia'}, [
+  const media = el('select', {id: 'cMedia', 'aria-describedby': 'cWarn'}, [
     option('', 'Not set', cable.media),
     ...MEDIA.map(m => option(m, MEDIA_LABELS[m], cable.media)),
     // A media from a file this page does not know stays selectable as itself.
@@ -35,13 +35,22 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
   const purpose = el('input', {id: 'cPurpose', type: 'text', value: cable.purpose || '',
                                list: 'cPurposes', autocomplete: 'off'});
   const label = el('input', {id: 'cLabel', type: 'text', value: cable.label || ''});
-  const length = el('input', {id: 'cLength', type: 'text', inputmode: 'decimal',
+  const length = el('input', {id: 'cLength', type: 'text', inputmode: 'decimal', 'aria-describedby': 'cError',
                               value: cable.length ? String(cable.length.value) : ''});
-  const unit = el('select', {id: 'cUnit'}, UNITS.map(u => option(u, u, cable.length?.unit || 'm')));
+  // A unit from a file this page does not know stays selectable as itself.
+  const oddUnit = cable.length?.unit && !UNITS.includes(cable.length.unit) ? cable.length.unit : null;
+  const unit = el('select', {id: 'cUnit'}, [...UNITS, ...(oddUnit ? [oddUnit] : [])]
+    .map(u => option(u, u, cable.length?.unit || 'm')));
+  // What the fields held when the form opened: a length left alone is kept
+  // exactly as the cable has it, even one this form's rule would refuse.
+  const loaded = {text: length.value, unit: unit.value};
   const warn = el('p', {id: 'cWarn', class: 'rk-warn', role: 'status'});
   const err = el('p', {id: 'cError', class: 'rk-error', role: 'alert'});
   const showWarn = () => { warn.textContent = mismatch(media.value, infoA, infoB).join(' '); };
   media.addEventListener('change', showWarn);
+  const clearErr = () => { err.textContent = ''; };
+  length.addEventListener('input', clearErr);
+  unit.addEventListener('change', clearErr);
   showWarn();
 
   const form = el('form', {id: 'cableForm', class: 'rk-cable-form', novalidate: ''}, [
@@ -62,7 +71,15 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
   // A form, so Enter in any field saves.
   form.addEventListener('submit', ev => {
     ev.preventDefault();
-    const len = parseLength(length.value, unit.value);
+    if (cable.length && length.value === loaded.text && unit.value === loaded.unit) {
+      err.textContent = '';
+      onSave({media: media.value, purpose: purpose.value.trim(), label: label.value.trim(), length: cable.length});
+      return;
+    }
+    // A changed length cannot ride on a unit this page does not know.
+    const len = oddUnit && unit.value === oddUnit
+      ? {ok: false, reason: 'Choose m or ft for the new length.'}
+      : parseLength(length.value, unit.value);
     if (!len.ok) { err.textContent = len.reason; length.focus(); return; }
     err.textContent = '';
     onSave({media: media.value, purpose: purpose.value.trim(), label: label.value.trim(), length: len.length});
@@ -77,7 +94,7 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // known and what is wrong: a loose end with its reason (spec §9.3), a media
 // mismatch as a warning. A row the filter leaves out is hidden; the count
 // line says how many match.
-export function cableList({rack, ends, on, selectedId = null, onFilter, onSelect, onEdit, onDelete}) {
+export function cableList({rack, ends, on, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -85,8 +102,9 @@ export function cableList({rack, ends, on, selectedId = null, onFilter, onSelect
   if (!cables.length)
     return el('div', {id: 'cableList', class: 'rk-cables'}, [
       el('h3', {text: 'Cables'}),
+      // Cable mode is 2D's: in 3D the sentence above the list says where cables are.
       el('p', {id: 'cableEmpty', class: 'rk-muted',
-               text: 'No cables yet. Use Cable mode and click a port at each end.'})]);
+               text: mode3d ? 'No cables yet.' : 'No cables yet. Use Cable mode and click a port at each end.'})]);
 
   const filterRow = (field, title) => el('div', {class: 'rk-filter', 'data-filter-row': field}, [
     el('span', {class: 'rk-muted', text: title}),
