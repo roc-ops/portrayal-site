@@ -239,6 +239,14 @@ export function createMode3d(shell, opts = {}) {
 
   async function setMode(m) {
     if (m === mode) return;
+    // THE GATE IS THE MODE'S, NOT THE BUTTON'S (#93). A disabled button stops a
+    // press; it does not stop a page that asks for 3D itself - a ?mode=3d link to
+    // a device below level 3 - and that opened the wrong box the gate exists to
+    // prevent. Refused here, with the button's own reason.
+    if (m === '3d' && btn3d.disabled) {
+      shell.el.status.textContent = btn3d.title || `3D needs portrayal level ${CAN_3D}`;
+      return;
+    }
     mode = m;
     for (const b of modeBar.querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === m);
     shell.el.svgHost.hidden = m !== '2d';

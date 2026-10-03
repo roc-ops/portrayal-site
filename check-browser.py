@@ -4635,6 +4635,47 @@ def check_3d_context_loss(page, base):
         bad.append("3D: the context came back and the status line still says '3D paused'")
     return bad
 
+
+# A LINK CANNOT ASK FOR WHAT THE BUTTON REFUSES (#93). The 3D button is disabled
+# below portrayal level 3 - the scene would be a plausible wrong box - and a
+# ?mode=3d link to such a device has to be refused the same way, with the reason,
+# rather than opening the box the gate exists to prevent. The S9502-12SM has no
+# bottom face (level 2); the S9510-28DC has all six.
+@extra("a ?mode=3d link to a device that cannot do 3D stays in 2D and says why")
+def check_mode_link_respects_gate(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+
+    def open_link(device, config):
+        page.goto(f"{base}/annotate.html", wait_until="load")
+        page.wait_for_selector("#stage svg", timeout=READY_MS)
+        enc = page.evaluate("""async d => (await import('/vendor/marks.js')).encode(d)""",
+                            {"v": 1, "device": device, "config": config, "view": "front", "marks": []})
+        page.goto(f"{base}/annotate.html?mode=3d#{enc}", wait_until="load")
+        page.wait_for_function(f"() => document.querySelector('#devpick')?.value === '{device}'"
+                               f" || /{device}/.test(document.querySelector('#expmsg')?.textContent || '')"
+                               " || /restored/.test(document.querySelector('#expmsg')?.textContent || '')",
+                               timeout=READY_MS)
+        page.wait_for_timeout(1500)
+        return page.evaluate("""() => ({on3d: !!document.querySelector('#mode [data-mode="3d"].on'),
+          disabled: document.querySelector('#mode [data-mode="3d"]').disabled,
+          shown3d: !document.querySelector('#stage-3d').hidden,
+          status: document.querySelector('#status').textContent})""")
+
+    low = open_link("s9502-12sm", "")
+    if not low["disabled"]:
+        bad.append(f"gate: the 3D button is not disabled for the S9502-12SM - {low}")
+    if low["on3d"] or low["shown3d"]:
+        bad.append(f"gate: a ?mode=3d link opened 3D on a device below level 3 - {low}")
+    if "3D needs" not in low["status"]:
+        bad.append(f"gate: the refused link does not say why - status is {low['status']!r}")
+    if webgl_trouble(page):
+        return bad
+    ok = open_link("s9510-28dc", "dc")
+    if not ok["on3d"]:
+        bad.append(f"gate: a ?mode=3d link to a level 3 device did not open in 3D - {ok}")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
