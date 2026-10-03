@@ -4599,6 +4599,42 @@ def check_annotate_3d(page, base):
         pass
     return bad
 
+
+# A LOST GRAPHICS CONTEXT SAYS SO (Portrayal #746). The viewer stops drawing when
+# the browser takes the WebGL context away, rebuilds when it is handed back, and
+# announces both; site/mode3d.js puts that in the status line, so Explorer and
+# Annotate both say why the canvas went blank instead of just going blank. The
+# context is lost and restored for real, through WEBGL_lose_context.
+@extra("3D says when the graphics context is lost, and clears it when it is back")
+def check_3d_context_loss(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/explorer.html?device=s9510-28dc&debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_3d_context_loss] no WebGL here - nothing to lose")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__viewer && document.querySelector('#stage-3d canvas')", timeout=READY_3D_MS)
+    page.wait_for_function("() => document.querySelector('#status').textContent === ''", timeout=READY_3D_MS)
+    lost = page.evaluate("""() => { const c = document.querySelector('#stage-3d canvas');
+      const gl = c.getContext('webgl2') || c.getContext('webgl');
+      const ext = gl && gl.getExtension('WEBGL_lose_context');
+      if (!ext) return false; window.__lose = ext; ext.loseContext(); return true; }""")
+    if not lost:
+        print("[check_3d_context_loss] no WEBGL_lose_context here - not exercised")
+        return bad
+    try:
+        page.wait_for_function("() => /3D paused/.test(document.querySelector('#status').textContent)", timeout=READY_MS)
+    except Exception:
+        return bad + [f"3D: the context was lost and the status line says {page.text_content('#status')!r}, not '3D paused'"]
+    page.evaluate("() => window.__lose.restoreContext()")
+    try:
+        page.wait_for_function("() => !/3D paused/.test(document.querySelector('#status').textContent)", timeout=READY_3D_MS)
+    except Exception:
+        bad.append("3D: the context came back and the status line still says '3D paused'")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

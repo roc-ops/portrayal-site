@@ -35,6 +35,19 @@ export const MODE3D_CSS = `
 const CAN_3D = 3;
 const kb = n => n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`;
 
+// WHY 3D IS NOT SHOWING, in words a reader can act on (Portrayal #746). A
+// browser keeps only about sixteen WebGL contexts alive and, after repeated GPU
+// resets, refuses new ones until it restarts; three.js reports either as "Error
+// creating WebGL context", which on its own tells nobody what to do next.
+function why3d(err) {
+  const msg = String(err?.message || err);
+  if (/WebGL context/i.test(msg))
+    return '3D unavailable: the browser would not create a graphics context — ' +
+           'reload the page, or close other tabs with 3D open (browsers allow only about 16)';
+  return `3D unavailable: ${msg}`;
+}
+const LOST_MSG = '3D paused — the graphics context was lost; it will resume, or reload the page';
+
 export function createMode3d(shell, opts = {}) {
   const state = shell.state;
   const {
@@ -70,6 +83,8 @@ export function createMode3d(shell, opts = {}) {
   let mode = '2d', viewer = null, loading = null, loadedKey = '';
   // The load in flight and the key it is for: see sync().
   let inflight = null;
+  // The browser took the WebGL context away and has not handed it back yet.
+  let gpuLost = false;
 
   async function ensureViewer() {
     if (viewer) return viewer;
@@ -89,6 +104,15 @@ export function createMode3d(shell, opts = {}) {
       // gets here. What a pick MEANS is the page's: Explorer toggles the
       // selection, Annotate toggles a mark.
       v.on('select', p => onPick(p));
+      // A LOST CONTEXT LEAVES THE CANVAS BLANK (Portrayal #746): the viewer stops
+      // drawing, rebuilds the scene when the browser hands the context back, and
+      // says both. A page's hover readout is its own overlay, not this line, so
+      // nothing else has to hold off while the message is up.
+      v.on('contextlost', () => { gpuLost = true; shell.el.status.textContent = LOST_MSG; });
+      v.on('contextrestored', err => {
+        gpuLost = false;
+        shell.el.status.textContent = err ? why3d(err) : '';
+      });
       mountDownloads(v);
       if (extras) extras(v, host3d);
       return v;
@@ -245,10 +269,11 @@ export function createMode3d(shell, opts = {}) {
     try {
       await sync();
       (await ensureViewer()).resize();
-      shell.el.status.textContent = '';
+      // a context lost while the drawing showed is still lost: keep saying so
+      shell.el.status.textContent = gpuLost ? LOST_MSG : '';
     } catch (err) {
       console.warn('[portrayal] 3D unavailable', err);
-      shell.el.status.textContent = `3D unavailable: ${err.message || err}`;
+      shell.el.status.textContent = why3d(err);
       setMode('2d');
     }
   }
@@ -270,7 +295,7 @@ export function createMode3d(shell, opts = {}) {
   shell.on('select', path => { if (mode === '3d' && viewer) viewer.select(path); });
   const failed = what => err => {
     console.warn(`[portrayal] 3D ${what} failed`, err);
-    shell.el.status.textContent = `3D unavailable: ${err.message || err}`;
+    shell.el.status.textContent = why3d(err);
   };
   shell.on('change', () => { sync().catch(failed('swap sync')); });
   shell.on('load', () => {
