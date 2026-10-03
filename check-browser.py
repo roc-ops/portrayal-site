@@ -4389,6 +4389,129 @@ def check_explorer_three_lazy(page, base):
         bad.append("explorer: 3D came up without fetching vendor/viewer3d.js")
     return bad
 
+
+# ANNOTATE IN 3D SHOWS THE DOCUMENT (portrayal-site#46). On the S9510-28DC:
+# three marks in three colours, a lamp colour, a lamp state, a mark the scene
+# cannot build, a mark on a rear-only fan while the front is the drawing, a
+# click, an optic seated in 3D and a mode round trip - all read back from the
+# viewer itself.
+@extra("Annotate in 3D: marks, lamps, states, legend, picks, swaps and exports reach the scene")
+def check_annotate_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    doc = {"v": 1, "device": "s9510-28dc", "config": "dc", "view": "front", "legend": True,
+           "marks": [
+               {"select": "[data-path='port-0']", "color": "#e0574f", "label": "uplink"},
+               {"select": "[data-path='port-4']", "color": "#2bb3c8"},
+               # fan-2 is drawn on the REAR face only (fans 1-5 exhaust at the back):
+               # marked while the front is the drawing, it must still reach 3D
+               {"select": "[data-path='fan-2']", "color": "#9b5de5", "label": "exhaust fan"},
+               {"select": "#led-gnss", "lamp": "#ff00ff"},
+               {"select": "[data-path='led-sync']", "state": "synced"},
+               {"select": "[data-class='silkscreen']", "color": "#ffd400"},
+           ]}
+    page.goto(f"{base}/annotate.html?debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    page.evaluate("""async d => { const m = await import('/vendor/marks.js');
+                       location.hash = m.encode(d); }""", doc)
+    page.reload(wait_until="load")
+    page.wait_for_selector("#stage svg [data-path='port-0']", state="attached", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_annotate_3d] no WebGL here - checking the fallback only")
+        page.click('#mode [data-mode="3d"]')
+        page.wait_for_function("() => /3D unavailable/.test(document.querySelector('#status')?.textContent || '')"
+                               " || !document.querySelector('#stage-3d').hidden", timeout=READY_MS)
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__viewer && window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
+    r = page.evaluate("""() => { const v = window.__viewer;
+      return {marks: v.marks().map(m => [m.path, m.color]).sort(),
+              lamps: v.lampColors(), states: v.states(),
+              legend: [...document.querySelectorAll('#legend3d .row')].map(e => e.textContent.trim()),
+              notIn3d: [...document.querySelectorAll('#rows .mark')].map(r =>
+                /not in 3D/.test(r.querySelector('.notes').textContent)),
+              off: [...document.querySelectorAll('.btns button[data-act]')]
+                     .filter(b => b.dataset.act !== 'share').every(b => b.disabled && /2D only/.test(b.title))}; }""")
+    got = dict((p, c) for p, c in r["marks"])
+    for path, colour in [("port-0", "#e0574f"), ("port-4", "#2bb3c8"), ("fan-2", "#9b5de5")]:
+        if got.get(path) != colour:
+            bad.append(f"annotate 3D: mark on {path} is {got.get(path)}, expected {colour}")
+    if "#ff00ff" not in [c.lower() for c in r["lamps"].values()]:
+        bad.append(f"annotate 3D: the lamp colour never reached the viewer - {r['lamps']}")
+    if r["states"].get("led-sync") != "state-synced":
+        bad.append(f"annotate 3D: led-sync state is {r['states'].get('led-sync')}")
+    if r["legend"] != ["uplink", "exhaust fan"]:
+        bad.append(f"annotate 3D: legend rows {r['legend']}, expected ['uplink', 'exhaust fan']")
+    if r["notIn3d"] != [False, False, False, False, False, True]:
+        bad.append(f"annotate 3D: 'not in 3D' flags {r['notIn3d']}")
+    if not r["off"]:
+        bad.append("annotate 3D: a 2D-only export is enabled, or lacks its '2D only' title")
+
+    # A CLICK IN 3D IS A CLICK (Review Focus 4). select() frames the camera on
+    # the part, centred, so a real click at the canvas centre lands on it - the
+    # whole path: canvas, the viewer's select event, onPick, Annotate's toggle.
+    # The first click adds a mark for port-8; a second click on the same part
+    # takes it off, exactly once.
+    n = len(doc["marks"])
+    page.evaluate("() => { window.__viewer.select('port-8'); }")
+    page.wait_for_timeout(500)
+    box = page.locator("#stage-3d canvas").bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.click(cx, cy)
+    page.wait_for_function(f"() => document.querySelectorAll('#rows .mark').length === {n + 1}", timeout=READY_MS)
+    page.mouse.click(cx, cy)
+    page.wait_for_function(f"() => document.querySelectorAll('#rows .mark').length === {n}", timeout=READY_MS)
+
+    # AN OPTIC SEATED IN 3D KEEPS EVERY MARK. Through the inspector, as a
+    # reader does it: select the cage in the tree, choose the first optic.
+    page.click(".node[data-path='port-4']")
+    page.wait_for_selector("#optic", timeout=READY_MS)
+    optic = page.evaluate("() => [...document.querySelectorAll('#optic option')].map(o => o.value).find(Boolean)")
+    page.select_option("#optic", optic)
+    page.wait_for_function("() => window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
+    page.wait_for_timeout(1500)
+    after_swap = page.evaluate("() => window.__viewer.marks().map(m => m.path).sort()")
+    if not set(got) <= set(after_swap):
+        bad.append(f"annotate 3D: seating {optic} in port-4 lost marks {sorted(set(got) - set(after_swap))}")
+
+    # A 3D -> 2D -> 3D round trip leaves the document and the marks as they were
+    page.click('#mode [data-mode="2d"]')
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
+    after = page.evaluate("() => window.__viewer.marks().map(m => m.path).sort()")
+    if after != after_swap:
+        bad.append(f"annotate 3D: a 2D/3D round trip changed the marks {after_swap} -> {after}")
+
+    # Back in 2D the exports come back with their own titles (Review Focus 5)
+    page.click('#mode [data-mode="2d"]')
+    back = page.evaluate("""() => [...document.querySelectorAll('.btns button[data-act]')]
+      .every(b => !b.disabled && !/2D only/.test(b.title))""")
+    if not back:
+        bad.append("annotate: back in 2D, an export is still disabled or still titled '2D only'")
+
+    # A share link made in 3D opens in 3D, with its marks
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
+    page.click('.btns button[data-act="share"]')
+    url = page.input_value('#share')
+    if "?mode=3d#" not in url:
+        # Reopening a link that does not say 3D opens the drawing, and the waits
+        # below would sit out their timeout and throw away everything above.
+        return bad + [f"annotate 3D: the share link does not record the mode - {url[:80]}"]
+    page.goto(url.replace("?mode=3d", "?mode=3d&debug=1"), wait_until="load")
+    page.wait_for_function("() => window.__viewer && window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
+
+    # The GLB is the model: as many meshes with the marks as without (needs PR 1 synced)
+    meshes = page.evaluate("""async () => { const v = window.__viewer;
+      const count = async () => { const b = await v.exportData('glb'), d = new DataView(b);
+        return (JSON.parse(new TextDecoder().decode(new Uint8Array(b, 20, d.getUint32(12, true)))).meshes || []).length; };
+      const held = v.marks(); const marked = await count();
+      v.setMarks([]); const plain = await count(); v.setMarks(held);
+      return [marked, plain]; }""")
+    if meshes[0] != meshes[1]:
+        bad.append(f"annotate 3D: the GLB carries the marks ({meshes[0]} meshes marked, {meshes[1]} plain)")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

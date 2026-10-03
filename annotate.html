@@ -31,14 +31,6 @@
 
   /* The shell brings its own stylesheet. Everything here is the Explorer's own:
      the stage toggle, the state chips, and the About panel. */
-  #mode { display:flex; gap:0.2rem; }
-  #mode button { border-radius:0; }
-  #mode button:first-child { border-radius:6px 0 0 6px; }
-  #mode button:last-child { border-radius:0 6px 6px 0; margin-left:-1px; }
-  #mode button:disabled { opacity:0.45; cursor:not-allowed; }
-  #mode button:disabled:hover { background:var(--pt-surface-2); }
-  #stage-3d { background:var(--pt-surface); }
-  #stage-3d canvas { display:block; }
   #frus { display:flex; gap:0.2rem; flex-wrap:wrap; }
   #frus[hidden] { display:none; }        /* display:flex outranks the hidden attribute */
   #frus button { font-family:ui-monospace, monospace; font-size:0.72rem; padding:0.26rem 0.42rem; }
@@ -271,6 +263,8 @@ import * as marks from './vendor/marks.js';
 import { toDrawio } from './vendor/drawio.js';
 import { toGraffle } from './vendor/omnigraffle.js';
 import { swapsNow, fieldsNow, installOpticFields, OPTIC_CSS } from './site/optics.js';
+import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
+import { docToScene, legendItems } from './site/annotate3d.js';
 // The analysis of what a drawing says about its own lamps is not this page's -
 // the gaps register asks the same questions of the same drawings offline. What
 // stays here is the markup and the handlers that put it on screen.
@@ -288,6 +282,31 @@ const state = shell.state;
 // set lands in the live drawing, which is what every export here reads.
 installOpticFields(shell);
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: OPTIC_CSS}));
+document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
+
+// THE DOCUMENT IN 3D (#46). Every face the shell holds, the mounted one
+// included, because a mark is written against the hardware and the scene shows
+// all of it - a mark on the rear fans is a mark in 3D while the front is the
+// drawing. docToScene is pure (site/annotate3d.js); this is only the wiring.
+const facesNow = () => ({...(state.faces || {}), [state.view]: state.svg});
+let lastScene = null;
+const scene3d = () => lastScene;
+const m3d = createMode3d(shell, {
+  states: () => (lastScene = docToScene(doc, facesNow())).states,
+  overrides: () => swapsNow(shell),
+  afterSync: async v => {
+    const s = lastScene || (lastScene = docToScene(doc, facesNow()));
+    v.setMarks(s.marks);
+    await v.setLampColors(s.lamps);
+  },
+  // A CLICK IN 3D IS A CLICK. Annotate's own select handler decides what a
+  // second click on the same part means - it takes the mark off - so a pick is
+  // handed over as the path itself; Explorer's "again clears" would toggle twice.
+  onPick: p => shell.select(p || null, false),
+});
+const sync3d = () => {
+  if (m3d.mode() === '3d') m3d.sync().catch(err => console.warn('[portrayal] 3D annotate sync', err));
+};
 
 // The document. Everything on this page is a view of this object, and nothing
 // else is state: the panel, the stage, the exports and the URL are all built
@@ -505,6 +524,8 @@ function stage(opts = {}) {
   hadLegend = has;
   $('#perf').textContent = report.length
     ? `${report.length} mark${report.length === 1 ? '' : 's'} · ${ms} ms` : '';
+  // The scene follows the document; in 2D this returns at once.
+  sync3d();
 }
 
 function restage(opts = {}) {
