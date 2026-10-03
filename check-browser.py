@@ -4366,6 +4366,29 @@ def check_drawio_optics_library(page, base):
             bad.append(f"draw.io optics: {port} cell at {got}, expected {want} - on the bore")
     return bad
 
+
+# THREE.JS IS PAID FOR ON THE PRESS, NOT ON THE PAGE. site/mode3d.js imports
+# vendor/viewer3d.js on the first press of 3D, and the viewer pulls three.js
+# through the import map; a page that never shows 3D must fetch neither.
+@extra("Explorer fetches no three.js and no viewer until 3D is pressed")
+def check_explorer_three_lazy(page, base):
+    bad, asked = [], []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("request", lambda r: asked.append(r.url))
+    page.goto(f"{base}/explorer.html?device=s9510-28dc", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    early = [u for u in asked if "/vendor/three/" in u or u.endswith("/vendor/viewer3d.js")]
+    if early:
+        bad.append(f"explorer: fetched before 3D was pressed: {early[:3]}")
+    if webgl_trouble(page):
+        print("[check_explorer_three_lazy] no WebGL here - checked the 2D half only")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => document.querySelector('#stage-3d canvas')", timeout=READY_3D_MS)
+    if not any(u.endswith("/vendor/viewer3d.js") for u in asked):
+        bad.append("explorer: 3D came up without fetching vendor/viewer3d.js")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
