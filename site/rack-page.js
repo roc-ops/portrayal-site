@@ -266,7 +266,7 @@ const modelExport = async format => {
   const forRack = rack();
   const current = () => S.scene3d === scene && S.scene3dRack === forRack && rack() === forRack;
   let out;
-  try { out = await modelFile(scene, forRack, format); }
+  try { out = await modelFile(scene, forRack, format, chassisOf); }
   catch (err) { if (current()) throw err; console.warn('[portrayal] export overtaken', err); return OVERTAKEN; }
   return current() ? out : OVERTAKEN;
 };

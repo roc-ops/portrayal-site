@@ -31,6 +31,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null}) {
     ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label,
     face: item.face, turned: item.turned, overrides: item.swaps || {},
     chassis: chassisOf?.(item.ref) || undefined,
+    mount: chassisOf?.(item.ref)?.mount,
   }));
 
   // Imported here, not at module load: rack-page.js pulls this module in on

@@ -40,6 +40,9 @@ def build():
             "default": idx.get("default"),
             "configs": [x["name"] for x in idx.get("configs", [])],
         }
+        # only a stated mount other than a rack's, so the file barely grows
+        if c.get("mount") and c["mount"] != "rack":
+            out[d["name"]]["mount"] = c["mount"]
     return {"generated-from": "assets/dist/devices.json and <name>.configs.json, by chassis-index.py",
             "devices": out}
 

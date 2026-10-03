@@ -23,7 +23,7 @@ import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
-import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes,
+import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence} from './export-data.js';
@@ -39,8 +39,8 @@ export const faceOf = (it, view) => configuredFace({ref: it.ref, cfg: it.cfg, vi
   swaps: it.swaps || {}, fields: it.fields || {}}).catch(() => null);
 
 // What the panes named could not show, item by item.
-export async function faceNotesFor(rack, items, panes) {
-  const notes = [...rackNotes(rack)];
+export async function faceNotesFor(rack, items, panes, chassisOf = () => null) {
+  const notes = [...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame)];
   for (const it of items) {
     for (const pane of panes) {
       const panel = panelFor(it, pane);
@@ -68,7 +68,7 @@ const text = (x, y, s, {size = 11, weight = 400, fill = INK, mono = false} = {})
 // cabledElevationSvg does.
 export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date = new Date()} = {}) {
   const items = itemsWithU(rack, chassisOf);
-  const notes = await faceNotesFor(rack, items, faces);
+  const notes = await faceNotesFor(rack, items, faces, chassisOf);
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true})));
   const faceH = rack.frame.heightRU * RU + 30;       // drawElevation's own viewBox height
@@ -133,7 +133,7 @@ export async function drawioFile(rack, chassisOf) {
   const items = itemsWithU(rack, chassisOf);
   const H = rack.frame.heightRU;
   const lists = perFaceItems(items);
-  const notes = await faceNotesFor(rack, items, ['front', 'rear']);
+  const notes = await faceNotesFor(rack, items, ['front', 'rear'], chassisOf);
   for (const h of lists.hidden)
     notes.push(`${h.pane === 'front' ? 'Front' : 'Rear'} page: ${h.item.label} is behind ${h.by.label} and is not drawn there.`);
   const numDisp = rack.frame.numbering === 'top-down' ? 'ascend' : 'descend';
@@ -159,7 +159,7 @@ export async function drawioFile(rack, chassisOf) {
 // the deferred relief pass (optics, plugs) has landed. The notes ride in the
 // scene's userData, which GLTFExporter writes as the scene's `extras`. A USDZ
 // has no such place, so its notes come back as `left`, not `notes`.
-export async function modelFile(scene, rack, kind) {
+export async function modelFile(scene, rack, kind, chassisOf = () => null) {
   // The render loop runs on the same thread as the exporters, and both encode
   // each texture with canvas.toBlob(), one await at a time. Each await then
   // queues behind a frame of the whole rack: 2-3 s a texture on a software
@@ -181,7 +181,7 @@ export async function modelFile(scene, rack, kind) {
           missing.push(...faceNotes({label: it.label, u: uLabel(rack.frame, it.ru), pane, panel, face: null}));
       }
     }
-    const notes = uniq([...rackNotes(rack), ...threeDNotes(rack), ...missing]);
+    const notes = uniq([...rackNotes(rack), ...mountNotes(rack.items, chassisOf, rack.frame), ...threeDNotes(rack), ...missing]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
@@ -261,7 +261,7 @@ export async function dcimContext(rack, chassisOf, target, {modules = true} = {}
   const [index, files, comps] = await Promise.all([
     fetchJson(`${EXPORTS_BASE}index.json`), fetchJson(`${EXPORTS_BASE}files.json`), components()]);
   const items = itemsWithU(rack, chassisOf);
-  const notes = [...rackNotes(rack)];
+  const notes = [...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame)];
   const types = new Map();
   for (const it of items) {
     const manufacturer = chassisOf(it.ref)?.manufacturer;
@@ -343,7 +343,7 @@ export async function bomCsv(rack, chassisOf) {
       return null;
     }), components()]);
   const {parts, notes} = await seatedPartsOf(rack, items);
-  notes.unshift(...rackNotes(rack));
+  notes.unshift(...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame));
   if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
   const devices = items.map(it => ({ref: it.ref, cfg: it.cfg,
@@ -359,7 +359,7 @@ export async function bomCsv(rack, chassisOf) {
     if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
   if (items.length) notes.push(...hardwareNotes(rack.frame));   // no devices, no hardware to explain
   const all = uniq(notes);
-  const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: items.map(i => i.u)});
+  const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: items.filter(i => isRackMount(chassisOf(i.ref))).map(i => i.u)});
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
 }

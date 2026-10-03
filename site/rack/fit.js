@@ -64,7 +64,10 @@ export function availableDepth(rack, item, chassisOf) {
 // not) - what the elevation, the 3D view and any export (Phase 1b) all need
 // beside the item's own fields, so each draws the same rack.
 export const itemsWithU = (rack, chassisOf) =>
-  rack.items.map(i => ({...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1)}));
+  rack.items.map(i => {
+    const mount = chassisOf(i.ref)?.mount;      // stated only when it is not a rack's
+    return {...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1), ...(mount && mount !== 'rack' ? {mount} : {})};
+  });
 
 export const attachPoints = kind => (kind === 'four-post'
   ? ['left-front', 'right-front', 'left-rear', 'right-rear'] : ['left', 'right']);

@@ -3534,6 +3534,60 @@ def export_status(page):
     return page.inner_text("#exportStatus")
 
 
+@extra("rack.html: a desktop device is flagged in the picker and the exports, placeable, with no ears and no rail hardware")
+def check_rack_mount_flag(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    pick(page, "front", 10, "TM-280", "tm-280")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="tm-280"]', timeout=READY_MS)
+    page.click('svg[data-pane="front"] rect.rk-u[data-u="12"]')
+    page.fill("#catQuery", "hlx")
+    row = page.inner_text('#catDevice option[value="hlx-tgv"]')
+    if "desktop" not in row:
+        bad.append(f"picker row for hlx-tgv: {row!r}")
+    page.select_option("#catDevice", "hlx-tgv")
+    fit = page.inner_text("#catFit")
+    if fit != "Fits here, on a shelf: this is a desktop device.":
+        bad.append(f"picker fit line: {fit!r}")
+    if page.is_disabled("#catPlace"):
+        bad.append("picker: Place is disabled for a desktop device")
+    page.click("#catPlace")
+    try:
+        page.wait_for_selector('svg[data-pane="front"] [data-device-ref="hlx-tgv"]', timeout=READY_MS)
+    except Exception:
+        bad.append("a desktop device was not placed")
+        return bad
+    ears = page.evaluate("""() => [...document.querySelectorAll('svg[data-pane="front"] g.rk-ears')]
+      .map(g => document.querySelector(`svg[data-pane="front"] [data-item-id="${g.dataset.earsFor}"][data-device-ref]`)?.dataset.deviceRef)""")
+    if "tm-280" not in ears or "hlx-tgv" in ears:
+        bad.append(f"ears are drawn for {ears}, expected tm-280 only")
+    page.evaluate("() => window.__rack.flush()")
+
+    note = "at U12: a desktop device, so it needs a shelf."
+    dl = export_file(page, "sheet-svg")
+    svg = pathlib.Path(dl.path()).read_bytes().decode("utf-8")
+    if "a desktop device, so it needs a shelf" not in svg:
+        bad.append("sheet: no mount note")
+    if svg.count("data-ears-for") != 1:
+        bad.append(f"sheet: {svg.count('data-ears-for')} ear groups, expected 1")
+    _, rows, text = read_csv(export_file(page, "bom"))
+    if note not in text.partition("\r\nNotes\r\n")[2]:
+        bad.append(f"BOM: no mount note: {text[-300:]!r}")
+    cage = next((int(r["qty"]) for r in rows if r["model"] == "Cage nut, M6"), None)
+    if cage != 4:
+        bad.append(f"BOM: cage nuts {cage}, expected 4 (the rack-mount 1U device only)")
+    dev = next((r for r in rows if r["ref"] == "hlx-tgv"), None)
+    if not dev:
+        bad.append("BOM: the desktop device is not listed")
+    _, crows, _ = read_csv(export_file(page, "netbox-devices"))
+    if not any("needs a shelf" in r["comments"] for r in crows):
+        bad.append(f"device CSV: no mount comment {[r['comments'] for r in crows]}")
+    return bad
+
+
 @extra("rack.html: Export - a model whose 3D view changed under the exporter is not saved or called downloaded")
 def check_rack_export_overtaken(page, base):
     bad = []

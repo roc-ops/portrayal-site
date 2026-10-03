@@ -199,3 +199,10 @@ test('a device label that starts with = stays verbatim in the DCIM CSV (only the
   assert.ok(csv.split('\r\n')[1].startsWith('=core,'), csv);
   assert.ok(!csv.includes("'=core"));
 });
+
+test('a device that is not rack-mount says so in its own comments', () => {
+  const rack = {name: 'r', frame: M.normalizeFrame({heightRU: 4})};
+  const items = [{id: 'a', ref: 'hlx-tgv', cfg: '', label: 'tgv', ru: 1, u: 1, face: 'front', mount: 'desktop'}];
+  const {rows} = X.deviceImportRows({rack, items, types: new Map(), target: 'netbox'});
+  assert.match(rows[0].comments, /A desktop device, so it needs a shelf\./);
+});

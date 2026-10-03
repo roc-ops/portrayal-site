@@ -13,6 +13,7 @@
 import {el} from './dom.js';
 import {fits} from './fit.js';
 import {uLabel} from './model.js';
+import {mountPick} from './export-data.js';
 
 const wordsOf = q => q.toLowerCase().split(/\s+/).filter(Boolean);
 const hay = e => `${e.manufacturer ?? ''} ${e.model ?? ''} ${e.family ?? ''} ${e.name}`.toLowerCase();
@@ -58,7 +59,8 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     device.replaceChildren(...list.map(e => {
       const f = fitOf.get(e.name);
       const prefix = state.vendor === ALL ? `${e.manufacturer ?? ''} ${e.model}`.trim() : e.model;
-      const text = `${prefix} · ${e.ru}U · ${Math.round(e.d ?? 0)} mm${f.ok ? '' : ' — doesn\'t fit'}`;
+      const mp = mountPick(e.mount);
+      const text = `${prefix} · ${e.ru}U · ${Math.round(e.d ?? 0)} mm${mp ? ` · ${mp.tag}` : ''}${f.ok ? '' : ' — doesn\'t fit'}`;
       return el('option', {value: e.name, text, 'data-fits': f.ok ? 'true' : 'false'});
     }));
     if (!list.some(e => e.name === state.device)) setState({device: list[0]?.name ?? null});
@@ -79,7 +81,7 @@ export function catalogPanel({entries, rack, face, ru, chassisOf, pick, onState,
     const chosen = state.cfgByRef[entry.name] ?? entry.default ?? configs[0];
     cfg.replaceChildren(...configs.map(c => el('option', {value: c, text: c, ...(c === chosen ? {selected: ''} : {})})));
     const f = fitOf.get(entry.name);
-    fitLine.textContent = f.ok ? 'Fits here.' : f.reason;
+    fitLine.textContent = f.ok ? (mountPick(entry.mount)?.fit ?? 'Fits here.') : f.reason;
     fitLine.className = f.ok ? 'rk-muted' : 'rk-error';
   }
 

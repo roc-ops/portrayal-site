@@ -665,7 +665,9 @@ export function createRackScene(container, opts = {}) {
     // device and cancelling only the Y offset left them displaced by the Z
     // recess, which is what put a pair of white slabs out beside each unit.
     // A rear entry's ears go on the rail it is actually mounted to.
-    const ears = rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1);
+    // (none for a device the caller marks as not rack-mount: `entry.mount`)
+    const ears = entry.mount && entry.mount !== 'rack' ? new THREE.Group()
+      : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1);
     scene.add(ears);
 
     // The device's tag, beside the left rail - a rail label, so it goes with

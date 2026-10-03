@@ -117,6 +117,32 @@ export function rackNotes(rack) {
   return out;
 }
 
+// NOT RACK-MOUNT. The chassis index states `mount` only when it is not
+// "rack"; such a device stays placeable, and every export says what it needs.
+export const isRackMount = chassis => !chassis?.mount || chassis.mount === 'rack';
+const MOUNT_TEXT = {
+  'din-rail': 'a DIN-rail device, so it needs a DIN-rail bracket or shelf',
+  desktop: 'a desktop device, so it needs a shelf',
+  wall: 'a wall-mount device, so it needs a shelf or bracket'};
+export const mountText = mount => !mount || mount === 'rack' ? null
+  : MOUNT_TEXT[mount] ?? `not a rack-mount device (${mount}), so it needs a shelf or bracket`;
+// The picker's words for the same fact: the list row's tag and the fit line.
+const MOUNT_PICK = {'din-rail': ['DIN rail', 'a DIN-rail device', 'a shelf or DIN-rail bracket'],
+  desktop: ['desktop', 'a desktop device', 'a shelf'], wall: ['wall mount', 'a wall-mount device', 'a shelf or bracket']};
+export function mountPick(mount) {
+  if (!mount || mount === 'rack') return null;
+  const [tag, what, where] = MOUNT_PICK[mount] ?? [mount, `not a rack-mount device (${mount})`, 'a shelf or bracket'];
+  return {tag, fit: `Fits here, on ${where}: this is ${what}.`};
+}
+export function mountNotes(items, chassisOf, frame) {
+  const out = [];
+  for (const it of items) {
+    const t = mountText(chassisOf(it.ref)?.mount);
+    if (t) out.push(`${it.label} at U${frame ? uLabel(frame, it.ru) : it.ru}: ${t}.`);
+  }
+  return out;
+}
+
 // createRackScene has no fields input yet (site/rack/scene3d.js).
 export function threeDNotes(rack) {
   const withFields = rack.items.filter(i => Object.keys(i.fields || {}).length).map(i => i.label);
@@ -268,6 +294,8 @@ export function deviceImportRows({rack, items, types, target = 'netbox'}) {
       notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer: t.chassisManufacturer, path: t.path}));
     else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
     if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${String(it.label || it.ref).trim()}.`);
+    const mt = mountText(it.mount);
+    if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
     const others = items.filter(o => o.id !== it.id && o.face !== it.face && overlaps(o, it));
     if (others.length && (t?.isFullDepth || others.some(o => types.get(o.id)?.isFullDepth))) {
