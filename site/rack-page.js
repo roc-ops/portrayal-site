@@ -4,7 +4,7 @@
 
 import {newDoc, nextRackName, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
-import {drawElevation, uAtY} from './rack/elevation.js';
+import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
 import {fits, reaches, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
@@ -19,8 +19,10 @@ import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv
 import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
 import {cableFacts} from './rack/cable-plugs.js';
-import {mergeSeats} from './rack/cable-rules.js';
-import {widenForCables, drawRackCables} from './rack/cable-view.js';
+import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, endName,
+        proposeMedia, countsBy} from './rack/cable-rules.js';
+import {widenForCables, drawRackCables, portAt, markPort} from './rack/cable-view.js';
+import {cableForm} from './rack/cable-panel.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -36,6 +38,8 @@ const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, n
   zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
+  // Cable mode: on or off, and the A end picked and waiting for its B.
+  cable: {on: false, a: null},
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
@@ -109,7 +113,17 @@ function setMode(m) {
   paintMode();
   if ($('exportMenu').open) renderExports();   // the 3D entries follow the mode
   showMode();
-  if (m === '3d') { rebuild3d(); return; }
+  if (m === '3d') {
+    // 3D has no ports to click, so Cable mode ends here, and a new cable not
+    // yet added goes with it. The side panel is redrawn to say so (render()
+    // is not called on the way into 3D).
+    if (pendingEnds().length) S.sel = null;
+    S.cable = {on: false, a: null};
+    paintCableMode();
+    renderSide();
+    rebuild3d();
+    return;
+  }
   disposeScene3d();
   // render() skips applying zoom while #panes is hidden (it was, in 3D), so
   // whatever was drawn there while hidden never got a real height - this is
@@ -182,11 +196,75 @@ function commit(nextRack) {
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
-  S.doc = doc; S.sel = null; S.undo = null;
+  S.doc = doc; S.sel = null; S.undo = null; S.cable.a = null;
   try { localStorage.setItem(LAST, doc.id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
   if (S.mode === '3d') rebuild3d();
+}
+
+// ── Cable mode (spec §9.2) ──────────────────────────────────────────────
+// A tool state beside 2D/3D: while it is on, a click in a pane picks a port
+// instead of selecting a device, and the drag controller is off. The A end
+// waits in S.cable.a; the B end opens the cable form with both.
+const pendingEnds = () => (S.sel?.kind === 'cable-form' && !S.sel.id ? [S.sel.a, S.sel.b] : []);
+function paintCableMode() {
+  $('cableBtn').setAttribute('aria-pressed', String(S.cable.on));
+  $('panes').classList.toggle('rk-cabling', S.cable.on);
+}
+function setCableMode(on) {
+  S.cable = {on: !!on && S.mode === '2d', a: null};
+  // Entering clears the selection; leaving drops a new cable not yet added.
+  if (S.cable.on || (S.sel?.kind === 'cable-form' && !S.sel.id)) S.sel = null;
+  paintCableMode();
+  render();
+}
+function onCableClick(ev) {
+  if (S.sel?.kind === 'cable-form') return;      // the form is open: finish or cancel it first
+  const group = ev.target.closest('[data-item-id][data-panel]');
+  const item = group ? itemById(group.dataset.itemId) : null;
+  const path = item && group.dataset.panel !== 'missing' ? portAt(ev.target, group) : null;
+  if (!path) return;
+  // The end's view is the device's own panel, not the pane it was clicked in.
+  const end = {item: item.id, path, view: panelFor(item, group.closest('svg').dataset.pane)};
+  if (S.cable.a && sameEnd(S.cable.a, end)) { S.cable.a = null; render(); return; }   // the same port again: unpick it
+  const free = portFree(rack(), end);
+  if (!free.ok) { S.notice = {text: free.reason, kind: 'error'}; render(); return; }
+  if (!S.cable.a) { S.cable.a = end; render(); return; }
+  S.sel = {kind: 'cable-form', id: null, a: S.cable.a, b: end};
+  S.cable.a = null;
+  render();
+}
+function cableModePanel() {
+  const a = S.cable.a;
+  return el('div', {id: 'cableHelp'}, [
+    el('h3', {text: 'Cable'}),
+    el('p', {id: 'cableStep', class: 'rk-muted', role: 'status', text: a
+      ? `From ${endName(rack(), a)}. Click the port at the other end, on either face. Esc starts over.`
+      : 'Click the port at one end, on either face. Esc leaves Cable mode.'})]);
+}
+// The form for a new cable (sel.a and sel.b, picked on the drawing) or for
+// an existing one (sel.id). What is known about each end comes from the
+// render that drew this panel (S.cableFacts).
+function cableFormPanel(sel) {
+  const r = rack();
+  const cable = sel.id ? r.cables.find(c => c.id === sel.id) : null;
+  if (sel.id && !cable) { S.sel = null; return summary(); }
+  const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
+  const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
+  return cableForm({
+    title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a), endB: endName(r, b),
+    cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
+    infoA: info(a), infoB: info(b),
+    purposes: [...countsBy(r.cables, 'purpose').keys()].filter(Boolean),
+    onSave: fields => {
+      S.sel = null;
+      if (cable) { commit(updateCable(r, cable.id, fields)); return; }
+      const ok = canCable(r, a, b);
+      if (!ok.ok) { S.notice = {text: ok.reason, kind: 'error'}; render(); return; }
+      commit(withCable(r, {a, b, ...fields}).rack);
+    },
+    onCancel: () => select(null)});
 }
 
 // A frame change goes through commit() as usual, unless the height drops and
@@ -360,7 +438,7 @@ async function render() {
     // port takes, laid over the item's own swaps for this drawing only. The
     // document, Explorer and the exports keep reading item.swaps.
     // Cables are an overlay: if reading them fails, the rack still draws, unplugged.
-    facts = await cableFacts(r).catch(err => {
+    facts = await cableFacts(r, pendingEnds()).catch(err => {
       console.warn('[portrayal] could not read the cables\' faces', err);
       return {seats: {}, ends: new Map()};
     });
@@ -399,6 +477,11 @@ async function render() {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
       for (const svg of S.svgs) drawRackCables(svg, r, reasons);
     }
+    // The picked A end, and both ends while a new cable's form is open.
+    for (const e of [...pendingEnds(), ...(S.cable.a ? [S.cable.a] : [])]) {
+      const it = itemById(e.item);
+      if (it) markPort(S.svgs.find(s => s.dataset.pane === paneOf(it, e.view)), it.id, e.path);
+    }
   }
   renderSide();
 }
@@ -435,7 +518,8 @@ function renderSide() {
   const focusId = had && $('side').contains(had) ? had.id : '';
   const r = rack(), sel = S.sel;
   let body;
-  if (!sel) body = summary();
+  if (!sel) body = S.cable.on ? cableModePanel() : summary();
+  else if (sel.kind === 'cable-form') body = cableFormPanel(sel);
   else if (sel.kind === 'frame') body = frameForm({rack: r,
     onName: name => commit(renamed(r, name)), onFrame: patch => commitFrame(patch)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
@@ -469,11 +553,15 @@ function renderSide() {
     kids.push(undo);
   }
   $('side').replaceChildren(...kids);
-  if (focusId) document.getElementById(focusId)?.focus();
+  const back = focusId ? document.getElementById(focusId) : null;
+  if (back) back.focus();
+  // A cable form that just opened takes the keyboard at its first field.
+  else if (S.sel?.kind === 'cable-form') $('cMedia')?.focus();
 }
 
 function onPaneClick(ev) {
   if (drag?.consumeClick()) return; // this drag's own trailing click (some engines fire one), not a fresh click
+  if (S.cable.on) return onCableClick(ev);
   if (S.sel?.kind === 'move') {
     const u = ev.target.closest('[data-u]');
     if (u) {
@@ -630,8 +718,11 @@ async function bootInner() {
     onEnd: reason => { if (reason) S.notice = {text: reason, kind: 'error'}; render(); },
     setStatus: text => { const s = $('dragStatus'); if (s) s.textContent = text; },
   });
-  $('paneFront').addEventListener('pointerdown', drag.onPointerDown);
-  $('paneRear').addEventListener('pointerdown', drag.onPointerDown);
+  // The drag controller is off in Cable mode: a press on a port must stay a click.
+  const press = ev => { if (!S.cable.on) drag.onPointerDown(ev); };
+  $('paneFront').addEventListener('pointerdown', press);
+  $('paneRear').addEventListener('pointerdown', press);
+  $('cableBtn').addEventListener('click', () => setCableMode(!S.cable.on));
   $('frameBtn').addEventListener('click', () => select(S.sel?.kind === 'frame' ? null : {kind: 'frame'}));
   $('rkMode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
@@ -679,6 +770,15 @@ async function bootInner() {
     // the event target, gates every key here.
     if (document.querySelector('.rk-lens')) return;
     if (ev.target.closest?.('input, select, textarea')) return;
+    // In Cable mode Esc backs out one step: the open form, then the picked
+    // end, then the mode itself.
+    if (ev.key === 'Escape' && S.cable.on) {
+      ev.preventDefault();
+      if (S.sel?.kind === 'cable-form') select(null);
+      else if (S.cable.a) { S.cable.a = null; render(); }
+      else setCableMode(false);
+      return;
+    }
     const id = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
     if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(id && S.sel.kind === 'move' ? {kind: 'item', id} : null); }
     else if (id && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {

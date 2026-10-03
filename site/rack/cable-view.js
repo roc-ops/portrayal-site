@@ -17,7 +17,7 @@
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
-import {cablePlan, endKey, endName, tagText} from './cable-rules.js';
+import {cablePlan, endKey, endName, tagText, portPathOf} from './cable-rules.js';
 
 // mm beside the rack for cross-face tails and their tags (the showcase's
 // own figure), and below it for a lead hanging from the lowest device.
@@ -144,4 +144,32 @@ export function drawRackCables(svg, rack, reasons) {
     if (title) title.textContent = `${endName(rack, c.a)} → ${endName(rack, c.b)}${c.media ? ` · ${c.media}` : ''}`;
   }
   return recs;
+}
+
+
+// WHICH PORT A CLICK IS ON, as its data-path, or null. `group` is the item's
+// panel group and `target` the element clicked inside it. The outermost
+// data-class="port" above the click wins (the rule zones.js's readSvg uses):
+// a duplex adapter, not one of its bores. A seated optic or plug is NOT
+// inside its cage - swap.js seats it beside the cage, at `<port>-occupant` -
+// so a click on either is mapped back to the port by its path
+// (cable-rules.js portPathOf), and counts only if that port is drawn.
+export function portAt(target, group) {
+  let hit = null;
+  for (let n = target; n && n !== group; n = n.parentNode) {
+    const p = n.getAttribute?.('data-path');
+    if (p && (n.getAttribute('data-class') === 'port' || p.includes('-occupant'))) hit = p;
+  }
+  if (hit == null) return null;
+  const path = portPathOf(hit);
+  return group.querySelector(`[data-path="${CSS.escape(path)}"][data-class="port"]`) ? path : null;
+}
+
+// A brass outline round a picked port, in the pane's own layer: screen UI
+// (data-pt-ui), so it never reaches a file.
+export function markPort(svg, itemId, path) {
+  const b = svg ? portBox(svg, itemId, path) : null;
+  if (!b) return;
+  svg.append(svgEl('rect', {x: b.x - 1.5, y: b.y - 1.5, width: b.w + 3, height: b.h + 3, rx: 2,
+    class: 'rk-end-pick', 'data-pt-ui': '*'}));
 }

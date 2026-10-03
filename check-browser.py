@@ -6540,6 +6540,127 @@ def check_rack_cable_form(page, base):
     return bad
 
 
+def port_sel(pane, item, path):
+    return f'svg[data-pane="{pane}"] [data-item-id="{item}"][data-panel] [data-path="{path}"]'
+
+
+@extra("rack.html: Cable mode - click one port, then another, on either face; a taken port says why; Esc backs out; nothing drags")
+def check_rack_cable_mode(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cable mode: {e}"]
+    cables = lambda: page.evaluate("() => window.__rack.doc().racks[0].cables")
+    pressed = lambda: page.get_attribute("#cableBtn", "aria-pressed")
+    marks = lambda pane: page.eval_on_selector_all(f'svg[data-pane="{pane}"] .rk-end-pick', "els => els.length")
+    notice = lambda: (page.text_content(".rk-side .rk-notice") or "") if page.query_selector(".rk-side .rk-notice") else ""
+    if not page.query_selector("#cableBtn"):
+        return bad + ["cable mode: no Cable button in the top bar"]
+
+    # Off: a click on a port is a click on its device.
+    page.click(port_sel("rear", "i4", "port-2-2"))
+    wait_sel(page, "cable mode: off, a port click selects the device", "#iLabel")
+
+    page.click("#cableBtn")
+    wait_sel(page, "cable mode: the help panel", "#cableStep")
+    if pressed() != "true" or not page.evaluate("() => document.getElementById('panes').classList.contains('rk-cabling')"):
+        bad.append("cable mode: the button is not pressed, or the panes are not marked as cabling")
+
+    # One cable per port. leaf-1's port-1 holds an optic, which is drawn
+    # beside its cage: a click on the optic is a click on the port.
+    page.click(port_sel("front", "i2", "port-1-occupant"))
+    wait_sel(page, "cable mode: the refusal", ".rk-side .rk-notice")
+    if notice() != "leaf-1 (U14) port-1 already has a cable (A1).":
+        bad.append(f"cable mode: a taken port said {notice()!r}")
+    if marks("front") or marks("rear"):
+        bad.append("cable mode: a refused port was picked")
+
+    # A then B, both in the rear pane: the two demarcs share a ref and a port path.
+    token = render_token(page)
+    page.click(port_sel("rear", "i3", "port-2-2"))
+    wait_rendered(page, "cable mode: the A end", token)
+    wait_sel(page, "cable mode: the A end's outline", 'svg[data-pane="rear"] .rk-end-pick')
+    step = page.text_content("#cableStep") or ""
+    if "From demarc (U14) port-2-2." not in step:
+        bad.append(f"cable mode: after the A end the panel reads {step!r}")
+    page.click(port_sel("rear", "i4", "port-2-2"))
+    wait_sel(page, "cable mode: the form", "#cableForm")
+    if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: demarc (U14) port-2-2", "B: demarc (U20) port-2-2"):
+        bad.append(f"cable mode: the form names {page.text_content('#cEndA')!r} and {page.text_content('#cEndB')!r}")
+    if page.input_value("#cMedia") != "cat6a":
+        bad.append(f"cable mode: two copper jacks proposed {page.input_value('#cMedia')!r}, expected cat6a")
+    if marks("rear") != 2:
+        bad.append(f"cable mode: {marks('rear')} ports are outlined while the form is open, expected both ends")
+    page.fill("#cPurpose", "access")
+    page.fill("#cLabel", "X1")
+    page.fill("#cLength", "1.5")
+    page.click("#cSave")
+    wait_fn(page, "cable mode: the new cable", "() => window.__rack.doc().racks[0].cables.length === 4")
+    # The view is the DEVICE's panel: these two show their front in the rear pane.
+    want = {"id": "c4", "a": {"item": "i3", "path": "port-2-2", "view": "front"},
+            "b": {"item": "i4", "path": "port-2-2", "view": "front"}, "media": "cat6a", "purpose": "access",
+            "label": "X1", "length": {"value": 1.5, "unit": "m", "source": "entered"}, "route": []}
+    if cables()[3] != want:
+        bad.append(f"cable mode: the new cable is {cables()[3]}")
+    # Attached, not visible: the two jacks share an x, so the cable is a vertical line with a zero-width box.
+    wait_fn(page, "cable mode: the new cable drawn",
+            "() => !!document.querySelector('svg[data-pane=\"rear\"] [data-cables] [data-cable-id=\"c4\"]')")
+    if page.evaluate(PLUGS_JS, ["rear", "i3"]) != {"lc": 0, "rj45": 2}:
+        bad.append("cable mode: the new cable's end did not get its plug")
+    if pressed() != "true":
+        bad.append("cable mode: adding a cable left Cable mode")
+    # That port is taken now; its plug is drawn over the jack, so the click lands on the plug.
+    page.click(port_sel("rear", "i3", "port-2-2-occupant"))
+    wait_sel(page, "cable mode: the second refusal", ".rk-side .rk-notice")
+    if notice() != "demarc (U14) port-2-2 already has a cable (X1).":
+        bad.append(f"cable mode: the port just cabled said {notice()!r}")
+
+    # Esc: first the picked end, then the mode.
+    page.click(port_sel("front", "i2", "port-3"))
+    wait_sel(page, "cable mode: an A end on the front", 'svg[data-pane="front"] .rk-end-pick')
+    page.keyboard.press("Escape")
+    wait_fn(page, "cable mode: Esc drops the picked end", "() => !document.querySelector('.rk-end-pick')")
+    if pressed() != "true":
+        bad.append("cable mode: the first Esc left Cable mode")
+    page.keyboard.press("Escape")
+    wait_fn(page, "cable mode: Esc leaves the mode",
+            "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'false'")
+    if page.evaluate("() => document.getElementById('panes').classList.contains('rk-cabling')"):
+        bad.append("cable mode: the panes are still marked as cabling after leaving")
+
+    # Cancel adds nothing. Two empty cages say nothing about a media, so none is proposed.
+    page.click("#cableBtn")
+    page.click(port_sel("front", "i2", "port-3"))
+    wait_sel(page, "cable mode: A again", 'svg[data-pane="front"] .rk-end-pick')
+    page.click(port_sel("front", "i2", "port-4"))
+    wait_sel(page, "cable mode: the form again", "#cableForm")
+    if page.input_value("#cMedia") != "":
+        bad.append(f"cable mode: two empty cages proposed {page.input_value('#cMedia')!r}")
+    page.click("#cCancel")
+    wait_fn(page, "cable mode: Cancel closes the form", "() => !document.getElementById('cableForm')")
+    if len(cables()) != 4 or pressed() != "true":
+        bad.append(f"cable mode: after Cancel there are {len(cables())} cables, pressed {pressed()}")
+
+    # No drag in Cable mode: a press and a move on a device leaves it where it is.
+    box = page.eval_on_selector('svg[data-pane="rear"] [data-item-id="i4"][data-panel]',
+                                "g => { const r = g.getBoundingClientRect(); return {x: r.x + 8, y: r.y + r.height / 2}; }")
+    page.mouse.move(box["x"], box["y"])
+    page.mouse.down()
+    page.mouse.move(box["x"], box["y"] - 90, steps=6)
+    dragging = page.query_selector("#dragStatus") is not None
+    page.mouse.up()
+    if dragging or page.evaluate("() => window.__rack.doc().racks[0].items.find(i => i.id === 'i4').ru") != 20:
+        bad.append("cable mode: a device could be dragged while cabling")
+
+    # 3D has no ports to click: switching leaves Cable mode.
+    page.click('#rkMode [data-mode="3d"]')
+    if pressed() != "false":
+        bad.append("cable mode: still on after switching to 3D")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
