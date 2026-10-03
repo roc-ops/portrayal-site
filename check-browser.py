@@ -8022,6 +8022,59 @@ def check_rack_cable_polish(page, base):
     return bad
 
 
+# A CITATION SAYS WHAT ITS SOURCE SAID. A provenance entry has been an object,
+# `{confidence, note}`, since Portrayal #167, and the About panel printed it as
+# a string: "chassis: [object Object]" under Dimensions, and the same under
+# every other cited fact on almost every device (roc-ops/portrayal-site#87).
+# The expected lines are built from the device's own configs.json, so a sync
+# that rewords a note changes both sides. The R660 has only leftover entries
+# apart from its chassis; the AGR110 has entries cited under its attrs too.
+@extra("Explorer: the About panel prints a provenance entry's confidence and note, never [object Object]")
+def check_about_provenance(page, base):
+    bad = []
+    for device in ["r660", "agr110"]:
+        page.goto(f"{base}/explorer.html?device={device}", wait_until="load")
+        wait_sel(page, f"{device}: the chassis row", '#tree .node[data-path="chassis"]')
+        page.click('#tree .node[data-path="chassis"]')
+        wait_sel(page, f"{device}: the About panel", "#inspect .prov")
+        r = page.evaluate("""async device => {
+          const meta = await (await fetch(`assets/dist/${device}.configs.json`)).json();
+          const box = document.querySelector('#inspect');
+          return {prov: meta.provenance || {}, text: box.textContent,
+                  head: box.querySelector('h2')?.textContent,
+                  lines: [...box.querySelectorAll('.prov')].map(e => e.textContent)};
+        }""", device)
+        if r["head"] != "About":
+            bad.append(f"{device}: the inspector is headed {r['head']!r}, not About")
+            continue
+        if "[object Object]" in r["text"]:
+            n = r["text"].count("[object Object]")
+            bad.append(f"{device}: the About panel prints [object Object] {n} time(s)")
+        entries = {k: v for k, v in r["prov"].items() if v}
+        if len(entries) < 10 or not isinstance(entries.get("chassis"), dict):
+            bad.append(f"{device}: expected ten or more provenance entries and an object for"
+                       f" chassis, found {len(entries)} - the check needs another device")
+            continue
+        wrong = []
+        for k, v in entries.items():
+            said = v if isinstance(v, str) else " ".join(
+                filter(None, [v.get("confidence") and f"[{v['confidence']}]", v.get("note")]))
+            if f"{k}: {said}" not in r["lines"]:
+                got = next((l for l in r["lines"] if l.startswith(f"{k}: ")), None)
+                wrong.append(f"{device}: the {k} citation reads {got and got[:60]!r},"
+                             f" expected {(k + ': ' + said)[:60]!r}")
+        # one broken helper breaks every line alike; three say it as well as thirty
+        bad += wrong[:3] + ([f"{device}: ... and {len(wrong) - 3} more citations"] if len(wrong) > 3 else [])
+        if len(r["lines"]) != len(entries):
+            bad.append(f"{device}: {len(r['lines'])} citations printed for {len(entries)} provenance entries")
+        # the chassis citation belongs under Dimensions, bracketed confidence first
+        chassis = entries["chassis"]
+        first = next((l for l in r["lines"] if l.startswith("chassis: ")), "")
+        if chassis.get("confidence") and not first.startswith(f"chassis: [{chassis['confidence']}] "):
+            bad.append(f"{device}: the chassis citation does not lead with its confidence: {first[:60]!r}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

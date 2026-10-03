@@ -375,11 +375,17 @@ function about(box) {
   const row = (k, v) => `<div class="row"><span>${esc(k)}</span><span class="v">${esc(v)}</span></div>`;
   // A fact and its citation belong together. Whatever provenance is left over is
   // about the modelling rather than about one fact, and goes at the bottom.
+  // A PROVENANCE ENTRY IS `{confidence, note}` since Portrayal #167, not a
+  // string, and printing it raw showed "[object Object]" under every cited fact
+  // (roc-ops/portrayal-site#87). Upstream's kit/index.html has the same helper.
+  const said = t => typeof t === 'object'
+    ? [t.confidence && `[${t.confidence}]`, t.note].filter(Boolean).join(' ')
+    : t;
   const cite = (...keys) => keys.map(k => {
     const t = prov[k];
     if (!t) return '';
     delete prov[k];
-    return `<div class="prov">${esc(k)}: ${esc(t)}</div>`;
+    return `<div class="prov">${esc(k)}: ${esc(said(t))}</div>`;
   }).join('');
 
   let h = `<h2>About</h2>`;
@@ -451,7 +457,7 @@ function about(box) {
   const rest = Object.keys(prov);
   if (rest.length) {
     h += `<h3>Provenance</h3>`;
-    for (const k of rest) h += `<div class="prov" style="margin-left:0">${esc(k)}: ${esc(prov[k])}</div>`;
+    for (const k of rest) h += `<div class="prov" style="margin-left:0">${esc(k)}: ${esc(said(prov[k]))}</div>`;
   }
   if (!akeys.length && !rest.length)
     h += `<div class="hint" style="padding-left:0">This manifest carries no attrs or provenance.
