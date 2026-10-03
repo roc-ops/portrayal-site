@@ -130,7 +130,7 @@ test('a cabinet draws what is mounted there and whatever is not hidden behind it
 });
 
 test('a device that is not rack-mount is said to need a shelf or bracket', () => {
-  assert.equal(X.mountText('din-rail'), 'a DIN-rail device, so it needs a DIN-rail bracket or shelf');
+  assert.equal(X.mountText('din-rail'), 'a DIN-rail device, so it needs a shelf or DIN-rail bracket');
   assert.equal(X.mountText('desktop'), 'a desktop device, so it needs a shelf');
   assert.equal(X.mountText('wall'), 'a wall-mount device, so it needs a shelf or bracket');
   assert.equal(X.mountText('pole'), 'not a rack-mount device (pole), so it needs a shelf or bracket');
@@ -141,13 +141,13 @@ test('a device that is not rack-mount is said to need a shelf or bracket', () =>
   const items = [{ref: 'ais', label: 'ais-1', ru: 5}, {ref: 'sw', label: 'sw-1', ru: 6}, {ref: 'tgv', label: 'tgv-1', ru: 7},
                  {ref: 'gl', label: 'gl-1', ru: 8}, {ref: 'odd', label: 'odd-1', ru: 9}, {ref: 'nope', label: 'x', ru: 10}];
   assert.deepEqual(X.mountNotes(items, ref => chassis[ref] ?? null, f), [
-    'ais-1 at U5: a DIN-rail device, so it needs a DIN-rail bracket or shelf.',
+    'ais-1 at U5: a DIN-rail device, so it needs a shelf or DIN-rail bracket.',
     'tgv-1 at U7: a desktop device, so it needs a shelf.',
     'gl-1 at U8: a wall-mount device, so it needs a shelf or bracket.',
     'odd-1 at U9: not a rack-mount device (pole), so it needs a shelf or bracket.']);
   const top = M.normalizeFrame({heightRU: 24, numbering: 'top-down'});
   assert.deepEqual(X.mountNotes([items[0]], ref => chassis[ref], top),
-    ['ais-1 at U20: a DIN-rail device, so it needs a DIN-rail bracket or shelf.']);
+    ['ais-1 at U20: a DIN-rail device, so it needs a shelf or DIN-rail bracket.']);
   assert.equal(X.isRackMount({mount: 'desktop'}), false);
   assert.equal(X.isRackMount({}), true);
   assert.equal(X.isRackMount(null), true);
@@ -158,6 +158,12 @@ test('the picker flags a device that is not rack-mount, in its own words', () =>
   assert.equal(X.mountPick(undefined), null);
   assert.deepEqual(X.mountPick('desktop'), {tag: 'desktop', fit: 'Fits here, on a shelf: this is a desktop device.'});
   assert.equal(X.mountPick('din-rail').tag, 'DIN rail');
+  assert.equal(X.mountPick('din-rail').fit, 'Fits here, on a shelf or DIN-rail bracket: this is a DIN-rail device.');
+  // one table: the note and the fit line say the same device and the same place
+  for (const m of ['din-rail', 'desktop', 'wall', 'pole']) {
+    const [, what, where] = /^(.*), so it needs (.*)$/.exec(X.mountText(m));
+    assert.equal(X.mountPick(m).fit, `Fits here, on ${where}: this is ${what}.`);
+  }
   assert.equal(X.mountPick('wall').tag, 'wall mount');
   assert.equal(X.mountPick('wall').fit, 'Fits here, on a shelf or bracket: this is a wall-mount device.');
   assert.equal(X.mountPick('pole').fit, 'Fits here, on a shelf or bracket: this is not a rack-mount device (pole).');

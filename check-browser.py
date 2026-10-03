@@ -3588,6 +3588,64 @@ def check_rack_mount_flag(page, base):
     return bad
 
 
+@extra("rack.html: a desktop and a DIN-rail device get no 3D ears and are named in the GLB, draw.io, types zip and BOM notes")
+def check_rack_mount_flag_3d_exports(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    for u, q, ref in ((10, "TM-280", "tm-280"), (12, "hlx", "hlx-tgv"), (14, "ais2003", "ais2003")):
+        pick(page, "front", u, q, ref)
+        page.wait_for_selector(f'svg[data-pane="front"] [data-device-ref="{ref}"]', timeout=READY_MS)
+    page.evaluate("() => window.__rack.flush()")
+    din = "at U14: a DIN-rail device, so it needs a shelf or DIN-rail bracket."
+    desk = "at U12: a desktop device, so it needs a shelf."
+
+    # The BOM of a rack holding only these says nothing of cage nuts it does not count.
+    only = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+      const of = C.chassisLookup(await C.loadChassis());
+      const r = window.__rack.doc().racks[0];
+      return (await X.bomCsv({...r, items: r.items.filter(i => i.ref !== 'tm-280')}, of)).data;
+    }""")
+    if "Cage nuts and screws" in only or "Mounting hardware" in only:
+        bad.append(f"BOM of non-rack devices only: hardware or its note present: {only[-300:]!r}")
+    if din not in only or desk not in only:
+        bad.append("BOM of non-rack devices only: a mount note is missing")
+
+    dl = export_file(page, "drawio")
+    xml = pathlib.Path(dl.path()).read_bytes().decode("utf-8")
+    if din not in xml or desk not in xml:
+        bad.append("draw.io: the mount notes are not in the file")
+    for target, T in (("netbox", "NetBox"),):
+        with zipfile.ZipFile(export_file(page, f"{target}-types").path()) as z:
+            notes = z.read("NOTES.txt").decode()
+        if din not in notes or desk not in notes:
+            bad.append(f"{T} types: NOTES.txt lacks the mount notes: {notes[:400]!r}")
+    _, crows, _ = read_csv(export_file(page, "netbox-devices"))
+    comments = " ".join(r["comments"] for r in crows)
+    if "A DIN-rail device, so it needs a shelf or DIN-rail bracket." not in comments:
+        bad.append(f"device CSV: no DIN-rail comment: {comments[:300]!r}")
+
+    page.click("#exportMenu > summary")
+    page.click('#exportItems [data-export="to-3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    ears = page.evaluate("""async () => {
+      const s = window.__rack.scene(); await s.complete();
+      const ids = Object.fromEntries(window.__rack.doc().racks[0].items.map(i => [i.ref, i.id]));
+      return Object.fromEntries(Object.entries(ids).map(([ref, id]) =>
+        [ref, !!s.three.scene.getObjectByName(`ears-${id}`)]));
+    }""")
+    if ears != {"tm-280": True, "hlx-tgv": False, "ais2003": False}:
+        bad.append(f"3D ears by device: {ears}, expected only tm-280")
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if din.encode() not in glb or desk.encode() not in glb:
+        bad.append("GLB: the mount notes are not in the scene's extras")
+    return bad
+
+
 @extra("rack.html: Export - a model whose 3D view changed under the exporter is not saved or called downloaded")
 def check_rack_export_overtaken(page, base):
     bad = []

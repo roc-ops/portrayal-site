@@ -10,6 +10,7 @@
 // passes through, so there a U is never shared.
 
 import {RU} from './rails.js';
+import {isRackMount} from './export-data.js';
 
 export const REACH_MM = 50;   // within this of the far rail, a device's far panel is visible there
 
@@ -66,7 +67,7 @@ export function availableDepth(rack, item, chassisOf) {
 export const itemsWithU = (rack, chassisOf) =>
   rack.items.map(i => {
     const mount = chassisOf(i.ref)?.mount;      // stated only when it is not a rack's
-    return {...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1), ...(mount && mount !== 'rack' ? {mount} : {})};
+    return {...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1), ...(isRackMount({mount}) ? {} : {mount})};
   });
 
 export const attachPoints = kind => (kind === 'four-post'

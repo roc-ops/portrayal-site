@@ -15,6 +15,7 @@ import {RU, RAIL_W, OPENING, HOLE_DY, HOLE_SQUARE, HOLE_ROUND, SIDES} from './ra
 import {configuredFace} from './face.js';
 import {svgEl} from './dom.js';
 import {uLabel} from './model.js';
+import {isRackMount} from './export-data.js';
 
 // Which of the device's own panels faces `pane`. On its own face that is its
 // front, unless it is turned; on the other face, the reverse.
@@ -212,7 +213,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     // its own group, so they overlap its edges like a real ear.
     // (a desktop, wall or DIN-rail device has none: the Rack Builder marks it
     // with `mount`, which the showcase's items never carry)
-    if (!through && ears && (!it.mount || it.mount === 'rack')) drawEars(out, it, topOf, ruH, C);
+    if (!through && ears && isRackMount(it)) drawEars(out, it, topOf, ruH, C);
     if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
   }
   for (const [top, ruH] of rings) out.append(ring(top, ruH));

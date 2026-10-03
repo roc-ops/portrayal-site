@@ -342,6 +342,7 @@ export async function bomCsv(rack, chassisOf) {
       filesFailed = true;
       return null;
     }), components()]);
+  const railItems = items.filter(i => isRackMount(chassisOf(i.ref)));
   const {parts, notes} = await seatedPartsOf(rack, items);
   notes.unshift(...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame));
   if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
@@ -357,9 +358,9 @@ export async function bomCsv(rack, chassisOf) {
   });
   for (const it of items)
     if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
-  if (items.length) notes.push(...hardwareNotes(rack.frame));   // no devices, no hardware to explain
+  if (railItems.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
   const all = uniq(notes);
-  const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: items.filter(i => isRackMount(chassisOf(i.ref))).map(i => i.u)});
+  const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: railItems.map(i => i.u)});
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
 }

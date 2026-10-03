@@ -118,21 +118,20 @@ export function rackNotes(rack) {
 }
 
 // NOT RACK-MOUNT. The chassis index states `mount` only when it is not
-// "rack"; such a device stays placeable, and every export says what it needs.
+// "rack"; such a device stays placeable, and everything says what it needs.
+// ONE table, so the picker and the notes cannot word it differently.
 export const isRackMount = chassis => !chassis?.mount || chassis.mount === 'rack';
-const MOUNT_TEXT = {
-  'din-rail': 'a DIN-rail device, so it needs a DIN-rail bracket or shelf',
-  desktop: 'a desktop device, so it needs a shelf',
-  wall: 'a wall-mount device, so it needs a shelf or bracket'};
-export const mountText = mount => !mount || mount === 'rack' ? null
-  : MOUNT_TEXT[mount] ?? `not a rack-mount device (${mount}), so it needs a shelf or bracket`;
-// The picker's words for the same fact: the list row's tag and the fit line.
-const MOUNT_PICK = {'din-rail': ['DIN rail', 'a DIN-rail device', 'a shelf or DIN-rail bracket'],
-  desktop: ['desktop', 'a desktop device', 'a shelf'], wall: ['wall mount', 'a wall-mount device', 'a shelf or bracket']};
+const MOUNTS = {
+  'din-rail': {tag: 'DIN rail', what: 'a DIN-rail device', where: 'a shelf or DIN-rail bracket'},
+  desktop: {tag: 'desktop', what: 'a desktop device', where: 'a shelf'},
+  wall: {tag: 'wall mount', what: 'a wall-mount device', where: 'a shelf or bracket'}};
+const mountOf = mount => isRackMount({mount}) ? null
+  : MOUNTS[mount] ?? {tag: mount, what: `not a rack-mount device (${mount})`, where: 'a shelf or bracket'};
+export const mountText = mount => { const m = mountOf(mount); return m && `${m.what}, so it needs ${m.where}`; };
+// The picker's words: the list row's tag and the fit line.
 export function mountPick(mount) {
-  if (!mount || mount === 'rack') return null;
-  const [tag, what, where] = MOUNT_PICK[mount] ?? [mount, `not a rack-mount device (${mount})`, 'a shelf or bracket'];
-  return {tag, fit: `Fits here, on ${where}: this is ${what}.`};
+  const m = mountOf(mount);
+  return m && {tag: m.tag, fit: `Fits here, on ${m.where}: this is ${m.what}.`};
 }
 export function mountNotes(items, chassisOf, frame) {
   const out = [];

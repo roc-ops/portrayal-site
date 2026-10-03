@@ -666,8 +666,10 @@ export function createRackScene(container, opts = {}) {
     // recess, which is what put a pair of white slabs out beside each unit.
     // A rear entry's ears go on the rail it is actually mounted to.
     // (none for a device the caller marks as not rack-mount: `entry.mount`)
-    const ears = entry.mount && entry.mount !== 'rack' ? new THREE.Group()
+    const noEars = !!entry.mount && entry.mount !== 'rack';
+    const ears = noEars ? new THREE.Group()
       : rackEars(entry.ru, ruHeight, W / 2, D, mountZ, face === 'rear' ? -1 : 1);
+    if (entry.id && !noEars) ears.name = `ears-${entry.id}`;   // named as the device is, only when the caller names mounts
     scene.add(ears);
 
     // The device's tag, beside the left rail - a rail label, so it goes with
