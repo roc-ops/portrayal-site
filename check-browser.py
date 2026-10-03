@@ -4758,6 +4758,44 @@ def check_annotate_3d_legend_state_colour(page, base):
                    + (" - it is the fallback grey" if r["got"] == r["grey"] else ""))
     return bad
 
+
+# THE ROWS READ THE DOCUMENT THEY ARE DRAWN FROM (#96). The 3D notes are indexed
+# by a mark's position, and the scene they read was recomputed only inside the
+# sync, which awaits. So deleting the first mark drew the remaining rows against
+# the old scene, one position out: the mark now first wore the deleted mark's
+# "not in 3D" until the sync caught up. Read here in the same tick as the delete.
+@extra("Annotate 3D: after a delete, no row wears another mark's 'not in 3D'")
+def check_annotate_3d_rows_after_delete(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html?debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    page.evaluate("""async () => { const m = await import('/vendor/marks.js');
+      location.hash = m.encode({v: 1, device: 's9510-28dc', config: 'dc', view: 'front', legend: true,
+        marks: [{select: "[data-path='psu-9']", color: '#ffd400', label: 'nowhere'},
+                {select: "[data-path='port-0']", color: '#e0574f', label: 'uplink'},
+                {select: "[data-path='port-4']", color: '#2bb3c8', label: 'access'}]}); }""")
+    page.reload(wait_until="load")
+    page.wait_for_selector("#stage svg [data-path='port-0']", state="attached", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_annotate_3d_rows_after_delete] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    flags = "[...document.querySelectorAll('#rows .mark')].map(r => /not in 3D/.test(r.querySelector('.notes').textContent))"
+    try:
+        page.wait_for_function(f"() => JSON.stringify({flags}) === '[true,false,false]'", timeout=READY_3D_MS)
+    except Exception:
+        return bad + [f"rows: before the delete the flags never settled to [true, false, false] - {page.evaluate('() => ' + flags)}"]
+    r = page.evaluate(f"""() => {{
+      document.querySelector('#rows .mark .x').click();
+      return {{flags: {flags},
+               legend: [...document.querySelectorAll('#legend3d .row')].map(e => e.textContent.trim())}}; }}""")
+    if r["flags"] != [False, False]:
+        bad.append(f"rows: straight after deleting the first mark the 'not in 3D' flags are {r['flags']}, not [False, False]")
+    if r["legend"] != ["uplink", "access"]:
+        bad.append(f"rows: straight after the delete the 3D legend reads {r['legend']}, not ['uplink', 'access']")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

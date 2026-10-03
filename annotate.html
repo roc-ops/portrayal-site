@@ -598,6 +598,15 @@ function stage(opts = {}) {
   hadLegend = has;
   $('#perf').textContent = report.length
     ? `${report.length} mark${report.length === 1 ? '' : 's'} · ${ms} ms` : '';
+  // THE SCENE'S PICTURE OF THE DOCUMENT, NOW, NOT AFTER THE SYNC (#96). The rows
+  // and the legend are drawn right after this returns and read the scene by a
+  // mark's position; the sync recomputes it only after an await, so a delete or
+  // a reorder drew them one position out until it caught up. docToScene is pure
+  // and cheap, so it is simply done here first.
+  if (m3d.mode() === '3d') {
+    lastScene = docToScene(doc, facesNow());
+    drawLegend3d();
+  }
   // The scene follows the document; in 2D this returns at once.
   sync3d();
 }
