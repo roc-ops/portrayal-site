@@ -44,9 +44,8 @@ export const newRack = ({name = 'Rack 1', kind = 'four-post'} = {}) =>
 export const newDoc = ({name = 'Rack 1', kind = 'four-post'} = {}) =>
   ({format: FORMAT, version: VERSION, id: `doc-${token()}`, racks: [newRack({name, kind})]});
 
-// The next id after the highest one ever used in `list`, so a removed item's
-// id is never handed to another - a cable (Phase 2) naming it must not start
-// naming something else.
+// The next id after the highest one in `list`. The list is everything that
+// holds an id of this kind - see itemIdsInUse for what that means for items.
 export function nextId(list, prefix) {
   const used = list.filter(x => String(x.id).startsWith(prefix))
     .map(x => Number(String(x.id).slice(prefix.length))).filter(Number.isInteger);
@@ -60,9 +59,19 @@ export function nextRackName(names) {
   return `Rack ${Math.max(0, ...used) + 1}`;
 }
 
+// AN ITEM ID IS NEVER REUSED WHILE A CABLE END NAMES IT. A cable kept when its
+// device was removed (or trimmed by a shrink) still names that device's id,
+// and reads "the device was removed"; handing the id to the next device
+// placed would land the cable on something unrelated. So the ids in use are
+// the items' own and every id a cable end names. (model.js cannot import
+// cable-rules.js, which imports this file: the two ends are read here.)
+const endItems = cables => (Array.isArray(cables) ? cables : [])
+  .flatMap(c => [c?.a?.item, c?.b?.item]).filter(id => id != null && id !== '').map(id => ({id: String(id)}));
+export const itemIdsInUse = rack => [...rack.items, ...endItems(rack.cables)];
+
 export function withItem(rack, {ref, cfg, ru, face = 'front', turned = false, label = ref,
                                 swaps = {}, fields = {}}) {
-  const item = {id: nextId(rack.items, 'i'), ref, cfg, label, ru,
+  const item = {id: nextId(itemIdsInUse(rack), 'i'), ref, cfg, label, ru,
                 face: face === 'rear' ? 'rear' : 'front', turned: !!turned,
                 swaps: {...swaps}, fields: structuredClone(fields)};
   return {rack: {...rack, items: [...rack.items, item]}, item};
@@ -80,21 +89,25 @@ export const uLabel = (frame, u) => (frame.numbering === 'top-down' ? frame.heig
 function readItem(i, n) {
   if (!i || typeof i.ref !== 'string' || !i.ref || !Number.isInteger(i.ru))
     throw new Error(`Item ${n} has no device or no U.`);
-  return {id: String(i.id ?? `i${n}`), ref: i.ref, cfg: String(i.cfg ?? ''), label: String(i.label ?? i.ref),
+  return {id: String(i.id ?? ''), ref: i.ref, cfg: String(i.cfg ?? ''), label: String(i.label ?? i.ref),
           ru: i.ru, face: i.face === 'rear' ? 'rear' : 'front', turned: !!i.turned,
           swaps: {...(i.swaps || {})}, fields: structuredClone(i.fields || {})};
 }
 
 // Every item needs an id unique within its rack: a missing one (an older
-// writer, or a hand-edited file) and a duplicate (two items sharing an id,
-// which the `i${n}` fallback could itself produce) are the same problem -
-// assign a fresh one from what has been kept so far.
-function readItems(list) {
+// writer, or a hand-edited file) and a duplicate (two items sharing an id)
+// are the same problem. The first item to declare an id keeps it, and the
+// cable ends naming that id are its own; a repaired item gets a fresh id,
+// past every id an item in the file declares and every id a cable end names
+// (`cables`, as written) - so a repair never takes a later item's id, and
+// never picks up a cable that was not this item's.
+function readItems(list, cables) {
+  const taken = [...list.map(i => ({id: String(i?.id ?? '')})), ...endItems(cables)];
   const items = [];
   const seen = new Set();
   list.forEach((i, n) => {
     const it = readItem(i, n + 1);
-    if (!it.id || seen.has(it.id)) it.id = nextId(items, 'i');
+    if (!it.id || seen.has(it.id)) it.id = nextId([...taken, ...items], 'i');
     seen.add(it.id);
     items.push(it);
   });
@@ -107,6 +120,14 @@ function readItems(list) {
 // a unique id, two ends, strings where the page reads strings, a length that
 // is a positive number, and a route array. Fields this page does not know are
 // kept as they are.
+//
+// A LENGTH IS KEPT AS WRITTEN. Its unit is the file's own, whatever it is
+// ({value: 30, unit: 'cm'} is 30 cm; rewriting the unit would change what the
+// value means), and 'm' only when the file states none. A length this page
+// cannot use - a value that is not a positive plain decimal, or not an object
+// at all - is not thrown away: it moves, whole, to the cable's
+// `lengthAsWritten`, so nothing downstream reads a bad number and the file
+// still holds what was written. Loading what was saved changes nothing more.
 const readEnd = e => ({...(e && typeof e === 'object' && !Array.isArray(e) ? e : {}), item: String(e?.item ?? ''), path: String(e?.path ?? ''),
                        view: e?.view === 'rear' ? 'rear' : 'front'});
 // A length is a number, or a string of plain decimal digits: Number() would
@@ -124,13 +145,15 @@ export function readCables(list) {
     let id = c.id == null ? '' : String(c.id);
     if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
     seen.add(id);
-    const value = lengthValue(len?.value);
+    const value = len && typeof len === 'object' && !Array.isArray(len) ? lengthValue(len.value) : 0;
     const length = value
-      ? {...len, value, unit: len.unit === 'ft' ? 'ft' : 'm', source: String(len.source ?? 'entered')}
+      ? {...len, value, unit: len.unit == null || len.unit === '' ? 'm' : String(len.unit),
+         source: String(len.source ?? 'entered')}
       : null;
     out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
-              ...(length ? {length} : {}), route: Array.isArray(c.route) ? c.route : []});
+              ...(length ? {length} : len == null ? {} : {lengthAsWritten: len}),
+              route: Array.isArray(c.route) ? c.route : []});
   }
   return out;
 }
@@ -152,7 +175,7 @@ export function parseDoc(input) {
     racks: d.racks.map((r, k) => ({
       id: String(r.id ?? `r${k + 1}`), name: String(r.name ?? 'Rack'),
       frame: normalizeFrame(r.frame),
-      items: readItems(r.items || []),
+      items: readItems(r.items || [], r.cables),
       zeroU: Array.isArray(r.zeroU) ? structuredClone(r.zeroU) : [],
       cables: readCables(Array.isArray(r.cables) ? r.cables : []),
     })),

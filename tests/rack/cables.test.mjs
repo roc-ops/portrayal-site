@@ -245,3 +245,72 @@ test('a loaded length is a number or a plain decimal string; anything else drops
     assert.equal(c.id, 'c1', 'the cable is kept');
   }
 });
+
+// ── an item id is never reused while a cable end names it ───────────────
+test('a kept cable never re-attaches: a removed device\'s id is not handed to the next one placed', () => {
+  let r = rack();                                     // i1..i4
+  r = C.withCable(r, {a: end('i2', 'mgmt-eth'), b: end('i4', 'port-2-1')}).rack;
+  r = M.withoutItem(r, 'i4');                         // the highest id goes; its cable is kept
+  const {rack: r2, item} = M.withItem(r, {ref: 'tm-280', cfg: 'base', ru: 30});
+  assert.notEqual(item.id, 'i4', 'the kept cable still names i4, so i4 is not free');
+  assert.equal(item.id, 'i5');
+  assert.equal(C.cablesOf(r2, item.id).length, 0, 'the new device has no cable');
+  assert.equal(C.endName(r2, r2.cables[0].b), "a removed device's port-2-1");
+  // Once no cable end names it, the id is only a number again.
+  const freed = M.withItem(C.withoutCable(r, 'c1'), {ref: 'tm-280', cfg: 'base', ru: 30}).item;
+  assert.equal(freed.id, 'i4');
+});
+
+test('a device a shrink trimmed keeps its id out of use while its cable is kept', async () => {
+  const {shrinkRack} = await import('../../site/rack/fit.js');
+  // Three 1U devices at U1, U2 and U3; the last placed (i3) is at the bottom.
+  let r = M.newRack();
+  for (const ru of [3, 2, 1]) r = M.withItem(r, {ref: 'x', cfg: '', ru}).rack;
+  r = C.withCable(r, {a: end('i1', 'p1'), b: end('i3', 'p1')}).rack;
+  const {rack: cut, removed} = shrinkRack(r, 2, () => ({ru: 1}));
+  assert.deepEqual(removed.map(i => i.id), ['i3'], 'the shrink trims the bottom device');
+  assert.equal(cut.cables.length, 1, 'and keeps its cable');
+  const {item} = M.withItem(cut, {ref: 'y', cfg: '', ru: 1});
+  assert.equal(item.id, 'i4');
+});
+
+test('the loader never repairs an item id into one a cable end names', () => {
+  const d = M.parseDoc({format: 'portrayal-rack', version: 1, racks: [{frame: {}, items: [
+    {id: 'i1', ref: 'x', ru: 1}, {id: 'i1', ref: 'y', ru: 2}, {ref: 'z', ru: 3}, {id: 'i3', ref: 'w', ru: 4}],
+    cables: [{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i2', path: 'q'}},
+             {id: 'c2', a: {item: 'i3', path: 'p'}, b: {item: 'i4', path: 'q'}}]}]});
+  const items = d.racks[0].items;
+  assert.deepEqual(items.map(i => [i.id, i.ref]), [['i1', 'x'], ['i5', 'y'], ['i6', 'z'], ['i3', 'w']],
+    'the first holder of an id keeps it; a repaired id is past every id an item declares or a cable names');
+  assert.deepEqual(M.parseDoc(M.serialize(d)), d, 'and the repaired file is a fixed point');
+});
+
+// ── a length is kept as written ─────────────────────────────────────────
+test('the loader keeps a length\'s unit as written, and lengthText prints it', () => {
+  const read = length => M.readCables([{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i1', path: 'q'}, length}])[0];
+  assert.deepEqual(read({value: 30, unit: 'cm'}).length, {value: 30, unit: 'cm', source: 'entered'});
+  assert.deepEqual(read({value: '3', unit: 'yd', source: 'routed'}).length, {value: 3, unit: 'yd', source: 'routed'});
+  assert.equal(C.lengthText(read({value: 30, unit: 'cm'}).length), '30 cm');
+  assert.equal(C.lengthText(read({value: 3, unit: 'yd'}).length), '3 yd');
+  assert.equal(read({value: 2}).length.unit, 'm', 'a length that states no unit is in meters');
+  assert.equal(read({value: 2, unit: ''}).length.unit, 'm');
+  assert.equal(C.lengthText({value: 'abc', unit: 'm'}), '', 'a value that is not a number prints nothing');
+  assert.equal(C.lengthText({value: '1e3', unit: 'm'}), '');
+});
+
+test('a length the loader cannot use moves to lengthAsWritten: nothing is lost, nothing reads a bad number', () => {
+  const read = length => M.readCables([{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i1', path: 'q'}, length}])[0];
+  for (const bad of [{value: 'abc', unit: 'm'}, {value: 0, unit: 'ft'}, {value: -2}, 'long', 5, {value: '1e3'}, [3], true]) {
+    const c = read(bad);
+    assert.ok(!('length' in c), `${JSON.stringify(bad)} is not a length`);
+    assert.deepEqual(c.lengthAsWritten, bad, `${JSON.stringify(bad)} is kept as written`);
+    assert.equal(C.lengthText(c.length), '');
+    assert.deepEqual(M.readCables([JSON.parse(JSON.stringify(c))])[0], c, 'load, save, load is a fixed point');
+  }
+  for (const none of [undefined, null]) assert.ok(!('lengthAsWritten' in read(none)), 'no length is no length');
+  // A good length beside an earlier lengthAsWritten: both are kept.
+  const both = M.readCables([{id: 'c1', a: {}, b: {}, length: {value: 2, unit: 'm'}, lengthAsWritten: 'long'}])[0];
+  assert.deepEqual([both.length.value, both.lengthAsWritten], [2, 'long']);
+  const odd = read({value: 30, unit: 'cm'});
+  assert.deepEqual(M.readCables([JSON.parse(JSON.stringify(odd))])[0], odd, 'an unknown unit is a fixed point too');
+});

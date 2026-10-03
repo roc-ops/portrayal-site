@@ -82,7 +82,9 @@ export function parseLength(text, unit = 'm') {
   if (!Number.isFinite(value) || value <= 0) return {ok: false, reason: 'Enter a length above 0, or leave it empty.'};
   return {ok: true, length: {value, unit: UNITS.includes(unit) ? unit : 'm', source: 'entered'}};
 }
-export const lengthText = l => (l && l.value > 0 ? `${l.value} ${l.unit || 'm'}` : '');
+// Value and unit as the cable has them: a unit this page does not offer (a
+// file's 'cm' or 'yd') prints as itself.
+export const lengthText = l => (l && typeof l.value === 'number' && l.value > 0 ? `${l.value} ${l.unit || 'm'}` : '');
 
 // ── the plan cables.js draws ────────────────────────────────────────────
 // The rack's cables in the shape drawCables2d takes: an end is [item id,
