@@ -7005,6 +7005,204 @@ def check_rack_cable_stale(page, base):
     return bad
 
 
+REASONS_JS = "() => window.__rack.cableFacts().reasons"
+
+
+def select_item(page, pane, item):
+    # Dispatched to the panel itself: a cable or another device's panel may
+    # be drawn over its middle, and onPaneClick reads the same target.
+    page.dispatch_event(f'svg[data-pane="{pane}"] [data-item-id="{item}"][data-panel]', "click")
+    wait_fn(page, f"select {item}", "() => !!document.getElementById('iLabel')")
+
+
+@extra("rack.html: cables follow their devices - a move keeps them, a remove asks, a shrink and a changed port leave loose ends with reasons")
+def check_rack_cable_lifecycle(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    # Nothing here may open a browser dialog: a device with cables asks in the side panel.
+    page.on("dialog", lambda d: (bad.append(f"lifecycle: a browser dialog opened ({d.message!r})"), d.dismiss()))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"lifecycle: {e}"]
+    doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
+    reason_is = lambda key, want: (
+        f"() => window.__rack.cableFacts().reasons[{json.dumps(key)}] === {json.dumps(want)}")
+    before = doc()["cables"]
+
+    # A MOVE keeps the cables: they name the item, not its place.
+    select_item(page, "front", "i2")
+    page.keyboard.press("ArrowUp")
+    wait_fn(page, "lifecycle: leaf-1 moved up", "() => window.__rack.doc().racks[0].items[1].ru === 15")
+    if doc()["cables"] != before:
+        bad.append("lifecycle: moving a device changed its cables")
+    wait_sel(page, "lifecycle: c1 drawn after the move", 'svg[data-pane="front"] [data-cables] [data-cable-id="c1"]')
+    if page.get_attribute('svg[data-pane="front"] [data-cables] [data-cable-id="c1"]', "data-loose-lead"):
+        bad.append("lifecycle: c1 came loose when its device moved")
+
+    # A CHANGED PORT (a new configuration clears the swaps, as an Explorer
+    # change can): the optic is gone, the cable stays, and it says why.
+    page.select_option("#iCfg", "ac-b2f")
+    wait_fn(page, "lifecycle: port-1 lost its optic", reason_is("i2|front|port-1", "port-1 holds no optic"))
+    if len(doc()["cables"]) != 3:
+        bad.append("lifecycle: a cable was deleted when its port's optic went")
+    wait_sel(page, "lifecycle: c1 hangs loose from its other end",
+             'svg[data-pane="front"] [data-cables] [data-cable-id="c1"][data-loose-lead="from"]')
+    # The configuration select still has the keyboard, and the page leaves
+    # keys typed into a field alone: let go of it before Esc.
+    page.evaluate("() => document.activeElement && document.activeElement.blur()")
+    page.keyboard.press("Escape")
+    wait_sel(page, "lifecycle: the list", "#cableList")
+    line = page.text_content('#cableList li[data-cable-item="c1"] [data-loose="a"]') or ""
+    if line != "Loose end A: port-1 holds no optic.":
+        bad.append(f"lifecycle: the list says {line!r} of c1")
+
+    # A REMOVE asks, in the side panel. Cancel changes nothing.
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    try:
+        wait_sel(page, "lifecycle: the remove panel", "#removePanel")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    said = page.text_content("#removePanel") or ""
+    if "demarc has 1 cable." not in said:
+        bad.append(f"lifecycle: the remove panel reads {said!r}")
+    page.click("#removeCancel")
+    wait_fn(page, "lifecycle: Cancel returns to the device", "() => !!document.getElementById('iLabel')")
+    if len(doc()["items"]) != 4:
+        bad.append("lifecycle: Cancel removed the device")
+    # Keep: the device goes, its cable stays, loose, and stays listed.
+    page.click("#iRemove")
+    wait_sel(page, "lifecycle: the remove panel again", "#removeKeepCables")
+    page.click("#removeKeepCables")
+    wait_fn(page, "lifecycle: demarc (U14) removed", "() => window.__rack.doc().racks[0].items.length === 3")
+    if [c["id"] for c in doc()["cables"]] != ["c1", "c2", "c3"]:
+        bad.append(f"lifecycle: keeping the cables left {[c['id'] for c in doc()['cables']]}")
+    wait_fn(page, "lifecycle: c2's far end is loose", reason_is("i3|front|port-2-1", "the device was removed"))
+    wait_sel(page, "lifecycle: the list after the remove", '#cableList li[data-cable-item="c2"] [data-loose="b"]')
+    row = page.text_content('#cableList [data-cable-row="c2"]') or ""
+    line = page.text_content('#cableList li[data-cable-item="c2"] [data-loose="b"]') or ""
+    if row != "leaf-1 (U15) mgmt-eth → a removed device's port-2-1" or line != "Loose end B: the device was removed.":
+        bad.append(f"lifecycle: c2 is listed as {row!r} with {line!r}")
+    wait_sel(page, "lifecycle: c2 hangs loose on the front",
+             'svg[data-pane="front"] [data-cables] [data-cable-id="c2"][data-loose-lead="to"]')
+    # Delete: the device and its cable both go.
+    select_item(page, "rear", "i4")
+    page.click("#iRemove")
+    wait_sel(page, "lifecycle: the remove panel for the other demarc", "#removeWithCables")
+    page.click("#removeWithCables")
+    wait_fn(page, "lifecycle: demarc (U20) removed", "() => window.__rack.doc().racks[0].items.length === 2")
+    if [c["id"] for c in doc()["cables"]] != ["c1", "c2"]:
+        bad.append(f"lifecycle: deleting its cables left {[c['id'] for c in doc()['cables']]}")
+
+    # A SHRINK that trims a device keeps its cables as loose ends, and Undo brings it all back.
+    open_cabled(page, base)
+    page.click("#frameBtn")
+    page.fill("#fHeight", "3")
+    page.dispatch_event("#fHeight", "change")
+    wait_fn(page, "lifecycle: shrunk to 3U", "() => window.__rack.doc().racks[0].frame.heightRU === 3")
+    if [i["id"] for i in doc()["items"]] != ["i2", "i3", "i4"] or len(doc()["cables"]) != 3:
+        bad.append(f"lifecycle: after the shrink the rack holds {[i['id'] for i in doc()['items']]} and {len(doc()['cables'])} cables")
+    wait_sel(page, "lifecycle: the shrink notice", ".rk-side .rk-notice")
+    note = page.text_content(".rk-side .rk-notice") or ""
+    if "core-1" not in note or "1 cable is kept as a loose end." not in note:
+        bad.append(f"lifecycle: the shrink notice reads {note!r}")
+    wait_fn(page, "lifecycle: c1's far end is loose after the shrink",
+            reason_is("i1|front|slot-2/module/p0", "the device was removed"))
+    page.click("#undoShrink")
+    wait_fn(page, "lifecycle: Undo restores the device", "() => window.__rack.doc().racks[0].items.length === 4")
+    wait_fn(page, "lifecycle: c1 lands again after Undo", reason_is("i1|front|slot-2/module/p0", None))
+
+    # A FILE whose cable names a port the slot's part no longer has: the loader
+    # keeps the cable, and the reason names the part.
+    changed = json.loads(json.dumps(CABLE_FIXTURE))
+    changed["id"] = "doc-cable-fixture-changed"
+    changed["racks"][0]["name"] = "Cable test, card changed"
+    changed["racks"][0]["items"][0]["swaps"] = {}
+    open_cabled(page, base, changed)
+    if len(doc()["cables"]) != 3:
+        bad.append("lifecycle: the loader dropped a cable")
+    try:
+        wait_fn(page, "lifecycle: a port its card no longer has",
+                reason_is("i1|front|slot-2/module/p0", "slot-2 holds A9K Slot Cover, which has no port p0"))
+    except RuntimeError as e:
+        bad.append(f"{e} (it says {page.evaluate(REASONS_JS).get('i1|front|slot-2/module/p0')!r})")
+    return bad
+
+
+@extra("rack.html: Undo after deleting a cable and after removing a cabled device, with its cables or without")
+def check_rack_cable_undo(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("dialog", lambda d: (bad.append(f"undo: a browser dialog opened ({d.message!r})"), d.dismiss()))
+    doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
+    note = lambda: page.text_content(".rk-side .rk-notice") or ""
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"undo: {e}"]
+    whole = doc()
+    if page.query_selector("#undoShrink"):
+        bad.append("undo: Undo is offered before anything changed")
+
+    # Delete a cable from the list, then Undo: that exact cable is back, plug and all.
+    page.click('#cableList [data-cable-row="c1"]')
+    page.click("#cableDelete")
+    wait_fn(page, "undo: c1 deleted", "() => window.__rack.doc().racks[0].cables.length === 2")
+    wait_sel(page, "undo: the delete notice", ".rk-side .rk-notice")
+    if note() != "Deleted cable A1.":
+        bad.append(f"undo: the delete notice reads {note()!r}")
+    wait_sel(page, "undo: Undo after a delete", "#undoShrink")
+    page.click("#undoShrink")
+    wait_fn(page, "undo: c1 is back", "() => window.__rack.doc().racks[0].cables.length === 3")
+    if doc() != whole:
+        bad.append("undo: the rack after Undo is not the rack before the delete")
+    wait_fn(page, "undo: c1's plug is back", "() => window.__rack.cableFacts().seats.i2['port-1-occupant/tx'] === 'generic/lc-plug@2'")
+    if page.query_selector("#undoShrink"):
+        bad.append("undo: Undo is still offered after it was used")
+
+    # Remove a cabled device with its cables, then Undo.
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    wait_sel(page, "undo: the remove panel", "#removeWithCables")
+    page.click("#removeWithCables")
+    wait_fn(page, "undo: demarc and its cable gone",
+            "() => window.__rack.doc().racks[0].items.length === 3 && window.__rack.doc().racks[0].cables.length === 2")
+    wait_sel(page, "undo: the remove notice", ".rk-side .rk-notice")
+    if note() != "Removed demarc and its 1 cable.":
+        bad.append(f"undo: the remove notice reads {note()!r}")
+    page.click("#undoShrink")
+    wait_fn(page, "undo: demarc is back", "() => window.__rack.doc().racks[0].items.length === 4")
+    if doc() != whole:
+        bad.append("undo: Undo after Remove and delete did not restore the rack")
+    wait_fn(page, "undo: demarc's plug is back", "() => window.__rack.cableFacts().seats.i3['port-2-1'] === 'generic/rj45-plug@1'")
+
+    # Remove it keeping the cables, then Undo.
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    wait_sel(page, "undo: the remove panel again", "#removeKeepCables")
+    page.click("#removeKeepCables")
+    wait_fn(page, "undo: demarc removed", "() => window.__rack.doc().racks[0].items.length === 3")
+    wait_sel(page, "undo: the keep notice", ".rk-side .rk-notice")
+    if note() != "Removed demarc. Its 1 cable is a loose end.":
+        bad.append(f"undo: the keep notice reads {note()!r}")
+    page.click("#undoShrink")
+    wait_fn(page, "undo: demarc is back again", "() => window.__rack.doc().racks[0].items.length === 4")
+    if doc() != whole:
+        bad.append("undo: Undo after Remove and keep did not restore the rack")
+
+    # Only one Undo is pending: a later change retires it.
+    page.click('#cableList [data-cable-row="c2"]')
+    page.click("#cableDelete")
+    wait_fn(page, "undo: c2 deleted", "() => window.__rack.doc().racks[0].cables.length === 2")
+    select_item(page, "front", "i2")
+    page.keyboard.press("ArrowUp")
+    wait_fn(page, "undo: leaf-1 moved", "() => window.__rack.doc().racks[0].items[1].ru === 15")
+    if page.query_selector("#undoShrink"):
+        bad.append("undo: an Undo outlived the next change")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

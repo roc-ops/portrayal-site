@@ -129,3 +129,18 @@ export function cableList({rack, ends, on, selectedId = null, onFilter, onSelect
     el('ul', {}, rows),
   ]);
 }
+
+// REMOVING A DEVICE THAT HAS CABLES asks first (spec §9.3), here in the side
+// panel: delete its cables with it, or keep them - a kept cable stays in the
+// file and in the list with that end loose ("the device was removed").
+export function removePanel({item, count, onBoth, onKeep, onCancel}) {
+  const n = `${count} cable${count === 1 ? '' : 's'}`;
+  return el('div', {id: 'removePanel', class: 'rk-remove'}, [
+    el('h3', {text: `Remove ${item.label}`}),
+    el('p', {class: 'rk-muted', text: `${item.label} has ${n}. Delete ${count === 1 ? 'it' : 'them'} too, or keep ${count === 1 ? 'it' : 'them'} as ${count === 1 ? 'a loose end' : 'loose ends'}?`}),
+    el('div', {class: 'rk-actions'}, [
+      button('removeWithCables', `Remove and delete ${n}`, onBoth),
+      button('removeKeepCables', `Remove and keep ${n}`, onKeep),
+      button('removeCancel', 'Cancel', onCancel)]),
+  ]);
+}

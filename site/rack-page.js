@@ -20,9 +20,9 @@ import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
 import {cableFacts} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
-        endName, proposeMedia, countsBy} from './rack/cable-rules.js';
+        cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy} from './rack/cable-rules.js';
 import {widenForCables, drawRackCables, portAt, markPort, paintCables} from './rack/cable-view.js';
-import {cableForm, cableList} from './rack/cable-panel.js';
+import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -189,8 +189,12 @@ async function explore(id) {
     patchItem(id, {cfg: res.config, swaps: res.swaps, fields: res.fields});
 }
 
-function commit(nextRack) {
-  S.undo = null;
+// `undoable` ({text}) makes this change the one pending Undo: the rack as it
+// was is kept whole in S.undo and the notice says what happened. Any other
+// change retires it, so only one Undo is ever pending.
+function commit(nextRack, undoable = null) {
+  S.undo = undoable ? rack() : null;
+  if (undoable) S.notice = {text: undoable.text, kind: 'note'};
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
   render();
@@ -321,7 +325,11 @@ function cableListPanel() {
     // A second click on the selected row lets it go.
     onSelect: id => select(selectedCable() === id ? null : {kind: 'cable', id}),
     onEdit: id => select({kind: 'cable-form', id}),
-    onDelete: id => { S.sel = null; commit(withoutCable(rack(), id)); }});
+    onDelete: id => {
+      const c = rack().cables.find(x => x.id === id);
+      S.sel = null;
+      commit(withoutCable(rack(), id), c && {text: `Deleted cable ${cableName(c)}.`});
+    }});
 }
 // What the side panel shows with nothing selected, or with a cable selected:
 // the summary (or Cable mode's help), then the cable list.
@@ -352,7 +360,11 @@ function commitFrame(patch) {
         : moved.length
         ? `Moved ${moved.length} ${dn(moved.length)} down to fit ${patch.heightRU}U.`
         : `Removed ${removed.length} ${dn(removed.length)} from the bottom to fit ${patch.heightRU}U: ${removedNames()}.`;
-      S.notice = {text, kind: 'note'};
+      // A trimmed device's cables are kept (spec §9.3: never silently
+      // deleted); each becomes a loose end, and Undo brings its device back.
+      const cut = new Set(removed.flatMap(i => cablesOf(r, i.id).map(c => c.id))).size;
+      const kept = cut ? ` ${cut} ${cut === 1 ? 'cable is kept as a loose end' : 'cables are kept as loose ends'}.` : '';
+      S.notice = {text: text + kept, kind: 'note'};
     } else {
       S.undo = null;
     }
@@ -494,7 +506,7 @@ async function render() {
   $('headFront').textContent = 'Front';
   $('headRear').textContent = 'Rear';
   $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
-  const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
+  const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' || S.sel?.kind === 'remove' ? S.sel.id : null;
   let front, rear, facts;
   try {
     // PLUGS ARE DERIVED, NEVER STORED: a cabled end is drawn with the plug its
@@ -591,6 +603,18 @@ function renderSide() {
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
     onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});
+  else if (sel.kind === 'remove') {
+    const it = itemById(sel.id);
+    if (!it) { S.sel = null; body = homePanel(); }
+    else {
+      const n = cablesOf(r, it.id).length, cables = `${n} cable${n === 1 ? '' : 's'}`;
+      body = removePanel({item: it, count: n,
+        onBoth: () => { S.sel = null; commit(withoutCablesOf(withoutItem(r, it.id), it.id), {text: `Removed ${it.label} and its ${cables}.`}); },
+        onKeep: () => { S.sel = null; commit(withoutItem(r, it.id),
+          {text: `Removed ${it.label}. Its ${cables} ${n === 1 ? 'is a loose end' : 'are loose ends'}.`}); },
+        onCancel: () => select({kind: 'item', id: it.id})});
+    }
+  }
   else if (sel.kind === 'move') {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = summary(); }
@@ -604,7 +628,12 @@ function renderSide() {
       available: availableDepth(r, it, chassisOf),
       onPatch: patch => patchItem(it.id, patch),
       onMove: () => select({kind: 'move', id: it.id}),
-      onRemove: () => { if (confirm(`Remove ${it.label} from the rack?`)) { S.sel = null; commit(withoutItem(r, it.id)); } },
+      // A device with cables asks in the side panel, where it can offer the
+      // choice a dialog cannot (spec §9.3); one without keeps the plain question.
+      onRemove: () => {
+        if (cablesOf(r, it.id).length) { select({kind: 'remove', id: it.id}); return; }
+        if (confirm(`Remove ${it.label} from the rack?`)) { S.sel = null; commit(withoutItem(r, it.id)); }
+      },
       onExplore: () => explore(it.id)});
   }
   const kids = [body];
