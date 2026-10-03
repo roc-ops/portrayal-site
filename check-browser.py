@@ -6661,6 +6661,163 @@ def check_rack_cable_mode(page, base):
     return bad
 
 
+# The cable list as shown: each row's id, text, pressed and hidden state, its
+# loose-end and warning lines, and the filter buttons and count.
+LIST_JS = """() => {
+  const list = document.getElementById('cableList');
+  if (!list) return null;
+  const count = list.querySelector('[data-filter-count]');
+  return {
+    rows: [...list.querySelectorAll('li[data-cable-item]')].map(li => ({
+      id: li.dataset.cableItem, hidden: li.hidden,
+      text: li.querySelector('[data-cable-row]').textContent,
+      pressed: li.querySelector('[data-cable-row]').getAttribute('aria-pressed') === 'true',
+      meta: li.querySelector('.rk-cable-meta')?.textContent || '',
+      loose: Object.fromEntries([...li.querySelectorAll('[data-loose]')].map(s => [s.dataset.loose, s.textContent])),
+      warnings: [...li.querySelectorAll('[data-warning]')].map(s => s.textContent)})),
+    purpose: [...list.querySelectorAll('[data-filter-purpose]')].map(b => b.textContent),
+    media: [...list.querySelectorAll('[data-filter-media]')].map(b => b.textContent),
+    count: count.textContent, matching: count.dataset.matching, total: count.dataset.total,
+  };
+}"""
+
+# Per pane: is it in focus mode, which cable ids are lit, which are ghosted.
+LIT_JS = """() => Object.fromEntries(['front', 'rear'].map(p => {
+  const svg = document.querySelector(`svg[data-pane="${p}"]`);
+  const ids = sel => [...new Set([...svg.querySelectorAll(sel)].map(n => n.dataset.cableId))].sort();
+  return [p, {focus: svg.classList.contains('cable-focus'), on: ids('[data-cable-id].on'),
+              parts: svg.querySelectorAll('[data-cable-id].on').length, ghost: ids('[data-cable-id].ghost')}];
+}))"""
+
+
+@extra("rack.html: the cable list - rows with reasons and warnings, filters that ghost, a row or a tag selects and lights both panes, edit and delete")
+def check_rack_cable_list(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cable list: {e}"]
+    cables = lambda: page.evaluate("() => window.__rack.doc().racks[0].cables")
+    row = lambda cid: f'#cableList [data-cable-row="{cid}"]'
+    # A synchronous predicate: is this row pressed (or, with want=False, not pressed)?
+    pressed_js = lambda cid, want=True: (
+        f"""() => (document.querySelector('#cableList [data-cable-row="{cid}"]')"""
+        f"""?.getAttribute('aria-pressed') === 'true') === {'true' if want else 'false'}""")
+
+    try:
+        wait_sel(page, "cable list: the list under the summary", "#cableList")
+    except RuntimeError as e:
+        return bad + [str(e)]
+    got = page.evaluate(LIST_JS)
+    by = {r["id"]: r for r in got["rows"]}
+    if list(by) != ["c1", "c2", "c3"]:
+        return bad + [f"cable list: the rows are {list(by)}"]
+    if by["c2"]["text"] != "leaf-1 (U14) mgmt-eth → demarc (U14) port-2-1":
+        bad.append(f"cable list: c2 reads {by['c2']['text']!r}")
+    if by["c1"]["meta"] != "A1 · OS2 single-mode fiber · uplink · 2 m":
+        bad.append(f"cable list: c1's details read {by['c1']['meta']!r}")
+    if by["c3"]["loose"] != {"a": "Loose end A: port-2 holds no optic."} or by["c1"]["loose"] or by["c2"]["loose"]:
+        bad.append(f"cable list: the loose ends are {[(r['id'], r['loose']) for r in got['rows']]}")
+    if by["c3"]["warnings"] != ["OS2 single-mode fiber does not suit end B, which is copper."] or by["c1"]["warnings"]:
+        bad.append(f"cable list: the warnings are {[(r['id'], r['warnings']) for r in got['rows']]}")
+    if got["purpose"] != ["uplink (2)", "management (1)"] or got["media"] != ["os2 (2)", "cat6a (1)"]:
+        bad.append(f"cable list: the filters are {got['purpose']} and {got['media']}")
+    if (got["count"], got["matching"], got["total"]) != ("3 of 3 cables match.", "3", "3"):
+        bad.append(f"cable list: the count reads {got['count']!r}")
+
+    # A ROW selects its cable: lit in BOTH panes (the run and its tag in each), every other one dimmed.
+    page.click(row("c2"))
+    wait_fn(page, "cable list: row c2 selected", pressed_js("c2"))
+    lit = page.evaluate(LIT_JS)
+    for p in ("front", "rear"):
+        if not lit[p]["focus"] or lit[p]["on"] != ["c2"] or lit[p]["parts"] != 2:
+            bad.append(f"cable list: with c2 selected the {p} pane is {lit[p]}")
+    if not page.is_visible("#cableEdit") or not page.is_visible("#cableDelete"):
+        bad.append("cable list: the selected row has no Edit and Delete")
+    page.click(row("c2"))
+    wait_fn(page, "cable list: a second click lets the row go", pressed_js("c2", False))
+    if page.evaluate(LIT_JS)["front"]["focus"]:
+        bad.append("cable list: the panes are still dimmed with nothing selected")
+
+    # A TAG selects its cable too, by a click or from the keyboard.
+    page.click('svg[data-pane="rear"] [data-cable-tags] [data-cable-tag][data-cable-id="c3"]')
+    wait_fn(page, "cable list: the rear tag selects c3", pressed_js("c3"))
+    page.focus('svg[data-pane="front"] [data-cable-tag][data-cable-id="c2"]')
+    page.keyboard.press("Enter")
+    wait_fn(page, "cable list: Enter on the front tag selects c2", pressed_js("c2"))
+    if page.evaluate(LIT_JS)["rear"]["on"] != ["c2"]:
+        bad.append("cable list: the front tag did not light the cable's rear end")
+    page.keyboard.press("Escape")
+    wait_fn(page, "cable list: Esc lets the selection go", pressed_js("c2", False))
+
+    # THE FILTERS ghost what they leave out and hide its row; the two axes combine.
+    page.click('#cableList [data-filter-media="os2"]')
+    got = page.evaluate(LIST_JS)
+    if (got["count"], got["matching"]) != ("2 of 3 cables match.", "2"):
+        bad.append(f"cable list: filtering to os2 reads {got['count']!r}")
+    if [r["id"] for r in got["rows"] if r["hidden"]] != ["c2"]:
+        bad.append("cable list: the os2 filter did not hide c2's row alone")
+    lit = page.evaluate(LIT_JS)
+    if lit["front"]["ghost"] != ["c2"] or lit["rear"]["ghost"] != ["c2"]:
+        bad.append(f"cable list: the os2 filter ghosted {lit['front']['ghost']} and {lit['rear']['ghost']}")
+    if page.get_attribute('#cableList [data-filter-media="os2"]', "aria-pressed") != "true":
+        bad.append("cable list: the pressed filter is not marked")
+    page.click('#cableList [data-filter-purpose="management"]')
+    if page.evaluate(LIST_JS)["matching"] != "0":
+        bad.append("cable list: os2 and management together should match nothing")
+    page.click('#cableList [data-filter-media="os2"]')
+    if page.evaluate(LIST_JS)["matching"] != "1":
+        bad.append("cable list: management alone should match c2")
+    page.click('#cableList [data-filter-purpose="management"]')
+    lit = page.evaluate(LIT_JS)
+    if page.evaluate(LIST_JS)["matching"] != "3" or lit["front"]["ghost"] or lit["rear"]["ghost"]:
+        bad.append("cable list: releasing the filters did not bring every cable back")
+
+    # EDIT reuses the form, opened on the cable's own values.
+    page.click(row("c1"))
+    wait_sel(page, "cable list: Edit", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "cable list: the form", "#cableForm")
+    vals = [page.input_value(s) for s in ("#cMedia", "#cPurpose", "#cLabel", "#cLength", "#cUnit")]
+    if vals != ["os2", "uplink", "A1", "2", "m"] or (page.text_content("#cSave") or "") != "Save":
+        bad.append(f"cable list: the edit form opens on {vals}")
+    page.select_option("#cMedia", "om4")
+    page.fill("#cLabel", "A2")
+    page.click("#cSave")
+    wait_fn(page, "cable list: the edit saved",
+            "() => window.__rack.doc().racks[0].cables[0].label === 'A2'")
+    c1 = cables()[0]
+    if (c1["media"], c1["a"], c1["length"]) != ("om4", {"item": "i2", "path": "port-1", "view": "front"},
+                                                {"value": 2, "unit": "m", "source": "entered"}):
+        bad.append(f"cable list: after the edit c1 is {c1}")
+    wait_fn(page, "cable list: the edited cable stays selected", pressed_js("c1"))
+    color = page.eval_on_selector('svg[data-pane="front"] [data-cables] [data-cable-id="c1"]',
+                                  "g => [...g.children].filter(n => n.tagName === 'path').pop().getAttribute('stroke')")
+    if color != "#2bb3c8":
+        bad.append(f"cable list: c1 is drawn {color} after becoming OM4, expected aqua")
+
+    # DELETE takes the cable, its drawing and its derived plug.
+    page.click(row("c3"))
+    wait_sel(page, "cable list: Delete", "#cableDelete")
+    page.click("#cableDelete")
+    wait_fn(page, "cable list: c3 deleted", "() => window.__rack.doc().racks[0].cables.length === 2")
+    wait_fn(page, "cable list: c3 off the drawing",
+            """() => !document.querySelector('svg[data-pane="rear"] [data-cable-id="c3"]')""")
+    if page.evaluate(PLUGS_JS, ["rear", "i4"]) != {"lc": 0, "rj45": 0}:
+        bad.append("cable list: the deleted cable's plug is still seated on the far demarc")
+
+    # What is left survives a reload (autosave).
+    page.evaluate("() => window.__rack.flush()")
+    page.reload(wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    wait_sel(page, "cable list: the list after a reload", "#cableList")
+    if [r["id"] for r in page.evaluate(LIST_JS)["rows"]] != ["c1", "c2"]:
+        bad.append("cable list: the cables did not survive a reload")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

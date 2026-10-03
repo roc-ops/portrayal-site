@@ -5,7 +5,8 @@
 // here has an id so the page can hand keyboard focus back to it.
 
 import {el} from './dom.js';
-import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength} from './cable-rules.js';
+import {MEDIA, MEDIA_LABELS, UNITS, mismatch, parseLength, lengthText, endName, endKey, countsBy,
+        matches} from './cable-rules.js';
 
 const option = (value, text, current) =>
   el('option', {value, text, ...(String(current ?? '') === String(value) ? {selected: ''} : {})});
@@ -67,4 +68,56 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
     onSave({media: media.value, purpose: purpose.value.trim(), label: label.value.trim(), length: len.length});
   });
   return form;
+}
+
+// THE CABLE LIST (spec §9.4): every cable as a row, stage 5's two filters
+// over them, and the selected row's actions. `ends` is cableFacts' Map
+// (endKey -> {info, reason}); `on` is the filter, {purpose, media}, null on
+// an axis that is not narrowing. A row names both ends, then says what is
+// known and what is wrong: a loose end with its reason (spec §9.3), a media
+// mismatch as a warning. A row the filter leaves out is hidden; the count
+// line says how many match.
+export function cableList({rack, ends, on, selectedId = null, onFilter, onSelect, onEdit, onDelete}) {
+  const cables = rack.cables;
+  const info = e => ends.get(endKey(e))?.info || null;
+  const why = e => ends.get(endKey(e))?.reason || null;
+  const shown = cables.filter(c => matches(c, on)).length;
+
+  const filterRow = (field, title) => el('div', {class: 'rk-filter', 'data-filter-row': field}, [
+    el('span', {class: 'rk-muted', text: title}),
+    ...[...countsBy(cables, field)].map(([v, n], k) => {
+      const b = el('button', {type: 'button', id: `cableFilter-${field}-${k}`, [`data-filter-${field}`]: v,
+        'aria-pressed': String(on[field] === v), text: `${v || 'not set'} (${n})`});
+      b.addEventListener('click', () => onFilter({...on, [field]: on[field] === v ? null : v}));
+      return b;
+    })]);
+
+  const rows = cables.map(c => {
+    const picked = c.id === selectedId;
+    const row = el('button', {type: 'button', id: `cableRow-${c.id}`, 'data-cable-row': c.id,
+      'aria-pressed': String(picked), text: `${endName(rack, c.a)} → ${endName(rack, c.b)}`});
+    row.addEventListener('click', () => onSelect(c.id));
+    const kids = [row];
+    const meta = [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, lengthText(c.length)].filter(Boolean).join(' · ');
+    if (meta) kids.push(el('span', {class: 'rk-cable-meta rk-muted', text: meta}));
+    for (const [k, e] of [['a', c.a], ['b', c.b]])
+      if (why(e)) kids.push(el('span', {class: 'rk-loose', 'data-loose': k, text: `Loose end ${k.toUpperCase()}: ${why(e)}.`}));
+    for (const w of mismatch(c.media, info(c.a), info(c.b)))
+      kids.push(el('span', {class: 'rk-warn', 'data-warning': 'true', text: w}));
+    if (picked) kids.push(el('div', {class: 'rk-actions'}, [
+      button('cableEdit', 'Edit', () => onEdit(c.id)),
+      button('cableDelete', 'Delete', () => onDelete(c.id))]));
+    const li = el('li', {'data-cable-item': c.id}, kids);
+    li.hidden = !matches(c, on);
+    return li;
+  });
+
+  return el('div', {id: 'cableList', class: 'rk-cables'}, [
+    el('h3', {text: 'Cables'}),
+    filterRow('purpose', 'Purpose'),
+    filterRow('media', 'Media'),
+    el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
+             'data-total': String(cables.length), text: `${shown} of ${cables.length} cables match.`}),
+    el('ul', {}, rows),
+  ]);
 }

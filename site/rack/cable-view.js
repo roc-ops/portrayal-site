@@ -17,7 +17,7 @@
 import {cablePoints} from '../../vendor/relief.js';
 import {drawCables2d, plugAt} from './cables.js';
 import {svgEl} from './dom.js';
-import {cablePlan, endKey, endName, tagText, portPathOf} from './cable-rules.js';
+import {cablePlan, endKey, endName, tagText, portPathOf, matches} from './cable-rules.js';
 
 // mm beside the rack for cross-face tails and their tags (the showcase's
 // own figure), and below it for a lead hanging from the lowest device.
@@ -172,4 +172,20 @@ export function markPort(svg, itemId, path) {
   if (!b) return;
   svg.append(svgEl('rect', {x: b.x - 1.5, y: b.y - 1.5, width: b.w + 3, height: b.h + 3, rx: 2,
     class: 'rk-end-pick', 'data-pt-ui': '*'}));
+}
+
+// WHICH CABLES ARE LIT. The selected cable keeps its paint and every other
+// one dims (.cable-focus on the pane, .on on the cable and its tag) - in
+// both panes at once, so a cross-face run lights at both ends. A cable the
+// list's filter leaves out fades to a ghost (.ghost), as in stage 5. Classes
+// only: nothing is redrawn.
+export function paintCables(svgs, rack, {selectedId = null, on = {}} = {}) {
+  const out = new Set(rack.cables.filter(c => !matches(c, on)).map(c => c.id));
+  for (const svg of svgs) {
+    svg.classList.toggle('cable-focus', selectedId != null);
+    for (const n of svg.querySelectorAll('[data-cable-id]')) {
+      n.classList.toggle('on', n.dataset.cableId === selectedId);
+      n.classList.toggle('ghost', out.has(n.dataset.cableId));
+    }
+  }
 }
