@@ -24,7 +24,13 @@ import {cablePoints} from '../../vendor/relief.js';
 import {svgEl} from './dom.js';
 
 // OS2 jackets are yellow; copper is colored by what it is for.
-export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '#9aa3ad'}};
+export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '#9aa3ad'},
+  // The Rack Builder's media (cable-rules.js MEDIA), beside the showcase's
+  // two: OM3 and OM4 aqua, OM5 lime green, Cat 6 and 6A blue, a DAC black, an
+  // AOC dark gray, and a neutral gray for a cable whose media is not set.
+  // Added keys only: colorOf, and every color the showcase draws, are unchanged.
+  om3: '#2bb3c8', om4: '#2bb3c8', om5: '#9acd32', cat6: '#5aa7ff', cat6a: '#5aa7ff',
+  dac: '#15171a', aoc: '#3a3f45', unset: '#9aa3ad'};
 export const colorOf = l => l.media === 'copper'
   ? (COLORS.copper[l.purpose] || COLORS.copper.server) : (COLORS[l.media] || COLORS.os2);
 
@@ -143,8 +149,11 @@ function leadDown(g, a, color, drop, outboard) {
 // above it allow - so no tag covers a port, a plug or another tag, and no
 // cable crosses one. A tag carries its cable's data-link-index, and the
 // record keeps it as `tag`.
+// `ends(svg, dev, path)` finds an end's connector points; it defaults to
+// ends2d, which looks a device up by its ref. The Rack Builder passes its
+// own (cable-view.js), which looks an item up by its id and panel.
 export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = () => false,
-                                               outboard = 1}) {
+                                               outboard = 1, ends = ends2d}) {
   // The CABLES are the drawing, and exports keep them (standalone() drops
   // every [data-pt-ui="*"] node). The TAGS beside them are on-screen
   // controls - a cross-face button, a not-connected link to the stage that
@@ -160,7 +169,7 @@ export function drawCables2d(svg, plan, view, {edgeX, tag, looseTag, farLoose = 
     const rec = {link, i, g: null, tag: null, loose: [], tagged: false, dangling: false};
     out.push(rec);
     if (!here.length) return;
-    const pts = here.map(([k, e]) => [k, ends2d(svg, e[0], e[1])]);
+    const pts = here.map(([k, e]) => [k, ends(svg, e[0], e[1])]);
     for (const [k, p] of pts) if (!p) rec.loose.push(k);
     const live = pts.filter(([, p]) => p);
     if (!live.length) return;

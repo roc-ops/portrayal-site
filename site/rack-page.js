@@ -20,6 +20,7 @@ import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
 import {cableFacts} from './rack/cable-plugs.js';
 import {mergeSeats} from './rack/cable-rules.js';
+import {widenForCables, drawRackCables} from './rack/cable-view.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -377,11 +378,24 @@ async function render() {
   // The SVGs are new nodes every render, so the zoom (a style on the old
   // ones) has to be reapplied to these.
   S.svgs = [front, rear];
+  // With cables, both panes widen by the same side column, before the zoom
+  // below reads their viewBox; with none they are exactly as they were.
+  const cabled = r.cables.length > 0;
+  if (cabled) for (const svg of S.svgs) widenForCables(svg);
   // #panes is hidden while in 3D (showMode()) - applyZoom measures its own
   // column width to fit into, and a hidden element measures 0, which is what
   // left every SVG at height:0 once the panes came back. Skipped here, this
   // is instead applied by setMode() the moment #panes is shown again.
-  if (!$('panes').hidden) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
+  if (!$('panes').hidden) {
+    applyZoom($('panes'), S.svgs, S.zoom);
+    setZoomLabel();
+    // Cables are measured off the laid-out panes (getScreenCTM), so they are
+    // drawn only while the panes show; setMode() redraws on the way back from 3D.
+    if (cabled) {
+      const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
+      for (const svg of S.svgs) drawRackCables(svg, r, reasons);
+    }
+  }
   renderSide();
 }
 

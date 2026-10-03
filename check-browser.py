@@ -6042,6 +6042,144 @@ def check_rack_cable_plugs(page, base):
     return bad
 
 
+def open_cabled(page, base, fixture=None):
+    open_fixture(page, base, fixture or CABLE_FIXTURE)
+    wait_sel(page, "cable fixture: the rear pane's cables", 'svg[data-pane="rear"] [data-cable-id]')
+    wait_sel(page, "cable fixture: the front pane's cables", 'svg[data-pane="front"] [data-cable-id]')
+
+
+# Both panes as drawn: the viewBox, the rendered box, U1's hit rectangle (the
+# shared U scale), and every cable group and tag.
+PANES_JS = """() => {
+  const box = e => { const r = e.getBoundingClientRect(); return {x: r.x, w: r.width, h: r.height, top: r.top, bottom: r.bottom}; };
+  return Object.fromEntries(['front', 'rear'].map(p => {
+    const svg = document.querySelector(`svg[data-pane="${p}"]`);
+    return [p, {
+      vb: svg.getAttribute('viewBox').split(/\\s+/).map(Number),
+      box: box(svg),
+      u1: box(svg.querySelector('rect.rk-u[data-u="1"]')),
+      layers: svg.querySelectorAll('[data-cables], [data-cable-tags]').length,
+      cables: [...svg.querySelectorAll('[data-cables] [data-cable]')].map(g => ({
+        id: g.dataset.cableId || null, lead: g.dataset.looseLead || null,
+        color: [...g.children].filter(n => n.tagName === 'path').pop()?.getAttribute('stroke') || null,
+        box: box(g)})),
+      tags: [...svg.querySelectorAll('[data-cable-tags] [data-cable-tag]')].map(t => ({
+        id: t.dataset.cableId || null, text: t.querySelector('text').textContent,
+        loose: t.classList.contains('not-connected'), why: t.querySelector('title')?.textContent || ''})),
+    }];
+  }));
+}"""
+
+
+@extra("cables.js colors the Rack Builder's media without changing a showcase color")
+def check_cable_colors(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    got = page.evaluate("""async () => {
+      const {colorOf} = await import('/site/rack/cables.js');
+      const links = [['os2', 'uplink'], ['copper', 'server'], ['copper', 'management'], ['copper', 'other'],
+                     ['om3', ''], ['om4', ''], ['om5', ''], ['cat6', ''], ['cat6a', ''], ['dac', ''], ['aoc', ''],
+                     ['unset', ''], ['something-else', '']];
+      return links.map(([media, purpose]) => [media, purpose, colorOf({media, purpose})]);
+    }""")
+    want = [["os2", "uplink", "#e8c547"], ["copper", "server", "#5aa7ff"], ["copper", "management", "#9aa3ad"],
+            ["copper", "other", "#5aa7ff"],
+            ["om3", "", "#2bb3c8"], ["om4", "", "#2bb3c8"], ["om5", "", "#9acd32"], ["cat6", "", "#5aa7ff"],
+            ["cat6a", "", "#5aa7ff"], ["dac", "", "#15171a"], ["aoc", "", "#3a3f45"], ["unset", "", "#9aa3ad"],
+            ["something-else", "", "#e8c547"]]
+    for g, w in zip(got, want):
+        if g != w:
+            bad.append(f"cable colors: {g[0]} / {g[1]!r} is {g[2]}, expected {w[2]}")
+    return bad
+
+
+@extra("rack.html: cables hang in both panes, a cross-face run leaves by a tag, a loose end hangs unplugged; the panes widen together and zoom still works")
+def check_rack_cables_drawn(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    near = lambda a, b, tol=0.6: abs(a - b) <= tol
+
+    # No cables: the panes are exactly as they were.
+    open_fixture(page, base)
+    plain = page.evaluate(PANES_JS)
+    for p in ("front", "rear"):
+        if not near(plain[p]["vb"][2], 514.85, 0.01) or plain[p]["layers"]:
+            bad.append(f"cables drawn: with no cables the {p} pane is {plain[p]['vb']} with {plain[p]['layers']} cable layers")
+
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cables drawn: {e}"]
+    got = page.evaluate(PANES_JS)
+    front, rear = got["front"], got["rear"]
+
+    # Both panes widen by the same 260 mm column - the front to its right, the
+    # rear to its left - and by 40 mm below.
+    pf, pr = plain["front"]["vb"], plain["rear"]["vb"]
+    if not (near(front["vb"][0], pf[0], 0.01) and near(front["vb"][2], pf[2] + 260, 0.01)
+            and near(front["vb"][3], pf[3] + 40, 0.01)):
+        bad.append(f"cables drawn: the front pane's viewBox is {front['vb']}, from {pf}")
+    if not (near(rear["vb"][0], pr[0] - 260, 0.01) and near(rear["vb"][2], pr[2] + 260, 0.01)
+            and near(rear["vb"][3], pr[3] + 40, 0.01)):
+        bad.append(f"cables drawn: the rear pane's viewBox is {rear['vb']}, from {pr}")
+    # One U scale: the two panes are the same size, and U1 sits at the same height in both.
+    if not (near(front["box"]["w"], rear["box"]["w"]) and near(front["box"]["h"], rear["box"]["h"])):
+        bad.append(f"cables drawn: the panes differ in size ({front['box']} / {rear['box']})")
+    if not (near(front["u1"]["h"], rear["u1"]["h"], 0.3) and near(front["u1"]["top"], rear["u1"]["top"], 1)):
+        bad.append(f"cables drawn: U1 is not level across the panes ({front['u1']} / {rear['u1']})")
+
+    ids = lambda pane, key: sorted(c["id"] or "?" for c in pane[key])
+    if ids(front, "cables") != ["c1", "c2"] or ids(rear, "cables") != ["c2", "c3"]:
+        bad.append(f"cables drawn: front draws {ids(front, 'cables')}, rear {ids(rear, 'cables')}; "
+                   "expected c1, c2 and c2, c3")
+    by = lambda pane, key, cid: next((c for c in pane[key] if c["id"] == cid), None)
+    # c1: both ends in the front pane - a cable hanging from the switch's optic to the router's card port.
+    c1 = by(front, "cables", "c1")
+    if c1:
+        leaf, core = (page.eval_on_selector(f'svg[data-pane="front"] [data-item-id="{i}"][data-panel]',
+                      "g => { const r = g.getBoundingClientRect(); return {top: r.top, bottom: r.bottom}; }")
+                      for i in ("i2", "i1"))
+        if not (leaf["top"] - 1 <= c1["box"]["top"] <= leaf["bottom"] and c1["box"]["bottom"] > core["top"]):
+            bad.append(f"cables drawn: c1 spans {c1['box']}, not from leaf-1 {leaf} down into core-1 {core}")
+        if c1["color"] != "#e8c547" or c1["lead"]:
+            bad.append(f"cables drawn: c1 is {c1['color']}, lead {c1['lead']}; expected OS2 yellow, plugged at both ends")
+    if by(front, "tags", "c1"):
+        bad.append("cables drawn: c1 has a tag, and both its ends are in one pane")
+    # c2: front pane to rear pane - each pane hangs it off to the side column, with a tag naming the far end.
+    for pane, name, text in ((front, "front", "→ demarc port-2-1"), (rear, "rear", "→ leaf-1 mgmt-eth")):
+        tag = by(pane, "tags", "c2")
+        if not tag or tag["text"] != text or tag["loose"]:
+            bad.append(f"cables drawn: c2's tag on the {name} is {tag}, expected {text!r}")
+    c2 = by(front, "cables", "c2")
+    if c2 and c2["color"] != "#5aa7ff":
+        bad.append(f"cables drawn: c2 is {c2['color']}, expected copper blue")
+    # c3: its far end is an empty cage - an unplugged lead in the rear pane, tagged with the reason.
+    c3, tag3 = by(rear, "cables", "c3"), by(rear, "tags", "c3")
+    if not c3 or c3["lead"] != "from":
+        bad.append(f"cables drawn: c3 on the rear is {c3}, expected an unplugged lead for its A end")
+    if not tag3 or not tag3["loose"] or tag3["why"] != "port-2 holds no optic":
+        bad.append(f"cables drawn: c3's not-connected tag is {tag3}")
+    if len(front["tags"]) != 1 or len(rear["tags"]) != 2:
+        bad.append(f"cables drawn: {len(front['tags'])} front tags and {len(rear['tags'])} rear tags, expected 1 and 2")
+
+    # Zoom and Fit still work on the widened panes.
+    panes_h = page.eval_on_selector("#panes", "p => p.getBoundingClientRect().height")
+    if (page.text_content("#zoomLevel") or "") != "Fit" or front["box"]["h"] > panes_h + 1:
+        bad.append(f"cables drawn: at Fit the front pane is {front['box']['h']} tall in a {panes_h} area")
+    page.click("#zoomIn")
+    zoomed = page.evaluate(PANES_JS)
+    if not (zoomed["front"]["box"]["w"] > front["box"]["w"] + 1
+            and near(zoomed["front"]["box"]["w"], zoomed["rear"]["box"]["w"])):
+        bad.append(f"cables drawn: zooming in gave {zoomed['front']['box']['w']} and {zoomed['rear']['box']['w']} wide panes")
+    if ids(zoomed["front"], "cables") != ["c1", "c2"]:
+        bad.append("cables drawn: zooming lost the cables")
+    page.click("#zoomFit")
+    if (page.text_content("#zoomLevel") or "") != "Fit":
+        bad.append("cables drawn: Fit did not come back")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
