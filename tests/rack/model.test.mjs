@@ -94,7 +94,9 @@ test('parseDoc fills what an older writer left out, and keeps zeroU and cables',
   assert.equal(d.racks[0].frame.usableDepth, 1000);
   assert.deepEqual(d.racks[0].items[0], {id: 'i4', ref: 'tm-280', cfg: '', label: 'tm-280', ru: 3,
     face: 'front', turned: false, swaps: {}, fields: {}});
-  assert.deepEqual([d.racks[0].zeroU, d.racks[0].cables], [[{id: 'z1'}], [{id: 'c1'}]]);
+  assert.deepEqual(d.racks[0].zeroU, [{id: 'z1'}]);
+  assert.deepEqual(d.racks[0].cables, [{id: 'c1', a: {item: '', path: '', view: 'front'},
+    b: {item: '', path: '', view: 'front'}, media: '', purpose: '', label: '', route: []}]);
 });
 
 test('nextId counts only ids that carry its own prefix', () => {

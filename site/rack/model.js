@@ -101,6 +101,33 @@ function readItems(list) {
   return items;
 }
 
+// CABLES ARE NEVER DROPPED ON LOAD (spec §9.3: a cable is never silently
+// deleted). A cable that names a missing item, an unknown media or no port at
+// all is kept and shown as a loose end; what is normalized is only its shape:
+// a unique id, two ends, strings where the page reads strings, a length that
+// is a positive number, and a route array. Fields this page does not know are
+// kept as they are.
+const readEnd = e => ({item: String(e?.item ?? ''), path: String(e?.path ?? ''),
+                       view: e?.view === 'rear' ? 'rear' : 'front'});
+export function readCables(list) {
+  const declared = list.map(c => ({id: String(c?.id ?? '')}));
+  const out = [];
+  const seen = new Set();
+  for (const raw of list) {
+    const {length: len, ...c} = raw && typeof raw === 'object' ? structuredClone(raw) : {};
+    let id = c.id == null ? '' : String(c.id);
+    if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
+    seen.add(id);
+    const length = len && Number(len.value) > 0
+      ? {...len, value: Number(len.value), unit: len.unit === 'ft' ? 'ft' : 'm', source: String(len.source ?? 'entered')}
+      : null;
+    out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
+              purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),
+              ...(length ? {length} : {}), route: Array.isArray(c.route) ? c.route : []});
+  }
+  return out;
+}
+
 // READ A FILE, OR REFUSE IT WITH A SENTENCE. A newer file than this page knows
 // is refused whole: reading the parts it understands and dropping the rest
 // would hand back a rack that looks complete and is not.
@@ -120,7 +147,7 @@ export function parseDoc(input) {
       frame: normalizeFrame(r.frame),
       items: readItems(r.items || []),
       zeroU: Array.isArray(r.zeroU) ? structuredClone(r.zeroU) : [],
-      cables: Array.isArray(r.cables) ? structuredClone(r.cables) : [],
+      cables: readCables(Array.isArray(r.cables) ? r.cables : []),
     })),
   };
 }
