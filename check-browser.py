@@ -3551,7 +3551,8 @@ def check_rack_menu_and_warnings(page, base):
         page.wait_for_function("() => document.querySelector('#libItems .rk-current')?.textContent === 'Renamed rack'",
                                timeout=READY_MS)
     except Exception:
-        bad.append(f"menu: the current rack is marked {page.text_content('#libItems .rk-current')!r}")
+        cur = page.evaluate("() => document.querySelector('#libItems .rk-current')?.textContent ?? null")
+        bad.append(f"menu: the current rack is marked {cur!r}")
     page.click("#libMenu > summary")
     pick(page, "front", 10, "R740", "r740xd")
     page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
