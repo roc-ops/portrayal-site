@@ -154,13 +154,24 @@ export async function drawioFile(rack, chassisOf) {
 // the deferred relief pass (optics, plugs) has landed. The notes ride in the
 // scene's userData, which GLTFExporter writes as the scene's `extras`.
 export async function modelFile(scene, rack, kind) {
-  await scene.complete();
-  const notes = uniq([...rackNotes(rack), ...threeDNotes(rack)]);
-  scene.three.scene.userData.portrayal = {rack: rack.name, notes};
-  const usdz = kind === 'usdz';
-  return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
-          data: usdz ? await scene.toUSDZ() : await scene.toGLB(),
-          type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary', notes};
+  // The render loop runs on the same thread as the exporters, and both encode
+  // each texture with canvas.toBlob(), one await at a time. Each await then
+  // queues behind a frame of the whole rack: 2-3 s a texture on a software
+  // renderer, over 300 textures for four devices. A paused scene makes the
+  // same awaits take milliseconds. It is resumed whatever happens.
+  const wasRunning = scene.running?.();
+  if (wasRunning) scene.pause();
+  try {
+    await scene.complete();
+    const notes = uniq([...rackNotes(rack), ...threeDNotes(rack)]);
+    scene.three.scene.userData.portrayal = {rack: rack.name, notes};
+    const usdz = kind === 'usdz';
+    return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
+            data: usdz ? await scene.toUSDZ() : await scene.toGLB(),
+            type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary', notes};
+  } finally {
+    if (wasRunning) scene.resume();
+  }
 }
 
 // rasterize() only takes a URL, so the sheet goes through a blob URL.

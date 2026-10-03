@@ -3092,6 +3092,10 @@ def check_rack_export_3d(page, base):
         with zipfile.ZipFile(io.BytesIO(usdz)) as z:
             if not any(n.lower().endswith((".usdc", ".usda", ".usd")) for n in z.namelist()):
                 bad.append(f"USDZ: no USD entry in the archive: {z.namelist()}")
+    # The exporters pause the render loop (their texture encoding crawls behind
+    # a frame of the rack otherwise); the view must be drawing again after.
+    if not page.evaluate("() => window.__rack.scene().running()"):
+        bad.append("3D export: the render loop was left paused after an export")
     page.click('#rkMode [data-mode="2d"]')
     return bad
 
