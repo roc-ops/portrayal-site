@@ -3045,6 +3045,35 @@ def check_rack_export_drawio(page, base):
     return bad
 
 
+@extra("rack.html: Export - 2D offers a switch to 3D; GLB and USDZ name every device and carry the notes")
+def check_rack_export_3d(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    page.click('#rkMode [data-mode="2d"]')
+    page.click("#exportMenu > summary")
+    page.wait_for_selector('#exportItems [data-export="to-3d"]', timeout=READY_MS)
+    if page.query_selector('#exportItems [data-export="glb"]'):
+        bad.append("3D export: 2D offers GLB, which only a 3D scene can make")
+    page.click('#exportItems [data-export="to-3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if dl.suggested_filename != "Export-test.glb" or glb[:4] != b"glTF":
+        bad.append(f"GLB: {dl.suggested_filename!r} is not a GLB")
+    missing = [i for i in ("i1", "i2", "i3", "i4") if f'"device-{i}"'.encode() not in glb]
+    if missing:
+        bad.append(f"GLB: no node for device(s) {missing}")
+    if b"Optic labels and colors are not in the 3D model yet: leaf-1." not in glb:
+        bad.append("GLB: the notes are not in the scene's extras")
+    dl = export_file(page, "usdz", timeout=READY_3D_MS)
+    usdz = pathlib.Path(dl.path()).read_bytes()
+    if dl.suggested_filename != "Export-test.usdz" or usdz[:2] != b"PK":
+        bad.append(f"USDZ: {dl.suggested_filename!r} is not a USDZ")
+    page.click('#rkMode [data-mode="2d"]')
+    return bad
+
+
 # THE TOOL PAGES FIT A PHONE. At 360px explorer.html scrolled sideways by 6px,
 # annotate.html by 287px and components.html by 2645px. Not the tool bar: the
 # shell's 23rem side panel (and the Annotator's second one) would not shrink

@@ -27,6 +27,7 @@ export async function mountRack3d(container, {rack, chassisOf, camera = null}) {
   // fields input yet, so a swap into a bay shows in 3D but a field edit on an
   // optic does not, until that lands.
   const stack = rack.items.map(item => ({
+    id: item.id,
     ref: item.ref, cfg: item.cfg, ru: item.ru, label: item.label,
     face: item.face, turned: item.turned, overrides: item.swaps || {},
     chassis: chassisOf?.(item.ref) || undefined,

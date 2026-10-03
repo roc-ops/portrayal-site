@@ -624,6 +624,10 @@ export function createRackScene(container, opts = {}) {
       .map(v => mat(flatCv[v]));
 
     const group = new THREE.Group();
+    // NAMED ONLY WHEN THE CALLER NAMES THE MOUNT. The Rack Builder passes each
+    // item's id, so its GLB says which node is which device; the showcase and
+    // the hero pass none, so their scenes and exports are exactly as before.
+    if (entry.id) group.name = `device-${entry.id}`;
     const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), mats);
     group.add(body);
     meshes.forEach(m => group.add(m));

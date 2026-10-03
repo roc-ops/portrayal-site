@@ -15,7 +15,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng, drawioFile} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile, modelFile} from './rack/exports.js';
 import {save} from './svg-export.js';
 
 const $ = id => document.getElementById(id);
@@ -29,7 +29,7 @@ function loadMode() {
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null, camera3d: null,
+  zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
@@ -55,15 +55,17 @@ function disposeScene3d() {
                 target: S.scene3d.three.controls.target.clone()};
   S.scene3d.dispose();
   S.scene3d = null;
+  S.scene3dRack = null;
 }
 async function rebuild3d() {
   if (S.mode !== '3d') return;             // overtaken by a switch back to 2D
   const mine = ++stage3dEpoch;
   const camera = S.camera3d;
+  const forRack = rack();
   disposeScene3d();
-  const built = await mountRack3d($('stage3d'), {rack: rack(), chassisOf, camera});
+  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
-  S.scene3d = built;
+  S.scene3d = built; S.scene3dRack = forRack;
 }
 let rebuild3dTimer = null;
 function scheduleRebuild3d() {
@@ -234,12 +236,24 @@ function undoShrink() {
 // Every export is built from S.doc by exports.js, never from the panes. A
 // builder resolves to {name, data, type, notes}, or {error: sentence}; the
 // notes travel inside the file, and the status line only counts them.
+// A rebuild follows a commit 300 ms later (scheduleRebuild3d), so an export
+// taken sooner would read the rack before the edit. The scene remembers which
+// rack object it was built from; any other one is rebuilt first.
+async function sceneForExport() {
+  if (S.mode !== '3d') return null;
+  if (!S.scene3d || S.scene3dRack !== rack()) { clearTimeout(rebuild3dTimer); await rebuild3d(); }
+  return S.scene3d;
+}
+const NO_SCENE = {error: "3D isn't available in this browser, so there's no model to export."};
+
 const BUILD = {
   'sheet-svg': () => sheetSvg(rack(), chassisOf),
   'front-svg': () => sheetSvg(rack(), chassisOf, {faces: ['front']}),
   'rear-svg': () => sheetSvg(rack(), chassisOf, {faces: ['rear']}),
   'sheet-png': () => sheetPng(rack(), chassisOf),
   drawio: () => drawioFile(rack(), chassisOf),
+  glb: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'glb') : NO_SCENE; },
+  usdz: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'usdz') : NO_SCENE; },
 };
 let exporting = false;
 async function runExport(kind) {
@@ -275,6 +289,11 @@ function renderExports() {
     act('sheet-png', 'Sheet as a picture (.png)'),
     el('hr'),
     act('drawio', 'draw.io diagram (.drawio)'),
+    el('hr'),
+    ...(S.mode === '3d'
+      ? [act('glb', '3D model (.glb)'), act('usdz', '3D model for Apple devices (.usdz)')]
+      : [act('to-3d', '3D model (GLB, USDZ): switch to 3D',
+             'GLB and USDZ export the 3D view, which 2D does not build')]),
     el('hr'),
     act('json', 'Rack file (.json)'),
   );

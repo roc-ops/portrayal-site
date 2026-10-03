@@ -19,7 +19,7 @@ import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
-import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes,
+import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes, threeDNotes,
         xmlComment, perFaceItems, drawioU} from './export-data.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -145,6 +145,19 @@ export async function drawioFile(rack, chassisOf) {
   const xml = rackDiagram(groups, {labels: true})
     .replace('<mxfile host="portrayal">', m => m + xmlComment(all));
   return {name: `${fileStem(rack.name)}.drawio`, data: xml, type: 'application/xml', notes: all};
+}
+
+// GLB / USDZ (spec §8), from the scene the page built - after complete(), so
+// the deferred relief pass (optics, plugs) has landed. The notes ride in the
+// scene's userData, which GLTFExporter writes as the scene's `extras`.
+export async function modelFile(scene, rack, kind) {
+  await scene.complete();
+  const notes = uniq([...rackNotes(rack), ...threeDNotes(rack)]);
+  scene.three.scene.userData.portrayal = {rack: rack.name, notes};
+  const usdz = kind === 'usdz';
+  return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
+          data: usdz ? await scene.toUSDZ() : await scene.toGLB(),
+          type: usdz ? 'model/vnd.usdz+zip' : 'model/gltf-binary', notes};
 }
 
 // rasterize() only takes a URL, so the sheet goes through a blob URL.
