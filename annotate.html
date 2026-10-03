@@ -1318,6 +1318,7 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
   if (!act || !state.svg) return;
   const buttons = [...panel.querySelectorAll('.btns button')];
   buttons.forEach(b => { b.disabled = true; });
+  exporting = true;
   try {
     if (act.startsWith('svg')) {
       const text = marks.toSvg(exportRoot(), doc);
@@ -1385,6 +1386,7 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
   } catch (e) {
     say('#expmsg', `${act} failed: ${e.message || e}`, 'bad');
   } finally {
+    exporting = false;
     buttons.forEach(b => { b.disabled = false; });
     // and back off again where 3D says the drawing's exports are not on offer
     paintExports3d();
@@ -1395,11 +1397,16 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
 // why they are off, rather than vanishing and leaving the reader to wonder
 // where they went. Share stays: a link carries the mode.
 const ONLY_2D = 'button[data-act]:not([data-act="share"]), #crop, #cropclear';
+// AN EXPORT IN FLIGHT OWNS THE BAR (#94). The handler disables every button
+// while it works, and a mode change repaints from the mode alone - so 3D and
+// back during a slow PNG turned the buttons on under it, and a second export
+// could be started beside the first. While one runs, nothing here enables.
+let exporting = false;
 function paintExports3d() {
   const in3d = m3d.mode() === '3d';
   for (const b of panel.querySelectorAll(ONLY_2D)) {
     if (!('title2d' in b.dataset)) b.dataset.title2d = b.title || '';
-    b.disabled = in3d;
+    b.disabled = in3d || exporting;
     b.title = in3d ? '2D only: switch to 2D to export the drawing' : b.dataset.title2d;
   }
 }

@@ -4676,6 +4676,45 @@ def check_mode_link_respects_gate(page, base):
         bad.append(f"gate: a ?mode=3d link to a level 3 device did not open in 3D - {ok}")
     return bad
 
+
+# AN EXPORT IN FLIGHT KEEPS ITS BUTTONS OFF (#94). The export handler disables
+# the bar while it works; the 3D mode repaints which exports are on offer on
+# every mode change, from the mode alone - so switching to 3D and back during a
+# slow PNG turned the buttons on again under the export, and a second could be
+# started beside it. The PNG is made slow here by holding canvas.toBlob.
+@extra("Annotate: switching modes during an export leaves the export buttons off")
+def check_annotate_export_survives_mode_switch(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html?device=s9510-28dc", wait_until="load")
+    page.wait_for_selector("#stage svg [data-path='port-0']", state="attached", timeout=READY_MS)
+    page.evaluate("""() => {
+      HTMLAnchorElement.prototype.click = function () {};          // no download
+      const toBlob = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function (cb, ...rest) {
+        window.__held = true;
+        setTimeout(() => { window.__held = false; toBlob.call(this, cb, ...rest); }, 6000);
+      };
+    }""")
+    page.click('.btns button[data-act="png-4"]')
+    page.wait_for_function("() => window.__held === true", timeout=READY_MS)
+    page.click('#mode [data-mode="3d"]')
+    page.click('#mode [data-mode="2d"]')
+    page.wait_for_timeout(300)
+    r = page.evaluate("""() => ({held: window.__held,
+      on: [...document.querySelectorAll('.btns button[data-act]')].filter(b => !b.disabled).map(b => b.dataset.act)})""")
+    if not r["held"]:
+        return bad + ["export: the held PNG finished before the mode was switched - nothing was tested"]
+    if r["on"]:
+        bad.append(f"export: with a PNG still in flight, a mode switch re-enabled {r['on']}")
+    page.wait_for_function("() => window.__held === false", timeout=READY_MS)
+    try:
+        page.wait_for_function("""() => [...document.querySelectorAll('.btns button[data-act]')].every(b => !b.disabled)""",
+                               timeout=READY_MS)
+    except Exception:
+        bad.append("export: the buttons did not come back after the export finished")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
