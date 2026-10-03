@@ -33,6 +33,16 @@
 // the smallest a label stays readable at 100%.
 const PITCH = 16, STUB = 46, BODY = 150, HEAD = 26, PAD = 6;
 
+// A STUB IS AS WIDE AS ITS DEVICE'S LONGEST NAME. At a fixed 46 an AIS800's
+// `mgmt-inband-1` ran past its stub into the body, and a C100G's `psu-monitor`
+// was cut off by the symbol's own edge - a name you cannot read is a port you
+// cannot pick. 5 px a character is a generous width for draw.io's 8 px
+// Helvetica, and every stub on a device takes the same width so the edges stay
+// straight. 46 stays the floor.
+const CHAR = 5, INSET = 8;
+const stubWidth = labels =>
+  Math.max(STUB, Math.ceil(Math.max(0, ...labels.map(l => l.length)) * CHAR + INSET));
+
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
   .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -160,7 +170,8 @@ export function schematic(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
   const rows = b => Math.max(1, Math.ceil(b.ports.length / 2));
   const bodyH = bands.reduce((a, b) => a + rows(b) * PITCH + PAD, 0);
   const h = HEAD + bodyH + PAD;
-  const w = STUB + BODY + STUB;
+  const stub = stubWidth(bands.flatMap(b => b.ports.map(stubLabel)));
+  const w = stub + BODY + stub;
   const cells = [];
 
   cells.push(cell(id, name,
@@ -192,7 +203,7 @@ export function schematic(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
     // worse than no control. The band stays a container so its stubs travel
     // with it when it is moved; it is simply not foldable.
     const alt = '';
-    cells.push(dataCell(bandId, label, style, STUB, cy, BODY, bh, id, {
+    cells.push(dataCell(bandId, label, style, stub, cy, BODY, bh, id, {
       'portrayal-bay': b.isBay ? b.key : null,
       'portrayal-face': b.face || null,
       'portrayal-accepts': b.slot ? b.slot.accepts.join(', ') : null,
@@ -206,14 +217,22 @@ export function schematic(name, ports, {id = 'dev', x = 0, y = 0, bays = [],
     b.ports.forEach((p, i) => {
       const onRight = i % 2 === 1;
       const ry = Math.floor(i / 2) * PITCH;
-      const pt = onRight ? 'points=[[1,0.5,0]];' : 'points=[[0,0.5,0]];';
+      // A CABLE COMES IN FROM OUTSIDE, whichever way it was drawn. `points`
+      // alone only holds a cable dropped on the point itself, which is what
+      // the UI pins; one dropped on the stub's body, or written by a script
+      // without entryX, floats - and draw.io's orthogonal router then took it
+      // down through the device and onto the stub's top edge. `portConstraint`
+      // names the side it may arrive on, so a floating cable ends where a
+      // pinned one does.
+      const pt = onRight ? 'points=[[1,0.5,0]];portConstraint=east;'
+                         : 'points=[[0,0.5,0]];portConstraint=west;';
       cells.push(dataCell(`${id}-${b.key}-${stubLabel(p)}`, stubLabel(p),
         'rounded=0;html=1;fillColor=#3a444c;strokeColor=#4d5860;' +
         `fontColor=#e4e7ea;fontSize=8;verticalAlign=middle;${pt}` +
         `align=${onRight ? 'left' : 'right'};` +
         `spacing${onRight ? 'Left' : 'Right'}=3;` +
         'container=0;movable=0;resizable=0;deletable=0;connectable=1;',
-        onRight ? BODY : -STUB, ry, STUB, PITCH, bandId, {
+        onRight ? BODY : -stub, ry, stub, PITCH, bandId, {
           'portrayal-port': p.path || p.id,
           'portrayal-media': p.media || null,
           'portrayal-speed': p.speed || null,
