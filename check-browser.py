@@ -6447,6 +6447,99 @@ def check_rack_cables_clicks(page, base):
     return bad
 
 
+# The cable form on its own, in a host over the page: what it shows, what it
+# warns, and what it hands back. window.__form records the callbacks.
+FORM_JS = """async (opts) => {
+  let P;
+  try { P = await import('/site/rack/cable-panel.js'); }
+  catch (err) { return String(err.message || err); }
+  document.getElementById('formHost')?.remove();
+  const host = document.createElement('aside');
+  host.id = 'formHost';
+  host.className = 'rk-side';
+  host.style.cssText = 'position:fixed;left:0;top:0;z-index:50;width:20rem;max-height:100vh';
+  document.body.append(host);
+  window.__form = {saved: null, cancelled: 0};
+  host.append(P.cableForm({...opts, onSave: f => { window.__form.saved = f; },
+                           onCancel: () => { window.__form.cancelled += 1; }}));
+  return '';
+}"""
+
+
+@extra("rack.html: the cable form offers the eight media, warns on a mismatch without blocking, and checks the length")
+def check_rack_cable_form(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    saved = lambda: page.evaluate("() => window.__form.saved")
+    warn = lambda: (page.text_content("#formHost #cWarn") or "")
+
+    # A NEW CABLE between a fiber end and a copper end, offered as OS2.
+    err = page.evaluate(FORM_JS, {
+        "title": "New cable", "endA": "leaf-1 (U14) port-3", "endB": "demarc (U20) port-2-2",
+        "cable": {"media": "os2", "purpose": "", "label": "", "length": None},
+        "infoA": {"family": "fiber", "mode": None}, "infoB": {"family": "copper", "mode": None},
+        "purposes": ["uplink", "management"]})
+    if err:
+        return bad + [f"cable form: cable-panel.js does not load ({err})"]
+    if (page.text_content("#formHost h3") or "") != "New cable":
+        bad.append("cable form: no New cable heading")
+    if (page.text_content("#cEndA"), page.text_content("#cEndB")) != ("A: leaf-1 (U14) port-3", "B: demarc (U20) port-2-2"):
+        bad.append("cable form: the two ends are not named")
+    values = page.eval_on_selector_all("#cMedia option", "os => os.map(o => o.value)")
+    if values != ["", "os2", "om3", "om4", "om5", "cat6", "cat6a", "dac", "aoc"]:
+        bad.append(f"cable form: the media offered are {values}")
+    if page.input_value("#cMedia") != "os2" or (page.text_content("#cSave") or "") != "Add cable":
+        bad.append("cable form: a new cable does not open on its proposed media with an Add cable button")
+    if page.eval_on_selector_all("#cPurposes option", "os => os.map(o => o.value)") != ["uplink", "management"]:
+        bad.append("cable form: the rack's purposes are not offered")
+    if "The ends differ: A is fiber, B is copper." not in warn() or "does not suit end B" not in warn():
+        bad.append(f"cable form: the mismatch warning reads {warn()!r}")
+    page.select_option("#cMedia", "cat6a")
+    if "does not suit end A" not in warn():
+        bad.append(f"cable form: the warning did not follow the media ({warn()!r})")
+    page.select_option("#cMedia", "")
+    if warn() != "The ends differ: A is fiber, B is copper.":
+        bad.append(f"cable form: with no media the warning reads {warn()!r}")
+    # A length that is not a number stops the save, with a sentence.
+    page.fill("#cLength", "abc")
+    page.click("#cSave")
+    if (page.text_content("#cError") or "") != "Enter a length above 0, or leave it empty." or saved() is not None:
+        bad.append(f"cable form: a bad length gave {page.text_content('#cError')!r} and saved {saved()}")
+    # A warning does not: the mismatched cable saves.
+    page.fill("#cPurpose", " uplink ")
+    page.fill("#cLabel", "A7")
+    page.fill("#cLength", "2.5")
+    page.select_option("#cUnit", "ft")
+    page.click("#cSave")
+    want = {"media": "", "purpose": "uplink", "label": "A7", "length": {"value": 2.5, "unit": "ft", "source": "entered"}}
+    if saved() != want:
+        bad.append(f"cable form: saved {saved()}, expected {want}")
+    page.click("#cCancel")
+    if page.evaluate("() => window.__form.cancelled") != 1:
+        bad.append("cable form: Cancel did not report")
+
+    # EDITING: the same form, opened on the cable's own values.
+    page.evaluate(FORM_JS, {
+        "title": "Edit cable", "endA": "a", "endB": "b",
+        "cable": {"id": "c1", "media": "om9", "purpose": "core", "label": "B1",
+                  "length": {"value": 3, "unit": "m", "source": "entered"}},
+        "infoA": None, "infoB": None, "purposes": []})
+    got = [page.input_value(s) for s in ("#cMedia", "#cPurpose", "#cLabel", "#cLength", "#cUnit")]
+    if got != ["om9", "core", "B1", "3", "m"] or (page.text_content("#cSave") or "") != "Save":
+        bad.append(f"cable form: editing opens on {got} with a {page.text_content('#cSave')!r} button")
+    if warn():
+        bad.append(f"cable form: a warning with nothing known about the ends ({warn()!r})")
+    page.fill("#cLength", "")
+    page.press("#cLabel", "Enter")
+    want = {"media": "om9", "purpose": "core", "label": "B1", "length": None}
+    if saved() != want:
+        bad.append(f"cable form: Enter saved {saved()}, expected {want}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
