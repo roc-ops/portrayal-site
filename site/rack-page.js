@@ -359,7 +359,11 @@ async function render() {
     // PLUGS ARE DERIVED, NEVER STORED: a cabled end is drawn with the plug its
     // port takes, laid over the item's own swaps for this drawing only. The
     // document, Explorer and the exports keep reading item.swaps.
-    facts = await cableFacts(r);
+    // Cables are an overlay: if reading them fails, the rack still draws, unplugged.
+    facts = await cableFacts(r).catch(err => {
+      console.warn('[portrayal] could not read the cables\' faces', err);
+      return {seats: {}, ends: new Map()};
+    });
     const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
       ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({

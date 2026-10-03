@@ -79,9 +79,17 @@ export async function cableFacts(rack, extra = []) {
   if (memo.key === key) return memo.value;
   const list = await components();
   const panels = new Map();
+  let failed = false;
+  // A panel that fails to load is a panel with no drawing: its ends read "this
+  // panel has no drawing" and the rack still draws. The failure is not kept
+  // (see `failed` below), so a later redraw asks again.
   const panelOf = (item, view) => {
     const k = `${item.id}|${view}`;
-    if (!panels.has(k)) panels.set(k, readPanel(item, view, list));
+    if (!panels.has(k)) panels.set(k, readPanel(item, view, list).catch(err => {
+      failed = true;
+      console.warn(`[portrayal] could not read ${item.label || item.id}'s ${view} panel for its cables`, err);
+      return null;
+    }));
     return panels.get(k);
   };
   const hasCable = new Set(cabled.map(endKey));
@@ -91,10 +99,16 @@ export async function cableFacts(rack, extra = []) {
     const item = items.get(end.item) || null;
     const got = readEnd(end, item, item ? await panelOf(item, end.view) : null, list);
     out.ends.set(k, {facts: got.facts, info: got.info, reason: looseReason(end, got.facts)});
+    // seats is keyed by ITEM, as item.swaps is: a front-panel end's plugs and a
+    // rear-panel end's share one map, and mergeSeats lays it over both panels.
     if (item && hasCable.has(k)) out.seats[item.id] = {...(out.seats[item.id] || {}), ...got.seats};
   }
-  // An empty component index is a fetch that failed (face.js asks again next
-  // time), so an answer built on it is not kept.
-  if (list.length) memo = {key, value: out};
+  // What is returned is shared (the memo, S.cableFacts, the probe): frozen.
+  for (const m of Object.values(out.seats)) Object.freeze(m);
+  Object.freeze(out.seats);
+  Object.freeze(out);
+  // An empty component index, or a panel that failed to load, is a fetch that
+  // failed (face.js asks again next time), so an answer built on it is not kept.
+  if (list.length && !failed) memo = {key, value: out};
   return out;
 }

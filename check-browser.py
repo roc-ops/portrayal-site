@@ -6180,6 +6180,98 @@ def check_rack_cables_drawn(page, base):
     return bad
 
 
+@extra("rack.html: a face that fails to load leaves its cable end loose, not the rack undrawn; an item's own swap beats a derived plug")
+def check_rack_cable_plugs_resilient(page, base):
+    import copy
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    loose_key = "i1|front|slot-2/module/p0"
+    seats = lambda: page.evaluate("() => window.__rack.cableFacts()")
+
+    # A face that fails to load. core-1 (i1) is the one item whose own swaps make
+    # the face read fetch asr-9006.configs.json twice: faceUrl asks for it and
+    # swallows a failure, then the swap step asks again and does not. So the
+    # first TWO requests for that file after the file is opened are aborted
+    # (the facts read comes before the elevations draw) and every later one
+    # is let through: configuredFace rejects for the facts read only, and the
+    # page's own draw succeeds.
+    state = {"abort": 0, "aborted": 0}
+    def maybe_abort(route):
+        if state["abort"] > 0:
+            state["abort"] -= 1
+            state["aborted"] += 1
+            route.abort()
+        else:
+            route.continue_()
+    page.route("**/assets/dist/asr-9006.configs.json", maybe_abort)
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    state["abort"] = 2
+    page.set_input_files("#openFile", files=[{"name": "fixture.rack.json", "mimeType": "application/json",
+                                              "buffer": json.dumps(CABLE_FIXTURE).encode()}])
+    try:
+        wait_sel(page, "resilient: the rack's cables despite a failed face", 'svg[data-pane="rear"] [data-cable-id]')
+    except RuntimeError as e:
+        return bad + [f"face failure: the rack was not drawn: {e}"]
+    if state["aborted"] != 2:
+        bad.append(f"face failure: {state['aborted']} requests were aborted, expected 2 (the check did not fail a face)")
+    n = page.evaluate("""() => ['front', 'rear'].map(p =>
+      document.querySelectorAll(`svg[data-pane="${p}"] [data-item-id][data-panel]`).length)""")
+    if n != [4, 4]:
+        bad.append(f"face failure: the panes draw {n} devices, expected 4 on each (i1-i4 on both faces)")
+    if page.query_selector("#side .rk-error[role=alert]"):
+        bad.append("face failure: the side panel says the rack could not be drawn")
+    facts = seats()
+    if facts["reasons"].get(loose_key) != "this panel has no drawing":
+        bad.append(f"face failure: core-1's end reads {facts['reasons'].get(loose_key)!r}, expected the no-drawing sentence")
+    others = {k: v for k, v in facts["reasons"].items() if k != loose_key}
+    if others != {"i2|front|port-1": None, "i2|front|mgmt-eth": None, "i3|front|port-2-1": None,
+                  "i2|front|port-2": "port-2 holds no optic", "i4|front|port-2-1": None}:
+        bad.append(f"face failure: the other ends read {others}")
+    if facts["seats"].get("i1"):
+        bad.append(f"face failure: core-1 was seated plugs from a panel that failed: {facts['seats']['i1']}")
+    # c1 has one end loose, so it hangs from leaf-1 as an unplugged lead; c2 is whole.
+    c1 = page.evaluate("""() => document.querySelector('svg[data-pane="front"] [data-cable-id="c1"]')?.dataset.looseLead || null""")
+    if c1 != "to":
+        bad.append(f"face failure: c1 is {c1!r}, expected an unplugged lead for its B end")
+    if not page.query_selector('svg[data-pane="front"] [data-item-id="i2"][data-panel] [data-ref^="generic/lc-plug@2"]'):
+        bad.append("face failure: leaf-1's plugs went missing with core-1's face")
+
+    if not page.evaluate("() => { const s = window.__rack.cableFacts().seats; return Object.isFrozen(s) && Object.values(s).every(Object.isFrozen); }"):
+        bad.append("face failure: the seats handed out are not frozen")
+
+    # The failure is not remembered: a redraw (selecting leaf-1) reads again, and the end lands.
+    x, y = u_center(page, "front", 14)
+    page.mouse.click(x, y)
+    try:
+        page.wait_for_function(
+            "() => window.__rack.cableFacts().reasons['i1|front|slot-2/module/p0'] === null", timeout=READY_MS)
+    except Exception:
+        bad.append(f"face failure: after the failure was lifted the end still reads {seats()['reasons'].get(loose_key)!r}")
+    else:
+        if not page.query_selector('svg[data-pane="front"] [data-item-id="i1"][data-panel] [data-ref^="generic/lc-plug@2"]'):
+            bad.append("face failure: after the redraw core-1 shows no plug")
+
+    # An item's own swap wins over a derived plug: leaf-1's port-1 optic has its tx
+    # bore seated by the user (a dust cap); only the rx bore takes a derived plug.
+    fx = copy.deepcopy(CABLE_FIXTURE)
+    fx["racks"][0]["items"][1]["swaps"]["port-1-occupant/tx"] = "common/lc-dust-cap@1"
+    open_fixture(page, base, fx)
+    wait_sel(page, "own swap: leaf-1's plug", 'svg[data-pane="front"] [data-item-id="i2"][data-panel] [data-ref^="generic/lc-plug@2"]')
+    i2 = seats()["seats"].get("i2", {})
+    if "port-1-occupant/tx" in i2 or i2.get("port-1-occupant/rx") != "generic/lc-plug@2":
+        bad.append(f"own swap: leaf-1's derived seats are {i2}, expected rx only")
+    got = page.evaluate("""() => { const g = document.querySelector('svg[data-pane="front"] [data-item-id="i2"][data-panel]');
+      const n = r => g.querySelectorAll(`[data-ref^="${r}"]`).length;
+      return {plug: n('generic/lc-plug@2'), cap: n('common/lc-dust-cap@1')}; }""")
+    if got != {"plug": 1, "cap": 1}:
+        bad.append(f"own swap: leaf-1's port-1 shows {got}, expected one plug (rx) and the user's dust cap (tx)")
+    if page.evaluate("() => window.__rack.doc().racks[0].items[1].swaps") != fx["racks"][0]["items"][1]["swaps"]:
+        bad.append("own swap: the document's swaps changed")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
