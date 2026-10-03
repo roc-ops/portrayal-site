@@ -68,6 +68,8 @@ export function createMode3d(shell, opts = {}) {
   shell.el.status.before(fruBox);
 
   let mode = '2d', viewer = null, loading = null, loadedKey = '';
+  // The load in flight and the key it is for: see sync().
+  let inflight = null;
 
   async function ensureViewer() {
     if (viewer) return viewer;
@@ -176,7 +178,19 @@ export function createMode3d(shell, opts = {}) {
     // point and for the same reason. The viewer keeps marks across a rebuild.
     if (afterSync) await afterSync(v);
     if (key === loadedKey) return;
-    await v.load({device: state.device, config: state.cfg, overrides: overrides()});
+    // ONE BUILD PER KEY. loadedKey is only set once a load has finished, and the
+    // viewer queues loads rather than merging them, so two syncs for the same
+    // key while the first build ran - a page re-syncing on every edit, a load
+    // event and a render together - each built the whole scene again. A sync
+    // for the key already loading waits for that load instead.
+    if (inflight && inflight.key === key) {
+      await inflight.done;
+      if (afterSync) await afterSync(v);
+      return;
+    }
+    const done = v.load({device: state.device, config: state.cfg, overrides: overrides()});
+    inflight = {key, done};
+    try { await done; } finally { if (inflight && inflight.done === done) inflight = null; }
     loadedKey = key;                // only once it is actually the thing on screen
     fruBar(v);
     if (state.sel) v.select(state.sel);
@@ -259,7 +273,15 @@ export function createMode3d(shell, opts = {}) {
     shell.el.status.textContent = `3D unavailable: ${err.message || err}`;
   };
   shell.on('change', () => { sync().catch(failed('swap sync')); });
-  shell.on('load', () => { sync().catch(failed('reload')); });
+  shell.on('load', () => {
+    sync().catch(failed('reload'));
+    // A LOAD DROPS THE FACES IT DID NOT MOUNT. The shell refetches them for a
+    // merged tree and says nothing when they are back, and a page whose state
+    // reaches every face - a mark on the rear fans - has to be synced again
+    // then, as setMode does on the way into 3D.
+    if (mode === '3d' && state.merge && typeof shell.loadFaces === 'function')
+      shell.loadFaces().then(() => sync()).catch(failed('faces after a reload'));
+  });
   addEventListener('resize', () => { if (mode === '3d' && viewer) viewer.resize(); });
 
   return {

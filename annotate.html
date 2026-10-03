@@ -309,10 +309,9 @@ const m3d = createMode3d(shell, {
     drawLegend3d();
     paintRows();
   },
-  // A CLICK IN 3D IS A CLICK. Annotate's own select handler decides what a
-  // second click on the same part means - it takes the mark off - so a pick is
-  // handed over as the path itself; Explorer's "again clears" would toggle twice.
-  onPick: p => shell.select(p || null, false),
+  // A CLICK IN 3D IS A CLICK IN 2D. mode3d's default pick is the 2D stage's own
+  // rule - a click on the selected part deselects it - so the same click means
+  // the same thing on both stages: select and mark, deselect, then unmark.
   // A MODE SWITCH IS NOT A CLICK. Returning to 2D re-selects what was selected
   // so its halo is drawn again; muted, so it does not toggle that part's mark.
   reselect: p => { muting = true; try { shell.select(p, true); } finally { muting = false; } },
@@ -335,7 +334,17 @@ function drawLegend3d() {
     `<div class="row"><span class="sw" style="border-color:${r.color};background:${
       r.hollow ? 'transparent' : r.color}"></span>${esc(r.label)}</div>`).join('');
 }
-m3d.on('mode', () => { drawLegend3d(); if (state.svg) paintRows(); });
+m3d.on('mode', () => {
+  // THE DRAWING'S GESTURES STAY WITH THE DRAWING. `dragged` is set by a pan on
+  // the SVG stage and reset only by the next press there, which is hidden in 3D
+  // - so a pan before switching made every 3D click look like the end of one,
+  // and none added a mark. The viewer filters its own orbit drags. And an armed
+  // crop's veil covers the whole stage, the 3D one included.
+  dragged = false;
+  disarmCrop();
+  drawLegend3d();
+  if (state.svg) paintRows();
+});
 
 // A mark the scene cannot show: it matched nothing on any face, or every path
 // it reached is one the viewer could not find (silkscreen is drawn, not built).

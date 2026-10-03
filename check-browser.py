@@ -4443,8 +4443,19 @@ def check_annotate_3d(page, base):
                                " || !document.querySelector('#stage-3d').hidden", timeout=READY_MS)
         return bad
     try:
+        # A PAN AND AN ARMED CROP IN 2D, THEN 3D (final review). The drag guard is
+        # the drawing's: a pan before 3D must not stop 3D clicks adding marks. And
+        # an armed crop's veil sits over the stage: going to 3D must disarm it.
+        sb = page.locator("#stage svg").bounding_box()
+        page.mouse.move(sb["x"] + sb["width"] * 0.3, sb["y"] + sb["height"] * 0.5)
+        page.mouse.down()
+        page.mouse.move(sb["x"] + sb["width"] * 0.45, sb["y"] + sb["height"] * 0.5, steps=8)
+        page.mouse.up()
+        page.click("#crop")
         page.click('#mode [data-mode="3d"]')
         until("() => window.__viewer && window.__viewer.marks().length >= 3", "the scene's first marks", READY_3D_MS)
+        if page.evaluate("() => document.querySelector('#crop').classList.contains('on')"):
+            bad.append("annotate 3D: a crop armed in 2D is still armed in 3D, its veil over the scene")
         # SETTLED, NOT JUST STARTED: marks are sent before the build and again on
         # the built scene, and the rows repaint on the viewer's report. Read once the
         # report has found the ports; if it never does, the assertions below say so.
@@ -4480,8 +4491,9 @@ def check_annotate_3d(page, base):
         # A CLICK IN 3D IS A CLICK (Review Focus 4). select() frames the camera on
         # the part, centred, so a real click at the canvas centre lands on it - the
         # whole path: canvas, the viewer's select event, onPick, Annotate's toggle.
-        # The first click adds a mark for port-8; a second click on the same part
-        # takes it off, exactly once.
+        # AS IN 2D, where the shell turns a click on the selected part into a
+        # deselect: the first click selects port-8 and adds its mark, the second
+        # clears the selection and keeps the mark, the third takes the mark off.
         n = len(doc["marks"])
         page.evaluate("() => { window.__viewer.select('port-8'); }")
         page.wait_for_timeout(500)
@@ -4489,8 +4501,15 @@ def check_annotate_3d(page, base):
         cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
         page.mouse.click(cx, cy)
         until(f"() => document.querySelectorAll('#rows .mark').length === {n + 1}", "a 3D click to add a mark")
+        if not page.evaluate("() => !!document.querySelector(\".node.sel[data-path='port-8']\")"):
+            bad.append("annotate 3D: a click on port-8 did not select it in the tree")
         page.mouse.click(cx, cy)
-        until(f"() => document.querySelectorAll('#rows .mark').length === {n}", "a second 3D click to take it off")
+        page.wait_for_timeout(600)
+        second = page.evaluate("() => [document.querySelectorAll('#rows .mark').length, !!document.querySelector('.node.sel')]")
+        if second != [n + 1, False]:
+            bad.append(f"annotate 3D: a second click gave {second} (rows, selected) - 2D gives [{n + 1}, False]: deselect, keep the mark")
+        page.mouse.click(cx, cy)
+        until(f"() => document.querySelectorAll('#rows .mark').length === {n}", "a third 3D click to take the mark off")
 
         # AN OPTIC SEATED IN 3D KEEPS EVERY MARK. Through the inspector, as a
         # reader does it: select the cage in the tree, choose the first optic.
@@ -4523,6 +4542,25 @@ def check_annotate_3d(page, base):
             bad.append(f"annotate 3D: a 2D/3D round trip changed the marks {after_swap} -> {after}")
         if page.evaluate(rows) != before_rows:
             bad.append(f"annotate 3D: a 2D/3D round trip changed the document {before_rows} -> {page.evaluate(rows)}")
+
+        # A CONFIGURATION CHANGE IN 3D (final review). The shell refetches the
+        # other faces after the load, and the rear-only fan-2 must be marked again
+        # once they are back; and the scene is built once, not once per listener.
+        page.evaluate("""() => { const v = window.__viewer; window.__loads = 0;
+          const l = v.load; v.load = o => { window.__loads++; return l(o); }; }""")
+        page.select_option("#cfg", "ac")
+        until("() => window.__viewer.info.config === 'ac'", "the scene to load the ac configuration", READY_3D_MS)
+        try:
+            page.wait_for_function("() => window.__viewer.marks().some(m => m.path === 'fan-2')", timeout=READY_MS)
+        except Exception:
+            bad.append("annotate 3D: after a configuration change, the rear-only fan-2 is no longer marked")
+        page.wait_for_timeout(1500)
+        loads = page.evaluate("() => window.__loads")
+        if loads != 1:
+            bad.append(f"annotate 3D: a configuration change built the scene {loads} times, not once")
+        page.select_option("#cfg", "dc")
+        until("() => window.__viewer.info.config === 'dc' && window.__viewer.marks().length >= 3",
+              "the dc configuration and its marks back", READY_3D_MS)
 
         # Back in 2D the exports come back with their own titles (Review Focus 5)
         page.click('#mode [data-mode="2d"]')
