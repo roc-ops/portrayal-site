@@ -69,6 +69,40 @@ test('a repeated label gets the item id, once per duplicate', () => {
   assert.equal(n.get('i1').renamed, false);
 });
 
+test('a generated name never collides with another item\'s own label', () => {
+  const items = [{id: 'i3', label: 'demarc', ref: 'tm-280'}, {id: 'i4', label: 'demarc', ref: 'tm-280'},
+                 {id: 'i9', label: 'demarc-i3', ref: 'tm-280'}];
+  const names = [...X.uniqueNames(items).values()].map(v => v.name);
+  assert.equal(new Set(names).size, 3, names.join(', '));
+  assert.equal(names[2], 'demarc-i3');           // an item's own label is kept
+  assert.equal(names[1], 'demarc-i4');
+  assert.notEqual(names[0], 'demarc-i3');
+  assert.match(names[0], /^demarc-i3-/);
+  // Two generated names cannot meet either.
+  const twice = [{id: 'a', label: 'x', ref: 'r'}, {id: 'a-2', label: 'x', ref: 'r'}, {id: 'b', label: 'x-a', ref: 'r'},
+                 {id: 'c', label: 'x-a-2', ref: 'r'}];
+  const got = [...X.uniqueNames(twice).values()].map(v => v.name);
+  assert.equal(new Set(got).size, 4, got.join(', '));
+});
+
+test('a device with no type and no configuration name leaves the parenthesis out', () => {
+  const item = {id: 'i1', ref: 'mystery', cfg: '', label: 'm', ru: 2, u: 1, face: 'front', turned: false};
+  const {rows} = X.deviceImportRows({rack: RACK, items: [item], types: new Map([['i1', null]])});
+  assert.equal(rows[0].comments, 'No NetBox device type for mystery; add one before importing.');
+  const {rows: none} = X.deviceImportRows({rack: RACK, items: [{...item, cfg: undefined}], types: new Map()});
+  assert.equal(none[0].comments, 'No NetBox device type for mystery; add one before importing.');
+});
+
+test('a rack with no devices does not claim every device matched', () => {
+  assert.equal(X.dcimNotesText({rackName: 'Empty', target: 'netbox', date: DAY, notes: [], devices: 0}),
+    'NetBox types for Empty, from the Portrayal Rack Builder, 2026-09-27.\n\n' +
+    'This rack has no devices, so there are no NetBox types in this zip.\n');
+  assert.equal(X.dcimNotesText({rackName: 'Empty', target: 'nautobot', date: DAY, notes: ['a'], devices: 0}),
+    'Nautobot types for Empty, from the Portrayal Rack Builder, 2026-09-27.\n\n' +
+    'This rack has no devices, so there are no Nautobot types in this zip.\n- a\n');
+  assert.match(X.dcimNotesText({rackName: 'R', target: 'netbox', date: DAY, notes: [], devices: 2}), /Every device and part/);
+});
+
 const TYPES = new Map([
   ['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: true, guess: true}],
   ['i2', {manufacturer: 'Edgecore', model: '7726-32X-O-AC-F', isFullDepth: true, guess: true}],

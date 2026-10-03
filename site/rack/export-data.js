@@ -9,8 +9,16 @@ import {uLabel} from './model.js';
 export const uniq = list => [...new Set(list)];
 
 // One stem for every file a rack exports - the one its .json already uses.
-export const fileStem = name =>
-  String(name ?? '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-|-$/g, '') || 'rack';
+// Never a dotfile ("." and ".." are names a rack can have), never longer
+// than 80 characters, and never a name Windows keeps for a device: CON.drawio
+// cannot be opened there, whatever its extension.
+const RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+const trimEdges = s => s.replace(/^[.-]+|[.-]+$/g, '');
+export function fileStem(name) {
+  const stem = trimEdges(trimEdges(String(name ?? '').replace(/[^A-Za-z0-9._-]+/g, '-')).slice(0, 80));
+  if (!stem) return 'rack';
+  return RESERVED.test(stem.split('.')[0]) ? `rack-${stem}` : stem;
+}
 
 const pad = n => String(n).padStart(2, '0');
 export const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -59,28 +67,48 @@ export function wrapText(text, width) {
   return lines;
 }
 
-// Notes inside an XML file (draw.io). "--" may not appear in a comment.
-export function xmlComment(notes) {
-  if (!notes.length) return '';
-  const body = notes.map(n => `- ${n}`).join('\n').replace(/-{2,}/g, '-');
-  return `<!--\nNotes from the Portrayal Rack Builder:\n${body}\n-->`;
+// draw.io reads a label cell as HTML (vendor/drawio.js writes html=1 and
+// escapes for XML only), so text handed to it is escaped for HTML first:
+// "R&D <core>" then shows as typed instead of losing its tag.
+export const htmlText = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// A swap the face did not take, said two ways: `drawn` for a file that shows
+// the face (the sheet, draw.io), `listed` for one that lists its parts (the
+// BOM, the DCIM types). A refused bay is left empty; a part that could not be
+// loaded leaves the configuration's own part in place.
+const SEAT_TAIL = {
+  drawn: {refused: n => `${n === 1 ? 'is' : 'are'} shown empty.`,
+          failed: 'so the drawing shows what the configuration seats there.'},
+  listed: {refused: n => `${n === 1 ? 'is' : 'are'} empty, so no part is listed there.`,
+           failed: 'so the part the configuration seats there is listed instead.'}};
+function seatNotesAs(tail, {label, u, face}) {
+  const at = `${label} at U${u}`;
+  const {refused = [], failed = []} = face?.seat || {};
+  const out = [];
+  if (refused.length)
+    out.push(`${at}: ${refused.join(', ')} refused the part chosen and ${tail.refused(refused.length)}`);
+  if (failed.length)
+    out.push(`${at}: the part chosen for ${failed.join(', ')} couldn't be loaded, ${tail.failed}`);
+  return out;
 }
+export const seatNotes = arg => seatNotesAs(SEAT_TAIL.listed, arg);
 
 // What one pane could not show of one item. `u` is the U label as the frame
 // numbers it; `panel` is the device's own panel facing `pane`.
 export function faceNotes({label, u, pane, panel, face}) {
-  const at = `${label} at U${u}`;
-  if (!face) return [`${at}: no ${panel} drawing, so the ${pane} shows an outline.`];
-  const {refused = [], failed = []} = face.seat || {};
-  const out = [];
-  if (refused.length)
-    out.push(`${at}: ${refused.join(', ')} refused the part chosen and ${refused.length === 1 ? 'is' : 'are'} shown empty.`);
-  if (failed.length)
-    out.push(`${at}: the part chosen for ${failed.join(', ')} couldn't be loaded, so the drawing shows what the configuration seats there.`);
-  return out;
+  if (!face) return [`${label} at U${u}: no ${panel} drawing, so the ${pane} shows an outline.`];
+  return seatNotesAs(SEAT_TAIL.drawn, {label, u, face});
 }
 
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+// THE STATUS LINE after a download. `notes` are the ones the file carries;
+// `left` are the ones it has no place for (a USDZ has none at all, a device
+// CSV has only its rows' comments), said rather than counted as "in the file".
+export function exportStatus({notes = [], left = [], leftText = ''} = {}) {
+  const head = notes.length ? `Downloaded, with ${count(notes.length, 'note', 'notes')} in the file.` : 'Downloaded.';
+  return left.length ? `${head} ${leftText || `Not in the file: ${left.join(' ')}`}` : head;
+}
 export function rackNotes(rack) {
   const out = [];
   const z = rack.zeroU?.length || 0, c = rack.cables?.length || 0;
@@ -192,13 +220,21 @@ export function moduleTypePath(paths, model) {
 export const partNumber = comp => comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
   ?? comp?.attrs?.['vendor-sku'] ?? '';
 
-// A DCIM wants unique device names; two items may share a label.
+// A DCIM wants unique device names; two items may share a label. A repeated
+// label gets the item's id - and a counter after it for as long as that name
+// is some other item's own label, or one already generated here.
 export function uniqueNames(items) {
   const base = i => String(i.label || i.ref).trim();
   const seen = new Map();
   for (const i of items) seen.set(base(i), (seen.get(base(i)) || 0) + 1);
-  return new Map(items.map(i => [i.id, seen.get(base(i)) > 1
-    ? {name: `${base(i)}-${i.id}`, renamed: true} : {name: base(i), renamed: false}]));
+  const taken = new Set(seen.keys());
+  return new Map(items.map(i => {
+    if (seen.get(base(i)) === 1) return [i.id, {name: base(i), renamed: false}];
+    let name = `${base(i)}-${i.id}`;
+    for (let k = 2; taken.has(name); k++) name = `${base(i)}-${i.id}-${k}`;
+    taken.add(name);
+    return [i.id, {name, renamed: true}];
+  }));
 }
 
 export const NETBOX_COLUMNS = ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack',
@@ -227,7 +263,7 @@ export function deviceImportRows({rack, items, types, target = 'netbox'}) {
     const t = types.get(it.id) || null;
     const n = names.get(it.id);
     const notes = [];
-    if (!t) notes.push(`No ${T} device type for ${it.ref} (${it.cfg}); add one before importing.`);
+    if (!t) notes.push(`No ${T} device type for ${it.ref}${it.cfg ? ` (${it.cfg})` : ''}; add one before importing.`);
     else if (t.otherVendor)
       notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer: t.chassisManufacturer, path: t.path}));
     else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
@@ -251,10 +287,12 @@ export function deviceImportRows({rack, items, types, target = 'netbox'}) {
   return {columns: target === 'nautobot' ? NAUTOBOT_COLUMNS : NETBOX_COLUMNS, rows};
 }
 
-export function dcimNotesText({rackName, target, date, notes}) {
+// `devices` is how many the rack has: with none, nothing matched anything.
+export function dcimNotesText({rackName, target, date, notes, devices}) {
   const T = TARGET_NAME[target] || 'NetBox';
-  const body = notes.length ? notes.map(n => `- ${n}`).join('\n')
-    : `Every device and part in this rack matched a ${T} type.`;
+  const list = notes.map(n => `- ${n}`);
+  const body = (devices === 0 ? [`This rack has no devices, so there are no ${T} types in this zip.`, ...list]
+    : list.length ? list : [`Every device and part in this rack matched a ${T} type.`]).join('\n');
   return `${T} types for ${rackName}, from the Portrayal Rack Builder, ${isoDate(date)}.\n\n${body}\n`;
 }
 
@@ -287,9 +325,10 @@ export const BOM_COLUMNS = ['section', 'qty', 'manufacturer', 'model', 'descript
 
 // The BOM is meant to open in a spreadsheet, unlike the device-import CSVs
 // (an importer reads those literally). A cell that OPENS as a formula -
-// starts with =, +, - or @ - gets a leading apostrophe first, so the
+// starts with =, +, - or @, or with the tab or carriage return a spreadsheet
+// skips on its way to one - gets a leading apostrophe first, so the
 // spreadsheet keeps it as text; csvCell then quotes it as any such text needs.
-const FORMULA_START = /^[=+\-@]/;
+const FORMULA_START = /^[=+\-@\t\r]/;
 export const bomCell = v => csvCell(FORMULA_START.test(String(v ?? '')) ? `'${v}` : v);
 
 export function bomRows({devices = [], parts = [], frame, railUs = []}) {

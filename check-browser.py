@@ -3060,6 +3060,31 @@ def check_rack_export_drawio(page, base):
         bad.append("draw.io: a bottom-up rack is not numbered from the bottom")
     if "is behind leaf-1" not in text:
         bad.append("draw.io: the notes comment does not list the device hidden behind leaf-1")
+    if not text.startswith('<mxfile host="portrayal"><!--') or text.count("<!--") != 1:
+        bad.append(f"draw.io: the notes are not one comment inside <mxfile>: {text[:80]!r}")
+
+    # draw.io reads a label as HTML (html=1): a name with & and < must reach it
+    # HTML-escaped, or the tag-like part is dropped from what it shows.
+    got = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js');
+      const r = window.__rack.doc().racks[0];
+      const rack = {...r, name: 'R&D <core>', items: r.items.filter(i => i.id === 'i2').map(i => ({...i, label: 'a<b>&c'}))};
+      const out = await X.drawioFile(rack, () => ({ru: 1}));
+      const doc = new DOMParser().parseFromString(out.data, 'application/xml');
+      const shown = v => { const d = document.createElement('div'); d.innerHTML = v; return d.textContent; };
+      const values = [...doc.querySelectorAll('[value]')].map(e => e.getAttribute('value')).filter(Boolean);
+      return {name: out.name, error: doc.querySelector('parsererror')?.textContent || '',
+              values, shown: values.map(shown)};
+    }""")
+    if got["error"]:
+        bad.append(f"draw.io labels: not well-formed XML ({got['error'][:120]})")
+    if got["name"] != "R-D-core.drawio":
+        bad.append(f"draw.io labels: named {got['name']!r}")
+    for want in ("R&D <core> · front", "R&D <core> · rear", "a<b>&c", "▲ a<b>&c"):
+        if want not in got["shown"]:
+            bad.append(f"draw.io labels: draw.io would not show {want!r}; it shows {sorted(set(got['shown']))}")
+    if "R&amp;D &lt;core&gt; · front" not in got["values"]:
+        bad.append(f"draw.io labels: the cabinet's value is not HTML-escaped: {sorted(set(got['values']))}")
     return bad
 
 
@@ -3084,6 +3109,9 @@ def check_rack_export_3d(page, base):
         bad.append(f"GLB: no node for device(s) {missing}")
     if b"Optic labels and colors are not in the 3D model yet: leaf-1." not in glb:
         bad.append("GLB: the notes are not in the scene's extras")
+    status = page.inner_text("#exportStatus")
+    if status != "Downloaded, with 1 note in the file.":
+        bad.append(f"GLB: the status reads {status!r}")
     dl = export_file(page, "usdz", timeout=READY_3D_MS)
     usdz = pathlib.Path(dl.path()).read_bytes()
     if dl.suggested_filename != "Export-test.usdz" or usdz[:2] != b"PK":
@@ -3092,6 +3120,10 @@ def check_rack_export_3d(page, base):
         with zipfile.ZipFile(io.BytesIO(usdz)) as z:
             if not any(n.lower().endswith((".usdc", ".usda", ".usd")) for n in z.namelist()):
                 bad.append(f"USDZ: no USD entry in the archive: {z.namelist()}")
+    # A USDZ has nowhere to put the notes, so the status must not say they are in it.
+    status = page.inner_text("#exportStatus")
+    if status != "Downloaded. USDZ carries no notes; the GLB does.":
+        bad.append(f"USDZ: the status reads {status!r}")
     # The exporters pause the render loop (their texture encoding crawls behind
     # a frame of the rack otherwise); the view must be drawing again after.
     if not page.evaluate("() => window.__rack.scene().running()"):
@@ -3492,6 +3524,281 @@ def check_rack_export_bom(page, base):
     return bad
 
 
+def notes_status(n):
+    return f"Downloaded, with {n} note{'' if n == 1 else 's'} in the file." if n else "Downloaded."
+
+
+def export_status(page):
+    page.wait_for_function("""() => { const t = document.getElementById('exportStatus').textContent;
+      return !!t && t !== 'Preparing…'; }""", timeout=READY_3D_MS)
+    return page.inner_text("#exportStatus")
+
+
+@extra("rack.html: Export - a model whose 3D view changed under the exporter is not saved or called downloaded")
+def check_rack_export_overtaken(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    downloads = []
+    page.on("download", lambda d: downloads.append(d.suggested_filename))
+    open_fixture(page, base)
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    # save() clicks a download link; counting those is the page's own account
+    # of what it offered, with no wait for a download that must not come.
+    page.evaluate("""() => { window.__saves = [];
+      const click = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () {
+        if (this.download) window.__saves.push(this.download);
+        return click.call(this); }; }""")
+    overtaken = "The 3D view changed before the model was ready. Try the export again."
+
+    # 1. A switch to 2D in the same task as the click: the export has its
+    #    scene in hand and has not yet awaited anything, so the scene is
+    #    disposed under it every time.
+    page.click("#exportMenu > summary")
+    page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
+    page.evaluate("""() => { document.querySelector('#exportItems [data-export="glb"]').click();
+      document.querySelector('#rkMode [data-mode="2d"]').click(); }""")
+    status = export_status(page)
+    if status != overtaken:
+        bad.append(f"overtaken by 2D: the status reads {status!r}")
+    if page.get_attribute("#exportStatus", "title") != status:
+        bad.append("overtaken by 2D: the status's title is not its full text, so the cut-off sentence cannot be read")
+    saves = page.evaluate("() => window.__saves")
+    if saves:
+        bad.append(f"overtaken by 2D: a file was offered anyway: {saves}")
+
+    # 2. An edit committed in the same task as the click: the scene on screen
+    #    is no longer this rack's, and is rebuilt (disposed) 300 ms later.
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    page.click("#frameBtn")
+    page.wait_for_selector("#fNumbering", timeout=READY_MS)
+    page.click("#exportMenu > summary")
+    page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
+    page.evaluate("""() => { window.__saves.length = 0;
+      document.querySelector('#exportItems [data-export="glb"]').click();
+      const sel = document.getElementById('fNumbering');
+      sel.value = 'top-down';
+      sel.dispatchEvent(new Event('change', {bubbles: true})); }""")
+    if page.evaluate("() => window.__rack.doc().racks[0].frame.numbering") != "top-down":
+        return bad + ["overtaken by an edit: the edit did not commit; the check proves nothing"]
+    status = export_status(page)
+    if status != overtaken:
+        bad.append(f"overtaken by an edit: the status reads {status!r}")
+    saves = page.evaluate("() => window.__saves")
+    if saves:
+        bad.append(f"overtaken by an edit: a file was offered anyway: {saves}")
+    # The same export, left alone, still downloads.
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    if dl.suggested_filename != "Export-test.glb" or not export_status(page).startswith("Downloaded"):
+        bad.append(f"overtaken: an undisturbed export after it gave {dl.suggested_filename!r}, "
+                   f"{page.inner_text('#exportStatus')!r}")
+    if downloads != ["Export-test.glb"]:
+        bad.append(f"overtaken: downloads were {downloads}, expected only the undisturbed one")
+    page.click('#rkMode [data-mode="2d"]')
+    return bad
+
+
+@extra("rack.html: Export - a swap that failed is in the BOM's and the zip's notes; the status counts only what the file carries")
+def check_rack_export_notes_truthful(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fixture = json.loads(json.dumps(EXPORT_FIXTURE))
+    fixture["id"] = "doc-export-unseated"
+    fixture["racks"][0]["name"] = "Export unseated"
+    # A ref the index does not know: the cage keeps what the configuration seats.
+    fixture["racks"][0]["items"][1]["swaps"] = {"port-1": "generic/no-such-optic@1"}
+    fixture["racks"][0]["items"][1]["fields"] = {}
+    open_fixture(page, base, fixture)
+    failed = ("leaf-1 at U14: the part chosen for port-1 couldn't be loaded, "
+              "so the part the configuration seats there is listed instead.")
+
+    # files.json down: the BOM still comes, and says why manufacturers are blank.
+    page.route("**/assets/exports/files.json", lambda r: r.abort())
+    _, _, text = read_csv(export_file(page, "bom"))
+    page.unroute("**/assets/exports/files.json")
+    notes = text.partition("\r\nNotes\r\n")[2]
+    if "Manufacturer names could not be loaded, so some are blank." not in notes:
+        bad.append(f"BOM without files.json: no note says so: {notes!r}")
+    if failed not in notes:
+        bad.append(f"BOM: a swap that could not be loaded is not in the notes: {notes!r}")
+    if "generic/no-such-optic@1" in text.partition("\r\nNotes\r\n")[0]:
+        bad.append("BOM: the part that could not be loaded is listed as if seated; the check's premise is wrong")
+    _, _, text = read_csv(export_file(page, "bom"))
+    if "Manufacturer names could not be loaded" in text:
+        bad.append("BOM: the files.json note is still there once files.json loads")
+    status = page.inner_text("#exportStatus")
+    n = len([l for l in text.partition("\r\nNotes\r\n")[2].split("\r\n") if l])
+    if status != notes_status(n):
+        bad.append(f"BOM: {n} notes in the file, but the status reads {status!r}")
+    if page.get_attribute("#exportStatus", "title") != status:
+        bad.append("status: its title is not its full text")
+
+    for target in ("netbox", "nautobot"):
+        with zipfile.ZipFile(export_file(page, f"{target}-types").path()) as z:
+            zip_notes = z.read("NOTES.txt").decode()
+        if failed not in zip_notes:
+            bad.append(f"{target} types: a swap that could not be loaded is not in NOTES.txt: {zip_notes!r}")
+
+    # The device CSV carries its rows' comments and nothing else.
+    _, rows, _ = read_csv(export_file(page, "netbox-devices"))
+    status = page.inner_text("#exportStatus")
+    carried = len([r for r in rows if r["comments"]])
+    if not carried or status != notes_status(carried):
+        bad.append(f"device CSV: {carried} rows have comments, but the status reads {status!r}")
+    got = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), E = await import('/site/rack/export-data.js');
+      const r = window.__rack.doc().racks[0];
+      const lookup = () => ({manufacturer: 'Edgecore', ru: 1});
+      const wired = {...r, items: r.items.filter(i => i.id === 'i2'), cables: [{}], zeroU: [{}, {}]};
+      const csv = await X.deviceImportCsv(wired, lookup, 'netbox');
+      // A model's notes, with a scene that exports nothing: only the notes are under test.
+      const scene = {running: () => false, complete: async () => {}, three: {scene: {userData: {}}},
+                     toGLB: async () => new Uint8Array(4), toUSDZ: async () => new Uint8Array(4)};
+      const ghost = {...r, items: [...r.items, {id: 'i9', ref: 'no-such-device', cfg: 'base', label: 'mystery',
+        ru: 22, face: 'front', turned: false, swaps: {}, fields: {}}]};
+      const glb = await X.modelFile(scene, ghost, 'glb');
+      const extras = [...scene.three.scene.userData.portrayal.notes];
+      const usdz = await X.modelFile(scene, ghost, 'usdz');
+      return {csvStatus: E.exportStatus(csv), csvData: csv.data, glbNotes: glb.notes, extras,
+              glbStatus: E.exportStatus(glb), usdzStatus: E.exportStatus(usdz), usdzNotes: usdz.notes};
+    }""")
+    want = ("Downloaded, with 1 note in the file. Not in the file: 2 zero-U items are not in this export yet. "
+            "1 cable is not in this export yet.")
+    if got["csvStatus"] != want:
+        bad.append(f"device CSV with cables: the status reads {got['csvStatus']!r}")
+    if "not in this export yet" in got["csvData"]:
+        bad.append("device CSV with cables: a rack-level note is in the file after all; the status is wrong")
+    for note in ("mystery at U22: no front drawing, so the front shows an outline.",
+                 "mystery at U22: no rear drawing, so the rear shows an outline."):
+        if note not in got["glbNotes"] or note not in got["extras"]:
+            bad.append(f"GLB: a device with no drawing is not in the notes ({note!r}): {got['glbNotes']}")
+    if got["glbStatus"] != notes_status(len(got["glbNotes"])):
+        bad.append(f"GLB: the status reads {got['glbStatus']!r} for {len(got['glbNotes'])} notes")
+    if got["usdzStatus"] != "Downloaded. USDZ carries no notes; the GLB does." or got["usdzNotes"]:
+        bad.append(f"USDZ: the status reads {got['usdzStatus']!r}, notes {got['usdzNotes']}")
+    return bad
+
+
+EMPTY_FIXTURE = {
+    "format": "portrayal-rack", "version": 1, "id": "doc-export-empty",
+    "racks": [{
+        "id": "r1", "name": "Empty rack",
+        "frame": {"kind": "two-post", "heightRU": 12, "numbering": "bottom-up",
+                  "holes": {"style": "tapped", "thread": "12-24"},
+                  "railDepth": None, "usableDepth": 1000, "ref": None},
+        "items": [], "zeroU": [], "cables": []}]}
+
+
+@extra("rack.html: Export - an empty two-post rack exports every 2D file well formed, and says it has no devices")
+def check_rack_export_empty(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base, EMPTY_FIXTURE)
+    page.wait_for_selector('svg[data-pane="rear"] rect[data-rail]', timeout=READY_MS)
+
+    def ok_status(kind):
+        status = page.inner_text("#exportStatus")
+        if not status.startswith("Downloaded"):
+            bad.append(f"empty rack {kind}: the status reads {status!r}")
+
+    for kind, name, panes in (("sheet-svg", "Empty-rack-sheet.svg", 2), ("front-svg", "Empty-rack-front.svg", 1),
+                              ("rear-svg", "Empty-rack-rear.svg", 1)):
+        dl = export_file(page, kind)
+        ok_status(kind)
+        text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+        try:
+            ET.fromstring(text.encode("utf-8"))
+        except ET.ParseError as e:
+            bad.append(f"empty rack {kind}: not well-formed XML ({e})")
+        if dl.suggested_filename != name or text.count("data-pane=") != panes or "Two-post frame, 12U" not in text:
+            bad.append(f"empty rack {kind}: {dl.suggested_filename!r} with {text.count('data-pane=')} panes")
+        if "data-item-id" in text:
+            bad.append(f"empty rack {kind}: a device is drawn")
+
+    dl = export_file(page, "sheet-png")
+    ok_status("sheet-png")
+    if pathlib.Path(dl.path()).read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+        bad.append("empty rack sheet-png: not a PNG")
+
+    dl = export_file(page, "drawio")
+    ok_status("drawio")
+    try:
+        root = ET.fromstring(pathlib.Path(dl.path()).read_text(encoding="utf-8"))
+        if [d.get("name") for d in root.findall("diagram")] != ["Front", "Rear"]:
+            bad.append("empty rack drawio: not a Front and a Rear page")
+    except ET.ParseError as e:
+        bad.append(f"empty rack drawio: not well-formed XML ({e})")
+
+    for target, T in (("netbox", "NetBox"), ("nautobot", "Nautobot")):
+        dl = export_file(page, f"{target}-types")
+        ok_status(f"{target}-types")
+        with zipfile.ZipFile(dl.path()) as z:
+            names = z.namelist()
+            notes = z.read("NOTES.txt").decode() if "NOTES.txt" in names else ""
+        if names != ["NOTES.txt"]:
+            bad.append(f"empty rack {T} types: entries {names}")
+        if f"This rack has no devices, so there are no {T} types in this zip." not in notes or "Every device" in notes:
+            bad.append(f"empty rack {T} types: NOTES.txt reads {notes!r}")
+        dl = export_file(page, f"{target}-devices")
+        cols, rows, text = read_csv(dl)
+        if rows or not cols or cols[0] != "name" or text.count("\r\n") != 1:
+            bad.append(f"empty rack {T} devices: not a header alone: {text!r}")
+        if page.inner_text("#exportStatus") != "Downloaded.":
+            bad.append(f"empty rack {T} devices: the status reads {page.inner_text('#exportStatus')!r}")
+
+    cols, rows, text = read_csv(export_file(page, "bom"))
+    ok_status("bom")
+    if cols != ["section", "qty", "manufacturer", "model", "description", "ref"] or rows:
+        bad.append(f"empty rack BOM: columns {cols}, rows {rows}")
+    notes = text.partition("\r\nNotes\r\n")[2]
+    if "This rack has no devices" not in notes:
+        bad.append(f"empty rack BOM: the notes do not say the rack is empty: {text!r}")
+    if "Screw" in text or "Cage nut" in text:
+        bad.append(f"empty rack BOM: hardware for no devices: {text!r}")
+
+    dl = export_file(page, "json")
+    if dl.suggested_filename != "Empty-rack.rack.json":
+        bad.append(f"empty rack file: named {dl.suggested_filename!r}")
+    return bad
+
+
+@extra("rack.html: Export - the sheet is the same ink in light and dark, a missing face's outline included")
+def check_rack_export_sheet_theme(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fixture = json.loads(json.dumps(EXPORT_FIXTURE))
+    fixture["id"] = "doc-export-theme"
+    fixture["racks"][0]["name"] = "Export theme"
+    fixture["racks"][0]["items"] = [
+        {"id": "i5", "ref": "no-such-device", "cfg": "base", "label": "mystery", "ru": 22, "face": "front",
+         "turned": False, "swaps": {}, "fields": {}}]
+    seen = {}
+    for scheme in ("light", "dark"):
+        page.emulate_media(color_scheme=scheme)
+        open_fixture(page, base, fixture)
+        text = pathlib.Path(export_file(page, "front-svg").path()).read_text(encoding="utf-8")
+        root = ET.fromstring(text.encode("utf-8"))
+        ns = "{http://www.w3.org/2000/svg}"
+        g = next((e for e in root.iter(f"{ns}g") if e.get("data-panel") == "missing"), None)
+        if g is None:
+            return bad + [f"sheet theme ({scheme}): no missing-face outline in the sheet"]
+        rect, label = g.find(f"{ns}rect"), g.find(f"{ns}text")
+        seen[scheme] = (rect.get("fill"), rect.get("stroke"), label.get("fill"))
+        if "var(--" in text:
+            bad.append(f"sheet theme ({scheme}): a theme token is left in the file")
+    if seen["light"] != seen["dark"]:
+        bad.append(f"sheet: a missing face's outline follows the theme: light {seen['light']}, dark {seen['dark']}")
+    # On screen the outline stays the theme's.
+    fill = page.evaluate("""() => document.querySelector(
+      'svg[data-pane="front"] [data-panel="missing"] rect').getAttribute('fill')""")
+    if fill != "var(--pt-surface-2)":
+        bad.append(f"the pane's own missing-face outline lost its theme color ({fill})")
+    return bad
+
+
 @extra("the Explorer lens: Escape reads back like Done; a lens showing another device hands back nothing")
 def check_rack_lens_edges(page, base):
     bad = []
@@ -3522,13 +3829,18 @@ def check_rack_lens_edges(page, base):
     page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
                            timeout=READY_MS)
     page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
-    page.evaluate("""() => { document.querySelector('.rk-lens iframe').srcdoc =
-      '<script>window.portrayalEmbed = {ready: new Promise(() => {}), ' +
+    # The lens resets itself in its own `load` listener. This listener is added
+    # after the lens's, so it runs after it: once it has fired for the NEW
+    # document (the one carrying the marker), the lens has seen the reload.
+    # The old document also has a portrayalEmbed and is also `complete`, so
+    # nothing short of the marker and the event tells the two apart.
+    page.evaluate("""() => { const f = document.querySelector('.rk-lens iframe');
+      window.__lens3Loads = 0;
+      f.addEventListener('load', () => { if (f.contentWindow.portrayalEmbed?.lens3) window.__lens3Loads++; });
+      f.srcdoc =
+      '<script>window.portrayalEmbed = {lens3: true, ready: new Promise(() => {}), ' +
       'current: () => ({device: "as7726-32x", config: "ac-f2b", swaps: {}, fields: {}})}<' + '/script>'; }""")
-    page.wait_for_function("""() => document.querySelector('.rk-lens iframe')?.contentDocument?.readyState === 'complete'
-      && !!document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed
-      && document.querySelector('.rk-lens iframe').srcdoc""", timeout=READY_MS)
-    page.wait_for_timeout(300)
+    page.wait_for_function("() => window.__lens3Loads > 0", timeout=READY_MS)
     page.click(".rk-lens-done", timeout=READY_MS)
     got3 = page.evaluate("async () => await window.__lens3")
     if got3 is not None:

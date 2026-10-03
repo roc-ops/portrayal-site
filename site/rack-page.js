@@ -17,6 +17,7 @@ import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv} from './rack/exports.js';
 import {save} from './svg-export.js';
+import {exportStatus} from './rack/export-data.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -235,7 +236,8 @@ function undoShrink() {
 // ── Export (spec §8) ────────────────────────────────────────────────────
 // Every export is built from S.doc by exports.js, never from the panes. A
 // builder resolves to {name, data, type, notes}, or {error: sentence}; the
-// notes travel inside the file, and the status line only counts them.
+// notes travel inside the file, and the status line only counts them - and
+// says which ones the file had no place for (`left`, see exportStatus).
 // A rebuild follows a commit 300 ms later (scheduleRebuild3d), so an export
 // taken sooner would read the rack before the edit. The scene remembers which
 // rack object it was built from; any other one is rebuilt first.
@@ -253,9 +255,20 @@ async function sceneForExport() {
 }
 const NO_SCENE = {error: "3D isn't available in this browser, so there's no model to export."};
 const OVERTAKEN = {error: 'The 3D view changed before the model was ready. Try the export again.'};
+// modelFile awaits the relief pass and the exporter while the page stays
+// live: a commit (and its rebuild 300 ms later), a switch to 2D or another
+// rack can dispose or replace the scene under it. What comes back is only
+// good if it is still the scene on screen, built from the rack as it is now;
+// otherwise nothing is saved, whether the exporter threw or returned.
 const modelExport = async format => {
   const {scene, overtaken} = await sceneForExport();
-  return scene ? modelFile(scene, rack(), format) : overtaken ? OVERTAKEN : NO_SCENE;
+  if (!scene) return overtaken ? OVERTAKEN : NO_SCENE;
+  const forRack = rack();
+  const current = () => S.scene3d === scene && S.scene3dRack === forRack && rack() === forRack;
+  let out;
+  try { out = await modelFile(scene, forRack, format); }
+  catch (err) { if (current()) throw err; console.warn('[portrayal] export overtaken', err); return OVERTAKEN; }
+  return current() ? out : OVERTAKEN;
 };
 
 const BUILD = {
@@ -278,17 +291,18 @@ async function runExport(kind) {
   if (kind === 'to-3d') { setMode('3d'); return; }
   if (exporting || !BUILD[kind]) return;
   exporting = true;
-  const status = $('exportStatus');
-  status.textContent = 'Preparing…';
+  // The line is one row and cuts a long sentence short (.rk-export-status),
+  // so the whole of it is the element's title too.
+  const say = text => { const status = $('exportStatus'); status.textContent = text; status.title = text; };
+  say('Preparing…');
   try {
     const out = await BUILD[kind]();
-    if (out.error) { status.textContent = out.error; return; }
+    if (out.error) { say(out.error); return; }
     save(out.data, out.name, out.type);
-    const n = out.notes?.length || 0;
-    status.textContent = n ? `Downloaded, with ${n} note${n === 1 ? '' : 's'} in the file.` : 'Downloaded.';
+    say(exportStatus(out));
   } catch (err) {
     console.warn('[portrayal] export', kind, err);
-    status.textContent = "That export didn't work. Try again.";
+    say("That export didn't work. Try again.");
   } finally {
     exporting = false;
   }

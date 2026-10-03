@@ -51,6 +51,9 @@ test('a BOM cell that opens as a formula is guarded; the device-import CSV cell 
   assert.equal(X.bomCell('-5'), "'-5");
   assert.equal(X.bomCell('@cmd'), "'@cmd");
   assert.equal(X.bomCell('plain'), 'plain');
+  // A tab or carriage return ahead of a formula opens it too.
+  assert.equal(X.bomCell('\t=1+1'), "'\t=1+1");
+  assert.equal(X.bomCell('\r=1+1'), `"'\r=1+1"`);
   assert.equal(X.bomCell(null), '');
   const line = X.toCsv(X.BOM_COLUMNS, [{section: 'Devices', qty: 1, manufacturer: '', model: label,
     description: '', ref: 'r1'}], [], {cell: X.bomCell}).split('\r\n')[1];

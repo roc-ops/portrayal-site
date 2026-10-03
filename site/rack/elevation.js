@@ -67,13 +67,19 @@ const ring = (top, ruH) => svgEl('rect', {x: -3, y: top - 1.5, width: OPENING + 
   rx: 3, fill: 'none', stroke: 'var(--pt-brass)', 'stroke-width': 2.5, class: 'rk-sel-ring',
   'pointer-events': 'none'});
 
-function outline(top, ruH, text, attrs) {
+// A MISSING FACE'S OUTLINE follows the theme on screen. On paper (the
+// exported sheet, fixed ink on white) it is fixed too, like the metal rails:
+// a sheet exported from a dark page must not carry dark-theme paint.
+const OUTLINE = {fill: 'var(--pt-surface-2)', ink: 'var(--pt-ink-muted)'};
+const OUTLINE_PAPER = {fill: '#E4E7EA', ink: '#5B636B'};
+
+function outline(top, ruH, text, attrs, C = OUTLINE) {
   const g = svgEl('g', attrs);
   g.append(svgEl('rect', {x: 0.5, y: top + 0.5, width: OPENING - 1, height: ruH * RU - 1, rx: 2,
-    fill: 'var(--pt-surface-2)', 'fill-opacity': 0.35, stroke: 'var(--pt-ink-muted)',
+    fill: C.fill, 'fill-opacity': 0.35, stroke: C.ink,
     'stroke-width': 1, 'stroke-dasharray': '4 3'}));
   const t = svgEl('text', {x: OPENING / 2, y: top + ruH * RU / 2 + 4, 'text-anchor': 'middle',
-    'font-size': 11, 'font-family': 'IBM Plex Mono, monospace', fill: 'var(--pt-ink-muted)'});
+    'font-size': 11, 'font-family': 'IBM Plex Mono, monospace', fill: C.ink});
   t.textContent = text;
   g.append(t);
   return g;
@@ -137,7 +143,7 @@ export function uAtY(frame, y, baseRU = 1) {
 
 export async function drawElevation({items, frame, view = 'front', baseRU = 1,
                                      hitTargets = false, selectedId = null, selectedU = null,
-                                     placeholders = true, ears = false, metal = false}) {
+                                     placeholders = true, ears = false, metal = false, paper = false}) {
   const C = metal ? METAL : THEMED;
   const totalH = frame.heightRU * RU;
   const out = svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg', 'data-pane': view,
@@ -179,7 +185,7 @@ export async function drawElevation({items, frame, view = 'front', baseRU = 1,
     if (!face) {
       if (placeholders) {
         out.append(outline(topOf(ruH), ruH, `${it.label} · no ${panel} drawing`,
-                           {...common, 'data-panel': 'missing'}));
+                           {...common, 'data-panel': 'missing'}, paper ? OUTLINE_PAPER : OUTLINE));
         if (it.id === selectedId) rings.push([topOf(ruH), ruH]);
       }
       continue;

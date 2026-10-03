@@ -18,6 +18,51 @@ test('every export of a rack shares one file stem', () => {
   assert.equal(X.fileStem(''), 'rack');
 });
 
+test('a file stem is never a dotfile, a reserved device name, or longer than 80 characters', () => {
+  assert.equal(X.fileStem('.'), 'rack');
+  assert.equal(X.fileStem('..'), 'rack');
+  assert.equal(X.fileStem('...'), 'rack');
+  assert.equal(X.fileStem('#!?'), 'rack');
+  assert.equal(X.fileStem('.hidden.'), 'hidden');
+  assert.equal(X.fileStem('--.Lab-A.--'), 'Lab-A');
+  assert.equal(X.fileStem('v1.2 rack'), 'v1.2-rack');
+  for (const n of ['CON', 'prn', 'Aux', 'NUL', 'COM1', 'com9', 'LPT1', 'lpt9', 'con.a'])
+    assert.equal(X.fileStem(n), `rack-${n}`);
+  assert.equal(X.fileStem('COM10'), 'COM10');
+  assert.equal(X.fileStem('console'), 'console');
+  assert.equal(X.fileStem('a'.repeat(200)).length, 80);
+  // The cap must not leave a dash or dot hanging at the cut.
+  assert.equal(X.fileStem(`${'a'.repeat(79)} b`), 'a'.repeat(79));
+});
+
+test('a draw.io label is HTML-escaped, so html=1 shows the text as typed', () => {
+  assert.equal(X.htmlText('R&D <core>'), 'R&amp;D &lt;core&gt;');
+  assert.equal(X.htmlText('plain "name"'), 'plain "name"');
+  assert.equal(X.htmlText(null), '');
+});
+
+test('the status line counts only the notes the file carries, and says what it leaves out', () => {
+  assert.equal(X.exportStatus({notes: []}), 'Downloaded.');
+  assert.equal(X.exportStatus({notes: ['a']}), 'Downloaded, with 1 note in the file.');
+  assert.equal(X.exportStatus({notes: ['a', 'b']}), 'Downloaded, with 2 notes in the file.');
+  assert.equal(X.exportStatus({notes: [], left: ['x'], leftText: 'USDZ carries no notes; the GLB does.'}),
+    'Downloaded. USDZ carries no notes; the GLB does.');
+  assert.equal(X.exportStatus({notes: ['a'], left: ['2 cables are not in this export yet.']}),
+    'Downloaded, with 1 note in the file. Not in the file: 2 cables are not in this export yet.');
+  assert.equal(X.exportStatus({notes: [], left: []}), 'Downloaded.');
+});
+
+test('a parts list says which chosen parts it could not list', () => {
+  assert.deepEqual(X.seatNotes({label: 'core-1', u: 2,
+    face: {seat: {applied: 1, refused: ['slot-1'], failed: ['slot-3', 'slot-4']}}}), [
+    'core-1 at U2: slot-1 refused the part chosen and is empty, so no part is listed there.',
+    "core-1 at U2: the part chosen for slot-3, slot-4 couldn't be loaded, so the part the configuration seats there is listed instead."]);
+  assert.deepEqual(X.seatNotes({label: 'core-1', u: 2, face: {seat: {applied: 0, refused: ['a', 'b'], failed: []}}}),
+    ['core-1 at U2: a, b refused the part chosen and are empty, so no part is listed there.']);
+  assert.deepEqual(X.seatNotes({label: 'x', u: 1, face: {seat: {applied: 0, refused: [], failed: []}}}), []);
+  assert.deepEqual(X.seatNotes({label: 'x', u: 1, face: null}), []);
+});
+
 test('CSV cells are quoted only when they must be, RFC 4180 style', () => {
   assert.equal(X.csvCell('plain'), 'plain');
   assert.equal(X.csvCell('a,b'), '"a,b"');
@@ -46,12 +91,6 @@ test('wrapText breaks on words and never splits one', () => {
   assert.deepEqual(X.wrapText('one two three four', 9), ['one two', 'three', 'four']);
   assert.deepEqual(X.wrapText('abcdefghijk x', 5), ['abcdefghijk', 'x']);
   assert.deepEqual(X.wrapText('', 5), []);
-});
-
-test('notes become an XML comment that cannot close itself early', () => {
-  assert.equal(X.xmlComment([]), '');
-  assert.equal(X.xmlComment(['a -- b', 'c']),
-    '<!--\nNotes from the Portrayal Rack Builder:\n- a - b\n- c\n-->');
 });
 
 test('a face that is missing or refused a part says so', () => {
