@@ -23,8 +23,10 @@ const button = (id, text, fn, type = 'button') => {
 // `infoA` and `infoB` are the ends' connectors (cable-rules.js connectorOf),
 // for the warning beside the media; `purposes` are the ones the rack already
 // uses, offered as suggestions. A media mismatch is a WARNING and never stops
-// a save (spec §9.3). onSave gets {media, purpose, label, length}, with
-// length null when the field is empty.
+// a save (spec §9.3). onSave gets {media, purpose, label} and, ONLY when the
+// length field or its unit was changed, `length`: the new one, or null when
+// the field was emptied. No `length` key means the length was left alone -
+// the cable keeps whatever it has, including one kept as written.
 export function cableForm({title, endA, endB, cable, infoA = null, infoB = null, purposes = [],
                            onSave, onCancel}) {
   const media = el('select', {id: 'cMedia', 'aria-describedby': 'cWarn'}, [
@@ -41,8 +43,9 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
   const oddUnit = cable.length?.unit && !UNITS.includes(cable.length.unit) ? cable.length.unit : null;
   const unit = el('select', {id: 'cUnit'}, [...UNITS, ...(oddUnit ? [oddUnit] : [])]
     .map(u => option(u, u, cable.length?.unit || 'm')));
-  // What the fields held when the form opened: a length left alone is kept
-  // exactly as the cable has it, even one this form's rule would refuse.
+  // What the fields held when the form opened, whatever the cable had: a
+  // length left alone is not sent at all, so it is kept exactly - even one
+  // this form's rule would refuse, or one the loader could only keep as written.
   const loaded = {text: length.value, unit: unit.value};
   const warn = el('p', {id: 'cWarn', class: 'rk-warn', role: 'status'});
   const err = el('p', {id: 'cError', class: 'rk-error', role: 'alert'});
@@ -71,9 +74,9 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
   // A form, so Enter in any field saves.
   form.addEventListener('submit', ev => {
     ev.preventDefault();
-    if (cable.length && length.value === loaded.text && unit.value === loaded.unit) {
+    if (length.value === loaded.text && unit.value === loaded.unit) {
       err.textContent = '';
-      onSave({media: media.value, purpose: purpose.value.trim(), label: label.value.trim(), length: cable.length});
+      onSave({media: media.value, purpose: purpose.value.trim(), label: label.value.trim()});
       return;
     }
     // A NEW value cannot ride on a unit this page does not know; clearing the

@@ -293,7 +293,6 @@ test('the loader keeps a length\'s unit as written, and lengthText prints it', (
   assert.equal(C.lengthText(read({value: 30, unit: 'cm'}).length), '30 cm');
   assert.equal(C.lengthText(read({value: 3, unit: 'yd'}).length), '3 yd');
   assert.equal(read({value: 2}).length.unit, 'm', 'a length that states no unit is in meters');
-  assert.equal(read({value: 2, unit: ''}).length.unit, 'm');
   assert.equal(C.lengthText({value: 'abc', unit: 'm'}), '', 'a value that is not a number prints nothing');
   assert.equal(C.lengthText({value: '1e3', unit: 'm'}), '');
 });
@@ -313,4 +312,35 @@ test('a length the loader cannot use moves to lengthAsWritten: nothing is lost, 
   assert.deepEqual([both.length.value, both.lengthAsWritten], [2, 'long']);
   const odd = read({value: 30, unit: 'cm'});
   assert.deepEqual(M.readCables([JSON.parse(JSON.stringify(odd))])[0], odd, 'an unknown unit is a fixed point too');
+});
+
+// ── fix round 3 ─────────────────────────────────────────────────────────
+test('a length the user sets or clears replaces the one kept as written; a patch that does not name the length keeps it', () => {
+  const r = {...rack(), cables: M.readCables([
+    {id: 'c1', a: end('i1', 'p'), b: end('i2', 'q'), length: {value: 'long'}}])};
+  assert.deepEqual(r.cables[0].lengthAsWritten, {value: 'long'});
+  const set = C.updateCable(r, 'c1', {length: {value: 2, unit: 'm', source: 'entered'}}).cables[0];
+  assert.deepEqual(set.length, {value: 2, unit: 'm', source: 'entered'});
+  assert.ok(!('lengthAsWritten' in set), 'a new length replaces what was kept as written');
+  const cleared = C.updateCable(r, 'c1', {label: 'x', length: null}).cables[0];
+  assert.ok(!('length' in cleared) && !('lengthAsWritten' in cleared), 'clearing the length clears both');
+  const untouched = C.updateCable(r, 'c1', {label: 'x', media: 'os2'}).cables[0];
+  assert.deepEqual(untouched.lengthAsWritten, {value: 'long'}, 'a patch with no length key keeps it exactly');
+  assert.ok(!('length' in untouched));
+  assert.equal(untouched.label, 'x');
+  assert.deepEqual(r.cables[0].lengthAsWritten, {value: 'long'}, 'the input rack is untouched');
+});
+
+test('a unit that is not a non-blank string is not a unit: the length moves to lengthAsWritten', () => {
+  const read = length => M.readCables([{id: 'c1', a: {item: 'i1', path: 'p'}, b: {item: 'i1', path: 'q'}, length}])[0];
+  for (const unit of [{a: 1}, 5, true, ['m'], '', ' ', '\t\n']) {
+    const c = read({value: 3, unit});
+    assert.ok(!('length' in c), `unit ${JSON.stringify(unit)} is not a unit`);
+    assert.deepEqual(c.lengthAsWritten, {value: 3, unit});
+    assert.deepEqual(M.readCables([JSON.parse(JSON.stringify(c))])[0], c, 'a fixed point');
+  }
+  assert.equal(read({value: 3}).length.unit, 'm', 'no unit stated is meters');
+  assert.equal(read({value: 3, unit: undefined}).length.unit, 'm');
+  assert.equal(read({value: 3, unit: null}).length.unit, 'm', 'null states no unit');
+  assert.equal(read({value: 3, unit: ' yd '}).length.unit, ' yd ', 'a non-blank string is kept exactly as written');
 });

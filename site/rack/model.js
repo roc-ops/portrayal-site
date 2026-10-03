@@ -145,10 +145,13 @@ export function readCables(list) {
     let id = c.id == null ? '' : String(c.id);
     if (!id || seen.has(id)) id = nextId([...declared, ...out], 'c');
     seen.add(id);
-    const value = len && typeof len === 'object' && !Array.isArray(len) ? lengthValue(len.value) : 0;
+    // A unit is a non-blank string, kept exactly as written, or it is not
+    // stated (meters). Anything else - an object, a number, blank - is not a
+    // unit, and the length it came with is not usable.
+    const unitOk = len?.unit == null || (typeof len.unit === 'string' && len.unit.trim() !== '');
+    const value = len && typeof len === 'object' && !Array.isArray(len) && unitOk ? lengthValue(len.value) : 0;
     const length = value
-      ? {...len, value, unit: len.unit == null || len.unit === '' ? 'm' : String(len.unit),
-         source: String(len.source ?? 'entered')}
+      ? {...len, value, unit: len.unit ?? 'm', source: String(len.source ?? 'entered')}
       : null;
     out.push({...c, id, a: readEnd(c.a), b: readEnd(c.b), media: String(c.media ?? ''),
               purpose: String(c.purpose ?? ''), label: String(c.label ?? ''),

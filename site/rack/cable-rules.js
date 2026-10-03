@@ -59,10 +59,15 @@ export function withCable(rack, {a, b, media = '', purpose = '', label = '', len
   return {rack: {...rack, cables: [...(rack.cables || []), cable]}, cable};
 }
 // `length: null` in the patch removes the length; anything else is merged.
+// A patch that names the length at all - a value, or null - is the user
+// setting or clearing it, and that replaces a length the loader kept as
+// written (model.js `lengthAsWritten`); a patch that does not name it leaves
+// both as they are.
 export function updateCable(rack, id, patch) {
   return {...rack, cables: (rack.cables || []).map(c => {
     if (c.id !== id) return c;
     const next = {...c, ...patch};
+    if (Object.hasOwn(patch, 'length')) delete next.lengthAsWritten;
     if (next.length == null) delete next.length;
     return next;
   })};

@@ -6576,7 +6576,8 @@ def check_rack_cable_form(page, base):
         bad.append(f"cable form: Enter saved {saved()}, expected {want}")
 
     # A hand-edited length the form's own rule would refuse is kept as it was
-    # while the user leaves the length alone, and never blocks Save.
+    # while the user leaves the length alone, and never blocks Save: the form
+    # then reports no `length` at all, and the page leaves the cable's alone.
     for odd, label in (({"value": 1e-7, "unit": "m", "source": "routed", "note": "kept"}, "a tiny value"),
                        ({"value": 3, "unit": "yd", "source": "entered"}, "an unknown unit")):
         page.evaluate(FORM_JS, {
@@ -6588,13 +6589,13 @@ def check_rack_cable_form(page, base):
         page.fill("#cLabel", "touched")             # something else changes; the length does not
         page.click("#cSave")
         got = saved()
-        if not got or got.get("length") != odd or page.text_content("#cError"):
+        if not got or "length" in got or got.get("label") != "touched" or page.text_content("#cError"):
             bad.append(f"cable form: {label} was rewritten on Save: {got}, error {page.text_content('#cError')!r}")
     # Once the user does change it, the rule applies: a value that is refused is refused,
     # and an unknown unit is not quietly turned into meters.
     page.fill("#cLength", "4")
     page.click("#cSave")
-    if not page.text_content("#cError") or saved().get("length") != {"value": 3, "unit": "yd", "source": "entered"}:
+    if page.text_content("#cError") != "Choose m or ft for the new length." or "length" in saved():
         bad.append(f"cable form: a changed length on an unknown unit gave {page.text_content('#cError')!r}, saved {saved()}")
     page.select_option("#cUnit", "ft")
     page.click("#cSave")
@@ -7707,6 +7708,54 @@ def check_rack_cable_length_units(page, base):
         bad.append(f"length units: clearing a yd length was refused ({err()!r})")
     if "length" in cable("c2"):
         bad.append(f"length units: after clearing it c2's length is {cable('c2').get('length')}")
+
+    # A LENGTH KEPT AS WRITTEN (c3's {value: 'long'}): an edit that leaves the
+    # length alone keeps it exactly; a length typed replaces it; so does clearing.
+    def edit_c3(fill, label):
+        wait_fn(page, "length units: no form open for c3", "() => !document.getElementById('cableForm')")
+        wait_sel(page, "length units: c3's row", '#cableList [data-cable-row="c3"]')
+        if page.get_attribute('#cableList [data-cable-row="c3"]', "aria-pressed") != "true":
+            page.click('#cableList [data-cable-row="c3"]')
+        wait_fn(page, "length units: c3 selected",
+                """() => document.querySelector('#cableList [data-cable-row="c3"]')?.getAttribute('aria-pressed') === 'true'
+                   && !!document.getElementById('cableEdit')""")
+        page.click("#cableEdit")
+        wait_sel(page, "length units: c3's form", "#cableForm")
+        page.fill("#cLabel", label)
+        if fill is not None:
+            page.fill("#cLength", fill)
+        page.click("#cSave")
+        wait_fn(page, f"length units: c3 saved as {label}",
+                f"() => window.__rack.doc().racks[0].cables[2].label === {json.dumps(label)}")
+    edit_c3(None, "L1")
+    c3 = cable("c3")
+    if c3.get("lengthAsWritten") != {"value": "long", "unit": "m"} or "length" in c3:
+        bad.append(f"length units: an edit of the label alone left c3 as {c3}")
+    edit_c3("4", "L2")
+    c3 = cable("c3")
+    if c3.get("length") != {"value": 4, "unit": "m", "source": "entered"} or "lengthAsWritten" in c3:
+        bad.append(f"length units: after a length was typed c3 is {c3}")
+    # The clear case: put the kept-as-written length back, open the form, type and clear.
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, cables: r.cables.map(c => {
+        if (c.id !== 'c3') return c;
+        const {length, ...rest} = c;
+        return {...rest, lengthAsWritten: {value: 'long', unit: 'm'}}; })}); }""")
+    wait_fn(page, "length units: c3 kept as written again",
+            "() => !!window.__rack.doc().racks[0].cables[2].lengthAsWritten && !window.__rack.doc().racks[0].cables[2].length")
+    page.wait_for_timeout(300)
+    wait_fn(page, "length units: c3 selected", "() => !!document.getElementById('cableEdit')")
+    page.click("#cableEdit")
+    wait_sel(page, "length units: c3's form to clear", "#cableForm")
+    page.fill("#cLabel", "L3")
+    page.fill("#cLength", "7")
+    page.fill("#cLength", "")
+    page.select_option("#cUnit", "ft")
+    page.click("#cSave")
+    wait_fn(page, "length units: c3 saved as L3", "() => window.__rack.doc().racks[0].cables[2].label === 'L3'")
+    c3 = cable("c3")
+    if "length" in c3 or "lengthAsWritten" in c3:
+        bad.append(f"length units: after the length was cleared c3 is {c3}")
     return bad
 
 
