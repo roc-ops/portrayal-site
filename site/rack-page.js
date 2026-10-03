@@ -222,6 +222,24 @@ function setCableMode(on) {
   paintCableMode();
   render();
 }
+// A picked end never outlives its device or its port: whenever the rack
+// changes under Cable mode (a frame shrink removes a device, Undo brings it
+// back, a taken port) the pick is dropped, and a new-cable form whose end's
+// device is gone is closed with a sentence. Run at the top of every render.
+const NOT_ADDED = 'The cable was not added because a device it ran to was removed.';
+function addNotice(text, kind = 'error') {
+  const old = S.notice && (typeof S.notice === 'string' ? {text: S.notice, kind: 'error'} : S.notice);
+  S.notice = old ? {text: `${old.text} ${text}`, kind: old.kind} : {text, kind};
+}
+function pruneCable() {
+  const r = rack(), a = S.cable.a;
+  if (a && (!itemById(a.item) || !portFree(r, a).ok)) S.cable.a = null;
+  const s = S.sel;
+  if (s?.kind === 'cable-form' && !s.id && !(itemById(s.a.item) && itemById(s.b.item))) {
+    S.sel = null;
+    addNotice(NOT_ADDED);
+  }
+}
 function onCableClick(ev) {
   if (S.sel?.kind === 'cable-form') return;      // the form is open: finish or cancel it first
   const group = ev.target.closest('[data-item-id][data-panel]');
@@ -234,6 +252,8 @@ function onCableClick(ev) {
   const free = portFree(rack(), end);
   if (!free.ok) { S.notice = {text: free.reason, kind: 'error'}; render(); return; }
   if (!S.cable.a) { S.cable.a = end; render(); return; }
+  // The A end is checked again now: the rack may have changed since it was picked.
+  if (!itemById(S.cable.a.item) || !portFree(rack(), S.cable.a).ok) { S.cable.a = null; render(); return; }
   S.sel = {kind: 'cable-form', id: null, a: S.cable.a, b: end};
   S.cable.a = null;
   render();
@@ -262,10 +282,13 @@ function cableFormPanel(sel) {
     purposes: [...countsBy(r.cables, 'purpose').keys()].filter(Boolean),
     // A saved cable is left selected: lit on the drawing, its row open in the list.
     onSave: fields => {
-      if (cable) { S.sel = {kind: 'cable', id: cable.id}; commit(updateCable(r, cable.id, fields)); return; }
-      const ok = canCable(r, a, b);
+      if (cable) { S.sel = {kind: 'cable', id: cable.id}; commit(updateCable(rack(), cable.id, fields)); return; }
+      // The rack as it is NOW: it may have changed while the form was open (Undo).
+      const now = rack();
+      if (!itemById(a.item) || !itemById(b.item)) { S.sel = null; addNotice(NOT_ADDED); render(); return; }
+      const ok = canCable(now, a, b);
       if (!ok.ok) { S.sel = null; S.notice = {text: ok.reason, kind: 'error'}; render(); return; }
-      const made = withCable(r, {a, b, ...fields});
+      const made = withCable(now, {a, b, ...fields});
       S.sel = {kind: 'cable', id: made.cable.id};
       commit(made.rack);
     },
@@ -455,6 +478,7 @@ function renderExports() {
 
 async function render() {
   const mine = ++S.draws;
+  pruneCable();
   const r = rack();
   $('rackName').textContent = r.name;
   const holes = r.frame.holes.style === 'tapped'
@@ -769,7 +793,12 @@ async function bootInner() {
     const cab = ev.key === 'Enter' || ev.key === ' ' ? ev.target.closest?.('[data-cable-tags] [data-cable-id]') : null;
     if (cab) { ev.preventDefault(); select({kind: 'cable', id: cab.dataset.cableId}); }
   });
-  $('frameBtn').addEventListener('click', () => select(S.sel?.kind === 'frame' ? null : {kind: 'frame'}));
+  // The frame form is a different activity from Cable mode, as it is from
+  // Move: opening it replaces the selection, and turns Cable mode off.
+  $('frameBtn').addEventListener('click', () => {
+    if (S.cable.on) { S.cable = {on: false, a: null}; paintCableMode(); }
+    select(S.sel?.kind === 'frame' ? null : {kind: 'frame'});
+  });
   $('rkMode').addEventListener('click', ev => {
     const b = ev.target.closest('[data-mode]');
     if (b) setMode(b.dataset.mode);
@@ -815,6 +844,10 @@ async function bootInner() {
     // the document while the lens is still open - so its presence, not just
     // the event target, gates every key here.
     if (document.querySelector('.rk-lens')) return;
+    // Esc in the cable form's own fields cancels the form, as Cancel does;
+    // the next Esc (below) drops the picked end, then leaves the mode. Other
+    // forms' fields keep Esc to themselves.
+    if (ev.key === 'Escape' && ev.target.closest?.('#cableForm')) { ev.preventDefault(); $('cCancel')?.click(); return; }
     if (ev.target.closest?.('input, select, textarea')) return;
     // In Cable mode Esc backs out one step: the open form, then the picked
     // end, then the mode itself.
@@ -844,6 +877,8 @@ async function bootInner() {
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
   window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d,
+    // Probe only: put a rack in through commit(), as any edit that changes the rack under the page does.
+    replaceRack: next => commit(next),
     // The last redraw's cable facts, as plain data: the derived plug seats per
     // item, and each cabled end's loose-end reason (null when it lands).
     cableFacts: () => ({seats: S.cableFacts.seats,

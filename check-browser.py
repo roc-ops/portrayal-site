@@ -6607,6 +6607,11 @@ def check_rack_cable_mode(page, base):
     # Attached, not visible: the two jacks share an x, so the cable is a vertical line with a zero-width box.
     wait_fn(page, "cable mode: the new cable drawn",
             "() => !!document.querySelector('svg[data-pane=\"rear\"] [data-cables] [data-cable-id=\"c4\"]')")
+    # An in-DOM wait lost the geometry: it is a vertical run, so its box has height and its path a d.
+    geo = page.evaluate("""() => { const g = document.querySelector('svg[data-pane="rear"] [data-cables] [data-cable-id="c4"]');
+      return {h: g.getBBox().height, d: [...g.querySelectorAll('path')].map(p => p.getAttribute('d') || '')}; }""")
+    if not geo["h"] > 0 or not geo["d"] or not all(geo["d"]):
+        bad.append(f"cable mode: the new cable's drawing is {geo}")
     if page.evaluate(PLUGS_JS, ["rear", "i3"]) != {"lc": 0, "rj45": 2}:
         bad.append("cable mode: the new cable's end did not get its plug")
     if pressed() != "true":
@@ -6815,6 +6820,110 @@ def check_rack_cable_list(page, base):
     wait_sel(page, "cable list: the list after a reload", "#cableList")
     if [r["id"] for r in page.evaluate(LIST_JS)["rows"]] != ["c1", "c2"]:
         bad.append("cable list: the cables did not survive a reload")
+    return bad
+
+
+@extra("rack.html: Cable mode - a picked end never outlives its device, Esc cancels the form, Save reads the rack as it is now, the Frame button leaves the mode")
+def check_rack_cable_stale(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cable stale: {e}"]
+    doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
+    pressed = lambda: page.get_attribute("#cableBtn", "aria-pressed")
+    picks = lambda: page.eval_on_selector_all(".rk-end-pick", "els => els.length")
+    step = lambda: (page.text_content("#cableStep") or "") if page.query_selector("#cableStep") else ""
+    notice = lambda: (page.text_content(".rk-side .rk-notice") or "") if page.query_selector(".rk-side .rk-notice") else ""
+    # A device removed from the rack as an edit that bypasses the frame form would: item i1 and its cable.
+    drop_i1 = """() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.filter(i => i.id !== 'i1'),
+                                 cables: r.cables.filter(c => c.a.item !== 'i1' && c.b.item !== 'i1')}); }"""
+    free_i1 = port_sel("front", "i1", "slot-2/module/p1")
+
+    # 1. A picked A end goes with its device.
+    page.click("#cableBtn")
+    page.click(free_i1)
+    wait_sel(page, "cable stale: A on core-1", 'svg[data-pane="front"] .rk-end-pick')
+    page.evaluate(drop_i1)
+    wait_fn(page, "cable stale: the pick is dropped", "() => !document.querySelector('.rk-end-pick')")
+    if not step().startswith("Click the port at one end"):
+        bad.append(f"cable stale: after its device went the help reads {step()!r}")
+    if pressed() != "true":
+        bad.append("cable stale: losing the picked device left Cable mode")
+    # ...and with the form open, the form goes too, with a sentence, and nothing is added.
+    open_cabled(page, base)
+    page.click("#cableBtn")
+    page.click(free_i1)
+    wait_sel(page, "cable stale: A again", 'svg[data-pane="front"] .rk-end-pick')
+    page.click(port_sel("front", "i2", "port-3"))
+    wait_sel(page, "cable stale: the form", "#cableForm")
+    page.evaluate(drop_i1)
+    wait_fn(page, "cable stale: the form closes", "() => !document.getElementById('cableForm')")
+    if "not added" not in notice() or "removed" not in notice():
+        bad.append(f"cable stale: closing the form said {notice()!r}")
+    if len(doc()["cables"]) != 2 or picks():
+        bad.append(f"cable stale: {len(doc()['cables'])} cables and {picks()} outlines after the device went")
+
+    # 2. Esc cancels the form from the focused field; the next Esc leaves the mode (no end is held).
+    open_cabled(page, base)
+    page.click("#cableBtn")
+    for field in ("#cMedia", "#cLabel"):
+        page.click(port_sel("front", "i2", "port-3"))
+        wait_sel(page, "cable stale: A for Esc", 'svg[data-pane="front"] .rk-end-pick')
+        page.click(port_sel("front", "i2", "port-4"))
+        wait_sel(page, "cable stale: the form for Esc", "#cableForm")
+        page.focus(field)
+        page.keyboard.press("Escape")
+        wait_fn(page, f"cable stale: Esc in {field} cancels the form", "() => !document.getElementById('cableForm')")
+        if len(doc()["cables"]) != 3 or pressed() != "true":
+            bad.append(f"cable stale: Esc in {field} left {len(doc()['cables'])} cables, pressed {pressed()}")
+    page.keyboard.press("Escape")
+    wait_fn(page, "cable stale: the next Esc leaves the mode",
+            "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'false'")
+
+    # 3. Save reads the rack as it is now: Undo beside the open form stands.
+    open_cabled(page, base)
+    page.click("#frameBtn")
+    page.fill("#fHeight", "12")
+    page.dispatch_event("#fHeight", "change")
+    wait_fn(page, "cable stale: shrunk", "() => window.__rack.doc().racks[0].frame.heightRU === 12")
+    wait_sel(page, "cable stale: Undo offered", "#undoShrink")
+    page.click("#cableBtn")
+    page.click(port_sel("front", "i2", "port-3"))
+    wait_sel(page, "cable stale: A on the shrunk rack", 'svg[data-pane="front"] .rk-end-pick')
+    page.click(port_sel("front", "i2", "port-4"))
+    wait_sel(page, "cable stale: the form on the shrunk rack", "#cableForm")
+    page.click("#undoShrink")
+    wait_fn(page, "cable stale: Undo stood", "() => window.__rack.doc().racks[0].frame.heightRU === 24")
+    wait_sel(page, "cable stale: the form survives Undo", "#cableForm")
+    page.click("#cSave")
+    wait_fn(page, "cable stale: the cable saved", "() => window.__rack.doc().racks[0].cables.length === 4")
+    if doc()["frame"]["heightRU"] != 24:
+        bad.append(f"cable stale: Save reverted the Undo (frame {doc()['frame']['heightRU']}U)")
+
+    # The same, in the window before the form is rebuilt: the rack changes and Save is pressed in one task.
+    page.click(port_sel("front", "i2", "port-6"))
+    wait_sel(page, "cable stale: A for the race", 'svg[data-pane="front"] .rk-end-pick')
+    page.click(port_sel("front", "i2", "port-7"))
+    wait_sel(page, "cable stale: the form for the race", "#cableForm")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, frame: {...r.frame, heightRU: 30}});
+      document.getElementById('cSave').click(); }""")
+    wait_fn(page, "cable stale: the raced cable saved", "() => window.__rack.doc().racks[0].cables.length === 5")
+    if doc()["frame"]["heightRU"] != 30:
+        bad.append(f"cable stale: a Save pressed as the rack changed wrote the old rack back (frame {doc()['frame']['heightRU']}U)")
+
+    # 4. The Frame button is a different activity: it turns Cable mode off.
+    page.click(port_sel("front", "i2", "port-5"))
+    wait_sel(page, "cable stale: A before Frame", 'svg[data-pane="front"] .rk-end-pick')
+    page.click("#frameBtn")
+    wait_sel(page, "cable stale: the frame form", "#fHeight")
+    if pressed() != "false" or picks() or page.evaluate("() => document.getElementById('panes').classList.contains('rk-cabling')"):
+        bad.append(f"cable stale: Frame left Cable mode {pressed()} with {picks()} outlines")
+    page.keyboard.press("Escape")
+    wait_fn(page, "cable stale: Esc closes the frame form", "() => !document.getElementById('fHeight')")
     return bad
 
 
