@@ -4689,9 +4689,11 @@ def check_rack_dev_note(page, base):
         bad.append("dev note: the note is open before it is clicked")
     page.click("#devNote > summary")
     body = page.text_content("#devNote .rk-devnote-body") or ""
-    for want in ("still being built", "Coming next", "cabling"):
+    for want in ("still being built", "Coming next: cabling."):
         if want not in body:
             bad.append(f"dev note: the note doesn't mention {want!r}")
+    if "exports" in body.lower():
+        bad.append("dev note: it still lists exports as coming, and they have shipped")
     box = page.evaluate("""() => { const r = document.querySelector('#devNote .rk-devnote-body').getBoundingClientRect();
                               return [Math.round(r.left), Math.round(r.right), innerWidth]; }""")
     if box[0] < 0 or box[1] > box[2]:
