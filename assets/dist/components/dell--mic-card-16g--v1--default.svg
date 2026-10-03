@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="42.58mm" height="15.93mm" viewBox="0 0 42.58 15.93">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <g id="mic-card-16g" data-path="mic-card-16g" data-class="expansion-card" data-behaviour="fills" data-ref="dell/mic-card-16g@1:1.0.0" data-body-depth="117.2" data-power-absent="not-published" transform="translate(0,0)">
+    <title>mic-card-16g</title>
+    <rect id="mic-card-16g--plate" x="0.15" y="0.15" width="42.28" height="15.63" rx="0.4" fill="#cdd1d5" stroke="#9aa1a8" stroke-width="0.25" />
+    <g id="mic-card-16g--vents">
+      <rect x="5.54" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="11.03" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="16.52" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="22.01" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="27.50" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="32.99" y="4.60" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="5.54" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="11.03" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="16.52" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="22.01" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="27.50" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+      <rect x="32.99" y="10.09" width="4.05" height="4.02" rx="0.4" fill="#16191c" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="68.0mm" height="40.4mm" viewBox="0 0 68.0 40.4">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='hpe/psu-865408-b21@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="psu-865408-b21" data-path="psu-865408-b21" data-class="psu" data-behaviour="fills" data-ref="hpe/psu-865408-b21@1:1.0.0" data-body-depth="225.3" data-wall="#3a4045" data-efficiency="platinum" data-form-factor="flex-slot" data-inlet="c14" data-input="100-240 VAC" data-power-output-w="500" transform="translate(0,0)">
+    <title>psu-865408-b21</title>
+    <g id="psu-865408-b21--inlet" data-path="psu-865408-b21/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(41.6,15.8) rotate(90 14.0 10.0)">
+      <title>psu-865408-b21--inlet</title>
+      <rect id="psu-865408-b21--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-865408-b21/inlet/opening" data-class="cutout" />
+      <path id="psu-865408-b21--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="psu-865408-b21--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-865408-b21--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-865408-b21--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+    <path id="psu-865408-b21--body" fill-rule="evenodd" d="M0.2 0.9 a0.7 0.7 0 0 1 0.7 -0.7 h66.2 a0.7 0.7 0 0 1 0.7 0.7 v38.6 a0.7 0.7 0 0 1 -0.7 0.7 h-66.2 a0.7 0.7 0 0 1 -0.7 -0.7 Z M45.6 11.8 h20.0 v28.0 h-20.0 Z" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+    <g id="psu-865408-b21--grille" data-path="psu-865408-b21/grille" data-class="vent">
+      <circle cx="20" cy="20.4" r="18" fill="#141619" />
+      <line x1="20" y1="20.4" x2="36.91" y2="26.56" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="25.86" y2="37.42" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="10.46" y2="35.66" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="2.13" y2="22.59" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="7.05" y2="7.9" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="21.57" y2="2.47" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="34.92" y2="10.33" stroke="#3a3f44" stroke-width="1.6" />
+      <line x1="20" y1="20.4" x2="37.21" y2="25.66" stroke="#3a3f44" stroke-width="1.6" />
+    </g>
+    <circle cx="5.5" cy="5.2" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+    <path d="M4.4 5.2 H6.6 M5.5 4.1 V6.3" stroke="#6b7178" stroke-width="0.4" />
+    <circle cx="37.2" cy="5.2" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+    <path d="M36.1 5.2 H38.3 M37.2 4.1 V6.3" stroke="#6b7178" stroke-width="0.4" />
+    <circle cx="4.8" cy="36.9" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+    <path d="M3.7 36.9 H5.9 M4.8 35.8 V38" stroke="#6b7178" stroke-width="0.4" />
+    <circle cx="37.2" cy="36.9" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+    <path d="M36.1 36.9 H38.3 M37.2 35.8 V38" stroke="#6b7178" stroke-width="0.4" />
+    <circle id="psu-865408-b21--hub" cx="20" cy="20.4" r="8.6" fill="#d9dcdf" stroke="#2a2e32" stroke-width="0.3" data-path="psu-865408-b21/hub" data-class="sticker" />
+    <g id="psu-865408-b21--silkscreen" font-family="sans-serif" text-anchor="middle" fill="#22262a">
+      <text data-from="watts" x="20" y="17.8" font-size="4.4" font-weight="bold">500W</text>
+      <text x="20" y="27" font-size="3.4" font-weight="bold">94%</text>
+    </g>
+    <circle id="psu-865408-b21--lamp" cx="48.3" cy="5.6" r="1.1" fill="var(--led-color, #3f5a43)" stroke="#2a2e32" stroke-width="0.2" data-path="psu-865408-b21/lamp" data-class="led" data-states="off ok" data-description="Power supply. Solid green - normal; off - power unavailable, failure, standby, or error." />
+    <path id="psu-865408-b21--inlet-bezel" fill-rule="evenodd" d="M43.1 11.1 h24.9 v29.3 h-24.9 Z M45.6 11.8 h20.0 v28.0 h-20.0 Z" fill="#202326" stroke="#16191c" stroke-width="0.3" data-path="psu-865408-b21/inlet-bezel" data-class="inlet" />
+    <rect id="psu-865408-b21--latch" x="53.1" y="4.5" width="9" height="6.6" rx="0.6" fill="#853e44" stroke="#5a262b" stroke-width="0.3" data-path="psu-865408-b21/latch" data-class="latch" data-z-out="3.0" data-z-color="#853e44" />
+    <path id="psu-865408-b21--handle" d="M0.6 18.0 H44.6 V22.8 H0.6 Z" fill="#17191c" stroke="#0c0e10" stroke-width="0.3" data-path="psu-865408-b21/handle" data-class="latch" data-z-uhandle="14.0" data-z-color="#17191c" />
+  </g>
+</svg>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="76.2mm" height="15.0mm" viewBox="0 0 76.2 15.0">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-active { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-do-not-remove { --led-color: #f8fafc; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-firmware { --led-color: #3b82f6; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-firmware { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-locate { --led-color: #3b82f6; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-online { --led-color: #22c55e; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-predictive-failure { --led-color: #f59e0b; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-predictive-failure { animation: portrayal-blink 1s linear infinite; }
+    @keyframes portrayal-seq-hpe-sff-sc-carrier-predictive-failure-member {
+      0%, 49.9% { opacity: 1; fill: #f59e0b; }
+      50%, 99.9% { opacity: 1; fill: #22c55e; }
+    }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-predictive-failure-member { animation: portrayal-seq-hpe-sff-sc-carrier-predictive-failure-member 1s steps(1, end) infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-rebuild { --led-color: #22c55e; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-rebuild { animation: portrayal-blink 1s linear infinite; }</style>
+  <g id="sff-sc-carrier" data-path="sff-sc-carrier" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(0,0)">
+    <title>sff-sc-carrier</title>
+    <rect id="sff-sc-carrier--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+    <rect id="sff-sc-carrier--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-sc-carrier/label" data-class="label" />
+    <g id="sff-sc-carrier--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+      <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+      <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+      <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+      <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+    </g>
+    <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+    <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+    <rect id="sff-sc-carrier--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-sc-carrier/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+    <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+    <circle id="sff-sc-carrier--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-sc-carrier/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+    <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+    <circle id="sff-sc-carrier--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-sc-carrier/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+    <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+    <rect id="sff-sc-carrier--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-sc-carrier/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+  </g>
+</svg>

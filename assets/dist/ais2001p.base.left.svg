@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="93.0mm" height="110.0mm" viewBox="0 0 93.0 110.0" data-device="ais2001p" data-view="left" data-dimensions-in="4.33 x 3.66 x 2.84 (L x W x H, datasheet)" data-enclosure="fanless all-aluminium, finned" data-mounting="DIN rail (TS35) or wall" data-accessories="two pluggable terminal plugs (power and relay), console cable" data-switching-capacity="12 Gbps" data-forwarding-rate="8.92 Mpps" data-mac-table="8K" data-power-max-w="125.36" data-power-envelope="fully-configured" data-power-idle-w="6.65" data-poe-budget-w="120" data-poe-standard="IEEE 802.3af/at" data-power-input="DC 48-57 V, dual feed" data-cooling="fanless (finned housing)" data-operating-temp-c="-40 to 75" data-storage-temp-c="-40 to 80" data-surge-protection="differential mode 2 kV, common mode 6 kV" data-esd="contact 6 kV, air 8 kV" data-flash-mb="32" data-memory="128 MB" data-optics-sfp="vendor optics listed under AurCore Accessories - AOM01M-S550 (1G, multimode, 550 m) and AOM01S-K10 (1G, single-mode, 10 km); the datasheet states no compatibility list or third-party policy" data-layer="L2+ (static routing, ERPS ring recovery 20 ms or less)" data-interfaces="console, Telnet, SSH, SNMP v1/v2c/v3, web, ACC/ACN cloud" data-interface-naming="Ethernet1/0/N (Command Manual - 2000 Series)" data-eol="none-announced" data-airflow="passive" data-power="dc">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"AurCore AIS2001P","device-version":"0.1.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"a77c17d1fd5ff88646c7bde2741803cf64efb04783b254d8696c27c9ebcf8aa9","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="AIS2001P" data-sku="AIS2001P" data-part-number="" x="0" y="0" width="93" height="110" rx="1.2" fill="#63696f" stroke="#3f4449" stroke-width="0.5" />
+  <g id="chassis-bevels" data-path="chassis/bevels">
+    <polygon data-edge="bottom-left" points="79.200,94.000 13.800,94.000 4.800,110.000 88.200,110.000" fill="#ffffff" fill-opacity="0.08" stroke="#3f4449" stroke-width="0.25" />
+    <polygon data-edge="front-left" points="93.000,0.000 88.200,0.000 79.200,16.000 79.200,94.000 88.200,110.000 93.000,110.000" fill="#ffffff" fill-opacity="0.08" stroke="#3f4449" stroke-width="0.25" />
+    <polygon data-edge="left-rear" points="13.800,94.000 13.800,16.000 4.800,0.000 0.000,0.000 0.000,110.000 4.800,110.000" fill="#ffffff" fill-opacity="0.08" stroke="#3f4449" stroke-width="0.25" />
+    <polygon data-edge="left-top" points="88.200,0.000 4.800,0.000 13.800,16.000 79.200,16.000" fill="#ffffff" fill-opacity="0.08" stroke="#3f4449" stroke-width="0.25" />
+  </g>
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="14" y="17" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-1" data-kind="plate" x="14" y="21.4" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-2" data-kind="plate" x="14" y="25.8" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-3" data-kind="plate" x="14" y="30.2" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-4" data-kind="plate" x="14" y="34.6" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-5" data-kind="plate" x="14" y="39" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-6" data-kind="plate" x="14" y="43.4" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-7" data-kind="plate" x="14" y="47.8" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-8" data-kind="plate" x="14" y="52.2" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-9" data-kind="plate" x="14" y="56.6" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-10" data-kind="plate" x="14" y="61" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-11" data-kind="plate" x="14" y="65.4" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-12" data-kind="plate" x="14" y="69.8" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-13" data-kind="plate" x="14" y="74.2" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-14" data-kind="plate" x="14" y="78.6" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-15" data-kind="plate" x="14" y="83" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+    <rect id="plate-16" data-kind="plate" x="14" y="87.4" width="65" height="1.6" rx="0.6" fill="#3a3f44" />
+  </g>
+</svg>

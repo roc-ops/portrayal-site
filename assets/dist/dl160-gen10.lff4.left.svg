@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="614.9mm" height="42.9mm" viewBox="0 0 614.9 42.9" data-device="dl160-gen10" data-view="left" data-ru="1" data-weight-min-kg="10.97" data-weight-max-kg="15.74" data-power-input="100-240 VAC per Flex Slot supply (the 865434-B21 supply -48 VDC, the 865428-B21 HVAC/HVDC)" data-psu-redundancy="1+1 with the redundant power supply enablement kit 866442-B21" data-fans="three single-rotor hot-plug fans with one processor, six with two; one more with the redundant fan kit 866438-B21" data-operating-temp-c="10 to 35" data-operating-temp-extended-c="5 to 10 and 35 to 45, approved configurations only" data-storage-temp-c="-30 to 60" data-operating-humidity="8 to 90% non-condensing, 28 C maximum wet bulb" data-altitude-operating-m="3050" data-acoustic-lwad="4.5 B idle, 5.1 B operating" data-cpu="up to two Intel Xeon Scalable processors, first or second generation" data-memory="16 DDR4 DIMM slots, up to 1.0 TB with 64 GB DIMMs" data-storage-controller="HPE Smart Array S100i embedded (SATA only); Smart Array modular and PCIe controllers optional" data-network="embedded 2-port 1GbE" data-bmc="HPE iLO 5" data-eol="announced" data-eol-announcement="https://support.hpe.com/hpesc/public/docDisplay?docId=a00021860enw" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"HPE ProLiant DL160 Gen10","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"0a748a1bef5df88ad1f5fe5ce374b887e6489a7af16941e2945139046ceee0b1","view":"left"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ProLiant DL160 Gen10" x="0" y="0" width="614.9" height="42.9" rx="1.2" fill="#26292d" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor" />
+</svg>

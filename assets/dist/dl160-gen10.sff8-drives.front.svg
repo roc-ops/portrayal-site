@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="434.6mm" height="42.9mm" viewBox="0 0 434.6 42.9" data-device="dl160-gen10" data-view="front" data-ru="1" data-weight-min-kg="10.97" data-weight-max-kg="15.74" data-power-input="100-240 VAC per Flex Slot supply (the 865434-B21 supply -48 VDC, the 865428-B21 HVAC/HVDC)" data-psu-redundancy="1+1 with the redundant power supply enablement kit 866442-B21" data-fans="three single-rotor hot-plug fans with one processor, six with two; one more with the redundant fan kit 866438-B21" data-operating-temp-c="10 to 35" data-operating-temp-extended-c="5 to 10 and 35 to 45, approved configurations only" data-storage-temp-c="-30 to 60" data-operating-humidity="8 to 90% non-condensing, 28 C maximum wet bulb" data-altitude-operating-m="3050" data-acoustic-lwad="4.5 B idle, 5.1 B operating" data-cpu="up to two Intel Xeon Scalable processors, first or second generation" data-memory="16 DDR4 DIMM slots, up to 1.0 TB with 64 GB DIMMs" data-storage-controller="HPE Smart Array S100i embedded (SATA only); Smart Array modular and PCIe controllers optional" data-network="embedded 2-port 1GbE" data-bmc="HPE iLO 5" data-eol="announced" data-eol-announcement="https://support.hpe.com/hpesc/public/docDisplay?docId=a00021860enw" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/button-led-sq@'] .state-amber { --led-color: #f59e0b; }
+    g[data-ref^='common/button-led-sq@'] .state-blue { --led-color: #3b82f6; }
+    g[data-ref^='common/button-led-sq@'] .state-blue-flashing { --led-color: #3b82f6; }
+    g[data-ref^='common/button-led-sq@'] .state-blue-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/button-led-sq@'] .state-green { --led-color: #22c55e; }
+    g[data-ref^='common/button-led-sq@'] .state-green-flashing { --led-color: #22c55e; }
+    g[data-ref^='common/button-led-sq@'] .state-green-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-amber-flashing { --led-color: #f59e0b; }
+    g[data-ref^='common/led-sq@'] .state-amber-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-blue { --led-color: #3b82f6; }
+    g[data-ref^='common/led-sq@'] .state-blue-flashing { --led-color: #3b82f6; }
+    g[data-ref^='common/led-sq@'] .state-blue-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-green { --led-color: #22c55e; }
+    g[data-ref^='common/led-sq@'] .state-green-flashing { --led-color: #22c55e; }
+    g[data-ref^='common/led-sq@'] .state-green-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-red-flashing { --led-color: #ef4444; }
+    g[data-ref^='common/led-sq@'] .state-red-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-active { --led-color: #22c55e; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-active { animation: portrayal-blink 0.25s linear infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-do-not-remove { --led-color: #f8fafc; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-firmware { --led-color: #3b82f6; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-firmware { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-locate { --led-color: #3b82f6; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-online { --led-color: #22c55e; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-predictive-failure { --led-color: #f59e0b; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-predictive-failure { animation: portrayal-blink 1s linear infinite; }
+    @keyframes portrayal-seq-hpe-sff-sc-carrier-predictive-failure-member {
+      0%, 49.9% { opacity: 1; fill: #f59e0b; }
+      50%, 99.9% { opacity: 1; fill: #22c55e; }
+    }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-predictive-failure-member { animation: portrayal-seq-hpe-sff-sc-carrier-predictive-failure-member 1s steps(1, end) infinite; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-rebuild { --led-color: #22c55e; }
+    g[data-ref^='hpe/sff-sc-carrier@'] .state-rebuild { animation: portrayal-blink 1s linear infinite; }
+</style>
+  <metadata>{"device":"HPE ProLiant DL160 Gen10","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/button-led-sq@1":"1.0.0","common/led-sq@1":"1.0.0","hpe/info-pull-tab-slim@1":"1.0.0","hpe/media-bay-blank-1u@1":"1.0.0","hpe/sff-sc-carrier@1":"1.0.0","std/usb-a@1":"1.3.0"},"source-sha256":"0a748a1bef5df88ad1f5fe5ce374b887e6489a7af16941e2945139046ceee0b1","view":"front"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ProLiant DL160 Gen10" x="0" y="0" width="434.6" height="42.9" rx="1.2" fill="#26292d" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="434.6" height="42.9" rx="0.6" fill="#26292d" />
+    <rect id="plate-1" data-kind="plate" x="0" y="41.2" width="434.6" height="1.7" rx="0.6" fill="#c3c8cd" />
+    <rect id="plate-2" data-kind="plate" x="409" y="0.6" width="25.2" height="40.4" rx="0.6" fill="#202326" />
+    <rect id="plate-3" data-kind="plate" x="6" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-4" data-kind="plate" x="12.7" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-5" data-kind="plate" x="19.4" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-6" data-kind="plate" x="26.1" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-7" data-kind="plate" x="32.8" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-8" data-kind="plate" x="39.5" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-9" data-kind="plate" x="46.2" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-10" data-kind="plate" x="52.9" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-11" data-kind="plate" x="59.6" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-12" data-kind="plate" x="66.3" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-13" data-kind="plate" x="73" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-14" data-kind="plate" x="79.7" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-15" data-kind="plate" x="86.4" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-16" data-kind="plate" x="93.1" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-17" data-kind="plate" x="99.8" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-18" data-kind="plate" x="106.5" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-19" data-kind="plate" x="113.2" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-20" data-kind="plate" x="119.9" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-21" data-kind="plate" x="126.6" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-22" data-kind="plate" x="133.3" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-23" data-kind="plate" x="140" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-24" data-kind="plate" x="146.7" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-25" data-kind="plate" x="153.4" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-26" data-kind="plate" x="160.1" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-27" data-kind="plate" x="166.8" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-28" data-kind="plate" x="173.5" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-29" data-kind="plate" x="180.2" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-30" data-kind="plate" x="224" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-31" data-kind="plate" x="230.7" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+    <rect id="plate-32" data-kind="plate" x="237.4" y="2.8" width="4.6" height="1.6" rx="0.6" fill="#0d0f11" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 0.55 0.55 A 0.95 0.95 0 1 0 1.85 0.55 M 1.2 0 V 1.0" fill="none" stroke="#e7ebee" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(415.2 2.6)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-power" />
+    <path d="M 0 1.0 H 0.9 L 1.3 0 L 1.7 2.0 L 2.1 1.0 H 3.0" fill="none" stroke="#e7ebee" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(414.9 12.6)" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-health" />
+    <path d="M 1.1 0 H 1.9 V 0.6 H 1.1 Z M 1.5 0.6 V 1.0 M 0.4 1.0 H 2.6 M 0.4 1.0 V 1.4 M 2.6 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.2 1.4 H 3.0 V 2.0 H 2.2 Z" fill="none" stroke="#e7ebee" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" transform="translate(414.9 20.9)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="led-nic" />
+    <text x="416.4" y="30.6" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#e7ebee" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="btn-uid">UID</text>
+    <text x="426" y="4.6" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#d98cb3" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-front">SS</text>
+    <text x="426.3" y="22.4" font-family="sans-serif" font-size="1.5" text-anchor="middle" fill="#f1f3f5" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ilo-service">iLO</text>
+    <path d="M 0 0 H 0.9 M 1.6 0 H 2.5 M 6.4 0 H 7.3 M 8 0 H 8.9" fill="none" stroke="#f1f3f5" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(421.9 22.8)" id="ilo-box-top" data-path="silk:ilo-box-top" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ilo-service" />
+    <path d="M 0 0 H 0.9 M 1.6 0 H 2.5 M 3.2 0 H 4.1 M 4.8 0 H 5.7 M 6.4 0 H 7.3 M 8 0 H 8.9" fill="none" stroke="#f1f3f5" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(421.9 39)" id="ilo-box-bottom" data-path="silk:ilo-box-bottom" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ilo-service" />
+    <path d="M 0 0 V 0.9 M 0 1.6 V 2.5 M 0 3.2 V 4.1 M 0 4.8 V 5.7 M 0 6.4 V 7.3 M 0 8 V 8.9 M 0 9.6 V 10.5 M 0 11.2 V 12.1 M 0 12.8 V 13.7 M 0 14.4 V 15.3 M 0 16 V 16.2" fill="none" stroke="#f1f3f5" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(421.9 22.8)" id="ilo-box-left" data-path="silk:ilo-box-left" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ilo-service" />
+    <path d="M 0 0 V 0.9 M 0 1.6 V 2.5 M 0 3.2 V 4.1 M 0 4.8 V 5.7 M 0 6.4 V 7.3 M 0 8 V 8.9 M 0 9.6 V 10.5 M 0 11.2 V 12.1 M 0 12.8 V 13.7 M 0 14.4 V 15.3 M 0 16 V 16.2" fill="none" stroke="#f1f3f5" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" transform="translate(431.1 22.8)" id="ilo-box-right" data-path="silk:ilo-box-right" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ilo-service" />
+  </g>
+  <g id="info-tab" data-path="info-tab" data-class="tab" data-behaviour="fills" data-ref="hpe/info-pull-tab-slim@1:1.0.0" data-rel-pos="1" transform="translate(188.1,0.3)" data-group="tags" data-group-role="furniture">
+    <title>info-tab</title>
+    <rect id="info-tab--tab" x="0.15" y="0.6" width="33.2" height="4.65" rx="0.6" fill="#1c1f22" stroke="#3a3f44" stroke-width="0.3" data-path="info-tab/tab" data-class="label" />
+    <rect x="5.5" y="3.3" width="8.3" height="0.5" fill="#e7ebee" />
+    <rect x="21.6" y="3.3" width="9.2" height="0.5" fill="#e7ebee" />
+    <rect x="16.1" y="1.9" width="3.2" height="3" rx="0.3" fill="#e7ebee" />
+    <g id="info-tab--silkscreen">
+      <text x="17.7" y="4.5" font-family="serif" font-size="2.7" font-weight="bold" fill="#1c1f22" text-anchor="middle">i</text>
+    </g>
+  </g>
+  <g id="btn-power" data-path="btn-power" data-class="button" data-ref="common/button-led-sq@1:1.0.0" data-rel-pos="1" transform="translate(414.4,7.0)" data-group="controls" data-group-role="management" data-for="chassis">
+    <title>btn-power</title>
+    <rect x="0.1" y="0.1" width="3.8" height="3.8" rx="0.4" fill="#3a3f44" stroke="#15181b" stroke-width="0.2" />
+    <rect id="btn-power--lamp" x="0.5" y="0.5" width="3.0" height="3.0" rx="0.3" fill="var(--led-color, #8a9097)" data-path="btn-power/lamp" data-class="led" data-states="off green green-flashing amber blue blue-flashing" />
+  </g>
+  <g id="led-health" data-path="led-health" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="2" transform="translate(414.9,15.8)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>led-health</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-health--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-health/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="led-nic" data-path="led-nic" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="1" transform="translate(414.9,23.9)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>led-nic</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="led-nic--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="led-nic/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="btn-uid" data-path="btn-uid" data-class="button" data-ref="common/button-led-sq@1:1.0.0" data-rel-pos="2" transform="translate(414.4,31.4)" data-group="controls" data-group-role="management" data-for="chassis">
+    <title>btn-uid</title>
+    <rect x="0.1" y="0.1" width="3.8" height="3.8" rx="0.4" fill="#3a3f44" stroke="#15181b" stroke-width="0.2" />
+    <rect id="btn-uid--lamp" x="0.5" y="0.5" width="3.0" height="3.0" rx="0.3" fill="var(--led-color, #8a9097)" data-path="btn-uid/lamp" data-class="led" data-states="off green green-flashing amber blue blue-flashing" />
+  </g>
+  <g id="usb-front" data-path="usb-front" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.0" data-rel-pos="2" transform="translate(420.0,9.75) rotate(90 6.0 2.25)" data-group="usb" data-group-role="management" data-description="the USB Type-A ports front and rear, the front iLO service port among them">
+    <title>usb-front</title>
+    <rect id="usb-front--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-front/opening" data-class="cutout" />
+    <rect id="usb-front--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="ilo-service" data-path="ilo-service" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-role="ilo-service" data-rel-pos="1" transform="translate(420.3,28.65) rotate(90 6.0 2.25)" data-group="usb" data-group-role="management" data-description="the USB Type-A ports front and rear, the front iLO service port among them">
+    <title>ilo-service</title>
+    <rect id="ilo-service--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="ilo-service/opening" data-class="cutout" />
+    <rect id="ilo-service--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="sff-1" data-path="sff-1" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="1">
+    <title>sff-1</title>
+    <rect id="sff-1--opening" x="5.3" y="6.8" width="76.2" height="15" fill="#101214" />
+    <g id="sff-1--module" data-path="sff-1/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(43.4,14.3) translate(-38.1,-7.5)">
+      <title>sff-1--module</title>
+      <rect id="sff-1--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-1--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-1/module/label" data-class="label" />
+      <g id="sff-1--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-1--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-1/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-1--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-1/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-1--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-1/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-1--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-1/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-2" data-path="sff-2" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="2">
+    <title>sff-2</title>
+    <rect id="sff-2--opening" x="5.3" y="24.5" width="76.2" height="15" fill="#101214" />
+    <g id="sff-2--module" data-path="sff-2/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(43.4,32) translate(-38.1,-7.5)">
+      <title>sff-2--module</title>
+      <rect id="sff-2--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-2--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-2/module/label" data-class="label" />
+      <g id="sff-2--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-2--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-2/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-2--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-2/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-2--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-2/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-2--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-2/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-3" data-path="sff-3" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="3">
+    <title>sff-3</title>
+    <rect id="sff-3--opening" x="87.05" y="6.8" width="76.2" height="15" fill="#101214" />
+    <g id="sff-3--module" data-path="sff-3/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(125.15,14.3) translate(-38.1,-7.5)">
+      <title>sff-3--module</title>
+      <rect id="sff-3--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-3--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-3/module/label" data-class="label" />
+      <g id="sff-3--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-3--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-3/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-3--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-3/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-3--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-3/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-3--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-3/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-4" data-path="sff-4" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="4">
+    <title>sff-4</title>
+    <rect id="sff-4--opening" x="87.05" y="24.5" width="76.2" height="15" fill="#101214" />
+    <g id="sff-4--module" data-path="sff-4/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(125.15,32) translate(-38.1,-7.5)">
+      <title>sff-4--module</title>
+      <rect id="sff-4--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-4--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-4/module/label" data-class="label" />
+      <g id="sff-4--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-4--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-4/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-4--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-4/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-4--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-4/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-4--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-4/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-5" data-path="sff-5" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="5">
+    <title>sff-5</title>
+    <rect id="sff-5--opening" x="168.8" y="6.8" width="76.2" height="15" fill="#101214" />
+    <g id="sff-5--module" data-path="sff-5/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(206.9,14.3) translate(-38.1,-7.5)">
+      <title>sff-5--module</title>
+      <rect id="sff-5--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-5--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-5/module/label" data-class="label" />
+      <g id="sff-5--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-5--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-5/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-5--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-5/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-5--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-5/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-5--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-5/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-6" data-path="sff-6" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="6">
+    <title>sff-6</title>
+    <rect id="sff-6--opening" x="168.8" y="24.5" width="76.2" height="15" fill="#101214" />
+    <g id="sff-6--module" data-path="sff-6/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(206.9,32) translate(-38.1,-7.5)">
+      <title>sff-6--module</title>
+      <rect id="sff-6--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-6--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-6/module/label" data-class="label" />
+      <g id="sff-6--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-6--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-6/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-6--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-6/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-6--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-6/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-6--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-6/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-7" data-path="sff-7" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="7">
+    <title>sff-7</title>
+    <rect id="sff-7--opening" x="250.55" y="24.5" width="76.2" height="15" fill="#101214" />
+    <g id="sff-7--module" data-path="sff-7/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(288.65,32) translate(-38.1,-7.5)">
+      <title>sff-7--module</title>
+      <rect id="sff-7--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-7--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-7/module/label" data-class="label" />
+      <g id="sff-7--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-7--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-7/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-7--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-7/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-7--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-7/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-7--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-7/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="sff-8" data-path="sff-8" data-class="bay" data-group="drives" data-group-role="service" data-rel-pos="8">
+    <title>sff-8</title>
+    <rect id="sff-8--opening" x="332.3" y="24.5" width="76.2" height="15" fill="#101214" />
+    <g id="sff-8--module" data-path="sff-8/module" data-class="drive" data-behaviour="fills" data-ref="hpe/sff-sc-carrier@1:1.0.0" data-body-depth="125.0" data-wall="#1b1e21" data-capacity="300" data-capacity-unit="GB" data-form-factor="2.5in" data-interface="SAS" data-rpm="10K" transform="translate(370.4,32) translate(-38.1,-7.5)">
+      <title>sff-8--module</title>
+      <rect id="sff-8--module--body" x="0.15" y="0.15" width="75.9" height="14.7" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <rect id="sff-8--module--label" x="2.3" y="2.3" width="7.3" height="10.2" rx="1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.25" data-path="sff-8/module/label" data-class="label" />
+      <g id="sff-8--module--silkscreen" font-family="sans-serif" fill="#e7ebee" text-anchor="middle">
+        <text data-from="rpm" x="5.95" y="5.1" font-size="1.7" font-weight="bold">10K</text>
+        <text data-from="interface" x="5.95" y="7.2" font-size="1.3">SAS</text>
+        <text data-from="capacity" x="5.0" y="9.6" font-size="1.4" font-weight="bold">300</text>
+        <text data-from="capacity-unit" x="7.7" y="9.6" font-size="1.0">GB</text>
+      </g>
+      <path d="M10.6 3.6 H38.6 L40.4 5.4 V10.4 L38.6 12.2 H10.6 Z" fill="#4a4f55" stroke="#1e2124" stroke-width="0.3" />
+      <rect x="12" y="12.6" width="27" height="1.3" rx="0.5" fill="#101214" />
+      <rect id="sff-8--module--lamp-locate" x="14.0" y="1.0" width="24.0" height="1.3" rx="0.6" fill="var(--led-color, #101214)" data-path="sff-8/module/lamp-locate" data-class="led" data-states="off locate firmware" data-description="Locate. Solid blue - identified by a host application; flashing blue - carrier firmware updating or needing an update." />
+      <circle cx="46.4" cy="7.4" r="6.1" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <circle id="sff-8--module--lamp-activity" cx="46.4" cy="7.4" r="4.7" fill="none" stroke="var(--led-color, #2f8f3d)" stroke-width="1.2" data-path="sff-8/module/lamp-activity" data-class="led" data-states="off active" data-description="Activity ring. Rotating green - drive activity; off - none. The rotation is drawn as a blink." />
+      <circle cx="46.4" cy="7.4" r="3.4" fill="#14171a" />
+      <circle id="sff-8--module--lamp-status" cx="46.4" cy="7.4" r="1.85" fill="var(--led-color, #3fae4d)" data-path="sff-8/module/lamp-status" data-class="led" data-states="off online rebuild predictive-failure predictive-failure-member fault" data-description="Drive status. Solid green - member of a logical drive; flashing green - rebuilding or migrating; flashing amber - predictive failure, not a member of a logical drive; flashing amber/green - a member of one or more logical drives and predicted to fail; solid amber - failed." />
+      <rect x="58.8" y="0.9" width="16.1" height="13.2" rx="0.6" fill="#3a3f44" stroke="#1e2124" stroke-width="0.3" />
+      <rect id="sff-8--module--release" x="62.0" y="1.8" width="7.4" height="10.7" rx="0.5" fill="var(--led-color, #b8545a)" stroke="#5c2327" stroke-width="0.35" data-path="sff-8/module/release" data-class="led" data-states="off do-not-remove" data-description="The release button, which is the do-not-remove lamp - solid white when removing the drive would fail a logical drive." data-z-out="1.0" data-z-color="#b8463b" />
+    </g>
+  </g>
+  <g id="media-bay" data-path="media-bay" data-class="bay" data-group="media-bays" data-group-role="service" data-rel-pos="1">
+    <title>media-bay</title>
+    <rect id="media-bay--opening" x="245.5" y="0.7" width="163.1" height="22.1" fill="#101214" />
+    <g id="media-bay--module" data-path="media-bay/module" data-class="blank" data-behaviour="fills" data-ref="hpe/media-bay-blank-1u@1:1.0.0" transform="translate(327.05,11.75) translate(-81.55,-11.05)">
+      <title>media-bay--module</title>
+      <rect id="media-bay--module--plate" x="0.15" y="0.15" width="162.8" height="21.8" rx="0.6" fill="#2b2f33" stroke="#16191c" stroke-width="0.3" />
+      <g id="media-bay--module--vents" data-path="media-bay/module/vents" data-class="vent">
+        <rect x="9.2" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="9.2" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="9.2" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="9.2" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="15.9" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="15.9" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="15.9" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="15.9" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="22.6" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="22.6" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="22.6" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="22.6" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="29.3" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="29.3" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="29.3" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="29.3" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="36" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="36" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="36" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="36" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="42.7" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="42.7" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="42.7" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="42.7" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="49.4" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="49.4" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="49.4" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="49.4" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="56.1" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="56.1" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="56.1" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="56.1" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="62.8" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="62.8" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="62.8" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="62.8" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="69.5" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="69.5" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="69.5" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="69.5" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="76.2" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="76.2" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="76.2" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="76.2" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="82.9" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="82.9" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="82.9" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="82.9" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="89.6" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="89.6" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="89.6" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="89.6" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="96.3" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="96.3" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="96.3" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="96.3" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="103" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="103" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="103" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="103" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="109.7" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="109.7" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="109.7" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="109.7" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="116.4" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="116.4" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="116.4" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="116.4" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="123.1" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="123.1" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="123.1" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="123.1" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="129.8" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="129.8" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="129.8" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="129.8" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="136.5" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="136.5" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="136.5" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="136.5" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="143.2" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="143.2" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="143.2" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="143.2" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="149.9" y="4.6" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="149.9" y="8.75" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="149.9" y="12.9" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+        <rect x="149.9" y="17.05" width="5.5" height="2.8" rx="0.4" fill="#0d0f11" />
+      </g>
+    </g>
+  </g>
+</svg>
