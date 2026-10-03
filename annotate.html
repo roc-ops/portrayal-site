@@ -326,9 +326,29 @@ const legend3d = document.createElement('div');
 legend3d.id = 'legend3d';
 legend3d.hidden = true;
 m3d.el.host3d.appendChild(legend3d);
+// WHAT A STATE PAINTS, as marks.js's legend reads it (#95): the matched part's
+// lamp in the mounted drawing - where marks.apply has put the state's class -
+// and failing that a probe carrying the class. The stylesheet scopes a state's
+// rule to the component that owns the lamp, so the lamp is asked first.
+function statePaint(m) {
+  const svg = state.svg;
+  if (!svg || !svg.isConnected || !m.state) return '';
+  const led = v => getComputedStyle(v).getPropertyValue('--led-color').trim();
+  for (const el of marks.match(svg, m).els) {
+    const lamp = el.getAttribute('data-class') === 'led' ? el : el.querySelector('[data-class="led"]');
+    const c = led(lamp || el);
+    if (c) return c;
+  }
+  const probe = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  probe.setAttribute('class', `state-${m.state}`);
+  svg.appendChild(probe);
+  const c = led(probe);
+  probe.remove();
+  return c;
+}
 function drawLegend3d() {
   const s = scene3d();
-  const rows = s && doc.legend ? legendItems(doc, s) : [];
+  const rows = s && doc.legend ? legendItems(doc, s, statePaint) : [];
   legend3d.hidden = m3d.mode() !== '3d' || !rows.length;
   legend3d.innerHTML = rows.map(r =>
     `<div class="row"><span class="sw" style="border-color:${r.color};background:${

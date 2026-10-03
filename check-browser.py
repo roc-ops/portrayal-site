@@ -4715,6 +4715,49 @@ def check_annotate_export_survives_mode_switch(page, base):
         bad.append("export: the buttons did not come back after the export finished")
     return bad
 
+
+# THE 3D LEGEND'S SWATCH IS THE STATE'S COLOUR (#95). A labelled mark with only
+# a state has no ring and no lamp colour; the 2D strip shows the colour that
+# state paints, read off the drawing's own stylesheet, and the 3D panel showed
+# grey. Compared here against the matched lamp's own computed colour in the
+# live drawing - the way marks.js asks.
+@extra("Annotate 3D: a state-only mark's legend swatch is the colour its state paints")
+def check_annotate_3d_legend_state_colour(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html?debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    page.evaluate("""async () => { const m = await import('/vendor/marks.js');
+      location.hash = m.encode({v: 1, device: 's9510-28dc', config: 'dc', view: 'front', legend: true,
+        marks: [{select: "[data-path='led-sync']", state: 'synced', label: 'in sync'}]}); }""")
+    page.reload(wait_until="load")
+    page.wait_for_selector("#stage svg [data-path='led-sync']", state="attached", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_annotate_3d_legend_state_colour] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    try:
+        page.wait_for_function("() => document.querySelector('#legend3d .row .sw')", timeout=READY_3D_MS)
+    except Exception:
+        return bad + ["legend: no row in the 3D legend for a labelled state-only mark"]
+    r = page.evaluate("""() => {
+      const rgb = c => { const d = document.createElement('i'); d.style.color = c; document.body.append(d);
+                         const v = getComputedStyle(d).color; d.remove(); return v; };
+      // as marks.js's litColor: the matched part's lamp, with the mark's state on it.
+      // (A probe at the root finds nothing: the stylesheet scopes a state's rule
+      // to the component that owns the lamp.)
+      const el = document.querySelector("#stage svg [data-path='led-sync']");
+      const lamp = el.getAttribute('data-class') === 'led' ? el : el.querySelector('[data-class="led"]');
+      const want = getComputedStyle(lamp || el).getPropertyValue('--led-color').trim();
+      const sw = document.querySelector('#legend3d .row .sw');
+      return {want, wantRgb: rgb(want), got: getComputedStyle(sw).borderTopColor, grey: rgb('#8d939a')}; }""")
+    if not r["want"]:
+        return bad + ["legend: the drawing paints no colour for state-synced - the check has nothing to compare"]
+    if r["got"] != r["wantRgb"]:
+        bad.append(f"legend: the 3D swatch is {r['got']}, the state paints {r['want']} ({r['wantRgb']})"
+                   + (" - it is the fallback grey" if r["got"] == r["grey"] else ""))
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

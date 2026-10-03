@@ -84,3 +84,20 @@ test('the legend lists labelled marks that reached something, in order', () => {
     {label: 'lit', color: '#ff00ff', hollow: true},
   ]);
 });
+
+test('a state-only labelled mark takes the colour its state paints, when the page can say', () => {
+  const doc = {marks: [
+    {select: "[data-path='psu-0']", state: 'fault', label: 'failed feed'},
+    {select: "[data-path='psu-1']", state: 'ok', label: 'good feed'},
+    {select: "[data-path='port-1']", color: '#00ff00', state: 'fault', label: 'ringed'},
+  ]};
+  const s = docToScene(doc, {front, rear});
+  const colorOf = m => ({fault: '#EF4444', ok: 'url(x)'})[m.state];
+  assert.deepEqual(legendItems(doc, s, colorOf), [
+    {label: 'failed feed', color: '#ef4444', hollow: true},   // the state's colour, hollow: no ring
+    {label: 'good feed', color: '#8d939a', hollow: true},     // not a hex: grey, never passed on
+    {label: 'ringed', color: '#00ff00', hollow: false},       // a ring colour still wins
+  ]);
+  // and with no resolver the rows are as before
+  assert.equal(legendItems(doc, s)[0].color, '#8d939a');
+});

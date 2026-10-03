@@ -113,6 +113,10 @@ A mark row shows **not in 3D** when either is true:
 
 In 3D, an HTML panel beside the stage lists each mark's colour swatch and label: the same entries, in the same order, as the 2D legend strip. The legend checkbox shows or hides it.
 
+Two points settled after the first release (#95):
+- **The swatch** is the ring colour, else the lamp colour, else the colour the mark's state paints, read off the mounted drawing as `marks.js` reads it: the matched lamp's computed `--led-color`, then a probe carrying the state's class. The page supplies that as `colorOf(mark)` to `legendItems`, which holds the result to the hex rule.
+- **Membership differs from the 2D strip in one case, on purpose.** A row needs the mark to have reached a part the scene can place: a `data-path`, on any face. The 2D strip lists a mark that matched anything in the drawing. A legend is a key to what is beside it, so a mark the scene cannot show gets no row in 3D; its mark row says "not in 3D".
+
 #### Exports in 3D
 
 - **GLB and USDZ appear,** through `mode3d`'s bar. With PR 1 synced, they are the plain model.

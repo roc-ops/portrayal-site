@@ -56,14 +56,27 @@ export function docToScene(doc, faces) {
 }
 
 /**
- * The legend panel's rows: as marks.js's strip, one per labelled mark that
- * reached something - here on any face - in document order. The swatch is the
- * ring colour, else the lamp colour; hollow when there is no ring.
+ * The legend panel's rows: as marks.js's strip, one per labelled mark, in
+ * document order. The swatch is the ring colour, else the lamp colour, else the
+ * colour the mark's state paints; hollow when there is no ring.
+ *
+ * WHAT A STATE PAINTS IS THE DRAWING'S TO SAY (#95). marks.js reads it off the
+ * live drawing - the lamp's computed --led-color, or a probe carrying the
+ * state's class - and that needs a document, which this module does not have.
+ * So the page hands in `colorOf(mark)`, and whatever it returns is held to the
+ * hex rule before it is used: it lands in a style attribute.
+ *
+ * ONE DIFFERENCE FROM THE 2D STRIP, kept on purpose: a row needs the mark to
+ * have reached a part the SCENE can place - a path, on any face. The strip
+ * lists a mark that matched anything in the drawing; a legend is a key to what
+ * is beside it, and a row for a mark the scene cannot show would claim a
+ * highlight the reader cannot see.
  */
-export function legendItems(doc, scene) {
+export function legendItems(doc, scene, colorOf = null) {
   return ((doc && doc.marks) || []).flatMap((m, i) => {
     if (!m.label || !scene.byMark[i] || !scene.byMark[i].paths.length) return [];
     const c = hex(m.color), l = hex(m.lamp);
-    return [{label: m.label, color: c || l || '#8d939a', hollow: !c}];
+    const st = !c && !l && m.state && colorOf ? hex(colorOf(m)) : '';
+    return [{label: m.label, color: c || l || st || '#8d939a', hollow: !c}];
   });
 }
