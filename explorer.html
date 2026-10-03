@@ -648,13 +648,16 @@ for (const a of document.querySelectorAll('a[data-export]')) {
 function applyPendingFields() {
   const map = pendingFields;
   pendingFields = null;
-  if (map) {
-    for (const [path, vals] of Object.entries(map)) shell.setFields(path, vals);
-    writeLocation();
+  try {
+    if (map) {
+      for (const [path, vals] of Object.entries(map)) shell.setFields(path, vals);
+      writeLocation();
+    }
+  } finally {
+    // Settled either way - a URL naming none is done applying them too, and a
+    // throw here must not leave the embed's `ready` pending for ever.
+    fieldsSettled();
   }
-  // Settled either way - a URL naming none is done applying them too, and the
-  // embed's `ready` is waiting on this same tick regardless.
-  fieldsSettled();
 }
 
 // An optic's latch colour and label: controls beneath the optic menu. Shared

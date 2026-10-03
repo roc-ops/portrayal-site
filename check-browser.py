@@ -2806,6 +2806,21 @@ def check_rack_library(page, base):
     for k, v in want.items():
         if r.get(k) != v:
             bad.append(f"library: {k} is {r.get(k)!r}, expected {v!r}")
+    # list() reads a stored record through parseDoc, as get() does.
+    listed = page.evaluate("""async () => {
+      await new Promise((res, rej) => { const o = indexedDB.open('portrayal-racks', 1);
+        o.onerror = rej; o.onsuccess = () => { const tx = o.result.transaction('docs', 'readwrite');
+          tx.objectStore('docs').put({format: 'portrayal-rack', version: 1, id: 'doc-raw',
+            racks: [{name: 42, frame: {}, items: []}], updatedAt: 1});
+          tx.oncomplete = () => { o.result.close(); res(); }; tx.onerror = rej; }; });
+      const L = await import('/site/rack/library.js');
+      const lib = await L.openLibrary();
+      const name = (await lib.list()).find(x => x.id === 'doc-raw')?.name;
+      await lib.remove('doc-raw');
+      return name;
+    }""")
+    if listed != "42":
+        bad.append(f"library: list() names a stored rack {listed!r}, expected '42' (read through parseDoc)")
     return bad
 
 
@@ -3073,6 +3088,10 @@ def check_rack_export_3d(page, base):
     usdz = pathlib.Path(dl.path()).read_bytes()
     if dl.suggested_filename != "Export-test.usdz" or usdz[:2] != b"PK":
         bad.append(f"USDZ: {dl.suggested_filename!r} is not a USDZ")
+    else:
+        with zipfile.ZipFile(io.BytesIO(usdz)) as z:
+            if not any(n.lower().endswith((".usdc", ".usda", ".usd")) for n in z.namelist()):
+                bad.append(f"USDZ: no USD entry in the archive: {z.namelist()}")
     page.click('#rkMode [data-mode="2d"]')
     return bad
 
@@ -3257,14 +3276,15 @@ def check_rack_export_dcim_types(page, base):
         if dl.suggested_filename != f"Export-test-{target}-types.zip":
             bad.append(f"{T} types: named {dl.suggested_filename!r}")
         with zipfile.ZipFile(dl.path()) as z:
-            names = set(z.namelist())
+            listing = z.namelist()
+            names = set(listing)
             notes = z.read("NOTES.txt").decode() if "NOTES.txt" in names else ""
             head = z.read("device-types/Edgecore/7726-32X-O-AC-F.yaml").decode() \
                 if "device-types/Edgecore/7726-32X-O-AC-F.yaml" in names else ""
         if names != want:
             bad.append(f"{T} types: entries differ - missing {sorted(want - names)}, extra {sorted(names - want)}")
-        if len(zipfile.ZipFile(dl.path()).namelist()) != len(want):
-            bad.append(f"{T} types: {len(zipfile.ZipFile(dl.path()).namelist())} entries, expected {len(want)} (a duplicate?)")
+        if len(listing) != len(want):
+            bad.append(f"{T} types: {len(listing)} entries, expected {len(want)} (a duplicate?)")
         devices = sorted(n for n in names if n.startswith("device-types/"))
         if len(devices) != 3:
             bad.append(f"{T} types: {len(devices)} device types, expected 3 (two TM-280s share one): {devices}")
@@ -3316,6 +3336,16 @@ def check_rack_export_device_csv(page, base):
     if (leaf.get("device_type__model"), leaf.get("status__name")) != ("7726-32X-O-AC-F", "Planned"):
         bad.append(f"Nautobot CSV: leaf-1 is {leaf}")
 
+    # A DCIM CSV is imported as is: a label that opens like a formula stays verbatim (only the BOM guards it).
+    eq = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js');
+      const r = window.__rack.doc().racks[0];
+      const rack = {...r, items: r.items.filter(i => i.id === 'i2').map(i => ({...i, label: '=leaf'}))};
+      return (await X.deviceImportCsv(rack, () => ({manufacturer: 'Edgecore'}), 'netbox')).data;
+    }""")
+    if not eq.split("\r\n")[1].startswith("=leaf,"):
+        bad.append(f"NetBox CSV: a label starting with '=' is not verbatim: {eq[:200]!r}")
+
     # Positions follow the frame's numbering.
     page.click("#frameBtn")
     page.select_option("#fNumbering", "top-down")
@@ -3342,19 +3372,22 @@ def check_rack_export_other_vendor(page, base):
       const ctx = await X.dcimContext(rack, stub, 'netbox', {modules: false});
       const csv = await X.deviceImportCsv(rack, stub, 'netbox');
       const zip = await X.dcimTypesZip(rack, stub, 'netbox');
+      const buf = zip.data instanceof Blob ? await zip.data.arrayBuffer() : zip.data;
       return {note: ctx.notes.find(n => n.includes('core-1')) || '', flag: ctx.types.get('i1')?.otherVendor,
-              csv: csv.data, zipNotes: zip.notes.join(' ')};
+              csv: csv.data, zipBytes: Array.from(new Uint8Array(buf.buffer ?? buf))};
     }""")
     if got["flag"] is not True:
         bad.append(f"other vendor: otherVendor is {got['flag']!r}, expected true")
     if "another vendor's" not in got["note"]:
         bad.append(f"other vendor: dcimContext note is {got['note']!r}")
-    _, rows, _ = (None, list(csv.DictReader(io.StringIO(got["csv"], newline=""))), None)
+    rows = list(csv.DictReader(io.StringIO(got["csv"], newline="")))
     comments = rows[0]["comments"] if rows else ""
     if "another vendor's (Cisco) file" not in comments:
         bad.append(f"other vendor: the CSV comment is {comments!r}")
-    if "another vendor's (Cisco) file" not in got["zipNotes"]:
-        bad.append(f"other vendor: the zip's notes are {got['zipNotes']!r}")
+    with zipfile.ZipFile(io.BytesIO(bytes(got["zipBytes"]))) as z:
+        zipNotes = z.read("NOTES.txt").decode() if "NOTES.txt" in z.namelist() else ""
+    if "another vendor's (Cisco) file" not in zipNotes:
+        bad.append(f"other vendor: the zip's NOTES.txt is {zipNotes!r}")
     return bad
 
 
@@ -3418,6 +3451,31 @@ def check_rack_export_bom(page, base):
     if "'=evil" not in guarded or "'=lbl" not in guarded or re.search(r"(^|\n)=", guarded):
         bad.append(f"BOM: a formula-like cell is not apostrophe-guarded: {guarded[:300]!r}")
 
+    # A seated ref that is not in the component index keeps its row (model = the ref) and is noted.
+    unknown = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), F = await import('/site/rack/face.js');
+      const r = window.__rack.doc().racks[0];
+      const rack = {...r, items: r.items.filter(i => i.id === 'i1')};
+      const chassisOf = () => ({manufacturer: 'Cisco'});
+      const before = (await X.bomCsv(rack, chassisOf)).data;
+      const ref = before.split('\\n').find(l => l.startsWith('Power supplies,'))?.split(',').pop().trim();
+      const list = await F.components();
+      const at = list.findIndex(c => `${c.ns}/${c.name}@${c.major.slice(1)}` === ref);
+      if (at < 0) return {ref, error: 'ref not found in the index'};
+      const [gone] = list.splice(at, 1);
+      try { return {ref, data: (await X.bomCsv(rack, chassisOf)).data}; }
+      finally { list.splice(at, 0, gone); }
+    }""")
+    if unknown.get("error"):
+        bad.append(f"BOM: unindexed-ref probe could not set up: {unknown}")
+    else:
+        urows = list(csv.DictReader(io.StringIO(unknown["data"].partition("\r\n\r\nNotes\r\n")[0], newline="")))
+        krow = next((r for r in urows if r["ref"] == unknown["ref"]), None)
+        if not krow or krow["model"] != unknown["ref"]:
+            bad.append(f"BOM: an unindexed seated ref is {krow!r}, expected a row whose model is the ref")
+        if "not in the component index" not in unknown["data"]:
+            bad.append("BOM: no 'not in the component index' note for an unindexed ref")
+
     # Tapped rails: screws of the chosen thread, no cage nuts.
     page.click("#frameBtn")
     page.select_option("#fHoles", "tapped")
@@ -3427,6 +3485,84 @@ def check_rack_export_bom(page, base):
     _, rows, _ = read_csv(export_file(page, "bom"))
     if qty(rows, "Mounting hardware", "Screw, 12-24") != 52 or qty(rows, "Mounting hardware", "Cage nut, M6"):
         bad.append(f"BOM tapped: hardware rows {[(r['model'], r['qty']) for r in rows if r['section'] == 'Mounting hardware']}")
+    return bad
+
+
+@extra("the Explorer lens: Escape reads back like Done; a lens showing another device hands back nothing")
+def check_rack_lens_edges(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    page.evaluate("""() => { window.__lens = import('/site/rack/explorer-lens.js').then(L =>
+      L.openLens({ref: 'as7726-32x', cfg: 'ac-f2b', title: 'AS7726', swaps: {'port-1': 'generic/qsfp-lc@2'}})); }""")
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
+                           timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    page.focus(".rk-lens-done")
+    page.keyboard.press("Escape")
+    r = page.evaluate("async () => await window.__lens")
+    if not r or r.get("swaps", {}).get("port-1") != "generic/qsfp-lc@2":
+        bad.append(f"lens: Escape read back {r!r}")
+    if page.query_selector(".rk-lens"):
+        bad.append("lens: the overlay is still open after Escape")
+    page.evaluate("""() => { window.__lens2 = import('/site/rack/explorer-lens.js').then(L =>
+      L.openLens({ref: 'no-such-device', cfg: 'base', title: 'Nothing'})); }""")
+    page.click(".rk-lens-done", timeout=READY_MS)
+    got2 = page.evaluate("async () => await window.__lens2")
+    if got2 is not None:
+        bad.append(f"lens: a lens that never showed its device handed back {got2!r}")
+    return bad
+
+
+@extra("rack.html: the library menu renames and marks the current rack; the summary lists depth warnings")
+def check_rack_menu_and_warnings(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.once("dialog", lambda d: d.accept("Renamed rack"))
+    page.click("#libMenu > summary")
+    page.click("#libItems button:has-text('Rename')")
+    page.wait_for_function("() => window.__rack.doc().racks[0].name === 'Renamed rack'", timeout=READY_MS)
+    if (page.text_content("#rackName") or "") != "Renamed rack":
+        bad.append("menu: the rack name in the bar did not follow a rename")
+    page.click("#libMenu > summary")
+    # The list is redrawn when the menu opens; wait for that draw, not the previous one.
+    try:
+        page.wait_for_function("() => document.querySelector('#libItems .rk-current')?.textContent === 'Renamed rack'",
+                               timeout=READY_MS)
+    except Exception:
+        bad.append(f"menu: the current rack is marked {page.text_content('#libItems .rk-current')!r}")
+    page.click("#libMenu > summary")
+    pick(page, "front", 10, "R740", "r740xd")
+    page.wait_for_selector('svg[data-pane="front"] [data-device-ref="r740xd"][data-panel="mounted"]', timeout=READY_MS)
+    page.click("#frameBtn")
+    page.fill("#fUsable", "500")
+    page.dispatch_event("#fUsable", "change")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.usableDepth === 500", timeout=READY_MS)
+    page.click("#frameBtn")                       # back to the summary
+    page.wait_for_selector(".rk-side .rk-error", timeout=READY_MS)
+    if "this rack allows 500 mm" not in (page.text_content(".rk-side") or ""):
+        bad.append(f"summary: no depth warning for the R740xd ({page.text_content('.rk-side')!r})")
+    return bad
+
+
+@extra("rack.html: the frame form keeps keyboard focus across a change")
+def check_rack_frame_focus(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/rack.html?probe=1", wait_until="load")
+    page.wait_for_function("() => window.__rack && window.__rack.ready", timeout=READY_MS)
+    page.evaluate("() => window.__rack.ready")
+    page.click("#frameBtn")
+    page.evaluate("() => { document.querySelector('#fNumbering').dataset.old = '1'; }")
+    page.focus("#fNumbering")
+    page.select_option("#fNumbering", "top-down")
+    page.wait_for_function("() => { const s = document.querySelector('#fNumbering'); return s && !s.dataset.old; }",
+                           timeout=READY_MS)
+    if page.evaluate("() => document.activeElement && document.activeElement.id") != "fNumbering":
+        bad.append("frame form: focus left the control that was just changed")
     return bad
 
 
@@ -3919,6 +4055,16 @@ def check_rack_no_idb(page, base):
     data = json.loads(saved.read_text())
     if data.get("format") != "portrayal-rack":
         bad.append(f"rack page without IndexedDB: downloaded file format is {data.get('format')!r}, expected 'portrayal-rack'")
+    # Without a library, New rack still counts up rather than naming every rack "Rack 1".
+    page.on("dialog", lambda d: d.dismiss())
+    for want in ("Rack 2", "Rack 3"):
+        page.click("#libMenu > summary")
+        page.click("#libItems button:has-text('New rack')")
+        try:
+            page.wait_for_function("(n) => window.__rack.doc().racks[0].name === n", arg=want, timeout=5000)
+        except Exception:
+            bad.append(f"rack page without IndexedDB: New rack is named {page.evaluate('() => window.__rack.doc().racks[0].name')!r}, expected {want!r}")
+            break
     return bad
 
 

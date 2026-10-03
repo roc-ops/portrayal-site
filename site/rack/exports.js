@@ -236,6 +236,7 @@ export async function dcimContext(rack, chassisOf, target, {modules = true} = {}
     // matchDeviceType falls back past the manufacturer filter when no file is in
     // the chassis's own folder; that shows as a file from another vendor's.
     const otherVendor = vendorOf(m.path) !== manufacturer;
+    // chassisManufacturer is the chassis catalog's value; `manufacturer` below is the YAML's.
     types.set(it.id, {...m, otherVendor, chassisManufacturer: manufacturer, manufacturer: head.manufacturer ?? '', model: head.model ?? '',
                       isFullDepth: head.isFullDepth});
     if (otherVendor)

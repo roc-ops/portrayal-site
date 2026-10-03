@@ -233,9 +233,12 @@ export function deviceImportRows({rack, items, types, target = 'netbox'}) {
     else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
     if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${String(it.label || it.ref).trim()}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
-    const other = items.find(o => o.id !== it.id && o.face !== it.face && overlaps(o, it));
-    if (other && (t?.isFullDepth || types.get(other.id)?.isFullDepth))
-      notes.push(`Shares its U with ${names.get(other.id).name} on the ${other.face}; ${T} refuses this while either type is full depth.`);
+    const others = items.filter(o => o.id !== it.id && o.face !== it.face && overlaps(o, it));
+    if (others.length && (t?.isFullDepth || others.some(o => types.get(o.id)?.isFullDepth))) {
+      const named = others.map(o => names.get(o.id).name);
+      const list = named.length > 1 ? `${named.slice(0, -1).join(', ')} and ${named.at(-1)}` : named[0];
+      notes.push(`Shares its U with ${list} on the ${others[0].face}; ${T} refuses this while either type is full depth.`);
+    }
     const position = positionOf(rack.frame, it.ru, it.u);
     const comments = notes.join(' ');
     return target === 'nautobot'
@@ -296,7 +299,7 @@ export function bomRows({devices = [], parts = [], frame, railUs = []}) {
     add(`device|${d.ref}|${d.cfg}`, {section: 'Devices', manufacturer: d.manufacturer ?? '', model: d.model ?? d.ref,
       description: d.cfg ? `Configuration ${d.cfg}` : '', ref: d.ref});
   for (const p of parts)
-    add(`part|${p.ref}`, {section: sectionOf(p.cls), manufacturer: p.manufacturer ?? '', model: p.model ?? '',
+    add(`part|${p.ref}`, {section: sectionOf(p.cls), manufacturer: p.manufacturer ?? '', model: p.model || p.ref,
       description: p.description ?? '', ref: p.ref});
   const rows = [...lines.values()].sort((a, b) => sectionOrder(a.section) - sectionOrder(b.section)
     || String(a.model).localeCompare(String(b.model)) || String(a.ref).localeCompare(String(b.ref)));

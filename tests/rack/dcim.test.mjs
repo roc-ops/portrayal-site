@@ -132,3 +132,36 @@ test('a type from another vendor says so in the row\'s comments, as NOTES.txt do
   assert.equal(rows[0].comments, 'core-1 (asr-9006): no NetBox device type from Nobody Inc, so ' +
     "ASR-9006-AC-V2 is another vendor's (Cisco) file, a best guess.");
 });
+
+test('the shared-U note names every device it shares with', () => {
+  const full = {manufacturer: 'M', model: 'X', isFullDepth: true, guess: false};
+  const items = [
+    {id: 'a', ref: 'r', cfg: 'base', label: 'tall', ru: 10, u: 6, face: 'front', turned: false},
+    {id: 'b', ref: 'r', cfg: 'base', label: 'one', ru: 11, u: 1, face: 'rear', turned: false},
+    {id: 'c', ref: 'r', cfg: 'base', label: 'two', ru: 13, u: 1, face: 'rear', turned: false},
+    {id: 'd', ref: 'r', cfg: 'base', label: 'three', ru: 15, u: 1, face: 'rear', turned: false}];
+  const types = new Map(items.map(i => [i.id, full]));
+  const {rows} = X.deviceImportRows({rack: RACK, items, types, target: 'netbox'});
+  assert.equal(rows.find(r => r.name === 'tall').comments,
+    'Shares its U with one, two and three on the rear; NetBox refuses this while either type is full depth.');
+  assert.equal(rows.find(r => r.name === 'one').comments,
+    'Shares its U with tall on the front; NetBox refuses this while either type is full depth.');
+});
+
+test('the other-vendor comment wins over a certain match (guess: false)', () => {
+  const types = new Map([['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: false, guess: false,
+    otherVendor: true, chassisManufacturer: 'Nobody Inc', path: nb('Cisco', 'ASR-9006-AC-V2')}]]);
+  const item = {id: 'i1', ref: 'asr-9006', cfg: 'base', label: 'core-1', ru: 2, u: 4, face: 'front', turned: false};
+  const {rows} = X.deviceImportRows({rack: RACK, items: [item], types, target: 'netbox'});
+  assert.match(rows[0].comments, /another vendor's \(Cisco\) file/);
+  assert.doesNotMatch(rows[0].comments, /best guess for configuration/);
+});
+
+test('a device label that starts with = stays verbatim in the DCIM CSV (only the BOM guards it)', () => {
+  const item = {id: 'i1', ref: 'asr-9006', cfg: 'base', label: '=core', ru: 2, u: 4, face: 'front', turned: false};
+  const types = new Map([['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: false, guess: false}]]);
+  const {columns, rows} = X.deviceImportRows({rack: RACK, items: [item], types, target: 'netbox'});
+  const csv = X.toCsv(columns, rows);
+  assert.ok(csv.split('\r\n')[1].startsWith('=core,'), csv);
+  assert.ok(!csv.includes("'=core"));
+});

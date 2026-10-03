@@ -2,7 +2,7 @@
 // goes through commit(), which autosaves and redraws. What the side panel
 // shows follows S.sel.
 
-import {newDoc, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
+import {newDoc, nextRackName, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation, uAtY} from './rack/elevation.js';
 import {fits, reaches, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
@@ -240,11 +240,23 @@ function undoShrink() {
 // taken sooner would read the rack before the edit. The scene remembers which
 // rack object it was built from; any other one is rebuilt first.
 async function sceneForExport() {
-  if (S.mode !== '3d') return null;
-  if (!S.scene3d || S.scene3dRack !== rack()) { clearTimeout(rebuild3dTimer); await rebuild3d(); }
-  return S.scene3d;
+  if (S.mode !== '3d') return {scene: null, overtaken: true};
+  if (!S.scene3d || S.scene3dRack !== rack()) {
+    clearTimeout(rebuild3dTimer);
+    const before = stage3dEpoch;
+    await rebuild3d();
+    // A switch back to 2D, or a newer rebuild, overtook this one: that is not
+    // a browser without WebGL.
+    if (S.mode !== '3d' || stage3dEpoch !== before + 1) return {scene: null, overtaken: true};
+  }
+  return {scene: S.scene3d, overtaken: false};
 }
 const NO_SCENE = {error: "3D isn't available in this browser, so there's no model to export."};
+const OVERTAKEN = {error: 'The 3D view changed before the model was ready. Try the export again.'};
+const modelExport = async format => {
+  const {scene, overtaken} = await sceneForExport();
+  return scene ? modelFile(scene, rack(), format) : overtaken ? OVERTAKEN : NO_SCENE;
+};
 
 const BUILD = {
   'sheet-svg': () => sheetSvg(rack(), chassisOf),
@@ -257,8 +269,8 @@ const BUILD = {
   'netbox-devices': () => deviceImportCsv(rack(), chassisOf, 'netbox'),
   'nautobot-devices': () => deviceImportCsv(rack(), chassisOf, 'nautobot'),
   bom: () => bomCsv(rack(), chassisOf),
-  glb: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'glb') : NO_SCENE; },
-  usdz: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'usdz') : NO_SCENE; },
+  glb: () => modelExport('glb'),
+  usdz: () => modelExport('usdz'),
 };
 let exporting = false;
 async function runExport(kind) {
@@ -375,6 +387,10 @@ function summary() {
 }
 
 function renderSide() {
+  // Rebuilding the panel must not take keyboard focus away (a frame edit
+  // redraws the form): the control that had it gets it back, by id.
+  const had = document.activeElement;
+  const focusId = had && $('side').contains(had) ? had.id : '';
   const r = rack(), sel = S.sel;
   let body;
   if (!sel) body = summary();
@@ -411,6 +427,7 @@ function renderSide() {
     kids.push(undo);
   }
   $('side').replaceChildren(...kids);
+  if (focusId) document.getElementById(focusId)?.focus();
 }
 
 function onPaneClick(ev) {
@@ -478,7 +495,7 @@ async function renderLibrary() {
       // queued (saveSoon fires 500ms later); flushing first means it lands
       // before the switch instead of being silently skipped.
       await S.save.flush();
-      const d = newDoc({name: `Rack ${(await S.lib.list()).length + 1}`});
+      const d = newDoc({name: nextRackName([...(await S.lib.list()).map(x => x.name), rack().name])});
       await S.lib.put(d); setDoc(d);
     }),
     act('Duplicate', async () => {
@@ -513,7 +530,8 @@ async function renderLibrary() {
   const list = await S.lib.list();
   if (mine !== libDraws || !list.length) return;
   items.append(el('hr'), ...list.map(d => {
-    const b = act(d.name, async () => {
+    // The open rack by its live name: the stored one trails an edit by the autosave delay.
+    const b = act(d.id === S.doc.id ? rack().name : d.name, async () => {
       await S.save.flush();
       const doc = await getDoc(d.id);
       if (!doc) { $('side').replaceChildren(el('p', {class: 'rk-error', role: 'alert', text: CANT_OPEN})); return; }
@@ -547,7 +565,9 @@ async function bootInner() {
   S.save = autosaver(S.lib);
   $('libNote').hidden = S.lib.available;
   let doc = null;
-  try { const last = localStorage.getItem(LAST); if (last) doc = await getDoc(last); } catch { /* none */ }
+  let last = null;
+  try { last = localStorage.getItem(LAST); } catch { /* storage blocked: no last rack */ }
+  if (last) doc = await getDoc(last);   // getDoc already reports null rather than throwing
   if (!doc) { const first = (await S.lib.list())[0]; if (first) doc = await getDoc(first.id); }
   if (!doc) { doc = newDoc(); await S.lib.put(doc); }
   $('paneFront').addEventListener('click', onPaneClick);

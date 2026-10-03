@@ -31,8 +31,14 @@ export async function openLibrary({idb = globalThis.indexedDB} = {}) {
     async list() {
       if (!db) return [];
       const all = await done(store('readonly').getAll());
-      return all.map(d => ({id: d.id, name: d.racks?.[0]?.name ?? 'Rack', updatedAt: d.updatedAt ?? 0}))
-                .sort((a, b) => b.updatedAt - a.updatedAt);
+      return all.map(d => {
+        // Read as get() reads it, so a migrated or older record lists by the
+        // name it opens with; one that will not parse still lists as stored
+        // (opening it says why).
+        let name = d.racks?.[0]?.name ?? 'Rack';
+        try { name = parseDoc(d).racks[0].name; } catch { /* listed as stored */ }
+        return {id: d.id, name, updatedAt: d.updatedAt ?? 0};
+      }).sort((a, b) => b.updatedAt - a.updatedAt);
     },
     async get(id) {
       if (!db) return null;

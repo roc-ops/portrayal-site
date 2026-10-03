@@ -48,8 +48,16 @@ export const newDoc = ({name = 'Rack 1', kind = 'four-post'} = {}) =>
 // id is never handed to another - a cable (Phase 2) naming it must not start
 // naming something else.
 export function nextId(list, prefix) {
-  const used = list.map(x => Number(String(x.id).slice(prefix.length))).filter(Number.isInteger);
+  const used = list.filter(x => String(x.id).startsWith(prefix))
+    .map(x => Number(String(x.id).slice(prefix.length))).filter(Number.isInteger);
   return `${prefix}${Math.max(0, ...used) + 1}`;
+}
+
+// "Rack N" for a new rack: one past the highest N in use, so names never
+// repeat - with or without a library to count.
+export function nextRackName(names) {
+  const used = names.map(n => /^Rack (\d+)$/.exec(String(n))?.[1]).filter(Boolean).map(Number);
+  return `Rack ${Math.max(0, ...used) + 1}`;
 }
 
 export function withItem(rack, {ref, cfg, ru, face = 'front', turned = false, label = ref,

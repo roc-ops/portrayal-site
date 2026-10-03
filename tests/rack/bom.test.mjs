@@ -67,3 +67,9 @@ test('mounting hardware is 4 per U: cage nuts and screws, or screws of the threa
   assert.match(X.hardwareNotes(M.normalizeFrame({holes: {style: 'tapped'}}))[0], /thread is not set/);
   assert.deepEqual(X.hardwareNotes(tapped), []);
 });
+
+test('a seated part with no part number is listed by its reference', () => {
+  const rows = X.bomRows({devices: [], parts: [{ref: 'no/such-part@1', cls: 'other'}], frame: M.normalizeFrame({heightRU: 4}), railUs: []});
+  const row = rows.find(r => r.ref === 'no/such-part@1');
+  assert.equal(row.model, 'no/such-part@1');
+});

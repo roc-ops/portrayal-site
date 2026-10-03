@@ -27,7 +27,7 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
     const box = el('div', {class: 'rk-lens', role: 'dialog', 'aria-modal': 'true',
                            'aria-label': `${title} in Explorer`},
       [el('div', {class: 'rk-lens-bar'}, [el('strong', {text: title}), status, done]), frame]);
-    let api = null;
+    let api = null, shown = false;   // shown: Explorer reported its device ready
     // EVERY load, not the first: if the frame reloads, the API the first load
     // exposed belongs to a dead window.
     frame.addEventListener('load', async () => {
@@ -35,10 +35,11 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
         api = frame.contentWindow?.portrayalEmbed || null;
         if (!api) throw new Error('explorer.html did not expose portrayalEmbed');
         await api.ready;
+        shown = true;
         status.textContent = 'Changes you make here come back to the rack when you press Done.';
       } catch (err) {
         console.warn('[portrayal] Explorer lens', err);
-        api = null;
+        api = null; shown = false;
         status.textContent = `${title} could not be opened in Explorer.`;
       }
     });
@@ -51,7 +52,9 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
       document.removeEventListener('keydown', onKey);
       backdrop.remove();
       box.remove();
-      resolve(cur && cur.device === ref
+      // current() falls back to the URL's own device before one loads, so
+      // `shown` is what says Explorer really has it.
+      resolve(shown && cur && cur.device === ref
         ? {device: cur.device, config: cur.config, swaps: {...(cur.swaps || {})},
            fields: structuredClone(cur.fields || {})}
         : null);

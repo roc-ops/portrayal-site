@@ -96,3 +96,13 @@ test('parseDoc fills what an older writer left out, and keeps zeroU and cables',
     face: 'front', turned: false, swaps: {}, fields: {}});
   assert.deepEqual([d.racks[0].zeroU, d.racks[0].cables], [[{id: 'z1'}], [{id: 'c1'}]]);
 });
+
+test('nextId counts only ids that carry its own prefix', () => {
+  assert.equal(M.nextId([{id: 'z7'}, {id: 'i2'}], 'i'), 'i3');
+});
+
+test('nextRackName follows the highest "Rack N" in use', () => {
+  assert.equal(M.nextRackName([]), 'Rack 1');
+  assert.equal(M.nextRackName(['Rack 1']), 'Rack 2');
+  assert.equal(M.nextRackName(['Lab', 'Rack 3', 'Rack 1']), 'Rack 4');
+});

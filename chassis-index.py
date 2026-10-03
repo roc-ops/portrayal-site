@@ -27,7 +27,8 @@ def build():
             continue
         idx = json.loads(p.read_text())
         c = idx.get("chassis") or {}
-        h = c.get("h") or RU
+        # a stated 0 (a zero-U part's face) is a height, not a missing one
+        h = c.get("h") if c.get("h") is not None else RU
         out[d["name"]] = {
             "manufacturer": d.get("manufacturer"),
             "model": d.get("model") or d["name"],
