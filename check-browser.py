@@ -4530,9 +4530,16 @@ def wait_fn(page, label, expr, timeout=READY_MS):
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
 
-def wait_sel(page, label, selector, timeout=READY_MS):
+def wait_sel(page, label, selector, timeout=READY_MS, state=None):
+    # Playwright's default is to wait until the element is VISIBLE, and an SVG
+    # group is visible only if its box has an area: a cable that is one
+    # vertical stroke (both ends at one x) has a zero-width box and never is.
+    # A cable group or a cable layer is therefore waited for as ATTACHED, so no
+    # check depends on where its fixture's ports happen to be.
+    if state is None and ("[data-cable-id" in selector or "[data-cables" in selector):
+        state = "attached"
     try:
-        return page.wait_for_selector(selector, timeout=timeout)
+        return page.wait_for_selector(selector, timeout=timeout, **({"state": state} if state else {}))
     except Exception as e:
         raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
 
@@ -6080,14 +6087,21 @@ def check_cable_colors(page, base):
       const {colorOf} = await import('/site/rack/cables.js');
       const links = [['os2', 'uplink'], ['copper', 'server'], ['copper', 'management'], ['copper', 'other'],
                      ['om3', ''], ['om4', ''], ['om5', ''], ['cat6', ''], ['cat6a', ''], ['dac', ''], ['aoc', ''],
-                     ['unset', ''], ['something-else', '']];
+                     ['unset', ''], ['something-else', ''],
+                     // Names every object has are not media, and not purposes.
+                     ['toString', ''], ['constructor', ''], ['__proto__', ''], ['hasOwnProperty', ''],
+                     ['copper', 'toString'], ['copper', 'constructor']];
       return links.map(([media, purpose]) => [media, purpose, colorOf({media, purpose})]);
     }""")
     want = [["os2", "uplink", "#e8c547"], ["copper", "server", "#5aa7ff"], ["copper", "management", "#9aa3ad"],
             ["copper", "other", "#5aa7ff"],
             ["om3", "", "#2bb3c8"], ["om4", "", "#2bb3c8"], ["om5", "", "#9acd32"], ["cat6", "", "#5aa7ff"],
             ["cat6a", "", "#5aa7ff"], ["dac", "", "#15171a"], ["aoc", "", "#3a3f45"], ["unset", "", "#9aa3ad"],
-            ["something-else", "", "#e8c547"]]
+            ["something-else", "", "#e8c547"],
+            ["toString", "", "#e8c547"], ["constructor", "", "#e8c547"], ["__proto__", "", "#e8c547"],
+            ["hasOwnProperty", "", "#e8c547"], ["copper", "toString", "#5aa7ff"], ["copper", "constructor", "#5aa7ff"]]
+    if len(got) != len(want):
+        bad.append(f"cable colors: {len(got)} colors read, {len(want)} expected")
     for g, w in zip(got, want):
         if g != w:
             bad.append(f"cable colors: {g[0]} / {g[1]!r} is {g[2]}, expected {w[2]}")
@@ -7477,6 +7491,485 @@ def check_rack_cables_3d(page, base):
             "() => document.getElementById('cableEmpty')?.textContent.includes('Use Cable mode')")
     if (page.text_content("#cableEmpty") or "") != "No cables yet. Use Cable mode and click a port at each end.":
         bad.append(f"cables 3D: in 2D the empty state reads {page.text_content('#cableEmpty')!r}")
+    return bad
+
+
+def cable_fixture(doc_id, name, edit):
+    f = json.loads(json.dumps(CABLE_FIXTURE))
+    f["id"] = doc_id
+    f["racks"][0]["name"] = name
+    edit(f["racks"][0])
+    return f
+
+
+@extra("rack.html: a kept cable never re-attaches - a removed device's id is not handed to the next device placed")
+def check_rack_cable_id_reuse(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("dialog", lambda d: (bad.append(f"id reuse: a browser dialog opened ({d.message!r})"), d.dismiss()))
+    # c2 runs to the device with the HIGHEST id (i4), so its id is the next one a naive count hands out.
+    def edit(rack):
+        rack["cables"][1]["b"]["item"] = "i4"
+        rack["cables"][2]["b"]["item"] = "i3"
+    try:
+        open_cabled(page, base, cable_fixture("doc-cable-id-reuse", "Cable ids", edit))
+    except RuntimeError as e:
+        return bad + [f"id reuse: {e}"]
+    doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
+    reason = lambda: page.evaluate("() => window.__rack.cableFacts().reasons['i4|front|port-2-1']")
+    select_item(page, "rear", "i4")
+    page.click("#iRemove")
+    wait_sel(page, "id reuse: the remove panel", "#removeKeepCables")
+    page.click("#removeKeepCables")
+    wait_fn(page, "id reuse: demarc (U20) removed", "() => window.__rack.doc().racks[0].items.length === 3")
+    wait_fn(page, "id reuse: c2's far end is loose",
+            "() => window.__rack.cableFacts().reasons['i4|front|port-2-1'] === 'the device was removed'")
+    # Place another device where the removed one stood.
+    pick(page, "rear", 20, "TM-280", "tm-280", dispatch=True)
+    wait_fn(page, "id reuse: a device placed", "() => window.__rack.doc().racks[0].items.length === 4")
+    new = doc()["items"][-1]
+    if new["id"] == "i4":
+        bad.append("id reuse: the new device was given i4, the id the kept cable still names")
+    wait_fn(page, "id reuse: the new device is drawn",
+            f"""() => !!document.querySelector('svg[data-pane="rear"] [data-item-id="{new["id"]}"][data-panel]')""")
+    # Past the redraw that would land it: read what the newest drawing says.
+    page.evaluate("() => document.activeElement?.blur()")
+    page.keyboard.press("Escape")
+    wait_sel(page, "id reuse: the cable list", '#cableList [data-cable-row="c2"]')
+    if reason() != "the device was removed":
+        bad.append(f"id reuse: after placing a new device, c2's far end reads {reason()!r}")
+    line = page.text_content('#cableList li[data-cable-item="c2"] [data-loose="b"]') if page.query_selector(
+        '#cableList li[data-cable-item="c2"] [data-loose="b"]') else None
+    if line != "Loose end B: the device was removed.":
+        bad.append(f"id reuse: the list says {line!r} of c2's far end")
+    if page.query_selector('svg[data-pane="rear"] [data-cable-id="c2"]'):
+        bad.append("id reuse: c2 is drawn on the rear pane, landing on the new device")
+    if page.get_attribute('svg[data-pane="front"] [data-cables] [data-cable-id="c2"]', "data-loose-lead") != "to":
+        bad.append("id reuse: c2 is not an unplugged lead on the front pane")
+    if page.evaluate(PLUGS_JS, ["rear", new["id"]]) != {"lc": 0, "rj45": 0}:
+        bad.append("id reuse: the new device was drawn with a plug for a cable that is not its own")
+    return bad
+
+
+# A 42U RACK WHOSE CABLES REACH BELOW IT: one from the top U to the bottom U
+# in the front pane (its sag grows with its length), and an unplugged lead
+# from a U1 device in the rear pane, whose tag hangs below the rack.
+ROOM_FIXTURE = {
+    "format": "portrayal-rack", "version": 1, "id": "doc-cable-room",
+    "racks": [{
+        "id": "r1", "name": "Cable room",
+        "frame": {"kind": "four-post", "heightRU": 42, "numbering": "bottom-up",
+                  "holes": {"style": "square", "thread": None},
+                  "railDepth": 740, "usableDepth": 1000, "ref": None},
+        "items": [
+            {"id": "i1", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "top", "ru": 42, "face": "front",
+             "turned": False, "swaps": {}, "fields": {}},
+            {"id": "i2", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "bottom", "ru": 1, "face": "front",
+             "turned": False, "swaps": {}, "fields": {}},
+            {"id": "i3", "ref": "tm-280", "cfg": "base", "label": "low demarc", "ru": 1, "face": "rear",
+             "turned": False, "swaps": {}, "fields": {}},
+        ],
+        "zeroU": [],
+        "cables": [
+            {"id": "c1", "a": {"item": "i1", "path": "mgmt-eth", "view": "front"},
+             "b": {"item": "i2", "path": "mgmt-eth", "view": "front"},
+             "media": "cat6a", "purpose": "management", "label": "", "route": []},
+            {"id": "c2", "a": {"item": "i3", "path": "port-2-1", "view": "front"},
+             "b": {"item": "i9", "path": "port-1", "view": "front"},
+             "media": "cat6a", "purpose": "management", "label": "", "route": []},
+        ]}]}
+
+# Every stroke, plug and tag of each pane's cable layers that reaches outside
+# the pane's viewBox - what the pane would clip.
+CLIPPED_JS = """() => Object.fromEntries(['front', 'rear'].map(p => {
+  const svg = document.querySelector(`svg[data-pane="${p}"]`);
+  const vb = svg.getAttribute('viewBox').split(/\\s+/).map(Number);
+  const nodes = [...svg.querySelectorAll('[data-cables] path, [data-cables] rect, [data-cable-tags] rect, [data-cable-tags] text')];
+  const out = nodes.map(n => [n, n.getBBox()]).filter(([, b]) =>
+    b.x < vb[0] - 0.01 || b.y < vb[1] - 0.01 || b.x + b.width > vb[0] + vb[2] + 0.01 || b.y + b.height > vb[1] + vb[3] + 0.01)
+    .map(([n, b]) => `${n.closest('[data-cable-id]')?.dataset.cableId} ${n.tagName} to y ${Math.round(b.y + b.height)} of ${Math.round(vb[1] + vb[3])}`);
+  return [p, {vb, nodes: nodes.length, tags: svg.querySelectorAll('[data-cable-tags] rect').length, out}];
+}))"""
+
+
+@extra("rack.html: a long cable's loop and a bottom lead's tag are never cut off - the panes grow downward together, and Fit still fits")
+def check_rack_cables_room(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base, ROOM_FIXTURE)
+    except RuntimeError as e:
+        return bad + [f"cable room: {e}"]
+    near = lambda a, b, tol=0.6: abs(a - b) <= tol
+    got = page.evaluate(CLIPPED_JS)
+    if got["front"]["nodes"] < 2 or got["rear"]["tags"] != 1:
+        return bad + [f"cable room: the fixture did not draw its cables ({got}); the check proves nothing"]
+    for p in ("front", "rear"):
+        if got[p]["out"]:
+            bad.append(f"cable room: the {p} pane cuts off {got[p]['out']}")
+    f, r = got["front"]["vb"], got["rear"]["vb"]
+    if not (near(f[1], r[1], 0.01) and near(f[3], r[3], 0.01)):
+        bad.append(f"cable room: the panes' viewBoxes differ in origin or height ({f} / {r})")
+    panes = page.evaluate(PANES_JS)
+    front, rear = panes["front"], panes["rear"]
+    if not (near(front["u1"]["h"], rear["u1"]["h"], 0.3) and near(front["u1"]["top"], rear["u1"]["top"], 1)):
+        bad.append(f"cable room: U1 is not level across the panes ({front['u1']} / {rear['u1']})")
+    if not (near(front["box"]["w"], rear["box"]["w"]) and near(front["box"]["h"], rear["box"]["h"])):
+        bad.append(f"cable room: the panes differ in size ({front['box']} / {rear['box']})")
+    # The base box is still the box before any widening: the plain 42U rack.
+    base_h = float((front["baseBox"] or "0 0 0 0").split()[3])
+    if not (base_h > 0 and f[3] > base_h + 40 and front["baseBox"].split()[3] == rear["baseBox"].split()[3]):
+        bad.append(f"cable room: base boxes {front['baseBox']} / {rear['baseBox']} under viewBox height {f[3]}")
+    # Fit fits the height and the width of the taller panes.
+    fit = page.evaluate("""() => { const p = document.getElementById('panes');
+      const cols = [...p.children].map(c => c.getBoundingClientRect());
+      const svgs = ['front', 'rear'].map(n => document.querySelector(`svg[data-pane="${n}"]`).getBoundingClientRect());
+      return {label: document.getElementById('zoomLevel').textContent, panes: p.getBoundingClientRect().height,
+              scrollX: p.scrollWidth - p.clientWidth, scrollY: p.scrollHeight - p.clientHeight,
+              h: svgs.map(r => r.height), over: svgs.map((r, i) => r.right - cols[i].right)}; }""")
+    if (fit["label"] != "Fit" or any(h > fit["panes"] + 1 for h in fit["h"]) or fit["scrollX"] > 1
+            or fit["scrollY"] > 1 or any(o > 1 for o in fit["over"])):
+        bad.append(f"cable room: Fit does not fit the grown panes ({fit})")
+    # A zoom step and back to Fit: still nothing cut off.
+    page.click("#zoomIn")
+    page.click("#zoomFit")
+    again = page.evaluate(CLIPPED_JS)
+    if again["front"]["out"] or again["rear"]["out"] or again["front"]["vb"] != f:
+        bad.append(f"cable room: after a zoom and Fit the panes are {again}")
+    # A rack with no cables is untouched.
+    open_fixture(page, base)
+    plain = page.evaluate(PANES_JS)
+    if plain["front"]["baseBox"] or plain["front"]["layers"] or not near(plain["front"]["vb"][3], plain["rear"]["vb"][3], 0.01):
+        bad.append(f"cable room: a rack with no cables was widened ({plain['front']['vb']}, base {plain['front']['baseBox']})")
+    return bad
+
+
+@extra("rack.html: a length keeps the unit its file wrote - listed as written, kept by an edit that leaves it alone; clearing it saves none; only a new value needs m or ft")
+def check_rack_cable_length_units(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    def edit(rack):
+        rack["cables"][1]["length"] = {"value": 3, "unit": "yd"}
+        rack["cables"][2]["length"] = {"value": "long", "unit": "m"}
+    try:
+        open_cabled(page, base, cable_fixture("doc-cable-units", "Cable units", edit))
+    except RuntimeError as e:
+        return bad + [f"length units: {e}"]
+    cable = lambda cid: page.evaluate("id => window.__rack.doc().racks[0].cables.find(c => c.id === id)", cid)
+    meta = lambda cid: (page.text_content(f'#cableList li[data-cable-item="{cid}"] .rk-cable-meta') or "")
+    wait_sel(page, "length units: the list", '#cableList [data-cable-row="c2"]')
+    if cable("c2").get("length") != {"value": 3, "unit": "yd", "source": "entered"}:
+        bad.append(f"length units: the loader made c2's length {cable('c2').get('length')}")
+    if "3 yd" not in meta("c2"):
+        bad.append(f"length units: the list says {meta('c2')!r} of a 3 yd cable")
+    # A length the loader cannot use is kept as written, beside the cable, and shown nowhere as a number.
+    c3 = cable("c3")
+    if "length" in c3 or c3.get("lengthAsWritten") != {"value": "long", "unit": "m"}:
+        bad.append(f"length units: c3 loaded as {c3}")
+    if "long" in meta("c3") or "NaN" in meta("c3"):
+        bad.append(f"length units: the list prints c3's unusable length ({meta('c3')!r})")
+
+    def open_form():
+        # A saved cable is left selected, and a second click on its row would let it go.
+        wait_fn(page, "length units: no form open", "() => !document.getElementById('cableForm')")
+        wait_sel(page, "length units: c2's row", '#cableList [data-cable-row="c2"]')
+        if page.get_attribute('#cableList [data-cable-row="c2"]', "aria-pressed") != "true":
+            page.click('#cableList [data-cable-row="c2"]')
+        wait_sel(page, "length units: Edit", "#cableEdit")
+        page.click("#cableEdit")
+        wait_sel(page, "length units: the form", "#cableForm")
+    # An edit that leaves the length alone keeps it, unit and all.
+    open_form()
+    if page.input_value("#cLength") != "3" or page.input_value("#cUnit") != "yd":
+        bad.append(f"length units: the form shows {page.input_value('#cLength')!r} {page.input_value('#cUnit')!r}")
+    page.fill("#cLabel", "M7")
+    page.click("#cSave")
+    wait_fn(page, "length units: the label saved", "() => window.__rack.doc().racks[0].cables[1].label === 'M7'")
+    if cable("c2").get("length") != {"value": 3, "unit": "yd", "source": "entered"}:
+        bad.append(f"length units: an edit that left the length alone made it {cable('c2').get('length')}")
+    wait_sel(page, "length units: the list again", '#cableList li[data-cable-item="c2"] .rk-cable-meta')
+    if "3 yd" not in meta("c2"):
+        bad.append(f"length units: after the edit the list says {meta('c2')!r}")
+    # A NEW value on the unknown unit is refused, with the sentence.
+    open_form()
+    page.fill("#cLength", "5")
+    page.click("#cSave")
+    page.wait_for_timeout(200)
+    err = lambda: page.text_content("#cError") if page.query_selector("#cError") else None
+    if err() != "Choose m or ft for the new length.":
+        return bad + [f"length units: a new value in yd gave {err()!r}, and c2's length is {cable('c2').get('length')}"]
+    # Clearing the length, the unknown unit still selected, saves no length.
+    page.fill("#cLength", "")
+    page.click("#cSave")
+    try:
+        wait_fn(page, "length units: clearing the length saves", "() => !document.getElementById('cableForm')", timeout=5000)
+    except RuntimeError:
+        bad.append(f"length units: clearing a yd length was refused ({err()!r})")
+    if "length" in cable("c2"):
+        bad.append(f"length units: after clearing it c2's length is {cable('c2').get('length')}")
+    return bad
+
+
+@extra("rack.html: a control of a panel built for an earlier rack acts on the rack as it is now - Remove, the inspector's fields, the frame's name, Place")
+def check_rack_stale_handlers(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("dialog", lambda d: d.accept())
+    doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
+    open_fixture(page, base)
+    whole = doc()
+    restore = lambda: (page.evaluate("w => window.__rack.replaceRack(w)", whole),
+                       wait_fn(page, "stale: the rack is whole again",
+                               "() => window.__rack.doc().racks[0].items.length === 4 && window.__rack.doc().racks[0].name === 'Export test'"),
+                       wait_fn(page, "stale: all four drawn again",
+                               """() => document.querySelectorAll('svg[data-pane="rear"] [data-item-id][data-panel]').length >= 4"""))
+    # Each step changes the rack and uses the OLD panel's control in one page
+    # task: the redraw that would replace the panel has not run yet.
+    # 1. Remove, over a renamed rack: the device goes, the new name stays.
+    select_item(page, "rear", "i3")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, name: 'Renamed'});
+      document.getElementById('iRemove').click(); }""")
+    wait_fn(page, "stale: demarc removed", "() => window.__rack.doc().racks[0].items.length === 3")
+    if doc()["name"] != "Renamed":
+        bad.append(f"stale: Remove wrote the rack it was built for back (name {doc()['name']!r})")
+    restore()
+    # 2. Remove, for a device already gone: nothing changes, and a pending Undo stands.
+    select_item(page, "rear", "i3")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.filter(i => i.id !== 'i3')}, {text: 'Dropped demarc.'});
+      document.getElementById('iRemove').click(); }""")
+    page.wait_for_timeout(400)
+    if len(doc()["items"]) != 3 or not page.query_selector("#undoShrink"):
+        bad.append(f"stale: Remove for a device already gone left {len(doc()['items'])} items, "
+                   f"Undo {'offered' if page.query_selector('#undoShrink') else 'retired'}")
+    restore()
+    # 3. An inspector field, for a device already gone: no error, no commit (Undo stands).
+    for field, js in (("the label", "const f = document.getElementById('iLabel'); f.value = 'zz';"),
+                      ("the configuration", "const f = document.getElementById('iCfg'); f.value = f.options[f.options.length - 1].value;"),
+                      ("the turned box", "const f = document.getElementById('iTurned'); f.checked = true;")):
+        select_item(page, "front", "i2")
+        page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+          window.__rack.replaceRack({...r, items: r.items.filter(i => i.id !== 'i2')}, {text: 'Dropped leaf-1.'});
+          %s f.dispatchEvent(new Event('change', {bubbles: true})); }""" % js)
+        page.wait_for_timeout(400)
+        if len(doc()["items"]) != 3 or not page.query_selector("#undoShrink"):
+            bad.append(f"stale: {field} of a device already gone left {len(doc()['items'])} items, "
+                       f"Undo {'offered' if page.query_selector('#undoShrink') else 'retired'}")
+        restore()
+    # 4. An inspector field over a changed rack: the change lands on the rack as it is now.
+    select_item(page, "front", "i2")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, name: 'Renamed'});
+      const f = document.getElementById('iLabel'); f.value = 'leaf-9';
+      f.dispatchEvent(new Event('change', {bubbles: true})); }""")
+    wait_fn(page, "stale: the label saved", "() => window.__rack.doc().racks[0].items[1].label === 'leaf-9'")
+    if doc()["name"] != "Renamed":
+        bad.append(f"stale: an inspector field wrote the old rack back (name {doc()['name']!r})")
+    restore()
+    # 5. The frame form's name, over a rack that lost a device: the device stays gone.
+    page.click("#frameBtn")
+    wait_sel(page, "stale: the frame form", "#fName")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.filter(i => i.id !== 'i4')});
+      const f = document.getElementById('fName'); f.value = 'Lab';
+      f.dispatchEvent(new Event('change', {bubbles: true})); }""")
+    wait_fn(page, "stale: the name saved", "() => window.__rack.doc().racks[0].name === 'Lab'")
+    if len(doc()["items"]) != 3:
+        bad.append(f"stale: the frame form's name brought a removed device back ({len(doc()['items'])} items)")
+    page.click("#frameBtn")
+    restore()
+    # 6. Place, into a U the rack has since filled: refused with the reason, nothing placed.
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: r.items.filter(i => i.id !== 'i4')}); }""")
+    wait_fn(page, "stale: U20 is free", """() => !document.querySelector('svg[data-pane="rear"] [data-item-id="i4"]')""")
+    page.dispatch_event('svg[data-pane="rear"] rect.rk-u[data-u="20"]', "click")
+    wait_sel(page, "stale: the picker", "#catQuery")
+    page.fill("#catQuery", "TM-280")
+    page.select_option("#catDevice", "tm-280")
+    page.evaluate("""w => { window.__rack.replaceRack(w); document.getElementById('catPlace').click(); }""", whole)
+    page.wait_for_timeout(400)
+    if len(doc()["items"]) != 4:
+        bad.append(f"stale: Place put a device into a U that was no longer free ({len(doc()['items'])} items)")
+    return bad
+
+
+@extra("rack.html: in 3D, a device edit then a cable edit inside the rebuild's wait - the GLB exported next carries the new device")
+def check_rack_export_after_cable_edit(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"export after a cable edit: {e}"]
+    if webgl_trouble(page):
+        print("[check_rack_export_after_cable_edit] WebGL unavailable - not exercised")
+        return bad
+    page.click('#rkMode [data-mode="3d"]')
+    page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    page.click("#exportMenu > summary")
+    page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
+    # One page task: a device is added (its rebuild waits 300 ms), a cable is
+    # deleted (a cables-only commit, which re-points a CURRENT scene and must
+    # leave this stale one stale), and the export is asked for.
+    downloads = []
+    page.on("download", lambda d: downloads.append(d))
+    page.evaluate("""() => {
+      const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, items: [...r.items, {id: 'i5', ref: 'tm-280', cfg: 'base', label: 'late',
+        ru: 22, face: 'front', turned: false, swaps: {}, fields: {}}]});
+      const r2 = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r2, cables: r2.cables.slice(1)});
+      document.querySelector('#exportItems [data-export="glb"]').click(); }""")
+    # The status settles whether or not a file comes, so a refused export is
+    # reported at once and not by waiting out a download that never starts.
+    status = export_status(page)
+    if not status.startswith("Downloaded"):
+        return bad + [f"export after a cable edit: no GLB; the status reads {status!r}"]
+    for _ in range(50):
+        if downloads:
+            break
+        page.wait_for_timeout(100)
+    if not downloads:
+        return bad + ["export after a cable edit: the status says Downloaded and no file came"]
+    glb = pathlib.Path(downloads[0].path()).read_bytes()
+    missing = [i for i in ("i1", "i2", "i3", "i4", "i5") if f'"device-{i}"'.encode() not in glb]
+    if missing:
+        bad.append(f"export after a cable edit: the GLB has no node for {missing} - it was made from the scene before the device edit")
+    page.click('#rkMode [data-mode="2d"]')
+    return bad
+
+
+@extra("rack.html: cabling's small print - a tag never discards a new cable's form, a gone cable's form falls back to the list, focus follows a delete and the remove panel, Undo says what it undoes, counts read right")
+def check_rack_cable_polish(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.on("dialog", lambda d: (bad.append(f"polish: a browser dialog opened ({d.message!r})"), d.dismiss()))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"polish: {e}"]
+    doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
+    whole = doc()
+    active = lambda: page.evaluate("() => document.activeElement?.id || ''")
+    def focus_is(label, want):
+        try:
+            wait_fn(page, label, f"() => document.activeElement?.id === {json.dumps(want)}", timeout=5000)
+        except RuntimeError:
+            bad.append(f"polish: {label}: focus is on {active()!r}, expected {want!r}")
+    note = lambda: (page.text_content(".rk-side .rk-notice") or "") if page.query_selector(".rk-side .rk-notice") else ""
+
+    # M1. A tag clicked (or keyed) while a NEW cable's form is open leaves the form alone.
+    page.click("#cableBtn")
+    page.click(port_sel("front", "i2", "port-3"))
+    wait_sel(page, "polish: A picked", 'svg[data-pane="front"] .rk-end-pick')
+    page.click(port_sel("front", "i2", "port-4"))
+    wait_sel(page, "polish: the new cable's form", "#cableForm")
+    page.fill("#cLabel", "typed")
+    tag = 'svg[data-pane="front"] [data-cable-tags] [data-cable-id="c2"]'
+    page.dispatch_event(tag, "click")
+    page.focus(tag)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(400)
+    if not page.query_selector("#cableForm") or page.input_value("#cLabel") != "typed":
+        bad.append("polish: a tag click discarded the new cable's form")
+    else:
+        page.click("#cCancel")
+    page.evaluate("() => document.activeElement?.blur()")
+    page.keyboard.press("Escape")
+    wait_fn(page, "polish: Cable mode off",
+            "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'false'")
+    # With no form open a tag still selects its cable.
+    page.dispatch_event(tag, "click")
+    wait_fn(page, "polish: a tag still selects",
+            """() => document.querySelector('#cableList [data-cable-row="c2"]')?.getAttribute('aria-pressed') === 'true'""")
+
+    # M2. An edit form whose cable is gone falls back to the list, not the bare summary.
+    page.click("#cableEdit")
+    wait_sel(page, "polish: the edit form", "#cableForm")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.id !== 'c2')}); }""")
+    wait_fn(page, "polish: the form of a cable that is gone closes", "() => !document.getElementById('cableForm')")
+    if not page.query_selector("#cableList"):
+        bad.append("polish: after its cable went, the form's panel has no cable list")
+    page.evaluate("w => window.__rack.replaceRack(w)", whole)
+    wait_sel(page, "polish: c2 back", '#cableList [data-cable-row="c2"]')
+
+    # M3 + M4. Delete: focus goes to Undo, which says what it would undo - and keeps saying it.
+    page.click('#cableList [data-cable-row="c1"]')
+    wait_sel(page, "polish: Delete", "#cableDelete")
+    page.click("#cableDelete")
+    wait_fn(page, "polish: c1 deleted", "() => window.__rack.doc().racks[0].cables.length === 2")
+    focus_is("after a delete", "undoShrink")
+    said = lambda: page.evaluate("""() => { const b = document.getElementById('undoShrink');
+      const d = b && document.getElementById(b.getAttribute('aria-describedby') || '');
+      return b ? {text: b.textContent, what: d ? d.textContent : null,
+                  whats: document.querySelectorAll('#undoWhat').length} : null; }""")
+    if said() != {"text": "Undo", "what": "Deleted cable A1.", "whats": 1}:
+        bad.append(f"polish: right after a delete, Undo is {said()}")
+    select_item(page, "front", "i2")           # the one-shot notice is gone; the button is not
+    if note():
+        bad.append(f"polish: the one-shot notice is still shown ({note()!r})")
+    if said() != {"text": "Undo", "what": "Deleted cable A1.", "whats": 1}:
+        bad.append(f"polish: after selecting something else, Undo is {said()} - it no longer says what it undoes")
+    page.click("#undoShrink")
+    wait_fn(page, "polish: c1 is back", "() => window.__rack.doc().racks[0].cables.length === 3")
+    wait_fn(page, "polish: Undo and its sentence go together",
+            "() => !document.getElementById('undoShrink') && !document.getElementById('undoWhat')")
+
+    # M3. The remove panel takes the keyboard at its first button; Cancel and Esc hand it back to Remove.
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    wait_sel(page, "polish: the remove panel", "#removePanel")
+    focus_is("the remove panel opens", "removeWithCables")
+    page.click("#removeCancel")
+    wait_sel(page, "polish: back on the device", "#iLabel")
+    focus_is("after Cancel", "iRemove")
+    page.click("#iRemove")
+    wait_sel(page, "polish: the remove panel again", "#removePanel")
+    focus_is("the remove panel opens again", "removeWithCables")
+    page.keyboard.press("Escape")
+    wait_sel(page, "polish: Esc goes back to the device", "#iLabel")
+    focus_is("after Esc", "iRemove")
+
+    # M5. "and its 0 cables" is never said: the count is the one at the click.
+    page.click("#iRemove")
+    wait_sel(page, "polish: the remove panel for the count", "#removeWithCables")
+    for btn, want in (("removeWithCables", "Removed demarc."), ("removeKeepCables", "Removed demarc.")):
+        page.evaluate("""(btn) => { const r = window.__rack.doc().racks[0];
+          window.__rack.replaceRack({...r, cables: r.cables.filter(c => c.a.item !== 'i3' && c.b.item !== 'i3')});
+          document.getElementById(btn).click(); }""", btn)
+        wait_fn(page, "polish: demarc removed", "() => window.__rack.doc().racks[0].items.length === 3")
+        try:
+            wait_fn(page, f"polish: the notice after {btn}",
+                    f"() => (document.querySelector('.rk-side .rk-notice')?.textContent || '') === {json.dumps(want)}", timeout=5000)
+        except RuntimeError:
+            bad.append(f"polish: {btn} with no cable left says {note()!r}, expected {want!r}")
+        focus_is(f"after {btn}", "undoShrink")
+        page.evaluate("w => window.__rack.replaceRack(w)", whole)
+        wait_fn(page, "polish: the rack is whole", "() => window.__rack.doc().racks[0].items.length === 4")
+        if btn == "removeWithCables":
+            select_item(page, "rear", "i3")
+            page.click("#iRemove")
+            wait_sel(page, "polish: the remove panel once more", "#removeKeepCables")
+    # ... and one cable is "1 of 1 cable matches."
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, cables: r.cables.slice(0, 1)}); }""")
+    page.evaluate("() => document.activeElement?.blur()")
+    page.keyboard.press("Escape")
+    count = "() => document.querySelector('#cableList [data-filter-count]')?.textContent"
+    try:
+        wait_fn(page, "polish: the count of one", f"() => ({count})() === '1 of 1 cable matches.'", timeout=5000)
+    except RuntimeError:
+        bad.append(f"polish: with one cable the count reads {page.evaluate(count)!r}")
+
+    # M7. A sentence the notice already holds is not added again.
+    page.evaluate("""() => { window.__rack.addNotice('Once.'); window.__rack.addNotice('Once.');
+      window.__rack.addNotice('Twice.'); window.__rack.addNotice('Once.');
+      window.__rack.replaceRack(window.__rack.doc().racks[0]); }""")
+    wait_sel(page, "polish: the notice", ".rk-side .rk-notice")
+    if note() != "Once. Twice.":
+        bad.append(f"polish: a repeated sentence gave the notice {note()!r}")
     return bad
 
 

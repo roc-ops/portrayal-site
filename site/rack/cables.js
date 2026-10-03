@@ -31,8 +31,11 @@ export const COLORS = {os2: '#e8c547', copper: {server: '#5aa7ff', management: '
   // Added keys only: colorOf, and every color the showcase draws, are unchanged.
   om3: '#2bb3c8', om4: '#2bb3c8', om5: '#9acd32', cat6: '#5aa7ff', cat6a: '#5aa7ff',
   dac: '#15171a', aoc: '#3a3f45', unset: '#9aa3ad'};
+// Own keys only: a hand-edited media or purpose named like something every
+// object has (toString, constructor, __proto__) is unknown, not a color.
+const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);
 export const colorOf = l => l.media === 'copper'
-  ? (COLORS.copper[l.purpose] || COLORS.copper.server) : (COLORS[l.media] || COLORS.os2);
+  ? (own(COLORS.copper, l.purpose) || COLORS.copper.server) : (own(COLORS, l.media) || COLORS.os2);
 
 // JACKETS: what a cable's outer sheath looks like, by what it is. Multimode
 // fiber and AOCs are aqua, single-mode is yellow (the same yellow as os2), a

@@ -29,13 +29,16 @@ function partName(list, ref) {
 }
 
 // One panel of one item, as its own swaps configure it: the parsed face and
-// every slot on it. null when that panel has no compiled drawing.
-async function readPanel(item, view, list) {
+// every slot on it. null when that panel has no compiled drawing. A device's
+// configs.json that fails to load leaves its cages unknown (an empty cage then
+// reads as landing): the panel is still read, and `onFail` is told, so the
+// answer built on it is not kept and the next redraw asks again.
+async function readPanel(item, view, list, onFail) {
   const face = await configuredFace({ref: item.ref, cfg: item.cfg, view,
                                      swaps: item.swaps || {}, fields: item.fields || {}});
   if (!face) return null;
   const root = new DOMParser().parseFromString(face.text, 'image/svg+xml').documentElement;
-  const idx = await jdist(`${DIST}${item.ref}.configs.json`).catch(() => null);
+  const idx = await jdist(`${DIST}${item.ref}.configs.json`).catch(err => { onFail(err); return null; });
   return {root, slots: faceCages(root, idx?.cages?.[view] || [], x => findComp(list, x))};
 }
 
@@ -90,7 +93,10 @@ export async function cableFacts(rack, extra = []) {
   // (see `failed` below), so a later redraw asks again.
   const panelOf = (item, view) => {
     const k = `${item.id}|${view}`;
-    if (!panels.has(k)) panels.set(k, readPanel(item, view, list).catch(err => {
+    if (!panels.has(k)) panels.set(k, readPanel(item, view, list, err => {
+      failed = true;
+      console.warn(`[portrayal] could not read ${item.label || item.id}'s configurations for its cables`, err);
+    }).catch(err => {
       failed = true;
       console.warn(`[portrayal] could not read ${item.label || item.id}'s ${view} panel for its cables`, err);
       return null;

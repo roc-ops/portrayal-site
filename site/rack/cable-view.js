@@ -35,6 +35,34 @@ export function widenForCables(svg) {
   svg.setAttribute('viewBox', [rear ? b[0] - ROOM : b[0], b[1], b[2] + ROOM, b[3] + DROP].join(' '));
 }
 
+// ROOM BELOW, AS MUCH AS THE CABLES TOOK. A cable's sag grows with its length
+// (cables.js sag2d), and a lead from the lowest device hangs below the rack
+// with its tag, so no fixed DROP holds them all and the pane would clip what
+// is past its box - for a loose lead, the only control the pane has for that
+// cable. Call it after drawRackCables has run on BOTH panes: it measures what
+// the cable and tag layers occupy and grows both viewBoxes downward by the
+// same amount (the most either needs), so the panes keep one height, one
+// origin and one U scale. Returns whether anything grew: the caller then
+// applies the zoom again. data-base-box stays the box before any widening.
+const MARGIN = 8;   // mm below the lowest stroke: half a stroke's width, and air
+export function roomForCables(svgs) {
+  const box = svg => svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  let over = 0;
+  for (const svg of svgs) {
+    const [, y, , h] = box(svg);
+    for (const layer of svg.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]')) {
+      const b = layer.getBBox();
+      if (b.width || b.height) over = Math.max(over, b.y + b.height + MARGIN - (y + h));
+    }
+  }
+  if (!(over > 0)) return false;
+  for (const svg of svgs) {
+    const b = box(svg);
+    svg.setAttribute('viewBox', [b[0], b[1], b[2], b[3] + Math.ceil(over)].join(' '));
+  }
+  return true;
+}
+
 const panelGroup = (svg, itemId) => svg.querySelector(`[data-item-id="${CSS.escape(itemId)}"][data-panel]`);
 
 // A port's box in the pane's own user space, or null when the pane does not

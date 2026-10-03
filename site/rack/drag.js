@@ -181,7 +181,7 @@ export function createDragController({panesEl, svgFor, rack, chassisOf, itemById
     // capture stays on whatever was actually pressed.
     const panelGroup = group.dataset.panel
       ? group
-      : group.closest('svg')?.querySelector(`[data-item-id="${item.id}"][data-panel]`) || group;
+      : group.closest('svg')?.querySelector(`[data-item-id="${CSS.escape(item.id)}"][data-panel]`) || group;
     group.setPointerCapture(ev.pointerId);
     d = {id: item.id, item, group, panelGroup, pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY,
          origFace: item.face, moved: false, scrollDir: 0, rafId: null};

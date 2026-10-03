@@ -35,7 +35,8 @@ export function frameForm({rack, onName, onFrame}) {
 
   const holes = el('select', {id: 'fHoles'},
     [option('square', 'Square (cage nuts)', f.holes.style), option('tapped', 'Tapped (round)', f.holes.style)]);
-  holes.addEventListener('change', () => onFrame({holes: {style: holes.value, thread: f.holes.thread}}));
+  // Only the style: the page keeps the thread the frame has now (it may not be this form's any more).
+  holes.addEventListener('change', () => onFrame({holes: {style: holes.value}}));
 
   const thread = el('select', {id: 'fThread'},
     [option('', 'Not stated', f.holes.thread ?? ''), ...THREADS.map(t => option(t, t, f.holes.thread))]);

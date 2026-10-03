@@ -76,8 +76,9 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
       onSave({media: media.value, purpose: purpose.value.trim(), label: label.value.trim(), length: cable.length});
       return;
     }
-    // A changed length cannot ride on a unit this page does not know.
-    const len = oddUnit && unit.value === oddUnit
+    // A NEW value cannot ride on a unit this page does not know; clearing the
+    // field is not a new value, and saves no length whatever the unit says.
+    const len = length.value.trim() && oddUnit && unit.value === oddUnit
       ? {ok: false, reason: 'Choose m or ft for the new length.'}
       : parseLength(length.value, unit.value);
     if (!len.ok) { err.textContent = len.reason; length.focus(); return; }
@@ -143,7 +144,7 @@ export function cableList({rack, ends, on, selectedId = null, mode3d = false, on
     filterRow('purpose', 'Purpose'),
     filterRow('media', 'Media'),
     el('p', {class: 'rk-muted', 'data-filter-count': 'true', 'data-matching': String(shown),
-             'data-total': String(cables.length), text: `${shown} of ${cables.length} cables match.`}),
+             'data-total': String(cables.length), text: `${shown} of ${cables.length} ${cables.length === 1 ? 'cable matches' : 'cables match'}.`}),
     el('ul', {}, rows),
   ]);
 }

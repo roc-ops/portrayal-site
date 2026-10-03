@@ -21,7 +21,7 @@ import {exportStatus} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
         cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy} from './rack/cable-rules.js';
-import {widenForCables, drawRackCables, portAt, markPort, paintCables} from './rack/cable-view.js';
+import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables} from './rack/cable-view.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 
 const $ = id => document.getElementById(id);
@@ -36,7 +36,7 @@ function loadMode() {
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
+  zoom: loadZoom(), svgs: [], undo: null, undoText: '', focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   // Cable mode: on or off, and the A end picked and waiting for its B.
@@ -160,7 +160,12 @@ async function getDoc(id) {
   catch (err) { console.warn('[portrayal] could not read a stored rack', id, err); return null; }
 }
 
+// The picker judged the fit against the rack it was built for, and its Place
+// button can outlive that rack (a redraw still on its way): the fit is judged
+// again here, against the rack as it is now.
 function place(entry, cfg, face, ru) {
+  const f = fits(rack(), {ref: entry.name, ru, face}, chassisOf);
+  if (!f.ok) { S.notice = {text: f.reason, kind: 'error'}; render(); return; }
   const {rack: next, item} = withItem(rack(), {ref: entry.name, cfg, ru, face, label: entry.model || entry.name});
   S.sel = {kind: 'item', id: item.id};
   commit(next);
@@ -171,8 +176,12 @@ function place(entry, cfg, face, ru) {
 // changed cfg that leaves an item with no swaps/fields to carry forward
 // says so - one shot, through S.notice, since the panel showing this patch
 // is about to be replaced by the redraw it triggers.
+const GONE = 'That device is no longer in the rack.';
 function patchItem(id, patch) {
   const r = rack(), it = itemById(id);
+  // A control of a panel built for an earlier rack (the redraw that replaces
+  // it is still on its way): the device may be gone. Nothing is committed.
+  if (!it) { S.notice = {text: GONE, kind: 'error'}; render(); return {ok: false, reason: GONE}; }
   const next = {...it, ...patch};
   if (['ru', 'face'].some(k => k in patch)) {
     const f = fits(r, {ref: next.ref, ru: next.ru, face: next.face}, chassisOf, {ignoreId: id});
@@ -192,6 +201,7 @@ function patchItem(id, patch) {
 // racks - so the write-back is guarded by both the document and the ref.
 async function explore(id) {
   const it = itemById(id);
+  if (!it) { render(); return; }               // a stale panel's button: the device is gone
   const docId = S.doc.id, ref = it.ref;
   const res = await openLens({ref: it.ref, cfg: it.cfg, swaps: it.swaps, fields: it.fields, title: it.label});
   if (res && S.doc.id === docId && itemById(id)?.ref === ref)
@@ -210,9 +220,15 @@ function commit(nextRack, undoable = null) {
   // still pending) stays stale, so an export still rebuilds it first. An
   // export already running holds the old rack and is discarded by
   // modelExport's guard, as for any commit.
+  //
+  // THIS TEST KNOWS WHAT THE 3D SCENE READS: `items` and `frame`, nothing
+  // else. A rack-level field the scene comes to read later (cables in 2b,
+  // zeroU) must be added to it, or an edit to that field will leave the scene,
+  // and a GLB exported from it, showing the rack as it was.
   const prev = rack();
   const sameScene = nextRack.items === prev.items && nextRack.frame === prev.frame;
   S.undo = undoable ? prev : null;
+  S.undoText = undoable ? undoable.text : '';
   if (undoable) addNotice(undoable.text, 'note');
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
@@ -254,6 +270,8 @@ const UNCHECKED_TEXT = 'Cable ends could not be checked, so loose ends are not m
 const NOT_ADDED = 'The cable was not added because a device it ran to was removed.';
 function addNotice(text, kind = 'error') {
   const old = S.notice && (typeof S.notice === 'string' ? {text: S.notice, kind: 'error'} : S.notice);
+  // Overlapping redraws can raise the same sentence twice before either shows it.
+  if (old?.text.includes(text)) return;
   S.notice = old ? {text: `${old.text} ${text}`, kind: old.kind} : {text, kind};
 }
 function pruneCable() {
@@ -297,7 +315,7 @@ function cableModePanel() {
 function cableFormPanel(sel) {
   const r = rack();
   const cable = sel.id ? r.cables.find(c => c.id === sel.id) : null;
-  if (sel.id && !cable) { S.sel = null; return summary(); }
+  if (sel.id && !cable) { S.sel = null; return homePanel(); }
   const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
   const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
   return cableForm({
@@ -307,9 +325,15 @@ function cableFormPanel(sel) {
     purposes: [...countsBy(r.cables, 'purpose').keys()].filter(Boolean),
     // A saved cable is left selected: lit on the drawing, its row open in the list.
     onSave: fields => {
-      if (cable) { S.sel = {kind: 'cable', id: cable.id}; commit(updateCable(rack(), cable.id, fields)); return; }
       // The rack as it is NOW: it may have changed while the form was open (Undo).
       const now = rack();
+      if (cable) {
+        // The cable may be gone: then there is nothing to save, and nothing is committed.
+        if (!now.cables.some(c => c.id === cable.id)) { S.sel = null; render(); return; }
+        S.sel = {kind: 'cable', id: cable.id};
+        commit(updateCable(now, cable.id, fields));
+        return;
+      }
       if (!itemById(a.item) || !itemById(b.item)) { S.sel = null; addNotice(NOT_ADDED); render(); return; }
       const ok = canCable(now, a, b);
       if (!ok.ok) { S.sel = null; S.notice = {text: ok.reason, kind: 'error'}; render(); return; }
@@ -348,8 +372,10 @@ function cableListPanel() {
     onEdit: id => select({kind: 'cable-form', id}),
     onDelete: id => {
       const c = rack().cables.find(x => x.id === id);
+      if (!c) { render(); return; }            // a stale row's button: the cable is already gone
       S.sel = null;
-      commit(withoutCable(rack(), id), c && {text: `Deleted cable ${cableName(c)}.`});
+      S.focusNext = 'undoShrink';              // Delete is gone with its row: the keyboard goes to Undo
+      commit(withoutCable(rack(), id), {text: `Deleted cable ${cableName(c)}.`});
     }});
 }
 // What the side panel shows with nothing selected, or with a cable selected:
@@ -373,6 +399,9 @@ const homePanel = () => el('div', {}, [
 // and Undo the first pass just set.
 function commitFrame(patch) {
   const r = rack();
+  // The form names only the part of `holes` it changed; the rest is the
+  // frame's as it is now, not as it was when the form was built.
+  if (patch.holes) patch = {...patch, holes: {...r.frame.holes, ...patch.holes}};
   if ('heightRU' in patch && patch.heightRU < r.frame.heightRU) {
     const {rack: next, moved, removed} = shrinkRack(r, patch.heightRU, chassisOf);
     if (moved.length || removed.length) {
@@ -389,6 +418,7 @@ function commitFrame(patch) {
       const cut = new Set(removed.flatMap(i => cablesOf(r, i.id).map(c => c.id))).size;
       const kept = cut ? ` ${cut} ${cut === 1 ? 'cable is kept as a loose end' : 'cables are kept as loose ends'}.` : '';
       S.notice = {text: text + kept, kind: 'note'};
+      S.undoText = text + kept;
     } else {
       S.undo = null;
     }
@@ -578,6 +608,10 @@ async function render() {
     if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
       for (const svg of S.svgs) drawRackCables(svg, r, reasons);
+      // A long cable's loop and a low lead's tag reach below the rack: both
+      // panes grow downward by what the lowest one needs, and the zoom is
+      // applied again to the taller boxes.
+      if (roomForCables(S.svgs)) { applyZoom($('panes'), S.svgs, S.zoom); setZoomLabel(); }
       paintCables(S.svgs, r, {selectedId: selectedCable(), on: S.cableFilter});
     }
     // The picked A end, and both ends while a new cable's form is open.
@@ -626,7 +660,9 @@ function renderSide() {
   if (!sel || sel.kind === 'cable') body = homePanel();
   else if (sel.kind === 'cable-form') body = cableFormPanel(sel);
   else if (sel.kind === 'frame') body = frameForm({rack: r,
-    onName: name => commit(renamed(r, name)), onFrame: patch => commitFrame(patch)});
+    // The rack as it is when the field changes, not as it was when the form was built.
+    onName: name => { if (name !== rack().name) commit(renamed(rack(), name)); },
+    onFrame: patch => commitFrame(patch)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
     onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});
@@ -644,34 +680,47 @@ function renderSide() {
         if (S.sel?.kind !== 'remove' || S.sel.id !== it.id || !cur) { render(); return; }
         const k = cablesOf(now, it.id).length, cables = `${k} cable${k === 1 ? '' : 's'}`;
         S.sel = null;
+        S.focusNext = 'undoShrink';            // the panel's buttons go: the keyboard goes to Undo
         fn(now, cur, k, cables);
       };
       body = removePanel({item: it, count: n,
         onBoth: act((now, cur, k, cables) =>
-          commit(withoutCablesOf(withoutItem(now, cur.id), cur.id), {text: `Removed ${cur.label} and its ${cables}.`})),
+          commit(withoutCablesOf(withoutItem(now, cur.id), cur.id),
+            {text: k ? `Removed ${cur.label} and its ${cables}.` : `Removed ${cur.label}.`})),
+        // The count is the one at click time: with no cable left, neither sentence mentions any.
         onKeep: act((now, cur, k, cables) => commit(withoutItem(now, cur.id),
-          {text: `Removed ${cur.label}. Its ${cables} ${k === 1 ? 'is a loose end' : 'are loose ends'}.`})),
-        onCancel: () => select({kind: 'item', id: it.id})});
+          {text: k ? `Removed ${cur.label}. Its ${cables} ${k === 1 ? 'is a loose end' : 'are loose ends'}.`
+                   : `Removed ${cur.label}.`})),
+        onCancel: () => { S.focusNext = 'iRemove'; select({kind: 'item', id: it.id}); }});
     }
   }
   else if (sel.kind === 'move') {
     const it = itemById(sel.id);
-    if (!it) { S.sel = null; body = summary(); }
+    if (!it) { S.sel = null; body = homePanel(); }
     else body = el('div', {}, [
       el('h3', {text: `Move ${it.label}`}),
       el('p', {class: 'rk-muted', text: 'Click the U where its bottom should go, on either face, or use the ↑ and ↓ keys. Esc stops moving.'})]);
   } else {
     const it = itemById(sel.id);
-    if (!it) { S.sel = null; body = summary(); }
+    if (!it) { S.sel = null; body = homePanel(); }
     else body = inspectorPanel({item: it, rack: r, chassis: chassisOf(it.ref),
       available: availableDepth(r, it, chassisOf),
       onPatch: patch => patchItem(it.id, patch),
       onMove: () => select({kind: 'move', id: it.id}),
       // A device with cables asks in the side panel, where it can offer the
       // choice a dialog cannot (spec §9.3); one without keeps the plain question.
+      // Like the remove panel's buttons, this one may outlive the rack it was
+      // built for: it reads the rack as it is at the click, and does nothing
+      // once the device is gone or is no longer the selection.
       onRemove: () => {
-        if (cablesOf(r, it.id).length) { select({kind: 'remove', id: it.id}); return; }
-        if (confirm(`Remove ${it.label} from the rack?`)) { S.sel = null; commit(withoutItem(r, it.id)); }
+        const now = rack(), cur = now.items.find(i => i.id === it.id);
+        if (S.sel?.kind !== 'item' || S.sel.id !== it.id || !cur) { render(); return; }
+        if (cablesOf(now, cur.id).length) {
+          S.focusNext = 'removeWithCables';    // the panel's first button takes the keyboard
+          select({kind: 'remove', id: cur.id});
+          return;
+        }
+        if (confirm(`Remove ${cur.label} from the rack?`)) { S.sel = null; commit(withoutItem(now, cur.id)); }
       },
       onExplore: () => explore(it.id)});
   }
@@ -682,15 +731,28 @@ function renderSide() {
   // they are cleared by the next commit (commit()/undoShrink()) or a
   // document switch (setDoc()), not by this redraw.
   if (S.undo) {
-    const undo = el('button', {type: 'button', id: 'undoShrink', text: 'Undo'});
+    // The notice is shown once; the button stays until the next change. So
+    // that it is never a bare "Undo", the sentence saying what it would undo
+    // stays beside it: the notice itself while it shows, then a line of its
+    // own. Either way it is the button's description.
+    if (notice && S.undoText && notice.textContent.includes(S.undoText)) notice.id = 'undoWhat';
+    else if (S.undoText) kids.push(el('p', {id: 'undoWhat', class: 'rk-undo-what rk-muted', text: S.undoText}));
+    const undo = el('button', {type: 'button', id: 'undoShrink', text: 'Undo',
+                               ...(S.undoText ? {'aria-describedby': 'undoWhat'} : {})});
     undo.addEventListener('click', undoShrink);
     kids.push(undo);
   }
   $('side').replaceChildren(...kids);
   const back = focusId ? document.getElementById(focusId) : null;
   const row = S.focusRow ? document.getElementById(`cableRow-${S.focusRow}`) : null;
+  // Where the keyboard goes when the control that had it is gone with its
+  // panel (a Delete, the remove panel opening or closing): named by the
+  // action, taken by the redraw that shows it.
+  const next = S.focusNext ? document.getElementById(S.focusNext) : null;
+  S.focusNext = null;
   S.focusRow = null;
   if (row) row.focus();
+  else if (next) next.focus();
   else if (back) back.focus();
   // A cable form that just opened takes the keyboard at its first field.
   else if (S.sel?.kind === 'cable-form') $('cMedia')?.focus();
@@ -701,6 +763,10 @@ function onPaneClick(ev) {
   // A tag selects its cable (cable strokes are click-through, rack.css) - in
   // Cable mode too, where only the tags take clicks.
   const cab = ev.target.closest('[data-cable-tags] [data-cable-id]');
+  // A new cable's form is open (or any cable form, in Cable mode): finish or
+  // cancel it first. Selecting another cable would discard the picked ends
+  // and what was typed.
+  if (cab && S.sel?.kind === 'cable-form' && (!S.sel.id || S.cable.on)) return;
   if (cab) return select({kind: 'cable', id: cab.dataset.cableId});
   if (S.cable.on) return onCableClick(ev);
   if (S.sel?.kind === 'move') {
@@ -869,6 +935,7 @@ async function bootInner() {
     const cab = ev.key === 'Enter' || ev.key === ' ' ? ev.target.closest?.('[data-cable-tags] [data-cable-id]') : null;
     if (cab) {
       ev.preventDefault();
+      if (S.sel?.kind === 'cable-form' && (!S.sel.id || S.cable.on)) return;   // as a click: finish or cancel the form first
       // select() redraws the cable layer and destroys the focused tag: the keyboard goes to the row.
       S.focusRow = cab.dataset.cableId;
       select({kind: 'cable', id: cab.dataset.cableId});
@@ -942,6 +1009,7 @@ async function bootInner() {
     const id = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
     // Esc in the move or remove panel goes back to the device, as Cancel does.
     const back = S.sel?.kind === 'remove' ? S.sel.id : id;
+    if (ev.key === 'Escape' && S.sel?.kind === 'remove') S.focusNext = 'iRemove';
     if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(back && (S.sel.kind === 'move' || S.sel.kind === 'remove') ? {kind: 'item', id: back} : null); }
     else if (id && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
       const cur = itemById(id);
