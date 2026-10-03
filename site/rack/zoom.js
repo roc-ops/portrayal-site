@@ -49,6 +49,18 @@ function columnWidth(panesEl) {
 // The available height for one pane's SVG in Fit mode: the scroll area's own
 // height, minus its padding and that pane's heading.
 function fitHeight(panesEl, svg) {
+  const h = heightAvailable(panesEl, svg);
+  // A rack with cables is wider than a plain one (its side column), so the
+  // height alone can make it wider than its column: it fits the width too.
+  // A plain rack is exactly as before.
+  const vb = svg.viewBox?.baseVal;
+  if (svg.dataset.baseBox && vb && vb.width > 0 && vb.height > 0) {
+    const w = columnWidth(panesEl);
+    if (w > 0) return Math.min(h, w * vb.height / vb.width);
+  }
+  return h;
+}
+function heightAvailable(panesEl, svg) {
   const heading = svg.parentElement?.previousElementSibling;
   const cs = getComputedStyle(panesEl);
   const padV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);

@@ -71,6 +71,16 @@ function endPoints(svg, itemId, path) {
 // after widenForCables, with the pane in the document and laid out. Each
 // cable group and each tag carries data-cable-id; returns drawCables2d's
 // records.
+// A TAG'S PILL NEVER OUTGROWS THE ROOM beside the pane: its text, whatever it
+// is, is cut by code point to what ROOM holds (7 mm a character and 12 mm of
+// padding, after the 8 mm the column starts out and 4 mm of margin each
+// side), with an ellipsis. The tag's title keeps the full text.
+const MAX_CHARS = Math.floor((ROOM - 8 - 8 - 12) / 7);
+export function pillText(text) {
+  const cs = Array.from(String(text));
+  return cs.length > MAX_CHARS ? `${cs.slice(0, MAX_CHARS - 1).join('')}…` : String(text);
+}
+
 export function drawRackCables(svg, rack, reasons) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
@@ -88,8 +98,9 @@ export function drawRackCables(svg, rack, reasons) {
   // drawCables2d hands a tag the far end as the plan's own array.
   const farEnd = (link, far) => { const i = plan.links.indexOf(link); return endAt(i, far === link.from ? 'from' : 'to'); };
   // A tag's pill sits in the side column, outboard of the point it labels.
-  const pill = (t, at, label) => {
-    const w = 7 * label.length + 12;
+  const pill = (t, at, text) => {
+    const label = pillText(text);
+    const w = 7 * Array.from(label).length + 12;
     const x = rear ? at[0] - 4 - w : at[0] + 4;
     t.append(svgEl('rect', {x, y: at[1] - 9, width: w, height: 18, rx: 4}));
     const tx = svgEl('text', {x: x + 6, y: at[1] + 4}); tx.textContent = label; t.append(tx);
@@ -100,13 +111,20 @@ export function drawRackCables(svg, rack, reasons) {
     ends: (s, itemId, path) => (looseHere.has(`${itemId}|${path}`) ? null : endPoints(s, itemId, path)),
     farLoose: loose,
     // The far end is in the other pane: the tag names it.
-    tag: (at, far, link) => pill(svgEl('g', {class: 'cable-tag', tabindex: '0', role: 'button'}), at,
-                                 tagText(rack, farEnd(link, far))),
+    // Its title carries the full text, which the pill may have had to cut.
+    tag: (at, far, link) => {
+      const t = svgEl('g', {class: 'cable-tag', tabindex: '0', role: 'button'});
+      const end = farEnd(link, far), it = rack.items.find(i => i.id === end.item);
+      const full = svgEl('title', {});
+      full.textContent = `→ ${it ? it.label : 'removed'} ${end.path}`;
+      t.append(full);
+      return pill(t, at, tagText(rack, end));
+    },
     // The far end does not land anywhere: the tag says so, and its title says why.
     looseTag: (at, far, link) => {
       const t = svgEl('g', {class: 'cable-tag not-connected', tabindex: '0', role: 'button'});
       const why = svgEl('title', {});
-      why.textContent = reasons.get(endKey(farEnd(link, far))) || 'not connected';
+      why.textContent = `✕ not connected — ${reasons.get(endKey(farEnd(link, far))) || 'not connected'}`;
       t.append(why);
       return pill(t, at, '✕ not connected');
     },
@@ -114,6 +132,14 @@ export function drawRackCables(svg, rack, reasons) {
   for (const rec of recs) {
     const c = cables[rec.i];
     for (const n of [rec.g, rec.tag]) if (n) n.setAttribute('data-cable-id', c.id);
+    // A STROKE IS CLICK-THROUGH: nothing handles a click on it, so it must not
+    // take the click meant for the device or the empty U beneath. Only its
+    // tag is a control. (The showcase's cable is a focus stop; here it is not.)
+    if (rec.g) {
+      rec.g.setAttribute('pointer-events', 'none');
+      rec.g.removeAttribute('tabindex');
+      rec.g.removeAttribute('data-pt-ui');
+    }
     const title = rec.g?.querySelector('title');
     if (title) title.textContent = `${endName(rack, c.a)} → ${endName(rack, c.b)}${c.media ? ` · ${c.media}` : ''}`;
   }

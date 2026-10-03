@@ -6055,7 +6055,7 @@ PANES_JS = """() => {
   return Object.fromEntries(['front', 'rear'].map(p => {
     const svg = document.querySelector(`svg[data-pane="${p}"]`);
     return [p, {
-      vb: svg.getAttribute('viewBox').split(/\\s+/).map(Number),
+      vb: svg.getAttribute('viewBox').split(/\\s+/).map(Number), baseBox: svg.dataset.baseBox || null,
       box: box(svg),
       u1: box(svg.querySelector('rect.rk-u[data-u="1"]')),
       layers: svg.querySelectorAll('[data-cables], [data-cable-tags]').length,
@@ -6104,8 +6104,8 @@ def check_rack_cables_drawn(page, base):
     open_fixture(page, base)
     plain = page.evaluate(PANES_JS)
     for p in ("front", "rear"):
-        if not near(plain[p]["vb"][2], 514.85, 0.01) or plain[p]["layers"]:
-            bad.append(f"cables drawn: with no cables the {p} pane is {plain[p]['vb']} with {plain[p]['layers']} cable layers")
+        if not near(plain[p]["vb"][2], 514.85, 0.01) or plain[p]["layers"] or plain[p]["baseBox"]:
+            bad.append(f"cables drawn: with no cables the {p} pane is {plain[p]['vb']} (base box {plain[p]['baseBox']}) with {plain[p]['layers']} cable layers")
 
     try:
         open_cabled(page, base)
@@ -6117,6 +6117,10 @@ def check_rack_cables_drawn(page, base):
     # Both panes widen by the same 260 mm column - the front to its right, the
     # rear to its left - and by 40 mm below.
     pf, pr = plain["front"]["vb"], plain["rear"]["vb"]
+    # The height too: the cabled panes' recorded base box is exactly the plain viewBox.
+    for p, pv in (("front", pf), ("rear", pr)):
+        if [round(float(n), 4) for n in (got[p]["baseBox"] or "x").split()[:4] if n != "x"] != [round(n, 4) for n in pv]:
+            bad.append(f"cables drawn: the {p} pane's base box is {got[p]['baseBox']}, the plain viewBox is {pv}")
     if not (near(front["vb"][0], pf[0], 0.01) and near(front["vb"][2], pf[2] + 260, 0.01)
             and near(front["vb"][3], pf[3] + 40, 0.01)):
         bad.append(f"cables drawn: the front pane's viewBox is {front['vb']}, from {pf}")
@@ -6158,7 +6162,7 @@ def check_rack_cables_drawn(page, base):
     c3, tag3 = by(rear, "cables", "c3"), by(rear, "tags", "c3")
     if not c3 or c3["lead"] != "from":
         bad.append(f"cables drawn: c3 on the rear is {c3}, expected an unplugged lead for its A end")
-    if not tag3 or not tag3["loose"] or tag3["why"] != "port-2 holds no optic":
+    if not tag3 or not tag3["loose"] or tag3["why"] != "✕ not connected — port-2 holds no optic":
         bad.append(f"cables drawn: c3's not-connected tag is {tag3}")
     if len(front["tags"]) != 1 or len(rear["tags"]) != 2:
         bad.append(f"cables drawn: {len(front['tags'])} front tags and {len(rear['tags'])} rear tags, expected 1 and 2")
@@ -6167,6 +6171,20 @@ def check_rack_cables_drawn(page, base):
     panes_h = page.eval_on_selector("#panes", "p => p.getBoundingClientRect().height")
     if (page.text_content("#zoomLevel") or "") != "Fit" or front["box"]["h"] > panes_h + 1:
         bad.append(f"cables drawn: at Fit the front pane is {front['box']['h']} tall in a {panes_h} area")
+    # ... and Fit fits the width too, at the default size and in a narrower window.
+    for w, h in ((1280, 900), (1000, 900), (800, 700)):
+        page.set_viewport_size({"width": w, "height": h})
+        try:    # the resize handler runs a frame later; wait for the panes to settle, then judge
+            page.wait_for_function("() => document.getElementById('panes').scrollWidth <= document.getElementById('panes').clientWidth + 1", timeout=3000)
+        except Exception:
+            pass
+        over = page.evaluate("""() => { const p = document.getElementById('panes');
+          const cols = [...p.children].map(c => c.getBoundingClientRect());
+          const svgs = ['front', 'rear'].map(n => document.querySelector(`svg[data-pane="${n}"]`).getBoundingClientRect());
+          return {scroll: p.scrollWidth - p.clientWidth, svgOver: svgs.map((r, i) => r.right - cols[i].right)}; }""")
+        if over["scroll"] > 1 or any(o > 1 for o in over["svgOver"]):
+            bad.append(f"cables drawn: at Fit in a {w}x{h} window the panes overflow their column width ({over})")
+    page.set_viewport_size({"width": 1280, "height": 900})
     page.click("#zoomIn")
     zoomed = page.evaluate(PANES_JS)
     if not (zoomed["front"]["box"]["w"] > front["box"]["w"] + 1
@@ -6269,6 +6287,163 @@ def check_rack_cable_plugs_resilient(page, base):
         bad.append(f"own swap: leaf-1's port-1 shows {got}, expected one plug (rx) and the user's dust cap (tx)")
     if page.evaluate("() => window.__rack.doc().racks[0].items[1].swaps") != fx["racks"][0]["items"][1]["swaps"]:
         bad.append("own swap: the document's swaps changed")
+    return bad
+
+
+# Points where a cable stroke crosses something clickable, computed from the
+# strokes' own geometry: sampled along each cable path, mapped to the screen,
+# and classified by what is under them with the cable layers made click-through.
+STROKE_POINTS_JS = """() => {
+  const out = [], layers = [...document.querySelectorAll('[data-cables]')];
+  const was = layers.map(l => l.style.pointerEvents);
+  layers.forEach(l => { l.style.pointerEvents = 'none'; });
+  for (const p of document.querySelectorAll('[data-cables] [data-cable] > path:not([data-leader])')) {
+    const len = p.getTotalLength(), m = p.getScreenCTM();
+    for (let t = 0.04; t < 0.97; t += 0.02) {
+      const q = p.getPointAtLength(len * t), pt = new DOMPoint(q.x, q.y).matrixTransform(m);
+      if (pt.x < 5 || pt.y < 5 || pt.x > innerWidth - 5 || pt.y > innerHeight - 5) continue;
+      const under = document.elementFromPoint(pt.x, pt.y);
+      if (!under || under.closest('[data-cable-tags]')) continue;
+      const dev = under.closest('[data-item-id][data-panel]');
+      const pane = under.closest('svg[data-pane]')?.dataset.pane;
+      if (dev) out.push({x: pt.x, y: pt.y, kind: 'device', item: dev.dataset.itemId, pane});
+      else if (under.matches('rect.rk-u')) out.push({x: pt.x, y: pt.y, kind: 'u', u: under.dataset.u, pane});
+    }
+  }
+  layers.forEach((l, i) => { l.style.pointerEvents = was[i]; });
+  return out;
+}"""
+
+LIT = '<b>&"\''
+LONG = "a-rather-long-device-label-" * 5
+
+
+@extra("rack.html: a cable stroke never takes the click meant for what is beneath it; a tag never outgrows its pane; labels are literal")
+def check_rack_cables_clicks(page, base):
+    import copy
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return [f"cable clicks: {e}"]
+    pts = page.evaluate(STROKE_POINTS_JS)
+    on_dev = [p for p in pts if p["kind"] == "device"]
+    on_u = [p for p in pts if p["kind"] == "u"]
+    if not on_dev or not on_u:
+        return [f"cable clicks: found {len(on_dev)} stroke points over a device and {len(on_u)} over an empty U"]
+    # Strokes carry no focus stop and no pointer cursor; tags keep both.
+    if page.evaluate("() => document.querySelectorAll('[data-cables] [data-cable][tabindex]').length"):
+        bad.append("cable clicks: a cable stroke is a tab stop")
+    if page.evaluate("() => [...document.querySelectorAll('[data-cables] [data-cable]')].some(g => getComputedStyle(g).pointerEvents !== 'none')"):
+        bad.append("cable clicks: a cable stroke takes pointer events")
+    if page.evaluate("() => [...document.querySelectorAll('[data-cable-tags] [data-cable-tag]')].some(g => getComputedStyle(g).pointerEvents === 'none' || g.getAttribute('tabindex') !== '0')"):
+        bad.append("cable clicks: a tag is not interactive")
+
+    # A real click over a stroke on a device selects that device.
+    pt = on_dev[len(on_dev) // 2]
+    page.mouse.click(pt["x"], pt["y"])
+    try:
+        page.wait_for_selector("#iLabel", timeout=READY_MS)
+    except Exception:
+        bad.append(f"cable clicks: a click on {pt['item']} under a stroke did not select it")
+    sel = page.evaluate("() => document.querySelector('#iLabel')?.value || null")
+    want = next(i["label"] for i in CABLE_FIXTURE["racks"][0]["items"] if i["id"] == pt["item"])
+    if sel != want:
+        bad.append(f"cable clicks: clicking {pt['item']} ({want}) under a stroke shows {sel!r} in the inspector")
+    # The same device is still selected after the redraw; each pane holds one cable layer, the same cables.
+    layers = page.evaluate("() => ['front', 'rear'].map(p => document.querySelectorAll(`svg[data-pane=\"${p}\"] [data-cables]`).length)")
+    cables = page.evaluate(PANES_JS)
+    if layers != [1, 1] or sorted(c["id"] for c in cables["front"]["cables"]) != ["c1", "c2"] \
+            or sorted(c["id"] for c in cables["rear"]["cables"]) != ["c2", "c3"]:
+        bad.append(f"cable clicks: after a selection redraw the panes hold {layers} cable layers and "
+                   f"{[c['id'] for c in cables['front']['cables']]} / {[c['id'] for c in cables['rear']['cables']]}")
+
+    # A real click over a stroke on an empty U opens the picker.
+    pts = page.evaluate(STROKE_POINTS_JS)
+    u = next((p for p in pts if p["kind"] == "u"), None)
+    if not u:
+        bad.append("cable clicks: no stroke over an empty U after the redraw")
+    else:
+        page.mouse.click(u["x"], u["y"])
+        try:
+            page.wait_for_selector("#catQuery", state="visible", timeout=READY_MS)
+        except Exception:
+            bad.append(f"cable clicks: a click on empty U{u['u']} under a stroke did not open the picker")
+
+    # A drag begun on a device under a stroke still moves it. leaf-1 (1U, front U14)
+    # goes to the free U22 of the same pane.
+    pts = page.evaluate(STROKE_POINTS_JS)
+    d = next((p for p in pts if p["kind"] == "device" and p["item"] == "i2"), None)
+    if not d:
+        bad.append("cable clicks: no stroke point over leaf-1")
+    else:
+        x1, y1 = u_center(page, "front", 22)
+        page.mouse.move(d["x"], d["y"])
+        page.mouse.down()
+        page.mouse.move((d["x"] + x1) / 2, (d["y"] + y1) / 2, steps=4)
+        page.mouse.move(x1, y1, steps=4)
+        page.mouse.up()
+        try:
+            page.wait_for_function("() => window.__rack.doc().racks[0].items[1].ru === 22", timeout=READY_MS)
+        except Exception:
+            bad.append(f"cable clicks: dragging leaf-1 from under a stroke left it at U{page.evaluate('() => window.__rack.doc().racks[0].items[1].ru')}")
+
+    # Literal text: a label full of markup characters is text in the tag, never markup.
+    fx = copy.deepcopy(CABLE_FIXTURE)
+    fx["racks"][0]["items"][2]["label"] = LIT
+    fx["racks"][0]["items"][1]["label"] = LIT
+    fx["racks"][0]["cables"][1]["label"] = LIT
+    try:
+        open_cabled(page, base, fx)
+    except RuntimeError as e:
+        return bad + [f"cable clicks: {e}"]
+    got = page.evaluate(PANES_JS)
+    tag = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
+    if not tag or tag["text"] != f"→ {LIT} port-2-1":
+        bad.append(f"cable clicks: c2's tag reads {tag}, expected the label literally")
+    if page.evaluate("() => document.querySelectorAll('svg[data-pane] b').length"):
+        bad.append("cable clicks: a label injected markup into the pane")
+
+    # A long label never takes the tag past the room beside the pane.
+    fx = copy.deepcopy(CABLE_FIXTURE)
+    fx["racks"][0]["items"][2]["label"] = LONG
+    fx["racks"][0]["items"][1]["label"] = LONG
+    fx["racks"][0]["cables"][1]["label"] = LONG
+    try:
+        open_cabled(page, base, fx)
+    except RuntimeError as e:
+        return bad + [f"cable clicks: {e}"]
+    over = page.evaluate("""() => ['front', 'rear'].flatMap(p => {
+      const svg = document.querySelector(`svg[data-pane="${p}"]`);
+      const vb = svg.viewBox.baseVal, base = svg.dataset.baseBox.split(' ').map(Number);
+      const inv = svg.getScreenCTM().inverse();
+      return [...svg.querySelectorAll('[data-cable-tag] rect')].map(r => {
+        const b = r.getBoundingClientRect(), a = new DOMPoint(b.left, b.top).matrixTransform(inv),
+              z = new DOMPoint(b.right, b.bottom).matrixTransform(inv);
+        return {p, left: a.x - vb.x, right: vb.x + vb.width - z.x};
+      });
+    })""")
+    if not over or any(o["left"] < -0.5 or o["right"] < -0.5 for o in over):
+        bad.append(f"cable clicks: a tag runs outside its pane's viewBox ({over})")
+    got = page.evaluate(PANES_JS)
+    t2 = next((t for t in got["front"]["tags"] if t["id"] == "c2"), None)
+    if not t2 or not t2["text"].endswith("…") or len(t2["text"]) > 33:
+        bad.append(f"cable clicks: the long tag reads {t2['text'] if t2 else None!r}, expected a short text with an ellipsis")
+    titles = page.evaluate("""() => Object.fromEntries(['front', 'rear'].map(p => [p, [...document.querySelectorAll(
+      `svg[data-pane="${p}"] [data-cable-tag]`)].map(t => [t.dataset.cableId, t.querySelector('title')?.textContent || ''])]))""")
+    full = dict(titles["front"]).get("c2", "")
+    if f"→ {LONG} port-2-1" != full:
+        bad.append(f"cable clicks: the long tag's title is {full!r}, expected its full text")
+    loose = dict(titles["rear"]).get("c3", "")
+    if "✕ not connected" not in loose or "port-2 holds no optic" not in loose:
+        bad.append(f"cable clicks: the loose tag's title is {loose!r}, expected its text and its reason")
+    # Whatever text it is given, the drawing caps the pill to the room.
+    cap = page.evaluate("""async () => { const v = await import('/site/rack/cable-view.js');
+      return typeof v.pillText === 'function' ? [v.pillText('x'.repeat(300)), v.pillText('short'), v.pillText('😀'.repeat(100))] : null; }""")
+    if not cap or len(cap[0]) > 36 or not cap[0].endswith("…") or cap[1] != "short" \
+            or not cap[2].endswith("…") or len(list(cap[2])) > 36:
+        bad.append(f"cable clicks: pillText caps to {cap}")
     return bad
 
 
