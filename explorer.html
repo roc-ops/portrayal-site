@@ -32,12 +32,6 @@
   /* The shell brings its own stylesheet. Everything here is the Explorer's own:
      the stage toggle, the state chips, and the About panel. */
   body.embed .site-bar, body.embed #mode { display: none; }
-  #mode { display:flex; gap:0.2rem; }
-  #mode button { border-radius:0; }
-  #mode button:first-child { border-radius:6px 0 0 6px; }
-  #mode button:last-child { border-radius:0 6px 6px 0; margin-left:-1px; }
-  #mode button:disabled { opacity:0.45; cursor:not-allowed; }
-  #mode button:disabled:hover { background:var(--pt-surface-2); }
   /* A HOVER READOUT MUST NOT SHARE A LAYOUT WITH WHAT YOU ARE HOVERING.
      `#status` is a span in the shell's header, and that header is
      `display:flex; flex-wrap:wrap`. Text in it wraps the header onto a second
@@ -64,26 +58,16 @@
      went to 150px and the model with it. An absolutely positioned element is
      already a containing block for its own absolute children, so the readout
      anchors to this box with no help. */
-  #stage-3d { background:var(--pt-surface); }
   #hoverpath { position: absolute; left: 8px; top: 8px; max-width: 60%;
     padding: 2px 7px; border-radius: 3px; pointer-events: none; z-index: 5;
     font: 11px ui-monospace, monospace; color: var(--pt-ink);
     background: rgba(16,18,21,.72); white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis; opacity: 0; transition: opacity .08s linear; }
   #hoverpath.on { opacity: 1; }
-  #stage-3d canvas { display:block; }
-  #frus { display:flex; gap:0.2rem; flex-wrap:wrap; }
-  #frus[hidden] { display:none; }        /* display:flex outranks the hidden attribute */
-  #frus button { font-family:ui-monospace, monospace; font-size:0.72rem; padding:0.26rem 0.42rem; }
   #gfx { position:absolute; bottom:0.6rem; right:0.7rem; z-index:5; pointer-events:none;
          background:color-mix(in srgb, var(--pt-ground) 80%, transparent); border:1px solid var(--pt-line); border-radius:4px;
          padding:0.25rem 0.45rem; font:11px ui-monospace, monospace; color:var(--pt-ink-muted); }
   #gfx.warn { color:var(--pt-warn); border-color:var(--pt-warn); }
-  #glx { position:absolute; bottom:0.6rem; left:0.7rem; z-index:5; display:flex;
-         gap:0.3rem; align-items:center; font-size:0.72rem; }
-  #glx button:disabled { opacity:0.55; cursor:progress; }
-  #glx .msg { color:var(--dim); }
-  #glx .msg.bad { color:var(--warn); }
   .chip { display:inline-block; margin-left:0.3rem; padding:0 0.4rem; border:1px solid var(--pt-line);
           border-radius:9px; font-size:0.64rem; color:var(--pt-ink); cursor:pointer; user-select:none;
           line-height:1.35; }
@@ -184,6 +168,7 @@ import { swapsNow, fieldsNow, encodeFields, decodeFields,
          installOpticFields, OPTIC_CSS } from './site/optics.js';
 import { configuredFace } from './site/rack/face.js';
 import { rasterize } from './site/raster.js';
+import { createMode3d, MODE3D_CSS } from './site/mode3d.js';
 
 const shell = createShell({
   title: 'Explorer',
@@ -250,7 +235,7 @@ shell.on('row', (row, node) => {
 // drawing is showing the way an incrementally-maintained copy can.
 //
 // THE COST IS PAID WHERE IT BELONGS, the same rule the swap sync follows: in 2D
-// this does nothing at all and sync3d picks the states up on the mode switch,
+// this does nothing at all and the 3D sync picks the states up on the mode switch,
 // which is already a rebuild-shaped moment. Nobody repaints a scene they are not
 // looking at, and a user who never opens 3D never pays. In 3D it is cheap by
 // design - the viewer repaints only the textures the change reaches.
@@ -263,11 +248,7 @@ function liveStates() {
   }
   return out;
 }
-function pushStates() {
-  if (mode !== '3d' || !viewer) return;
-  Promise.resolve(viewer.setStates(liveStates()))
-    .catch(err => console.warn('[portrayal] 3D state sync failed', err));
-}
+function pushStates() { m3d.pushStates(); }
 
 // A PULL IS A STATE THE SCENE HAS TO BE TOLD ABOUT TOO.
 // The shell takes a cover off by hiding the element in the drawing, which is
@@ -287,12 +268,6 @@ const livePulled = () => typeof shell.pulledPaths === 'function'
   ? shell.pulledPaths()
   : (state.svg ? [...state.svg.querySelectorAll('[data-portrayal-pulled]')]
       .map(e => e.dataset.path).filter(Boolean) : []);
-function pushPulled() {
-  if (mode !== '3d' || !viewer) return;
-  Promise.resolve(viewer.setPulled(livePulled()))
-    .catch(err => console.warn('[portrayal] 3D pull sync failed', err));
-}
-shell.on('pulled', pushPulled);
 
 // ---------------------------------------------------------------- About panel
 
@@ -499,18 +474,34 @@ shell.on('inspect', ({path, box}) => {
 // page, same tree, same inspector, no iframe and no message protocol. It is
 // imported on first use: it drags in three.js and a WebGL context, and someone
 // who never presses 3D should pay for neither.
-const modeBar = document.createElement('span');
-modeBar.id = 'mode';
-modeBar.innerHTML = `<button data-mode="2d" class="on">2D</button><button data-mode="3d">3D</button>`;
-shell.el.fit.before(modeBar);
-
-const host3d = document.createElement('div');
-host3d.className = 'stage-host';
-host3d.id = 'stage-3d';
-host3d.hidden = true;
-shell.el.stage.appendChild(host3d);
-
-let mode = '2d', viewer = null, loading = null, loadedKey = '';
+const m3d = createMode3d(shell, {
+  states: liveStates,
+  pulled: livePulled,
+  overrides: () => swapsNow(shell),
+  extras: (v, host3d) => {
+    // THE READOUT, AND NOT THE HEADER: hover written into #status wrapped the
+    // header and slid the model out from under the pointer (see #hoverpath).
+    const readout = document.createElement('div');
+    readout.id = 'hoverpath';
+    host3d.appendChild(readout);
+    v.on('hover', p => {
+      readout.textContent = p || '';
+      readout.classList.toggle('on', !!p);
+    });
+    // A diagnosis aid, not decoration. WebGL1, msaa 0 and anisotropy below 4 each
+    // produce shimmer no material setting can fix, and knowing which of the three
+    // you are looking at is the difference between a driver note and a bug hunt.
+    if (typeof v.capabilities === 'function') {
+      const gfx = document.createElement('div');
+      gfx.id = 'gfx';
+      const c = v.capabilities() || {};
+      gfx.textContent = c.text || '';
+      gfx.classList.toggle('warn', !!c.warn);
+      host3d.appendChild(gfx);
+    }
+  },
+});
+const setMode = m => m3d.setMode(m);
 
 // `READY` MEANS FIELDS TOO. A link's `fields=` is applied by applyPendingFields
 // below, one tick after shell.ready - so a caller who awaited shell.ready alone
@@ -538,179 +529,13 @@ if (EMBED) {
       device: state.device ?? q.get('device') ?? null,
       config: state.cfg ?? q.get('config') ?? null,
       view: state.view ?? q.get('view') ?? null,
-      mode,
+      mode: m3d.mode(),
       swaps: state.device ? {...swapsNow(shell)} : {},
       fields: state.device ? fieldsNow(shell) : {},
       pulled: state.device ? shell.pulledPaths() : [],
     }),
   });
 }
-
-async function ensureViewer() {
-  if (viewer) return viewer;
-  if (!loading) loading = (async () => {
-    const {createViewer} = await import('./vendor/viewer3d.js');
-    // dist is passed explicitly. In demo2/ the viewer's default of '../dist/'
-    // happened to resolve correctly because the page sat beside it; here the
-    // page is at the site root and that default would point outside the site.
-    // THE BACKGROUND IS THE READER'S (Portrayal cf387677). The shell owns the
-    // swatches and the 2D stage; the scene is told the colour it starts with
-    // and every change after, so the two stages never disagree.
-    const v = createViewer(host3d, {dist: 'assets/dist/', background: shell.stage()});
-    shell.on('stage', c => v.setBackground(c));
-    // WHAT IS WRITTEN ON A PART reaches the scene as well as the drawing - an
-    // optic's label, today. The shell's setFields says the host mirrors it.
-    shell.on('fields', ({all}) => v.setFields(all));
-    if (Object.keys(state.cfgFields || {}).length) v.setFields(state.cfgFields);
-    // A HANDLE FOR MEASURING, not for using. `?debug=1` puts the viewer on
-    // window so a console or a harness can ask it what it selected and where
-    // the halo landed - which is how the ear-offset bug was pinned to a number
-    // instead of an impression. Off by default: nothing on the page reads it.
-    if (new URLSearchParams(location.search).get('debug') === '1') window.__viewer = v;
-    // 3D shows every face at once and the tree shows one view, so the scene can
-    // report a part the drawing on the other tab does not contain - click a PSU
-    // while the view is `front`. Say so rather than clearing the selection to
-    // nothing and looking broken.
-    // EVERY PART THE SCENE CAN PICK IS IN THE MERGED TREE, because the
-    // scene's index and the tree are built from the same six face drawings.
-    // The old branch reported "not in the front view" for a heatsink on the
-    // lid - true of the 2D drawing, and exactly the limitation the merge
-    // removes. The shell now resolves a path across every face it holds.
-    //
-    // AND A CLICK ON NOTHING CLEARS IT. The viewer already said so - it emits
-    // null for a click that hits no part, and only for a click, since a drag
-    // to orbit is filtered before it gets here - and this handler threw that
-    // away, so the only way out of a selection was the tree. Through the
-    // shell rather than the viewer alone, so the row, the inspector and the
-    // covers that reveal took off all follow, the same as clicking the
-    // drawing's background in 2D.
-    // And clicking the selected part again clears it, as the drawing does:
-    // the 2D handler reads `path !== state.sel ? path : null`, and a scene
-    // that answered differently would be the same click meaning two things.
-    v.on('select', p => shell.select(p && p !== state.sel ? p : null, false));
-    // THE READOUT, AND NOT THE HEADER. Writing hover into `#status` also wiped
-    // the shell's own `N bays` line the first time you moved the pointer, so
-    // the header lost a fact it was holding to show one that changes 60 times a
-    // second. Two reasons for one move.
-    const readout = document.createElement('div');
-    readout.id = 'hoverpath';
-    host3d.appendChild(readout);
-    v.on('hover', p => {
-      readout.textContent = p || '';
-      readout.classList.toggle('on', !!p);
-    });
-    mountExtras(v);
-    return v;
-  })();
-  try {
-    viewer = await loading;
-  } catch (err) {
-    loading = null;               // a rejected promise would poison every retry
-    throw err;
-  }
-  return viewer;
-}
-
-// The pinned API is load/select/on/resize/dispose. Everything 3d.html owned above
-// its canvas - the FRU eject buttons, the capability HUD, the GLB/USDZ buttons -
-// is chrome, and chrome belongs to the page. The pinned five cannot express any
-// of it, so the module reports the rest through names outside the pin and the
-// page asks before using each: if a name is not there the chrome simply is not
-// there either, and nothing breaks. Both overlays are children of the 3D host,
-// so they come and go with the canvas without a mode handler.
-const kb = n => n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`;
-
-function mountExtras(v) {
-  // A diagnosis aid, not decoration. WebGL1, msaa 0 and anisotropy below 4 each
-  // produce shimmer no material setting can fix, and knowing which of the three
-  // you are looking at is the difference between a driver note and a bug hunt.
-  if (typeof v.capabilities === 'function') {
-    const gfx = document.createElement('div');
-    gfx.id = 'gfx';
-    const c = v.capabilities() || {};
-    gfx.textContent = c.text || '';
-    gfx.classList.toggle('warn', !!c.warn);
-    host3d.appendChild(gfx);
-  }
-  // A GLB is the demo's only output that survives someone not being able to reach
-  // the demo host. The module does the exporting - it owns the scene graph, and
-  // the pinned API deliberately does not hand that out - so the page is two
-  // buttons and a progress line over the canvas.
-  if (typeof v.download !== 'function') return;
-  const bar = document.createElement('div');
-  bar.id = 'glx';
-  bar.innerHTML =
-    `<button data-fmt="glb" title="Geometry and textures in one file. Opens in Quick Look, Windows 3D Viewer, PowerPoint, Blender, Sketchfab.">Download GLB</button>`
-  + `<button data-fmt="usdz" title="AR Quick Look on iPhone and iPad.">USDZ</button>`
-  + `<span class="msg"></span>`;
-  host3d.appendChild(bar);
-  const msg = bar.querySelector('.msg');
-  const all = [...bar.querySelectorAll('button')];
-  for (const b of all) b.onclick = async () => {
-    const fmt = b.dataset.fmt;
-    all.forEach(x => { x.disabled = true; });
-    msg.classList.remove('bad');
-    msg.textContent = `building ${fmt.toUpperCase()}…`;
-    try {
-      const {name, size} = await v.download(fmt);
-      msg.textContent = `${name} — ${kb(size)}`;
-    } catch (err) {
-      // USDZ is fussier than GLB, so say which one failed rather than "export failed"
-      msg.textContent = `${fmt.toUpperCase()} failed: ${err.message || err}`;
-      msg.classList.add('bad');
-    } finally {
-      all.forEach(x => { x.disabled = false; });
-    }
-  };
-}
-
-// One button per removable unit. frus() names each one by its class - "Fan
-// module", "Power supply" - which is true and useless when a 2RU box has five
-// fans and two PSUs: seven buttons in a row, two labels between them, and no way
-// to tell which one you are about to pull. So the button carries the unit's own
-// path. That is what the tree row, the halo and the hover status already call it,
-// so pressing `fan-3` and watching `fan-3` slide out needs no translation.
-//
-// The glyph is the module's, not ours: it reports the action available (⏏ eject,
-// ⏎ insert; ⤒/⤓ for a captive unit that extends rather than comes out), and
-// toggleFru returns the next state, so the button re-labels itself as it moves.
-const fruBox = document.createElement('span');
-fruBox.id = 'frus';
-fruBox.hidden = true;
-shell.el.status.before(fruBox);
-
-function fruBar(v) {
-  fruBox.replaceChildren();
-  if (typeof v.frus !== 'function' || typeof v.toggleFru !== 'function') return;
-  for (const fru of v.frus() || []) {
-    const btn = document.createElement('button');
-    btn.dataset.fru = fru.path;
-    const paint = st => {
-      btn.textContent = `${st.icon} ${st.path}`;
-      // out units stay lit, so a chassis left half stripped still reads at a glance
-      btn.classList.toggle('on', !!st.out);
-      btn.title = `${st.label} — ${st.out ? 'insert' : 'eject'}`
-                + ` (${Math.round(st.travel)} mm travel${st.captive ? ', captive' : ''})`;
-    };
-    paint(fru);
-    btn.onclick = () => {
-      const st = v.toggleFru(fru.path);
-      if (!st) return;
-      paint(st);
-      shell.el.status.textContent = st.text || '';
-    };
-    fruBox.appendChild(btn);
-  }
-}
-
-// Ejecting a fan does nothing you can see on a flat drawing, so the FRU bar is
-// 3D chrome and leaves with the canvas. Fit goes the other way: it measures the
-// SVG stage, and while that stage is hidden it measures 0x0 and returns without
-// doing anything - a button that silently does nothing is worse than no button.
-shell.on('mode', m => {
-  fruBox.hidden = m !== '3d';
-  shell.el.fit.hidden = m === '3d';
-});
 
 // AN OVERRIDE IS A DEVIATION FROM WHAT WAS BUILT, not a restatement of it.
 // `state.cfgBays` is SEEDED from the configuration's own bays, so handing it over
@@ -837,136 +662,7 @@ function applyPendingFields() {
 // what is left here is the control the kit's page does not offer.
 installOpticFields(shell);
 document.head.appendChild(Object.assign(document.createElement('style'), {textContent: OPTIC_CSS}));
-
-// THE SWAP STATE IS PART OF WHAT IS ON SCREEN, so it is part of the key.
-// A runtime swap changes no file on disk - the 3D scene is extracted from the
-// compiled faces, which know only what the built configuration says - so the
-// overrides have to travel with the load AND be visible to the early-return, or
-// sync3d would decide it was already showing the right thing. That early return
-// is why swapping while in 3D did nothing even after the viewer learned how.
-const swapKey = () => Object.entries(swapOverrides())
-  .sort(([a], [b]) => a < b ? -1 : 1)
-  .map(([k, v]) => `${k}=${v || ''}`).join(',');
-
-async function sync3d() {
-  if (mode !== '3d') return;
-  const v = await ensureViewer();
-  const key = `${state.device}.${state.cfg}|${swapKey()}`;
-  // BEFORE the early return, and before the load. Before the return because
-  // states set while the drawing was showing are exactly the case where the
-  // device and the swaps have not changed and the scene still has to catch up -
-  // which is the same trap the swap fix had to be taught about. Before the load
-  // because build() reads them, so a scene comes up already lit instead of
-  // flashing dark and repainting itself.
-  await v.setStates(liveStates());
-  // Before the early return for the same reason the states are: a cover taken
-  // off while the drawing was showing is exactly the case where the device and
-  // the swaps have not changed and the scene still has to catch up.
-  await v.setPulled(livePulled());
-  if (key === loadedKey) return;
-  await v.load({device: state.device, config: state.cfg,
-                overrides: swapOverrides()});
-  loadedKey = key;                // only once it is actually the thing on screen
-  fruBar(v);
-  if (state.sel) v.select(state.sel);
-}
-
-async function setMode(m) {
-  if (m === mode) return;
-  mode = m;
-  for (const b of modeBar.querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === m);
-  shell.el.svgHost.hidden = m !== '2d';
-  host3d.hidden = m !== '3d';
-  shell.emit('mode', m);
-  // IN 3D THE VIEW IS NOT A CHOICE. A 2D drawing shows one face, so picking
-  // which is a real control; a 3D scene shows all six at once, and a tree
-  // still pinned to one of them listed a sixth of what was on screen. So the
-  // tree merges - one section per face, the 2D view's first - and the view
-  // picker steps aside until the drawing is back.
-  const viewPick = shell.el.view.closest('label') || shell.el.view;
-  // ONLY IF THE SHELL CAN. This page runs against whichever shell.js is
-  // vendored beside it, and a shell without loadFaces() - main's, or a branch
-  // that has not taken it - threw here, inside an async setMode, so sync3d
-  // never ran and 3D never came up at all: the button lit and the stage
-  // stayed empty. An older shell keeps its one-view tree and its picker.
-  const canMerge = typeof shell.loadFaces === 'function';
-  const merge = m === '3d' && canMerge;
-  shell.state.merge = merge;
-  // not `hidden`: the shell styles `label.f { display:flex }`, which outranks
-  // the UA's [hidden] rule, so the attribute alone left the picker on screen
-  viewPick.style.display = merge ? 'none' : '';
-  if (merge) shell.loadFaces().then(() => shell.refreshTree())
-    .catch(err => console.warn('[portrayal] faces for the merged tree', err));
-  else shell.refreshTree();
-  if (m === '2d') {
-    // the SVG could not be measured while it was hidden, so the halo and the fit
-    // both have to be recomputed now that it can be
-    shell.fit();
-    if (state.sel) shell.select(state.sel, true);
-    return;
-  }
-  shell.el.status.textContent = 'loading 3D…';
-  try {
-    await sync3d();
-    (await ensureViewer()).resize();
-    shell.el.status.textContent = '';
-  } catch (err) {
-    // viewer3d.js is written by another hand and may not be there yet. Say so,
-    // and drop back to the drawing rather than leaving a black rectangle.
-    console.warn('[portrayal] 3D unavailable', err);
-    shell.el.status.textContent = `3D unavailable: ${err.message || err}`;
-    setMode('2d');
-  }
-}
-for (const b of modeBar.querySelectorAll('button')) b.onclick = () => setMode(b.dataset.mode);
-
-// A scene needs six faces that describe one box, which is exactly portrayal
-// level 3. Below it the viewer has nothing to extrude the sides from and draws a
-// plausible wrong box instead - c100g has a front and a rear and ships in this
-// device list, so this is not hypothetical. The build says which faces are
-// missing, in words, so the button can decline and say why rather than lie.
-//
-// Absent capability data leaves the button exactly as it was: a device the build
-// has not judged is not a device we refuse to draw.
-const btn3d = modeBar.querySelector('[data-mode="3d"]');
-const CAN_3D = 3;
-
-shell.on('device', (name, meta) => {
-  const cap = meta?.capability || shell.device()?.capability;
-  const short = cap && cap.level != null && cap.level < CAN_3D;
-  btn3d.disabled = !!short;
-  if (!short) {
-    btn3d.title = '';
-    return;
-  }
-  // the blocked entry for the level 3D needs carries the missing faces; fall
-  // back to the level name so the button is never disabled without a reason.
-  // The same sentence is in About -> Capability, which is where it can be read
-  // at leisure; this is the version you get with the pointer on the button.
-  const needs = (cap.blocked || []).find(b => b.level === CAN_3D)?.needs;
-  btn3d.title = needs ? `3D needs ${needs}` : `3D needs portrayal level ${CAN_3D}`;
-  if (mode === '3d') setMode('2d');
-});
-
-// the tree and the bar do not change when the stage does: selecting a row
-// highlights in whichever stage is showing, and a config change reaches both
-shell.on('select', path => { if (mode === '3d' && viewer) viewer.select(path); });
-// a config change reloads the drawing and the scene both; the scene's half can
-// fail on its own, and an unhandled rejection is a silent one
-// A swap is the same event as a config change as far as the scene is concerned:
-// the drawing on the other tab now shows something the 3D scene does not. In 2D
-// mode sync3d returns immediately and the rebuild is deferred to the mode switch,
-// which is where the cost belongs - swapping is a 2D affordance and nobody should
-// pay for a scene they are not looking at.
-shell.on('change', () => { sync3d().catch(err => {
-  console.warn('[portrayal] 3D swap sync failed', err);
-  shell.el.status.textContent = `3D unavailable: ${err.message || err}`;
-}); });
-shell.on('load', () => { sync3d().catch(err => {
-  console.warn('[portrayal] 3D reload failed', err);
-  shell.el.status.textContent = `3D unavailable: ${err.message || err}`;
-}); });
-addEventListener('resize', () => { if (mode === '3d' && viewer) viewer.resize(); });
+document.head.appendChild(Object.assign(document.createElement('style'), {textContent: MODE3D_CSS}));
 
 await shell.ready;
 applyPendingFields();
