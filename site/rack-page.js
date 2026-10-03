@@ -213,7 +213,7 @@ function commit(nextRack, undoable = null) {
   const prev = rack();
   const sameScene = nextRack.items === prev.items && nextRack.frame === prev.frame;
   S.undo = undoable ? prev : null;
-  if (undoable) S.notice = {text: undoable.text, kind: 'note'};
+  if (undoable) addNotice(undoable.text, 'note');
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
   render();
@@ -634,11 +634,23 @@ function renderSide() {
     const it = itemById(sel.id);
     if (!it) { S.sel = null; body = homePanel(); }
     else {
-      const n = cablesOf(r, it.id).length, cables = `${n} cable${n === 1 ? '' : 's'}`;
+      const n = cablesOf(r, it.id).length;
+      // The buttons may outlive the rack they were built for (a redraw still
+      // awaiting the cables' faces leaves them clickable): a click acts on the
+      // rack as it is now, and does nothing once the device is gone or the
+      // panel is no longer this device's.
+      const act = fn => () => {
+        const now = rack(), cur = now.items.find(i => i.id === it.id);
+        if (S.sel?.kind !== 'remove' || S.sel.id !== it.id || !cur) { render(); return; }
+        const k = cablesOf(now, it.id).length, cables = `${k} cable${k === 1 ? '' : 's'}`;
+        S.sel = null;
+        fn(now, cur, k, cables);
+      };
       body = removePanel({item: it, count: n,
-        onBoth: () => { S.sel = null; commit(withoutCablesOf(withoutItem(r, it.id), it.id), {text: `Removed ${it.label} and its ${cables}.`}); },
-        onKeep: () => { S.sel = null; commit(withoutItem(r, it.id),
-          {text: `Removed ${it.label}. Its ${cables} ${n === 1 ? 'is a loose end' : 'are loose ends'}.`}); },
+        onBoth: act((now, cur, k, cables) =>
+          commit(withoutCablesOf(withoutItem(now, cur.id), cur.id), {text: `Removed ${cur.label} and its ${cables}.`})),
+        onKeep: act((now, cur, k, cables) => commit(withoutItem(now, cur.id),
+          {text: `Removed ${cur.label}. Its ${cables} ${k === 1 ? 'is a loose end' : 'are loose ends'}.`})),
         onCancel: () => select({kind: 'item', id: it.id})});
     }
   }
@@ -928,7 +940,9 @@ async function bootInner() {
       return;
     }
     const id = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
-    if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(id && S.sel.kind === 'move' ? {kind: 'item', id} : null); }
+    // Esc in the move or remove panel goes back to the device, as Cancel does.
+    const back = S.sel?.kind === 'remove' ? S.sel.id : id;
+    if (ev.key === 'Escape' && S.sel) { ev.preventDefault(); select(back && (S.sel.kind === 'move' || S.sel.kind === 'remove') ? {kind: 'item', id: back} : null); }
     else if (id && (ev.key === 'ArrowUp' || ev.key === 'ArrowDown')) {
       const cur = itemById(id);
       if (cur) {
@@ -947,7 +961,9 @@ const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
   window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d,
     // Probe only: put a rack in through commit(), as any edit that changes the rack under the page does.
-    replaceRack: next => commit(next),
+    replaceRack: (next, undoable) => commit(next, undoable),
+    // Probe only: a notice raised earlier in the same action.
+    addNotice: text => addNotice(text, 'note'),
     // Probe only: make reading the cables' faces fail, to see the page without it.
     failCableFacts: on => { S.probeFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per

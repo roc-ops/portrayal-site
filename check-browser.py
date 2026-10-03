@@ -7168,9 +7168,14 @@ def check_rack_cable_lifecycle(page, base):
     changed["id"] = "doc-cable-fixture-changed"
     changed["racks"][0]["name"] = "Cable test, card changed"
     changed["racks"][0]["items"][0]["swaps"] = {}
-    open_cabled(page, base, changed)
-    if len(doc()["cables"]) != 3:
-        bad.append("lifecycle: the loader dropped a cable")
+    try:
+        open_cabled(page, base, changed)
+    except RuntimeError as e:
+        # The panes wait failed; say what the loader did first.
+        got = [c["id"] for c in doc()["cables"]]
+        return bad + [f"lifecycle: opening the changed file: {e}; the loader kept cables {got}, expected ['c1', 'c2', 'c3']"]
+    if [c["id"] for c in doc()["cables"]] != ["c1", "c2", "c3"]:
+        bad.append(f"lifecycle: the loader dropped or renamed a cable ({[c['id'] for c in doc()['cables']]})")
     try:
         wait_fn(page, "lifecycle: a port its card no longer has",
                 reason_is("i1|front|slot-2/module/p0", "slot-2 holds A9K Slot Cover, which has no port p0"))
@@ -7186,6 +7191,18 @@ def check_rack_cable_undo(page, base):
     page.on("dialog", lambda d: (bad.append(f"undo: a browser dialog opened ({d.message!r})"), d.dismiss()))
     doc = lambda: page.evaluate("() => window.__rack.doc().racks[0]")
     note = lambda: page.text_content(".rk-side .rk-notice") or ""
+    # The panel redraws after the document changes, so every read of it waits
+    # for what it expects: the exact notice text, or the button's absence.
+    def note_is(label, text):
+        try:
+            wait_fn(page, label, f"() => (document.querySelector('.rk-side .rk-notice')?.textContent || '') === {json.dumps(text)}")
+        except RuntimeError:
+            bad.append(f"undo: {label}: the notice reads {note()!r}, expected {text!r}")
+    def undo_gone(label):
+        try:
+            wait_fn(page, label, "() => !document.getElementById('undoShrink')")
+        except RuntimeError:
+            bad.append(f"undo: {label}")
     try:
         open_cabled(page, base)
     except RuntimeError as e:
@@ -7198,17 +7215,14 @@ def check_rack_cable_undo(page, base):
     page.click('#cableList [data-cable-row="c1"]')
     page.click("#cableDelete")
     wait_fn(page, "undo: c1 deleted", "() => window.__rack.doc().racks[0].cables.length === 2")
-    wait_sel(page, "undo: the delete notice", ".rk-side .rk-notice")
-    if note() != "Deleted cable A1.":
-        bad.append(f"undo: the delete notice reads {note()!r}")
+    note_is("the delete notice", "Deleted cable A1.")
     wait_sel(page, "undo: Undo after a delete", "#undoShrink")
     page.click("#undoShrink")
     wait_fn(page, "undo: c1 is back", "() => window.__rack.doc().racks[0].cables.length === 3")
     if doc() != whole:
         bad.append("undo: the rack after Undo is not the rack before the delete")
     wait_fn(page, "undo: c1's plug is back", "() => window.__rack.cableFacts().seats.i2['port-1-occupant/tx'] === 'generic/lc-plug@2'")
-    if page.query_selector("#undoShrink"):
-        bad.append("undo: Undo is still offered after it was used")
+    undo_gone("Undo is still offered after it was used")
 
     # Remove a cabled device with its cables, then Undo.
     select_item(page, "rear", "i3")
@@ -7217,9 +7231,8 @@ def check_rack_cable_undo(page, base):
     page.click("#removeWithCables")
     wait_fn(page, "undo: demarc and its cable gone",
             "() => window.__rack.doc().racks[0].items.length === 3 && window.__rack.doc().racks[0].cables.length === 2")
-    wait_sel(page, "undo: the remove notice", ".rk-side .rk-notice")
-    if note() != "Removed demarc and its 1 cable.":
-        bad.append(f"undo: the remove notice reads {note()!r}")
+    note_is("the remove notice", "Removed demarc and its 1 cable.")
+    wait_sel(page, "undo: Undo after Remove and delete", "#undoShrink")
     page.click("#undoShrink")
     wait_fn(page, "undo: demarc is back", "() => window.__rack.doc().racks[0].items.length === 4")
     if doc() != whole:
@@ -7232,23 +7245,76 @@ def check_rack_cable_undo(page, base):
     wait_sel(page, "undo: the remove panel again", "#removeKeepCables")
     page.click("#removeKeepCables")
     wait_fn(page, "undo: demarc removed", "() => window.__rack.doc().racks[0].items.length === 3")
-    wait_sel(page, "undo: the keep notice", ".rk-side .rk-notice")
-    if note() != "Removed demarc. Its 1 cable is a loose end.":
-        bad.append(f"undo: the keep notice reads {note()!r}")
+    note_is("the keep notice", "Removed demarc. Its 1 cable is a loose end.")
+    wait_sel(page, "undo: Undo after Remove and keep", "#undoShrink")
     page.click("#undoShrink")
     wait_fn(page, "undo: demarc is back again", "() => window.__rack.doc().racks[0].items.length === 4")
     if doc() != whole:
         bad.append("undo: Undo after Remove and keep did not restore the rack")
 
+    # The remove panel acts on the rack as it is when the button is clicked,
+    # not as it was when the panel was built: the click lands before the
+    # redraw replaces the old buttons.
+    stale = """(which) => {
+      const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack(which === 'renamed' ? {...r, name: 'Renamed'}
+        : {...r, name: 'Gone', items: r.items.filter(i => i.id !== 'i3'),
+           cables: r.cables.filter(c => c.a.item !== 'i3' && c.b.item !== 'i3')});
+      document.getElementById('removeKeepCables').click();
+    }"""
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    wait_sel(page, "undo: the remove panel for the stale click", "#removeKeepCables")
+    page.evaluate(stale, "renamed")
+    wait_fn(page, "undo: demarc removed over the changed rack", "() => window.__rack.doc().racks[0].items.length === 3")
+    if doc()["name"] != "Renamed" or len(doc()["cables"]) != 3:
+        bad.append(f"undo: a stale remove click wrote the old rack back (name {doc()['name']!r}, {len(doc()['cables'])} cables)")
+    page.evaluate("w => window.__rack.replaceRack(w)", whole)
+    wait_fn(page, "undo: the rack is whole again", "() => window.__rack.doc().racks[0].items.length === 4")
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    wait_sel(page, "undo: the remove panel for the gone device", "#removeKeepCables")
+    page.evaluate(stale, "gone")
+    page.wait_for_timeout(500)
+    if doc()["name"] != "Gone" or len(doc()["items"]) != 3 or len(doc()["cables"]) != 2:
+        bad.append(f"undo: a remove click for a device already gone changed the rack ({doc()['name']!r}, "
+                   f"{len(doc()['items'])} items, {len(doc()['cables'])} cables)")
+    page.evaluate("w => window.__rack.replaceRack(w)", whole)
+    wait_fn(page, "undo: the rack is whole once more", "() => window.__rack.doc().racks[0].items.length === 4")
+
+    # Esc in the remove panel does what Cancel does: back to the device.
+    select_item(page, "rear", "i3")
+    page.click("#iRemove")
+    wait_sel(page, "undo: the remove panel for Esc", "#removeWithCables")
+    page.evaluate("() => document.activeElement?.blur()")
+    page.keyboard.press("Escape")
+    try:
+        wait_sel(page, "undo: Esc in the remove panel returns to the device", "#iLabel")
+    except RuntimeError as e:
+        bad.append(str(e))
+    if doc() != whole:
+        bad.append("undo: Esc in the remove panel changed the rack")
+
+    # An earlier notice from the same action is not lost to the Undo notice.
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0];
+      window.__rack.addNotice('Earlier.');
+      window.__rack.replaceRack({...r, cables: r.cables.slice(1)}, {text: 'Later.'}); }""")
+    note_is("an earlier notice is kept", "Earlier. Later.")
+    page.evaluate("w => window.__rack.replaceRack(w)", whole)
+    wait_fn(page, "undo: the rack is whole for the Undo test", "() => window.__rack.doc().racks[0].cables.length === 3")
+
     # Only one Undo is pending: a later change retires it.
+    page.evaluate("() => document.activeElement?.blur()")
+    page.keyboard.press("Escape")               # the device is still selected: back to the list
+    wait_sel(page, "undo: the cable list", '#cableList [data-cable-row="c2"]')
     page.click('#cableList [data-cable-row="c2"]')
     page.click("#cableDelete")
     wait_fn(page, "undo: c2 deleted", "() => window.__rack.doc().racks[0].cables.length === 2")
+    wait_sel(page, "undo: Undo after the last delete", "#undoShrink")
     select_item(page, "front", "i2")
     page.keyboard.press("ArrowUp")
     wait_fn(page, "undo: leaf-1 moved", "() => window.__rack.doc().racks[0].items[1].ru === 15")
-    if page.query_selector("#undoShrink"):
-        bad.append("undo: an Undo outlived the next change")
+    undo_gone("an Undo outlived the next change")
     return bad
 
 
