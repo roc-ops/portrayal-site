@@ -313,6 +313,9 @@ const m3d = createMode3d(shell, {
   // second click on the same part means - it takes the mark off - so a pick is
   // handed over as the path itself; Explorer's "again clears" would toggle twice.
   onPick: p => shell.select(p || null, false),
+  // A MODE SWITCH IS NOT A CLICK. Returning to 2D re-selects what was selected
+  // so its halo is drawn again; muted, so it does not toggle that part's mark.
+  reselect: p => { muting = true; try { shell.select(p, true); } finally { muting = false; } },
   // THE VIEWER'S REPORT COMES AFTER ITS BUILD. Marks are sent before the scene
   // has loaded, so the first report says every path is missing; the clean one
   // is announced once the build has drawn them, and the rows repaint on it.
@@ -1362,7 +1365,8 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
       // this page may be running in the tab shell's iframe, so the URL that is
       // worth sharing is this document's own - opening it directly reproduces
       // device, config, view and every mark from the hash alone
-      const url = `${location.origin}${location.pathname}#${enc}`;
+      // A link made in 3D opens in 3D; the document itself does not change.
+      const url = `${location.origin}${location.pathname}${m3d.mode() === '3d' ? '?mode=3d' : ''}#${enc}`;
       history.replaceState(null, '', `#${enc}`);
       $('#share').value = url;
       $('#share').select();
@@ -1373,8 +1377,24 @@ panel.querySelector('.btns').addEventListener('click', async ev => {
     say('#expmsg', `${act} failed: ${e.message || e}`, 'bad');
   } finally {
     buttons.forEach(b => { b.disabled = false; });
+    // and back off again where 3D says the drawing's exports are not on offer
+    paintExports3d();
   }
 });
+
+// THE DRAWING'S EXPORTS ARE THE DRAWING'S. In 3D they stay in the bar and say
+// why they are off, rather than vanishing and leaving the reader to wonder
+// where they went. Share stays: a link carries the mode.
+const ONLY_2D = 'button[data-act]:not([data-act="share"]), #crop, #cropclear';
+function paintExports3d() {
+  const in3d = m3d.mode() === '3d';
+  for (const b of panel.querySelectorAll(ONLY_2D)) {
+    if (!('title2d' in b.dataset)) b.dataset.title2d = b.title || '';
+    b.disabled = in3d;
+    b.title = in3d ? '2D only: switch to 2D to export the drawing' : b.dataset.title2d;
+  }
+}
+m3d.on('mode', paintExports3d);
 
 // ---------------------------------------------------------------- wiring
 
@@ -1441,6 +1461,9 @@ if (fromHash) {
                  (out ? `; ${out} do not fit this drawing and were left out` : ''),
       out ? 'bad' : 'good');
 }
+
+// A LINK OPENS IN ITS MODE: ?mode=3d beside the document, as the share button writes it.
+if (new URLSearchParams(location.search).get('mode') === '3d') m3d.setMode('3d');
 </script>
 <script>
 // Close the export menu on Escape or on a click outside it. <details> handles

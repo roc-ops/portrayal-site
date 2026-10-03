@@ -44,6 +44,10 @@ export function createMode3d(shell, opts = {}) {
     afterSync = null,
     extras = null,
     onPick = p => shell.select(p && p !== state.sel ? p : null, false),
+    // Back in 2D the halo is redrawn by selecting the selection again. On a page
+    // where a selection is an action - Annotate's click adds a mark - that
+    // re-selection must not count as one, so the page can say how to make it.
+    reselect = p => shell.select(p, true),
   } = opts;
   const listeners = {mode: []};
 
@@ -220,7 +224,7 @@ export function createMode3d(shell, opts = {}) {
     else shell.refreshTree();
     if (m === '2d') {
       shell.fit();
-      if (state.sel) shell.select(state.sel, true);
+      if (state.sel) reselect(state.sel);
       return;
     }
     shell.el.status.textContent = 'loading 3D…';

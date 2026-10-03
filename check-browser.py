@@ -4399,6 +4399,25 @@ def check_explorer_three_lazy(page, base):
 def check_annotate_3d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+
+    # A NAMED WAIT. A bare Playwright timeout says only that something took 240s;
+    # this says which step it was, and the check stops there with what it has.
+    class Stop(Exception):
+        pass
+
+    def until(expr, what, timeout=READY_MS):
+        try:
+            page.wait_for_function(expr, timeout=timeout)
+        except Exception:
+            st = page.evaluate("""() => ({url: location.pathname + location.search,
+              on3d: !!document.querySelector('#mode [data-mode="3d"].on'),
+              status: document.querySelector('#status')?.textContent || '',
+              marks: window.__viewer ? window.__viewer.marks().length : null,
+              rows: [...document.querySelectorAll('#rows .mark .sel')].map(e => e.value),
+              paths: window.__viewer ? window.__viewer.marks().map(m => m.path) : null})""")
+            bad.append(f"annotate 3D: timed out waiting for {what} - {st}")
+            raise Stop()
+
     doc = {"v": 1, "device": "s9510-28dc", "config": "dc", "view": "front", "legend": True,
            "marks": [
                {"select": "[data-path='port-0']", "color": "#e0574f", "label": "uplink"},
@@ -4423,108 +4442,123 @@ def check_annotate_3d(page, base):
         page.wait_for_function("() => /3D unavailable/.test(document.querySelector('#status')?.textContent || '')"
                                " || !document.querySelector('#stage-3d').hidden", timeout=READY_MS)
         return bad
-    page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__viewer && window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
-    # SETTLED, NOT JUST STARTED: marks are sent before the build and again on
-    # the built scene, and the rows repaint on the viewer's report. Read once the
-    # report has found the ports; if it never does, the assertions below say so.
     try:
-        page.wait_for_function("""() => { const r = window.__viewer.markReport;
-            return r && !['port-0', 'port-4', 'fan-2'].some(p => r.missing.includes(p)); }""", timeout=READY_MS)
-    except Exception:
+        page.click('#mode [data-mode="3d"]')
+        until("() => window.__viewer && window.__viewer.marks().length >= 3", "the scene's first marks", READY_3D_MS)
+        # SETTLED, NOT JUST STARTED: marks are sent before the build and again on
+        # the built scene, and the rows repaint on the viewer's report. Read once the
+        # report has found the ports; if it never does, the assertions below say so.
+        try:
+            page.wait_for_function("""() => { const r = window.__viewer.markReport;
+                return r && !['port-0', 'port-4', 'fan-2'].some(p => r.missing.includes(p)); }""", timeout=READY_MS)
+        except Exception:
+            pass
+        page.wait_for_timeout(300)
+        r = page.evaluate("""() => { const v = window.__viewer;
+          return {marks: v.marks().map(m => [m.path, m.color]).sort(),
+                  lamps: v.lampColors(), states: v.states(),
+                  legend: [...document.querySelectorAll('#legend3d .row')].map(e => e.textContent.trim()),
+                  notIn3d: [...document.querySelectorAll('#rows .mark')].map(r =>
+                    /not in 3D/.test(r.querySelector('.notes').textContent)),
+                  off: [...document.querySelectorAll('.btns button[data-act]')]
+                         .filter(b => b.dataset.act !== 'share').every(b => b.disabled && /2D only/.test(b.title))}; }""")
+        got = dict((p, c) for p, c in r["marks"])
+        for path, colour in [("port-0", "#e0574f"), ("port-4", "#2bb3c8"), ("fan-2", "#9b5de5")]:
+            if got.get(path) != colour:
+                bad.append(f"annotate 3D: mark on {path} is {got.get(path)}, expected {colour}")
+        if "#ff00ff" not in [c.lower() for c in r["lamps"].values()]:
+            bad.append(f"annotate 3D: the lamp colour never reached the viewer - {r['lamps']}")
+        if r["states"].get("led-sync") != "state-synced":
+            bad.append(f"annotate 3D: led-sync state is {r['states'].get('led-sync')}")
+        if r["legend"] != ["uplink", "exhaust fan"]:
+            bad.append(f"annotate 3D: legend rows {r['legend']}, expected ['uplink', 'exhaust fan']")
+        if r["notIn3d"] != [False, False, False, False, False, True]:
+            bad.append(f"annotate 3D: 'not in 3D' flags {r['notIn3d']}")
+        if not r["off"]:
+            bad.append("annotate 3D: a 2D-only export is enabled, or lacks its '2D only' title")
+
+        # A CLICK IN 3D IS A CLICK (Review Focus 4). select() frames the camera on
+        # the part, centred, so a real click at the canvas centre lands on it - the
+        # whole path: canvas, the viewer's select event, onPick, Annotate's toggle.
+        # The first click adds a mark for port-8; a second click on the same part
+        # takes it off, exactly once.
+        n = len(doc["marks"])
+        page.evaluate("() => { window.__viewer.select('port-8'); }")
+        page.wait_for_timeout(500)
+        box = page.locator("#stage-3d canvas").bounding_box()
+        cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+        page.mouse.click(cx, cy)
+        until(f"() => document.querySelectorAll('#rows .mark').length === {n + 1}", "a 3D click to add a mark")
+        page.mouse.click(cx, cy)
+        until(f"() => document.querySelectorAll('#rows .mark').length === {n}", "a second 3D click to take it off")
+
+        # AN OPTIC SEATED IN 3D KEEPS EVERY MARK. Through the inspector, as a
+        # reader does it: select the cage in the tree, choose the first optic.
+        # Click highlights go off for the select - with them on, a click on port-4's
+        # row is a click that takes port-4's mark off, which is Annotate's 2D
+        # behaviour and not what this step is about.
+        page.click("#clickadd")
+        page.click(".node[data-path='port-4']")
+        page.click("#clickadd")
+        page.wait_for_selector("#optic", timeout=READY_MS)
+        optic = page.evaluate("() => [...document.querySelectorAll('#optic option')].map(o => o.value).find(Boolean)")
+        page.select_option("#optic", optic)
+        until("() => window.__viewer.marks().length >= 3", "the marks after seating an optic", READY_3D_MS)
+        page.wait_for_timeout(1500)
+        after_swap = page.evaluate("() => window.__viewer.marks().map(m => m.path).sort()")
+        if not set(got) <= set(after_swap):
+            bad.append(f"annotate 3D: seating {optic} in port-4 lost marks {sorted(set(got) - set(after_swap))}")
+
+        # A 3D -> 2D -> 3D round trip leaves the document and the marks as they were.
+        # The DOCUMENT too, not only the scene: returning to 2D re-selects what was
+        # selected (port-4, from the swap), and a re-selection that counted as a
+        # click took port-4's mark off.
+        rows = "() => [...document.querySelectorAll('#rows .mark .sel')].map(e => e.value)"
+        before_rows = page.evaluate(rows)
+        page.click('#mode [data-mode="2d"]')
+        page.click('#mode [data-mode="3d"]')
+        until("() => window.__viewer.marks().length >= 3", "the marks after a 2D/3D round trip", READY_3D_MS)
+        after = page.evaluate("() => window.__viewer.marks().map(m => m.path).sort()")
+        if after != after_swap:
+            bad.append(f"annotate 3D: a 2D/3D round trip changed the marks {after_swap} -> {after}")
+        if page.evaluate(rows) != before_rows:
+            bad.append(f"annotate 3D: a 2D/3D round trip changed the document {before_rows} -> {page.evaluate(rows)}")
+
+        # Back in 2D the exports come back with their own titles (Review Focus 5)
+        page.click('#mode [data-mode="2d"]')
+        back = page.evaluate("""() => [...document.querySelectorAll('.btns button[data-act]')]
+          .every(b => !b.disabled && !/2D only/.test(b.title))""")
+        if not back:
+            bad.append("annotate: back in 2D, an export is still disabled or still titled '2D only'")
+
+        # A share link made in 3D opens in 3D, with its marks
+        page.click('#mode [data-mode="3d"]')
+        until("() => window.__viewer.marks().length >= 3", "the marks back in 3D before sharing", READY_3D_MS)
+        page.click('.btns button[data-act="share"]')
+        url = page.input_value('#share')
+        if "?mode=3d#" not in url:
+            # Reopening a link that does not say 3D opens the drawing, and the waits
+            # below would sit out their timeout and throw away everything above.
+            return bad + [f"annotate 3D: the share link does not record the mode - {url[:80]}"]
+        page.goto(url.replace("?mode=3d", "?mode=3d&debug=1"), wait_until="load")
+        until("() => window.__viewer && window.__viewer.marks().length >= 3", "the shared link to open in 3D with its marks", READY_3D_MS)
+
+        # The GLB is the model: as many meshes with the marks as without (needs PR 1 synced).
+        # Only once the halos are DRAWN - counted on a scene whose report still says
+        # every mark is missing, there are no plates to leak and this passes vacuously.
+        until("""() => { const r = window.__viewer.markReport;
+            return r && !['port-0', 'fan-2'].some(p => r.missing.includes(p)); }""",
+              "the reopened scene to draw its marks", READY_3D_MS)
+        meshes = page.evaluate("""async () => { const v = window.__viewer;
+          const count = async () => { const b = await v.exportData('glb'), d = new DataView(b);
+            return (JSON.parse(new TextDecoder().decode(new Uint8Array(b, 20, d.getUint32(12, true)))).meshes || []).length; };
+          const held = v.marks(); const marked = await count();
+          v.setMarks([]); const plain = await count(); v.setMarks(held);
+          return [marked, plain]; }""")
+        if meshes[0] != meshes[1]:
+            bad.append(f"annotate 3D: the GLB carries the marks ({meshes[0]} meshes marked, {meshes[1]} plain)")
+    except Stop:
         pass
-    page.wait_for_timeout(300)
-    r = page.evaluate("""() => { const v = window.__viewer;
-      return {marks: v.marks().map(m => [m.path, m.color]).sort(),
-              lamps: v.lampColors(), states: v.states(),
-              legend: [...document.querySelectorAll('#legend3d .row')].map(e => e.textContent.trim()),
-              notIn3d: [...document.querySelectorAll('#rows .mark')].map(r =>
-                /not in 3D/.test(r.querySelector('.notes').textContent)),
-              off: [...document.querySelectorAll('.btns button[data-act]')]
-                     .filter(b => b.dataset.act !== 'share').every(b => b.disabled && /2D only/.test(b.title))}; }""")
-    got = dict((p, c) for p, c in r["marks"])
-    for path, colour in [("port-0", "#e0574f"), ("port-4", "#2bb3c8"), ("fan-2", "#9b5de5")]:
-        if got.get(path) != colour:
-            bad.append(f"annotate 3D: mark on {path} is {got.get(path)}, expected {colour}")
-    if "#ff00ff" not in [c.lower() for c in r["lamps"].values()]:
-        bad.append(f"annotate 3D: the lamp colour never reached the viewer - {r['lamps']}")
-    if r["states"].get("led-sync") != "state-synced":
-        bad.append(f"annotate 3D: led-sync state is {r['states'].get('led-sync')}")
-    if r["legend"] != ["uplink", "exhaust fan"]:
-        bad.append(f"annotate 3D: legend rows {r['legend']}, expected ['uplink', 'exhaust fan']")
-    if r["notIn3d"] != [False, False, False, False, False, True]:
-        bad.append(f"annotate 3D: 'not in 3D' flags {r['notIn3d']}")
-    if not r["off"]:
-        bad.append("annotate 3D: a 2D-only export is enabled, or lacks its '2D only' title")
-
-    # A CLICK IN 3D IS A CLICK (Review Focus 4). select() frames the camera on
-    # the part, centred, so a real click at the canvas centre lands on it - the
-    # whole path: canvas, the viewer's select event, onPick, Annotate's toggle.
-    # The first click adds a mark for port-8; a second click on the same part
-    # takes it off, exactly once.
-    n = len(doc["marks"])
-    page.evaluate("() => { window.__viewer.select('port-8'); }")
-    page.wait_for_timeout(500)
-    box = page.locator("#stage-3d canvas").bounding_box()
-    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
-    page.mouse.click(cx, cy)
-    page.wait_for_function(f"() => document.querySelectorAll('#rows .mark').length === {n + 1}", timeout=READY_MS)
-    page.mouse.click(cx, cy)
-    page.wait_for_function(f"() => document.querySelectorAll('#rows .mark').length === {n}", timeout=READY_MS)
-
-    # AN OPTIC SEATED IN 3D KEEPS EVERY MARK. Through the inspector, as a
-    # reader does it: select the cage in the tree, choose the first optic.
-    # Click highlights go off for the select - with them on, a click on port-4's
-    # row is a click that takes port-4's mark off, which is Annotate's 2D
-    # behaviour and not what this step is about.
-    page.click("#clickadd")
-    page.click(".node[data-path='port-4']")
-    page.click("#clickadd")
-    page.wait_for_selector("#optic", timeout=READY_MS)
-    optic = page.evaluate("() => [...document.querySelectorAll('#optic option')].map(o => o.value).find(Boolean)")
-    page.select_option("#optic", optic)
-    page.wait_for_function("() => window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
-    page.wait_for_timeout(1500)
-    after_swap = page.evaluate("() => window.__viewer.marks().map(m => m.path).sort()")
-    if not set(got) <= set(after_swap):
-        bad.append(f"annotate 3D: seating {optic} in port-4 lost marks {sorted(set(got) - set(after_swap))}")
-
-    # A 3D -> 2D -> 3D round trip leaves the document and the marks as they were
-    page.click('#mode [data-mode="2d"]')
-    page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
-    after = page.evaluate("() => window.__viewer.marks().map(m => m.path).sort()")
-    if after != after_swap:
-        bad.append(f"annotate 3D: a 2D/3D round trip changed the marks {after_swap} -> {after}")
-
-    # Back in 2D the exports come back with their own titles (Review Focus 5)
-    page.click('#mode [data-mode="2d"]')
-    back = page.evaluate("""() => [...document.querySelectorAll('.btns button[data-act]')]
-      .every(b => !b.disabled && !/2D only/.test(b.title))""")
-    if not back:
-        bad.append("annotate: back in 2D, an export is still disabled or still titled '2D only'")
-
-    # A share link made in 3D opens in 3D, with its marks
-    page.click('#mode [data-mode="3d"]')
-    page.wait_for_function("() => window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
-    page.click('.btns button[data-act="share"]')
-    url = page.input_value('#share')
-    if "?mode=3d#" not in url:
-        # Reopening a link that does not say 3D opens the drawing, and the waits
-        # below would sit out their timeout and throw away everything above.
-        return bad + [f"annotate 3D: the share link does not record the mode - {url[:80]}"]
-    page.goto(url.replace("?mode=3d", "?mode=3d&debug=1"), wait_until="load")
-    page.wait_for_function("() => window.__viewer && window.__viewer.marks().length >= 3", timeout=READY_3D_MS)
-
-    # The GLB is the model: as many meshes with the marks as without (needs PR 1 synced)
-    meshes = page.evaluate("""async () => { const v = window.__viewer;
-      const count = async () => { const b = await v.exportData('glb'), d = new DataView(b);
-        return (JSON.parse(new TextDecoder().decode(new Uint8Array(b, 20, d.getUint32(12, true)))).meshes || []).length; };
-      const held = v.marks(); const marked = await count();
-      v.setMarks([]); const plain = await count(); v.setMarks(held);
-      return [marked, plain]; }""")
-    if meshes[0] != meshes[1]:
-        bad.append(f"annotate 3D: the GLB carries the marks ({meshes[0]} meshes marked, {meshes[1]} plain)")
     return bad
 
 def main():
