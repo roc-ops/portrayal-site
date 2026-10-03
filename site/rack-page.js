@@ -300,24 +300,28 @@ function cableFormPanel(sel) {
 // cables. The filter is the viewer's, not the document's: S.cableFilter.
 const selectedCable = () =>
   (S.sel?.kind === 'cable' || (S.sel?.kind === 'cable-form' && S.sel.id) ? S.sel.id : null);
-function cableListPanel() {
-  const r = rack();
-  if (!r.cables.length) return null;
-  // A filter value no cable has any more (its last cable was edited or
-  // deleted) would hide every row with no button left to release it.
-  const on = {...S.cableFilter};
+// A filter value no cable has any more (its last cable was edited or deleted,
+// or there are none) would ghost every cable with no button left to release
+// it. One helper, run before anything is painted and before the list is built.
+function pruneFilter() {
+  const r = rack(), on = {...S.cableFilter};
   for (const f of ['purpose', 'media']) if (on[f] != null && !countsBy(r.cables, f).has(on[f])) on[f] = null;
   S.cableFilter = on;
+}
+function cableListPanel() {
+  const r = rack();
+  pruneFilter();
+  const on = S.cableFilter;
   return cableList({rack: r, ends: S.cableFacts.ends, on, selectedId: selectedCable(),
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
-      paintCables(S.svgs, r, {selectedId: selectedCable(), on: next});
+      paintCables(S.svgs, rack(), {selectedId: selectedCable(), on: next});
     },
     // A second click on the selected row lets it go.
     onSelect: id => select(selectedCable() === id ? null : {kind: 'cable', id}),
     onEdit: id => select({kind: 'cable-form', id}),
-    onDelete: id => { S.sel = null; commit(withoutCable(r, id)); }});
+    onDelete: id => { S.sel = null; commit(withoutCable(rack(), id)); }});
 }
 // What the side panel shows with nothing selected, or with a cable selected:
 // the summary (or Cable mode's help), then the cable list.
@@ -479,6 +483,7 @@ function renderExports() {
 async function render() {
   const mine = ++S.draws;
   pruneCable();
+  pruneFilter();
   const r = rack();
   $('rackName').textContent = r.name;
   const holes = r.frame.holes.style === 'tapped'
@@ -615,7 +620,10 @@ function renderSide() {
   }
   $('side').replaceChildren(...kids);
   const back = focusId ? document.getElementById(focusId) : null;
-  if (back) back.focus();
+  const row = S.focusRow ? document.getElementById(`cableRow-${S.focusRow}`) : null;
+  S.focusRow = null;
+  if (row) row.focus();
+  else if (back) back.focus();
   // A cable form that just opened takes the keyboard at its first field.
   else if (S.sel?.kind === 'cable-form') $('cMedia')?.focus();
 }
@@ -791,7 +799,12 @@ async function bootInner() {
   // A tag is focusable: Enter or Space selects its cable, as a click does.
   $('panes').addEventListener('keydown', ev => {
     const cab = ev.key === 'Enter' || ev.key === ' ' ? ev.target.closest?.('[data-cable-tags] [data-cable-id]') : null;
-    if (cab) { ev.preventDefault(); select({kind: 'cable', id: cab.dataset.cableId}); }
+    if (cab) {
+      ev.preventDefault();
+      // select() redraws the cable layer and destroys the focused tag: the keyboard goes to the row.
+      S.focusRow = cab.dataset.cableId;
+      select({kind: 'cable', id: cab.dataset.cableId});
+    }
   });
   // The frame form is a different activity from Cable mode, as it is from
   // Move: opening it replaces the selection, and turns Cable mode off.

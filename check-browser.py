@@ -6734,6 +6734,8 @@ def check_rack_cable_list(page, base):
     # A ROW selects its cable: lit in BOTH panes (the run and its tag in each), every other one dimmed.
     page.click(row("c2"))
     wait_fn(page, "cable list: row c2 selected", pressed_js("c2"))
+    if page.evaluate("() => document.activeElement.id") != "cableRow-c2":
+        bad.append("cable list: focus did not stay on the clicked row")
     lit = page.evaluate(LIT_JS)
     for p in ("front", "rear"):
         if not lit[p]["focus"] or lit[p]["on"] != ["c2"] or lit[p]["parts"] != 2:
@@ -6753,8 +6755,21 @@ def check_rack_cable_list(page, base):
     wait_fn(page, "cable list: Enter on the front tag selects c2", pressed_js("c2"))
     if page.evaluate(LIT_JS)["rear"]["on"] != ["c2"]:
         bad.append("cable list: the front tag did not light the cable's rear end")
+    if page.evaluate("() => document.activeElement.id") != "cableRow-c2":
+        bad.append("cable list: a keyboard selection by a tag did not put focus on the row")
     page.keyboard.press("Escape")
     wait_fn(page, "cable list: Esc lets the selection go", pressed_js("c2", False))
+    # Space on a tag selects too; selecting a device lets the cable go.
+    page.focus('svg[data-pane="rear"] [data-cable-tags] [data-cable-tag][data-cable-id="c3"]')
+    page.keyboard.press("Space")
+    wait_fn(page, "cable list: Space on the rear tag selects c3", pressed_js("c3"))
+    page.click('svg[data-pane="rear"] [data-item-id="i4"][data-panel]', position={"x": 8, "y": 8})
+    wait_sel(page, "cable list: selecting a device", "#iLabel")
+    wait_fn(page, "cable list: a device selection clears the cable", pressed_js("c3", False))
+    if page.evaluate(LIT_JS)["rear"]["focus"]:
+        bad.append("cable list: the panes are still dimmed after selecting a device")
+    page.keyboard.press("Escape")
+    wait_sel(page, "cable list: the list is back", "#cableList")
 
     # THE FILTERS ghost what they leave out and hide its row; the two axes combine.
     page.click('#cableList [data-filter-media="os2"]')
@@ -6778,6 +6793,26 @@ def check_rack_cable_list(page, base):
     lit = page.evaluate(LIT_JS)
     if page.evaluate(LIST_JS)["matching"] != "3" or lit["front"]["ghost"] or lit["rear"]["ghost"]:
         bad.append("cable list: releasing the filters did not bring every cable back")
+
+    # A SELECTED cable a filter leaves out is never ghosted, and its row stays with Edit and Delete.
+    page.click(row("c2"))
+    wait_fn(page, "cable list: c2 selected before the filter", pressed_js("c2"))
+    page.click('#cableList [data-filter-media="os2"]')
+    got = page.evaluate(LIST_JS)
+    lit = page.evaluate(LIT_JS)
+    for p in ("front", "rear"):
+        if lit[p]["on"] != ["c2"] or "c2" in lit[p]["ghost"]:
+            bad.append(f"cable list: the selected c2, filtered out, is {lit[p]} in the {p} pane")
+    c2 = next(r for r in got["rows"] if r["id"] == "c2")
+    if c2["hidden"] or not page.is_visible("#cableEdit") or not page.is_visible("#cableDelete"):
+        bad.append("cable list: the selected cable's row or its Edit and Delete vanished under a filter")
+    if page.query_selector('li[data-cable-item="c2"] [data-off-filter]') is None:
+        bad.append("cable list: the selected row does not say it is outside the filter")
+    if (got["count"], got["matching"]) != ("2 of 3 cables match.", "2"):
+        bad.append(f"cable list: the count with c2 kept visible reads {got['count']!r}")
+    page.click('#cableList [data-filter-media="os2"]')
+    page.click(row("c2"))
+    wait_fn(page, "cable list: c2 let go", pressed_js("c2", False))
 
     # EDIT reuses the form, opened on the cable's own values.
     page.click(row("c1"))
@@ -6811,6 +6846,8 @@ def check_rack_cable_list(page, base):
             """() => !document.querySelector('svg[data-pane="rear"] [data-cable-id="c3"]')""")
     if page.evaluate(PLUGS_JS, ["rear", "i4"]) != {"lc": 0, "rj45": 0}:
         bad.append("cable list: the deleted cable's plug is still seated on the far demarc")
+    if [c["id"] for c in cables()] != ["c1", "c2"]:
+        bad.append(f"cable list: Delete left {[c['id'] for c in cables()]}, expected c1 and c2")
 
     # What is left survives a reload (autosave).
     page.evaluate("() => window.__rack.flush()")
@@ -6820,6 +6857,47 @@ def check_rack_cable_list(page, base):
     wait_sel(page, "cable list: the list after a reload", "#cableList")
     if [r["id"] for r in page.evaluate(LIST_JS)["rows"]] != ["c1", "c2"]:
         bad.append("cable list: the cables did not survive a reload")
+
+    # A FILTER NO CABLE MATCHES any more is dropped before anything is painted.
+    unfiltered = lambda what: (
+        [what + f": ghosted {lit_[p]['ghost']} in {p}" for p in ("front", "rear") if (lit_ := page.evaluate(LIT_JS))[p]["ghost"]]
+        + ([what + ": a filter button is still pressed"] if page.query_selector("#cableList [aria-pressed=true][data-filter-purpose], #cableList [aria-pressed=true][data-filter-media]") else []))
+    page.click('#cableList [data-filter-purpose="management"]')
+    page.click(row("c2"))
+    wait_sel(page, "cable list: Delete on c2", "#cableDelete")
+    page.click("#cableDelete")
+    wait_fn(page, "cable list: c2 deleted under a filter", "() => window.__rack.doc().racks[0].cables.length === 1")
+    wait_fn(page, "cable list: the redraw", "() => !document.querySelector('[data-cable-id=\"c2\"]')")
+    bad += unfiltered("cable list: after deleting the last cable of a filtered purpose")
+    page.click('#cableList [data-filter-purpose="uplink"]')
+    page.click(row("c1"))
+    wait_sel(page, "cable list: Edit on c1", "#cableEdit")
+    page.click("#cableEdit")
+    wait_sel(page, "cable list: the form", "#cableForm")
+    page.fill("#cPurpose", "core")
+    page.click("#cSave")
+    wait_fn(page, "cable list: c1 re-purposed", "() => window.__rack.doc().racks[0].cables[0].purpose === 'core'")
+    wait_sel(page, "cable list: the list after the edit", "#cableList [data-filter-purpose]")
+    bad += unfiltered("cable list: after re-purposing the last cable of a filtered purpose")
+    # With no cables the section says how to add one, and a stale filter does not come back.
+    page.click('#cableList [data-filter-purpose="core"]')   # c1 is still selected from its edit
+    wait_sel(page, "cable list: Delete on c1", "#cableDelete")
+    page.click("#cableDelete")
+    wait_sel(page, "cable list: the empty state", "#cableList #cableEmpty")
+    if (page.text_content("#cableEmpty") or "") != "No cables yet. Use Cable mode and click a port at each end.":
+        bad.append(f"cable list: the empty state reads {page.text_content('#cableEmpty')!r}")
+    page.click("#cableBtn")
+    page.click(port_sel("front", "i2", "port-3"))
+    wait_sel(page, "cable list: A", 'svg[data-pane="front"] .rk-end-pick')
+    page.click(port_sel("front", "i2", "port-4"))
+    wait_sel(page, "cable list: the form", "#cableForm")
+    page.fill("#cPurpose", "core")
+    page.click("#cSave")
+    wait_sel(page, "cable list: the new cable's row", "#cableList [data-cable-row]")
+    got = page.evaluate(LIST_JS)
+    if got["matching"] != "1" or [r["hidden"] for r in got["rows"]] != [False]:
+        bad.append(f"cable list: a stale filter came back ({got['count']!r}, rows {got['rows']})")
+    bad += unfiltered("cable list: after the list emptied and refilled")
     return bad
 
 

@@ -177,15 +177,15 @@ export function markPort(svg, itemId, path) {
 // WHICH CABLES ARE LIT. The selected cable keeps its paint and every other
 // one dims (.cable-focus on the pane, .on on the cable and its tag) - in
 // both panes at once, so a cross-face run lights at both ends. A cable the
-// list's filter leaves out fades to a ghost (.ghost), as in stage 5. Classes
-// only: nothing is redrawn.
+// list's filter leaves out fades to a ghost (.ghost), as in stage 5 - except
+// the selected cable, which is never ghosted. Classes only: nothing is redrawn.
 export function paintCables(svgs, rack, {selectedId = null, on = {}} = {}) {
   const out = new Set(rack.cables.filter(c => !matches(c, on)).map(c => c.id));
   for (const svg of svgs) {
     svg.classList.toggle('cable-focus', selectedId != null);
     for (const n of svg.querySelectorAll('[data-cable-id]')) {
       n.classList.toggle('on', n.dataset.cableId === selectedId);
-      n.classList.toggle('ghost', out.has(n.dataset.cableId));
+      n.classList.toggle('ghost', n.dataset.cableId !== selectedId && out.has(n.dataset.cableId));
     }
   }
 }

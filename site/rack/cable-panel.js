@@ -82,6 +82,11 @@ export function cableList({rack, ends, on, selectedId = null, onFilter, onSelect
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
   const shown = cables.filter(c => matches(c, on)).length;
+  if (!cables.length)
+    return el('div', {id: 'cableList', class: 'rk-cables'}, [
+      el('h3', {text: 'Cables'}),
+      el('p', {id: 'cableEmpty', class: 'rk-muted',
+               text: 'No cables yet. Use Cable mode and click a port at each end.'})]);
 
   const filterRow = (field, title) => el('div', {class: 'rk-filter', 'data-filter-row': field}, [
     el('span', {class: 'rk-muted', text: title}),
@@ -104,11 +109,14 @@ export function cableList({rack, ends, on, selectedId = null, onFilter, onSelect
       if (why(e)) kids.push(el('span', {class: 'rk-loose', 'data-loose': k, text: `Loose end ${k.toUpperCase()}: ${why(e)}.`}));
     for (const w of mismatch(c.media, info(c.a), info(c.b)))
       kids.push(el('span', {class: 'rk-warn', 'data-warning': 'true', text: w}));
+    // The selected cable stays on the list even when the filter leaves it out; say so.
+    if (picked && !matches(c, on))
+      kids.push(el('span', {class: 'rk-muted', 'data-off-filter': 'true', text: 'Not in this filter.'}));
     if (picked) kids.push(el('div', {class: 'rk-actions'}, [
       button('cableEdit', 'Edit', () => onEdit(c.id)),
       button('cableDelete', 'Delete', () => onDelete(c.id))]));
     const li = el('li', {'data-cable-item': c.id}, kids);
-    li.hidden = !matches(c, on);
+    li.hidden = !picked && !matches(c, on);
     return li;
   });
 
