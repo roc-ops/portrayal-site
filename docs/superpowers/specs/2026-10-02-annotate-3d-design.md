@@ -70,8 +70,9 @@ PRs 1 and 2 run in parallel. The 3D export in PR 3 relies on PR 1 having reached
 
 `extras(viewer)` is where a page mounts its own chrome. Explorer keeps:
 - the hover readout;
-- the graphics diagnostics overlay;
-- its `?debug=1` handle.
+- the graphics diagnostics overlay.
+
+The `?debug=1` handle, which puts the viewer on `window.__viewer`, moves into the module. A browser check reaches the scene through it, and Annotate's check needs it as much as Explorer's.
 
 **Data hooks:** a page supplies `states()`, `pulled()` and `overrides()`. Explorer's are today's `liveStates`, `livePulled` and `swapOverrides`. The module calls them at the same points `sync3d` does now. A page can also supply `afterSync(viewer)`, which Annotate uses to send marks and lamp colours.
 
