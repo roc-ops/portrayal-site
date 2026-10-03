@@ -18,6 +18,8 @@ import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
+import {cableFacts} from './rack/cable-plugs.js';
+import {mergeSeats} from './rack/cable-rules.js';
 
 const $ = id => document.getElementById(id);
 const LAST = 'portrayal.rack.last';
@@ -31,6 +33,8 @@ function loadMode() {
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
   zoom: loadZoom(), svgs: [], undo: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
+  // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
+  cableFacts: {seats: {}, ends: new Map()},
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
@@ -348,10 +352,15 @@ async function render() {
   $('headFront').textContent = 'Front';
   $('headRear').textContent = 'Rear';
   $('frameSummary').textContent = `${r.frame.heightRU}U ${r.frame.kind} · ${holes}`;
-  const items = itemsWithU(r, chassisOf);
   const selectedId = S.sel?.kind === 'item' || S.sel?.kind === 'move' ? S.sel.id : null;
-  let front, rear;
+  let front, rear, facts;
   try {
+    // PLUGS ARE DERIVED, NEVER STORED: a cabled end is drawn with the plug its
+    // port takes, laid over the item's own swaps for this drawing only. The
+    // document, Explorer and the exports keep reading item.swaps.
+    facts = await cableFacts(r);
+    const items = itemsWithU(r, chassisOf).map(it => (facts.seats[it.id]
+      ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it));
     [front, rear] = await Promise.all(['front', 'rear'].map(view => drawElevation({
       items, frame: r.frame, view, hitTargets: true, selectedId, ears: true, metal: true,
       selectedU: S.sel?.kind === 'u' && S.sel.face === view ? S.sel.ru : null})));
@@ -362,6 +371,7 @@ async function render() {
     return;
   }
   if (mine !== S.draws) return;
+  S.cableFacts = facts;
   $('paneFront').replaceChildren(front);
   $('paneRear').replaceChildren(rear);
   // The SVGs are new nodes every render, so the zoom (a style on the old
@@ -669,5 +679,9 @@ async function bootInner() {
 
 const ready = boot();
 if (new URLSearchParams(location.search).get('probe') === '1') {
-  window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d};
+  window.__rack = {ready, doc: () => S.doc, flush: () => S.save.flush(), scene: () => S.scene3d,
+    // The last redraw's cable facts, as plain data: the derived plug seats per
+    // item, and each cabled end's loose-end reason (null when it lands).
+    cableFacts: () => ({seats: S.cableFacts.seats,
+      reasons: Object.fromEntries([...S.cableFacts.ends].map(([k, v]) => [k, v.reason]))})};
 }

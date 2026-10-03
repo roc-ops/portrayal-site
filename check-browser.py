@@ -5931,6 +5931,117 @@ def check_cables_moved(page, base):
     return bad
 
 
+# THE CABLE FIXTURE: the export fixture's rack with the cases cabling has to
+# get right - a port on a seated card that holds an optic (core-1's
+# slot-2/module/p0), an optic port (leaf-1's port-1), a copper port
+# (leaf-1's mgmt-eth), a cross-face pair (leaf-1 shows its front in the front
+# pane, the rear-mounted demarc shows its front in the rear pane), an empty
+# cage (leaf-1's port-2), and two devices with one ref (the two tm-280
+# demarcs, each cabled on the same port path).
+#   c1  leaf-1 port-1   -> core-1 slot-2/module/p0   fiber, both in the front pane
+#   c2  leaf-1 mgmt-eth -> demarc (U14) port-2-1     copper, front pane to rear pane
+#   c3  leaf-1 port-2   -> demarc (U20) port-2-1     end A is an empty cage: a loose end
+CABLE_FIXTURE = {
+    "format": "portrayal-rack", "version": 1, "id": "doc-cable-fixture",
+    "racks": [{
+        "id": "r1", "name": "Cable test",
+        "frame": {"kind": "four-post", "heightRU": 24, "numbering": "bottom-up",
+                  "holes": {"style": "square", "thread": None},
+                  "railDepth": 740, "usableDepth": 1000, "ref": None},
+        "items": [
+            {"id": "i1", "ref": "asr-9006", "cfg": "base", "label": "core-1", "ru": 2, "face": "front",
+             "turned": False, "swaps": {"slot-2": "cisco/a9k-16x100ge-tr@1",
+                                        "slot-2/module/p0": "generic/qsfp-lc@2"}, "fields": {}},
+            {"id": "i2", "ref": "as7726-32x", "cfg": "ac-f2b", "label": "leaf-1", "ru": 14, "face": "front",
+             "turned": False, "swaps": {"port-1": "generic/qsfp-lc@2"}, "fields": {}},
+            {"id": "i3", "ref": "tm-280", "cfg": "base", "label": "demarc", "ru": 14, "face": "rear",
+             "turned": False, "swaps": {}, "fields": {}},
+            {"id": "i4", "ref": "tm-280", "cfg": "base", "label": "demarc", "ru": 20, "face": "rear",
+             "turned": False, "swaps": {}, "fields": {}},
+        ],
+        "zeroU": [],
+        "cables": [
+            {"id": "c1", "a": {"item": "i2", "path": "port-1", "view": "front"},
+             "b": {"item": "i1", "path": "slot-2/module/p0", "view": "front"},
+             "media": "os2", "purpose": "uplink", "label": "A1",
+             "length": {"value": 2, "unit": "m", "source": "entered"}, "route": []},
+            {"id": "c2", "a": {"item": "i2", "path": "mgmt-eth", "view": "front"},
+             "b": {"item": "i3", "path": "port-2-1", "view": "front"},
+             "media": "cat6a", "purpose": "management", "label": "", "route": []},
+            {"id": "c3", "a": {"item": "i2", "path": "port-2", "view": "front"},
+             "b": {"item": "i4", "path": "port-2-1", "view": "front"},
+             "media": "os2", "purpose": "uplink", "label": "", "route": []},
+        ]}]}
+
+# How many seated plugs of each kind one item's panel shows in one pane.
+PLUGS_JS = """([pane, item]) => {
+  const g = document.querySelector(`svg[data-pane="${pane}"] [data-item-id="${item}"][data-panel]`);
+  const n = ref => (g ? g.querySelectorAll(`[data-ref^="${ref}"]`).length : -1);
+  return {lc: n('generic/lc-plug@2'), rj45: n('generic/rj45-plug@1')};
+}"""
+
+
+@extra("rack.html: a cabled end seats the plug its port takes, drawn but never stored")
+def check_rack_cable_plugs(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    plugs = lambda pane, item: page.evaluate(PLUGS_JS, [pane, item])
+
+    # No cables, no plugs: the export fixture draws exactly as before.
+    open_fixture(page, base)
+    if page.evaluate("() => typeof window.__rack.cableFacts") != "function":
+        return bad + ["cable plugs: window.__rack has no cableFacts probe"]
+    for pane, item in (("front", "i1"), ("front", "i2"), ("rear", "i3"), ("rear", "i4")):
+        got = plugs(pane, item)
+        if got != {"lc": 0, "rj45": 0}:
+            bad.append(f"cable plugs: with no cables, {item} shows plugs {got}")
+
+    open_fixture(page, base, CABLE_FIXTURE)
+    wait_sel(page, "cable plugs: leaf-1's copper plug",
+             'svg[data-pane="front"] [data-item-id="i2"][data-panel] [data-ref^="generic/rj45-plug@1"]')
+    wait_sel(page, "cable plugs: the far demarc's copper plug",
+             'svg[data-pane="rear"] [data-item-id="i4"][data-panel] [data-ref^="generic/rj45-plug@1"]')
+    # An LC plug in each bore of each cabled optic, an RJ45 plug in each cabled
+    # jack, and nothing in the empty cage.
+    for pane, item, want in (("front", "i2", {"lc": 2, "rj45": 1}), ("front", "i1", {"lc": 2, "rj45": 0}),
+                             ("rear", "i3", {"lc": 0, "rj45": 1}), ("rear", "i4", {"lc": 0, "rj45": 1})):
+        got = plugs(pane, item)
+        if got != want:
+            bad.append(f"cable plugs: {item} on the {pane} shows {got}, expected {want}")
+    if page.query_selector('svg[data-pane="front"] [data-item-id="i2"][data-panel] [data-path="port-2-occupant"]'):
+        bad.append("cable plugs: the empty cage port-2 was given an occupant")
+
+    # Derived, not stored: the document's swaps are the file's own.
+    swaps = page.evaluate("() => window.__rack.doc().racks[0].items.map(i => i.swaps)")
+    want_swaps = [i["swaps"] for i in CABLE_FIXTURE["racks"][0]["items"]]
+    if swaps != want_swaps:
+        bad.append(f"cable plugs: plugs were written into item.swaps: {swaps}")
+
+    facts = page.evaluate("() => window.__rack.cableFacts()")
+    want_seats = {
+        "i1": {"slot-2/module/p0-occupant/tx": "generic/lc-plug@2", "slot-2/module/p0-occupant/rx": "generic/lc-plug@2"},
+        "i2": {"port-1-occupant/tx": "generic/lc-plug@2", "port-1-occupant/rx": "generic/lc-plug@2",
+               "mgmt-eth": "generic/rj45-plug@1"},
+        "i3": {"port-2-1": "generic/rj45-plug@1"},
+        "i4": {"port-2-1": "generic/rj45-plug@1"}}
+    if facts["seats"] != want_seats:
+        bad.append(f"cable plugs: the derived seats are {facts['seats']}")
+    want_reasons = {"i2|front|port-1": None, "i1|front|slot-2/module/p0": None, "i2|front|mgmt-eth": None,
+                    "i3|front|port-2-1": None, "i2|front|port-2": "port-2 holds no optic",
+                    "i4|front|port-2-1": None}
+    if facts["reasons"] != want_reasons:
+        bad.append(f"cable plugs: the loose-end reasons are {facts['reasons']}")
+
+    # The BOM reads item.swaps, so it lists the two optics and no plug.
+    _, rows, _ = read_csv(export_file(page, "bom"))
+    if any(r["section"] == "Plugs" for r in rows):
+        bad.append("cable plugs: the BOM lists a plug, and a derived plug is not a part of the rack")
+    optics = next((int(r["qty"]) for r in rows if r["section"] == "Optics" and r["ref"] == "generic/qsfp-lc@2"), None)
+    if optics != 2:
+        bad.append(f"cable plugs: the BOM counts {optics} QSFP optics, expected 2")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
