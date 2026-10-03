@@ -10,7 +10,10 @@ import {nextId, uLabel} from './model.js';
 
 // ── ends ────────────────────────────────────────────────────────────────
 export const endKey = end => `${end.item}|${end.view}|${end.path}`;
-export const sameEnd = (a, b) => endKey(a) === endKey(b);
+// One PORT, however its path is spelled: a click on a seated optic or its plug
+// (`port-1-occupant/tx`) is a click on `port-1`. endKey stays exact.
+const portKey = end => `${end.item}|${end.view}|${portPathOf(end.path)}`;
+export const sameEnd = (a, b) => portKey(a) === portKey(b);
 
 // WHICH PANE SHOWS A DEVICE'S PANEL: the inverse of elevation.js's panelFor.
 // A device's front is on the face it is mounted on, unless it is turned.
@@ -29,7 +32,7 @@ export function endName(rack, end) {
   return it ? `${it.label} (U${uLabel(rack.frame, it.ru)}) ${end.path}` : `a removed device's ${end.path}`;
 }
 export const cableName = c => c.label || c.id;
-const clip = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+const clip = (s, n) => { const cs = Array.from(s); return cs.length > n ? `${cs.slice(0, n - 1).join('')}…` : s; };
 // The text of a cross-face tag: the far end, short enough for the side column.
 export function tagText(rack, end) {
   const it = itemOf(rack, end);
@@ -38,8 +41,8 @@ export function tagText(rack, end) {
 
 // ── one cable per port (spec §9.3) ──────────────────────────────────────
 export function portFree(rack, end, {ignoreId = null} = {}) {
-  const k = endKey(end);
-  const other = (rack.cables || []).find(c => c.id !== ignoreId && (endKey(c.a) === k || endKey(c.b) === k));
+  const k = portKey(end);
+  const other = (rack.cables || []).find(c => c.id !== ignoreId && (portKey(c.a) === k || portKey(c.b) === k));
   return other ? {ok: false, reason: `${endName(rack, end)} already has a cable (${cableName(other)}).`} : {ok: true};
 }
 export function canCable(rack, a, b, opts = {}) {
@@ -57,14 +60,14 @@ export function withCable(rack, {a, b, media = '', purpose = '', label = '', len
 }
 // `length: null` in the patch removes the length; anything else is merged.
 export function updateCable(rack, id, patch) {
-  return {...rack, cables: rack.cables.map(c => {
+  return {...rack, cables: (rack.cables || []).map(c => {
     if (c.id !== id) return c;
     const next = {...c, ...patch};
     if (next.length == null) delete next.length;
     return next;
   })};
 }
-export const withoutCable = (rack, id) => ({...rack, cables: rack.cables.filter(c => c.id !== id)});
+export const withoutCable = (rack, id) => ({...rack, cables: (rack.cables || []).filter(c => c.id !== id)});
 export const cablesOf = (rack, itemId) =>
   (rack.cables || []).filter(c => c.a.item === itemId || c.b.item === itemId);
 export const withoutCablesOf = (rack, itemId) =>
@@ -75,7 +78,7 @@ export const UNITS = ['m', 'ft'];
 export function parseLength(text, unit = 'm') {
   const t = String(text ?? '').trim();
   if (!t) return {ok: true, length: null};
-  const value = Number(t);
+  const value = /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;   // a plain decimal, not 0x10 or 1e3
   if (!Number.isFinite(value) || value <= 0) return {ok: false, reason: 'Enter a length above 0, or leave it empty.'};
   return {ok: true, length: {value, unit: UNITS.includes(unit) ? unit : 'm', source: 'entered'}};
 }

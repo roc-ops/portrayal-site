@@ -107,7 +107,7 @@ function readItems(list) {
 // a unique id, two ends, strings where the page reads strings, a length that
 // is a positive number, and a route array. Fields this page does not know are
 // kept as they are.
-const readEnd = e => ({item: String(e?.item ?? ''), path: String(e?.path ?? ''),
+const readEnd = e => ({...(e && typeof e === 'object' && !Array.isArray(e) ? e : {}), item: String(e?.item ?? ''), path: String(e?.path ?? ''),
                        view: e?.view === 'rear' ? 'rear' : 'front'});
 export function readCables(list) {
   const declared = list.map(c => ({id: String(c?.id ?? '')}));

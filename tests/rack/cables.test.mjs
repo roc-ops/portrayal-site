@@ -172,3 +172,63 @@ test('a cabled document survives serialize and parse unchanged', () => {
   d = {...d, racks: [r]};
   assert.deepEqual(M.parseDoc(M.serialize(d)), d);
 });
+
+test('one cable per PORT: another spelling of the path is the same port', () => {
+  const {rack: r} = C.withCable(rack(), {a: end('i2', 'port-1'), b: end('i3', 'port-2-1'), label: 'A1'});
+  assert.equal(C.portFree(r, end('i2', 'port-1-occupant/tx')).ok, false);
+  assert.equal(C.portFree(r, end('i2', 'port-1-occupant/tx-occupant')).ok, false);
+  assert.equal(C.portFree(r, end('i2', 'port-1-occupant/tx'), {ignoreId: 'c1'}).ok, true);
+  assert.equal(C.portFree(r, end('i2', 'port-10')).ok, true);
+  assert.equal(C.portFree(r, end('i2', 'port-1-occupant/tx', 'rear')).ok, true);
+  const {rack: r2} = C.withCable(rack(), {a: end('i2', 'port-1-occupant/tx'), b: end('i3', 'port-2-1')});
+  assert.equal(C.portFree(r2, end('i2', 'port-1')).ok, false);
+  assert.deepEqual(C.canCable(r, end('i2', 'port-2'), end('i2', 'port-2-occupant/rx')),
+    {ok: false, reason: 'A cable needs two different ports.'});
+  assert.ok(C.sameEnd(end('i2', 'port-2'), end('i2', 'port-2-occupant/rx')));
+  assert.notEqual(C.endKey(end('i2', 'port-2')), C.endKey(end('i2', 'port-2-occupant/rx')));
+});
+
+test('tagText clips by code point and never leaves a lone surrogate', () => {
+  const r = rack();
+  r.items[0].label = '😀'.repeat(40);
+  const t = C.tagText(r, end('i1', 'p'));
+  assert.ok(Array.from(t).length <= 32);
+  assert.ok(!/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/.test(t));
+  assert.ok(t.endsWith('…'));
+});
+
+test('edits treat a missing cable list as empty, and never touch a frozen input', () => {
+  const bare = {frame: {}, items: []};
+  assert.deepEqual(C.updateCable(bare, 'c1', {media: 'os2'}).cables, []);
+  assert.deepEqual(C.withoutCable(bare, 'c1').cables, []);
+  assert.deepEqual(C.withoutCablesOf(bare, 'i1').cables, []);
+  assert.deepEqual(C.cablePlan(bare).links, []);
+  assert.deepEqual(C.cablesOf(bare, 'i1'), []);
+  const deep = o => { Object.values(o).forEach(v => v && typeof v === 'object' && deep(v)); return Object.freeze(o); };
+  const {rack: r} = C.withCable(rack(), {a: end('i2', 'port-1'), b: end('i3', 'port-2-1'), length: {value: 1, unit: 'm', source: 'entered'}});
+  deep(r);
+  const before = JSON.stringify(r);
+  const {rack: r2} = C.withCable(r, {a: end('i2', 'port-2'), b: end('i4', 'port-2-1')});
+  C.updateCable(r2, 'c1', {media: 'os2', length: null});
+  C.withoutCable(r2, 'c1');
+  C.withoutCablesOf(r2, 'i2');
+  assert.equal(JSON.stringify(r), before);
+});
+
+test('parseLength takes only a plain decimal', () => {
+  for (const bad of ['0x10', '1.', '.5', '1e3', '+2', '1,5'])
+    assert.deepEqual(C.parseLength(bad, 'm'), {ok: false, reason: 'Enter a length above 0, or leave it empty.'}, bad);
+  assert.equal(C.parseLength(' 12.25 ', 'm').length.value, 12.25);
+});
+
+test('the loader keeps unknown fields on an end, and a malformed length never throws', () => {
+  const d = M.parseDoc({format: 'portrayal-rack', version: 1, racks: [{frame: {}, items: [], cables: [
+    {id: 'c1', a: {item: 'i1', path: 'p', view: 'rear', extra: 7}, b: {item: 'i2', path: 'q'}, length: {value: 'abc'}},
+    {id: 'c2', a: {}, b: {}, length: 'long'},
+    {id: 'c3', a: {}, b: {}, length: 5},
+    {id: 'c4', a: 'x', b: ['y'], length: {value: -2}}]}]});
+  const cs = d.racks[0].cables;
+  assert.deepEqual(cs[0].a, {item: 'i1', path: 'p', view: 'rear', extra: 7});
+  assert.equal(cs.length, 4);
+  assert.ok(cs.every(c => !('length' in c)));
+});
