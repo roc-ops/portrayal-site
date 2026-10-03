@@ -320,6 +320,10 @@ export function createMode3d(shell, opts = {}) {
   return {
     mode: () => mode, setMode, sync, pushStates,
     viewer: () => viewer,
+    // The scene on screen is the one asked for: a viewer, a finished load, and
+    // none in flight. What the viewer reports before that - its mark report,
+    // while the scene is still building - is about a scene that is not there yet.
+    settled: () => !!viewer && !inflight && loadedKey !== '',
     on: (ev, fn) => { (listeners[ev] ||= []).push(fn); },
     el: {modeBar, host3d, fruBox},
   };

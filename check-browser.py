@@ -4796,6 +4796,42 @@ def check_annotate_3d_rows_after_delete(page, base):
         bad.append(f"rows: straight after the delete the 3D legend reads {r['legend']}, not ['uplink', 'access']")
     return bad
 
+
+# ONE NOTE FOR A SELECTOR THAT NEVER RAN (#97). Invalid CSS is "skipped - bad
+# selector"; in 3D the row also said "not in 3D: nothing the scene builds
+# matches this mark", which is a statement about a search that was never made.
+@extra("Annotate 3D: an invalid selector says 'skipped', and not 'not in 3D' as well")
+def check_annotate_3d_bad_selector_note(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html?debug=1", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    page.evaluate("""async () => { const m = await import('/vendor/marks.js');
+      location.hash = m.encode({v: 1, device: 's9510-28dc', config: 'dc', view: 'front', legend: true,
+        marks: [{select: "[data-path=", color: '#ffd400'},
+                {select: "[data-path='psu-9']", color: '#2bb3c8'},
+                {select: "[data-path='port-0']", color: '#e0574f'}]}); }""")
+    page.reload(wait_until="load")
+    page.wait_for_selector("#stage svg [data-path='port-0']", state="attached", timeout=READY_MS)
+    if webgl_trouble(page):
+        print("[check_annotate_3d_bad_selector_note] no WebGL here - not exercised")
+        return bad
+    page.click('#mode [data-mode="3d"]')
+    notes = "[...document.querySelectorAll('#rows .mark .notes')].map(n => n.textContent.replace(/\\s+/g, ' ').trim())"
+    # settled when the row that really is not in 3D (psu-9) says so
+    try:
+        page.wait_for_function(f"() => /not in 3D/.test({notes}[1] || '')", timeout=READY_3D_MS)
+    except Exception:
+        return bad + [f"notes: the psu-9 row never said 'not in 3D' - {page.evaluate('() => ' + notes)}"]
+    got = page.evaluate("() => " + notes)
+    if "skipped" not in got[0]:
+        bad.append(f"notes: the invalid selector's row does not say 'skipped' - {got[0]!r}")
+    if "not in 3D" in got[0]:
+        bad.append(f"notes: the invalid selector's row also says 'not in 3D' - {got[0]!r}")
+    if "not in 3D" in got[2]:
+        bad.append(f"notes: port-0, which is in the scene, says 'not in 3D' - {got[2]!r}")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

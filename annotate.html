@@ -371,8 +371,15 @@ m3d.on('mode', () => {
 function missing3d(i) {
   const s = scene3d(), v = m3d.viewer();
   if (m3d.mode() !== '3d' || !s || !s.byMark[i]) return false;
+  // A SELECTOR THAT NEVER RAN IS NOT A SEARCH THAT FOUND NOTHING (#97): its row
+  // already says "skipped", and "not in 3D" beside it claims a result.
+  if (s.byMark[i].error) return false;
   const paths = s.byMark[i].paths;
   if (!paths.length) return true;
+  // The viewer's report is about the scene it has BUILT. While a load is in
+  // flight it lists every path as missing, and a row that trusted it said
+  // "not in 3D" of a part that was about to appear.
+  if (!m3d.settled()) return false;
   const gone = new Set((v && v.markReport && v.markReport.missing) || []);
   const m = doc.marks[i];
   return !!m.color && paths.every(p => gone.has(p));
