@@ -15,7 +15,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv} from './rack/exports.js';
 import {save} from './svg-export.js';
 
 const $ = id => document.getElementById(id);
@@ -254,6 +254,8 @@ const BUILD = {
   drawio: () => drawioFile(rack(), chassisOf),
   'netbox-types': () => dcimTypesZip(rack(), chassisOf, 'netbox'),
   'nautobot-types': () => dcimTypesZip(rack(), chassisOf, 'nautobot'),
+  'netbox-devices': () => deviceImportCsv(rack(), chassisOf, 'netbox'),
+  'nautobot-devices': () => deviceImportCsv(rack(), chassisOf, 'nautobot'),
   glb: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'glb') : NO_SCENE; },
   usdz: async () => { const sc = await sceneForExport(); return sc ? modelFile(sc, rack(), 'usdz') : NO_SCENE; },
 };
@@ -299,6 +301,8 @@ function renderExports() {
     el('hr'),
     act('netbox-types', 'NetBox device types (.zip)'),
     act('nautobot-types', 'Nautobot device types (.zip)'),
+    act('netbox-devices', 'NetBox device import (.csv)', 'Fill in role and site before importing'),
+    act('nautobot-devices', 'Nautobot device import (.csv)', 'Fill in role and location before importing'),
     el('hr'),
     act('json', 'Rack file (.json)'),
   );

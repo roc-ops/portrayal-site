@@ -123,3 +123,12 @@ test('NOTES.txt heads its list, or says everything matched', () => {
   assert.equal(X.dcimNotesText({rackName: 'R', target: 'nautobot', date: DAY, notes: ['a', 'b']}),
     'Nautobot types for R, from the Portrayal Rack Builder, 2026-09-27.\n\n- a\n- b\n');
 });
+
+test('a type from another vendor says so in the row\'s comments, as NOTES.txt does', () => {
+  const types = new Map([['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: false, guess: true,
+    otherVendor: true, chassisManufacturer: 'Nobody Inc', path: nb('Cisco', 'ASR-9006-AC-V2')}]]);
+  const item = {id: 'i1', ref: 'asr-9006', cfg: 'base', label: 'core-1', ru: 2, u: 4, face: 'front', turned: false};
+  const {rows} = X.deviceImportRows({rack: RACK, items: [item], types, target: 'netbox'});
+  assert.equal(rows[0].comments, 'core-1 (asr-9006): no NetBox device type from Nobody Inc, so ' +
+    "ASR-9006-AC-V2 is another vendor's (Cisco) file, a best guess.");
+});

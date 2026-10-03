@@ -29,6 +29,8 @@ Run it locally the same way CI does:
 """
 import argparse
 import contextlib
+import csv
+import io
 import json
 import math
 import os
@@ -3259,8 +3261,10 @@ def check_rack_export_dcim_types(page, base):
             notes = z.read("NOTES.txt").decode() if "NOTES.txt" in names else ""
             head = z.read("device-types/Edgecore/7726-32X-O-AC-F.yaml").decode() \
                 if "device-types/Edgecore/7726-32X-O-AC-F.yaml" in names else ""
-        if want - names:
-            bad.append(f"{T} types: missing {sorted(want - names)}")
+        if names != want:
+            bad.append(f"{T} types: entries differ - missing {sorted(want - names)}, extra {sorted(names - want)}")
+        if len(zipfile.ZipFile(dl.path()).namelist()) != len(want):
+            bad.append(f"{T} types: {len(zipfile.ZipFile(dl.path()).namelist())} entries, expected {len(want)} (a duplicate?)")
         devices = sorted(n for n in names if n.startswith("device-types/"))
         if len(devices) != 3:
             bad.append(f"{T} types: {len(devices)} device types, expected 3 (two TM-280s share one): {devices}")
@@ -3270,6 +3274,109 @@ def check_rack_export_dcim_types(page, base):
             bad.append(f"{T} types: NOTES.txt does not list the optic with no module type")
         if "model: 7726-32X-O-AC-F" not in head:
             bad.append(f"{T} types: the Edgecore YAML is not the exported file")
+    return bad
+
+
+def read_csv(dl):
+    text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    data = text.partition("\r\n\r\nNotes\r\n")[0]
+    reader = csv.DictReader(io.StringIO(data, newline=""))
+    return reader.fieldnames, list(reader), text
+
+
+@extra("rack.html: Export - device import CSVs name each device's type, position and face as NetBox and Nautobot read them")
+def check_rack_export_device_csv(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    dl = export_file(page, "netbox-devices")
+    if dl.suggested_filename != "Export-test-netbox-devices.csv":
+        bad.append(f"NetBox CSV: named {dl.suggested_filename!r}")
+    cols, rows, _ = read_csv(dl)
+    if cols != ["name", "role", "manufacturer", "device_type", "status", "site", "rack", "position", "face", "comments"]:
+        bad.append(f"NetBox CSV: columns {cols}")
+    by = {r["name"]: r for r in rows}
+    want = {"core-1": ("Cisco", "ASR-9006-AC-V2", "2", "front"), "leaf-1": ("Edgecore", "7726-32X-O-AC-F", "14", "front"),
+            "demarc-i3": ("Telco Systems", "TM-280", "14", "rear"), "demarc-i4": ("Telco Systems", "TM-280", "20", "rear")}
+    for name, (man, dt, pos, face) in want.items():
+        r = by.get(name)
+        if not r or (r["manufacturer"], r["device_type"], r["position"], r["face"]) != (man, dt, pos, face):
+            bad.append(f"NetBox CSV: {name} is {r and (r['manufacturer'], r['device_type'], r['position'], r['face'])}")
+    if not all(r["status"] == "planned" and r["rack"] == "Export test" for r in rows):
+        bad.append("NetBox CSV: status or rack column wrong")
+    if "best guess" not in by.get("core-1", {}).get("comments", ""):
+        bad.append("NetBox CSV: core-1's guessed type is not said in comments")
+
+    dl = export_file(page, "nautobot-devices")
+    cols, rows, _ = read_csv(dl)
+    if dl.suggested_filename != "Export-test-nautobot-devices.csv" or "device_type__model" not in (cols or []):
+        bad.append(f"Nautobot CSV: {dl.suggested_filename!r} with columns {cols}")
+    leaf = next((r for r in rows if r["name"] == "leaf-1"), {})
+    if (leaf.get("device_type__model"), leaf.get("status__name")) != ("7726-32X-O-AC-F", "Planned"):
+        bad.append(f"Nautobot CSV: leaf-1 is {leaf}")
+
+    # Positions follow the frame's numbering.
+    page.click("#frameBtn")
+    page.select_option("#fNumbering", "top-down")
+    page.wait_for_function("() => window.__rack.doc().racks[0].frame.numbering === 'top-down'", timeout=READY_MS)
+    _, rows, _ = read_csv(export_file(page, "netbox-devices"))
+    got = {r["name"]: r["position"] for r in rows}
+    if got != {"core-1": "14", "leaf-1": "11", "demarc-i3": "11", "demarc-i4": "5"}:
+        bad.append(f"NetBox CSV: top-down positions {got}")
+    return bad
+
+
+@extra("rack.html: Export - a device type from another vendor's file is said so in the notes, the CSV and the zip's NOTES")
+def check_rack_export_other_vendor(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    # A chassisOf stub whose manufacturer has no files, so the match falls
+    # back to the Cisco folder: a file from another vendor.
+    got = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js');
+      const r = window.__rack.doc().racks[0];
+      const rack = {...r, items: r.items.filter(i => i.id === 'i1')};
+      const stub = () => ({manufacturer: 'Nobody Inc'});
+      const ctx = await X.dcimContext(rack, stub, 'netbox', {modules: false});
+      const csv = await X.deviceImportCsv(rack, stub, 'netbox');
+      const zip = await X.dcimTypesZip(rack, stub, 'netbox');
+      return {note: ctx.notes.find(n => n.includes('core-1')) || '', flag: ctx.types.get('i1')?.otherVendor,
+              csv: csv.data, zipNotes: zip.notes.join(' ')};
+    }""")
+    if got["flag"] is not True:
+        bad.append(f"other vendor: otherVendor is {got['flag']!r}, expected true")
+    if "another vendor's" not in got["note"]:
+        bad.append(f"other vendor: dcimContext note is {got['note']!r}")
+    _, rows, _ = (None, list(csv.DictReader(io.StringIO(got["csv"], newline=""))), None)
+    comments = rows[0]["comments"] if rows else ""
+    if "another vendor's (Cisco) file" not in comments:
+        bad.append(f"other vendor: the CSV comment is {comments!r}")
+    if "another vendor's (Cisco) file" not in got["zipNotes"]:
+        bad.append(f"other vendor: the zip's notes are {got['zipNotes']!r}")
+    return bad
+
+
+@extra("rack.html: Export - a slot emptied by a null swap yields no part, where its default would have seated one")
+def check_rack_export_emptied_slot(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    got = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js');
+      const r = window.__rack.doc().racks[0];
+      const it = r.items.find(i => i.id === 'i1');
+      const stub = () => ({manufacturer: 'Cisco'});
+      const paths = async swaps => (await X.dcimContext({...r, items: [{...it, swaps}]}, stub, 'netbox'))
+        .parts.map(p => p.path);
+      return {full: await paths({}), emptied: await paths({'slot-5': null})};
+    }""")
+    if "slot-5/module" not in got["full"]:
+        bad.append(f"emptied slot: the default does not seat slot-5 ({got['full']}); the check proves nothing")
+    if "slot-5/module" in got["emptied"]:
+        bad.append("emptied slot: slot-5 is still a part after a null swap")
+    if "slot-4/module" not in got["emptied"]:
+        bad.append(f"emptied slot: slot-4's default went missing too: {got['emptied']}")
     return bad
 
 

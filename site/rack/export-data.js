@@ -207,6 +207,12 @@ export const NAUTOBOT_COLUMNS = ['name', 'role__name', 'device_type__manufacture
   'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments'];
 export const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
 
+// The one wording for "this type is another vendor's file", shared by
+// NOTES.txt and the device CSV's comments column.
+export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
+  `${label} (${ref}): no ${T} device type from ${manufacturer || 'its manufacturer'}, so ` +
+  `${stemOf(path)} is another vendor's (${vendorOf(path)}) file, a best guess.`;
+
 // One row per rail item, top down. Role and site/location are left blank on
 // purpose: both are required, and this rack knows neither - a blank one
 // fails the import loudly instead of filing devices under a guess.
@@ -222,6 +228,8 @@ export function deviceImportRows({rack, items, types, target = 'netbox'}) {
     const n = names.get(it.id);
     const notes = [];
     if (!t) notes.push(`No ${T} device type for ${it.ref} (${it.cfg}); add one before importing.`);
+    else if (t.otherVendor)
+      notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer: t.chassisManufacturer, path: t.path}));
     else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
     if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${String(it.label || it.ref).trim()}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');

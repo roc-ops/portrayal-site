@@ -22,7 +22,7 @@ import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, rackNotes, threeDNotes,
         xmlComment, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
-        stemOf, vendorOf, dcimNotesText, isSeatedPath, TARGET_NAME} from './export-data.js';
+        stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME} from './export-data.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -235,11 +235,10 @@ export async function dcimContext(rack, chassisOf, target, {modules = true} = {}
     // matchDeviceType falls back past the manufacturer filter when no file is in
     // the chassis's own folder; that shows as a file from another vendor's.
     const otherVendor = vendorOf(m.path) !== manufacturer;
-    types.set(it.id, {...m, otherVendor, manufacturer: head.manufacturer ?? '', model: head.model ?? '',
+    types.set(it.id, {...m, otherVendor, chassisManufacturer: manufacturer, manufacturer: head.manufacturer ?? '', model: head.model ?? '',
                       isFullDepth: head.isFullDepth});
     if (otherVendor)
-      notes.push(`${it.label} (${it.ref}): no ${T} device type from ${manufacturer || 'its manufacturer'}, so ` +
-                 `${stemOf(m.path)} is another vendor's (${vendorOf(m.path)}) file, a best guess.`);
+      notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer, path: m.path}));
     else if (m.guess)
       notes.push(`${it.label} (${it.ref}, configuration ${it.cfg || 'default'}): ${stemOf(m.path)} is a best guess ` +
                  `among ${m.candidates} ${T} device types; none names this configuration.`);
@@ -276,4 +275,13 @@ export async function dcimTypesZip(rack, chassisOf, target, {date = new Date()} 
   entries.push({name: 'NOTES.txt', bytes: enc.encode(dcimNotesText({rackName: rack.name, target, date, notes: ctx.notes}))});
   return {name: `${fileStem(rack.name)}-${target}-types.zip`, data: await makeZip(entries, date),
           type: 'application/zip', notes: ctx.notes};
+}
+
+// The device import (spec §8): one row per rail item. Pure CSV so it
+// imports as is; each row's notes are in its own comments column.
+export async function deviceImportCsv(rack, chassisOf, target) {
+  const ctx = await dcimContext(rack, chassisOf, target, {modules: false});
+  const {columns, rows} = deviceImportRows({rack, items: ctx.items, types: ctx.types, target});
+  return {name: `${fileStem(rack.name)}-${target}-devices.csv`, data: toCsv(columns, rows),
+          type: 'text/csv', notes: ctx.notes};
 }
