@@ -4832,6 +4832,42 @@ def check_annotate_3d_bad_selector_note(page, base):
         bad.append(f"notes: port-0, which is in the scene, says 'not in 3D' - {got[2]!r}")
     return bad
 
+
+# THE ADDRESS SAYS WHAT IS ON SCREEN (#98). A page opened from a 3D link keeps
+# ?mode=3d in its address after the reader returns to 2D, so a reload - or a
+# copy of the address bar - reopened in 3D. The mode is written on every switch:
+# present in 3D, absent in 2D, the page's other parameters and its hash kept.
+@extra("Annotate: the address carries ?mode=3d in 3D and drops it in 2D")
+def check_annotate_mode_in_address(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/annotate.html", wait_until="load")
+    page.wait_for_selector("#stage svg", timeout=READY_MS)
+    enc = page.evaluate("""async () => (await import('/vendor/marks.js')).encode(
+      {v: 1, device: 's9510-28dc', config: 'dc', view: 'front',
+       marks: [{select: "[data-path='port-0']", color: '#e0574f'}]})""")
+    if webgl_trouble(page):
+        print("[check_annotate_mode_in_address] no WebGL here - not exercised")
+        return bad
+    page.goto(f"{base}/annotate.html?mode=3d&debug=1#{enc}", wait_until="load")
+    page.wait_for_function("() => !!document.querySelector('#mode [data-mode=\"3d\"].on')", timeout=READY_3D_MS)
+    where = "() => ({q: Object.fromEntries(new URLSearchParams(location.search)), hash: location.hash.length})"
+    at3d = page.evaluate(where)
+    page.click('#mode [data-mode="2d"]')
+    page.wait_for_timeout(300)
+    at2d = page.evaluate(where)
+    if "mode" in at2d["q"]:
+        bad.append(f"address: back in 2D the address still says mode={at2d['q']['mode']}")
+    if at2d["q"].get("debug") != "1" or at2d["hash"] != at3d["hash"] or not at2d["hash"]:
+        bad.append(f"address: switching to 2D lost another parameter or the document - {at3d} -> {at2d}")
+    page.click('#mode [data-mode="3d"]')
+    page.wait_for_function("() => !!document.querySelector('#mode [data-mode=\"3d\"].on')", timeout=READY_3D_MS)
+    page.wait_for_timeout(300)
+    again = page.evaluate(where)
+    if again["q"].get("mode") != "3d" or again["q"].get("debug") != "1" or again["hash"] != at3d["hash"]:
+        bad.append(f"address: back in 3D the address is {again}, not mode=3d with debug=1 and the document")
+    return bad
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

@@ -1448,6 +1448,20 @@ function paintExports3d() {
 }
 m3d.on('mode', paintExports3d);
 
+// THE ADDRESS SAYS WHAT IS ON SCREEN (#98). A page opened from a 3D link kept
+// ?mode=3d after the reader went back to 2D, so a reload, or a copy of the
+// address bar, reopened in 3D. Written on every switch - present in 3D, absent
+// in 2D - with replaceState, so it does not fill the back button, and with the
+// page's other parameters and the document's hash left as they are.
+m3d.on('mode', m => {
+  const q = new URLSearchParams(location.search);
+  if (m === '3d') q.set('mode', '3d'); else q.delete('mode');
+  const search = q.toString();
+  try {
+    history.replaceState(history.state, '', `${location.pathname}${search ? `?${search}` : ''}${location.hash}`);
+  } catch (err) { /* a sandboxed frame may refuse; nothing else depends on it */ }
+});
+
 // ---------------------------------------------------------------- wiring
 
 // Every reload of the drawing - device, config, view, a bay swap, drilling into
