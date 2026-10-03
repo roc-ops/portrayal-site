@@ -4138,6 +4138,9 @@ def check_rack_inspect(page, base):
       const w = document.querySelector('.rk-lens iframe')?.contentWindow;
       try { return !!w?.portrayalEmbed && !!w.portrayalEmbed.current().swaps['port-1']; } catch { return false; } }""",
                            timeout=READY_MS)
+    # Done reads back only a settled Explorer; the swap can show a moment before.
+    page.wait_for_function("() => document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed?.settled === true",
+                           timeout=READY_MS)
     page.click(".rk-lens-done")
     page.wait_for_function("() => (window.__rack.doc().racks[0].items[0].swaps || {})['port-1'] === 'generic/qsfp-lc@2'",
                            timeout=READY_MS)
@@ -4169,6 +4172,8 @@ def check_rack_inspect(page, base):
     page.wait_for_function("""() => {
       const w = document.querySelector('.rk-lens iframe')?.contentWindow;
       try { return !!w?.portrayalEmbed && w.portrayalEmbed.current().config === 'dc-f2b'; } catch { return false; } }""",
+                           timeout=READY_MS)
+    page.wait_for_function("() => document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed?.settled === true",
                            timeout=READY_MS)
     page.click(".rk-lens-done")
     page.wait_for_function("() => window.__rack.doc().racks[0].items[0].cfg === 'dc-f2b'", timeout=READY_MS)

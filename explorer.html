@@ -522,8 +522,14 @@ const fieldsSettledPromise = new Promise(res => { fieldsSettled = res; });
 // nothing pulled, rather than reading state that is not there yet.
 if (EMBED) {
   const q = new URLSearchParams(location.search);
+  const ready = shell.ready.then(() => fieldsSettledPromise);
+  // `settled` is `ready`, readable without awaiting: a host deciding in a click
+  // handler whether current() is the device's real state cannot await a promise.
+  let settled = false;
+  ready.then(() => { settled = true; }, () => {});
   window.portrayalEmbed = Object.freeze({
-    ready: shell.ready.then(() => fieldsSettledPromise),
+    ready: ready,
+    get settled() { return settled; },
     setMode: m => setMode(m),
     current: () => ({
       device: state.device ?? q.get('device') ?? null,

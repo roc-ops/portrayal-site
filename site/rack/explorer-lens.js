@@ -27,22 +27,18 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
     const box = el('div', {class: 'rk-lens', role: 'dialog', 'aria-modal': 'true',
                            'aria-label': `${title} in Explorer`},
       [el('div', {class: 'rk-lens-bar'}, [el('strong', {text: title}), status, done]), frame]);
-    let api = null, shown = false;   // shown: Explorer reported its device ready
+    let api = null;
     // EVERY load, not the first: if the frame reloads, the API the first load
     // exposed belongs to a dead window.
     frame.addEventListener('load', async () => {
-      // A new document is not shown until ITS api.ready resolves: if it never
-      // does, close() must not hand back the previous document's answer.
-      shown = false;
       try {
         api = frame.contentWindow?.portrayalEmbed || null;
         if (!api) throw new Error('explorer.html did not expose portrayalEmbed');
         await api.ready;
-        shown = true;
         status.textContent = 'Changes you make here come back to the rack when you press Done.';
       } catch (err) {
         console.warn('[portrayal] Explorer lens', err);
-        api = null; shown = false;
+        api = null;
         status.textContent = `${title} could not be opened in Explorer.`;
       }
     });
@@ -55,9 +51,12 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
       document.removeEventListener('keydown', onKey);
       backdrop.remove();
       box.remove();
-      // current() falls back to the URL's own device before one loads, so
-      // `shown` is what says Explorer really has it.
-      resolve(shown && cur && cur.device === ref
+      // current() falls back to the URL's own device before one loads, so the
+      // live window's own `settled` is what says Explorer really has it. Not
+      // this frame's load event: that can trail the device by seconds, and a
+      // Done pressed in that gap would drop real edits. A reloaded document
+      // that never settles answers for itself, so it hands back nothing.
+      resolve(live?.settled === true && cur && cur.device === ref
         ? {device: cur.device, config: cur.config, swaps: {...(cur.swaps || {})},
            fields: structuredClone(cur.fields || {})}
         : null);
