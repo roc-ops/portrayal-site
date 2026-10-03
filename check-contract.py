@@ -766,10 +766,18 @@ else:
 
 # Stage 4 cables THIS rack now, not the ROADM ring: cables.js draws them from
 # the kit's own cablePoints, and the stage keeps no colors of its own.
-CAB = HERE / "site" / "showcase" / "cables.js"
+# The geometry lives in site/rack/ since the Rack Builder shares it; the
+# showcase's old address is a re-export and holds no code of its own, so the
+# hero's and patch-view.js's imports (checked further down) still resolve.
+CAB = HERE / "site" / "rack" / "cables.js"
 cab = CAB.read_text() if CAB.is_file() else ""
 check("export function drawCables2d" in cab and "cablePoints" in cab,
       "cables.js draws 2D cables from the kit's cablePoints", "missing")
+SHIM = HERE / "site" / "showcase" / "cables.js"
+shim = SHIM.read_text() if SHIM.is_file() else ""
+check("export * from '../rack/cables.js';" in shim and "function" not in shim,
+      "site/showcase/cables.js only re-exports site/rack/cables.js",
+      "the showcase file is missing, or defines code of its own")
 s4 = (HERE / "site" / "showcase" / "stages" / "04-cable.js").read_text()
 check("ring.js" not in s4 and "ring2d.js" not in s4 and "labs.json" not in s4 and "loadLab" not in s4,
       "stage 4 no longer reads the ROADM ring", "04-cable.js still imports the ring")
@@ -863,7 +871,7 @@ for name, doc in docs.items():
 # floating callout, and every link in its table seats parts the drawing's
 # cages actually accept.
 hero = (HERE / "site" / "hero-reveal.js").read_text()
-cab = (HERE / "site" / "showcase" / "cables.js").read_text()
+cab = (HERE / "site" / "rack" / "cables.js").read_text()
 check(re.search(r"export const JACKETS\s*=\s*\{", cab) is not None
       and all(re.search(rf"\b{k}\s*:", cab.split("export const JACKETS", 1)[-1][:400]) for k in ("mm", "sm", "dac", "cu")),
       "cables.js names the four jacket colors the hero draws (mm, sm, dac, cu)",

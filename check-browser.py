@@ -5907,6 +5907,30 @@ def check_rack_export_sheet(page, base):
     return bad
 
 
+@extra("cables.js lives in site/rack, and the showcase's old address re-exports the same bindings")
+def check_cables_moved(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    page.goto(f"{base}/index.html", wait_until="load")
+    r = page.evaluate("""async () => {
+      const names = ['COLORS', 'colorOf', 'JACKETS', 'colorOfJacket', 'PLUGS', 'plugColorOf', 'WIDTH', 'TAG_H',
+                     'sag2d', 'plugAt', 'ends2d', 'LEAD_DROP', 'drawCables2d', 'looseOn', 'LEAD', 'hangPoints3d',
+                     'danglePoints3d', 'clearOf', 'drawCables3d'];
+      let R;
+      try { R = await import('/site/rack/cables.js'); }
+      catch (err) { return {error: String(err.message || err)}; }
+      const S = await import('/site/showcase/cables.js');
+      return {missing: names.filter(n => !(n in R)), differ: names.filter(n => R[n] !== S[n]),
+              extra: Object.keys(S).filter(n => !(n in R))};
+    }""")
+    if r.get("error"):
+        return bad + [f"cables moved: site/rack/cables.js does not load ({r['error']})"]
+    for k in ("missing", "differ", "extra"):
+        if r[k]:
+            bad.append(f"cables moved: {k} {r[k]}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
