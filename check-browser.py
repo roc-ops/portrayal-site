@@ -3511,6 +3511,24 @@ def check_rack_lens_edges(page, base):
     got2 = page.evaluate("async () => await window.__lens2")
     if got2 is not None:
         bad.append(f"lens: a lens that never showed its device handed back {got2!r}")
+    # A reload whose new document never becomes ready: the lens was shown once,
+    # but that is not this document, so Done hands back nothing.
+    page.evaluate("""() => { window.__lens3 = import('/site/rack/explorer-lens.js').then(L =>
+      L.openLens({ref: 'as7726-32x', cfg: 'ac-f2b', title: 'AS7726'})); }""")
+    page.wait_for_function("() => !!document.querySelector('.rk-lens iframe')?.contentWindow?.portrayalEmbed",
+                           timeout=READY_MS)
+    page.evaluate("async () => { await document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed.ready; }")
+    page.evaluate("""() => { document.querySelector('.rk-lens iframe').srcdoc =
+      '<script>window.portrayalEmbed = {ready: new Promise(() => {}), ' +
+      'current: () => ({device: "as7726-32x", config: "ac-f2b", swaps: {}, fields: {}})}<' + '/script>'; }""")
+    page.wait_for_function("""() => document.querySelector('.rk-lens iframe')?.contentDocument?.readyState === 'complete'
+      && !!document.querySelector('.rk-lens iframe').contentWindow.portrayalEmbed
+      && document.querySelector('.rk-lens iframe').srcdoc""", timeout=READY_MS)
+    page.wait_for_timeout(300)
+    page.click(".rk-lens-done", timeout=READY_MS)
+    got3 = page.evaluate("async () => await window.__lens3")
+    if got3 is not None:
+        bad.append(f"lens: a reload that never became ready handed back {got3!r}")
     return bad
 
 

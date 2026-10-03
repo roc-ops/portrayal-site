@@ -31,6 +31,9 @@ export function openLens({ref, cfg, view = 'front', swaps = {}, fields = {}, tit
     // EVERY load, not the first: if the frame reloads, the API the first load
     // exposed belongs to a dead window.
     frame.addEventListener('load', async () => {
+      // A new document is not shown until ITS api.ready resolves: if it never
+      // does, close() must not hand back the previous document's answer.
+      shown = false;
       try {
         api = frame.contentWindow?.portrayalEmbed || null;
         if (!api) throw new Error('explorer.html did not expose portrayalEmbed');
