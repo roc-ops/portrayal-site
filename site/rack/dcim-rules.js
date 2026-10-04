@@ -4,6 +4,9 @@
 // and what the README says of the rest. site/rack/exports.js fetches the type
 // files and the faces, and asks here.
 
+import {endName, lengthParts} from './cable-rules.js';
+import {cableFindings, TARGET_NAME} from './export-data.js';
+
 // ── a type file's own names ─────────────────────────────────────────────
 // The sections of a device-type or module-type YAML that hold cable ends, in
 // the order a name is looked up, with the type a DCIM gives an end found there.
@@ -91,4 +94,158 @@ export function resolveEnd({path, device, moduleAt = () => null, consoles = []})
   const hit = findName(module, `{module}/${leaf}`);
   if (!hit) return {ok: false, reason: `the module type ${module.model} lists no port named {module}/${leaf}`};
   return {ok: true, name: `${bay.position}/${leaf}`, type: hit.type, bay};
+}
+
+// ── the modules file (Phase 2c ruling 5) ────────────────────────────────
+// A card's ports exist in a DCIM only once a module of its type is in its bay,
+// so the modules are imported before the cables. NetBox finds the bay by the
+// device's name and the bay's NAME, and the module type by its model alone (a
+// manufacturer column is refused); Nautobot by the lookups below. Both were
+// accepted by the real instances (NetBox 4.7.2, Nautobot 3.2.6).
+export const MODULE_COLUMNS = {
+  netbox: ['device', 'module_bay', 'module_type', 'status'],
+  nautobot: ['module_type__manufacturer__name', 'module_type__model', 'parent_module_bay__parent_device__name',
+             'parent_module_bay__name', 'status__name']};
+
+// One row per part seated in a BAY (its path ends "/module") that has a module
+// type, on a device the devices file holds, in a bay the device type has at
+// that position. A part seated in a cage (an optic, a plug) is not a module:
+// the cage is the interface. A module inside a card is not written: no module
+// type here has a module bay of its own to import it into.
+//   parts     [{itemId, path, ref}], what each device has seated (exports.js)
+//   names     uniqueNames(items); kept: the ids of the devices in the devices file
+//   deviceOf  item id -> typeLists of its device type, or null
+//   moduleOf  part ref -> {manufacturer, model, lists} of its module type, or null
+// `left` holds one sentence for each thing the file does not carry.
+export function moduleImportRows({target = 'netbox', parts, names, kept, deviceOf, moduleOf}) {
+  const rows = [], left = [], said = new Set();
+  for (const p of parts) {
+    if (!String(p.path).endsWith('/module')) continue;
+    const type = moduleOf(p.ref);
+    if (!type) continue;                       // a part with no module type is already in the kit's notes
+    const device = names.get(p.itemId)?.name ?? '';
+    const bayId = p.path.slice(0, -'/module'.length);
+    if (!kept.has(p.itemId)) {
+      if (!said.has(p.itemId)) left.push(`The modules of ${device} are not in the modules file: ${device} is not in the devices file.`);
+      said.add(p.itemId);
+      continue;
+    }
+    if (bayId.includes(MODULE)) {
+      left.push(`${device} ${bayId}: ${type.model} is not in the modules file. It is a module inside a card, and no module type here has a module bay to import it into.`);
+      continue;
+    }
+    const lists = deviceOf(p.itemId), bay = bayAt(lists, bayId);
+    if (!bay) {
+      left.push(`${device} ${bayId}: ${type.model} is not in the modules file. The device type ${lists?.model ?? ''} has no module bay at position ${bayId}.`);
+      continue;
+    }
+    rows.push(target === 'nautobot'
+      ? {module_type__manufacturer__name: type.manufacturer, module_type__model: type.model,
+         parent_module_bay__parent_device__name: device, parent_module_bay__name: bay.name, status__name: 'Planned'}
+      : {device, module_bay: bay.name, module_type: type.model, status: 'planned'});
+  }
+  return {columns: MODULE_COLUMNS[target === 'nautobot' ? 'nautobot' : 'netbox'], rows, left};
+}
+
+// ── the cables file (Phase 2c rulings 6 and 7) ──────────────────────────
+// The Rack Builder's media as a DCIM's cable type. Both targets accepted each
+// of these and refused "os2". A media this page does not know, or none, is a
+// blank type: the column is optional.
+export const CABLE_TYPE = {os2: 'smf-os2', om3: 'mmf-om3', om4: 'mmf-om4', om5: 'mmf-om5', cat6: 'cat6', cat6a: 'cat6a',
+                           dac: 'dac-passive', aoc: 'aoc'};
+export const cableType = media => (Object.hasOwn(CABLE_TYPE, media ?? '') ? CABLE_TYPE[media] : '');
+
+// Which kinds of end a DCIM lets one cable join (NetBox and Nautobot share the
+// table; both refused a console port to an interface).
+const PORTS = ['dcim.frontport', 'dcim.rearport'];
+const MEETS = {
+  'dcim.interface': ['dcim.interface', ...PORTS],
+  'dcim.frontport': ['dcim.interface', 'dcim.consoleport', 'dcim.consoleserverport', ...PORTS],
+  'dcim.rearport': ['dcim.interface', 'dcim.consoleport', 'dcim.consoleserverport', ...PORTS],
+  'dcim.consoleport': ['dcim.consoleserverport', ...PORTS],
+  'dcim.consoleserverport': ['dcim.consoleport', ...PORTS],
+  'dcim.powerport': ['dcim.poweroutlet'],
+  'dcim.poweroutlet': ['dcim.powerport']};
+export const canMeet = (a, b) => (MEETS[a] || []).includes(b);
+const KIND = {'dcim.interface': 'an interface', 'dcim.frontport': 'a front port', 'dcim.rearport': 'a rear port',
+              'dcim.consoleport': 'a console port', 'dcim.consoleserverport': 'a console server port',
+              'dcim.powerport': 'a power port', 'dcim.poweroutlet': 'a power outlet'};
+
+// A cable's length as a target takes it: {value, unit, note}. Only m and ft
+// are written (the units the page offers). NetBox keeps two decimal places and
+// refuses a third; Nautobot takes a whole number only. Either way a length is
+// rounded UP, never down: a cable cut short does not reach.
+export function importLength(cable, target = 'netbox') {
+  const p = lengthParts(cable.length);
+  if (!p) return {value: '', unit: '', note: cable.lengthAsWritten != null ? 'its length as written in the rack file is not carried' : null};
+  if (p.unit !== 'm' && p.unit !== 'ft')
+    return {value: '', unit: '', note: `its length (${p.value} ${p.unit}) is not carried: the kit writes lengths in m or ft only`};
+  const value = target === 'nautobot' ? Math.ceil(p.value) : Math.ceil(p.value * 100 - 1e-9) / 100;
+  const note = value === p.value ? null
+    : `${p.value} ${p.unit} is written as ${value} ${p.unit}: ${target === 'nautobot' ? 'Nautobot takes whole numbers' : 'NetBox keeps two decimal places'}, and a length is rounded up`;
+  return {value, unit: p.unit, note};
+}
+
+export const CABLE_IMPORT_COLUMNS = {
+  netbox: ['side_a_device', 'side_a_type', 'side_a_name', 'side_b_device', 'side_b_type', 'side_b_name', 'type', 'status',
+           'label', 'color', 'length', 'length_unit', 'description'],
+  // Read by import_cables.py, NOT by Nautobot's own importer: Nautobot takes a cable's ends by id only.
+  nautobot: ['a_device', 'a_type', 'a_name', 'b_device', 'b_type', 'b_name', 'type', 'status', 'label', 'color', 'length',
+             'length_unit']};
+
+// One row per cable the target will take. NetBox takes the file whole or not
+// at all, so a cable it would refuse is left out and said, in `left`, with its
+// reason. A row needs: its ends checked and both landed; both devices in the
+// devices file; both ends named by the type files (`resolve`, resolveEnd over
+// this rack); no comma in a device or port name (NetBox reads one as a list);
+// two kinds of end a DCIM joins; and no port already used by an earlier row.
+//   ends       cable-plugs.js cableFacts(rack).ends; unchecked: reading them failed
+//   names      uniqueNames(items); kept: the ids of the devices in the devices file
+//   resolve    end -> resolveEnd's answer for that end
+//   uOf        endName's: how tall a device is
+// `notes` are about rows that ARE written: a type left blank, a length changed.
+export function cableImportRows({rack, target = 'netbox', names, kept, resolve, ends = new Map(), unchecked = false, uOf}) {
+  const T = TARGET_NAME[target] || 'NetBox', nautobot = target === 'nautobot';
+  const rows = [], left = [], notes = [], used = new Map();
+  let dac = false;
+  for (const f of cableFindings(rack, ends)) {
+    const c = f.cable;
+    let why = [], sides = [];
+    if (unchecked || !f.checked) why = ['its ends could not be checked'];
+    else if (f.loose.length)
+      why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end, uOf)}, is not connected (${l.reason})`);
+    else {
+      sides = [['A', c.a], ['B', c.b]].map(([side, end]) => {
+        const device = names.get(end.item)?.name ?? '';
+        if (!kept.has(end.item)) return {why: `end ${side} is on ${device}, which is not in the devices file`};
+        const r = resolve(end);
+        if (!r.ok) return {why: `end ${side}, ${endName(rack, end, uOf)}: ${r.reason}`};
+        const comma = [device, r.name].find(x => x.includes(','));
+        if (!nautobot && comma != null) return {why: `end ${side}: NetBox reads a comma in a device or port name as a list, so "${comma}" cannot be written`};
+        return {side, end, device, name: r.name, type: r.type, key: JSON.stringify([device, r.type, r.name])};
+      });
+      why = sides.filter(s => s.why).map(s => s.why);
+      if (!why.length && !canMeet(sides[0].type, sides[1].type))
+        why = [`${T} does not cable ${KIND[sides[0].type]} to ${KIND[sides[1].type]}`];
+      if (!why.length)
+        why = sides.filter(s => used.has(s.key))
+          .map(s => `end ${s.side}, ${endName(rack, s.end, uOf)}, already has cable ${used.get(s.key)} in this file`);
+    }
+    if (why.length) { left.push(`Cable ${f.name} is not in the cables file: ${why.join('; ')}.`); continue; }
+    const [a, b] = sides;
+    for (const s of sides) used.set(s.key, f.name);
+    const type = cableType(c.media);
+    if (c.media && !type) notes.push(`Cable ${f.name}: its media (${c.media}) has no ${T} cable type, so its type is blank.`);
+    dac ||= c.media === 'dac';
+    const len = importLength(c, target);
+    if (len.note) notes.push(`Cable ${f.name}: ${len.note}.`);
+    rows.push(nautobot
+      ? {a_device: a.device, a_type: a.type, a_name: a.name, b_device: b.device, b_type: b.type, b_name: b.name, type,
+         status: 'Planned', label: c.label || c.id, color: '', length: len.value, length_unit: len.unit}
+      : {side_a_device: a.device, side_a_type: a.type, side_a_name: a.name, side_b_device: b.device, side_b_type: b.type,
+         side_b_name: b.name, type, status: 'planned', label: c.label || c.id, color: '', length: len.value,
+         length_unit: len.unit, description: c.purpose || ''});
+  }
+  if (dac) notes.push('A DAC is written as dac-passive. Change the type of one that is active.');
+  return {columns: CABLE_IMPORT_COLUMNS[nautobot ? 'nautobot' : 'netbox'], rows, left, notes};
 }
