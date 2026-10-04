@@ -4602,7 +4602,9 @@ def check_rack_import_keeps_library(page, base):
     # round trip between them) to make the race deterministic rather than
     # dependent on how long Playwright's own IPC happens to take.
     page.click("#libMenu summary")   # renders #libItems, including the current-rack button, ahead of time
-    page.wait_for_selector("#libItems button.rk-current", timeout=READY_MS)
+    # A synchronous predicate: the library list redraws asynchronously, and the click below
+    # is in the same page task as the edit, with no room to wait for the row there.
+    page.wait_for_function("() => !!document.querySelector('#libItems button.rk-current')", timeout=READY_MS)
     page.evaluate("""() => {
       const h = document.getElementById('fHeight');
       h.value = '30';
@@ -5297,11 +5299,14 @@ def check_rack_dev_note(page, base):
         bad.append("dev note: the note is open before it is clicked")
     page.click("#devNote > summary")
     body = page.text_content("#devNote .rk-devnote-body") or ""
-    for want in ("still being built", "You can cable ports in 2D", "Coming next: cables in the exports and in 3D."):
+    for want in ("still being built", "You can cable ports in 2D",
+                 "Cables are in 3D and in the exports: the sheet, draw.io, the 3D model, the bill of materials and a cable schedule.",
+                 "Coming next: cable import for NetBox and Nautobot."):
         if want not in body:
             bad.append(f"dev note: the note doesn't mention {want!r}")
-    if "Coming next: cabling." in body:
-        bad.append("dev note: it still lists cabling as coming, and it has shipped")
+    for gone in ("Coming next: cabling.", "Coming next: cables in the exports and in 3D."):
+        if gone in body:
+            bad.append(f"dev note: it still says {gone!r}, and that has shipped")
     box = page.evaluate("""() => { const r = document.querySelector('#devNote .rk-devnote-body').getBoundingClientRect();
                               return [Math.round(r.left), Math.round(r.right), innerWidth]; }""")
     if box[0] < 0 or box[1] > box[2]:
@@ -8432,6 +8437,24 @@ def check_rack_export_cable_failures(page, base):
     if pe:
         bad.append(f"sheet, front cables failing: pointer-events on cable groups {pe}")
     page.evaluate("window.__rack.failExport({})")
+
+    # The GLB with the cables' faces unreadable: it still downloads, and says so in the scene's extras.
+    try:
+        if webgl_trouble(page):
+            print("[check_rack_export_cable_failures] WebGL unavailable - GLB not exercised")
+            return bad
+        page.click('#rkMode [data-mode="3d"]')
+        page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
+        page.evaluate("window.__rack.failExport({facts: true})")
+        dl = export_file(page, "glb", timeout=READY_3D_MS)
+        glb = pathlib.Path(dl.path()).read_bytes()
+        status = export_status(page)
+        if glb[:4] != b"glTF":
+            bad.append(f"GLB, facts failing: {dl.suggested_filename!r} is not a GLB")
+        if b"Cable ends could not be checked, so loose ends are not marked." not in glb or "didn't work" in status:
+            bad.append(f"GLB, facts failing: no unchecked note in the extras, or status {status!r}")
+    finally:
+        page.evaluate("window.__rack.failExport({})")
     return bad
 
 

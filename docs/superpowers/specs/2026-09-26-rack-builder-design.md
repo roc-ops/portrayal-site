@@ -1,7 +1,7 @@
 # Rack Builder: the showcase's rack, as a tool people drive
 
 **Date:** 2026-09-26
-**Status:** design approved; Phase 0 implemented; Phase 1a implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase1a-build-a-rack.md); Phase 1b implemented (plan: docs/superpowers/plans/2026-09-27-rack-builder-phase1b-exports.md); Phase 2a (cabling on the page) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2a-cabling.md); Phase 2b (cables in the exports and in 3D) next
+**Status:** design approved; Phase 0 implemented; Phase 1a implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase1a-build-a-rack.md); Phase 1b implemented (plan: docs/superpowers/plans/2026-09-27-rack-builder-phase1b-exports.md); Phase 2a (cabling on the page) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2a-cabling.md); Phase 2b (cables in the exports and in 3D) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2b-cable-exports.md); Phase 2c (NetBox and Nautobot cable import) next
 **Builds on:** `2026-09-24-showcase-staged-rack-design.md`, `2026-09-25-showcase-inspect-is-explorer-design.md`, `2026-09-25-showcase-patching-plan-design.md`
 **Upstream:** roc-ops/Portrayal issue (filed 2026-09-26) for a `{module}` naming token on module-type ports; §9.4 depends on it
 
@@ -224,7 +224,7 @@ Every export is built from the saved model through `configuredFace()`, never fro
 |---|---|
 | SVG sheet | Front and rear side by side, plus a title block: rack name, frame, depths, hole style, date. Each face is also available on its own. |
 | PNG | The same sheet at 2×, via `rasterize`. |
-| draw.io | One page per face. Port cells carry `portrayal-path`. (Phase 2) cables become edges. |
+| draw.io | One page, with a front and a rear cabinet side by side. Port cells carry `portrayal-path`, and each cable that lands is an edge between two of them. |
 | GLB / USDZ | From the 3D scene, after `scene.complete()`. In 2D, a "switch to 3D" button replaces them. |
 | DCIM device types | NetBox or Nautobot YAML for every distinct device and module in the rack, zipped with `makeZip`. |
 | **DCIM device import (CSV)** | One row per item, with NetBox's `device_type`, `rack`, `position`, `face` and `name` columns, plus Nautobot's equivalents. Positions follow the frame's numbering. |

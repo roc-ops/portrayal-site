@@ -1037,9 +1037,9 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     replaceRack: (next, undoable) => commit(next, undoable),
     // Probe only: a notice raised earlier in the same action.
     addNotice: text => addNotice(text, 'note'),
-    // Probe only: make reading the cables' faces fail, to see the page without it.
     // Probe only: make the exports' own reading of the cables fail, or one sheet pane's cables (see exports.js).
     failExport: what => failExport(what),
+    // Probe only: make reading the cables' faces fail, to see the page without it.
     failCableFacts: on => { S.probeFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per
     // item, and each cabled end's loose-end reason (null when it lands).
