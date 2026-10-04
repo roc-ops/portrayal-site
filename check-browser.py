@@ -8295,17 +8295,17 @@ def check_rack_export_cable_schedule(page, base):
     if dl.suggested_filename != "Cable-test-cables.csv":
         bad.append(f"cable schedule: named {dl.suggested_filename!r}")
     cols, rows, text = read_csv(dl)
-    if cols != ["cable", "a_device", "a_u", "a_port", "b_device", "b_u", "b_port", "media", "purpose",
+    if cols != ["id", "cable", "a_device", "a_u", "a_port", "b_device", "b_u", "b_port", "media", "purpose",
                 "length", "length_unit", "status", "notes"]:
         bad.append(f"cable schedule: columns {cols}")
     want = [
-        {"cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
+        {"id": "c1", "cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
          "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
          "length_unit": "m", "status": "connected", "notes": ""},
-        {"cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
+        {"id": "c2", "cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
          "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "", "length_unit": "",
          "status": "connected", "notes": ""},
-        {"cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
+        {"id": "c3", "cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
          "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "", "length_unit": "",
          "status": "loose end",
          "notes": "End A is not connected: port-2 holds no optic. "
@@ -8332,10 +8332,14 @@ def check_rack_export_cable_schedule(page, base):
       const of = C.chassisLookup(await C.loadChassis());
       const r = window.__rack.doc().racks[0];
       const cables = [{...r.cables[0], label: '=SUM(A1)', length: undefined, lengthAsWritten: {value: 'about 3', unit: 'm'}}];
-      return (await X.cableScheduleCsv({...r, cables}, of)).data;
+      return {sched: (await X.cableScheduleCsv({...r, cables}, of)).data, bom: (await X.bomCsv({...r, cables}, of)).data};
     }""")
+    # The BOM lists that cable as "length not set", and says what the file wrote, in the schedule's words.
+    if 'Cable =SUM(A1): Length as written in the file: {""value"":""about 3"",""unit"":""m""}.' not in odd["bom"]:
+        bad.append(f"cable schedule: the BOM does not say a length was kept as written: {odd['bom'].partition('Notes')[2]!r}")
+    odd = odd["sched"]
     line = odd.split("\r\n")[1]
-    if not line.startswith("'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,connected,"):
+    if not line.startswith("c1,'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,connected,"):
         bad.append(f"cable schedule: a formula-like label or a length as written is wrong: {line!r}")
     if 'Length as written in the file: {""value"":""about 3"",""unit"":""m""}.' not in line:
         bad.append(f"cable schedule: the length as written is not quoted in the notes: {line!r}")
@@ -8345,7 +8349,7 @@ def check_rack_export_cable_schedule(page, base):
     dl = export_file(page, "cables")
     status = export_status(page)
     cols, rows, text = read_csv(dl)
-    if dl.suggested_filename != "Export-test-cables.csv" or rows or not cols or cols[0] != "cable":
+    if dl.suggested_filename != "Export-test-cables.csv" or rows or not cols or cols[:2] != ["id", "cable"]:
         bad.append(f"cable schedule, no cables: {dl.suggested_filename!r} with rows {rows}")
     if "This rack has no cables, so there is nothing to list." not in text.partition("\r\nNotes\r\n")[2]:
         bad.append(f"cable schedule, no cables: the notes do not say so: {text!r}")
@@ -8410,6 +8414,14 @@ def check_rack_export_cable_failures(page, base):
         # An edge that may run to an empty cage is a false statement: with the ends unchecked, none is drawn.
         if kind == "drawio" and (drawio_page(text)["edges"] or len(drawio_page(text)["cabinets"]) != 2):
             bad.append("drawio, facts failing: an edge is drawn, or a cabinet is missing")
+    # Resetting the probe with nothing, or with null, is "nothing fails": no export throws on it.
+    for reset in ("window.__rack.failExport(null)", "window.__rack.failExport()"):
+        page.evaluate("window.__rack.failExport({facts: true})")
+        page.evaluate(reset)
+        _, rows, _ = read_csv(export_file(page, "cables"))
+        status = export_status(page)
+        if [r["status"] for r in rows] != ["connected", "connected", "loose end"] or "didn't work" in status:
+            bad.append(f"{reset}: the schedule reads {[r['status'] for r in rows]}, status {status!r}")
     page.evaluate("window.__rack.failExport({})")
 
     # One pane's cables fail to draw: the sheet comes without them, the other face keeps its own, and it says so.
@@ -8439,7 +8451,11 @@ def check_rack_export_cable_failures(page, base):
         bad.append(f"sheet, front cables failing: pointer-events on cable groups {pe}")
     page.evaluate("window.__rack.failExport({})")
 
-    # The GLB with the cables' faces unreadable: it still downloads, and says so in the scene's extras.
+    # The GLB's notes describe the SCENE that is exported: a scene built with its
+    # cable ends checked keeps the facts it was built from, so its GLB carries the
+    # checked notes even while the export's own reading of the faces would fail.
+    # (Before the final fix wave the GLB re-read the faces itself, and this case
+    # asserted the unchecked note - a note about a reading the model was not built from.)
     try:
         if webgl_trouble(page):
             print("[check_rack_export_cable_failures] WebGL unavailable - GLB not exercised")
@@ -8452,8 +8468,13 @@ def check_rack_export_cable_failures(page, base):
         status = export_status(page)
         if glb[:4] != b"glTF":
             bad.append(f"GLB, facts failing: {dl.suggested_filename!r} is not a GLB")
-        if b"Cable ends could not be checked, so loose ends are not marked." not in glb or "didn't work" in status:
-            bad.append(f"GLB, facts failing: no unchecked note in the extras, or status {status!r}")
+        doc = json.loads(glb[20:20 + int.from_bytes(glb[12:16], "little")].decode("utf-8"))
+        notes = doc["scenes"][0].get("extras", {}).get("portrayal", {}).get("notes", [])
+        if page.evaluate("() => window.__rack.scene().rackCables.checked") is not True:
+            bad.append("GLB, facts failing: the scene itself was not built checked, so nothing is shown")
+        if notes != ["Cable c3: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic).",
+                     "Cable c3: OS2 single-mode fiber does not suit end B, which is copper."] or "didn't work" in status:
+            bad.append(f"GLB, facts failing: a checked scene's notes are {notes}, status {status!r}")
     finally:
         page.evaluate("window.__rack.failExport({})")
     return bad
@@ -8785,6 +8806,17 @@ def check_rack_export_sheet_cables(page, base):
         if abs(mm["width"] - 822.85) > 0.01 or mm["panes"][0]["out"]:
             bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
 
+    # A cross-face cable's tag on a single face still names the far end.
+    if cables_of(front)["front"]["tags"].get("c2") != "→ demarc port-2-1" or cables_of(rear)["rear"]["tags"].get("c2") != "→ leaf-1 mgmt-eth":
+        bad.append("sheet cables, one face: the cross-face cable's tag does not name its far end")
+    # c3 hangs as a lead in the rear pane only, c1 runs in the front pane only: the other face's sheet says so.
+    for name, t, note in (("front", front, "1 cable is on the rear face only and is not on this sheet."),
+                          ("rear", rear, "1 cable is on the front face only and is not on this sheet.")):
+        if note not in t:
+            bad.append(f"sheet cables, {name} only: it does not say {note!r}")
+    if "face only and" in text:
+        bad.append("sheet cables: the two-face sheet says a cable is on one face only")
+
     # The PNG is that sheet at 2x.
     png = pathlib.Path(export_file(page, "sheet-png").path()).read_bytes()
     w = int.from_bytes(png[16:20], "big") if png[:8] == b"\x89PNG\r\n\x1a\n" else 0
@@ -8820,6 +8852,25 @@ def check_rack_export_sheet_cables(page, base):
             bad.append(f"sheet cables, 42U: the {p['pane']} pane runs into the title block")
     if "Cable c2: end B, a removed device's port-1, is not connected (the device was removed)." not in text:
         bad.append("sheet cables, 42U: the note for the cable to a removed device is missing")
+
+    # A cable neither of whose ends lands has no lead to draw: the sheet says it
+    # "is not drawn", as the GLB and draw.io do, on every sheet.
+    def edit(rack):
+        rack["cables"].append({"id": "c6", "a": {"item": "i2", "path": "port-3", "view": "front"},
+                               "b": {"item": "i2", "path": "port-4", "view": "front"},
+                               "media": "os2", "purpose": "uplink", "label": "", "route": []})
+    open_cabled(page, base, cable_fixture("doc-sheet-undrawn", "Undrawn", edit))
+    want = ("Cable c6 is not drawn: end A, leaf-1 (U14) port-3, is not connected (port-3 holds no optic); "
+            "end B, leaf-1 (U14) port-4, is not connected (port-4 holds no optic).")
+    for kind in ("sheet-svg", "front-svg", "rear-svg"):
+        t = pathlib.Path(export_file(page, kind).path()).read_text(encoding="utf-8")
+        # The notes block wraps: compare with the whitespace between its lines taken out.
+        flat = re.sub(r"\s+", " ", " ".join(n.text or "" for n in ET.fromstring(t.encode("utf-8")).iter(f"{ns}text")))
+        flat = flat.replace("• ", "")
+        if want not in flat:
+            bad.append(f"sheet cables, {kind}: a cable that lands nowhere is not called undrawn: {[l for l in flat.split('Cable ') if l.startswith('c6')]}")
+        if any("c6" in p["cables"] or "c6" in p["tags"] for p in cables_of(t).values()):
+            bad.append(f"sheet cables, {kind}: the cable that lands nowhere has a group on the sheet")
     return bad
 
 
@@ -9201,6 +9252,41 @@ def check_rack_one_u(page, base):
     line = page.inner_text(".rk-inspector .rk-muted")
     if "· U14, front" not in line:
         bad.append(f"one U: the inspector reads {line!r}")
+    return bad
+
+
+@extra("rack.html: in 3D, a scene that could not check its cable ends says so once per rack - another rack's unchecked scene is announced too")
+def check_rack_unchecked_3d_each_rack(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"unchecked 3D: {e}"]
+    if webgl_trouble(page):
+        print("[check_rack_unchecked_3d_each_rack] WebGL unavailable - not exercised")
+        return bad
+    said = "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('could not be checked')"
+    page.evaluate("() => window.__rack.failSceneFacts(true)")
+    try:
+        page.click('#rkMode [data-mode="3d"]')
+        wait_fn(page, "unchecked 3D: the first rack's scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+        wait_fn(page, "unchecked 3D: the first rack's notice", said)
+        # Another rack, opened while still in 3D: its scene is unchecked as well, and it has not been told.
+        old = page.evaluate_handle("() => window.__rack.scene()")
+        other = cable_fixture("doc-unchecked-other", "Other rack", lambda rack: None)
+        page.set_input_files("#openFile", files=[{"name": "other.rack.json", "mimeType": "application/json",
+                                                  "buffer": json.dumps(other).encode()}])
+        page.wait_for_function("() => window.__rack.doc().racks[0].name === 'Other rack'", timeout=READY_MS)
+        page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+        if page.evaluate("() => window.__rack.scene().rackCables.checked") is not False:
+            bad.append("unchecked 3D: the second rack's scene is called checked")
+        try:
+            wait_fn(page, "unchecked 3D: the second rack's notice", said, timeout=5000)
+        except RuntimeError:
+            bad.append("unchecked 3D: the second rack's unchecked scene was not announced")
+    finally:
+        page.evaluate("() => window.__rack.failSceneFacts(false)")
     return bad
 
 

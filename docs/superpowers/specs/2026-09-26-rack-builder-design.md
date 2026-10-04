@@ -3,7 +3,7 @@
 **Date:** 2026-09-26
 **Status:** design approved; Phase 0 implemented; Phase 1a implemented (plan: docs/superpowers/plans/2026-09-26-rack-builder-phase1a-build-a-rack.md); Phase 1b implemented (plan: docs/superpowers/plans/2026-09-27-rack-builder-phase1b-exports.md); Phase 2a (cabling on the page) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2a-cabling.md); Phase 2b (cables in the exports and in 3D) implemented (plan: docs/superpowers/plans/2026-10-03-rack-builder-phase2b-cable-exports.md); Phase 2c (NetBox and Nautobot cable import) next
 **Builds on:** `2026-09-24-showcase-staged-rack-design.md`, `2026-09-25-showcase-inspect-is-explorer-design.md`, `2026-09-25-showcase-patching-plan-design.md`
-**Upstream:** roc-ops/Portrayal issue (filed 2026-09-26) for a `{module}` naming token on module-type ports; §9.4 depends on it
+**Upstream:** roc-ops/Portrayal issue (filed 2026-09-26) for a `{module}` naming token on module-type ports; landed, and in the vendored module types (§9.4)
 
 ---
 
@@ -268,7 +268,7 @@ Every export is built from the saved model through `configuredFace()`, never fro
 - A cable schedule CSV.
 - Cables drawn on the SVG, PNG and GLB exports; cables as draw.io edges between `portrayal-path` port cells.
 - The showcase's stage 6 already shows the plan's cables and carries them in its SVG, PNG and GLB exports (moved into Phase 0 as Task 4b, 2026-09-26). Phase 2 adds them to its draw.io export as edges.
-- **NetBox cable import comes last** and is blocked on the upstream `{module}` naming token. Today, module-type ports are named `p0…p11`, which collide between identical cards and do not match drawing paths.
+- **NetBox cable import comes last**, as Phase 2c. It is no longer blocked on the upstream `{module}` naming token: the token is in the vendored module types (a card's interfaces are named `'{module}/p0'`…). It needs the modules installed first - a card port's interface exists in NetBox only once a module of that type is in its bay, so a module import comes before the cables - and the import columns of both targets verified against a real instance (the Phase 2b plan's "Not in Phase 2b" records what is established).
 
 ### 9.5 Out of scope, as in the patching spec
 
@@ -322,6 +322,6 @@ Every module listed as moved is removed from `site/showcase/`, and the showcase 
 
 ## 12. Upstream dependencies
 
-- **`{module}` naming token** on module-type ports (issue filed 2026-09-26). This blocks only NetBox cable import (§9.4).
+- **`{module}` naming token** on module-type ports (issue filed 2026-09-26). Landed: the vendored module types carry it, so it no longer blocks NetBox cable import (§9.4).
 - **A Portrayal rack or cabinet item** (future): `frame.ref` (§5.1) is where it plugs in.
 - **Zero-U devices** (future): no site change needed beyond catalog data (§5.3).

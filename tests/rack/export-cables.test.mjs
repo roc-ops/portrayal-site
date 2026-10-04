@@ -58,13 +58,13 @@ test('the notes a drawn export carries name the cable, the end as the page names
 
 test('the cable schedule: one row per cable, devices named as the device import names them', () => {
   const {columns, rows, notes} = X.cableScheduleRows(RACK, ENDS);
-  assert.deepEqual(columns, ['cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
+  assert.deepEqual(columns, ['id', 'cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
     'length', 'length_unit', 'status', 'notes']);
   assert.equal(columns, X.CABLE_COLUMNS);
-  assert.deepEqual(rows[0], {cable: 'A1', a_device: 'leaf-1', a_u: 14, a_port: 'port-1', b_device: 'core-1', b_u: 2,
+  assert.deepEqual(rows[0], {id: 'c1', cable: 'A1', a_device: 'leaf-1', a_u: 14, a_port: 'port-1', b_device: 'core-1', b_u: 2,
     b_port: 'slot-2/module/p0', media: 'OS2 single-mode fiber', purpose: 'uplink', length: 2, length_unit: 'm',
     status: 'connected', notes: ''});
-  assert.deepEqual(rows[1], {cable: 'c2', a_device: 'leaf-1', a_u: 14, a_port: 'mgmt-eth', b_device: 'demarc-i3',
+  assert.deepEqual(rows[1], {id: 'c2', cable: 'c2', a_device: 'leaf-1', a_u: 14, a_port: 'mgmt-eth', b_device: 'demarc-i3',
     b_u: 14, b_port: 'port-2-1', media: 'Cat 6A copper', purpose: 'management', length: '', length_unit: '',
     status: 'connected', notes: ''});
   assert.equal(rows[2].status, 'loose end');
@@ -105,7 +105,7 @@ test('a schedule cell that opens as a formula is guarded, as the BOM guards it',
   const rack = {...RACK, cables: [{...RACK.cables[0], label: '=A1', purpose: '-x'}]};
   const {columns, rows} = X.cableScheduleRows(rack, ENDS);
   const csv = X.toCsv(columns, rows, [], {cell: X.bomCell});
-  assert.match(csv, /\r\n'=A1,leaf-1,14,port-1,core-1,2,slot-2\/module\/p0,OS2 single-mode fiber,'-x,2,m,connected,\r\n$/);
+  assert.match(csv, /\r\nc1,'=A1,leaf-1,14,port-1,core-1,2,slot-2\/module\/p0,OS2 single-mode fiber,'-x,2,m,connected,\r\n$/);
 });
 
 test('the BOM lists cables by media, length and connector, with "length not set" where there is none', () => {
@@ -349,4 +349,147 @@ test('every note that names a device with a U names its position, as the schedul
     assert.equal(X.uOfItem(rack.frame, rack.items[1]), want.b);
     assert.equal(X.uOfItem(rack.frame, bare.items[1], ref => chassis[ref]), want.b);
   }
+});
+
+// F2: what the sheet says of a cable it does not hold.
+test('the sheet: a cable with no group on it is "not drawn"; one wholly on the other face of a single-face sheet is counted', () => {
+  const both = {id: 'c6', label: '', media: 'os2', purpose: '', route: [],
+                a: {item: 'i2', path: 'port-2', view: 'front'}, b: {item: 'i2', path: 'port-3', view: 'front'}};
+  const rearOnly = {id: 'c7', label: '', media: 'cat6a', purpose: '', route: [],
+                    a: {item: 'i3', path: 'port-2-2', view: 'front'}, b: {item: 'i4', path: 'port-2-2', view: 'front'}};
+  const rack = {...RACK, cables: [...RACK.cables, both, rearOnly]};
+  const ends = new Map([...ENDS, ['i2|front|port-3', {info: NONE, reason: 'port-3 holds no optic'}],
+    ['i3|front|port-2-2', {info: COPPER, reason: null}], ['i4|front|port-2-2', {info: COPPER, reason: null}]]);
+  const c6 = 'Cable c6 is not drawn: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic); ' +
+             'end B, leaf-1 (U14) port-3, is not connected (port-3 holds no optic).';
+  const c3 = 'Cable c3: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic).';
+  const mism = 'Cable c3: OS2 single-mode fiber does not suit end B, which is copper.';
+  // Both faces: c6 has no group anywhere (both ends loose); every other cable has one.
+  assert.deepEqual(X.sheetCableNotes(rack, ends, {faces: ['front', 'rear'], drawn: new Set(['c1', 'c2', 'c3', 'c7'])}), [c3, mism, c6]);
+  // The same wording the GLB and draw.io give it.
+  assert.equal(X.cableNotes(rack, ends, {undrawn: c => c.id === 'c6'})[2], c6);
+  assert.ok(X.cableNotes(rack, ends, {undrawn: true}).includes(c6));
+  // The front alone: c3 (a lead from its landed end, in the rear pane) and c7 are on the rear face only; c6 is still not drawn.
+  assert.deepEqual(X.sheetCableNotes(rack, ends, {faces: ['front'], drawn: new Set(['c1', 'c2'])}),
+    [c3, mism, c6, '2 cables are on the rear face only and are not on this sheet.']);
+  // The rear alone: c1 is on the front face only; c6 lands nowhere, so it is not drawn on any sheet.
+  assert.deepEqual(X.sheetCableNotes(rack, ends, {faces: ['rear'], drawn: new Set(['c2', 'c3', 'c7'])}),
+    [c3, mism, c6, '1 cable is on the front face only and is not on this sheet.']);
+  // A face whose cables failed to draw has its own note: its cables are not called undrawn one by one.
+  assert.deepEqual(X.sheetCableNotes(RACK, ENDS, {faces: ['front', 'rear'], drawn: new Set(['c2', 'c3']), failed: ['front']}), [c3, mism]);
+  // Both devices gone: on no face at all, so it is not drawn, on any sheet.
+  const none = {...RACK, items: [], cables: [RACK.cables[1]]};
+  const gone = new Map([['i2|front|mgmt-eth', {info: NONE, reason: 'the device was removed'}], ['i3|front|port-2-1', {info: NONE, reason: 'the device was removed'}]]);
+  assert.match(X.sheetCableNotes(none, gone, {faces: ['front'], drawn: new Set()})[0], /^Cable c2 is not drawn: end A, a removed device's mgmt-eth/);
+  assert.deepEqual(X.sheetCableNotes({...RACK, cables: []}, ENDS, {faces: ['front'], drawn: new Set()}), []);
+});
+
+// F3: the rewrites of the vendor's file, against the vendor itself.
+import {rackCables} from '../../vendor/drawio.js';
+const SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 10"/>';
+const face = paths => ({svg: SVG, vb: [0, 0, 100, 10],
+  ports: paths.map(([path, cls = 'port'], k) => ({id: path.replace(/\//g, '--'), path, cls, x: 5 + 10 * k, y: 2, w: 4, h: 4}))});
+const cellsOf = xml => Object.fromEntries([...xml.slice(xml.indexOf('-->') + 3).matchAll(/<mxCell id="([^"]*)" value="([^"]*)"[^>]* parent="([^"]*)">/g)]
+  .map(m => [m[1], {value: m[2], parent: m[3]}]));
+
+test('draw.io: on a real vendor file the rear cabinet gets its label and its "no rear drawing", the front keeps its own', () => {
+  const label = X.htmlText('R&D <core>');
+  const suffix = X.rearSuffix([{id: 'i1'}, {id: 'i2'}]);
+  const mounted = pane => [
+    {id: X.drawioId('i1', pane, suffix), name: 'drawn', u: 1, ru: 1, faces: {front: face([['port-1']])}},
+    {id: X.drawioId('i2', pane, suffix), name: 'undrawn', u: 3, ru: 2, faces: {}}];
+  const xml = rackDiagram([{label: 'page', faces: ['front'], racks: [
+    {label, units: 8, mounted: mounted('front')}, {label, units: 8, mounted: mounted('rear')}]}],
+    {labels: true, notes: ['undrawn at U3: no front drawing, so the rear shows an outline.']});
+  const out = X.rearNoDrawing(X.rearCabinetLabel(xml, label));
+  const before = cellsOf(xml), after = cellsOf(out);
+  const esc = 'R&amp;amp;D &amp;lt;core&amp;gt;';
+  assert.equal(before['g0r1-front'].value, `${esc} · front`, 'the vendor labels both cabinets front');
+  assert.equal(after['g0r0-front'].value, `${esc} · front`);
+  assert.equal(after['g0r1-front'].value, `${esc} · rear`);
+  const none = Object.keys(after).filter(id => id.endsWith('-none'));
+  assert.deepEqual(none.map(id => [after[id].parent, after[id].value]),
+    [['g0r0-front', 'no front drawing'], ['g0r1-front', 'no rear drawing']]);
+  // Nothing else moved: the two rewrites are the only differences, and the note keeps its words.
+  assert.equal(out.replace(`${esc} · rear`, `${esc} · front`).replace('value="no rear drawing"', 'value="no front drawing"'), xml);
+  assert.ok(out.includes('- undrawn at U3: no front drawing, so the rear shows an outline.'));
+  // No rear entry without a face: nothing to reword, nothing thrown.
+  const plain = rackDiagram([{label: 'page', faces: ['front'], racks: [
+    {label, units: 8, mounted: mounted('front')}, {label, units: 8, mounted: mounted('rear').slice(0, 1)}]}], {labels: true});
+  assert.equal(X.rearNoDrawing(plain), plain);
+});
+
+test('draw.io: a rear "no drawing" box the rewrite did not reach throws, as the label does', () => {
+  const c = (id, attrs) => `<mxCell id="${id}" ${attrs}></mxCell>`;
+  const file = cells => `<mxfile host="portrayal"><!--\nNotes:\n- x\n--><diagram name="x">${cells}</diagram></mxfile>`;
+  // The vendor reworded its box, or moved its attributes: the rear cabinet would ship the wrong word.
+  for (const attrs of ['value="No front drawing" style="s" vertex="1" parent="g0r1-front"',
+                       'style="s" value="no front drawing" vertex="1" parent="g0r1-front" x="1"',
+                       'parent="g0r1-front" value="no front drawing" style="s" vertex="1"'])
+    assert.throws(() => X.rearNoDrawing(file(c('b-g0r1-front-none', attrs))), /rear cabinet/, attrs);
+  // The front cabinet's box, and a comment that looks like a cell, are not its business.
+  const front = file(c('a-g0r0-front-none', 'value="No front drawing" style="s" vertex="1" parent="g0r0-front"'));
+  assert.equal(X.rearNoDrawing(front), front);
+  const note = `<mxfile host="portrayal"><!--\nNotes:\n- <mxCell id="b-g0r1-front-none" value="x" parent="g0r1-front">\n--><diagram name="x"></diagram></mxfile>`;
+  assert.equal(X.rearNoDrawing(note), note);
+});
+
+test('draw.io: every cable drawioCables lets through, the vendor draws as an edge and writes no note of its own', () => {
+  // The cable fixture as the export hands it over: a port on a seated card, an
+  // optic's port, a bare port, and a device hidden in the cabinet that would show its panel.
+  const suffix = X.rearSuffix(RACK.items);
+  const panels = {i1: [['slot-2/module/p0'], ['slot-2/module/p0-occupant', 'transceiver'], ['slot-2', 'bay']],
+                  i2: [['port-1'], ['port-1-occupant', 'transceiver'], ['port-2'], ['mgmt-eth']],
+                  i3: [['port-2-1']], i4: [['port-2-1']]};
+  const shown = {front: ['i1', 'i2'], rear: ['i3']};          // i4 is hidden behind something in the rear cabinet
+  const idOf = (id, pane) => X.drawioId(id, pane, suffix);
+  const racks = ['front', 'rear'].map(pane => ({label: 'r', units: 24, mounted: shown[pane].map((id, k) =>
+    ({id: idOf(id, pane), name: id, u: 1 + 2 * k, ru: 1, faces: {front: face(panels[id])}}))}));
+  const groups = [{label: 'page', faces: ['front'], racks}];
+  const drawn = (id, pane, path) => shown[pane].includes(id) && panels[id].some(([p, cls = 'port']) => p === path && cls === 'port');
+  const landed = new Map([...ENDS].map(([k, v]) => [k, {...v, reason: null}]));
+  const hidden = {id: 'c4', a: {item: 'i2', path: 'port-2', view: 'front'}, b: {item: 'i4', path: 'port-2-1', view: 'front'}, media: 'cat6a', purpose: '', label: '', route: []};
+  const rack = {...RACK, cables: [RACK.cables[0], RACK.cables[1], hidden]};
+  const got = X.drawioCables(rack, {ends: landed, idOf, drawn, hiddenBy: id => (id === 'i4' ? 'demarc' : null)});
+  assert.deepEqual(got.cables.map(c => c.id), ['c1', 'c2']);
+  assert.deepEqual(got.notes, ['Cable c4 is not drawn: end B, demarc (U20) port-2-1, is hidden behind demarc in the rear cabinet.']);
+  assert.deepEqual(rackCables(groups, got.cables, {faces: ['front']}).notes, [], 'the vendor refused a cable the export let through');
+  const xml = rackDiagram(groups, {labels: true, cables: got.cables, notes: got.notes});
+  const edges = [...xml.matchAll(/portrayal-cable="([^"]*)"[^>]*><mxCell [^>]*edge="1"[^>]* source="([^"]*)" target="([^"]*)"/g)].map(m => m.slice(1));
+  assert.deepEqual(edges, [['c1', 'i2-g0r0-front-port-1', 'i1-g0r0-front-slot-2--module--p0'],
+                           ['c2', 'i2-g0r0-front-mgmt-eth', `${X.vendorSlug(idOf('i3', 'rear'))}-g0r1-front-port-2-1`]]);
+  // The comment holds the export's notes and nothing else: no vendor note, no cabinet id.
+  assert.equal(xml.slice(xml.indexOf('<!--'), xml.indexOf('-->') + 3), `<!--\nNotes:\n${got.notes.map(n => `- ${n}`).join('\n')}\n-->`);
+  // Had the export let the hidden one through, the vendor would have written its own note: this is what the test guards.
+  const raw = {id: 'c4', a: {item: 'i2', path: 'port-2'}, b: {item: idOf('i4', 'rear'), path: 'port-2-1'}, media: 'os2'};
+  assert.equal(rackCables(groups, [raw], {faces: ['front']}).notes.length, 1);
+});
+
+// F5: a cable's name in a note, and its id in the schedule.
+test('a cable is named by its label, with its id only when the label is shared; with no label it is its id', () => {
+  const mk = (id, label) => ({...RACK.cables[1], id, label});
+  const rack = {...RACK, cables: [mk('c1', 'dup'), mk('c2', 'dup'), mk('c3', 'solo'), mk('c4', ''), mk('c5', 'c4')]};
+  assert.deepEqual([...X.cableNames(rack)], [['c1', 'dup (c1)'], ['c2', 'dup (c2)'], ['c3', 'solo'], ['c4', 'c4'], ['c5', 'c4 (c5)']]);
+  assert.deepEqual([...X.cableNames({cables: undefined})], []);
+  assert.deepEqual(X.cableFindings(rack, ENDS).map(f => f.name), ['dup (c1)', 'dup (c2)', 'solo', 'c4', 'c4 (c5)']);
+  // Two cables sharing a label give two different notes and two different rows.
+  const loose = new Map([['i2|front|mgmt-eth', {info: COPPER, reason: 'mgmt-eth is not on this panel'}], ['i3|front|port-2-1', {info: COPPER, reason: null}]]);
+  const notes = X.cableNotes(rack, loose);
+  assert.equal(new Set(notes).size, 5);
+  assert.match(notes[0], /^Cable dup \(c1\): end A, /);
+  assert.match(X.drawioCables(rack, {ends: loose, idOf: id => id, drawn: () => true}).notes[1], /^Cable dup \(c2\) is not drawn: /);
+  const {columns, rows} = X.cableScheduleRows(rack, loose);
+  assert.deepEqual(columns.slice(0, 3), ['id', 'cable', 'a_device']);
+  assert.deepEqual(rows.map(r => [r.id, r.cable]), [['c1', 'dup'], ['c2', 'dup'], ['c3', 'solo'], ['c4', 'c4'], ['c5', 'c4']]);
+});
+
+// F10: the BOM says why a length it was given is "not set".
+test('BOM: a length kept as written is noted once per cable, in the schedule\'s words', () => {
+  const c = RACK.cables[1];
+  const rack = {...RACK, cables: [{...c, id: 'a', label: 'x', lengthAsWritten: 'long'}, {...c, id: 'b', label: 'x', lengthAsWritten: {value: 'about 3', unit: 'm'}},
+                                  {...c, id: 'd', length: {value: 3, unit: 'm'}}]};
+  const sched = X.cableScheduleRows(rack, ENDS).rows.map(r => r.notes);
+  assert.deepEqual(sched, ['Length as written in the file: long.', 'Length as written in the file: {"value":"about 3","unit":"m"}.', '']);
+  assert.deepEqual(X.cableBomNotes(rack, ENDS), [`Cable x (a): ${sched[0]}`, `Cable x (b): ${sched[1]}`]);
+  assert.deepEqual(X.cableBomRows(rack, ENDS).map(r => [r.qty, r.description]), [[1, '3 m; copper at both ends'], [2, 'length not set; copper at both ends']]);
 });

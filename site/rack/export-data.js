@@ -129,29 +129,70 @@ export function rackNotes(rack, {cables = true} = {}) {
 // Map(endKey -> {info, reason}), reason null when the end lands. A cable
 // whose ends are not in the map was not checked (reading the faces failed).
 export const UNCHECKED_NOTE = 'Cable ends could not be checked, so loose ends are not marked.';
+// A CABLE'S NAME IN A NOTE: its label, as the page lists it - with its id after
+// it when another cable would read the same (a shared label, or a label that
+// is another cable's id), so two notes never name two cables alike. A cable
+// with no label is its id. The schedule's `id` column is how to find either.
+export function cableNames(rack) {
+  const cables = rack.cables || [], seen = new Map();
+  for (const c of cables) seen.set(cableName(c), (seen.get(cableName(c)) || 0) + 1);
+  return new Map(cables.map(c => [c.id, c.label && seen.get(c.label) > 1 ? `${c.label} (${c.id})` : cableName(c)]));
+}
 export function cableFindings(rack, ends = new Map()) {
+  const names = cableNames(rack);
   return (rack.cables || []).map(cable => {
     const got = s => ends.get(endKey(cable[s]));
     const loose = [['A', 'a'], ['B', 'b']].filter(([, s]) => got(s)?.reason != null)
       .map(([side, s]) => ({side, end: cable[s], reason: got(s).reason}));
-    return {cable, name: cableName(cable), loose, checked: !!got('a') && !!got('b'),
+    return {cable, name: names.get(cable.id), loose, checked: !!got('a') && !!got('b'),
             warnings: mismatch(cable.media, got('a')?.info, got('b')?.info)};
   });
 }
 // The notes a drawn export carries: each loose end with its reason, each
 // media mismatch. `undrawn` is for a file that leaves a cable with a loose
-// end out altogether (draw.io) where the others draw its unplugged lead.
+// end out altogether (draw.io) where the others draw its unplugged lead: true
+// for every cable, or a test of one (the sheet and the 3D model leave out only
+// some).
 // `uOf` is endName's (how tall a device is), for a rack whose items do not
 // carry their height.
 export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf} = {}) {
-  const out = [];
+  const out = [], gone = typeof undrawn === 'function' ? undrawn : () => undrawn;
   for (const f of cableFindings(rack, ends)) {
     if (f.loose.length) {
       const why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end, uOf)}, is not connected (${l.reason})`);
-      out.push(`Cable ${f.name}${undrawn ? ' is not drawn' : ''}: ${why.join('; ')}.`);
+      out.push(`Cable ${f.name}${gone(f.cable) ? ' is not drawn' : ''}: ${why.join('; ')}.`);
     }
     for (const w of f.warnings) out.push(`Cable ${f.name}: ${w}`);
   }
+  return out;
+}
+
+// THE SHEET'S CABLE NOTES. `drawn` holds the ids of the cables that have a
+// group on the sheet (a run, a lead, or a tag), `faces` the faces the sheet
+// shows, `failed` the faces whose cables could not be drawn (the sheet says
+// that itself). A cable is drawn where an end of it LANDS: a run between two,
+// a lead hanging from one. A cable the sheet does not hold is said to be
+// missing, never only implied:
+//   - no end lands anywhere (both loose, both devices gone): it "is not
+//     drawn", in the words the 3D model and draw.io use;
+//   - its landed ends are all on the other face of a single-face sheet: it is
+//     simply not on this sheet, and one line counts those. (A cross-face cable
+//     is on both: its tag names the far end.)
+export function sheetCableNotes(rack, ends = new Map(), {faces = ['front', 'rear'], drawn = new Set(), failed = [], uOf} = {}) {
+  const byId = new Map(rack.items.map(i => [i.id, i]));
+  const lands = e => byId.has(e.item) && ends.get(endKey(e))?.reason == null;
+  const panes = c => [c.a, c.b].filter(lands).map(e => paneOf(byId.get(e.item), e.view));
+  const undrawn = new Set(), elsewhere = new Map();
+  for (const c of rack.cables || []) {
+    if (drawn.has(c.id)) continue;
+    const on = panes(c), here = on.filter(p => faces.includes(p));
+    if (here.some(p => failed.includes(p))) continue;
+    if (on.length && !here.length) elsewhere.set(on[0], (elsewhere.get(on[0]) || 0) + 1);
+    else undrawn.add(c.id);
+  }
+  const out = cableNotes(rack, ends, {undrawn: c => undrawn.has(c.id), uOf});
+  for (const [face, n] of elsewhere)
+    out.push(`${count(n, 'cable is', 'cables are')} on the ${face} face only and ${n === 1 ? 'is' : 'are'} not on this sheet.`);
   return out;
 }
 
@@ -159,12 +200,17 @@ export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf} = {}) 
 // (toString) is its own name, not a label.
 const mediaLabel = m => (Object.hasOwn(MEDIA_LABELS, m) ? MEDIA_LABELS[m] : String(m ?? ''));
 const asWritten = v => (typeof v === 'string' ? v : JSON.stringify(v));
+// A length the page could not use (model.js lengthAsWritten), said once for
+// the schedule and the BOM: neither counts it, and both quote it.
+const asWrittenNote = c => (c.lengthAsWritten != null ? `Length as written in the file: ${asWritten(c.lengthAsWritten)}.` : null);
 
 // THE CABLE SCHEDULE: one row per cable, in the rack's own order. A device is
 // named as the device import names it (uniqueNames over the same items), so
 // the two files agree. A length the page could not use (model.js
 // lengthAsWritten) is quoted in the notes, never put in the numeric column.
-export const CABLE_COLUMNS = ['cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
+// `id` is the cable's own id, which the 3D model's nodes and draw.io's edges
+// carry; `cable` is its label, or its id when it has none.
+export const CABLE_COLUMNS = ['id', 'cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
   'length', 'length_unit', 'status', 'notes'];
 // `items` are the rack's items with their height `u` (fit.js itemsWithU), so a
 // device's U is the device import's position (positionOf). Without a height an
@@ -183,8 +229,8 @@ export function cableScheduleRows(rack, ends = new Map(), items = rack.items) {
   const rows = findings.map(f => {
     const c = f.cable, len = lengthParts(c.length), [aDev, aU, aPort] = side(c.a), [bDev, bU, bPort] = side(c.b);
     const notes = [...f.loose.map(l => `End ${l.side} is not connected: ${l.reason}.`), ...f.warnings];
-    if (c.lengthAsWritten != null) notes.push(`Length as written in the file: ${asWritten(c.lengthAsWritten)}.`);
-    return {cable: f.name, a_device: aDev, a_u: aU, a_port: aPort, b_device: bDev, b_u: bU, b_port: bPort,
+    if (asWrittenNote(c)) notes.push(asWrittenNote(c));
+    return {id: c.id, cable: cableName(c), a_device: aDev, a_u: aU, a_port: aPort, b_device: bDev, b_u: bU, b_port: bPort,
             media: mediaLabel(c.media), purpose: c.purpose, length: len ? len.value : '',
             length_unit: len ? len.unit : '',
             status: !f.checked ? 'not checked' : f.loose.length ? 'loose end' : 'connected', notes: notes.join(' ')};
@@ -308,7 +354,16 @@ export function rearNoDrawing(xml) {
     out += xml.slice(pos, at) + (mine ? 'value="no rear drawing"' : text);
     pos = at + text.length;
   }
-  return out + xml.slice(pos);
+  out += xml.slice(pos);
+  // LOUD, like the label: a box of the rear cabinet (a cell whose id ends -none
+  // and whose parent is g0r1-front, wherever the vendor puts those attributes)
+  // that still does not read "no rear drawing" means the vendor's wording or
+  // layout changed under the rewrite above. The export fails where it can be
+  // seen, and never ships "no front drawing" in the rear cabinet.
+  for (const [tag] of out.slice(afterNotes(out)).matchAll(/<mxCell\b[^>]*>/g))
+    if (/\sid="[^"]*-none"/.test(tag) && /\sparent="g0r1-front"/.test(tag) && !tag.includes(' value="no rear drawing"'))
+      throw new Error("draw.io: a rear cabinet's \"no drawing\" box was not reworded");
+  return out;
 }
 
 // THE VENDOR'S CELL IDS. vendor/drawio.js slugs each entry's id into its cell
@@ -614,9 +669,12 @@ function connectorText(a, b) {
   return known.length ? `${known[0]} at one end` : '';
 }
 // A panel with no drawing leaves its cables' connectors blank: said once per
-// device panel, not once per cable.
+// device panel, not once per cable. A length kept as written is listed as
+// "length not set": said once per such cable, as the schedule says it.
 export function cableBomNotes(rack, ends = new Map()) {
   const byId = new Map(rack.items.map(i => [i.id, i])), seen = new Set(), out = [];
+  const names = cableNames(rack);
+  for (const c of rack.cables || []) if (asWrittenNote(c)) out.push(`Cable ${names.get(c.id)}: ${asWrittenNote(c)}`);
   for (const c of rack.cables || []) for (const e of [c.a, c.b]) {
     const it = byId.get(e.item), k = `${e.item}|${e.view}`;
     if (!it || seen.has(k) || ends.get(endKey(e))?.facts?.drawing !== false) continue;

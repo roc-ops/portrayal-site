@@ -17,7 +17,7 @@ import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
 import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
-import {exportStatus} from './rack/export-data.js';
+import {exportStatus, UNCHECKED_NOTE} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
         cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
@@ -250,6 +250,8 @@ function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
   S.doc = doc; S.sel = null; S.undo = null; S.cable.a = null;
   S.cableFilter = {purpose: null, media: null};
+  // "Said once" is once per rack: another rack's unchecked scene is announced too.
+  S.unchecked3dSaid = false;
   try { localStorage.setItem(LAST, doc.id); } catch { /* a convenience, not state */ }
   render();
   renderLibrary();
@@ -276,7 +278,8 @@ function setCableMode(on) {
 // changes under Cable mode (a frame shrink removes a device, Undo brings it
 // back, a taken port) the pick is dropped, and a new-cable form whose end's
 // device is gone is closed with a sentence. Run at the top of every render.
-const UNCHECKED_TEXT = 'Cable ends could not be checked, so loose ends are not marked.';
+// One sentence for the page and the files (export-data.js): both say the same thing happened.
+const UNCHECKED_TEXT = UNCHECKED_NOTE;
 const NOT_ADDED = 'The cable was not added because a device it ran to was removed.';
 function addNotice(text, kind = 'error') {
   const old = S.notice && (typeof S.notice === 'string' ? {text: S.notice, kind: 'error'} : S.notice);

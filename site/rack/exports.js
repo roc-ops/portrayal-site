@@ -26,10 +26,10 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
+        cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {mergeSeats, endKey, endName, cableName} from './cable-rules.js';
+import {mergeSeats, endKey, endName} from './cable-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
 
@@ -127,7 +127,8 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   const notes = await faceNotesFor(rack, base, faces, chassisOf, {cables: false});
   if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
   const uOf = heightOf(chassisOf);
-  if (cabled) notes.push(...cableNotes(rack, facts.ends, {uOf}));
+  // The cables' own notes wait for the drawing: they say which cables the sheet holds.
+  const after = [], failed = [];
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true})));
 
@@ -163,9 +164,13 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
           console.warn(`[portrayal] sheet: the ${pane.dataset.pane} face's cables`, err);
           pane.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]').forEach(n => n.remove());
-          notes.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet; tags on the other face may point at runs that are not drawn.`);
+          failed.push(pane.dataset.pane);
+          after.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet; tags on the other face may point at runs that are not drawn.`);
         }
       }
+      // A cable with no group on this sheet (a run, a lead or a tag) is said to be missing, and why.
+      const drawn = new Set(panes.flatMap(pane => [...pane.querySelectorAll('[data-cable-id]')].map(n => n.getAttribute('data-cable-id'))));
+      notes.push(...sheetCableNotes(rack, facts.ends, {faces, drawn, failed, uOf}), ...after);
       roomForCables(panes);
       for (const pane of panes) {
         pane.setAttribute('height', boxOf(pane)[3].toFixed(2));
@@ -268,6 +273,9 @@ export async function drawioFile(rack, chassisOf) {
 
 // What the 3D model carries of the cables, as notes. `hung` is what the scene
 // holds (scene3d.js: built.rackCables): drawCables3d's tubes, or {failed}.
+// `facts` are the ones the scene was BUILT from when it kept them (scene3d.js
+// hangCables), so the notes describe the model that is exported and never a
+// later, different reading:
 //   - nothing hung at all: the model has no cables, and says so;
 //   - a loose end, a mismatch: as the sheet says them (cableNotes);
 //   - an end the page calls connected that the scene could not place (no
@@ -282,16 +290,16 @@ function modelCableNotes(rack, hung, facts, uOf) {
   if (hung.checked === false) facts = UNCHECKED;
   // A cable the scene did not draw at all says so, as draw.io's notes do.
   const gone = new Set(hung.tubes.filter(t => !t.mesh).map(t => t.link.id));
-  const part = keep => ({...rack, cables: rack.cables.filter(c => keep === gone.has(c.id))});
-  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []), ...cableNotes(part(false), facts.ends, {uOf}),
-               ...cableNotes(part(true), facts.ends, {undrawn: true, uOf})];
+  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []),
+               ...cableNotes(rack, facts.ends, {undrawn: c => gone.has(c.id), uOf})];
+  const names = cableNames(rack);
   for (const t of hung.tubes) {
     const c = rack.cables.find(x => x.id === t.link.id);
     if (!c) continue;
     const lost = t.loose.map(k => (k === 'from' ? ['A', c.a] : ['B', c.b]))
       .filter(([, e]) => facts.ends.get(endKey(e))?.reason == null);
     if (lost.length)
-      out.push(`Cable ${cableName(c)}: ${lost.map(([s, e]) => `end ${s}, ${endName(rack, e, uOf)},`).join(' and ')} `
+      out.push(`Cable ${names.get(c.id)}: ${lost.map(([s, e]) => `end ${s}, ${endName(rack, e, uOf)},`).join(' and ')} `
         + `could not be placed in the 3D model, so the cable ${t.mesh ? 'hangs loose' : 'is not drawn'} there.`);
   }
   return out;
@@ -325,7 +333,9 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
           missing.push(...faceNotes({label: it.label, u: uOfItem(rack.frame, it, chassisOf), pane, panel, face: null}));
       }
     }
-    const facts = (rack.cables || []).length ? await cableEnds(rack) : UNCHECKED;
+    // The facts the scene hung its cables by, when it kept them; the export's
+    // own reading only for a scene that has none (a stub, a failed hang).
+    const facts = !(rack.cables || []).length ? UNCHECKED : scene.rackCables?.facts ?? await cableEnds(rack);
     const notes = uniq([...rackNotes(rack, {cables: false}), ...mountNotes(rack.items, chassisOf, rack.frame),
                         ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts, heightOf(chassisOf))]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
@@ -528,9 +538,11 @@ export async function bomCsv(rack, chassisOf) {
 // so (export-data.js UNCHECKED_NOTE) rather than calling every end connected.
 // Probe only (rack-page.js, ?probe=1 window.__rack.failExport): make the
 // exports' own reading fail ({facts: true}), or one sheet pane's cables fail
-// to draw ({pane: 'front'}), to see each export without it.
+// to draw ({pane: 'front'}), to see each export without it. Anything that is
+// not such an object - nothing, null - is "nothing fails": it never makes an
+// export throw.
 let probeFail = {};
-export const failExport = (what = {}) => { probeFail = what; };
+export const failExport = what => { probeFail = what && typeof what === 'object' ? what : {}; };
 export const cableEnds = rack => (probeFail.facts ? Promise.reject(new Error('probe: export cableFacts fails')) : cableFacts(rack)).catch(err => {
   console.warn("[portrayal] export: could not read the cables' faces", err);
   return UNCHECKED;

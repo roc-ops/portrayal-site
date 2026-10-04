@@ -20,9 +20,10 @@ const NO_WEBGL = "3D isn't available in this browser, so the rack is shown in 2D
 //     device) does not land, so 2D and 3D agree on which cables hang free;
 //   - an end with a plug or a DAC end seated lands on its cable points;
 //   - any other end lands on the center of its port, as it does in 2D.
-// Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked`, or
-// {failed: true} when the cables could not be drawn: the rack still stands,
-// and an export of it says so.
+// Returns drawCables3d's {tubes, anchors, boxes, group} plus `checked` and the
+// `facts` the cables were hung by (an export's notes read those, so they
+// describe this scene and not a later reading), or {failed: true} when the
+// cables could not be drawn: the rack still stands, and an export of it says so.
 async function hangCables(scene, rack, facts) {
   const loose = new Set([...facts.ends].filter(([, v]) => v.reason != null).map(([k]) => k));
   try {
@@ -33,7 +34,7 @@ async function hangCables(scene, rack, facts) {
       const port = await scene.portAnchor({id: item}, path, {view});
       return port ? [{position: port.position, normal: port.normal, view, path}] : [];
     }});
-    return {...drawn, checked: !facts.unchecked};
+    return {...drawn, checked: !facts.unchecked, facts};
   } catch (err) {
     console.warn('[portrayal] the cables could not be drawn in 3D', err);
     return {failed: true};
