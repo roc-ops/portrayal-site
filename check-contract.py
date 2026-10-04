@@ -1357,6 +1357,22 @@ check(len(_of) == 1 and len(_runs) == 1 and _mx_list == list(range(1, int(_of[0]
       "checks.yml runs the browser pass as every shard of the n it names, 1 to n, and one failing shard does not cancel the rest",
       f"matrix {_mx_list}, --shard .../{_of}, {len(_runs)} check-browser line(s)")
 
+# ── the Nautobot cable import script (Rack Builder Phase 2c) ─────────────────
+# Nautobot cannot import a cable by its ends' names, so the Rack Builder's
+# Nautobot kit carries a script that looks the ends up and creates each cable
+# by id. It is a real file, site/rack/nautobot/import_cables.py, which the page
+# fetches into the zip - so it must be served, and it is tested here, against
+# a mock Nautobot, on every push and in CI: nobody runs it by hand until a
+# user does, against their own instance.
+_ict = HERE / "tests" / "rack" / "import_cables_test.py"
+_icr = _sp.run([sys.executable, str(_ict)], capture_output=True, text=True) if _ict.is_file() else None
+check(_icr is not None and _icr.returncode == 0,
+      "site/rack/nautobot/import_cables.py passes its tests against a mock Nautobot",
+      (_icr.stderr[-600:] if _icr else "no tests/rack/import_cables_test.py"))
+check("site/rack/nautobot/import_cables.py" in _srv,
+      "the build serves site/rack/nautobot/import_cables.py, which the Nautobot kit fetches",
+      "the file is not tracked, or tools/build-public.py does not copy it")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
