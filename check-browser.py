@@ -9872,6 +9872,55 @@ def check_rack_dcim_kit_repeat(page, base):
     return bad
 
 
+@extra("rack.html: the acceptance rack (tools/dcim-verify) exports the kits its real-instance run expects: prefixed names, the rows each target takes, a reason for the rest")
+def check_rack_dcim_acceptance_kits(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    fixture = json.loads((HERE / "tools" / "dcim-verify" / "acceptance.rack.json").read_text(encoding="utf-8"))
+    try:
+        open_cabled(page, base, fixture)
+    except RuntimeError as e:
+        return bad + [f"acceptance rack: {e}"]
+    nb, nt = built_kit(page, "netbox"), built_kit(page, "nautobot")
+    # Everything the kits name that the rack can name carries the prefix cleanup deletes by.
+    own = {"1-rack.csv": ["site", "name"], "2-devices.csv": ["name", "role", "site", "rack"], "3-modules.csv": ["device"],
+           "4-cables.csv": ["side_a_device", "side_b_device", "label"]}
+    for name, cols in own.items():
+        for r in kit_rows(nb, name):
+            if any(not r[c].startswith("pt-verify-") for c in cols):
+                bad.append(f"acceptance rack: {name} has a name without the prefix: {r}")
+    for r in kit_rows(nt, "3-cables.csv") + kit_rows(nt, "1-devices.csv"):
+        if any(not r[c].startswith("pt-verify-") for c in r if c in ("a_device", "b_device", "label", "name", "role__name", "location__name", "rack__name")):
+            bad.append(f"acceptance rack: a Nautobot row has a name without the prefix: {r}")
+    if "will be refused" in nb["zip"]["README.txt"] + nt["zip"]["README.txt"]:
+        bad.append("acceptance rack: a kit says its devices file will be refused; the rack's settings are not in it")
+    # NetBox: three of the four devices, and three cables - one of them with no type and a decimal length in feet.
+    if [r["name"] for r in kit_rows(nb, "2-devices.csv")] != ["pt-verify-demarc-i4", "pt-verify-leaf-1", "pt-verify-core-1"]:
+        bad.append(f"acceptance rack: NetBox devices {[r['name'] for r in kit_rows(nb, '2-devices.csv')]}")
+    got = [(r["label"], r["side_a_name"], r["side_b_name"], r["type"], r["length"], r["length_unit"]) for r in kit_rows(nb, "4-cables.csv")]
+    if got != [("pt-verify-A1", "port-1", "slot-2/p0", "smf-os2", "2", "m"), ("pt-verify-mgmt", "mgmt-eth", "port-2-1", "cat6a", "", ""),
+               ("pt-verify-blank", "port-3", "slot-2/p1", "", "1.5", "ft")]:
+        bad.append(f"acceptance rack: NetBox cables {got}")
+    left = readme_lists(nb["zip"]["README.txt"])[0]
+    if [l.split(":")[0] for l in left] != ["pt-verify-demarc-i3 is not in the devices file", "Cable pt-verify-loose is not in the cables file",
+                                           "Cable pt-verify-pair is not in the cables file", "Cable pt-verify-console is not in the cables file"]:
+        bad.append(f"acceptance rack: NetBox leaves out {left}")
+    # Nautobot: all four devices, four cables with whole lengths, and a console port to an interface refused by name.
+    if len(kit_rows(nt, "1-devices.csv")) != 4:
+        bad.append(f"acceptance rack: Nautobot devices {[r['name'] for r in kit_rows(nt, '1-devices.csv')]}")
+    got = [(r["label"], r["type"], r["length"], r["length_unit"]) for r in kit_rows(nt, "3-cables.csv")]
+    if got != [("pt-verify-A1", "smf-os2", "2", "m"), ("pt-verify-mgmt", "cat6a", "", ""), ("pt-verify-pair", "cat6", "2", "ft"),
+               ("pt-verify-blank", "", "2", "ft")]:
+        bad.append(f"acceptance rack: Nautobot cables {got}")
+    left, notes = readme_lists(nt["zip"]["README.txt"])
+    if left != ["Cable pt-verify-loose is not in the cables file: end A, pt-verify-leaf-1 (U14) port-2, is not connected (port-2 holds no optic).",
+                "Cable pt-verify-console is not in the cables file: Nautobot does not cable a console port to an interface."]:
+        bad.append(f"acceptance rack: Nautobot leaves out {left}")
+    if "Cable pt-verify-pair: 1.5 ft is written as 2 ft: Nautobot takes whole numbers, and a length is rounded up." not in notes:
+        bad.append(f"acceptance rack: the README does not say a length was rounded up: {notes}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
