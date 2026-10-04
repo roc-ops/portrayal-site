@@ -8075,6 +8075,77 @@ def check_about_provenance(page, base):
     return bad
 
 
+@extra("rack.html: Export - the cable schedule lists each cable with its ends, media, length and status, named as the device import names them")
+def check_rack_export_cable_schedule(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cable schedule: {e}"]
+    dl = export_file(page, "cables")
+    status = export_status(page)
+    if dl.suggested_filename != "Cable-test-cables.csv":
+        bad.append(f"cable schedule: named {dl.suggested_filename!r}")
+    cols, rows, text = read_csv(dl)
+    if cols != ["cable", "a_device", "a_u", "a_port", "b_device", "b_u", "b_port", "media", "purpose",
+                "length", "length_unit", "status", "notes"]:
+        bad.append(f"cable schedule: columns {cols}")
+    want = [
+        {"cable": "A1", "a_device": "leaf-1", "a_u": "14", "a_port": "port-1", "b_device": "core-1", "b_u": "2",
+         "b_port": "slot-2/module/p0", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "2",
+         "length_unit": "m", "status": "connected", "notes": ""},
+        {"cable": "c2", "a_device": "leaf-1", "a_u": "14", "a_port": "mgmt-eth", "b_device": "demarc-i3", "b_u": "14",
+         "b_port": "port-2-1", "media": "Cat 6A copper", "purpose": "management", "length": "", "length_unit": "",
+         "status": "connected", "notes": ""},
+        {"cable": "c3", "a_device": "leaf-1", "a_u": "14", "a_port": "port-2", "b_device": "demarc-i4", "b_u": "20",
+         "b_port": "port-2-1", "media": "OS2 single-mode fiber", "purpose": "uplink", "length": "", "length_unit": "",
+         "status": "loose end",
+         "notes": "End A is not connected: port-2 holds no optic. "
+                  "OS2 single-mode fiber does not suit end B, which is copper."}]
+    if rows != want:
+        bad.append(f"cable schedule: rows {rows}")
+    notes = [l for l in text.partition("\r\nNotes\r\n")[2].split("\r\n") if l]
+    if notes != ["\"Devices that share a label are named as the device import names them: demarc-i3, demarc-i4.\""]:
+        bad.append(f"cable schedule: the notes section reads {notes}")
+    # One note in the notes section and one row with notes: two in the file.
+    if status != notes_status(2):
+        bad.append(f"cable schedule: the status reads {status!r}")
+    if "not in this export yet" in text:
+        bad.append("cable schedule: it says cables are not in this export")
+    # The device import names the same two devices the same way.
+    _, drows, _ = read_csv(export_file(page, "netbox-devices"))
+    names = {r["name"] for r in drows}
+    if not {"demarc-i3", "demarc-i4", "leaf-1", "core-1"} <= names:
+        bad.append(f"cable schedule: the device import names {sorted(names)}, and the schedule's are not among them")
+
+    # A label that opens as a formula is guarded; a length kept as written is in the notes, not the number.
+    odd = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js');
+      const r = window.__rack.doc().racks[0];
+      const cables = [{...r.cables[0], label: '=SUM(A1)', length: undefined, lengthAsWritten: {value: 'about 3', unit: 'm'}}];
+      return (await X.cableScheduleCsv({...r, cables})).data;
+    }""")
+    line = odd.split("\r\n")[1]
+    if not line.startswith("'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,connected,"):
+        bad.append(f"cable schedule: a formula-like label or a length as written is wrong: {line!r}")
+    if 'Length as written in the file: {""value"":""about 3"",""unit"":""m""}.' not in line:
+        bad.append(f"cable schedule: the length as written is not quoted in the notes: {line!r}")
+
+    # No cables: the header alone, and a note saying so.
+    open_fixture(page, base)
+    dl = export_file(page, "cables")
+    status = export_status(page)
+    cols, rows, text = read_csv(dl)
+    if dl.suggested_filename != "Export-test-cables.csv" or rows or not cols or cols[0] != "cable":
+        bad.append(f"cable schedule, no cables: {dl.suggested_filename!r} with rows {rows}")
+    if "This rack has no cables, so there is nothing to list." not in text.partition("\r\nNotes\r\n")[2]:
+        bad.append(f"cable schedule, no cables: the notes do not say so: {text!r}")
+    if status != notes_status(1):
+        bad.append(f"cable schedule, no cables: the status reads {status!r}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

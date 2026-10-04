@@ -26,7 +26,9 @@ import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
-        bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence} from './export-data.js';
+        bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
+        cableScheduleRows} from './export-data.js';
+import {cableFacts, UNCHECKED} from './cable-plugs.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -363,4 +365,25 @@ export async function bomCsv(rack, chassisOf) {
   const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: railItems.map(i => i.u)});
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
+}
+
+// ── CABLES (spec §9.4) ──────────────────────────────────────────────────
+// What each cabled end has on its panel, for an export: cable-plugs.js's own
+// reading (memoized, so the page and every export share one). A panel that
+// fails to load is already a loose end with a reason there. If the reading
+// itself fails, the export still comes: no end is judged, and the file says
+// so (export-data.js UNCHECKED_NOTE) rather than calling every end connected.
+export const cableEnds = rack => cableFacts(rack).catch(err => {
+  console.warn("[portrayal] export: could not read the cables' faces", err);
+  return UNCHECKED;
+});
+
+// THE CABLE SCHEDULE (spec §9.4): one row per cable. A spreadsheet opens it,
+// so its cells go through bomCell, as the BOM's do. The notes the file
+// carries are its notes section and each row's notes column.
+export async function cableScheduleCsv(rack) {
+  const facts = await cableEnds(rack);
+  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends);
+  return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
+          type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};
 }

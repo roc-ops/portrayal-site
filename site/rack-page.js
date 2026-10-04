@@ -15,7 +15,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv, cableScheduleCsv} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
@@ -492,6 +492,7 @@ const BUILD = {
   'netbox-devices': () => deviceImportCsv(rack(), chassisOf, 'netbox'),
   'nautobot-devices': () => deviceImportCsv(rack(), chassisOf, 'nautobot'),
   bom: () => bomCsv(rack(), chassisOf),
+  cables: () => cableScheduleCsv(rack()),
   glb: () => modelExport('glb'),
   usdz: () => modelExport('usdz'),
 };
@@ -541,6 +542,7 @@ function renderExports() {
     act('netbox-devices', 'NetBox device import (.csv)', 'Fill in role and site before importing'),
     act('nautobot-devices', 'Nautobot device import (.csv)', 'Fill in role and location before importing'),
     act('bom', 'Bill of materials (.csv)'),
+    act('cables', 'Cable schedule (.csv)'),
     el('hr'),
     act('json', 'Rack file (.json)'),
   );
