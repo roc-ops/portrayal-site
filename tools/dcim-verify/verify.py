@@ -154,6 +154,11 @@ class Client:
         self.target, self.base, self.netloc, self.scheme = target, base, u.netloc, u.scheme
         self.jar = http.cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self.jar), NoRedirect())
+        # A request that carries the API token goes through this opener, which has no cookie
+        # jar: if the session rode along, the instance would treat the request as
+        # session-authenticated and refuse it for a missing CSRF token (found in the
+        # 2026-10-04 run against Nautobot). Only the UI pages use the jar.
+        self.token_opener = urllib.request.build_opener(NoRedirect())
         self.csrf = ''
 
     def url(self, path):
@@ -163,13 +168,14 @@ class Client:
             raise Refused('refused: %s://%s is not the host in %s' % (u.scheme, u.netloc, ENV[self.target][0]))
         return full
 
-    def request(self, method, path, body=None, headers=None, follow=False):
+    def request(self, method, path, body=None, headers=None, follow=False, opener=None):
+        opener = opener or self.opener
         full = self.url(path)
         h = {'User-Agent': 'portrayal-dcim-verify/1', 'Referer': self.base + '/'}
         h.update(headers or {})
         req = urllib.request.Request(full, data=body, method=method, headers=h)
         try:
-            with self.opener.open(req, timeout=TIMEOUT) as r:
+            with opener.open(req, timeout=TIMEOUT) as r:
                 resp = Resp(r.status, r.headers, r.read())
         except urllib.error.HTTPError as e:
             resp = Resp(e.code, e.headers, e.read() or b'')
@@ -180,7 +186,7 @@ class Client:
             full = self.url(nxt)
             req = urllib.request.Request(full, method='GET', headers=h)
             try:
-                with self.opener.open(req, timeout=TIMEOUT) as r:
+                with opener.open(req, timeout=TIMEOUT) as r:
                     resp = Resp(r.status, r.headers, r.read())
             except urllib.error.HTTPError as e:
                 resp = Resp(e.code, e.headers, e.read() or b'')
@@ -217,15 +223,20 @@ class Client:
         return False, 'sign-in was not accepted (HTTP %s): %s' % (r.status, '; '.join(errs) or 'no message found')
 
     # -- the REST API --
-    def api_headers(self, csv_body=False):
+    def csrf_cookie(self):
+        """The CSRF cookie's value: what a session-authenticated unsafe request sends as X-CSRFToken."""
+        return next((c.value for c in self.jar if c.name == 'csrftoken'), '')
+
+    def api_headers(self, method='GET', csv_body=False):
         h = {'Accept': 'application/json'}
         tok = os.environ.get(ENV[self.target][1], '')
         if tok:
             # NetBox 4.7: "Bearer nbt_<key>.<token>" for a v2 token, "Token <token>" for v1.
             word = 'Bearer' if (self.target == 'netbox' and tok.startswith('nbt_')) else 'Token'
             h['Authorization'] = '%s %s' % (word, tok)
-        elif self.csrf:
-            h['X-CSRFToken'] = self.csrf       # session auth: the cookie jar carries the session
+        elif method not in ('GET', 'HEAD', 'OPTIONS') and self.csrf_cookie():
+            h['X-CSRFToken'] = self.csrf_cookie()   # session auth: the jar carries the session
+            h['Referer'] = self.base + '/'
         h['Content-Type'] = 'text/csv' if csv_body else 'application/json'
         return h
 
@@ -235,7 +246,9 @@ class Client:
             body = csv_text.encode('utf-8')
         elif data is not None:
             body = json.dumps(data).encode('utf-8')
-        return self.request(method, path, body, self.api_headers(csv_text is not None))
+        token = bool(os.environ.get(ENV[self.target][1], ''))
+        return self.request(method, path, body, self.api_headers(method, csv_text is not None),
+                            opener=self.token_opener if token else None)
 
     def api_list(self, path, max_pages=50):
         """Every result of a paginated list (same host only)."""
