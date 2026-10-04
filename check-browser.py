@@ -26,6 +26,9 @@ Run it locally the same way CI does:
 
     python3 check-browser.py              # starts its own server on a free port
     python3 check-browser.py --url http://localhost:8932   # against one already up
+
+CI runs the same checks split across parallel jobs, `--shard 1/4` to `--shard
+4/4` (see THE SHARDS, above main()). Without `--shard`, everything runs here.
 """
 import argparse
 import contextlib
@@ -2177,7 +2180,7 @@ def extra(label):
 def run_extra(browser, base, only, problems, notes):
     failed = 0
     for label, fn in EXTRA_CHECKS:
-        if only and fn.__name__ not in only:
+        if only is not None and fn.__name__ not in only:
             continue
         CLOCK[0] = time.time()
         page = browser.new_page()
@@ -9290,12 +9293,116 @@ def check_rack_unchecked_3d_each_rack(page, base):
     return bad
 
 
+# THE SHARDS. On CI's two CPUs the whole pass had grown to twenty minutes, most
+# of it software-rendered 3D, and no check waits on another: each opens its own
+# page. So CI runs it as n jobs side by side, `--shard i/n`, and this is how
+# the work is dealt out.
+#
+# A UNIT is one thing main() does, named: a page of PAGES, one of the blocks
+# hand-wired into main() (FIXED_UNITS), a registered @extra by its function
+# name, or the marks harness. units() is built from the same lists main() walks,
+# so a page or an @extra added to this file is in a shard without anyone
+# remembering to put it there.
+#
+# NO UNIT CAN BE SILENTLY SKIPPED, and three things hold that:
+#   - shard_plan() deals out units(), all of them, each to exactly one shard;
+#     check-contract.py asserts that for every n it might be asked for, and
+#     that the workflow's matrix asks for every shard of the n it names.
+#   - want() refuses a name that is not a unit, so a guard in main() cannot
+#     quietly be False in every shard.
+#   - a block added to main() with no want() around it runs in EVERY shard:
+#     wasteful, and never skipped.
+FIXED_UNITS = ["hero-2d", "hero-3d", "stage-rail", "rear-loose", "schema-coverage", "embed"]
+MARKS_UNIT = "marks-harness"
+
+# SECONDS A UNIT TAKES ON CI, for the units that take eight or more - read
+# from the lines took() prints in one green, unsharded run on the 2-CPU runner
+# (`gh run view <id> --log | grep 's  load '`), all from the same run because
+# runners differ by a third and only the proportions matter. The shards are
+# balanced by these, not by count: the stage rail alone is a fifth of the pass.
+# A unit not listed weighs DEFAULT_SECONDS, which is about what the many small
+# ones take, so a new check needs no entry here until it is slow enough to
+# unbalance a shard - and a stale number costs balance, never coverage.
+DEFAULT_SECONDS = 2.0
+SECONDS = {
+    "index.html": 73,
+    "explorer.html": 9, "annotate.html": 9, "components.html": 9, "compare.html": 9,
+    "drawings.html": 9, "drawio.html": 9, "exporter.html": 9, "schema.html": 9,
+    "kit.html": 9, "schematic.html": 9, "marks-harness.html": 9,
+    "viewer3d-harness.html": 9, "rack.html": 10, "contribute.html": 9,
+    "hero-3d": 23, "stage-rail": 219,
+    "check_kit_page": 24, "check_takeaway_cables_3d": 100,
+    "check_rack_export_3d": 11, "check_narrow_tool_pages": 11,
+    "check_rack_mount_flag_3d_exports": 10, "check_rack_export_overtaken": 20,
+    "check_rack_3d": 64, "check_wide_tool_pages": 10, "check_annotate_3d": 49,
+    "check_rack_cables_3d": 40, "check_rack_export_after_cable_edit": 15,
+    "check_rack_export_cable_failures": 12, "check_rack_cables_3d_scene": 10,
+    "check_rack_export_3d_cables": 25,
+}
+
+
+def units():
+    """Every unit of work main() does, in the order it does them."""
+    return list(PAGES) + FIXED_UNITS + [fn.__name__ for _, fn in EXTRA_CHECKS] + [MARKS_UNIT]
+
+
+def shard_plan(n):
+    """units() dealt into n lists: the heaviest unit first, each to whichever
+    shard is lightest so far. Depends on nothing but this file, so every job of
+    a matrix computes the same plan."""
+    all_units = units()
+    twice = sorted({u for u in all_units if all_units.count(u) > 1})
+    if twice:
+        raise SystemExit(f"check-browser: two units share a name, so one would hide the other: {twice}")
+    shards, load = [[] for _ in range(n)], [0.0] * n
+    for u in sorted(all_units, key=lambda u: (-SECONDS.get(u, DEFAULT_SECONDS), u)):
+        i = min(range(n), key=lambda i: (load[i], i))
+        shards[i].append(u)
+        load[i] += SECONDS.get(u, DEFAULT_SECONDS)
+    order = {u: k for k, u in enumerate(all_units)}
+    return [sorted(s, key=order.get) for s in shards]
+
+
+def parse_shard(text):
+    m = re.fullmatch(r"(\d+)/(\d+)", text or "")
+    i, n = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+    if not 1 <= i <= n:
+        raise SystemExit(f"check-browser: --shard wants i/n with 1 <= i <= n, not {text!r}")
+    return i, n
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
     ap.add_argument("--only", help="run only these registered extra checks, by function "
                                    "name, comma-separated - skips the page sweep and the stages")
+    ap.add_argument("--shard", metavar="i/n", help="run only the i-th of n balanced parts of "
+                                                   "the whole pass - how CI runs it, n jobs at once")
+    ap.add_argument("--plan", metavar="n", type=int, help="print what each of n shards would run, "
+                                                          "with the seconds it is weighed at, and stop")
     args = ap.parse_args()
+
+    if args.plan:
+        for i, shard in enumerate(shard_plan(args.plan), 1):
+            print(f"shard {i}/{args.plan}: {len(shard)} units, about "
+                  f"{sum(SECONDS.get(u, DEFAULT_SECONDS) for u in shard):.0f}s")
+            for u in shard:
+                print(f"  {SECONDS.get(u, DEFAULT_SECONDS):5.0f}s  {u}")
+        return 0
+    if args.shard and args.only:
+        raise SystemExit("check-browser: --shard and --only both choose what runs; give one")
+
+    # WHAT THIS RUN DOES: everything, unless it is one shard of several.
+    mine = None
+    if args.shard:
+        i, n = parse_shard(args.shard)
+        mine = set(shard_plan(n)[i - 1])
+        print(f"shard {i}/{n}: {len(mine)} of {len(units())} units", flush=True)
+    known = set(units())
+    def want(unit):
+        if unit not in known:
+            raise KeyError(f"{unit!r} is not a unit - see units()")
+        return mine is None or unit in mine
 
     from playwright.sync_api import sync_playwright   # imported late, so --help works without it
 
@@ -9310,6 +9417,7 @@ def main():
     problems, notes, failed_things = [], [], 0
     unexercised = []          # printed on every run, pass or fail: what this runner could not check
     hero_cables = ["hero: the index.html walk never reached the hero's cables"]
+    marks = None              # (passed, failed), once the marks harness has run
     try:
         if not wait_for(f"{base}/index.html"):
             print("check-browser: no server answering at", base, file=sys.stderr)
@@ -9325,6 +9433,8 @@ def main():
                     print("  " + line)
                 return 1 if failed_things else 0
             for name in PAGES:
+                if not want(name):
+                    continue
                 page = browser.new_page()
                 try:
                     bad = check(page, base, name)
@@ -9344,99 +9454,110 @@ def main():
                     notes.append(f"ok    {name}")
                 took(f"{name}")
 
-            if hero_cables:
-                failed_things += 1
-                problems.append("FAIL  the hero's cables and caption")
-                problems += [f"        {b}" for b in dict.fromkeys(hero_cables)]
-            else:
-                notes.append("ok    the hero's cables and caption")
-            took("the hero's cables and caption")
+            if want("index.html"):
+                if hero_cables:
+                    failed_things += 1
+                    problems.append("FAIL  the hero's cables and caption")
+                    problems += [f"        {b}" for b in dict.fromkeys(hero_cables)]
+                else:
+                    notes.append("ok    the hero's cables and caption")
+                took("the hero's cables and caption")
 
-            bad = check_hero_fallbacks(browser, base)
-            if bad:
-                failed_things += 1
-                problems.append("FAIL  the 2D hero stands on its own")
-                problems += [f"        {b}" for b in dict.fromkeys(bad)]
-            else:
-                notes.append("ok    the 2D hero stands on its own")
-            took("the 2D hero stands on its own")
+            if want("hero-2d"):
+                bad = check_hero_fallbacks(browser, base)
+                if bad:
+                    failed_things += 1
+                    problems.append("FAIL  the 2D hero stands on its own")
+                    problems += [f"        {b}" for b in dict.fromkeys(bad)]
+                else:
+                    notes.append("ok    the 2D hero stands on its own")
+                took("the 2D hero stands on its own")
 
-            bad, skipped = check_hero_3d(browser, base)
-            unexercised += skipped
-            if bad:
-                failed_things += 1
-                problems.append("FAIL  the hero in 3D")
-                problems += [f"        {b}" for b in dict.fromkeys(bad)]
-            else:
-                notes.append("ok    the hero in 3D")
-            took("the hero in 3D")
+            if want("hero-3d"):
+                bad, skipped = check_hero_3d(browser, base)
+                unexercised += skipped
+                if bad:
+                    failed_things += 1
+                    problems.append("FAIL  the hero in 3D")
+                    problems += [f"        {b}" for b in dict.fromkeys(bad)]
+                else:
+                    notes.append("ok    the hero in 3D")
+                took("the hero in 3D")
 
-            page = browser.new_page()
-            try:
-                bad = check_stages(page, base)
-            finally:
-                page.close()
-            if bad:
-                failed_things += 1
-                problems.append(f"FAIL  the stage rail: 7 stages")
-                problems += [f"        {b}" for b in dict.fromkeys(bad)]
-            else:
-                notes.append(f"ok    the stage rail: 7 stages")
-            took(f"the stage rail: 7 stages")
+            if want("stage-rail"):
+                page = browser.new_page()
+                try:
+                    bad = check_stages(page, base)
+                finally:
+                    page.close()
+                if bad:
+                    failed_things += 1
+                    problems.append(f"FAIL  the stage rail: 7 stages")
+                    problems += [f"        {b}" for b in dict.fromkeys(bad)]
+                else:
+                    notes.append(f"ok    the stage rail: 7 stages")
+                took(f"the stage rail: 7 stages")
 
-            page = browser.new_page()
-            try:
-                bad = check_rear_loose(page, base)
-            finally:
-                page.close()
-            if bad:
-                failed_things += 1
-                problems.append(f"FAIL  stage 4: a loose end on the rear is named")
-                problems += [f"        {b}" for b in dict.fromkeys(bad)]
-            else:
-                notes.append(f"ok    stage 4: a loose end on the rear is named")
-            took(f"stage 4: a loose end on the rear is named")
+            if want("rear-loose"):
+                page = browser.new_page()
+                try:
+                    bad = check_rear_loose(page, base)
+                finally:
+                    page.close()
+                if bad:
+                    failed_things += 1
+                    problems.append(f"FAIL  stage 4: a loose end on the rear is named")
+                    problems += [f"        {b}" for b in dict.fromkeys(bad)]
+                else:
+                    notes.append(f"ok    stage 4: a loose end on the rear is named")
+                took(f"stage 4: a loose end on the rear is named")
 
-            page = browser.new_page()
-            try:
-                bad = check_schema_coverage(page, base)
-            finally:
-                page.close()
-            if bad:
-                failed_things += 1
-                problems.append(f"FAIL  schema.html shows every property in the schemas")
-                problems += [f"        {b}" for b in dict.fromkeys(bad)]
-            else:
-                notes.append(f"ok    schema.html shows every property in the schemas")
-            took(f"schema.html shows every property in the schemas")
+            if want("schema-coverage"):
+                page = browser.new_page()
+                try:
+                    bad = check_schema_coverage(page, base)
+                finally:
+                    page.close()
+                if bad:
+                    failed_things += 1
+                    problems.append(f"FAIL  schema.html shows every property in the schemas")
+                    problems += [f"        {b}" for b in dict.fromkeys(bad)]
+                else:
+                    notes.append(f"ok    schema.html shows every property in the schemas")
+                took(f"schema.html shows every property in the schemas")
 
-            page = browser.new_page()
-            try:
-                bad = check_embed(page, base)
-            finally:
-                page.close()
-            if bad:
-                failed_things += 1
-                problems.append(f"FAIL  explorer embed mode")
-                problems += [f"        {b}" for b in dict.fromkeys(bad)]
-            else:
-                notes.append(f"ok    explorer embed mode")
-            took(f"explorer embed mode")
+            if want("embed"):
+                page = browser.new_page()
+                try:
+                    bad = check_embed(page, base)
+                finally:
+                    page.close()
+                if bad:
+                    failed_things += 1
+                    problems.append(f"FAIL  explorer embed mode")
+                    problems += [f"        {b}" for b in dict.fromkeys(bad)]
+                else:
+                    notes.append(f"ok    explorer embed mode")
+                took(f"explorer embed mode")
 
-            failed_things += run_extra(browser, base, None, problems, notes)
+            failed_things += run_extra(browser, base, mine, problems, notes)
 
-            page = browser.new_page()
-            try:
-                passed, failed = run_marks_harness(page, base)
-            finally:
-                page.close()
-            took("the marks harness")
+            if want(MARKS_UNIT):
+                page = browser.new_page()
+                try:
+                    marks = run_marks_harness(page, base)
+                finally:
+                    page.close()
+                took("the marks harness")
             browser.close()
     finally:
         if server:
             server.terminate()
 
-    if failed or not passed:
+    passed, failed = marks or (0, [])
+    if not want(MARKS_UNIT):
+        pass                  # another shard's
+    elif failed or not passed:
         failed_things += 1
         problems.append(f"FAIL  the marks harness: {passed} passed, {len(failed)} failed")
         problems += [f"        {l.strip()}" for l in failed]
@@ -9452,6 +9573,12 @@ def main():
         print("\nA page that 404s or throws is a page nobody can use. If this is a")
         print("deliberate removal, the list at the top of this file is where it goes.")
         return 1
+    if mine is not None:
+        # One shard's share. Zero here would mean a shard that checked nothing
+        # and said so in green - units() outnumbers any n CI asks for, so fail.
+        print(f"browser: shard {args.shard}, {len(notes)} checks passed - "
+              f"{len(mine)} of the whole pass's {len(units())} units")
+        return 0 if notes else 1
     print(f"browser: {len(notes)} checks passed, "
           f"{len(PAGES)} pages, {len(STAGES)} stage rail, and {passed} in the marks harness")
     return 0

@@ -23,14 +23,16 @@ concurrency:
   group: checks-${{ github.ref }}
   cancel-in-progress: true
 
+# TWO KINDS OF JOB, side by side. Every check run on a commit has to end green
+# for it to land, so nothing here is allowed to end any other way on a good
+# commit: no job waits on another, and none is skipped or cancelled by design.
 jobs:
-  checks:
+  # THE FILES, and the pure modules: nothing to install but the interpreters,
+  # and an answer in under a minute.
+  files:
+    name: contract and modules
     runs-on: ubuntu-latest
-    # 40, not 20: the browser pass had grown to 20 min 2 s on main (3921fcd6) and
-    # #105's fifteen more checks ran into the old limit, which GitHub reports as
-    # "cancelled", not as a failure. This is headroom until the pass is split
-    # across parallel jobs.
-    timeout-minutes: 40
+    timeout-minutes: 10
     steps:
       # depth 1 deliberately: assets/dist is ~286 MB of committed build output
       # and none of these checks reads a second commit.
@@ -40,9 +42,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
 
-      # THE FILES, which needs nothing installed. Run first and on its own step
-      # so a contract break is legible as one, rather than as whichever page
-      # happened to fall over because of it.
+      # Run first and on its own step so a contract break is legible as one,
+      # rather than as whichever page happened to fall over because of it.
       - name: the contract with Portrayal
         run: python3 check-contract.py
 
@@ -54,14 +55,41 @@ jobs:
       - name: the site's pure modules
         run: node --test tests/*/*.test.mjs
 
+  # THE PAGES, opened - in four jobs at once. As one job on a 2-CPU runner the
+  # pass had grown to twenty minutes and into its own timeout; no check in it
+  # waits on another, so check-browser.py deals them into shards balanced by
+  # how long each takes (see THE SHARDS there) and each job runs one.
+  #
+  # The list below and the n after the slash say the same thing twice, and
+  # check-contract.py fails if they stop agreeing - a shard nobody runs is a
+  # quarter of the checks gone quiet. fail-fast is off because a cancelled
+  # shard says nothing about its checks, and one red shard is not the whole
+  # answer to what a commit broke.
+  browser:
+    name: browser (${{ matrix.shard }} of 4)
+    runs-on: ubuntu-latest
+    # The slowest shard measures about five minutes; the stage rail alone is
+    # most of one and cannot be split.
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 1}
+
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+
       - name: install a browser
         run: |
           python3 -m pip install --disable-pip-version-check playwright
           python3 -m playwright install --with-deps chromium
 
-      # THE PAGES, opened. check-browser.py starts its own serve.py on a free
-      # port, so there is nothing to start or stop around it here.
+      # check-browser.py starts its own serve.py on a free port, so there is
+      # nothing to start or stop around it here.
       - name: the pages, and the marks harness
         run: |
           echo "runner: $(nproc) CPUs, $(free -m | awk '/Mem:/ {print $2}') MB"
-          python3 check-browser.py
+          python3 check-browser.py --shard ${{ matrix.shard }}/4

@@ -109,6 +109,16 @@ broken. The hook runs against your tree, where that file is sitting there
 working. The front page's hero was missing from every fresh clone for exactly
 that reason, and only the workflow saw it.
 
+The workflow runs the browser pass as four jobs at once, `python3
+check-browser.py --shard 1/4` to `4/4`, because one job on a two-CPU runner had
+reached twenty minutes. The shards are balanced by how long each check takes on
+CI, from the table at THE SHARDS in `check-browser.py`; a check not in the table
+is weighed as a short one, so a new check needs no entry. `python3
+check-browser.py --plan 4` prints who runs what. The contract check fails if
+the shards ever stop covering every check exactly once, or if the workflow
+stops asking for all of them. Without `--shard` the script runs everything, as
+the hook does.
+
 Then click through the showcase and check it still behaves.
 
 ## The showcase

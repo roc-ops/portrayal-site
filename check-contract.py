@@ -1306,6 +1306,57 @@ check(_pub.exists() and _pubrun(_ok) == (0, ["device.schema.json"]) and _pubrun(
       "tools/publish-schemas.sh publishes a schema whose $id is its URL and refuses one whose is not",
       f"{(_pubrun(_ok), _pubrun(_bad)) if _pub.exists() else 'no tools/publish-schemas.sh'}")
 
+# ── the browser pass, in shards ──────────────────────────────────────────
+# CI runs check-browser.py as a matrix of `--shard i/n` jobs. That is only as
+# good as two things nobody would notice breaking: that the n shards between
+# them run every unit exactly once, and that the workflow asks for all n. A
+# check that lands in no shard fails nothing - it just stops being run - so
+# both are held here, where a new page or a new @extra changes the answer.
+_cb_spec = _ilu.spec_from_file_location("check_browser", HERE / "check-browser.py")
+_cb = _ilu.module_from_spec(_cb_spec)
+_cb_spec.loader.exec_module(_cb)            # playwright is imported inside main(), not here
+_cb_src = (HERE / "check-browser.py").read_text()
+_units = _cb.units()
+_registered = re.findall(r"^@extra\(.*\)\ndef (\w+)\(", _cb_src, re.M)
+check(len(_units) == len(set(_units))
+      and sorted(_registered) == sorted(fn.__name__ for _, fn in _cb.EXTRA_CHECKS)
+      and set(_registered) | set(_cb.PAGES) | set(_cb.FIXED_UNITS) | {_cb.MARKS_UNIT} == set(_units),
+      "check-browser: every page, every hand-wired block, every @extra and the marks harness is a unit, under a name of its own",
+      f"{len(_units)} units, {len(set(_units))} names; {len(_registered)} @extra in the file, "
+      f"{len(_cb.EXTRA_CHECKS)} registered")
+_split_bad = []
+for _n in range(1, 13):
+    _plan = _cb.shard_plan(_n)
+    _dealt = [u for _s in _plan for u in _s]
+    if len(_plan) != _n or sorted(_dealt) != sorted(_units) or _plan != _cb.shard_plan(_n):
+        _split_bad.append(f"n={_n}: {len(_dealt)} dealt, {len(set(_dealt))} distinct, of {len(_units)}")
+check(not _split_bad,
+      "check-browser: --shard i/n deals every unit to exactly one shard, the same way each time, for n = 1 to 12",
+      "; ".join(_split_bad))
+# main() guards each block with want(<unit>): every hand-wired unit has its
+# guard, the page loop and the extras take theirs from the same set, and a
+# name that is not a unit raises rather than reading as "not mine".
+_main = _cb_src[_cb_src.index("\ndef main():"):]
+_guards = re.findall(r'\bwant\((?:"([^"]+)"|(MARKS_UNIT))\)', _main)
+_guarded = {a or _cb.MARKS_UNIT for a, b in _guards}
+check(_guarded == set(_cb.FIXED_UNITS) | {"index.html", _cb.MARKS_UNIT}
+      and "if not want(name):" in _main
+      and "run_extra(browser, base, mine, problems, notes)" in _main
+      and "if unit not in known:" in _main,
+      "check-browser: main() asks want() for every hand-wired unit, the page loop and the extras ask the same set, and an unknown name raises",
+      f"guards {sorted(_guarded)} against units {sorted(set(_cb.FIXED_UNITS) | {'index.html', _cb.MARKS_UNIT})}")
+# The workflow: a matrix of 1..n, each run as --shard <i>/n with the same n.
+_wf = (HERE / ".github" / "workflows" / "checks.yml").read_text()
+_wf_code = "\n".join(l for l in _wf.splitlines() if not l.lstrip().startswith("#"))
+_mx = re.search(r"^\s*shard:\s*\[([\d,\s]+)\]\s*$", _wf_code, re.M)
+_of = re.findall(r"check-browser\.py\s+--shard\s+\$\{\{\s*matrix\.shard\s*\}\}/(\d+)", _wf_code)
+_runs = re.findall(r"check-browser\.py.*", _wf_code)
+_mx_list = [int(x) for x in _mx.group(1).split(",")] if _mx else []
+check(len(_of) == 1 and len(_runs) == 1 and _mx_list == list(range(1, int(_of[0]) + 1))
+      and re.search(r"^\s*fail-fast:\s*false\s*$", _wf_code, re.M) is not None,
+      "checks.yml runs the browser pass as every shard of the n it names, 1 to n, and one failing shard does not cancel the rest",
+      f"matrix {_mx_list}, --shard .../{_of}, {len(_runs)} check-browser line(s)")
+
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
     print("contract: %d checks passed, %d FAILED" % (len(notes), len(problems)))
