@@ -3026,7 +3026,24 @@ def check_drawio_group_faces(page, base):
     return bad
 
 
-@extra("rack.html: Export - draw.io has a page per face, only what shows from each side, and a seated card's ports")
+# One draw.io page, read: its cabinets by cell id, what each one holds (the
+# values of the cells whose parent it is), every id, and the edges.
+def drawio_page(text):
+    root = ET.fromstring(text)
+    pages = root.findall("diagram")
+    page = pages[0] if pages else None
+    cells = list(page.iter("mxCell")) if page is not None else []
+    geo = lambda c: c.find("mxGeometry")
+    cabinets = {c.get("id"): {"value": c.get("value"), "x": float(geo(c).get("x")),
+                              "holds": [k.get("value") for k in cells if k.get("parent") == c.get("id")]}
+                for c in cells if re.fullmatch(r"g0r\d+-front", c.get("id") or "")}
+    return {"names": [d.get("name") for d in pages], "cabinets": cabinets,
+            "ids": [e.get("id") for e in (page.iter() if page is not None else []) if e.get("id")],
+            "edges": [o for o in (page.iter("object") if page is not None else [])
+                      if o.find("mxCell") is not None and o.find("mxCell").get("edge") == "1"]}
+
+
+@extra("rack.html: Export - draw.io is one page with a front and a rear cabinet, only what shows from each side, and a seated card's ports")
 def check_rack_export_drawio(page, base):
     from collections import Counter
     bad = []
@@ -3037,31 +3054,47 @@ def check_rack_export_drawio(page, base):
         bad.append(f"draw.io: named {dl.suggested_filename!r}")
     text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
     try:
-        root = ET.fromstring(text)
+        d = drawio_page(text)
     except ET.ParseError as e:
         return bad + [f"draw.io: not well-formed XML ({e})"]
-    pages = {d.get("name"): d for d in root.findall("diagram")}
-    if set(pages) != {"Front", "Rear"}:
-        return bad + [f"draw.io: pages {sorted(pages)}, expected Front and Rear"]
-    values = {n: [e.get("value") for e in p.iter() if e.get("value") is not None] for n, p in pages.items()}
-    for n, p in pages.items():
-        dup = [i for i, c in Counter(e.get("id") for e in p.iter() if e.get("id")).items() if c > 1]
-        if dup:
-            bad.append(f"draw.io {n}: duplicate cell ids {dup[:5]}")
-    if values["Front"].count("demarc") != 1:
-        bad.append("draw.io Front: expected one demarc (U20's, from behind); U14's is behind leaf-1")
-    if "leaf-1" in values["Rear"]:
-        bad.append("draw.io Rear: leaf-1 is drawn, but demarc is mounted in front of it there")
-    if values["Rear"].count("demarc") != 2 or "core-1" not in values["Rear"]:
-        bad.append("draw.io Rear: expected both demarcs and core-1's rear")
-    if 'portrayal-path="slot-2/module/p0"' not in ET.tostring(pages["Front"], encoding="unicode"):
-        bad.append("draw.io Front: no port cell for core-1's seated card")
+    # ONE page, named for the rack: the rear is beside the front, not on a second tab.
+    if d["names"] != ["Export test"]:
+        return bad + [f"draw.io: pages {d['names']}, expected the one page 'Export test'"]
+    cab = d["cabinets"]
+    if {k: v["value"] for k, v in cab.items()} != {"g0r0-front": "Export test · front", "g0r1-front": "Export test · rear"}:
+        return bad + [f"draw.io: cabinets {[(k, v['value']) for k, v in cab.items()]}, expected a front and a rear"]
+    front, rear = cab["g0r0-front"], cab["g0r1-front"]
+    # Side by side: the vendor's cabinet is 180 wide, and racks stand 190 apart.
+    if (front["x"], rear["x"]) != (0.0, 370.0):
+        bad.append(f"draw.io: the cabinets are at x {front['x']} and {rear['x']}, expected 0 and 370")
+    dup = [i for i, c in Counter(d["ids"]).items() if c > 1]
+    if dup:
+        bad.append(f"draw.io: duplicate cell ids {dup[:5]}")
+    if front["holds"].count("demarc") != 1:
+        bad.append("draw.io front cabinet: expected one demarc (U20's, from behind); U14's is behind leaf-1")
+    if "leaf-1" not in front["holds"] or "core-1" not in front["holds"]:
+        bad.append(f"draw.io front cabinet: holds {front['holds']}")
+    if "leaf-1" in rear["holds"]:
+        bad.append("draw.io rear cabinet: leaf-1 is drawn, but demarc is mounted in front of it there")
+    if rear["holds"].count("demarc") != 2 or "core-1" not in rear["holds"]:
+        bad.append("draw.io rear cabinet: expected both demarcs and core-1's rear")
+    # A rear cabinet entry has an id of its own, so its cells never collide with the front's.
+    if "i1-g0r0-front" not in d["ids"] or "i1-rear-g0r1-front" not in d["ids"] or "i3-rear-g0r1-front" not in d["ids"]:
+        bad.append("draw.io: core-1 is not in both cabinets under ids of its own, or the rear demarc is missing")
+    card = [o for o in ET.fromstring(text).iter("object") if o.get("portrayal-path") == "slot-2/module/p0"]
+    if [o.get("id") for o in card] != ["i1-g0r0-front-slot-2--module--p0"]:
+        bad.append(f"draw.io front cabinet: the seated card's port cell is {[o.get('id') for o in card]}")
     if "numDisp=descend;" not in text:
         bad.append("draw.io: a bottom-up rack is not numbered from the bottom")
-    if "is behind leaf-1" not in text:
+    if "Front cabinet: demarc is behind leaf-1 and is not drawn there." not in text:
         bad.append("draw.io: the notes comment does not list the device hidden behind leaf-1")
     if not text.startswith('<mxfile host="portrayal"><!--') or text.count("<!--") != 1:
         bad.append(f"draw.io: the notes are not one comment inside <mxfile>: {text[:80]!r}")
+    # A rack with no cables: no edge, and no word about cables.
+    if d["edges"] or "cable" in text.partition("-->")[0].lower():
+        bad.append(f"draw.io: a rack with no cables has {len(d['edges'])} edges or a cable note")
+    if "@rear" in text.partition("-->")[0]:
+        bad.append("draw.io: an id made for the rear cabinet is in the notes a person reads")
 
     # draw.io reads a label as HTML (html=1): a name with & and < must reach it
     # HTML-escaped, or the tag-like part is dropped from what it shows.
@@ -3073,8 +3106,11 @@ def check_rack_export_drawio(page, base):
       const doc = new DOMParser().parseFromString(out.data, 'application/xml');
       const shown = v => { const d = document.createElement('div'); d.innerHTML = v; return d.textContent; };
       const values = [...doc.querySelectorAll('[value]')].map(e => e.getAttribute('value')).filter(Boolean);
+      const blank = await X.drawioFile({...rack, name: ''}, () => ({ru: 1}));
       return {name: out.name, error: doc.querySelector('parsererror')?.textContent || '',
-              values, shown: values.map(shown)};
+              page: doc.querySelector('diagram')?.getAttribute('name'), values, shown: values.map(shown),
+              blank: [...blank.data.matchAll(/id="g0r\\d-front" value="([^"]*)"/g)].map(m => m[1]),
+              blankPage: blank.data.match(/<diagram name="([^"]*)"/)?.[1]};
     }""")
     if got["error"]:
         bad.append(f"draw.io labels: not well-formed XML ({got['error'][:120]})")
@@ -3083,8 +3119,15 @@ def check_rack_export_drawio(page, base):
     for want in ("R&D <core> · front", "R&D <core> · rear", "a<b>&c", "▲ a<b>&c"):
         if want not in got["shown"]:
             bad.append(f"draw.io labels: draw.io would not show {want!r}; it shows {sorted(set(got['shown']))}")
-    if "R&amp;D &lt;core&gt; · front" not in got["values"]:
-        bad.append(f"draw.io labels: the cabinet's value is not HTML-escaped: {sorted(set(got['values']))}")
+    for want in ("R&amp;D &lt;core&gt; · front", "R&amp;D &lt;core&gt; · rear"):
+        if want not in got["values"]:
+            bad.append(f"draw.io labels: a cabinet's value is not HTML-escaped ({want!r}): {sorted(set(got['values']))}")
+    # The page's name is an attribute, not a label: it is the rack's name as typed.
+    if got["page"] != "R&D <core>":
+        bad.append(f"draw.io labels: the page is named {got['page']!r}")
+    # A rack with no name still gets a front and a rear cabinet, and a page with a name.
+    if got["blank"] != ["front", "rear"] or got["blankPage"] != "Rack":
+        bad.append(f"draw.io labels: a nameless rack's cabinets read {got['blank']} on page {got['blankPage']!r}")
     return bad
 
 
@@ -3838,9 +3881,10 @@ def check_rack_export_empty(page, base):
     dl = export_file(page, "drawio")
     ok_status("drawio")
     try:
-        root = ET.fromstring(pathlib.Path(dl.path()).read_text(encoding="utf-8"))
-        if [d.get("name") for d in root.findall("diagram")] != ["Front", "Rear"]:
-            bad.append("empty rack drawio: not a Front and a Rear page")
+        d = drawio_page(pathlib.Path(dl.path()).read_text(encoding="utf-8"))
+        if d["names"] != ["Empty rack"] or [c["value"] for c in d["cabinets"].values()] != \
+                ["Empty rack · front", "Empty rack · rear"] or any(c["holds"] for c in d["cabinets"].values()):
+            bad.append(f"empty rack drawio: not one page with an empty front and rear cabinet: {d['names']}, {d['cabinets']}")
     except ET.ParseError as e:
         bad.append(f"empty rack drawio: not well-formed XML ({e})")
 

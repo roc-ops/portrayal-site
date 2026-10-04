@@ -131,3 +131,33 @@ test('the BOM: a length kept as written is not set, a unit is part of the line, 
   assert.deepEqual(X.cableBomRows({...RACK, cables: []}), []);
   assert.deepEqual(X.cableBomRows({items: []}), []);
 });
+
+test('draw.io: a rear cabinet entry gets an id no item has, whatever the ids are', () => {
+  assert.equal(X.rearSuffix(RACK.items), '@rear');
+  assert.equal(X.drawioId('i3', 'front', '@rear'), 'i3');
+  assert.equal(X.drawioId('i3', 'rear', '@rear'), 'i3@rear');
+  const odd = [{id: 'i3'}, {id: 'i3@rear'}, {id: 'x@rear@'}];
+  const s = X.rearSuffix(odd);
+  assert.equal(s, '@rear@@');
+  const ids = odd.map(i => i.id), rear = odd.map(i => X.drawioId(i.id, 'rear', s));
+  assert.equal(new Set([...ids, ...rear]).size, 6);
+  assert.equal(X.drawioId(7, 'front', s), '7');
+});
+
+test("draw.io: the second cabinet's label is changed by one exact replace, escaped as the vendor writes it", () => {
+  const cab = (id, value) => `<mxCell id="${id}" value="${value}" style="s" vertex="1" parent="1"></mxCell>`;
+  const file = (a, b) => `<mxfile host="portrayal"><!--\nNotes:\n- id="g0r1-front" value="x · front"\n--><diagram name="x">${a}${b}</diagram></mxfile>`;
+  assert.equal(X.rearCabinetLabel(file(cab('g0r0-front', 'x · front'), cab('g0r1-front', 'x · front')), 'x'),
+    file(cab('g0r0-front', 'x · front'), cab('g0r1-front', 'x · rear')));
+  // The label arrives HTML-escaped (htmlText), and the vendor escapes that for XML.
+  const label = X.htmlText('R&D <core> "a"');
+  const esc = 'R&amp;amp;D &amp;lt;core&amp;gt; &quot;a&quot;';
+  assert.equal(X.rearCabinetLabel(file(cab('g0r0-front', `${esc} · front`), cab('g0r1-front', `${esc} · front`)), label),
+    file(cab('g0r0-front', `${esc} · front`), cab('g0r1-front', `${esc} · rear`)));
+  // A rack with no name: the vendor writes the face alone.
+  assert.equal(X.rearCabinetLabel(file(cab('g0r0-front', 'front'), cab('g0r1-front', 'front')), ''),
+    file(cab('g0r0-front', 'front'), cab('g0r1-front', 'rear')));
+  // No such cell: it throws, and never returns the file unchanged.
+  assert.throws(() => X.rearCabinetLabel(file(cab('g0r0-front', 'x · front'), ''), 'x'), /rear cabinet/);
+  assert.throws(() => X.rearCabinetLabel(file(cab('g0r0-front', 'x · front'), cab('g0r1-front', 'y · front')), 'x'), /rear cabinet/);
+});

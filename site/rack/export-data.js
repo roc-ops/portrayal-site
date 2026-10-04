@@ -247,6 +247,39 @@ export function perFaceItems(items) {
   return out;
 }
 
+// DRAW.IO, ONE PAGE (Phase 2b ruling 1). Both cabinets stand on one page so
+// a front-to-rear cable is one edge, not two stubs on two tabs. vendor/drawio.js
+// lays the racks of ONE group side by side, each drawn once per face the group
+// names; so the group names one face, 'front', and holds two racks: rack 0 is
+// what the front pane shows, rack 1 what the rear pane shows. 'front' is only
+// the key each mounted entry's drawing is filed under.
+//
+// The vendor finds a cable's port by the mounted entry's id, and an item is
+// in both cabinets, so the rear cabinet's entries get the id plus a suffix.
+// The suffix is one no item id ends with: a rear id then never equals an item
+// id, and two items never share one.
+export function rearSuffix(items) {
+  let s = '@rear';
+  while (items.some(i => String(i.id).endsWith(s))) s += '@';
+  return s;
+}
+export const drawioId = (id, pane, suffix) => (pane === 'rear' ? `${id}${suffix}` : String(id));
+
+// The vendor labels every cabinet "<rack label> · <face key>", so both read
+// "· front". The second cabinet's value is put right by ONE exact replace on
+// its own cell (id g0r1-front), escaped as the vendor's cell() writes it. If
+// that cell is not there the file is wrong, and this throws: the export fails
+// where it can be seen, and never ships two "front" cabinets.
+const xmlAttr = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+export function rearCabinetLabel(xml, label) {
+  const cellOf = face => `id="g0r1-front" value="${xmlAttr(label ? `${label} · ${face}` : face)}"`;
+  const was = cellOf('front');
+  // Past the notes comment: inside a <diagram> every attribute value is escaped, so this text is the cell's own.
+  const at = xml.indexOf(was, Math.max(0, xml.indexOf('<diagram')));
+  if (at < 0) throw new Error("draw.io: the rear cabinet's label cell was not found");
+  return xml.slice(0, at) + cellOf('rear') + xml.slice(at + was.length);
+}
+
 // ── DCIM (spec §8) ─────────────────────────────────────────────────────
 export const stemOf = path => String(path).split('/').pop().replace(/\.ya?ml$/i, '');
 export const vendorOf = path => String(path).split('/').at(-2) ?? '';

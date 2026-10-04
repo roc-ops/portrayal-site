@@ -27,7 +27,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE} from './export-data.js';
+        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats} from './cable-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
@@ -200,35 +200,40 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   }
 }
 
-// DRAW.IO (spec §8): one page per face. Each cabinet holds what is mounted
-// on that side and the far panel of whatever nothing mounted there covers
-// (perFaceItems); a device hidden behind another is listed in the notes.
-// Each face is the configured face that side shows (panelFor), so a seated
-// card's ports are connection points carrying portrayal-path.
+// DRAW.IO (spec §8, Phase 2b ruling 1): ONE page, a cabinet per face. Each
+// cabinet holds what is mounted on that side and the far panel of whatever
+// nothing mounted there covers (perFaceItems); a device hidden behind another
+// is listed in the notes. Each face is the configured face that side shows
+// (panelFor), so a seated card's ports are connection points carrying
+// portrayal-path. The two cabinets are two racks of one group (export-data.js
+// says why), and the second one's label is put right afterwards.
 export async function drawioFile(rack, chassisOf) {
   const items = itemsWithU(rack, chassisOf);
   const H = rack.frame.heightRU;
   const lists = perFaceItems(items);
   const notes = await faceNotesFor(rack, items, ['front', 'rear'], chassisOf);
   for (const h of lists.hidden)
-    notes.push(`${h.pane === 'front' ? 'Front' : 'Rear'} page: ${h.item.label} is behind ${h.by.label} and is not drawn there.`);
+    notes.push(`${h.pane === 'front' ? 'Front' : 'Rear'} cabinet: ${h.item.label} is behind ${h.by.label} and is not drawn there.`);
   const numDisp = rack.frame.numbering === 'top-down' ? 'ascend' : 'descend';
-  const groups = [];
+  const suffix = rearSuffix(items);
+  const label = htmlText(rack.name);
+  const racks = [];
   for (const pane of ['front', 'rear']) {
     const mounted = await Promise.all(lists[pane].map(async it => {
       const f = await faceOf(it, panelFor(it, pane));
-      return {id: it.id, name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
-              faces: f ? {[pane]: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
+      // Filed under 'front' in both cabinets: it is the group's one face key, not the side shown.
+      return {id: drawioId(it.id, pane, suffix), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
+              faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
     }));
-    groups.push({label: pane === 'front' ? 'Front' : 'Rear', faces: [pane],
-                 racks: [{label: htmlText(rack.name), units: H, numDisp, mounted}]});
+    racks.push({label, units: H, numDisp, mounted});
   }
   const all = uniq(notes);
   // rackDiagram writes the notes as a comment INSIDE <mxfile>: draw.io reads
   // its <diagram> children and skips a comment there. Names and labels are
-  // HTML-escaped above because its label cells are html=1.
-  const xml = rackDiagram(groups, {labels: true, notes: all});
-  return {name: `${fileStem(rack.name)}.drawio`, data: xml, type: 'application/xml', notes: all};
+  // HTML-escaped above because its label cells are html=1; the page's name is
+  // an attribute, which the vendor escapes itself.
+  const xml = rackDiagram([{label: rack.name || 'Rack', faces: ['front'], racks}], {labels: true, notes: all});
+  return {name: `${fileStem(rack.name)}.drawio`, data: rearCabinetLabel(xml, label), type: 'application/xml', notes: all};
 }
 
 // GLB / USDZ (spec §8), from the scene the page built - after complete(), so
