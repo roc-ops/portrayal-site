@@ -15,7 +15,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv, cableScheduleCsv} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
@@ -492,7 +492,7 @@ const BUILD = {
   'netbox-devices': () => deviceImportCsv(rack(), chassisOf, 'netbox'),
   'nautobot-devices': () => deviceImportCsv(rack(), chassisOf, 'nautobot'),
   bom: () => bomCsv(rack(), chassisOf),
-  cables: () => cableScheduleCsv(rack()),
+  cables: () => cableScheduleCsv(rack(), chassisOf),
   glb: () => modelExport('glb'),
   usdz: () => modelExport('usdz'),
 };
@@ -1035,6 +1035,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     // Probe only: a notice raised earlier in the same action.
     addNotice: text => addNotice(text, 'note'),
     // Probe only: make reading the cables' faces fail, to see the page without it.
+    // Probe only: make the exports' own reading of the cables fail, or one sheet pane's cables (see exports.js).
+    failExport: what => failExport(what),
     failCableFacts: on => { S.probeFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per
     // item, and each cabled end's loose-end reason (null when it lands).

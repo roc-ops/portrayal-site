@@ -5,7 +5,7 @@
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
 import {uLabel} from './model.js';
-import {endKey, endName, cableName, paneOf, mismatch, lengthText, MEDIA_LABELS} from './cable-rules.js';
+import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -163,24 +163,27 @@ const asWritten = v => (typeof v === 'string' ? v : JSON.stringify(v));
 // lengthAsWritten) is quoted in the notes, never put in the numeric column.
 export const CABLE_COLUMNS = ['cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
   'length', 'length_unit', 'status', 'notes'];
-export function cableScheduleRows(rack, ends = new Map()) {
+// `items` are the rack's items with their height `u` (fit.js itemsWithU), so a
+// device's U is the device import's position (positionOf). Without a height an
+// item counts as 1U.
+export function cableScheduleRows(rack, ends = new Map(), items = rack.items) {
   const names = uniqueNames(rack.items);
-  const byId = new Map(rack.items.map(i => [i.id, i]));
+  const byId = new Map(items.map(i => [i.id, i]));
   const named = new Set();
   const side = e => {
     const it = byId.get(e.item);
     if (!it) return ['', '', e.path];
     if (names.get(it.id).renamed) named.add(names.get(it.id).name);
-    return [names.get(it.id).name, uLabel(rack.frame, it.ru), e.path];
+    return [names.get(it.id).name, positionOf(rack.frame, it.ru, it.u ?? 1), e.path];
   };
   const findings = cableFindings(rack, ends);
   const rows = findings.map(f => {
-    const c = f.cable, [aDev, aU, aPort] = side(c.a), [bDev, bU, bPort] = side(c.b);
+    const c = f.cable, len = lengthParts(c.length), [aDev, aU, aPort] = side(c.a), [bDev, bU, bPort] = side(c.b);
     const notes = [...f.loose.map(l => `End ${l.side} is not connected: ${l.reason}.`), ...f.warnings];
     if (c.lengthAsWritten != null) notes.push(`Length as written in the file: ${asWritten(c.lengthAsWritten)}.`);
     return {cable: f.name, a_device: aDev, a_u: aU, a_port: aPort, b_device: bDev, b_u: bU, b_port: bPort,
-            media: mediaLabel(c.media), purpose: c.purpose, length: c.length ? c.length.value : '',
-            length_unit: c.length ? c.length.unit : '',
+            media: mediaLabel(c.media), purpose: c.purpose, length: len ? len.value : '',
+            length_unit: len ? len.unit : '',
             status: !f.checked ? 'not checked' : f.loose.length ? 'loose end' : 'connected', notes: notes.join(' ')};
   });
   const notes = [];
@@ -546,13 +549,25 @@ function connectorText(a, b) {
   if (known.length === 2) return known[0] === known[1] ? `${known[0]} at both ends` : `${known[0]} at one end, ${known[1]} at the other`;
   return known.length ? `${known[0]} at one end` : '';
 }
+// A panel with no drawing leaves its cables' connectors blank: said once per
+// device panel, not once per cable.
+export function cableBomNotes(rack, ends = new Map()) {
+  const byId = new Map(rack.items.map(i => [i.id, i])), seen = new Set(), out = [];
+  for (const c of rack.cables || []) for (const e of [c.a, c.b]) {
+    const it = byId.get(e.item), k = `${e.item}|${e.view}`;
+    if (!it || seen.has(k) || ends.get(endKey(e))?.facts?.drawing !== false) continue;
+    seen.add(k);
+    out.push(`${it.label}: its ${e.view} panel had no drawing, so the cable lines do not state its connectors.`);
+  }
+  return out;
+}
 export function cableBomRows(rack, ends = new Map()) {
   const lines = new Map();
   for (const c of rack.cables || []) {
     const info = s => ends.get(endKey(c[s]))?.info;
     const length = lengthText(c.length) || 'length not set';
     const connector = connectorText(info('a'), info('b'));
-    const key = JSON.stringify([c.media, length, connector]);
+    const key = JSON.stringify([c.media ?? '', length, connector]);
     const l = lines.get(key);
     if (l) l.qty++;
     else lines.set(key, {section: 'Cables', qty: 1, manufacturer: '', model: mediaLabel(c.media) || 'Media not set',

@@ -89,7 +89,11 @@ export function parseLength(text, unit = 'm') {
 }
 // Value and unit as the cable has them: a unit this page does not offer (a
 // file's 'cm' or 'yd') prints as itself.
-export const lengthText = l => (l && typeof l.value === 'number' && l.value > 0 ? `${l.value} ${l.unit || 'm'}` : '');
+// ONE rule for every file and screen: a usable length is a finite number above
+// 0, with the unit it was given (m when none); anything else is not set.
+export const lengthParts = l => (l && typeof l.value === 'number' && Number.isFinite(l.value) && l.value > 0
+  ? {value: l.value, unit: l.unit || 'm'} : null);
+export const lengthText = l => { const p = lengthParts(l); return p ? `${p.value} ${p.unit}` : ''; };
 
 // ── the plan cables.js draws ────────────────────────────────────────────
 // The rack's cables in the shape drawCables2d takes: an end is [item id,

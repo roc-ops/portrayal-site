@@ -28,7 +28,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel,
-        drawioCables, drawioMedia} from './export-data.js';
+        drawioCables, drawioMedia, cableBomNotes} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats} from './cable-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
@@ -152,7 +152,10 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
     });
     if (cabled) {
       for (const pane of panes) {
-        try { drawRackCables(pane, rack, reasons); }
+        try {
+          if (probeFail.pane === pane.dataset.pane) throw new Error('probe: this pane cannot draw its cables');
+          drawRackCables(pane, rack, reasons);
+        }
         catch (err) {
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
           console.warn(`[portrayal] sheet: the ${pane.dataset.pane} face's cables`, err);
@@ -453,6 +456,7 @@ export async function bomCsv(rack, chassisOf) {
   const facts = cabled ? await cableEnds(rack) : UNCHECKED;
   notes.unshift(...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame));
   if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
+  if (cabled) notes.push(...cableBomNotes(rack, facts.ends));
   if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
   const devices = items.map(it => ({ref: it.ref, cfg: it.cfg,
@@ -480,7 +484,12 @@ export async function bomCsv(rack, chassisOf) {
 // fails to load is already a loose end with a reason there. If the reading
 // itself fails, the export still comes: no end is judged, and the file says
 // so (export-data.js UNCHECKED_NOTE) rather than calling every end connected.
-export const cableEnds = rack => cableFacts(rack).catch(err => {
+// Probe only (rack-page.js, ?probe=1 window.__rack.failExport): make the
+// exports' own reading fail ({facts: true}), or one sheet pane's cables fail
+// to draw ({pane: 'front'}), to see each export without it.
+let probeFail = {};
+export const failExport = (what = {}) => { probeFail = what; };
+export const cableEnds = rack => (probeFail.facts ? Promise.reject(new Error('probe: export cableFacts fails')) : cableFacts(rack)).catch(err => {
   console.warn("[portrayal] export: could not read the cables' faces", err);
   return UNCHECKED;
 });
@@ -488,9 +497,9 @@ export const cableEnds = rack => cableFacts(rack).catch(err => {
 // THE CABLE SCHEDULE (spec §9.4): one row per cable. A spreadsheet opens it,
 // so its cells go through bomCell, as the BOM's do. The notes the file
 // carries are its notes section and each row's notes column.
-export async function cableScheduleCsv(rack) {
+export async function cableScheduleCsv(rack, chassisOf) {
   const facts = await cableEnds(rack);
-  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends);
+  const {columns, rows, notes} = cableScheduleRows(rack, facts.ends, itemsWithU(rack, chassisOf));
   return {name: `${fileStem(rack.name)}-cables.csv`, data: toCsv(columns, rows, notes, {cell: bomCell}),
           type: 'text/csv', notes: [...notes, ...rows.map(r => r.notes).filter(Boolean)]};
 }

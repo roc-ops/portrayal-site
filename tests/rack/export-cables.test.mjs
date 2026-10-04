@@ -202,3 +202,48 @@ test('draw.io: each end names the cabinet that shows its panel; a loose end or a
   assert.ok(![...got.notes, ...hidden.notes, ...un.notes].some(n => n.includes('@rear')));
   assert.deepEqual(X.drawioCables({...RACK, cables: []}, {idOf, drawn: all}), {cables: [], notes: []});
 });
+
+// ── fix round 1 ────────────────────────────────────────────────────────
+test('schedule: a_u and b_u are the device import position (the lower U label), top-down and bottom-up', () => {
+  const cab = (n, a, b) => ({id: n, a: {item: a, path: 'p', view: 'front'}, b: {item: b, path: 'p', view: 'front'}, media: 'os2', purpose: '', label: n, route: []});
+  for (const [numbering, want] of [['top-down', {two: 14, ten: 13}], ['bottom-up', {two: 10, ten: 3}]]) {
+    const frame = M.normalizeFrame({heightRU: 24, numbering});
+    const items = [{id: 'a', label: 'two', ru: 10, u: 2}, {id: 'b', label: 'ten', ru: 3, u: 10}];
+    const rack = {name: 'r', frame, items, zeroU: [], cables: [cab('c', 'a', 'b')]};
+    const {rows} = X.cableScheduleRows(rack, new Map(), items);
+    assert.deepEqual([rows[0].a_u, rows[0].b_u], [want.two, want.ten], numbering);
+    for (const it of items) assert.equal(X.positionOf(frame, it.ru, it.u), it.id === 'a' ? want.two : want.ten);
+  }
+});
+
+test('one length rule for the schedule and the BOM: usable is above 0 with a unit (m when none), else not set in both', () => {
+  const run = length => {
+    const rack = {...RACK, cables: [{...RACK.cables[0], length}]};
+    const row = X.cableScheduleRows(rack, ENDS).rows[0];
+    return [row.length, row.length_unit, X.cableBomRows(rack, ENDS)[0].description.split(';')[0]];
+  };
+  assert.deepEqual(run({value: 0, unit: 'm'}), ['', '', 'length not set']);
+  assert.deepEqual(run({value: -2, unit: 'm'}), ['', '', 'length not set']);
+  assert.deepEqual(run({value: Infinity, unit: 'm'}), ['', '', 'length not set']);
+  assert.deepEqual(run({value: '3', unit: 'm'}), ['', '', 'length not set']);
+  assert.deepEqual(run({value: 3}), [3, 'm', '3 m']);
+  assert.deepEqual(run({value: 30, unit: 'cm'}), [30, 'cm', '30 cm']);
+  assert.deepEqual(run(undefined), ['', '', 'length not set']);
+});
+
+test('BOM: undefined, null and empty media are one group', () => {
+  const mk = media => ({...RACK.cables[1], id: String(media), media});
+  const rack = {...RACK, cables: [mk(undefined), mk(null), mk('')]};
+  const rows = X.cableBomRows(rack, ENDS);
+  assert.equal(rows.length, 1);
+  assert.deepEqual([rows[0].qty, rows[0].model], [3, 'Media not set']);
+});
+
+test('BOM: a panel with no drawing is noted once per device panel, not once per cable', () => {
+  const none = {facts: {item: true, drawing: false}, info: NONE, reason: 'this panel has no drawing'};
+  const ends = new Map([...ENDS, ['i2|front|port-1', none], ['i2|front|mgmt-eth', none], ['i2|front|port-2', none]]);
+  assert.deepEqual(X.cableBomNotes(RACK, ends),
+    ['leaf-1: its front panel had no drawing, so the cable lines do not state its connectors.']);
+  assert.deepEqual(X.cableBomNotes(RACK, ENDS), []);
+  assert.deepEqual(X.cableBomNotes({...RACK, cables: []}, ends), []);
+});

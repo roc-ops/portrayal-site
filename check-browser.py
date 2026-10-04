@@ -8163,10 +8163,11 @@ def check_rack_export_cable_schedule(page, base):
 
     # A label that opens as a formula is guarded; a length kept as written is in the notes, not the number.
     odd = page.evaluate("""async () => {
-      const X = await import('/site/rack/exports.js');
+      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+      const of = C.chassisLookup(await C.loadChassis());
       const r = window.__rack.doc().racks[0];
       const cables = [{...r.cables[0], label: '=SUM(A1)', length: undefined, lengthAsWritten: {value: 'about 3', unit: 'm'}}];
-      return (await X.cableScheduleCsv({...r, cables})).data;
+      return (await X.cableScheduleCsv({...r, cables}, of)).data;
     }""")
     line = odd.split("\r\n")[1]
     if not line.startswith("'=SUM(A1),leaf-1,14,port-1,core-1,2,slot-2/module/p0,OS2 single-mode fiber,uplink,,,connected,"):
@@ -8185,6 +8186,70 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule, no cables: the notes do not say so: {text!r}")
     if status != notes_status(1):
         bad.append(f"cable schedule, no cables: the status reads {status!r}")
+    return bad
+
+
+@extra("rack.html: Export - the schedule's U is the device import's position, and the cable exports survive their own failures")
+def check_rack_export_cable_failures(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"cable export failures: {e}"]
+
+    # Fix round 1: the schedule's U is the device import's position, whatever the numbering.
+    for numbering in ("top-down", "bottom-up"):
+        got = page.evaluate("""async numbering => {
+          const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+          const of = C.chassisLookup(await C.loadChassis());
+          const r = window.__rack.doc().racks[0];
+          const rack = {...r, frame: {...r.frame, numbering}};
+          return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.deviceImportCsv(rack, of, 'netbox')).data};
+        }""", numbering)
+        sched = list(csv.DictReader(io.StringIO(got["sched"].partition("\r\n\r\nNotes")[0])))
+        dev = {r["name"]: r["position"] for r in csv.DictReader(io.StringIO(got["dev"]))}
+        seen = 0
+        for row in sched:
+            for side in ("a", "b"):
+                if row[f"{side}_device"]:
+                    seen += 1
+                    if row[f"{side}_u"] != dev.get(row[f"{side}_device"]):
+                        bad.append(f"cable schedule ({numbering}): {row[side + '_device']} is at U{row[side + '_u']}, the device import says {dev.get(row[side + '_device'])}")
+        if not seen:
+            bad.append(f"cable schedule ({numbering}): no device read, nothing compared")
+
+    # The exports' own read of the cables' faces fails: each export still comes, and says what it could not do.
+    page.evaluate("window.__rack.failExport({facts: true})")
+    dl = export_file(page, "cables")
+    status = export_status(page)
+    _, rows, text = read_csv(dl)
+    if [r["status"] for r in rows] != ["not checked"] * 3 or "Cable ends could not be checked" not in text or "didn't work" in status:
+        bad.append(f"cable schedule, facts failing: {[r['status'] for r in rows]}, status {status!r}")
+    _, rows, text = read_csv(export_file(page, "bom"))
+    status = export_status(page)
+    if "Cable ends could not be read, so the cable lines do not state their connectors." not in text \
+            or [r["section"] for r in rows].count("Cables") == 0 or "didn't work" in status:
+        bad.append(f"BOM, facts failing: status {status!r}, notes {text.partition(chr(13) + chr(10) + 'Notes')[2]!r}")
+    for kind in ("sheet-svg", "drawio"):
+        text = pathlib.Path(export_file(page, kind).path()).read_text(encoding="utf-8")
+        status = export_status(page)
+        try:
+            ET.fromstring(text.encode("utf-8"))
+        except ET.ParseError as e:
+            bad.append(f"{kind}, facts failing: not well-formed ({e})")
+        if "Cable ends could not be checked, so loose ends are not marked." not in text or "didn't work" in status:
+            bad.append(f"{kind}, facts failing: no unchecked note, or status {status!r}")
+    page.evaluate("window.__rack.failExport({})")
+
+    # One pane's cables fail to draw: the sheet comes without them, and says so.
+    page.evaluate("window.__rack.failExport({pane: 'front'})")
+    text = pathlib.Path(export_file(page, "sheet-svg").path()).read_text(encoding="utf-8")
+    status = export_status(page)
+    if "The cables could not be drawn on the front face of this sheet." not in text \
+            or "face of this sheet" in text.replace("The cables could not be drawn on the front face of this sheet.", "") or "didn't work" in status:
+        bad.append(f"sheet, front cables failing: status {status!r}")
+    page.evaluate("window.__rack.failExport({})")
     return bad
 
 
