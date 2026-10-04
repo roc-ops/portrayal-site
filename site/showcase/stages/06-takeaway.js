@@ -190,7 +190,7 @@ export default function makeTakeaway() {
         // have run - so the GLB/USDZ row can tell "no 3D in this browser"
         // (R11: is3d but hh.scene never mounted) apart from "a scene is ready".
         top: hh => [kv([
-          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics a connection point on every port and the cables as edges'],
+          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics, a connection point on every port and the cables as edges'],
           ['GLB / USDZ', !is3d ? 'the 3D model with its cables - switch to 3D to build the scene they export'
                         : hh.scene ? 'the mounted, cabled rack as a 3D model'
                                    : 'unavailable - no 3D in this browser'],

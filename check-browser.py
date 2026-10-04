@@ -2854,6 +2854,84 @@ def check_drawio_port_paths(page, base):
     return bad
 
 
+def stage6_edge_problems(page, text, loose):
+    """Stage 6's draw.io `text` against the plan the page loaded: one edge per
+    link not in `loose` (indexes kept, ids unique), each end's cell carrying
+    the plan's path, inside the plan's device, in the cabinet the end's view
+    names, in cables.js's color."""
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError as e:
+        return [f"stage 6 draw.io: not well-formed XML ({e})"]
+    bad = []
+    if len(root.findall("diagram")) != 1:
+        bad.append("stage 6 draw.io: not one page")
+    plan = page.evaluate("async () => (await import('/site/showcase/plan.js')).loadPlan()")
+    cells = {}
+    for o in root.iter():
+        if o.get("id"):
+            cells[o.get("id")] = o
+    idlist = [o.get("id") for o in root.iter() if o.get("id")]
+    if len(idlist) != len(set(idlist)):
+        bad.append("stage 6 draw.io: cell ids are not unique")
+    edge_objs = [o for o in root.iter("object") if o.get("portrayal-cable") is not None]
+    idx = [o.get("portrayal-cable") for o in edge_objs]
+    want = [str(i) for i in range(len(plan["links"])) if i not in loose]
+    if sorted(idx, key=int) != want:
+        bad.append(f"stage 6 draw.io: edges for cables {sorted(idx, key=int)}, expected {want}")
+    for o in edge_objs:
+        if o.get("id") != f"cable-{o.get('portrayal-cable')}":
+            bad.append(f"stage 6 draw.io: edge id {o.get('id')} for cable {o.get('portrayal-cable')}")
+    ref_of = {d["id"]: d.get("ref", d["id"]) for d in plan["devices"]}
+
+    def parent_of(o):
+        c = o if o.tag == "mxCell" else o.find("mxCell")
+        return cells.get(c.get("parent"))
+
+    def end_problem(cell_id, end):
+        o = cells.get(cell_id)
+        if o is None:
+            return "is not a cell of the file"
+        view = end[2] if len(end) > 2 else "front"
+        if o.get("portrayal-path") != end[1]:
+            return f"carries path {o.get('portrayal-path')!r}, not {end[1]!r}"
+        a, chain = o, []
+        while a is not None and a.get("id") not in ("0", "1"):
+            chain.append(a)
+            a = parent_of(a)
+        # chain ends at the cabinet; the device group sits right under it.
+        if len(chain) < 3:
+            return "is not inside a device in a cabinet"
+        cab, dev = chain[-1], chain[-2]
+        if cab.get("value") != view:
+            return f"is in the {cab.get('value')} cabinet, not the {view}"
+        if dev.get("id") != f"{ref_of[end[0]]}-{cab.get('id')}":
+            return f"is in {dev.get('id')}, not device {end[0]}"
+        return None
+
+    colors = page.evaluate("async () => (await import('/site/showcase/cables.js')).COLORS")
+    by_media = {"os2": colors["os2"], "copper-server": colors["copper"]["server"],
+                "copper-management": colors["copper"]["management"]}
+    seen = set()
+    for o in edge_objs:
+        i = int(o.get("portrayal-cable"))
+        link = plan["links"][i]
+        c = o.find("mxCell")
+        if c.get("edge") != "1":
+            bad.append(f"stage 6 draw.io: cable {i} is not an edge")
+        for side, key in (("source", "from"), ("target", "to")):
+            why = end_problem(c.get(side), link[key])
+            if why:
+                bad.append(f"stage 6 draw.io: cable {i} {side} {c.get(side)} {why}")
+        media = o.get("portrayal-media")
+        seen.add(media)
+        if not c.get("style", "").endswith(f"strokeColor={by_media.get(media)};"):
+            bad.append(f"stage 6 draw.io: cable {i} ({media}) is styled {c.get('style', '')[-28:]!r}")
+    if not loose and seen != set(by_media):
+        bad.append(f"stage 6 draw.io: the edges' media are {sorted(seen)}")
+    return bad
+
+
 @extra("stage 6 draw.io carries the plan's seated card, front and rear")
 def check_takeaway_drawio(page, base):
     bad = []
@@ -2872,39 +2950,52 @@ def check_takeaway_drawio(page, base):
         bad.append("stage 6 draw.io: no port cell for the plan's slot-2 card")
     if 'value="rear"' not in text:
         bad.append("stage 6 draw.io: no rear cabinet")
-    # The plan's 14 cables are edges between port cells, in cables.js's colors.
-    try:
-        root = ET.fromstring(text)
-    except ET.ParseError as e:
-        return bad + [f"stage 6 draw.io: not well-formed XML ({e})"]
-    if len(root.findall("diagram")) != 1:
-        bad.append("stage 6 draw.io: not one page")
-    ids = {e.get("id") for e in root.iter() if e.get("id")}
-    edges = {o.get("portrayal-cable"): o for o in root.iter("object") if o.get("portrayal-cable") is not None}
-    if sorted(edges, key=int) != [str(i) for i in range(14)]:
-        bad.append(f"stage 6 draw.io: edges for cables {sorted(edges)}, expected the plan's 14")
-    colors = page.evaluate("async () => (await import('/site/showcase/cables.js')).COLORS")
-    by_media = {"os2": colors["os2"], "copper-server": colors["copper"]["server"],
-                "copper-management": colors["copper"]["management"]}
-    seen = set()
-    for i, o in edges.items():
-        c = o.find("mxCell")
-        if c.get("edge") != "1" or c.get("source") not in ids or c.get("target") not in ids:
-            bad.append(f"stage 6 draw.io: cable {i} is not an edge between two cells of the file")
-        media = o.get("portrayal-media")
-        seen.add(media)
-        if not c.get("style", "").endswith(f"strokeColor={by_media.get(media)};"):
-            bad.append(f"stage 6 draw.io: cable {i} ({media}) is styled {c.get('style', '')[-28:]!r}")
-    if seen != set(by_media):
-        bad.append(f"stage 6 draw.io: the edges' media are {sorted(seen)}")
-    # The server's NIC is on its rear, the switch port on its front: one edge across the two cabinets.
-    nic = edges.get("8")
-    if nic is not None:
-        ends = (nic.find("mxCell").get("source"), nic.find("mxCell").get("target"))
-        if ends != ("r740xd-g0r0-rear-ndc--module--port-1", "eps201-g0r0-front-port-1"):
-            bad.append(f"stage 6 draw.io: the rear-to-front cable runs {ends}")
+    # The plan's cables are edges between port cells, in cables.js's colors.
+    bad += stage6_edge_problems(page, text, set())
     if "<!--" in text:
         bad.append(f"stage 6 draw.io: the plan as built has a cable that was not drawn: {text[:300]!r}")
+    return bad
+
+
+@extra("stage 6 draw.io skips a link whose end does not land, and says so with the panel's reason")
+def check_takeaway_drawio_loose(page, base):
+    """A middle link (5) names a port its device does not have (the same data
+    error check_rear_loose serves; the showcase has no UI that loosens a
+    stage 6 end). Stage 6 lists it loose in its panel; its draw.io leaves it
+    out, notes it with the panel's own reason, and keeps every other link's
+    index - link 5 is not the last, so a renumbering would show."""
+    L = 5
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    plan = json.loads((HERE / "site" / "showcase" / "patching.json").read_text())
+    end = plan["links"][L]["from"]
+    gone = end[1] + "-absent"
+    plan["links"][L]["from"] = [end[0], gone] + end[2:]
+    to = plan["links"][L]["to"]
+    page.route("**/site/showcase/patching.json",
+               lambda r: r.fulfill(status=200, content_type="application/json", body=json.dumps(plan)))
+    open_showcase(page, base)
+    page.click('.stage-rail button[data-stage="cable"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="cable"]', timeout=READY_MS)
+    page.click('.stage-rail button[data-stage="takeaway"]', timeout=READY_MS)
+    page.wait_for_selector('[data-stage-ready="takeaway"]', timeout=READY_MS)
+    panel = page.eval_on_selector_all(f'#sidePanel li:has([data-plan-row="{L}"]) [data-loose]',
+                                      "ls => ls.map(l => l.textContent)")
+    if len(panel) != 1 or gone not in panel[0]:
+        bad.append(f"stage 6 draw.io (loose): the panel does not list link {L} loose: {panel}")
+    with page.expect_download(timeout=READY_MS) as dl:
+        page.click('#stageExport button:has-text("draw.io")')
+    text = pathlib.Path(dl.value.path()).read_text()
+    bad += stage6_edge_problems(page, text, {L})
+    if f'id="cable-{L}"' in text:
+        bad.append(f"stage 6 draw.io (loose): link {L} is drawn")
+    notes = re.findall(r"<!--(.*?)-->", text, re.S)
+    reason = f"{end[0]} {gone} is not on the drawing"
+    if len(notes) != 1 or f"from {end[0]} {gone} to {to[0]} {to[1]} is not drawn" not in notes[0] \
+            or reason not in notes[0]:
+        bad.append(f"stage 6 draw.io (loose): the notes are {notes}")
+    elif panel and reason not in panel[0]:
+        bad.append(f"stage 6 draw.io (loose): the panel says {panel[0]!r}, the notes {reason!r}")
     return bad
 
 
