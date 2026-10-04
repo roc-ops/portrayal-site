@@ -513,22 +513,51 @@ export function moduleTypePath(paths, model) {
 export const partNumber = comp => comp?.attrs?.model ?? comp?.attrs?.part ?? comp?.attrs?.['part-number']
   ?? comp?.attrs?.['vendor-sku'] ?? '';
 
-// A DCIM wants unique device names; two items may share a label. A repeated
-// label gets the item's id - and a counter after it for as long as that name
-// is some other item's own label, or one already generated here.
+// A DCIM wants unique device names, and NetBox's are unique IGNORING CASE
+// ("Leaf" and "leaf" are one name): two items may share a label, or differ
+// only by case. Every item whose label has a twin, case aside, gets the
+// item's id - and a counter after it for as long as that name is some other
+// item's own label (in any case), or one already generated here. This is the
+// ONE place device names are decided: the devices, modules and cables files,
+// the cable schedule and every note use these names.
 export function uniqueNames(items) {
   const base = i => String(i.label || i.ref).trim();
+  const key = i => base(i).toLowerCase();
   const seen = new Map();
-  for (const i of items) seen.set(base(i), (seen.get(base(i)) || 0) + 1);
+  for (const i of items) seen.set(key(i), (seen.get(key(i)) || 0) + 1);
   const taken = new Set(seen.keys());
   return new Map(items.map(i => {
-    if (seen.get(base(i)) === 1) return [i.id, {name: base(i), renamed: false}];
+    if (seen.get(key(i)) === 1) return [i.id, {name: base(i), renamed: false}];
     let name = `${base(i)}-${i.id}`;
-    for (let k = 2; taken.has(name); k++) name = `${base(i)}-${i.id}-${k}`;
-    taken.add(name);
+    for (let k = 2; taken.has(name.toLowerCase()); k++) name = `${base(i)}-${i.id}-${k}`;
+    taken.add(name.toLowerCase());
     return [i.id, {name, renamed: true}];
   }));
 }
+
+// WHAT A DCIM STORES, one table (Phase 2c fix round). Only the values a row
+// builder must screen. A value over a limit makes a real instance refuse the
+// row, and NetBox refuses the whole file for one bad row.
+//   Where each comes from: "facts" is rack-2c-facts.md (model fields read from
+//   NetBox 4.7 and Nautobot 3.2 source); "believed" is the model field as
+//   remembered, confirmed at the boundary by the acceptance run.
+export const DCIM_LIMITS = {
+  // NetBox Device.name is a 64-character field, unique ignoring case (believed;
+  // facts line 88 says only "unique per site and tenant"). Nautobot's own limit
+  // is not stated in the facts file, so this NetBox limit is applied to both.
+  deviceName: 64,
+  // Cable.label and Cable.description, NetBox 4.7 (believed). Nautobot's label is
+  // held to the same 100 here; its cable file carries no description.
+  cableLabel: 100,
+  cableDescription: 200,
+  // NetBox Cable.length: a decimal of 8 digits and 2 places, so below 1,000,000
+  // (facts line 166 for the two places; the 8 digits are believed).
+  netboxLengthBelow: 1000000,
+  // Nautobot Cable.length: a PositiveSmallIntegerField (facts, cables.py 495).
+  nautobotLengthMax: 32767};
+// What a database counts: characters, not UTF-16 units.
+export const charCount = s => Array.from(String(s)).length;
+export const cutTo = (s, n) => Array.from(String(s)).slice(0, n).join('');
 
 export const NETBOX_COLUMNS = ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack',
   'position', 'face', 'comments'];
@@ -567,6 +596,12 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
     if (!t) {
       left.push({id: it.id, name, reason: `${name} is not in the devices file: there is no ${T} device type for ` +
         `${it.ref}${it.cfg ? ` (${it.cfg})` : ''}. Add the type and the device by hand.`});
+      continue;
+    }
+    if (charCount(name) > DCIM_LIMITS.deviceName) {
+      left.push({id: it.id, name, reason: `${cutTo(name, 24)}... is not in the devices file: its name is ${charCount(name)} characters, ` +
+        `and NetBox allows ${DCIM_LIMITS.deviceName}${target === 'nautobot' ? ' (a NetBox limit, applied to Nautobot too)' : ''}. ` +
+        'Shorten its label and export again.'});
       continue;
     }
     const clash = target === 'nautobot' ? null

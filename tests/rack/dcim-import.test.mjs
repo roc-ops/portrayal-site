@@ -118,6 +118,50 @@ test('every vendored type file is read whole: each "- name:" line is a name, a m
   assert.ok(n > 2000, `${n} files`);
 });
 
+// Expected values read off the files with awk, NOT with typeLists: the identity lines, and for a section its
+// count and its first and last name; for the bays their count and the first and last position.
+test('identity spot checks: thirteen vendored files across vendors read to exactly what their lines say', () => {
+  const spot = [
+    ['netbox/device-types/Juniper/MX10003.yaml', 'Juniper', 'MX10003', {}, [14, 'ft0', 're1']],
+    ['netbox/device-types/Dell/PowerEdge R660 e3s14-rc0-none.yaml', 'Dell', 'PowerEdge R660 e3s14-rc0-none', {}, [59, 'fan-1', 'riser-blank-none']],
+    ['netbox/device-types/HPE/878972-B21.yaml', 'HPE', '878972-B21', {interfaces: [3, 'ilo', 'nic-2']}, [34, 'fan-1', 'serial']],
+    ['netbox/device-types/Nokia/7360 ISAM FX-16.yaml', 'Nokia', '7360 ISAM FX-16', {interfaces: [1, 'tod', 'tod']}, [20, 'fan', 'ntio']],
+    ['netbox/device-types/Celestica/R3059-F9021-A1.yaml', 'Celestica', 'R3059-F9021-A1',
+      {interfaces: [57, 'mgmt', 'port-56'], 'console-ports': [1, 'Console', 'Console']}, [2, 'psu-1', 'psu-2']],
+    ['netbox/device-types/Arrcus/7326-56X-O-48V-B.yaml', 'Arrcus', '7326-56X-O-48V-B',
+      {interfaces: [59, 'ma1', 'swp56'], 'console-ports': [2, 'Console', 'Console (USB-C)']}, [8, 'fan-1', 'psu-2']],
+    ['netbox/device-types/UfiSpace/S6301-56ST.yaml', 'UfiSpace', 'S6301-56ST',
+      {interfaces: [57, 'mgmt', 'port-55'], 'console-ports': [1, 'Console', 'Console']}, [4, 'fan-0', 'psu-1']],
+    ['netbox/device-types/FS.com/FHD-1UBE.yaml', 'FS.com', 'FHD-1UBE', {}, [4, 'bay-1', 'bay-4']],
+    ['netbox/device-types/Edgecore/5912-54X-O-48V-B.yaml', 'Edgecore', '5912-54X-O-48V-B',
+      {interfaces: [55, 'mgmt-eth', 'port-54'], 'console-ports': [1, 'Console', 'Console']}, [8, 'fan-1', 'psu-2']],
+    ['nautobot/device-types/Cisco/ASR 9001 Router.yaml', 'Cisco', 'ASR 9001 Router',
+      {interfaces: [12, 'svc-lan', 'tod'], 'console-ports': [1, 'Console', 'Console']}, [5, 'fan-0', 'mpa-1']],
+    ['nautobot/device-types/Juniper/MX10004.yaml', 'Juniper', 'MX10004', {}, [11, 'fan0', 're1']],
+    ['netbox/module-types/Cisco/A99-10X400GE-X-SE.yaml', 'Cisco', 'A99-10X400GE-X-SE', {interfaces: [10, '{module}/p0', '{module}/p9']}, null],
+    ['netbox/module-types/HPE/expansion-slot-blank-fh.yaml', 'HPE', 'expansion-slot-blank-fh', {}, null]];
+  for (const [path, manufacturer, model, sections, bays] of spot) {
+    const l = lists(path);
+    assert.deepEqual([l.manufacturer, l.model], [manufacturer, model], path);
+    for (const [name, list] of Object.entries(l.sections)) {
+      const want = sections[name];
+      assert.deepEqual(want ? [list.length, list[0], list.at(-1)] : [list.length], want ?? [0], `${path} ${name}`);
+    }
+    assert.deepEqual(bays ? [l.bays.length, l.bays[0].position, l.bays.at(-1).position] : [l.bays.length], bays ?? [0], `${path} bays`);
+    // A bay's name is for display; where it has none of its own, name and position are the file's two lines.
+    if (bays) assert.ok(l.bays.every(b => b.name && b.position), path);
+  }
+  // A bay's name and position together, as the file writes them.
+  assert.deepEqual(lists('netbox/device-types/Celestica/R3059-F9021-A1.yaml').bays, [{name: 'PSU 1', position: 'psu-1'}, {name: 'PSU 2', position: 'psu-2'}]);
+  assert.deepEqual(lists('netbox/device-types/Dell/PowerEdge R660 e3s14-rc0-none.yaml').bays[0], {name: 'Fan 1', position: 'fan-1'});
+});
+
+test('a YAML-only escape in a quoted value costs that value, not the type read', () => {
+  const got = D.typeLists('manufacturer: "Acme"\nmodel: "M\\e1"\ninterfaces:\n  - name: "p\\x1b0"\n  - name: "fine\\u00e9"\n  - name: \'it\'\'s\'\n');
+  assert.deepEqual([got.manufacturer, got.model], ['Acme', 'M\\e1']);
+  assert.deepEqual(got.sections.interfaces, ['p\\x1b0', 'fineé', "it's"]);
+});
+
 // ── the modules and cables files ────────────────────────────────────────
 // check-browser.py's cable fixture, as far as the rules read it.
 const FRAME = M.normalizeFrame({heightRU: 24});
@@ -293,67 +337,206 @@ test('a rack with no cables gets a header and no rows', () => {
     'side_a_device,side_a_type,side_a_name,side_b_device,side_b_type,side_b_name,type,status,label,color,length,length_unit,description\r\n');
 });
 
+// ── what a DCIM stores: the limits (Phase 2c fix round) ─────────────────
+test('the limits are one table', () => {
+  assert.deepEqual(D.DCIM_LIMITS, {deviceName: 64, cableLabel: 100, cableDescription: 200, netboxLengthBelow: 1000000, nautobotLengthMax: 32767});
+  assert.equal(D.DCIM_LIMITS, X.DCIM_LIMITS);
+});
+
+test('device names that differ only by case are made unique, in one place that every file reads', () => {
+  const items = [{id: 'i1', label: 'Leaf', ref: 'r'}, {id: 'i2', label: 'leaf', ref: 'r'}, {id: 'i3', label: 'leaf-i1', ref: 'r'},
+                 {id: 'i4', label: 'LEAF-I1', ref: 'r'}];
+  const names = [...X.uniqueNames(items).values()].map(v => v.name);
+  assert.equal(new Set(names.map(n => n.toLowerCase())).size, 4, names.join(', '));
+  assert.ok(X.uniqueNames(items).get('i1').renamed && X.uniqueNames(items).get('i2').renamed);
+  // "leaf-i1" and "LEAF-I1" are twins of each other, and what "Leaf" becomes cannot meet them.
+  assert.ok(!names.slice(0, 2).some(n => /^leaf-i1$/i.test(n)), names.join(', '));
+  // A label alone in its case-insensitive group is not renamed.
+  assert.equal(X.uniqueNames([{id: 'a', label: 'Leaf', ref: 'r'}, {id: 'b', label: 'spine', ref: 'r'}]).get('a').name, 'Leaf');
+  // The devices file and the cable schedule take the same names.
+  const rack = {name: 'R', frame: FRAME, zeroU: [], items: items.map(i => ({...i, cfg: 'base', ru: 2 + Number(i.id[1]), u: 1, face: 'front'}))};
+  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'M', model: 'T', isFullDepth: false}]));
+  const dev = X.deviceImportRows({rack, items: rack.items, types}).rows.map(r => r.name).sort();
+  assert.deepEqual(dev, [...names].sort());
+});
+
+test('a device name over 64 characters is left out, and said; at and under the limit it stays', () => {
+  const it = label => ({id: 'i1', ref: 'tm-280', cfg: 'base', label, ru: 2, u: 1, face: 'front', turned: false});
+  const types = new Map([['i1', {manufacturer: 'M', model: 'T', isFullDepth: false}]]);
+  const rows = (label, target) => X.deviceImportRows({rack: RACK, items: [it(label)], types, target});
+  for (const n of [1, 63, 64]) assert.equal(rows('x'.repeat(n), 'netbox').rows.length, 1, `${n}`);
+  const over = rows('x'.repeat(65), 'netbox');
+  assert.deepEqual([over.rows.length, over.left.length], [0, 1]);
+  assert.equal(over.left[0].reason, `${'x'.repeat(24)}... is not in the devices file: its name is 65 characters, and NetBox allows 64. Shorten its label and export again.`);
+  // Nautobot's own limit is not in the facts file: the NetBox one is applied, and the line says so.
+  assert.equal(rows('x'.repeat(64), 'nautobot').rows.length, 1);
+  assert.match(rows('x'.repeat(65), 'nautobot').left[0].reason, /NetBox allows 64 \(a NetBox limit, applied to Nautobot too\)\./);
+  // Counted in characters, not UTF-16 units: 64 astral characters are 64.
+  assert.equal(rows('\u{1F600}'.repeat(64), 'netbox').rows.length, 1);
+  assert.equal(rows('\u{1F600}'.repeat(65), 'netbox').rows.length, 0);
+  // What depends on a left-out device goes with it (the kit's `kept`): its cable and its modules.
+  const long = 'y'.repeat(65), items = ITEMS.map(i => (i.id === 'i2' ? {...i, label: long} : i));
+  const names = X.uniqueNames(items), kept = new Set(['i1', 'i3', 'i4']);
+  const cab = D.cableImportRows({rack: {...RACK, items}, target: 'netbox', names, kept, resolve, ends: ENDS});
+  assert.match(cab.left[0], /^Cable A1 is not in the cables file: end A is on y{65}, which is not in the devices file\.$/);
+});
+
+test('a cable label over 100 and a description over 200 are shortened to the limit; the cable stays', () => {
+  const cab = more => ({id: 'c9', a: end('i2', 'port-1'), b: end('i4', 'port-2-1'), media: 'cat6', purpose: '', label: 'X', route: [], ...more});
+  const run = (more, target = 'netbox') => {
+    const cables = [cab(more)];
+    return D.cableImportRows({rack: {...RACK, cables}, target, names: NAMES, kept: ALL, resolve, ends: landed(cables)});
+  };
+  for (const n of [99, 100]) { const g = run({label: 'l'.repeat(n)}); assert.deepEqual([g.rows[0].label.length, g.notes], [n, []], `${n}`); }
+  const over = run({label: 'l'.repeat(101)});
+  assert.equal(over.rows.length, 1);
+  assert.equal(over.rows[0].label, 'l'.repeat(100));
+  assert.deepEqual(over.notes, ['Cable ' + 'l'.repeat(101) + ': its label is 101 characters and NetBox takes 100, so the label is shortened to that.']);
+  assert.equal(run({label: 'l'.repeat(101)}, 'nautobot').rows[0].label.length, 100);
+  for (const n of [199, 200]) { const g = run({purpose: 'p'.repeat(n)}); assert.deepEqual([g.rows[0].description.length, g.notes], [n, []], `${n}`); }
+  const d = run({purpose: 'p'.repeat(201)});
+  assert.equal(d.rows[0].description, 'p'.repeat(200));
+  assert.deepEqual(d.notes, ['Cable X: its purpose is 201 characters and NetBox takes 200 in a description, so the description is shortened to that.']);
+  assert.ok(!('description' in run({purpose: 'p'.repeat(201)}, 'nautobot').rows[0]));
+  assert.deepEqual(run({purpose: 'p'.repeat(201)}, 'nautobot').notes, []);
+  // Counted in characters.
+  assert.equal(run({label: '\u{1F600}'.repeat(100)}).notes.length, 0);
+});
+
+test('a length too large for the target is written as none, and said', () => {
+  const len = (value, unit = 'm') => ({length: {value, unit, source: 'entered'}});
+  // NetBox: below 1,000,000 with two decimals.
+  assert.deepEqual(D.importLength(len(999999.99), 'netbox'), {value: 999999.99, unit: 'm', note: null});
+  assert.deepEqual(D.importLength(len(999999), 'netbox'), {value: 999999, unit: 'm', note: null});
+  for (const v of [1000000, 1000001, 999999.995]) {
+    const g = D.importLength(len(v), 'netbox');
+    assert.equal(g.value, '', `${v}`);
+    assert.match(g.note, /is too large for NetBox, which stores less than 1,000,000, so the row has no length$/);
+  }
+  // Nautobot: a whole number up to 32767 (rounded up first).
+  assert.deepEqual(D.importLength(len(32767, 'ft'), 'nautobot'), {value: 32767, unit: 'ft', note: null});
+  assert.deepEqual(D.importLength(len(32766.5), 'nautobot').value, 32767);
+  for (const v of [32767.5, 32768, 100000]) {
+    const g = D.importLength(len(v), 'nautobot');
+    assert.deepEqual([g.value, g.unit], ['', ''], `${v}`);
+    assert.match(g.note, /is too large for Nautobot, which stores whole numbers up to 32,767, so the row has no length$/);
+  }
+  assert.equal(D.importLength(len(32768), 'netbox').value, 32768);   // NetBox takes it
+  // In a row: the cable is written, with no length and no unit.
+  const cables = [{id: 'c9', a: end('i2', 'port-1'), b: end('i4', 'port-2-1'), media: 'cat6', purpose: '', label: 'X', route: [], ...len(40000)}];
+  const got = D.cableImportRows({rack: {...RACK, cables}, target: 'nautobot', names: NAMES, kept: ALL, resolve, ends: landed(cables)});
+  assert.deepEqual([got.rows[0].length, got.rows[0].length_unit], ['', '']);
+  assert.deepEqual(got.notes, ['Cable X: its length (40000 m) is too large for Nautobot, which stores whole numbers up to 32,767, so the row has no length.']);
+});
+
+test('a cable whose two ends are the same component has no row, and is said', () => {
+  const cables = [{id: 'c9', a: end('i2', 'port-1'), b: end('i2', 'port-1'), media: 'cat6', purpose: '', label: 'X', route: []}];
+  for (const target of ['netbox', 'nautobot']) {
+    const got = D.cableImportRows({rack: {...RACK, cables}, target, names: NAMES, kept: ALL, resolve, ends: landed(cables)});
+    assert.deepEqual(got.rows, []);
+    assert.deepEqual(got.left, ['Cable X is not in the cables file: its two ends are the same port, port-1 on leaf-1.']);
+  }
+});
+
+test('a comma in a PORT name leaves a NetBox cable out; Nautobot\'s script takes the name whole', () => {
+  const cables = [{id: 'c9', a: end('i2', 'port-1'), b: end('i4', 'port-2-1'), media: 'cat6', purpose: '', label: 'X', route: []}];
+  const comma = e => (e.item === 'i2' ? {ok: true, name: 'port 1, front', type: 'dcim.interface'} : resolve(e));
+  const run = target => D.cableImportRows({rack: {...RACK, cables}, target, names: NAMES, kept: ALL, resolve: comma, ends: landed(cables)});
+  assert.deepEqual(run('netbox').left, ['Cable X is not in the cables file: end A: NetBox reads a comma in a device or port name as a list, so "port 1, front" cannot be written.']);
+  assert.deepEqual(run('netbox').rows, []);
+  assert.equal(run('nautobot').rows[0].a_name, 'port 1, front');
+});
+
+test('a part of a device with no type is said in words that make sense', () => {
+  const type = {manufacturer: 'M', model: 'CARD', lists: D.typeLists('model: CARD\n')};
+  const got = D.moduleImportRows({target: 'netbox', parts: [{itemId: 'i1', path: 'slot-1/module', ref: 'c'}], names: NAMES, kept: ALL,
+    deviceOf: () => null, moduleOf: () => type});
+  assert.deepEqual(got.left, ['core-1 slot-1: CARD is not in the modules file. core-1 has no device type, so it has no module bays.']);
+});
+
 // ── README.txt ──────────────────────────────────────────────────────────
 const DAY = new Date(2026, 9, 4);
 const README_RACK = {name: 'Cable test', frame: FRAME};
 
+const WHOLE = {width: 1e9};          // a paragraph on one line, for reading its words
+
 test("the NetBox kit's README: what must exist, each file in import order with its row count, then what is not carried", () => {
   const got = D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {site: 'Lab 1', role: 'Router'}, typeFiles: 7,
     manufacturers: ['Cisco', 'Edgecore', 'Telco Systems'], rows: {rack: 1, devices: 3, modules: 1, cables: 1},
-    left: ['demarc-i3 is not in the devices file: because.', 'Cable c2 is not in the cables file: why.'], notes: ['A best guess.']});
+    left: ['demarc-i3 is not in the devices file: because.', 'Cable c2 is not in the cables file: why.'], notes: ['A best guess.'], ...WHOLE});
   assert.equal(got.text, [
     'NetBox import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04.',
     '',
-    'BEFORE YOU IMPORT, NetBox must already have:',
+    'Before you import, NetBox must already have:',
     '- the site "Lab 1"',
     '- the device role "Router"',
     '- these manufacturers: Cisco, Edgecore, Telco Systems',
     '',
-    'IMPORT IN THIS ORDER. NetBox takes each CSV file whole or not at all: one refused row refuses the file.',
-    '1. types/device-types/, then types/module-types/ (7 files): Device Types > Import and Module Types > Import, format YAML, one file at a time. The module types must be in before step 4.',
-    '2. 1-rack.csv (1 row): Racks > Import. Creates the rack "Cable test", 24U, numbered from the bottom.',
-    '3. 2-devices.csv (3 rows): Devices > Import. Every device is planned.',
-    "4. 3-modules.csv (1 row): Modules > Import. This creates each card's ports, so it comes before the cables.",
-    '5. 4-cables.csv (1 row): Cables > Import.',
-    '   NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it already has twice is refused as not unique.',
+    'Import in this order. NetBox takes each CSV file whole or not at all: one refused row refuses the file.',
+    'Step 1: types/device-types/, then types/module-types/ (7 files): Device Types > Import and Module Types > Import, format YAML, one file at a time. The module types must be in before step 4.',
+    'Step 2: 1-rack.csv (1 row): Racks > Import. Creates the rack "Cable test", 24U, numbered from the bottom.',
+    'Step 3: 2-devices.csv (3 rows): Devices > Import. Every device is planned.',
+    "Step 4: 3-modules.csv (1 row): Modules > Import. This creates each card's ports, so it comes before the cables.",
+    'Step 5: 4-cables.csv (1 row): Cables > Import.',
+    '        NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it already has twice is refused as not unique.',
     '',
-    'NOT IN THIS KIT:',
+    'Not in this kit:',
     '- demarc-i3 is not in the devices file: because.',
     '- Cable c2 is not in the cables file: why.',
     '',
-    'NOTES:',
+    'Notes:',
     '- A best guess.',
     ''].join('\n'));
   // What the status line counts: the lines the file carries beyond its instructions.
   assert.deepEqual(got.notes, ['demarc-i3 is not in the devices file: because.', 'Cable c2 is not in the cables file: why.', 'A best guess.']);
 });
 
+test('a README is wrapped at 78 columns with a hanging indent, in sentence case, in LF', () => {
+  const long = 'Cable c2 is not in the cables file: ' + 'a long reason that goes on and on '.repeat(8) + 'end.';
+  for (const target of ['netbox', 'nautobot']) {
+    const got = D.kitReadme({target, rack: README_RACK, date: DAY, dcim: {}, typeFiles: 7, manufacturers: ['Cisco'],
+      rows: {rack: 1, devices: 3, modules: 1, cables: 1}, left: [long], notes: ['n '.repeat(60).trim()]});
+    assert.ok(!got.text.includes('\r'));
+    // A command or a path may run over; prose never does.
+    for (const line of got.text.split('\n').filter(l => !l.startsWith('        export ') && !l.startsWith('        python3 ')))
+      assert.ok(line.length <= 78, `${line.length}: ${line}`);
+    const at = got.text.split('\n').findIndex(l => l.startsWith('- Cable c2 is not in the cables file: a long'));
+    assert.ok(at > 0 && /^  \S/.test(got.text.split('\n')[at + 1]), 'a list item continues on a hanging indent');
+    assert.ok(!/[A-Z]{4,} [A-Z]{2,}/.test(got.text), 'no heading or warning is in capitals');
+    assert.ok(got.text.startsWith(`${target === 'nautobot' ? 'Nautobot' : 'NetBox'} import kit`));
+    assert.ok(got.text.split('\n').slice(1, 4).some(l => l.startsWith('Read this first: ')), 'the warning comes first');
+    // Nothing mixes step numbers with file numbers: a step is "Step N:", and a file keeps its own number.
+    assert.ok(!/^\d\. /m.test(got.text));
+    assert.match(got.text, /^Step 1: /m);
+  }
+});
+
 test('blank settings: the first lines say the devices file will be refused, and name the columns', () => {
-  const nb = D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {}, typeFiles: 1, rows: {rack: 1, devices: 1, modules: 0, cables: 0}});
-  const warn = "2-devices.csv WILL BE REFUSED as it is: its site and role columns are blank, and NetBox requires both. 1-rack.csv's site " +
+  const nb = D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {}, typeFiles: 1, rows: {rack: 1, devices: 1, modules: 0, cables: 0}, ...WHOLE});
+  const warn = "2-devices.csv will be refused as it is: its site and role columns are blank, and NetBox requires both. 1-rack.csv's site " +
     'column is blank too. Set the site and the device role under Export, DCIM import settings, and export again; or fill those columns in by hand.';
-  assert.deepEqual(nb.text.split('\n').slice(0, 4), ['NetBox import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04.', '', warn, '']);
+  assert.deepEqual(nb.text.split('\n').slice(0, 4), ['NetBox import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04.', '', `Read this first: ${warn}`, '']);
   assert.deepEqual(nb.notes, [warn]);
   assert.ok(nb.text.includes('- a site (none is set in this kit)\n- a device role (none is set in this kit)\n'));
   // A file with no rows is still in the kit, and the README says it is empty.
-  assert.ok(nb.text.includes('4. 3-modules.csv (no rows: it holds its header only, so skip it): Modules > Import.'));
-  assert.ok(nb.text.includes('5. 4-cables.csv (no rows: it holds its header only, so skip it): Cables > Import.'));
-  assert.ok(nb.text.includes('NOT IN THIS KIT:\n- Nothing: every device, card and cable in this rack is in the files.\n'));
-  assert.ok(!nb.text.includes('NOTES:'));
+  assert.ok(nb.text.includes('Step 4: 3-modules.csv (no rows: it holds its header only, so skip it): Modules > Import.'));
+  assert.ok(nb.text.includes('Step 5: 4-cables.csv (no rows: it holds its header only, so skip it): Cables > Import.'));
+  assert.ok(nb.text.includes('Not in this kit:\n- Nothing: every device, card and cable in this rack is in the files.\n'));
+  assert.ok(!nb.text.includes('Notes:'));
   // One blank column: only that one is named.
-  assert.equal(D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {site: 'Lab 1'}, rows: {}}).text.split('\n')[2],
-    '2-devices.csv WILL BE REFUSED as it is: its role column is blank, and NetBox requires it. Set the device role under Export, ' +
+  assert.equal(D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {site: 'Lab 1'}, rows: {}, ...WHOLE}).text.split('\n')[2],
+    'Read this first: 2-devices.csv will be refused as it is: its role column is blank, and NetBox requires it. Set the device role under Export, ' +
     'DCIM import settings, and export again; or fill that column in by hand.');
-  const nt = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {role: 'R'}, rows: {}});
+  const nt = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {role: 'R'}, rows: {}, ...WHOLE});
   assert.equal(nt.text.split('\n')[2],
-    '1-devices.csv WILL BE REFUSED as it is: its location__name column is blank, and Nautobot requires it. Set the location under Export, ' +
+    'Read this first: 1-devices.csv will be refused as it is: its location__name column is blank, and Nautobot requires it. Set the location under Export, ' +
     'DCIM import settings, and export again; or fill that column in by hand.');
 });
 
 test("the Nautobot kit's README: the rack and the Planned status must exist, the types step is unverified, the cables go through the script", () => {
   const down = {...README_RACK, frame: {...FRAME, numbering: 'top-down'}};
   const got = D.kitReadme({target: 'nautobot', rack: down, date: DAY, dcim: {site: 'Lab 1', role: 'R'}, typeFiles: 2,
-    manufacturers: ['Cisco'], rows: {devices: 4, modules: 1, cables: 2}});
+    manufacturers: ['Cisco'], rows: {devices: 4, modules: 1, cables: 2}, ...WHOLE});
   for (const line of [
     'Nautobot import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04.',
     '- the location "Lab 1", of a location type that allows devices and racks',
@@ -361,22 +544,23 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
     '- a status named Planned, for devices, modules and cables',
     '- these manufacturers: Cisco',
     '- the rack "Cable test" in that location: 24U, numbered from the top (descending units). This kit has no rack file for Nautobot.',
-    "1. types/device-types/, then types/module-types/ (2 files): Device Types > Import and Module Types > Import, one YAML file per import. This step is written from Nautobot's source and was NOT verified against Nautobot 3.2.",
-    '2. 1-devices.csv (4 rows): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.',
-    "3. 2-modules.csv (1 row): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. This creates each card's ports, so it comes before the cables.",
-    "4. 3-cables.csv (2 rows), with import_cables.py. DO NOT give 3-cables.csv to Nautobot's own importer: Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.",
-    '     export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
-    '     python3 import_cables.py 3-cables.csv             (a dry run: what it would create, and what it cannot find)',
-    '     python3 import_cables.py 3-cables.csv --apply     (creates the cables)',
-    "   A cable's purpose is not carried: a Nautobot cable has no description."])
+    "Step 1: types/device-types/, then types/module-types/ (2 files): Device Types > Import and Module Types > Import, one YAML file per import. This step is written from Nautobot's source and was not verified against Nautobot 3.2.",
+    'Step 2: 1-devices.csv (4 rows): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.',
+    "Step 3: 2-modules.csv (1 row): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. This creates each card's ports, so it comes before the cables.",
+    "Step 4: 3-cables.csv (2 rows), with import_cables.py. Warning: do not give 3-cables.csv to Nautobot's own importer. Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.",
+    '        export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
+    '        python3 import_cables.py 3-cables.csv             (a dry run: what it would create, and what it cannot find)',
+    '        python3 import_cables.py 3-cables.csv --apply     (creates the cables)',
+    "        A cable's purpose is not carried into Nautobot by this kit."])
     assert.ok(got.text.split('\n').includes(line), line);
+  assert.ok(!got.text.includes('has no description'), 'the facts file does not say a Nautobot cable has no description');
   assert.deepEqual(got.notes, []);
   assert.ok(!got.text.includes('1-rack.csv'));
   // The script could not be fetched: the kit comes without it, and says where it is.
-  const bare = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {site: 'L', role: 'R'}, rows: {}, script: false});
+  const bare = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {site: 'L', role: 'R'}, rows: {}, script: false, ...WHOLE});
   const gone = 'import_cables.py could not be fetched, so it is not in this zip. It is at https://portrayal.dev/site/rack/nautobot/import_cables.py.';
   assert.deepEqual(bare.notes, [gone]);
-  assert.ok(bare.text.includes(`NOT IN THIS KIT:\n- ${gone}\n`) && !bare.text.includes('python3 import_cables.py'));
+  assert.ok(bare.text.includes(`Not in this kit:\n- ${gone}\n`) && !bare.text.includes('python3 import_cables.py'));
 });
 
 test('the files of a kit are numbered in import order', () => {

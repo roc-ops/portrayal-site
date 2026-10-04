@@ -5,7 +5,8 @@
 // files and the faces, and asks here.
 
 import {endName, lengthParts} from './cable-rules.js';
-import {cableFindings, TARGET_NAME} from './export-data.js';
+import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo} from './export-data.js';
+export {DCIM_LIMITS};
 
 // ── a type file's own names ─────────────────────────────────────────────
 // The sections of a device-type or module-type YAML that hold cable ends, in
@@ -15,7 +16,16 @@ export const SECTIONS = [
   ['console-ports', 'dcim.consoleport'], ['console-server-ports', 'dcim.consoleserverport'],
   ['power-ports', 'dcim.powerport'], ['power-outlets', 'dcim.poweroutlet']];
 
-const unquote = v => (/^'.*'$/.test(v) ? v.slice(1, -1).replace(/''/g, "'") : /^".*"$/.test(v) ? JSON.parse(v) : v);
+// A double-quoted YAML value is read as JSON when it is JSON; a YAML-only
+// escape (\e, \x1b, a line fold) is not, and one odd value must not fail a
+// whole type read, so it falls back to the text between the quotes.
+const unquote = v => {
+  if (/^'.*'$/.test(v)) return v.slice(1, -1).replace(/''/g, "'");
+  if (/^".*"$/.test(v)) {
+    try { return JSON.parse(v); } catch { return v.slice(1, -1); }
+  }
+  return v;
+};
 
 // THE NAME LISTS OF ONE TYPE FILE, read as text: the exporter writes every
 // component as "  - name: X" under a top-level "section:" line, with its other
@@ -136,7 +146,9 @@ export function moduleImportRows({target = 'netbox', parts, names, kept, deviceO
     }
     const lists = deviceOf(p.itemId), bay = bayAt(lists, bayId);
     if (!bay) {
-      left.push(`${device} ${bayId}: ${type.model} is not in the modules file. The device type ${lists?.model ?? ''} has no module bay at position ${bayId}.`);
+      left.push(`${device} ${bayId}: ${type.model} is not in the modules file. ` + (lists
+        ? `The device type ${lists.model} has no module bay at position ${bayId}.`
+        : `${device} has no device type, so it has no module bays.`));
       continue;
     }
     rows.push(target === 'nautobot'
@@ -181,6 +193,11 @@ export function importLength(cable, target = 'netbox') {
   if (p.unit !== 'm' && p.unit !== 'ft')
     return {value: '', unit: '', note: `its length (${p.value} ${p.unit}) is not carried: the kit writes lengths in m or ft only`};
   const value = target === 'nautobot' ? Math.ceil(p.value) : Math.ceil(p.value * 100 - 1e-9) / 100;
+  const big = nautobot => (nautobot ? value > DCIM_LIMITS.nautobotLengthMax : value >= DCIM_LIMITS.netboxLengthBelow);
+  if (big(target === 'nautobot'))
+    return {value: '', unit: '', note: `its length (${p.value} ${p.unit}) is too large for ${target === 'nautobot'
+      ? `Nautobot, which stores whole numbers up to ${DCIM_LIMITS.nautobotLengthMax.toLocaleString('en-US')}`
+      : `NetBox, which stores less than ${DCIM_LIMITS.netboxLengthBelow.toLocaleString('en-US')}`}, so the row has no length`};
   const note = value === p.value ? null
     : `${p.value} ${p.unit} is written as ${value} ${p.unit}: ${target === 'nautobot' ? 'Nautobot takes whole numbers' : 'NetBox keeps two decimal places'}, and a length is rounded up`;
   return {value, unit: p.unit, note};
@@ -227,6 +244,8 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
       why = sides.filter(s => s.why).map(s => s.why);
       if (!why.length && !canMeet(sides[0].type, sides[1].type))
         why = [`${T} does not cable ${KIND[sides[0].type]} to ${KIND[sides[1].type]}`];
+      if (!why.length && sides[0].key === sides[1].key)
+        why = [`its two ends are the same port, ${sides[0].name} on ${sides[0].device}`];
       if (!why.length)
         why = sides.filter(s => used.has(s.key))
           .map(s => `end ${s.side}, ${endName(rack, s.end, uOf)}, already has cable ${used.get(s.key)} in this file`);
@@ -239,12 +258,22 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     dac ||= c.media === 'dac';
     const len = importLength(c, target);
     if (len.note) notes.push(`Cable ${f.name}: ${len.note}.`);
+    // A label or a description over the field's length is cut to it, not the cable dropped.
+    let label = c.label || c.id, description = c.purpose || '';
+    if (charCount(label) > DCIM_LIMITS.cableLabel) {
+      notes.push(`Cable ${f.name}: its label is ${charCount(label)} characters and ${T} takes ${DCIM_LIMITS.cableLabel}, so the label is shortened to that.`);
+      label = cutTo(label, DCIM_LIMITS.cableLabel);
+    }
+    if (!nautobot && charCount(description) > DCIM_LIMITS.cableDescription) {
+      notes.push(`Cable ${f.name}: its purpose is ${charCount(description)} characters and ${T} takes ${DCIM_LIMITS.cableDescription} in a description, so the description is shortened to that.`);
+      description = cutTo(description, DCIM_LIMITS.cableDescription);
+    }
     rows.push(nautobot
       ? {a_device: a.device, a_type: a.type, a_name: a.name, b_device: b.device, b_type: b.type, b_name: b.name, type,
-         status: 'Planned', label: c.label || c.id, color: '', length: len.value, length_unit: len.unit}
+         status: 'Planned', label, color: '', length: len.value, length_unit: len.unit}
       : {side_a_device: a.device, side_a_type: a.type, side_a_name: a.name, side_b_device: b.device, side_b_type: b.type,
-         side_b_name: b.name, type, status: 'planned', label: c.label || c.id, color: '', length: len.value,
-         length_unit: len.unit, description: c.purpose || ''});
+         side_b_name: b.name, type, status: 'planned', label, color: '', length: len.value,
+         length_unit: len.unit, description});
   }
   if (dac) notes.push('A DAC is written as dac-passive. Change the type of one that is active.');
   return {columns: CABLE_IMPORT_COLUMNS[nautobot ? 'nautobot' : 'netbox'], rows, left, notes};
@@ -269,70 +298,100 @@ export const KIT_SCRIPT = 'import_cables.py';
 const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const rowsText = n => (n ? `${n} ${n === 1 ? 'row' : 'rows'}` : 'no rows: it holds its header only, so skip it');
 
+// The text is LF throughout (a comment, as asked): every modern editor on
+// Windows, macOS and Linux opens it, and the page's other notes are LF. The CSVs
+// stay CRLF because a CSV importer reads that. Lines are wrapped at WIDTH
+// columns, with a hanging indent; a command line or a path longer than that
+// is never broken. `width` is a parameter so a test can read a paragraph whole.
+export const README_WIDTH = 78;
+function wrap(text, first, hang, width) {
+  const lines = [];
+  let line = first, fresh = true;
+  for (const word of text.split(' ')) {
+    if (!fresh && line.length + 1 + word.length > width) { lines.push(line); line = hang + word; }
+    else line += (fresh ? '' : ' ') + word;
+    fresh = false;
+  }
+  lines.push(line);
+  return lines;
+}
+
 export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles = 0, manufacturers = [], rows = {},
-                           left = [], notes = [], script = true}) {
+                           left = [], notes = [], script = true, width = README_WIDTH}) {
   const nautobot = target === 'nautobot', T = TARGET_NAME[nautobot ? 'nautobot' : 'netbox'];
   const F = KIT_FILES[nautobot ? 'nautobot' : 'netbox'];
   const site = String(dcim?.site ?? '').trim(), role = String(dcim?.role ?? '').trim();
   const place = nautobot ? 'location' : 'site', cols = nautobot ? ['location__name', 'role__name'] : ['site', 'role'];
   const blank = [!site && cols[0], !role && cols[1]].filter(Boolean);
   const warning = blank.length
-    ? `${F.devices} WILL BE REFUSED as it is: its ${blank.join(' and ')} ${blank.length === 1 ? 'column is' : 'columns are'} blank, and ` +
+    ? `${F.devices} will be refused as it is: its ${blank.join(' and ')} ${blank.length === 1 ? 'column is' : 'columns are'} blank, and ` +
       `${T} requires ${blank.length === 1 ? 'it' : 'both'}.${!nautobot && !site ? ` ${F.rack}'s site column is blank too.` : ''} ` +
       `Set the ${[!site && place, !role && 'device role'].filter(Boolean).join(' and the ')} under Export, DCIM import settings, ` +
       `and export again; or fill ${blank.length === 1 ? 'that column' : 'those columns'} in by hand.`
     : '';
   const numbered = rack.frame.numbering === 'top-down' ? 'numbered from the top' : 'numbered from the bottom';
-  const out = [`${T} import kit for ${rack.name}, from the Portrayal Rack Builder, ${isoDay(date)}.`, ''];
-  if (warning) out.push(warning, '');
+  const out = [];
+  const para = (text, first = '', hang = '  ') => out.push(...wrap(text, first, hang, width));
+  para(`${T} import kit for ${rack.name}, from the Portrayal Rack Builder, ${isoDay(date)}.`);
+  out.push('');
+  const item = text => para(text, '- ', '  ');
+  if (warning) { para(warning, 'Read this first: '); out.push(''); }
 
-  out.push(`BEFORE YOU IMPORT, ${T} must already have:`);
-  out.push(site ? `- the ${place} "${site}"${nautobot ? ', of a location type that allows devices and racks' : ''}`
-                : `- a ${place}${nautobot ? ', of a location type that allows devices and racks' : ''} (none is set in this kit)`);
-  out.push(role ? `- the ${nautobot ? 'role' : 'device role'} "${role}"${nautobot ? ', for devices' : ''}`
-                : `- a ${nautobot ? 'role for devices' : 'device role'} (none is set in this kit)`);
-  if (nautobot) out.push('- a status named Planned, for devices, modules and cables');
-  if (manufacturers.length) out.push(`- these manufacturers: ${manufacturers.join(', ')}`);
+  out.push(`Before you import, ${T} must already have:`);
+  item(site ? `the ${place} "${site}"${nautobot ? ', of a location type that allows devices and racks' : ''}`
+            : `a ${place}${nautobot ? ', of a location type that allows devices and racks' : ''} (none is set in this kit)`);
+  item(role ? `the ${nautobot ? 'role' : 'device role'} "${role}"${nautobot ? ', for devices' : ''}`
+            : `a ${nautobot ? 'role for devices' : 'device role'} (none is set in this kit)`);
+  if (nautobot) item('a status named Planned, for devices, modules and cables');
+  if (manufacturers.length) item(`these manufacturers: ${manufacturers.join(', ')}`);
   if (nautobot)
-    out.push(`- the rack "${rack.name}" in that location: ${rack.frame.heightRU}U, ${numbered}` +
-             `${rack.frame.numbering === 'top-down' ? ' (descending units)' : ''}. This kit has no rack file for Nautobot.`);
+    item(`the rack "${rack.name}" in that location: ${rack.frame.heightRU}U, ${numbered}` +
+         `${rack.frame.numbering === 'top-down' ? ' (descending units)' : ''}. This kit has no rack file for Nautobot.`);
   out.push('');
 
   const types = `types/device-types/, then types/module-types/ (${typeFiles} ${typeFiles === 1 ? 'file' : 'files'})`;
+  const step = (n, text) => para(text, `Step ${n}: `, '        ');
+  const sub = text => para(text, '        ', '        ');
   if (nautobot) {
-    out.push('IMPORT IN THIS ORDER. Nautobot takes each CSV file whole or not at all.',
-      typeFiles ? `1. ${types}: Device Types > Import and Module Types > Import, one YAML file per import. This step is written ` +
-                  'from Nautobot\'s source and was NOT verified against Nautobot 3.2.'
-                : '1. types/: no files, so there is nothing to import.',
-      `2. ${F.devices} (${rowsText(rows.devices)}): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.`,
-      `3. ${F.modules} (${rowsText(rows.modules)}): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. ` +
-        "This creates each card's ports, so it comes before the cables.",
-      `4. ${F.cables} (${rowsText(rows.cables)}), with ${KIT_SCRIPT}. DO NOT give ${F.cables} to Nautobot's own importer: ` +
-        'Nautobot takes a cable\'s ends by id only, and from a file that names them it creates cables with no ends.');
-    if (script)
-      out.push('     export NAUTOBOT_URL=https://nautobot.example.com',
-        '     export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
-        `     python3 ${KIT_SCRIPT} ${F.cables}             (a dry run: what it would create, and what it cannot find)`,
-        `     python3 ${KIT_SCRIPT} ${F.cables} --apply     (creates the cables)`,
-        "   Python 3, standard library only. It talks to that URL's host and no other.");
-    out.push("   A cable's purpose is not carried: a Nautobot cable has no description.", '');
+    para('Import in this order. Nautobot takes each CSV file whole or not at all.');
+    step(1, typeFiles ? `${types}: Device Types > Import and Module Types > Import, one YAML file per import. This step is written ` +
+                        "from Nautobot's source and was not verified against Nautobot 3.2."
+                      : 'types/: no files, so there is nothing to import.');
+    step(2, `${F.devices} (${rowsText(rows.devices)}): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.`);
+    step(3, `${F.modules} (${rowsText(rows.modules)}): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. ` +
+            "This creates each card's ports, so it comes before the cables.");
+    step(4, `${F.cables} (${rowsText(rows.cables)}), with ${KIT_SCRIPT}. Warning: do not give ${F.cables} to Nautobot's own importer. ` +
+            "Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.");
+    if (script) {
+      out.push('        export NAUTOBOT_URL=https://nautobot.example.com',
+        '        export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
+        `        python3 ${KIT_SCRIPT} ${F.cables}             (a dry run: what it would create, and what it cannot find)`,
+        `        python3 ${KIT_SCRIPT} ${F.cables} --apply     (creates the cables)`);
+      sub("Python 3, standard library only. It talks to that URL's host and no other. Run it again after a failure: " +
+          'a cable it already made is reported as already connected, and left alone.');
+    }
+    sub("A cable's purpose is not carried into Nautobot by this kit.");
+    out.push('');
   } else {
-    out.push('IMPORT IN THIS ORDER. NetBox takes each CSV file whole or not at all: one refused row refuses the file.',
-      typeFiles ? `1. ${types}: Device Types > Import and Module Types > Import, format YAML, one file at a time. ` +
-                  'The module types must be in before step 4.'
-                : '1. types/: no files, so there is nothing to import.',
-      `2. ${F.rack} (${rowsText(rows.rack)}): Racks > Import. Creates the rack "${rack.name}", ${rack.frame.heightRU}U, ${numbered}.`,
-      `3. ${F.devices} (${rowsText(rows.devices)}): Devices > Import. Every device is planned.`,
-      `4. ${F.modules} (${rowsText(rows.modules)}): Modules > Import. This creates each card's ports, so it comes before the cables.`,
-      `5. ${F.cables} (${rowsText(rows.cables)}): Cables > Import.`,
-      '   NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it ' +
-      'already has twice is refused as not unique.', '');
+    para('Import in this order. NetBox takes each CSV file whole or not at all: one refused row refuses the file.');
+    step(1, typeFiles ? `${types}: Device Types > Import and Module Types > Import, format YAML, one file at a time. ` +
+                        'The module types must be in before step 4.'
+                      : 'types/: no files, so there is nothing to import.');
+    step(2, `${F.rack} (${rowsText(rows.rack)}): Racks > Import. Creates the rack "${rack.name}", ${rack.frame.heightRU}U, ${numbered}.`);
+    step(3, `${F.devices} (${rowsText(rows.devices)}): Devices > Import. Every device is planned.`);
+    step(4, `${F.modules} (${rowsText(rows.modules)}): Modules > Import. This creates each card's ports, so it comes before the cables.`);
+    step(5, `${F.cables} (${rowsText(rows.cables)}): Cables > Import.`);
+    sub('NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it ' +
+        'already has twice is refused as not unique.');
+    out.push('');
   }
 
   const missing = nautobot && !script
     ? [`${KIT_SCRIPT} could not be fetched, so it is not in this zip. It is at https://portrayal.dev/site/rack/nautobot/${KIT_SCRIPT}.`] : [];
   const gone = [...missing, ...left];
-  out.push('NOT IN THIS KIT:', ...(gone.length ? gone.map(n => `- ${n}`) : ['- Nothing: every device, card and cable in this rack is in the files.']), '');
-  if (notes.length) out.push('NOTES:', ...notes.map(n => `- ${n}`), '');
+  out.push('Not in this kit:');
+  if (gone.length) gone.forEach(item); else item('Nothing: every device, card and cable in this rack is in the files.');
+  out.push('');
+  if (notes.length) { out.push('Notes:'); notes.forEach(item); out.push(''); }
   return {text: `${out.join('\n').trimEnd()}\n`, notes: [...(warning ? [warning] : []), ...gone, ...notes]};
 }
