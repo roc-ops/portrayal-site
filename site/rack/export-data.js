@@ -542,44 +542,78 @@ export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
   `${label} (${ref}): no ${T} device type from ${manufacturer || 'its manufacturer'}, so ` +
   `${stemOf(path)} is another vendor's (${vendorOf(path)}) file, a best guess.`;
 
-// One row per rail item, top down. Role and site/location are left blank on
-// purpose: both are required, and this rack knows neither - a blank one
-// fails the import loudly instead of filing devices under a guess.
-export function deviceImportRows({rack, items, types, target = 'netbox'}) {
+// THE DEVICE IMPORT: one row per rail item the target will take, top down.
+// `dcim` is the rack's import settings ({site, role}, model.js dcimOf): NetBox's
+// site and role, Nautobot's location and role. Both are required by both
+// targets and are written as given; blank ones stay blank, and the kit's
+// README says the file will be refused until they are filled in.
+//
+// A ROW THE TARGET WOULD REFUSE IS NOT WRITTEN (Phase 2c ruling 3). Both
+// targets take a device file whole or not at all, so one such row would
+// refuse every device. `left` lists each device left out, with the sentence
+// the README carries:
+//   - a device with no device type (the type is a required column), on both;
+//   - on NetBox only, the later-placed of two devices that share a U front
+//     and rear while either type is full depth. The rack's own order is the
+//     order they were placed. Nautobot 3.2 accepts such a pair, so its file
+//     keeps both.
+export function deviceImportRows({rack, items, types, target = 'netbox', dcim = {}}) {
   const T = TARGET_NAME[target] || 'NetBox';
   const names = uniqueNames(items);
+  const site = String(dcim?.site ?? '').trim(), role = String(dcim?.role ?? '').trim();
+  const kept = [], left = [];
+  for (const it of items) {
+    const t = types.get(it.id) || null, name = names.get(it.id).name;
+    if (!t) {
+      left.push({id: it.id, name, reason: `${name} is not in the devices file: there is no ${T} device type for ` +
+        `${it.ref}${it.cfg ? ` (${it.cfg})` : ''}. Add the type and the device by hand.`});
+      continue;
+    }
+    const clash = target === 'nautobot' ? null
+      : kept.find(o => o.face !== it.face && overlaps(o, it) && (t.isFullDepth || types.get(o.id).isFullDepth));
+    if (clash) {
+      left.push({id: it.id, name, reason: `${name} is not in the devices file: it shares U${positionOf(rack.frame, it.ru, it.u)} ` +
+        `with ${names.get(clash.id).name} on the ${clash.face}, and ${T} refuses two devices in one U, front and rear, while ` +
+        `either type is full depth. One refused row refuses the whole file. Import ${name} by hand after changing the ` +
+        `type's depth, or place it elsewhere.`});
+      continue;
+    }
+    kept.push(it);
+  }
   // Top down by the U a device's TOP occupies, not where it starts (ru is
   // its bottom): a tall device reaches higher than its ru alone would say.
   const topU = it => it.ru + it.u - 1;
-  const sorted = [...items].sort((a, b) => topU(b) - topU(a) || (a.face === b.face ? 0 : a.face === 'front' ? -1 : 1));
+  const sorted = [...kept].sort((a, b) => topU(b) - topU(a) || (a.face === b.face ? 0 : a.face === 'front' ? -1 : 1));
   const rows = sorted.map(it => {
-    const t = types.get(it.id) || null;
+    const t = types.get(it.id);
     const n = names.get(it.id);
     const notes = [];
-    if (!t) notes.push(`No ${T} device type for ${it.ref}${it.cfg ? ` (${it.cfg})` : ''}; add one before importing.`);
-    else if (t.otherVendor)
+    if (t.otherVendor)
       notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer: t.chassisManufacturer, path: t.path}));
     else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
     if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${String(it.label || it.ref).trim()}.`);
     const mt = mountText(it.mount);
     if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
-    const others = items.filter(o => o.id !== it.id && o.face !== it.face && overlaps(o, it));
-    if (others.length && (t?.isFullDepth || others.some(o => types.get(o.id)?.isFullDepth))) {
-      const named = others.map(o => names.get(o.id).name);
-      const list = named.length > 1 ? `${named.slice(0, -1).join(', ')} and ${named.at(-1)}` : named[0];
-      notes.push(`Shares its U with ${list} on the ${others[0].face}; ${T} refuses this while either type is full depth.`);
-    }
     const position = positionOf(rack.frame, it.ru, it.u);
     const comments = notes.join(' ');
     return target === 'nautobot'
-      ? {name: n.name, role__name: '', device_type__manufacturer__name: t?.manufacturer ?? '',
-         device_type__model: t?.model ?? '', status__name: 'Planned', location__name: '',
+      ? {name: n.name, role__name: role, device_type__manufacturer__name: t.manufacturer ?? '',
+         device_type__model: t.model ?? '', status__name: 'Planned', location__name: site,
          rack__name: rack.name, position, face: it.face, comments}
-      : {name: n.name, role: '', manufacturer: t?.manufacturer ?? '', device_type: t?.model ?? '',
-         status: 'planned', site: '', rack: rack.name, position, face: it.face, comments};
+      : {name: n.name, role, manufacturer: t.manufacturer ?? '', device_type: t.model ?? '',
+         status: 'planned', site, rack: rack.name, position, face: it.face, comments};
   });
-  return {columns: target === 'nautobot' ? NAUTOBOT_COLUMNS : NETBOX_COLUMNS, rows};
+  return {columns: target === 'nautobot' ? NAUTOBOT_COLUMNS : NETBOX_COLUMNS, rows, left};
+}
+
+// THE RACK, as NetBox imports one (Phase 2c ruling 2): written from the frame.
+// A device row names its rack, and the device import does not create it.
+// desc_units is NetBox's "units are numbered top-to-bottom".
+export const NETBOX_RACK_COLUMNS = ['site', 'name', 'status', 'width', 'u_height', 'desc_units'];
+export function rackImportRows({rack, dcim = {}}) {
+  return {columns: NETBOX_RACK_COLUMNS, rows: [{site: String(dcim?.site ?? '').trim(), name: rack.name, status: 'planned',
+    width: 19, u_height: rack.frame.heightRU, desc_units: rack.frame.numbering === 'top-down' ? 'true' : 'false'}]};
 }
 
 // `devices` is how many the rack has: with none, nothing matched anything.

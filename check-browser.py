@@ -3512,6 +3512,13 @@ def read_csv(dl):
     return reader.fieldnames, list(reader), text
 
 
+def device_rows(page, target="nautobot"):
+    """The device import's rows for one target, as exported from the page. Nautobot's
+    file is the default because it holds every device with a type: NetBox's leaves
+    out a device NetBox would refuse (two full-depth devices sharing a U)."""
+    return read_csv(export_file(page, f"{target}-devices"))[1]
+
+
 @extra("rack.html: Export - device import CSVs name each device's type, position and face as NetBox and Nautobot read them")
 def check_rack_export_device_csv(page, base):
     bad = []
@@ -3525,11 +3532,15 @@ def check_rack_export_device_csv(page, base):
         bad.append(f"NetBox CSV: columns {cols}")
     by = {r["name"]: r for r in rows}
     want = {"core-1": ("Cisco", "ASR-9006-AC-V2", "2", "front"), "leaf-1": ("Edgecore", "7726-32X-O-AC-F", "14", "front"),
-            "demarc-i3": ("Telco Systems", "TM-280", "14", "rear"), "demarc-i4": ("Telco Systems", "TM-280", "20", "rear")}
+            "demarc-i4": ("Telco Systems", "TM-280", "20", "rear")}
     for name, (man, dt, pos, face) in want.items():
         r = by.get(name)
         if not r or (r["manufacturer"], r["device_type"], r["position"], r["face"]) != (man, dt, pos, face):
             bad.append(f"NetBox CSV: {name} is {r and (r['manufacturer'], r['device_type'], r['position'], r['face'])}")
+    # demarc-i3 shares U14 with leaf-1 and both types are full depth: NetBox would refuse the whole file for it.
+    status = export_status(page)
+    if set(by) != set(want) or "demarc-i3 is not in the devices file: it shares U14 with leaf-1 on the front" not in status:
+        bad.append(f"NetBox CSV: rows {sorted(by)}; the status reads {status!r}")
     if not all(r["status"] == "planned" and r["rack"] == "Export test" for r in rows):
         bad.append("NetBox CSV: status or rack column wrong")
     if "best guess" not in by.get("core-1", {}).get("comments", ""):
@@ -3542,6 +3553,9 @@ def check_rack_export_device_csv(page, base):
     leaf = next((r for r in rows if r["name"] == "leaf-1"), {})
     if (leaf.get("device_type__model"), leaf.get("status__name")) != ("7726-32X-O-AC-F", "Planned"):
         bad.append(f"Nautobot CSV: leaf-1 is {leaf}")
+    # Nautobot accepts the pair at U14, so its file keeps both, and calls neither refused.
+    if sorted(r["name"] for r in rows) != ["core-1", "demarc-i3", "demarc-i4", "leaf-1"] or any("refuses" in r["comments"] for r in rows):
+        bad.append(f"Nautobot CSV: rows {[(r['name'], r['comments']) for r in rows]}")
 
     # A DCIM CSV is imported as is: a label that opens like a formula stays verbatim (only the BOM guards it).
     eq = page.evaluate("""async () => {
@@ -3559,8 +3573,11 @@ def check_rack_export_device_csv(page, base):
     page.wait_for_function("() => window.__rack.doc().racks[0].frame.numbering === 'top-down'", timeout=READY_MS)
     _, rows, _ = read_csv(export_file(page, "netbox-devices"))
     got = {r["name"]: r["position"] for r in rows}
-    if got != {"core-1": "14", "leaf-1": "11", "demarc-i3": "11", "demarc-i4": "5"}:
+    if got != {"core-1": "14", "leaf-1": "11", "demarc-i4": "5"}:
         bad.append(f"NetBox CSV: top-down positions {got}")
+    got = {r["name"]: r["position"] for r in device_rows(page, "nautobot")}
+    if got != {"core-1": "14", "leaf-1": "11", "demarc-i3": "11", "demarc-i4": "5"}:
+        bad.append(f"Nautobot CSV: top-down positions {got}")
     return bad
 
 
@@ -3926,7 +3943,7 @@ def check_rack_export_notes_truthful(page, base):
             bad.append(f"{target} types: a swap that could not be loaded is not in NOTES.txt: {zip_notes!r}")
 
     # The device CSV carries its rows' comments and nothing else.
-    _, rows, _ = read_csv(export_file(page, "netbox-devices"))
+    rows = device_rows(page)
     status = page.inner_text("#exportStatus")
     carried = len([r for r in rows if r["comments"]])
     if not carried or status != notes_status(carried):
@@ -8324,8 +8341,7 @@ def check_rack_export_cable_schedule(page, base):
     if "not in this export yet" in text:
         bad.append("cable schedule: it says cables are not in this export")
     # The device import names the same two devices the same way.
-    _, drows, _ = read_csv(export_file(page, "netbox-devices"))
-    names = {r["name"] for r in drows}
+    names = {r["name"] for r in device_rows(page)}
     if not {"demarc-i3", "demarc-i4", "leaf-1", "core-1"} <= names:
         bad.append(f"cable schedule: the device import names {sorted(names)}, and the schedule's are not among them")
 
@@ -8377,7 +8393,7 @@ def check_rack_export_cable_failures(page, base):
           const of = C.chassisLookup(await C.loadChassis());
           const r = window.__rack.doc().racks[0];
           const rack = {...r, frame: {...r.frame, numbering}};
-          return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.deviceImportCsv(rack, of, 'netbox')).data};
+          return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.deviceImportCsv(rack, of, 'nautobot')).data};
         }""", numbering)
         sched = list(csv.DictReader(io.StringIO(got["sched"].partition("\r\n\r\nNotes")[0])))
         dev = {r["name"]: r["position"] for r in csv.DictReader(io.StringIO(got["dev"]))}
@@ -9212,9 +9228,8 @@ def check_rack_one_u(page, base):
         open_cabled(page, base, one_u_fixture())
     except RuntimeError as e:
         return bad + [f"one U: {e}"]
-    # The device import's position is the reference: NetBox's own word for it.
-    _, drows, _ = read_csv(export_file(page, "netbox-devices"))
-    pos = {r["name"]: r["position"] for r in drows}
+    # The device import's position is the reference: a DCIM's own word for it.
+    pos = {r["name"]: r["position"] for r in device_rows(page)}
     if pos.get("core-1") != "14" or pos.get("leaf-1") != "11":
         return bad + [f"one U: the device import's positions are {pos}"]
     end = "core-1 (U14) slot-2/module/p1"

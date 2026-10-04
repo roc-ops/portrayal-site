@@ -471,15 +471,17 @@ export async function dcimTypesZip(rack, chassisOf, target, {date = new Date()} 
           type: 'application/zip', notes: ctx.notes};
 }
 
-// The device import (spec §8): one row per rail item. Pure CSV so it
-// imports as is; each row's notes are in its own comments column, and those
-// are the notes the file carries. A rack-level note (zero-U items, cables)
-// has no row to sit in, so it comes back as `left`.
+// The device import (spec §8): one row per rail item the target will take.
+// Pure CSV so it imports as is; each row's notes are in its own comments
+// column, and those are the notes the file carries. A rack-level note (zero-U
+// items, cables) and a device left out of the file (export-data.js
+// deviceImportRows) have no row to sit in, so they come back as `left`.
 export async function deviceImportCsv(rack, chassisOf, target) {
   const ctx = await dcimContext(rack, chassisOf, target, {modules: false});
-  const {columns, rows} = deviceImportRows({rack, items: ctx.items, types: ctx.types, target});
+  const {columns, rows, left} = deviceImportRows({rack, items: ctx.items, types: ctx.types, target});
   return {name: `${fileStem(rack.name)}-${target}-devices.csv`, data: toCsv(columns, rows),
-          type: 'text/csv', notes: rows.map(r => r.comments).filter(Boolean), left: rackNotes(rack)};
+          type: 'text/csv', notes: rows.map(r => r.comments).filter(Boolean),
+          left: [...rackNotes(rack), ...left.map(l => l.reason)]};
 }
 
 // THE BILL OF MATERIALS (spec §8): each device by configuration, each

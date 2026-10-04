@@ -85,12 +85,16 @@ test('a generated name never collides with another item\'s own label', () => {
   assert.equal(new Set(got).size, 4, got.join(', '));
 });
 
-test('a device with no type and no configuration name leaves the parenthesis out', () => {
+test('a device with no type is left out of the file, and said; no configuration name leaves the parenthesis out', () => {
   const item = {id: 'i1', ref: 'mystery', cfg: '', label: 'm', ru: 2, u: 1, face: 'front', turned: false};
-  const {rows} = X.deviceImportRows({rack: RACK, items: [item], types: new Map([['i1', null]])});
-  assert.equal(rows[0].comments, 'No NetBox device type for mystery; add one before importing.');
-  const {rows: none} = X.deviceImportRows({rack: RACK, items: [{...item, cfg: undefined}], types: new Map()});
-  assert.equal(none[0].comments, 'No NetBox device type for mystery; add one before importing.');
+  const why = 'm is not in the devices file: there is no NetBox device type for mystery. Add the type and the device by hand.';
+  const got = X.deviceImportRows({rack: RACK, items: [item], types: new Map([['i1', null]])});
+  assert.deepEqual(got.rows, []);
+  assert.deepEqual(got.left, [{id: 'i1', name: 'm', reason: why}]);
+  const none = X.deviceImportRows({rack: RACK, items: [{...item, cfg: undefined}], types: new Map()});
+  assert.deepEqual([none.rows, none.left[0].reason], [[], why]);
+  assert.match(X.deviceImportRows({rack: RACK, items: [{...item, cfg: 'dc'}], types: new Map(), target: 'nautobot'}).left[0].reason,
+    /there is no Nautobot device type for mystery \(dc\)\./);
 });
 
 test('a rack with no devices does not claim every device matched', () => {
@@ -112,17 +116,42 @@ const TYPES = new Map([
 const RACK = {name: 'Export test', frame: M.normalizeFrame({heightRU: 24})};
 
 test('NetBox rows: top down, unique names, planned, notes in comments', () => {
-  const {columns, rows} = X.deviceImportRows({rack: RACK, items: ITEMS, types: TYPES, target: 'netbox'});
+  const {columns, rows, left} = X.deviceImportRows({rack: RACK, items: ITEMS, types: TYPES, target: 'netbox'});
   assert.deepEqual(columns, ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack',
                              'position', 'face', 'comments']);
+  // demarc-i3 shares U14 with leaf-1, which was placed first: NetBox would refuse it, and the file with it.
   assert.deepEqual(rows.map(r => [r.name, r.position, r.face, r.manufacturer, r.device_type]), [
     ['demarc-i4', 20, 'rear', 'Telco Systems', 'TM-280'], ['leaf-1', 14, 'front', 'Edgecore', '7726-32X-O-AC-F'],
-    ['demarc-i3', 14, 'rear', 'Telco Systems', 'TM-280'], ['core-1', 2, 'front', 'Cisco', 'ASR-9006-AC-V2']]);
+    ['core-1', 2, 'front', 'Cisco', 'ASR-9006-AC-V2']]);
   assert.ok(rows.every(r => r.status === 'planned' && r.role === '' && r.site === '' && r.rack === 'Export test'));
   assert.equal(rows[0].comments, 'Named demarc-i4 because another device here is also demarc.');
-  assert.equal(rows[1].comments, 'Device type 7726-32X-O-AC-F is a best guess for configuration ac-f2b. ' +
-    'Shares its U with demarc-i3 on the rear; NetBox refuses this while either type is full depth.');
-  assert.equal(rows[3].comments, 'Device type ASR-9006-AC-V2 is a best guess for configuration base.');
+  assert.equal(rows[1].comments, 'Device type 7726-32X-O-AC-F is a best guess for configuration ac-f2b.');
+  assert.equal(rows[2].comments, 'Device type ASR-9006-AC-V2 is a best guess for configuration base.');
+  assert.deepEqual(left, [{id: 'i3', name: 'demarc-i3', reason:
+    'demarc-i3 is not in the devices file: it shares U14 with leaf-1 on the front, and NetBox refuses two devices in one U, ' +
+    'front and rear, while either type is full depth. One refused row refuses the whole file. Import demarc-i3 by hand ' +
+    "after changing the type's depth, or place it elsewhere."}]);
+});
+
+test('the import settings fill role and site, or role and location; blank ones stay blank', () => {
+  const dcim = {site: ' Lab 1 ', role: 'Router'};
+  const nb = X.deviceImportRows({rack: RACK, items: ITEMS, types: TYPES, target: 'netbox', dcim}).rows;
+  assert.ok(nb.every(r => r.site === 'Lab 1' && r.role === 'Router'));
+  const nt = X.deviceImportRows({rack: RACK, items: ITEMS, types: TYPES, target: 'nautobot', dcim}).rows;
+  assert.ok(nt.every(r => r.location__name === 'Lab 1' && r.role__name === 'Router'));
+  const blank = X.deviceImportRows({rack: RACK, items: ITEMS, types: TYPES, target: 'netbox', dcim: {site: null}}).rows;
+  assert.ok(blank.every(r => r.site === '' && r.role === ''));
+});
+
+test('the rack row is written from the frame: 19 inch, its height, planned, and whether U1 is at the top', () => {
+  assert.deepEqual(X.rackImportRows({rack: RACK, dcim: {site: 'Lab 1', role: 'Router'}}), {
+    columns: ['site', 'name', 'status', 'width', 'u_height', 'desc_units'],
+    rows: [{site: 'Lab 1', name: 'Export test', status: 'planned', width: 19, u_height: 24, desc_units: 'false'}]});
+  const down = {...RACK, frame: {...RACK.frame, numbering: 'top-down'}};
+  assert.deepEqual(X.rackImportRows({rack: down}).rows[0], {site: '', name: 'Export test', status: 'planned', width: 19,
+    u_height: 24, desc_units: 'true'});
+  assert.equal(X.toCsv(...Object.values(X.rackImportRows({rack: down, dcim: {site: 'A, B'}}))),
+    'site,name,status,width,u_height,desc_units\r\n"A, B",Export test,planned,19,24,true\r\n');
 });
 
 test('rows sort by each item\'s top U, not where it starts', () => {
@@ -136,18 +165,23 @@ test('rows sort by each item\'s top U, not where it starts', () => {
 
 test('positions follow a top-down frame', () => {
   const rack = {...RACK, frame: {...RACK.frame, numbering: 'top-down'}};
-  assert.deepEqual(X.deviceImportRows({rack, items: ITEMS, types: TYPES}).rows.map(r => r.position), [5, 11, 11, 14]);
+  assert.deepEqual(X.deviceImportRows({rack, items: ITEMS, types: TYPES}).rows.map(r => r.position), [5, 11, 14]);
+  assert.deepEqual(X.deviceImportRows({rack, items: ITEMS, types: TYPES, target: 'nautobot'}).rows.map(r => r.position), [5, 11, 11, 14]);
+  assert.match(X.deviceImportRows({rack, items: ITEMS, types: TYPES}).left[0].reason, /^demarc-i3 is not in the devices file: it shares U11 with leaf-1/);
 });
 
-test('Nautobot rows use natural-key columns; a device with no type says so', () => {
+test('Nautobot rows use natural-key columns, keep two devices that share a U, and leave out a device with no type', () => {
   const types = new Map([...TYPES, ['i1', null]]);
-  const {columns, rows} = X.deviceImportRows({rack: RACK, items: ITEMS, types, target: 'nautobot'});
+  const {columns, rows, left} = X.deviceImportRows({rack: RACK, items: ITEMS, types, target: 'nautobot'});
   assert.deepEqual(columns, ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model',
     'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments']);
   assert.deepEqual([rows[1].device_type__manufacturer__name, rows[1].device_type__model, rows[1].status__name,
                     rows[1].rack__name], ['Edgecore', '7726-32X-O-AC-F', 'Planned', 'Export test']);
-  assert.equal(rows[3].device_type__model, '');
-  assert.equal(rows[3].comments, 'No Nautobot device type for asr-9006 (base); add one before importing.');
+  // Nautobot 3.2.6 accepted leaf-1 and demarc-i3 at U14, front and rear: both rows stay, and neither is called refused.
+  assert.deepEqual(rows.map(r => r.name), ['demarc-i4', 'leaf-1', 'demarc-i3']);
+  assert.ok(rows.every(r => !/refuses/.test(r.comments)));
+  assert.deepEqual(left, [{id: 'i1', name: 'core-1', reason:
+    'core-1 is not in the devices file: there is no Nautobot device type for asr-9006 (base). Add the type and the device by hand.'}]);
 });
 
 test('NOTES.txt heads its list, or says everything matched', () => {
@@ -167,19 +201,30 @@ test('a type from another vendor says so in the row\'s comments, as NOTES.txt do
     "ASR-9006-AC-V2 is another vendor's (Cisco) file, a best guess.");
 });
 
-test('the shared-U note names every device it shares with', () => {
-  const full = {manufacturer: 'M', model: 'X', isFullDepth: true, guess: false};
+test('NetBox: of two devices sharing a U front and rear, the later-placed is left out while either type is full depth', () => {
+  const full = {manufacturer: 'M', model: 'X', isFullDepth: true, guess: false}, half = {...full, isFullDepth: false};
   const items = [
     {id: 'a', ref: 'r', cfg: 'base', label: 'tall', ru: 10, u: 6, face: 'front', turned: false},
     {id: 'b', ref: 'r', cfg: 'base', label: 'one', ru: 11, u: 1, face: 'rear', turned: false},
     {id: 'c', ref: 'r', cfg: 'base', label: 'two', ru: 13, u: 1, face: 'rear', turned: false},
-    {id: 'd', ref: 'r', cfg: 'base', label: 'three', ru: 15, u: 1, face: 'rear', turned: false}];
-  const types = new Map(items.map(i => [i.id, full]));
-  const {rows} = X.deviceImportRows({rack: RACK, items, types, target: 'netbox'});
-  assert.equal(rows.find(r => r.name === 'tall').comments,
-    'Shares its U with one, two and three on the rear; NetBox refuses this while either type is full depth.');
-  assert.equal(rows.find(r => r.name === 'one').comments,
-    'Shares its U with tall on the front; NetBox refuses this while either type is full depth.');
+    {id: 'd', ref: 'r', cfg: 'base', label: 'three', ru: 20, u: 1, face: 'rear', turned: false}];
+  const all = new Map(items.map(i => [i.id, full]));
+  const got = X.deviceImportRows({rack: RACK, items, types: all, target: 'netbox'});
+  assert.deepEqual(got.rows.map(r => r.name), ['three', 'tall']);
+  assert.deepEqual(got.left.map(l => l.id), ['b', 'c']);
+  assert.match(got.left[0].reason, /^one is not in the devices file: it shares U11 with tall on the front, and NetBox refuses/);
+  // The rack's own order is the order they were placed: placed first, kept.
+  const rearFirst = X.deviceImportRows({rack: RACK, items: [items[1], items[0]], types: all, target: 'netbox'});
+  assert.deepEqual([rearFirst.rows.map(r => r.name), rearFirst.left.map(l => l.name)], [['one'], ['tall']]);
+  assert.match(rearFirst.left[0].reason, /it shares U10 with one on the rear/);
+  // A device left out takes no room: the next one is judged against what is in the file.
+  const chain = [items[1], items[0], {...items[2], ru: 12}];
+  assert.deepEqual(X.deviceImportRows({rack: RACK, items: chain, types: all, target: 'netbox'}).left.map(l => l.name), ['tall']);
+  // Neither type full depth: NetBox takes both. Either one: it does not.
+  assert.deepEqual(X.deviceImportRows({rack: RACK, items, types: new Map(items.map(i => [i.id, half])), target: 'netbox'}).left, []);
+  assert.deepEqual(X.deviceImportRows({rack: RACK, items, types: new Map([...all, ['a', half]]), target: 'netbox'}).left.map(l => l.id), ['b', 'c']);
+  // The same face is the page's own rule (fit.js), not this one; Nautobot keeps every pair.
+  assert.deepEqual(X.deviceImportRows({rack: RACK, items, types: all, target: 'nautobot'}).left, []);
 });
 
 test('the other-vendor comment wins over a certain match (guess: false)', () => {
@@ -203,6 +248,7 @@ test('a device label that starts with = stays verbatim in the DCIM CSV (only the
 test('a device that is not rack-mount says so in its own comments', () => {
   const rack = {name: 'r', frame: M.normalizeFrame({heightRU: 4})};
   const items = [{id: 'a', ref: 'hlx-tgv', cfg: '', label: 'tgv', ru: 1, u: 1, face: 'front', mount: 'desktop'}];
-  const {rows} = X.deviceImportRows({rack, items, types: new Map(), target: 'netbox'});
+  const types = new Map([['a', {manufacturer: 'M', model: 'X', isFullDepth: false, guess: false}]]);
+  const {rows} = X.deviceImportRows({rack, items, types, target: 'netbox'});
   assert.match(rows[0].comments, /A desktop device, so it needs a shelf\./);
 });
