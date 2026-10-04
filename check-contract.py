@@ -1372,6 +1372,16 @@ check(_icr is not None and _icr.returncode == 0,
 check("site/rack/nautobot/import_cables.py" in _srv,
       "the build serves site/rack/nautobot/import_cables.py, which the Nautobot kit fetches",
       "the file is not tracked, or tools/build-public.py does not copy it")
+# THE ACCEPTANCE KIT (tools/dcim-verify/) imports the Rack Builder's exported
+# kits into a real NetBox and Nautobot, and only a person with instances runs
+# that. What runs here is its self-test: kits.py end to end against a mock of
+# both (and the client's own test: a token request never carries the web
+# session), so the tool still works on the day somebody needs it.
+_kst = HERE / "tools" / "dcim-verify" / "selftest.py"
+_ksr = _sp.run([sys.executable, str(_kst)], capture_output=True, text=True) if _kst.is_file() else None
+check(_ksr is not None and _ksr.returncode == 0,
+      "tools/dcim-verify/kits.py passes its self-test against a mock NetBox and Nautobot",
+      (_ksr.stderr[-600:] if _ksr else "no tools/dcim-verify/selftest.py"))
 
 # ── report ───────────────────────────────────────────────────────────────
 if problems:
