@@ -5,7 +5,7 @@
 // files and the faces, and asks here.
 
 import {endName, lengthParts} from './cable-rules.js';
-import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo} from './export-data.js';
+import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate} from './export-data.js';
 export {DCIM_LIMITS};
 
 // ── a type file's own names ─────────────────────────────────────────────
@@ -295,7 +295,6 @@ export const KIT_FILES = {
   netbox: {rack: '1-rack.csv', devices: '2-devices.csv', modules: '3-modules.csv', cables: '4-cables.csv'},
   nautobot: {devices: '1-devices.csv', modules: '2-modules.csv', cables: '3-cables.csv'}};
 export const KIT_SCRIPT = 'import_cables.py';
-const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const rowsText = n => (n ? `${n} ${n === 1 ? 'row' : 'rows'}` : 'no rows: it holds its header only, so skip it');
 
 // The text is LF throughout (a comment, as asked): every modern editor on
@@ -317,7 +316,7 @@ function wrap(text, first, hang, width) {
 }
 
 export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles = 0, manufacturers = [], rows = {},
-                           left = [], notes = [], script = true, width = README_WIDTH}) {
+                           left = [], notes = [], script = true, scriptUrl = null, width = README_WIDTH}) {
   const nautobot = target === 'nautobot', T = TARGET_NAME[nautobot ? 'nautobot' : 'netbox'];
   const F = KIT_FILES[nautobot ? 'nautobot' : 'netbox'];
   const site = String(dcim?.site ?? '').trim(), role = String(dcim?.role ?? '').trim();
@@ -332,7 +331,7 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
   const numbered = rack.frame.numbering === 'top-down' ? 'numbered from the top' : 'numbered from the bottom';
   const out = [];
   const para = (text, first = '', hang = '  ') => out.push(...wrap(text, first, hang, width));
-  para(`${T} import kit for ${rack.name}, from the Portrayal Rack Builder, ${isoDay(date)}.`);
+  para(`${T} import kit for ${rack.name}, from the Portrayal Rack Builder, ${isoDate(date)}.`);
   out.push('');
   const item = text => para(text, '- ', '  ');
   if (warning) { para(warning, 'Read this first: '); out.push(''); }
@@ -360,17 +359,21 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
     step(2, `${F.devices} (${rowsText(rows.devices)}): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.`);
     step(3, `${F.modules} (${rowsText(rows.modules)}): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. ` +
             "This creates each card's ports, so it comes before the cables.");
-    step(4, `${F.cables} (${rowsText(rows.cables)}), with ${KIT_SCRIPT}. Warning: do not give ${F.cables} to Nautobot's own importer. ` +
-            "Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.");
-    if (script) {
-      out.push('        export NAUTOBOT_URL=https://nautobot.example.com',
-        '        export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
-        `        python3 ${KIT_SCRIPT} ${F.cables}             (a dry run: what it would create, and what it cannot find)`,
-        `        python3 ${KIT_SCRIPT} ${F.cables} --apply     (creates the cables)`);
-      sub("Python 3, standard library only. It talks to that URL's host and no other. Run it again after a failure: " +
-          'a cable it already made is reported as already connected, and left alone.');
+    // With no cable rows there is nothing to run: no commands, and no warning about a file nobody will use.
+    if (!rows.cables) step(4, `${F.cables} (${rowsText(rows.cables)}).`);
+    else {
+      step(4, `${F.cables} (${rowsText(rows.cables)}), with ${KIT_SCRIPT}. Warning: do not give ${F.cables} to Nautobot's own importer. ` +
+              "Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.");
+      if (script) {
+        out.push('        export NAUTOBOT_URL=https://nautobot.example.com',
+          '        export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
+          `        python3 ${KIT_SCRIPT} ${F.cables}             (a dry run: what it would create, and what it cannot find)`,
+          `        python3 ${KIT_SCRIPT} ${F.cables} --apply     (creates the cables)`);
+        sub("Python 3, standard library only. It talks to that URL's host and no other. Run it again after a failure: " +
+            'a cable it already made is reported as already connected, and left alone.');
+      }
+      sub("A cable's purpose is not carried into Nautobot by this kit.");
     }
-    sub("A cable's purpose is not carried into Nautobot by this kit.");
     out.push('');
   } else {
     para('Import in this order. NetBox takes each CSV file whole or not at all: one refused row refuses the file.');
@@ -387,7 +390,7 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
   }
 
   const missing = nautobot && !script
-    ? [`${KIT_SCRIPT} could not be fetched, so it is not in this zip. It is at https://portrayal.dev/site/rack/nautobot/${KIT_SCRIPT}.`] : [];
+    ? [`${KIT_SCRIPT} could not be fetched, so it is not in this zip. It is at ${scriptUrl || `https://portrayal.dev/site/rack/nautobot/${KIT_SCRIPT}`}.`] : [];
   const gone = [...missing, ...left];
   out.push('Not in this kit:');
   if (gone.length) gone.forEach(item); else item('Nothing: every device, card and cable in this rack is in the files.');

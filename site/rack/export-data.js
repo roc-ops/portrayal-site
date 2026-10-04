@@ -105,8 +105,8 @@ export function faceNotes({label, u, pane, panel, face}) {
 const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 // THE STATUS LINE after a download. `notes` are the ones the file carries;
-// `left` are the ones it has no place for (a USDZ has none at all, a device
-// CSV has only its rows' comments), said rather than counted as "in the file".
+// `left` are the ones it has no place for (a USDZ has none at all), said
+// rather than counted as "in the file".
 export function exportStatus({notes = [], left = [], leftText = ''} = {}) {
   const head = notes.length ? `Downloaded, with ${count(notes.length, 'note', 'notes')} in the file.` : 'Downloaded.';
   return left.length ? `${head} ${leftText || `Not in the file: ${left.join(' ')}`}` : head;
@@ -586,7 +586,7 @@ export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
 //     and rear while either type is full depth. The rack's own order is the
 //     order they were placed. Nautobot 3.2 accepts such a pair, so its file
 //     keeps both.
-export function deviceImportRows({rack, items, types, target = 'netbox', dcim = {}}) {
+export function deviceImportRows({rack, items, types, target = 'netbox', dcim = {}, why = new Map()}) {
   const T = TARGET_NAME[target] || 'NetBox';
   const names = uniqueNames(items);
   const site = String(dcim?.site ?? '').trim(), role = String(dcim?.role ?? '').trim();
@@ -594,8 +594,9 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
   for (const it of items) {
     const t = types.get(it.id) || null, name = names.get(it.id).name;
     if (!t) {
-      left.push({id: it.id, name, reason: `${name} is not in the devices file: there is no ${T} device type for ` +
-        `${it.ref}${it.cfg ? ` (${it.cfg})` : ''}. Add the type and the device by hand.`});
+      // `why` is the real cause when it is not "there is none" (a type file or the index could not be read).
+      left.push({id: it.id, name, reason: `${name} is not in the devices file: ` + (why.get(it.id) ??
+        `there is no ${T} device type for ${it.ref}${it.cfg ? ` (${it.cfg})` : ''}`) + '. Add the type and the device by hand.'});
       continue;
     }
     if (charCount(name) > DCIM_LIMITS.deviceName) {

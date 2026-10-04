@@ -563,6 +563,29 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
   assert.ok(bare.text.includes(`Not in this kit:\n- ${gone}\n`) && !bare.text.includes('python3 import_cables.py'));
 });
 
+test('a Nautobot kit with no cable rows shows no script commands and no warning about the file', () => {
+  const got = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {site: 'L', role: 'R'}, rows: {devices: 1, modules: 0, cables: 0}, ...WHOLE});
+  assert.ok(got.text.includes('Step 4: 3-cables.csv (no rows: it holds its header only, so skip it).\n'));
+  for (const gone of ['python3 import_cables.py', 'NAUTOBOT_TOKEN', 'Warning: do not give', "purpose is not carried"])
+    assert.ok(!got.text.includes(gone), gone);
+});
+
+test("the README says where the script is on the page's own site, or on portrayal.dev when there is none", () => {
+  const args = {target: 'nautobot', rack: README_RACK, date: DAY, dcim: {site: 'L', role: 'R'}, rows: {}, script: false, ...WHOLE};
+  const gone = url => `import_cables.py could not be fetched, so it is not in this zip. It is at ${url}.`;
+  assert.deepEqual(D.kitReadme({...args, scriptUrl: 'http://127.0.0.1:8932/site/rack/nautobot/import_cables.py'}).notes,
+    [gone('http://127.0.0.1:8932/site/rack/nautobot/import_cables.py')]);
+  assert.deepEqual(D.kitReadme(args).notes, [gone('https://portrayal.dev/site/rack/nautobot/import_cables.py')]);
+});
+
+test("a device's own line says why its type is missing when a file or the index could not be read", () => {
+  const item = {id: 'i1', ref: 'tm-280', cfg: 'base', label: 'demarc', ru: 2, u: 1, face: 'front', turned: false};
+  const why = new Map([['i1', 'its NetBox device type file, netbox/x.yaml, could not be read']]);
+  assert.equal(X.deviceImportRows({rack: RACK, items: [item], types: new Map([['i1', null]]), why}).left[0].reason,
+    'demarc is not in the devices file: its NetBox device type file, netbox/x.yaml, could not be read. Add the type and the device by hand.');
+  assert.match(X.deviceImportRows({rack: RACK, items: [item], types: new Map([['i1', null]])}).left[0].reason, /there is no NetBox device type for tm-280 \(base\)\./);
+});
+
 test('the files of a kit are numbered in import order', () => {
   assert.deepEqual(D.KIT_FILES, {
     netbox: {rack: '1-rack.csv', devices: '2-devices.csv', modules: '3-modules.csv', cables: '4-cables.csv'},
