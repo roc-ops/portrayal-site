@@ -27,7 +27,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows} from './export-data.js';
+        cableScheduleRows, cableBomRows} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -331,8 +331,9 @@ export async function deviceImportCsv(rack, chassisOf, target) {
 // THE BILL OF MATERIALS (spec §8): each device by configuration, each
 // seated part by reference (as configured - defaults and swaps alike, read
 // off the configured faces by the reader the DCIM exports use), and the
-// mounting hardware, 4 x U per device. A spreadsheet opens this one, so
-// its cells go through bomCell (formula guard); the DCIM CSVs stay verbatim.
+// mounting hardware, 4 x U per device, and the cables by media, length and
+// connector. A spreadsheet opens this one, so its cells go through bomCell
+// (formula guard); the DCIM CSVs stay verbatim.
 export async function bomCsv(rack, chassisOf) {
   const items = itemsWithU(rack, chassisOf);
   // files.json only names manufacturers here, so the BOM goes on without it -
@@ -346,7 +347,13 @@ export async function bomCsv(rack, chassisOf) {
     }), components()]);
   const railItems = items.filter(i => isRackMount(chassisOf(i.ref)));
   const {parts, notes} = await seatedPartsOf(rack, items);
-  notes.unshift(...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame));
+  // The BOM carries the cables, so it no longer says they are left out. Their
+  // connectors come from the faces as the items' OWN swaps configure them:
+  // a derived plug is never a part, and never a line here.
+  const cabled = (rack.cables || []).length > 0;
+  const facts = cabled ? await cableEnds(rack) : UNCHECKED;
+  notes.unshift(...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame));
+  if (cabled && facts.unchecked) notes.push('Cable ends could not be read, so the cable lines do not state their connectors.');
   if (!items.length) notes.push('This rack has no devices, so there is nothing to list.');
   if (filesFailed && parts.length) notes.push('Manufacturer names could not be loaded, so some are blank.');
   const devices = items.map(it => ({ref: it.ref, cfg: it.cfg,
@@ -362,7 +369,8 @@ export async function bomCsv(rack, chassisOf) {
     if (!chassisOf(it.ref)) notes.push(`${it.label}: no size is known for ${it.ref}, so its hardware is counted for 1U.`);
   if (railItems.length) notes.push(...hardwareNotes(rack.frame));   // no rail hardware, nothing to explain
   const all = uniq(notes);
-  const rows = bomRows({devices, parts: lines, frame: rack.frame, railUs: railItems.map(i => i.u)});
+  const rows = [...bomRows({devices, parts: lines, frame: rack.frame, railUs: railItems.map(i => i.u)}),
+                ...cableBomRows(rack, facts.ends)];
   return {name: `${fileStem(rack.name)}-bom.csv`, data: toCsv(BOM_COLUMNS, rows, all, {cell: bomCell}),
           type: 'text/csv', notes: all};
 }

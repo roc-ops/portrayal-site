@@ -107,3 +107,27 @@ test('a schedule cell that opens as a formula is guarded, as the BOM guards it',
   const csv = X.toCsv(columns, rows, [], {cell: X.bomCell});
   assert.match(csv, /\r\n'=A1,leaf-1,14,port-1,core-1,2,slot-2\/module\/p0,OS2 single-mode fiber,'-x,2,m,connected,\r\n$/);
 });
+
+test('the BOM lists cables by media, length and connector, with "length not set" where there is none', () => {
+  const two = {...RACK.cables[0], id: 'c7', label: 'A2', a: RACK.cables[0].b, b: RACK.cables[0].a};
+  const rows = X.cableBomRows({...RACK, cables: [...RACK.cables, two]}, ENDS);
+  assert.deepEqual(rows, [
+    {section: 'Cables', qty: 1, manufacturer: '', model: 'Cat 6A copper', description: 'length not set; copper at both ends', ref: ''},
+    {section: 'Cables', qty: 2, manufacturer: '', model: 'OS2 single-mode fiber', description: '2 m; fiber at both ends', ref: ''},
+    {section: 'Cables', qty: 1, manufacturer: '', model: 'OS2 single-mode fiber', description: 'length not set; copper at one end', ref: ''}]);
+});
+
+test('the BOM: a length kept as written is not set, a unit is part of the line, an unknown end adds nothing', () => {
+  const c = RACK.cables[1];
+  const rack = {...RACK, cables: [
+    {...c, id: 'a', length: {value: 3, unit: 'm'}}, {...c, id: 'b', length: {value: 3, unit: 'ft'}},
+    {...c, id: 'c', lengthAsWritten: 'long'}, {...c, id: 'd', media: ''}, {...c, id: 'e', media: 'toString'}]};
+  assert.deepEqual(X.cableBomRows(rack).map(r => [r.qty, r.model, r.description]), [
+    [1, 'Cat 6A copper', '3 ft'], [1, 'Cat 6A copper', '3 m'], [1, 'Cat 6A copper', 'length not set'],
+    [1, 'Media not set', 'length not set'], [1, 'toString', 'length not set']]);
+  const mixed = new Map([['i2|front|mgmt-eth', {info: COPPER}], ['i3|front|port-2-1', {info: FIBER}]]);
+  assert.equal(X.cableBomRows({...RACK, cables: [c]}, mixed)[0].description,
+    'length not set; copper at one end, fiber at the other');
+  assert.deepEqual(X.cableBomRows({...RACK, cables: []}), []);
+  assert.deepEqual(X.cableBomRows({items: []}), []);
+});

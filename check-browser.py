@@ -7408,10 +7408,10 @@ def check_rack_cables_3d(page, base):
             bad.append(f"cables 3D: the sheet carries {bit!r}, and cables are not in the exports yet")
     if "3 cables are not in this export yet." not in sheet:
         bad.append("cables 3D: the sheet's notes do not say its 3 cables are left out")
-    # The BOM says the same, through the same notes.
+    # The BOM carries the cables now (check_rack_export_bom_cables), so it does not say they are left out.
     bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
-    if "3 cables are not in this export yet." not in bom:
-        bad.append("cables 3D: the BOM's notes do not say its 3 cables are left out")
+    if "not in this export yet" in bom:
+        bad.append("cables 3D: the BOM still says cables are not in it")
 
     no_webgl = webgl_trouble(page)
     page.click("#cableBtn")
@@ -8143,6 +8143,50 @@ def check_rack_export_cable_schedule(page, base):
         bad.append(f"cable schedule, no cables: the notes do not say so: {text!r}")
     if status != notes_status(1):
         bad.append(f"cable schedule, no cables: the status reads {status!r}")
+    return bad
+
+
+@extra("rack.html: Export - the BOM lists cables by media, length and connector, never a plug, and no longer says cables are left out")
+def check_rack_export_bom_cables(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"BOM cables: {e}"]
+    cols, rows, text = read_csv(export_file(page, "bom"))
+    status = export_status(page)
+    cables = [(r["qty"], r["manufacturer"], r["model"], r["description"], r["ref"]) for r in rows if r["section"] == "Cables"]
+    want = [("1", "", "Cat 6A copper", "length not set; copper at both ends", ""),
+            ("1", "", "OS2 single-mode fiber", "2 m; fiber at both ends", ""),
+            ("1", "", "OS2 single-mode fiber", "length not set; copper at one end", "")]
+    if cables != want:
+        bad.append(f"BOM cables: the Cables section is {cables}")
+    if [r["section"] for r in rows][-3:] != ["Cables"] * 3:
+        bad.append(f"BOM cables: the cables are not the last section: {[r['section'] for r in rows]}")
+    if any(r["section"] == "Plugs" or "plug" in r["ref"] for r in rows):
+        bad.append("BOM cables: a derived plug is listed as a part")
+    notes = text.partition("\r\nNotes\r\n")[2]
+    if "not in this export yet" in notes:
+        bad.append(f"BOM cables: the notes still say cables are left out: {notes!r}")
+    n = len([l for l in notes.split("\r\n") if l])
+    if status != notes_status(n):
+        bad.append(f"BOM cables: {n} notes in the file, but the status reads {status!r}")
+
+    # A rack with no cables has no Cables section, and its BOM is what it was.
+    open_fixture(page, base)
+    _, rows, text = read_csv(export_file(page, "bom"))
+    if any(r["section"] == "Cables" for r in rows) or "cable" in text.partition("\r\nNotes\r\n")[2].lower():
+        bad.append("BOM cables: a rack with no cables has a Cables row or a cable note")
+    # Zero-U items are still said to be left out; only the cable line is retired.
+    kept = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+      const of = C.chassisLookup(await C.loadChassis());
+      const r = window.__rack.doc().racks[0];
+      return (await X.bomCsv({...r, zeroU: [{}]}, of)).notes;
+    }""")
+    if "1 zero-U item is not in this export yet." not in kept:
+        bad.append(f"BOM cables: the zero-U note is gone: {kept}")
     return bad
 
 

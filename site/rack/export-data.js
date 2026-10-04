@@ -5,7 +5,7 @@
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
 import {uLabel} from './model.js';
-import {endKey, endName, cableName, mismatch, MEDIA_LABELS} from './cable-rules.js';
+import {endKey, endName, cableName, mismatch, lengthText, MEDIA_LABELS} from './cable-rules.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -458,4 +458,32 @@ export function hardwareNotes(frame) {
   if (frame.holes?.style !== 'tapped')
     return ["Cage nuts and screws are counted as M6, the usual size for square-hole rails; check your rack's own."];
   return frame.holes.thread ? [] : ['The rail thread is not set under Frame, so the screws are listed without one.'];
+}
+
+// CABLES IN THE BOM (spec §8): one line per media, length and connector, with
+// a quantity. A cable with no length - or one whose length the page could not
+// use - is "length not set". The connector is what each end's port takes, as
+// cable-plugs.js read it (`ends`, as for cableFindings); the two ends are
+// said in one order, so A-to-B and B-to-A are one line. The plugs a cable is
+// drawn with are part of the cable: they are never lines of their own.
+const FAMILY = {fiber: 'fiber', copper: 'copper', dac: 'DAC', aoc: 'AOC'};
+const familyOf = info => (info && Object.hasOwn(FAMILY, info.family ?? '') ? FAMILY[info.family] : null);
+function connectorText(a, b) {
+  const known = [familyOf(a), familyOf(b)].filter(Boolean).sort();
+  if (known.length === 2) return known[0] === known[1] ? `${known[0]} at both ends` : `${known[0]} at one end, ${known[1]} at the other`;
+  return known.length ? `${known[0]} at one end` : '';
+}
+export function cableBomRows(rack, ends = new Map()) {
+  const lines = new Map();
+  for (const c of rack.cables || []) {
+    const info = s => ends.get(endKey(c[s]))?.info;
+    const length = lengthText(c.length) || 'length not set';
+    const connector = connectorText(info('a'), info('b'));
+    const key = JSON.stringify([c.media, length, connector]);
+    const l = lines.get(key);
+    if (l) l.qty++;
+    else lines.set(key, {section: 'Cables', qty: 1, manufacturer: '', model: mediaLabel(c.media) || 'Media not set',
+                         description: [length, connector].filter(Boolean).join('; '), ref: ''});
+  }
+  return [...lines.values()].sort((a, b) => a.model.localeCompare(b.model) || a.description.localeCompare(b.description));
 }
