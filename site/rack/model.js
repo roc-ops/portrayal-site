@@ -83,6 +83,19 @@ export const withoutItem = (rack, id) => ({...rack, items: rack.items.filter(i =
 export const withFrame = (rack, patch) => ({...rack, frame: normalizeFrame({...rack.frame, ...patch})});
 export const renamed = (rack, name) => ({...rack, name: String(name)});
 
+// DCIM IMPORT SETTINGS (Phase 2c ruling 2): the names a NetBox or Nautobot
+// import needs and a rack does not otherwise know. `site` is NetBox's site and
+// Nautobot's location; `role` is the device role. An OPTIONAL field of a rack:
+// a rack that was never given them has no `dcim` key at all, so a file written
+// before this field existed opens, and saves, exactly as it was. dcimOf reads
+// it whatever is there: two trimmed strings.
+const plain = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+const word = v => (typeof v === 'string' ? v.trim() : '');
+export const dcimOf = rack => ({site: word(plain(rack?.dcim).site), role: word(plain(rack?.dcim).role)});
+// Fields of `dcim` this page does not know are kept as they are.
+export const withDcim = (rack, patch) =>
+  ({...rack, dcim: {...plain(rack.dcim), ...dcimOf({dcim: {...plain(rack.dcim), ...patch}})}});
+
 // U numbers are stored bottom-up always; this is only what a label says.
 export const uLabel = (frame, u) => (frame.numbering === 'top-down' ? frame.heightRU - u + 1 : u);
 // A DEVICE'S U, wherever it is named with one: its POSITION, the lowest-numbered
@@ -186,6 +199,10 @@ export function parseDoc(input) {
       items: readItems(r.items || [], r.cables),
       zeroU: Array.isArray(r.zeroU) ? structuredClone(r.zeroU) : [],
       cables: readCables(Array.isArray(r.cables) ? r.cables : []),
+      // Optional, and only when the file has it (dcimOf): no version bump, since a
+      // page that does not know the field reads the rack whole and loses two names.
+      ...(r.dcim && typeof r.dcim === 'object' && !Array.isArray(r.dcim)
+        ? {dcim: {...structuredClone(r.dcim), ...dcimOf(r)}} : {}),
     })),
   };
 }

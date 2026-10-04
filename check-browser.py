@@ -9386,6 +9386,68 @@ def parse_shard(text):
     return i, n
 
 
+@extra("rack.html: DCIM import settings - a panel form from the Export menu stores the site and role in the rack file; an old file is unchanged")
+def check_rack_dcim_settings(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    saved = lambda: json.loads(pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8"))["racks"][0]
+    # A rack never given the settings has no such field: its file is what it was.
+    if "dcim" in saved() or page.evaluate("() => 'dcim' in window.__rack.doc().racks[0]"):
+        bad.append("settings: a rack that was never given them has a dcim field")
+
+    page.click("#exportMenu > summary")
+    page.click('#exportItems [data-export="dcim-settings"]')
+    wait_sel(page, "settings: the form", "#dcimForm")
+    if page.evaluate("() => document.getElementById('exportMenu').open"):
+        bad.append("settings: the Export menu stayed open")
+    wait_fn(page, "settings: the first field takes the keyboard", "() => document.activeElement?.id === 'dSite'")
+    if page.input_value("#dSite") != "" or page.input_value("#dRole") != "":
+        bad.append("settings: the fields of a new rack are not empty")
+    if page.inner_text("#dStatus") != "Status: planned, for every device, module and cable.":
+        bad.append(f"settings: the status line reads {page.inner_text('#dStatus')!r}")
+
+    page.fill("#dSite", "  Lab <b>1</b>  ")
+    page.dispatch_event("#dSite", "change")
+    wait_fn(page, "settings: the site is in the document, trimmed",
+            "() => window.__rack.doc().racks[0].dcim?.site === 'Lab <b>1</b>'")
+    # The panel is rebuilt by the commit: the field is there again, with its value as text, and no markup was made of it.
+    wait_fn(page, "settings: the form shows the stored site", "() => document.getElementById('dSite')?.value === 'Lab <b>1</b>'")
+    if page.query_selector("#side b"):
+        bad.append("settings: a name was read as markup")
+    page.fill("#dRole", "Router")
+    page.dispatch_event("#dRole", "change")
+    wait_fn(page, "settings: the role is in the document", "() => window.__rack.doc().racks[0].dcim?.role === 'Router'")
+    got = saved()
+    if got.get("dcim") != {"site": "Lab <b>1</b>", "role": "Router"}:
+        bad.append(f"settings: the rack file holds {got.get('dcim')!r}")
+
+    # A field of a panel built for an earlier rack acts on the rack as it is now.
+    page.evaluate("""() => {
+      window.__stale = document.getElementById('dRole');
+      const r = window.__rack.doc().racks[0];
+      window.__rack.replaceRack({...r, name: 'Renamed since'});
+    }""")
+    wait_fn(page, "settings: the rename landed", "() => window.__rack.doc().racks[0].name === 'Renamed since'")
+    page.evaluate("() => { window.__stale.value = 'Switch'; window.__stale.dispatchEvent(new Event('change')); }")
+    wait_fn(page, "settings: a stale field's change landed", "() => window.__rack.doc().racks[0].dcim?.role === 'Switch'")
+    now = page.evaluate("() => { const r = window.__rack.doc().racks[0]; return [r.name, r.dcim.site, r.items.length]; }")
+    if now != ["Renamed since", "Lab <b>1</b>", 4]:
+        bad.append(f"settings: a stale field wrote over the rack as it was: {now}")
+
+    page.click("#dDone")
+    wait_fn(page, "settings: Done closes the form", "() => !document.getElementById('dcimForm')")
+    # Reopened, in Cable mode: the form shows what is stored, and the mode is left.
+    page.click("#cableBtn")
+    page.click("#exportMenu > summary")
+    page.click('#exportItems [data-export="dcim-settings"]')
+    wait_fn(page, "settings: reopened with the stored names",
+            "() => document.getElementById('dSite')?.value === 'Lab <b>1</b>' && document.getElementById('dRole')?.value === 'Switch'")
+    if page.get_attribute("#cableBtn", "aria-pressed") != "false":
+        bad.append("settings: opening the form left Cable mode on")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

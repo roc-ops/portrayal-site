@@ -99,6 +99,36 @@ test('parseDoc fills what an older writer left out, and keeps zeroU and cables',
     b: {item: '', path: '', view: 'front'}, media: '', purpose: '', label: '', route: []}]);
 });
 
+test('the DCIM import settings are optional: an old file opens unchanged, a new one keeps them', () => {
+  const doc = extra => ({format: 'portrayal-rack', version: 1, id: 'doc-1',
+    racks: [{id: 'r1', name: 'A', frame: {}, items: [], zeroU: [], cables: [], ...extra}]});
+  // No `dcim` in the file: none in the rack, so saving it writes what was read.
+  const old = M.parseDoc(doc({}));
+  assert.equal('dcim' in old.racks[0], false);
+  assert.deepEqual(M.parseDoc(M.serialize(old)), old);
+  assert.deepEqual(M.dcimOf(old.racks[0]), {site: '', role: ''});
+  // In the file: read as two trimmed strings, with anything else it holds kept.
+  const kept = M.parseDoc(doc({dcim: {site: ' Lab 1 ', role: 7, tenant: 'acme'}})).racks[0];
+  assert.deepEqual(kept.dcim, {site: 'Lab 1', role: '', tenant: 'acme'});
+  // Not an object: not settings.
+  for (const bad of ['Lab 1', ['Lab 1'], null, 3]) assert.equal('dcim' in M.parseDoc(doc({dcim: bad})).racks[0], false);
+  // The format's version did not change for it.
+  assert.equal(M.VERSION, 1);
+});
+
+test('withDcim sets one name and keeps the other, and returns a new rack', () => {
+  const rack = M.newRack();
+  assert.equal('dcim' in rack, false);
+  const a = M.withDcim(rack, {site: ' Lab 1 '});
+  assert.deepEqual(a.dcim, {site: 'Lab 1', role: ''});
+  assert.equal('dcim' in rack, false);
+  const b = M.withDcim({...a, dcim: {...a.dcim, tenant: 'acme'}}, {role: 'Router'});
+  assert.deepEqual(b.dcim, {site: 'Lab 1', role: 'Router', tenant: 'acme'});
+  assert.deepEqual(M.dcimOf(M.withDcim(b, {site: ''})), {site: '', role: 'Router'});
+  assert.deepEqual(M.dcimOf({dcim: 'nonsense'}), {site: '', role: ''});
+  assert.deepEqual(M.dcimOf(undefined), {site: '', role: ''});
+});
+
 test('nextId counts only ids that carry its own prefix', () => {
   assert.equal(M.nextId([{id: 'z7'}, {id: 'i2'}], 'i'), 'i3');
 });

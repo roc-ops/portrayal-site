@@ -2,12 +2,13 @@
 // goes through commit(), which autosaves and redraws. What the side panel
 // shows follows S.sel.
 
-import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem} from './rack/model.js';
+import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem, dcimOf, withDcim} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
 import {fits, reaches, availableDepth, itemsWithU, heightOf, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
+import {dcimForm} from './rack/dcim-form.js';
 import {catalogPanel} from './rack/picker.js';
 import {openLens} from './rack/explorer-lens.js';
 import {inspectorPanel} from './rack/inspector.js';
@@ -510,10 +511,18 @@ const BUILD = {
   glb: () => modelExport('glb'),
   usdz: () => modelExport('usdz'),
 };
+// The DCIM import settings are a form in the side panel, as the frame's is: a
+// different activity from Cable mode, so opening it turns that off.
+function openDcimSettings() {
+  if (S.cable.on) { S.cable = {on: false, a: null}; paintCableMode(); }
+  S.focusNext = 'dSite';
+  select({kind: 'dcim'});
+}
 let exporting = false;
 async function runExport(kind) {
   if (kind === 'json') { downloadDoc(S.doc); return; }
   if (kind === 'to-3d') { setMode('3d'); return; }
+  if (kind === 'dcim-settings') { openDcimSettings(); return; }
   if (exporting || !BUILD[kind]) return;
   exporting = true;
   // The line is one row and cuts a long sentence short (.rk-export-status),
@@ -551,6 +560,7 @@ function renderExports() {
       : [act('to-3d', '3D model (GLB, USDZ): switch to 3D',
              'GLB and USDZ export the 3D view, which 2D does not build')]),
     el('hr'),
+    act('dcim-settings', 'DCIM import settings', 'The site or location and the device role the NetBox and Nautobot files name'),
     act('netbox-types', 'NetBox device types (.zip)'),
     act('nautobot-types', 'Nautobot device types (.zip)'),
     act('netbox-devices', 'NetBox device import (.csv)', 'Fill in role and site before importing'),
@@ -679,6 +689,15 @@ function renderSide() {
     // The rack as it is when the field changes, not as it was when the form was built.
     onName: name => { if (name !== rack().name) commit(renamed(rack(), name)); },
     onFrame: patch => commitFrame(patch)});
+  else if (sel.kind === 'dcim') body = dcimForm({rack: r,
+    // The rack as it is when a field changes, not as it was when the form was
+    // built. A change that leaves the settings as they are commits nothing: a
+    // field removed while it has focus can fire 'change' a second time.
+    onChange: patch => {
+      const now = rack(), next = withDcim(now, patch);
+      if (JSON.stringify(dcimOf(next)) !== JSON.stringify(dcimOf(now))) commit(next);
+    },
+    onDone: () => select(null)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
     onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});
