@@ -7400,14 +7400,12 @@ def check_rack_cables_3d(page, base):
         return bad + [f"cables 3D: {e}"]
     cables = lambda: page.evaluate("() => window.__rack.doc().racks[0].cables")
 
-    # 2a draws no cable into a file: the sheet has no cable and no derived
-    # plug, and its notes say how many cables it leaves out.
+    # The sheet carries the cables now (check_rack_export_sheet_cables): what
+    # stays out of it is the screen's - a picked end's outline - and the old note.
     sheet = pathlib.Path(export_file(page, "sheet-svg").path()).read_text(encoding="utf-8")
-    for bit in ("data-cable", "data-cable-tags", "generic/lc-plug@2", "generic/rj45-plug@1", "rk-end-pick"):
+    for bit in ("rk-end-pick", "not in this export yet"):
         if bit in sheet:
-            bad.append(f"cables 3D: the sheet carries {bit!r}, and cables are not in the exports yet")
-    if "3 cables are not in this export yet." not in sheet:
-        bad.append("cables 3D: the sheet's notes do not say its 3 cables are left out")
+            bad.append(f"cables 3D: the sheet carries {bit!r}")
     # The BOM carries the cables now (check_rack_export_bom_cables), so it does not say they are left out.
     bom = pathlib.Path(export_file(page, "bom").path()).read_text(encoding="utf-8")
     if "not in this export yet" in bom:
@@ -8187,6 +8185,264 @@ def check_rack_export_bom_cables(page, base):
     }""")
     if "1 zero-U item is not in this export yet." not in kept:
         bad.append(f"BOM cables: the zero-U note is gone: {kept}")
+    return bad
+
+
+# THE SHEET AS PHASE 1B BUILT IT, kept here as the reference a rack with no
+# cables is pinned to: the same faces, title block and notes, laid out by the
+# arithmetic exports.js had before cables. For each set of faces it returns
+# whether today's sheetSvg gives the same bytes, and where they first differ.
+SHEET_1B_JS = """async ([y, m, d]) => {
+  const X = await import('/site/rack/exports.js'), E = await import('/site/rack/elevation.js'),
+        D = await import('/site/rack/export-data.js'), F = await import('/site/rack/fit.js'),
+        R = await import('/site/rack/rails.js'), C = await import('/site/rack/chassis.js'),
+        V = await import('/site/svg-export.js'), U = await import('/site/rack/dom.js'),
+        L = await import('/site/rack/model.js');
+  const chassisOf = C.chassisLookup(await C.loadChassis());
+  const rack = window.__rack.doc().racks[0], date = new Date(y, m, d);
+  const FACE_W = R.OPENING + R.RAIL_W * 2 + 12, M = 24, GAP = 48, HEAD = 28, LINE = 16, NOTE_LINE = 13;
+  const INK = '#1D2125', MUTED = '#5B636B', PAPER = '#FFFFFF', RULE = '#B9BFC6';
+  const text = (x, y, s, {size = 11, weight = 400, fill = INK, mono = false} = {}) => {
+    const t = U.svgEl('text', {x, y, 'font-size': size, 'font-weight': weight, fill,
+      'font-family': mono ? 'IBM Plex Mono, ui-monospace, monospace' : 'Archivo, system-ui, sans-serif'});
+    t.textContent = s;
+    return t;
+  };
+  async function before(faces) {
+    const items = F.itemsWithU(rack, chassisOf);
+    const notes = [...D.rackNotes(rack, {cables: false}), ...D.mountNotes(items, chassisOf, rack.frame)];
+    for (const it of items) for (const pane of faces) {
+      const panel = E.panelFor(it, pane);
+      notes.push(...D.faceNotes({label: it.label, u: L.uLabel(rack.frame, it.ru), pane, panel,
+                                 face: await X.faceOf(it, panel)}));
+    }
+    const all = D.uniq(notes);
+    const panes = await Promise.all(faces.map(view =>
+      E.drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true})));
+    const faceH = rack.frame.heightRU * R.RU + 30;
+    const width = M * 2 + faces.length * FACE_W + (faces.length - 1) * GAP;
+    const chars = Math.floor((width - M * 2 - 24) / 6.2);
+    const noteLines = all.flatMap(n => D.wrapText(n, chars - 2).map((l, i) => (i ? `  ${l}` : `• ${l}`)));
+    const sheet = U.svgEl('svg', {xmlns: 'http://www.w3.org/2000/svg'});
+    const paper = U.svgEl('rect', {x: 0, y: 0, fill: PAPER});
+    sheet.append(paper);
+    panes.forEach((pane, i) => {
+      const x = M + i * (FACE_W + GAP);
+      sheet.append(text(x, M + 16, faces[i] === 'front' ? 'Front' : 'Rear', {size: 14, weight: 600}));
+      pane.setAttribute('x', x.toFixed(2));
+      pane.setAttribute('y', String(M + HEAD));
+      pane.setAttribute('width', FACE_W.toFixed(2));
+      pane.setAttribute('height', faceH.toFixed(2));
+      sheet.append(pane);
+    });
+    const blockY = M + HEAD + faceH + 24;
+    const box = U.svgEl('rect', {x: M, y: blockY, width: (width - 2 * M).toFixed(2), fill: 'none', stroke: RULE});
+    sheet.append(box);
+    let yy = blockY + 22;
+    D.titleLines(rack, date).forEach((line, i) => {
+      sheet.append(text(M + 12, yy, line, i ? {fill: MUTED} : {size: 14, weight: 600}));
+      yy += LINE;
+    });
+    if (noteLines.length) {
+      yy += 6;
+      sheet.append(text(M + 12, yy, 'Notes', {weight: 600}));
+      for (const l of noteLines) { yy += NOTE_LINE; sheet.append(text(M + 12, yy, l, {size: 10, fill: MUTED, mono: true})); }
+    }
+    const blockH = yy - blockY + 12;
+    box.setAttribute('height', blockH.toFixed(2));
+    const height = blockY + blockH + M;
+    for (const [k, v] of [['width', width], ['height', height]]) {
+      sheet.setAttribute(k, v.toFixed(2));
+      paper.setAttribute(k, v.toFixed(2));
+    }
+    sheet.setAttribute('viewBox', `0 0 ${width.toFixed(2)} ${height.toFixed(2)}`);
+    const host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:0;top:0;width:800px;visibility:hidden;pointer-events:none';
+    document.body.append(host);
+    try { host.append(sheet); return V.standalone(sheet); }
+    finally { host.remove(); }
+  }
+  const out = {};
+  for (const faces of [['front', 'rear'], ['front'], ['rear']]) {
+    const was = await before(faces), now = (await X.sheetSvg(rack, chassisOf, {faces, date})).data;
+    let at = 0;
+    while (at < was.length && was[at] === now[at]) at++;
+    out[faces.join('+')] = {same: was === now, bytes: was.length,
+                            ...(was === now ? {} : {was: was.slice(Math.max(0, at - 60), at + 120),
+                                                    now: now.slice(Math.max(0, at - 60), at + 120)})};
+  }
+  return out;
+}"""
+
+
+@extra("rack.html: Export - a rack with no cables gets the sheet it got before cables, byte for byte")
+def check_rack_export_sheet_pinned(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    notes_fixture = json.loads(json.dumps(EXPORT_FIXTURE))
+    notes_fixture["id"] = "doc-export-pin"
+    notes_fixture["racks"][0]["name"] = "Export pin"
+    notes_fixture["racks"][0]["zeroU"] = [{"id": "z1"}]
+    notes_fixture["racks"][0]["items"].append(
+        {"id": "i5", "ref": "no-such-device", "cfg": "base", "label": "mystery", "ru": 22, "face": "front",
+         "turned": False, "swaps": {}, "fields": {}})
+    for name, fixture in (("the export fixture", EXPORT_FIXTURE), ("a rack with notes", notes_fixture),
+                          ("an empty rack", EMPTY_FIXTURE)):
+        open_fixture(page, base, fixture)
+        got = page.evaluate(SHEET_1B_JS, [2026, 0, 2])
+        for faces, r in got.items():
+            if r["bytes"] < 2000:
+                bad.append(f"sheet pin ({name}, {faces}): the reference sheet is only {r['bytes']} bytes")
+            if not r["same"]:
+                bad.append(f"sheet pin ({name}, {faces}): the sheet changed for a rack with no cables: "
+                           f"was {r['was']!r}, now {r['now']!r}")
+    return bad
+
+
+# An exported sheet, measured: parsed, attached where it can be laid out, and
+# each nested pane read - its box on the sheet, its viewBox, and every stroke,
+# plug outline and tag of its cable layers that reaches outside that viewBox
+# (a nested <svg> clips what is past its box). Also where the title block starts.
+SHEET_PANES_JS = """(text) => {
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;pointer-events:none';
+  host.innerHTML = text.replace(/^<\\?xml[^>]*>\\s*/, '');
+  document.body.append(host);
+  try {
+    const sheet = host.querySelector('svg');
+    const num = (n, k) => parseFloat(n.getAttribute(k));
+    const panes = [...sheet.querySelectorAll(':scope > svg[data-pane]')].map(svg => {
+      const vb = svg.getAttribute('viewBox').split(/\\s+/).map(Number);
+      const nodes = [...svg.querySelectorAll('[data-cables] path, [data-cables] rect, [data-cable-tags] rect, [data-cable-tags] text')];
+      const out = nodes.map(n => [n, n.getBBox()]).filter(([, b]) =>
+        b.x < vb[0] - 0.01 || b.y < vb[1] - 0.01 || b.x + b.width > vb[0] + vb[2] + 0.01 || b.y + b.height > vb[1] + vb[3] + 0.01)
+        .map(([n, b]) => `${n.closest('[data-cable-id]')?.dataset.cableId} ${n.tagName} to y ${Math.round(b.y + b.height)} of ${Math.round(vb[1] + vb[3])}`);
+      return {pane: svg.dataset.pane, x: num(svg, 'x'), y: num(svg, 'y'), w: num(svg, 'width'), h: num(svg, 'height'),
+              vb, nodes: nodes.length, out};
+    });
+    const block = [...sheet.querySelectorAll(':scope > rect')].find(r => r.getAttribute('fill') === 'none');
+    return {width: num(sheet, 'width'), height: num(sheet, 'height'), blockY: num(block, 'y'), panes};
+  } finally { host.remove(); }
+}"""
+
+
+@extra("rack.html: Export - the sheet draws the cables as the page does: plugs, tags that survive on paper, loose leads, and notes; one face carries its own")
+def check_rack_export_sheet_cables(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"sheet cables: {e}"]
+    ns = "{http://www.w3.org/2000/svg}"
+
+    def cables_of(text):
+        # {pane: {"cables": [ids, in file order], "tags": {id: text}}}
+        root = ET.fromstring(text.encode("utf-8"))
+        out = {}
+        for pane in root.findall(f"{ns}svg"):
+            layer = next((g for g in pane.findall(f"{ns}g") if g.get("data-cables")), None)
+            tags = next((g for g in pane.findall(f"{ns}g") if g.get("data-cable-tags")), None)
+            out[pane.get("data-pane")] = {
+                "cables": sorted(g.get("data-cable-id") for g in (layer if layer is not None else [])),
+                "tags": {g.get("data-cable-id"): g.find(f"{ns}text").text for g in (tags if tags is not None else [])},
+                "tag_nodes": list(tags) if tags is not None else []}
+        return out
+
+    dl = export_file(page, "sheet-svg")
+    status = export_status(page)
+    text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    if dl.suggested_filename != "Cable-test-sheet.svg":
+        bad.append(f"sheet cables: named {dl.suggested_filename!r}")
+    got = cables_of(text)
+    want = {"front": (["c1", "c2"], {"c2": "→ demarc port-2-1"}),
+            "rear": (["c2", "c3"], {"c2": "→ leaf-1 mgmt-eth", "c3": "✕ not connected"})}
+    for pane, (ids, tags) in want.items():
+        g = got.get(pane, {"cables": None, "tags": None})
+        if g["cables"] != ids or g["tags"] != tags:
+            bad.append(f"sheet cables: the {pane} pane draws {g['cables']} with tags {g['tags']}, expected {ids} and {tags}")
+    # The derived plugs are drawn (an LC plug in each bore of both optics, an RJ45 plug in each jack).
+    for ref, n in (("generic/lc-plug@2", 4), ("generic/rj45-plug@1", 3)):
+        if text.count(f'data-ref="{ref}') != n:
+            bad.append(f"sheet cables: {text.count(f'data-ref="{ref}')} {ref} drawn, expected {n}")
+    # A tag is drawing, not a control: fixed ink of its own, nothing of the screen's.
+    for pane in got.values():
+        for tag in pane["tag_nodes"]:
+            rect, label = tag.find(f"{ns}rect"), tag.find(f"{ns}text")
+            if (rect.get("fill"), label.get("fill"), label.get("font-size")) != ("#FFFFFF", "#1D2125", "11") \
+                    or not rect.get("stroke") or any(tag.get(k) for k in ("class", "tabindex", "role", "style")):
+                bad.append(f"sheet cables: a tag is not fixed ink on paper: {ET.tostring(tag, encoding='unicode')[:200]}")
+    loose = [t for p in got.values() for t in p["tag_nodes"] if t.get("data-not-connected")]
+    if len(loose) != 1 or loose[0].find(f"{ns}rect").get("stroke-dasharray") != "3 2":
+        bad.append("sheet cables: the not-connected tag is not dashed, or there is not exactly one")
+    for ui_bit in ("tabindex", "data-pt-ui", 'class="cable-tag', 'role="button"', "var(--pt-", "rk-end-pick",
+                   "data-base-box", "cable-focus", 'class="on"'):
+        if ui_bit in text:
+            bad.append(f"sheet cables: screen UI in the file ({ui_bit})")
+    for note in ("Cable c3: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no", "does not suit end B, which is copper."):
+        if note not in text:
+            bad.append(f"sheet cables: the notes block lacks {note!r}")
+    if "not in this export yet" in text:
+        bad.append("sheet cables: the sheet still says cables are not in it")
+    if status != notes_status(2):
+        bad.append(f"sheet cables: two notes in the file, but the status reads {status!r}")
+    m = page.evaluate(SHEET_PANES_JS, text)
+    # 24 + (514.85 + 260) + 48 + (514.85 + 260) + 24: both panes widened by the column, which meet in the middle.
+    if abs(m["width"] - 1645.70) > 0.01 or [p["w"] for p in m["panes"]] != [774.85, 774.85]:
+        bad.append(f"sheet cables: the sheet is {m['width']} wide with panes {[p['w'] for p in m['panes']]}")
+    for p in m["panes"]:
+        if p["out"] or not p["nodes"]:
+            bad.append(f"sheet cables: the {p['pane']} pane clips {p['out']} (of {p['nodes']} nodes)")
+        if abs(p["h"] - p["vb"][3]) > 0.01 or p["y"] + p["h"] > m["blockY"]:
+            bad.append(f"sheet cables: the {p['pane']} pane is {p['h']} tall for a viewBox of {p['vb'][3]}, title block at {m['blockY']}")
+
+    # One face alone carries that face's cables and tags.
+    front = pathlib.Path(export_file(page, "front-svg").path()).read_text(encoding="utf-8")
+    rear = pathlib.Path(export_file(page, "rear-svg").path()).read_text(encoding="utf-8")
+    for name, t, pane in (("front", front, "front"), ("rear", rear, "rear")):
+        g = cables_of(t)
+        ids, tags = want[pane]
+        if list(g) != [pane] or g[pane]["cables"] != ids or g[pane]["tags"] != tags:
+            bad.append(f"sheet cables, {name} only: draws {[(k, v['cables'], v['tags']) for k, v in g.items()]}")
+        mm = page.evaluate(SHEET_PANES_JS, t)
+        if abs(mm["width"] - 822.85) > 0.01 or mm["panes"][0]["out"]:
+            bad.append(f"sheet cables, {name} only: {mm['width']} wide, clipping {mm['panes'][0]['out']}")
+
+    # The PNG is that sheet at 2x.
+    png = pathlib.Path(export_file(page, "sheet-png").path()).read_bytes()
+    w = int.from_bytes(png[16:20], "big") if png[:8] == b"\x89PNG\r\n\x1a\n" else 0
+    if w not in (3291, 3292):
+        bad.append(f"sheet cables: the PNG is {w} px wide, expected the 1645.70 mm sheet at 2x")
+
+    # The same ink in light and dark, cables and tags included.
+    seen = {}
+    for scheme in ("light", "dark"):
+        page.emulate_media(color_scheme=scheme)
+        seen[scheme] = page.evaluate("""async () => {
+          const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+          const of = C.chassisLookup(await C.loadChassis());
+          return (await X.sheetSvg(window.__rack.doc().racks[0], of, {date: new Date(2026, 0, 2)})).data;
+        }""")
+    if seen["light"] != seen["dark"]:
+        bad.append("sheet cables: the cabled sheet differs between light and dark")
+    page.emulate_media(color_scheme="light")
+
+    # A 42U rack cabled top to bottom, with a loose lead from its lowest device:
+    # the panes grow together to hold the loop and the lead, and nothing is cut off.
+    open_cabled(page, base, ROOM_FIXTURE)
+    text = pathlib.Path(export_file(page, "sheet-svg").path()).read_text(encoding="utf-8")
+    m = page.evaluate(SHEET_PANES_JS, text)
+    base_h = 42 * 44.45 + 30
+    hs = [p["h"] for p in m["panes"]]
+    if len(hs) != 2 or hs[0] != hs[1] or hs[0] <= base_h + 40:
+        bad.append(f"sheet cables, 42U: the panes are {hs} tall, expected one height past {base_h + 40}")
+    for p in m["panes"]:
+        if p["out"] or not p["nodes"]:
+            bad.append(f"sheet cables, 42U: the {p['pane']} pane clips {p['out']} (of {p['nodes']} nodes)")
+        if p["y"] + p["h"] > m["blockY"]:
+            bad.append(f"sheet cables, 42U: the {p['pane']} pane runs into the title block")
+    if "Cable c2: end B, a removed device's port-1, is not connected (the device was removed)." not in text:
+        bad.append("sheet cables, 42U: the note for the cable to a removed device is missing")
     return bad
 
 

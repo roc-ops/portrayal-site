@@ -27,8 +27,10 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows} from './export-data.js';
+        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
+import {mergeSeats} from './cable-rules.js';
+import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -40,9 +42,10 @@ const INK = '#1D2125', MUTED = '#5B636B', PAPER = '#FFFFFF', RULE = '#B9BFC6';
 export const faceOf = (it, view) => configuredFace({ref: it.ref, cfg: it.cfg, view,
   swaps: it.swaps || {}, fields: it.fields || {}}).catch(() => null);
 
-// What the panes named could not show, item by item.
-export async function faceNotesFor(rack, items, panes, chassisOf = () => null) {
-  const notes = [...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame)];
+// What the panes named could not show, item by item. `cables: false` is for
+// a file that carries the cables, and so does not say they are left out.
+export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {cables = true} = {}) {
+  const notes = [...rackNotes(rack, {cables}), ...mountNotes(items, chassisOf, rack.frame)];
   for (const it of items) {
     for (const pane of panes) {
       const panel = panelFor(it, pane);
@@ -60,6 +63,41 @@ const text = (x, y, s, {size = 11, weight = 400, fill = INK, mono = false} = {})
   return t;
 };
 
+// The cabled ends of a rack as an export draws them: the items with the
+// derived plugs laid over their own swaps (for this drawing only - notes, the
+// BOM and the DCIM exports keep reading item.swaps), and why each end is
+// loose. With no cables it reads nothing and the items are the rack's own.
+async function cabledItems(rack, base) {
+  if (!(rack.cables || []).length) return {cabled: false, facts: UNCHECKED, items: base, reasons: new Map()};
+  const facts = await cableEnds(rack);
+  return {cabled: true, facts,
+          items: base.map(it => (facts.seats[it.id] ? {...it, swaps: mergeSeats(it.swaps, facts.seats[it.id])} : it)),
+          reasons: new Map([...facts.ends].map(([k, v]) => [k, v.reason]))};
+}
+
+const boxOf = svg => svg.getAttribute('viewBox').split(/\s+/).map(Number);
+const MONO = 'IBM Plex Mono, ui-monospace, monospace';
+
+// A TAG IS PART OF THE DRAWING ON PAPER. On the page it is a control (a
+// button, painted by rack.css, in a layer standalone() strips); on the sheet
+// it is the only thing that says where a cross-face run goes or that a lead
+// is not connected. So the layer stops being screen UI, and each pill gets
+// fixed ink of its own: no class, no tabindex, no role, no theme token.
+function paperTags(pane) {
+  const set = (node, attrs) => { for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); };
+  for (const layer of pane.querySelectorAll(':scope > [data-cable-tags]')) {
+    layer.removeAttribute('data-pt-ui');
+    for (const tag of layer.querySelectorAll('[data-cable-tag]')) {
+      const loose = tag.classList.contains('not-connected');
+      for (const a of ['class', 'tabindex', 'role']) tag.removeAttribute(a);
+      if (loose) tag.setAttribute('data-not-connected', 'true');
+      set(tag.querySelector('rect'), {fill: PAPER, stroke: loose ? MUTED : RULE, 'stroke-width': 1,
+                                      ...(loose ? {'stroke-dasharray': '3 2'} : {})});
+      set(tag.querySelector('text'), {fill: INK, 'font-family': MONO, 'font-size': 11, 'font-weight': 500});
+    }
+  }
+}
+
 // THE SHEET: the faces asked for, side by side, fresh from drawElevation
 // (no hit targets, no selection; ears and metal, as the page draws them),
 // over a title block and, when there are any, the notes. The root carries a
@@ -68,59 +106,95 @@ const text = (x, y, s, {size = 11, weight = 400, fill = INK, mono = false} = {})
 // file is the same in light and dark; `standalone` bakes whatever
 // `var(--pt-*)` paint is left while the sheet is attached, as
 // cabledElevationSvg does.
+//
+// WITH CABLES the sheet draws them as the page does (cable-view.js): the
+// derived plugs seated, every pane widened by the side column and grown
+// together to hold the lowest loop or lead, a cross-face run leaving by a
+// tag, a loose end as an unplugged lead with its tag. The cable code
+// measures a laid-out drawing, so the sheet is attached to its hidden host
+// BEFORE the cables are drawn, and the title block is placed after them.
+// A RACK WITH NO CABLES takes none of that: its sheet is byte for byte the
+// one this function made before cables (check_rack_export_sheet_pinned).
 export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date = new Date()} = {}) {
-  const items = itemsWithU(rack, chassisOf);
-  const notes = await faceNotesFor(rack, items, faces, chassisOf);
+  const base = itemsWithU(rack, chassisOf);
+  const {cabled, facts, items, reasons} = await cabledItems(rack, base);
+  // What a pane could not show is judged on the items' own swaps: a plug
+  // nobody chose is never "the part chosen".
+  const notes = await faceNotesFor(rack, base, faces, chassisOf, {cables: false});
+  if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
+  if (cabled) notes.push(...cableNotes(rack, facts.ends));
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true})));
-  const faceH = rack.frame.heightRU * RU + 30;       // drawElevation's own viewBox height
-  const width = M * 2 + faces.length * FACE_W + (faces.length - 1) * GAP;
-  const chars = Math.floor((width - M * 2 - 24) / 6.2);   // 10 px mono runs about 6 px a character
-  const noteLines = notes.flatMap(n => wrapText(n, chars - 2).map((l, i) => (i ? `  ${l}` : `• ${l}`)));
 
   const sheet = svgEl('svg', {xmlns: SVG_NS});
   const paper = svgEl('rect', {x: 0, y: 0, fill: PAPER});
   sheet.append(paper);
-  panes.forEach((pane, i) => {
-    const x = M + i * (FACE_W + GAP);
-    sheet.append(text(x, M + 16, faces[i] === 'front' ? 'Front' : 'Rear', {size: 14, weight: 600}));
-    pane.setAttribute('x', x.toFixed(2));
-    pane.setAttribute('y', String(M + HEAD));
-    pane.setAttribute('width', FACE_W.toFixed(2));
-    pane.setAttribute('height', faceH.toFixed(2));
-    sheet.append(pane);
-  });
-
-  const blockY = M + HEAD + faceH + 24;
-  const box = svgEl('rect', {x: M, y: blockY, width: (width - 2 * M).toFixed(2), fill: 'none', stroke: RULE});
-  sheet.append(box);
-  let y = blockY + 22;
-  titleLines(rack, date).forEach((line, i) => {
-    sheet.append(text(M + 12, y, line, i ? {fill: MUTED} : {size: 14, weight: 600}));
-    y += LINE;
-  });
-  if (noteLines.length) {
-    y += 6;
-    sheet.append(text(M + 12, y, 'Notes', {weight: 600}));
-    for (const l of noteLines) { y += NOTE_LINE; sheet.append(text(M + 12, y, l, {size: 10, fill: MUTED, mono: true})); }
-  }
-  const blockH = y - blockY + 12;
-  box.setAttribute('height', blockH.toFixed(2));
-  const height = blockY + blockH + M;
-  for (const [k, v] of [['width', width], ['height', height]]) {
-    sheet.setAttribute(k, v.toFixed(2));
-    paper.setAttribute(k, v.toFixed(2));
-  }
-  sheet.setAttribute('viewBox', `0 0 ${width.toFixed(2)} ${height.toFixed(2)}`);
-
   const host = el('div', {'aria-hidden': 'true'});
   host.style.cssText = 'position:fixed;left:0;top:0;width:800px;visibility:hidden;pointer-events:none';
   document.body.append(host);
   try {
     host.append(sheet);
+    if (cabled) for (const pane of panes) widenForCables(pane);
+    // Every pane has one width: drawElevation's own, plus the column when cabled.
+    const faceW = cabled ? FACE_W + ROOM : FACE_W;
+    panes.forEach((pane, i) => {
+      const x = M + i * (faceW + GAP);
+      // The heading sits over the rack, not over the rear pane's column to its left.
+      sheet.append(text(x + (cabled && faces[i] === 'rear' ? ROOM : 0), M + 16,
+                        faces[i] === 'front' ? 'Front' : 'Rear', {size: 14, weight: 600}));
+      pane.setAttribute('x', x.toFixed(2));
+      pane.setAttribute('y', String(M + HEAD));
+      pane.setAttribute('width', faceW.toFixed(2));
+      pane.setAttribute('height', boxOf(pane)[3].toFixed(2));
+      sheet.append(pane);
+    });
+    if (cabled) {
+      for (const pane of panes) {
+        try { drawRackCables(pane, rack, reasons); }
+        catch (err) {
+          // One face's cables failing must not cost the sheet: it comes without them, and says so.
+          console.warn(`[portrayal] sheet: the ${pane.dataset.pane} face's cables`, err);
+          pane.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]').forEach(n => n.remove());
+          notes.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet.`);
+        }
+      }
+      roomForCables(panes);
+      for (const pane of panes) {
+        pane.setAttribute('height', boxOf(pane)[3].toFixed(2));
+        pane.removeAttribute('data-base-box');
+        paperTags(pane);
+      }
+    }
+    const all = uniq(notes);
+    const faceH = cabled ? boxOf(panes[0])[3] : rack.frame.heightRU * RU + 30;   // drawElevation's own viewBox height
+    const width = M * 2 + faces.length * faceW + (faces.length - 1) * GAP;
+    const chars = Math.floor((width - M * 2 - 24) / 6.2);   // 10 px mono runs about 6 px a character
+    const noteLines = all.flatMap(n => wrapText(n, chars - 2).map((l, i) => (i ? `  ${l}` : `• ${l}`)));
+
+    const blockY = M + HEAD + faceH + 24;
+    const box = svgEl('rect', {x: M, y: blockY, width: (width - 2 * M).toFixed(2), fill: 'none', stroke: RULE});
+    sheet.append(box);
+    let y = blockY + 22;
+    titleLines(rack, date).forEach((line, i) => {
+      sheet.append(text(M + 12, y, line, i ? {fill: MUTED} : {size: 14, weight: 600}));
+      y += LINE;
+    });
+    if (noteLines.length) {
+      y += 6;
+      sheet.append(text(M + 12, y, 'Notes', {weight: 600}));
+      for (const l of noteLines) { y += NOTE_LINE; sheet.append(text(M + 12, y, l, {size: 10, fill: MUTED, mono: true})); }
+    }
+    const blockH = y - blockY + 12;
+    box.setAttribute('height', blockH.toFixed(2));
+    const height = blockY + blockH + M;
+    for (const [k, v] of [['width', width], ['height', height]]) {
+      sheet.setAttribute(k, v.toFixed(2));
+      paper.setAttribute(k, v.toFixed(2));
+    }
+    sheet.setAttribute('viewBox', `0 0 ${width.toFixed(2)} ${height.toFixed(2)}`);
     const stem = fileStem(rack.name);
     return {name: faces.length === 1 ? `${stem}-${faces[0]}.svg` : `${stem}-sheet.svg`,
-            data: standalone(sheet), type: 'image/svg+xml', notes};
+            data: standalone(sheet), type: 'image/svg+xml', notes: all};
   } finally {
     host.remove();
   }
