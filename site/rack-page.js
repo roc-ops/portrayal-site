@@ -37,7 +37,7 @@ function loadMode() {
 }
 function saveMode(m) { try { localStorage.setItem(MODE_KEY, m); } catch { /* forgets */ } }
 const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, notice: null, entries: [],
-  zoom: loadZoom(), svgs: [], undo: null, undoText: '', focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
+  dcimDraft: null, zoom: loadZoom(), svgs: [], undo: null, undoText: '', focusNext: null, mode: loadMode(), scene3d: null, scene3dRack: null, camera3d: null,
   // What the last redraw read off the cabled ends: the derived plugs, and why an end is loose.
   cableFacts: {seats: {}, ends: new Map()},
   // Cable mode: on or off, and the A end picked and waiting for its B.
@@ -249,7 +249,7 @@ function commit(nextRack, undoable = null) {
 }
 function select(sel) { S.sel = sel; render(); }
 function setDoc(doc) {
-  S.doc = doc; S.sel = null; S.undo = null; S.cable.a = null;
+  S.doc = doc; S.sel = null; S.undo = null; S.cable.a = null; S.dcimDraft = null;
   S.cableFilter = {purpose: null, media: null};
   // "Said once" is once per rack: another rack's unchecked scene is announced too.
   S.unchecked3dSaid = false;
@@ -514,7 +514,20 @@ const BUILD = {
 function openDcimSettings() {
   if (S.cable.on) { S.cable = {on: false, a: null}; paintCableMode(); }
   S.focusNext = 'dSite';
+  S.dcimDraft = null;
   select({kind: 'dcim'});
+}
+// Closing the settings form: the keyboard goes back to the Export menu that opened it.
+function closeDcimForm(saved) {
+  S.dcimDraft = null;
+  S.focusNext = 'exportSummary';
+  if (saved) {
+    const now = rack(), next = withDcim(now, saved), d = dcimOf(next);
+    S.notice = {kind: 'note', text: `DCIM import settings saved: ${d.site ? `site or location "${d.site}"` : 'no site or location'}, ` +
+                                    `${d.role ? `device role "${d.role}"` : 'no device role'}.`};
+    if (JSON.stringify(next.dcim) !== JSON.stringify(now.dcim)) { S.sel = null; commit(next); return; }
+  }
+  select(null);
 }
 let exporting = false;
 async function runExport(kind) {
@@ -570,7 +583,21 @@ function renderExports() {
   );
 }
 
+// The DCIM settings form keeps what was typed as a draft; Done and Cancel clear
+// it. If the form is gone and a draft is left, the user went elsewhere (a click
+// on the rack, another panel): what they typed is saved, not lost. It is put
+// into the document here, quietly - the scene reads nothing of it.
+function flushDcimDraft() {
+  if (!S.dcimDraft || S.sel?.kind === 'dcim') return;
+  const draft = S.dcimDraft;
+  S.dcimDraft = null;
+  const now = rack(), next = withDcim(now, draft);
+  if (JSON.stringify(next.dcim) === JSON.stringify(now.dcim)) return;
+  S.doc = {...S.doc, racks: [next]};
+  S.save.saveSoon(S.doc);
+}
 async function render() {
+  flushDcimDraft();
   const mine = ++S.draws;
   pruneCable();
   pruneFilter();
@@ -687,15 +714,12 @@ function renderSide() {
     // The rack as it is when the field changes, not as it was when the form was built.
     onName: name => { if (name !== rack().name) commit(renamed(rack(), name)); },
     onFrame: patch => commitFrame(patch)});
-  else if (sel.kind === 'dcim') body = dcimForm({rack: r,
-    // The rack as it is when a field changes, not as it was when the form was
-    // built. A change that leaves the settings as they are commits nothing: a
-    // field removed while it has focus can fire 'change' a second time.
-    onChange: patch => {
-      const now = rack(), next = withDcim(now, patch);
-      if (JSON.stringify(dcimOf(next)) !== JSON.stringify(dcimOf(now))) commit(next);
-    },
-    onDone: () => select(null)});
+  else if (sel.kind === 'dcim') body = dcimForm({rack: r, draft: S.dcimDraft,
+    // Typing only keeps a draft. Done saves it once, against the rack as it is
+    // when Done is clicked, not as it was when the form was built.
+    onEdit: draft => { S.dcimDraft = draft; },
+    onDone: closeDcimForm,
+    onCancel: () => closeDcimForm(null)});
   else if (sel.kind === 'u') body = catalogPanel({entries: S.entries, rack: r, face: sel.face, ru: sel.ru,
     chassisOf, pick: S.pick, onState: patch => { S.pick = {...S.pick, ...patch}; },
     onPlace: (entry, cfg) => place(entry, cfg, sel.face, sel.ru)});

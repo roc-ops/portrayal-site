@@ -9391,65 +9391,169 @@ def parse_shard(text):
     return i, n
 
 
-@extra("rack.html: DCIM import settings - a panel form from the Export menu stores the site and role in the rack file; an old file is unchanged")
+@extra("rack.html: DCIM import settings - a panel form from the Export menu stores the site and role in the rack file with one real click on Done; Esc and Cancel discard; an old file is unchanged")
 def check_rack_dcim_settings(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     open_fixture(page, base)
     saved = lambda: json.loads(pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8"))["racks"][0]
-    # A rack never given the settings has no such field: its file is what it was.
-    if "dcim" in saved() or page.evaluate("() => 'dcim' in window.__rack.doc().racks[0]"):
-        bad.append("settings: a rack that was never given them has a dcim field")
+    dcim = lambda: page.evaluate("() => window.__rack.doc().racks[0].dcim ?? null")
+    focus_is = lambda what, want: wait_fn(page, f"settings: focus {what}", f"() => document.activeElement?.id === {json.dumps(want)}")
 
-    page.click("#exportMenu > summary")
-    page.click('#exportItems [data-export="dcim-settings"]')
-    wait_sel(page, "settings: the form", "#dcimForm")
+    def open_form():
+        page.click("#exportMenu > summary")
+        page.click('#exportItems [data-export="dcim-settings"]')
+        wait_sel(page, "settings: the form", "#dcimForm")
+        wait_fn(page, "settings: the first field takes the keyboard", "() => document.activeElement?.id === 'dSite'")
+
+    # A rack never given the settings has no such field: its file is what it was.
+    if "dcim" in saved() or dcim() is not None:
+        bad.append("settings: a rack that was never given them has a dcim field")
+    open_form()
     if page.evaluate("() => document.getElementById('exportMenu').open"):
         bad.append("settings: the Export menu stayed open")
-    wait_fn(page, "settings: the first field takes the keyboard", "() => document.activeElement?.id === 'dSite'")
     if page.input_value("#dSite") != "" or page.input_value("#dRole") != "":
         bad.append("settings: the fields of a new rack are not empty")
     if page.inner_text("#dStatus") != "Status: planned, for every device, module and cable.":
         bad.append(f"settings: the status line reads {page.inner_text('#dStatus')!r}")
 
-    page.fill("#dSite", "  Lab <b>1</b>  ")
-    page.dispatch_event("#dSite", "change")
-    wait_fn(page, "settings: the site is in the document, trimmed",
-            "() => window.__rack.doc().racks[0].dcim?.site === 'Lab <b>1</b>'")
-    # The panel is rebuilt by the commit: the field is there again, with its value as text, and no markup was made of it.
-    wait_fn(page, "settings: the form shows the stored site", "() => document.getElementById('dSite')?.value === 'Lab <b>1</b>'")
+    # Type both fields with the keyboard and click Done ONCE with the real mouse: it saves and closes.
+    # (The first click used to be lost: the blur's change committed, the panel was rebuilt, and Done was replaced.)
+    page.keyboard.type("  Lab <b>1</b>  ")
+    page.keyboard.press("Tab")
+    page.keyboard.type("Router")
+    if dcim() is not None:
+        bad.append(f"settings: typing alone changed the rack: {dcim()!r}")
+    page.click("#dDone", delay=150)      # a person's click: the mouse is down while the blur's change redraws the panel
+    wait_fn(page, "settings: one click on Done closes the form", "() => !document.getElementById('dcimForm')")
+    focus_is("returns to the Export menu after Done", "exportSummary")
+    if dcim() != {"site": "Lab <b>1</b>", "role": "Router"}:
+        bad.append(f"settings: after one click on Done the rack holds {dcim()!r}")
+    wait_fn(page, "settings: Done says what it saved", "() => /saved: site or location \"Lab <b>1<\\/b>\", device role \"Router\"/.test(document.querySelector('#side [role=status]')?.textContent || '')")
     if page.query_selector("#side b"):
         bad.append("settings: a name was read as markup")
-    page.fill("#dRole", "Router")
-    page.dispatch_event("#dRole", "change")
-    wait_fn(page, "settings: the role is in the document", "() => window.__rack.doc().racks[0].dcim?.role === 'Router'")
-    got = saved()
-    if got.get("dcim") != {"site": "Lab <b>1</b>", "role": "Router"}:
-        bad.append(f"settings: the rack file holds {got.get('dcim')!r}")
+    if saved().get("dcim") != {"site": "Lab <b>1</b>", "role": "Router"}:
+        bad.append(f"settings: the rack file holds {saved().get('dcim')!r}")
 
-    # A field of a panel built for an earlier rack acts on the rack as it is now.
-    page.evaluate("""() => {
-      window.__stale = document.getElementById('dRole');
-      const r = window.__rack.doc().racks[0];
-      window.__rack.replaceRack({...r, name: 'Renamed since'});
-    }""")
+    # One field, then Tab, then Enter: Enter in a field is Done.
+    open_form()
+    if page.input_value("#dSite") != "Lab <b>1</b>" or page.input_value("#dRole") != "Router":
+        bad.append("settings: reopened without the stored names")
+    page.keyboard.press("ControlOrMeta+A")
+    page.keyboard.type("Lab 2")
+    page.keyboard.press("Tab")
+    page.keyboard.press("Enter")
+    wait_fn(page, "settings: Enter closes the form", "() => !document.getElementById('dcimForm')")
+    if dcim() != {"site": "Lab 2", "role": "Router"}:
+        bad.append(f"settings: one field, Tab, Enter: the rack holds {dcim()!r}")
+    focus_is("returns to the Export menu after Enter", "exportSummary")
+
+    # Esc in a field and Cancel discard, and give the keyboard back to the Export menu.
+    for how in ("Esc", "Cancel"):
+        open_form()
+        page.keyboard.type("discarded")
+        if how == "Esc":
+            page.keyboard.press("Escape")
+        else:
+            page.click("#dCancel")
+        wait_fn(page, f"settings: {how} closes the form", "() => !document.getElementById('dcimForm')")
+        if dcim() != {"site": "Lab 2", "role": "Router"}:
+            bad.append(f"settings: {how} saved what was typed: {dcim()!r}")
+        focus_is(f"returns to the Export menu after {how}", "exportSummary")
+    # Esc closes the form from a field too, and it still has its two fields.
+    open_form()
+    if page.evaluate("() => document.getElementById('dcimForm').querySelectorAll('input').length") != 2:
+        bad.append("settings: the form lost a field")
+    page.keyboard.press("Escape")
+    wait_fn(page, "settings: Esc closes the form again", "() => !document.getElementById('dcimForm')")
+
+    # Leaving the form another way - here, opening the Frame form - saves what was typed rather than losing it.
+    open_form()
+    page.keyboard.press("ControlOrMeta+A")
+    page.keyboard.type("Lab 3")
+    page.click("#frameBtn")
+    wait_sel(page, "settings: the frame form", "#fHeight")
+    wait_fn(page, "settings: leaving the form saved the typed site", "() => window.__rack.doc().racks[0].dcim?.site === 'Lab 3'")
+    page.click("#frameBtn")
+
+    # Done acts on the rack as it is now, not as it was when the form was built.
+    open_form()
+    page.keyboard.press("ControlOrMeta+A")
+    page.keyboard.type("Switch")
+    page.keyboard.press("Tab")
+    page.keyboard.press("ControlOrMeta+A")
+    page.keyboard.type("Edge")
+    page.evaluate("""() => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, name: 'Renamed since'}); }""")
     wait_fn(page, "settings: the rename landed", "() => window.__rack.doc().racks[0].name === 'Renamed since'")
-    page.evaluate("() => { window.__stale.value = 'Switch'; window.__stale.dispatchEvent(new Event('change')); }")
-    wait_fn(page, "settings: a stale field's change landed", "() => window.__rack.doc().racks[0].dcim?.role === 'Switch'")
-    now = page.evaluate("() => { const r = window.__rack.doc().racks[0]; return [r.name, r.dcim.site, r.items.length]; }")
-    if now != ["Renamed since", "Lab <b>1</b>", 4]:
-        bad.append(f"settings: a stale field wrote over the rack as it was: {now}")
-
+    wait_fn(page, "settings: the form kept what was typed through the redraw",
+            "() => document.getElementById('dSite')?.value === 'Switch' && document.getElementById('dRole')?.value === 'Edge'")
     page.click("#dDone")
-    wait_fn(page, "settings: Done closes the form", "() => !document.getElementById('dcimForm')")
+    wait_fn(page, "settings: Done closes the form after a rename", "() => !document.getElementById('dcimForm')")
+    now = page.evaluate("() => { const r = window.__rack.doc().racks[0]; return [r.name, r.dcim.site, r.dcim.role, r.items.length]; }")
+    if now != ["Renamed since", "Switch", "Edge", 4]:
+        bad.append(f"settings: Done wrote over the rack as it was: {now}")
+
     # Reopened, in Cable mode: the form shows what is stored, and the mode is left.
     page.click("#cableBtn")
-    page.click("#exportMenu > summary")
-    page.click('#exportItems [data-export="dcim-settings"]')
-    wait_fn(page, "settings: reopened with the stored names",
-            "() => document.getElementById('dSite')?.value === 'Lab <b>1</b>' && document.getElementById('dRole')?.value === 'Switch'")
+    open_form()
     if page.get_attribute("#cableBtn", "aria-pressed") != "false":
         bad.append("settings: opening the form left Cable mode on")
+    page.keyboard.press("Escape")
+
+    # A missing key stays missing: Done with nothing typed adds neither site nor role.
+    for have, want in (({}, {}), ({"site": "Only"}, {"site": "Only"})):
+        page.evaluate("(d) => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, dcim: d}); }", have)
+        page.wait_for_function("(d) => JSON.stringify(window.__rack.doc().racks[0].dcim) === JSON.stringify(d)", arg=have, timeout=READY_MS)
+        open_form()
+        page.click("#dDone")
+        wait_fn(page, "settings: Done closes the untouched form", "() => !document.getElementById('dcimForm')")
+        if dcim() != want:
+            bad.append(f"settings: Done on {have} left {dcim()!r}, expected {want}")
+    return bad
+
+
+@extra("rack.html: DCIM import settings are kept by Duplicate, Save as .json then Open, Undo and a frame shrink")
+def check_rack_dcim_settings_kept(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    open_fixture(page, base)
+    want = {"site": "Lab 1", "role": "Router"}
+    page.evaluate("(d) => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, dcim: d}); }", want)
+    page.wait_for_function("(d) => JSON.stringify(window.__rack.doc().racks[0].dcim) === JSON.stringify(d)", arg=want, timeout=READY_MS)
+    dcim = lambda: page.evaluate("() => window.__rack.doc().racks[0].dcim ?? null")
+    page.evaluate("() => window.__rack.flush()")
+
+    # A frame shrink keeps them, and Undo (which restores the rack from before) keeps them.
+    page.click("#frameBtn")
+    page.fill("#fHeight", "6")
+    page.dispatch_event("#fHeight", "change")
+    wait_fn(page, "kept: the frame shrank", "() => window.__rack.doc().racks[0].frame.heightRU === 6")
+    if dcim() != want:
+        bad.append(f"frame shrink: the settings are {dcim()!r}")
+    wait_sel(page, "kept: Undo offered", "#undoShrink")
+    page.click("#undoShrink")
+    wait_fn(page, "kept: Undo restored the frame", "() => window.__rack.doc().racks[0].frame.heightRU !== 6")
+    if dcim() != want:
+        bad.append(f"Undo: the settings are {dcim()!r}")
+
+    # Save as .json, then Open it: a new document with the same settings.
+    text = pathlib.Path(export_file(page, "json").path()).read_text(encoding="utf-8")
+    if json.loads(text)["racks"][0].get("dcim") != want:
+        bad.append("Save as .json: the file does not hold the settings")
+    old_id = page.evaluate("() => window.__rack.doc().id")
+    page.evaluate("() => window.__rack.flush()")
+    page.set_input_files("#openFile", files=[{"name": "kept.rack.json", "mimeType": "application/json", "buffer": text.encode()}])
+    page.wait_for_function("(id) => window.__rack.doc().id !== id", arg=old_id, timeout=READY_MS)
+    if dcim() != want:
+        bad.append(f"Open .json: the settings are {dcim()!r}")
+
+    # Duplicate: the copy has them.
+    old_id = page.evaluate("() => window.__rack.doc().id")
+    page.click("#libMenu > summary")
+    page.click("#libItems button:has-text('Duplicate')")
+    page.wait_for_function("(id) => window.__rack.doc().id !== id", arg=old_id, timeout=READY_MS)
+    if dcim() != want or not page.evaluate("() => window.__rack.doc().racks[0].name.endsWith(' copy')"):
+        bad.append(f"Duplicate: the copy's settings are {dcim()!r}")
     return bad
 
 

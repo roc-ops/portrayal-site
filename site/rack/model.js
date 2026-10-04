@@ -93,8 +93,17 @@ const plain = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
 const word = v => (typeof v === 'string' ? v.trim() : '');
 export const dcimOf = rack => ({site: word(plain(rack?.dcim).site), role: word(plain(rack?.dcim).role)});
 // Fields of `dcim` this page does not know are kept as they are.
-export const withDcim = (rack, patch) =>
-  ({...rack, dcim: {...plain(rack.dcim), ...dcimOf({dcim: {...plain(rack.dcim), ...patch}})}});
+// A key the rack did not have stays missing unless it is given a value: a blank
+// site on a rack with no site adds nothing, so saving never invents a field.
+export const withDcim = (rack, patch) => {
+  const had = plain(rack.dcim), next = {...had};
+  for (const key of ['site', 'role']) {
+    if (!(key in patch)) continue;
+    const v = word(patch[key]);
+    if (v || key in had) next[key] = v;
+  }
+  return !rack.dcim && !Object.keys(next).length ? rack : {...rack, dcim: next};
+};
 
 // U numbers are stored bottom-up always; this is only what a label says.
 export const uLabel = (frame, u) => (frame.numbering === 'top-down' ? frame.heightRU - u + 1 : u);
@@ -202,7 +211,7 @@ export function parseDoc(input) {
       // Optional, and only when the file has it (dcimOf): no version bump, since a
       // page that does not know the field reads the rack whole and loses two names.
       ...(r.dcim && typeof r.dcim === 'object' && !Array.isArray(r.dcim)
-        ? {dcim: {...structuredClone(r.dcim), ...dcimOf(r)}} : {}),
+        ? {dcim: {...structuredClone(r.dcim), ...Object.fromEntries(Object.entries(dcimOf(r)).filter(([k]) => k in r.dcim))}} : {}),
     })),
   };
 }

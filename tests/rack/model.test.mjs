@@ -110,6 +110,9 @@ test('the DCIM import settings are optional: an old file opens unchanged, a new 
   // In the file: read as two trimmed strings, with anything else it holds kept.
   const kept = M.parseDoc(doc({dcim: {site: ' Lab 1 ', role: 7, tenant: 'acme'}})).racks[0];
   assert.deepEqual(kept.dcim, {site: 'Lab 1', role: '', tenant: 'acme'});
+  // Only the keys the file has: `{}` and `{site}` open, and save, as they were.
+  assert.deepEqual(M.parseDoc(doc({dcim: {}})).racks[0].dcim, {});
+  assert.deepEqual(M.parseDoc(doc({dcim: {site: 'Lab 1'}})).racks[0].dcim, {site: 'Lab 1'});
   // Not an object: not settings.
   for (const bad of ['Lab 1', ['Lab 1'], null, 3]) assert.equal('dcim' in M.parseDoc(doc({dcim: bad})).racks[0], false);
   // The format's version did not change for it.
@@ -120,11 +123,14 @@ test('withDcim sets one name and keeps the other, and returns a new rack', () =>
   const rack = M.newRack();
   assert.equal('dcim' in rack, false);
   const a = M.withDcim(rack, {site: ' Lab 1 '});
-  assert.deepEqual(a.dcim, {site: 'Lab 1', role: ''});
+  assert.deepEqual(a.dcim, {site: 'Lab 1'});          // a key the rack never had stays missing
   assert.equal('dcim' in rack, false);
   const b = M.withDcim({...a, dcim: {...a.dcim, tenant: 'acme'}}, {role: 'Router'});
   assert.deepEqual(b.dcim, {site: 'Lab 1', role: 'Router', tenant: 'acme'});
   assert.deepEqual(M.dcimOf(M.withDcim(b, {site: ''})), {site: '', role: 'Router'});
+  assert.deepEqual(M.withDcim(b, {site: ''}).dcim, {site: '', role: 'Router', tenant: 'acme'});   // a key it had is cleared, not dropped
+  assert.equal(M.withDcim(rack, {site: '  ', role: ''}), rack);                                  // blanks on a rack with none: no field made
+  assert.deepEqual(M.withDcim({...rack, dcim: {}}, {role: 'R'}).dcim, {role: 'R'});
   assert.deepEqual(M.dcimOf({dcim: 'nonsense'}), {site: '', role: ''});
   assert.deepEqual(M.dcimOf(undefined), {site: '', role: ''});
 });
