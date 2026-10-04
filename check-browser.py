@@ -2872,6 +2872,39 @@ def check_takeaway_drawio(page, base):
         bad.append("stage 6 draw.io: no port cell for the plan's slot-2 card")
     if 'value="rear"' not in text:
         bad.append("stage 6 draw.io: no rear cabinet")
+    # The plan's 14 cables are edges between port cells, in cables.js's colors.
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError as e:
+        return bad + [f"stage 6 draw.io: not well-formed XML ({e})"]
+    if len(root.findall("diagram")) != 1:
+        bad.append("stage 6 draw.io: not one page")
+    ids = {e.get("id") for e in root.iter() if e.get("id")}
+    edges = {o.get("portrayal-cable"): o for o in root.iter("object") if o.get("portrayal-cable") is not None}
+    if sorted(edges, key=int) != [str(i) for i in range(14)]:
+        bad.append(f"stage 6 draw.io: edges for cables {sorted(edges)}, expected the plan's 14")
+    colors = page.evaluate("async () => (await import('/site/showcase/cables.js')).COLORS")
+    by_media = {"os2": colors["os2"], "copper-server": colors["copper"]["server"],
+                "copper-management": colors["copper"]["management"]}
+    seen = set()
+    for i, o in edges.items():
+        c = o.find("mxCell")
+        if c.get("edge") != "1" or c.get("source") not in ids or c.get("target") not in ids:
+            bad.append(f"stage 6 draw.io: cable {i} is not an edge between two cells of the file")
+        media = o.get("portrayal-media")
+        seen.add(media)
+        if not c.get("style", "").endswith(f"strokeColor={by_media.get(media)};"):
+            bad.append(f"stage 6 draw.io: cable {i} ({media}) is styled {c.get('style', '')[-28:]!r}")
+    if seen != set(by_media):
+        bad.append(f"stage 6 draw.io: the edges' media are {sorted(seen)}")
+    # The server's NIC is on its rear, the switch port on its front: one edge across the two cabinets.
+    nic = edges.get("8")
+    if nic is not None:
+        ends = (nic.find("mxCell").get("source"), nic.find("mxCell").get("target"))
+        if ends != ("r740xd-g0r0-rear-ndc--module--port-1", "eps201-g0r0-front-port-1"):
+            bad.append(f"stage 6 draw.io: the rear-to-front cable runs {ends}")
+    if "<!--" in text:
+        bad.append(f"stage 6 draw.io: the plan as built has a cable that was not drawn: {text[:300]!r}")
     return bad
 
 

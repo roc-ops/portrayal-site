@@ -16,7 +16,8 @@
 //   draw.io   - a rack diagram through drawio.js's rackDiagram, fed each
 //               device's configured face (site/rack/face.js) on front and
 //               rear, so the cards, optics and plugs seated here are in it
-//               and their ports are connection points.
+//               and their ports are connection points - and the plan's
+//               cables, as edges between those points, in cables.js's colors.
 //   GLB/USDZ  - the mounted scene's own exporters, offered only when a scene
 //               exists (R11). In 2D there is no scene to export, so the two
 //               become one button that switches to 3D (the rail's setMode)
@@ -44,6 +45,9 @@ import {CAST, RACK_U, overrides} from '../rack.js';
 import {enterPatched, cabledElevationSvg} from '../patch-view.js';
 import {rackDiagram} from '../../../vendor/drawio.js';
 import {configuredFace} from '../../rack/face.js';
+import {colorOf} from '../cables.js';
+import {looseReason, endView} from '../plan.js';
+import {drawioMedia} from '../../rack/export-data.js';
 import {rasterize} from '../../raster.js';
 // A circular import (the rail imports this stage); setMode is only read inside
 // a click handler, never while the modules are being evaluated. Stages may use
@@ -82,7 +86,16 @@ function dcimSection(index) {
 // the ports on those cards. A side a device was never drawn for is left
 // out, and rackDiagram says "no rear drawing" there rather than borrowing
 // the other side.
-async function buildDrawio() {
+//
+// AND AS CABLED (rack builder spec §9.4): each link of the plan is an edge
+// between its two port cells. A mounted entry carries its device ref as `id`,
+// which is what a link's end names. Both faces are on the one page, so a
+// rear-to-front run (the server's NICs to the switch) is one edge. A link
+// with a loose end (`h.loose`, as the panel lists it) is not drawn as if it
+// were connected: it goes in the file's notes with the panel's own reason.
+// Colors are cables.js's, through the media key drawio.js looks them up by.
+async function buildDrawio(h) {
+  if (!h) return;                 // the stage was left before the click was handled
   const mounted = [];
   for (const e of CAST) {
     if (e.ru == null) continue;   // dropped from the rack - no compiled index
@@ -100,10 +113,23 @@ async function buildDrawio() {
     // it), and its `u` is where the device's top edge sits. So the device's
     // top U, e.ru + e.u - 1, is flipped: top U 22 of 22 is draw.io's u 1.
     // Passed as-is, the 10U ASR-9006 at the bottom drew at the top.
-    mounted.push({name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u, faces});
+    mounted.push({id: e.ref, name: e.label, u: RACK_U - (e.ru + e.u - 1) + 1, ru: e.u, faces});
   }
+  const refOf = id => (h.plan.devices || []).find(d => d.id === id)?.ref || id;
+  const cables = [], notes = [], cableStyle = {};
+  h.plan.links.forEach((l, i) => {
+    const loose = h.loose[i] || [];
+    if (loose.length) {
+      notes.push(`The cable from ${l.from[0]} ${l.from[1]} to ${l.to[0]} ${l.to[1]} is not drawn: `
+        + `${loose.map(k => looseReason(h.plan, h.kept, l[k])).join('; ')}.`);
+      return;
+    }
+    const end = e => ({item: refOf(e[0]), path: e[1], view: endView(e)});
+    cables.push({id: String(i), a: end(l.from), b: end(l.to), media: drawioMedia(l), purpose: l.purpose});
+    cableStyle[drawioMedia(l)] = colorOf(l);
+  });
   const groups = [{label: 'Cast rack', racks: [{label: '', units: RACK_U, mounted}]}];
-  save(rackDiagram(groups, {faces: ['front', 'rear'], labels: true}),
+  save(rackDiagram(groups, {faces: ['front', 'rear'], labels: true, cables, cableStyle, notes}),
        'cast-rack.drawio', 'application/xml');
 }
 
@@ -164,7 +190,7 @@ export default function makeTakeaway() {
         // have run - so the GLB/USDZ row can tell "no 3D in this browser"
         // (R11: is3d but hh.scene never mounted) apart from "a scene is ready".
         top: hh => [kv([
-          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics and a connection point on every port'],
+          ['draw.io', 'rack diagram, front and rear, with the seated cards and optics a connection point on every port and the cables as edges'],
           ['GLB / USDZ', !is3d ? 'the 3D model with its cables - switch to 3D to build the scene they export'
                         : hh.scene ? 'the mounted, cabled rack as a 3D model'
                                    : 'unavailable - no 3D in this browser'],
@@ -179,8 +205,8 @@ export default function makeTakeaway() {
 
       const items = [
         {label: 'draw.io',
-         title: 'Download a draw.io rack diagram - front and rear, as built, with a connection point on every port',
-         run: buildDrawio},
+         title: 'Download a draw.io rack diagram - front and rear, as built and cabled, with a connection point on every port',
+         run: () => buildDrawio(handle)},
         {label: 'SVG', title: 'Download the face shown as an SVG, with its cards, optics and cables',
          run: buildSvg},
         {label: 'PNG', title: 'Download a PNG raster of the face shown, with its cables',
