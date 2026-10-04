@@ -9020,7 +9020,11 @@ def check_rack_export_3d_cables(page, base):
       const lost = {tubes: [{link: link('c1'), loose: ['to'], mesh: {}}, {link: link('c2'), loose: ['from', 'to'], mesh: null},
                             {link: link('c3'), loose: ['from'], mesh: {}}]};
       const out = {};
-      for (const [k, s] of [['hung', scene(hung)], ['lost', scene(lost)], ['none', scene(null)], ['failed', scene({failed: true})]])
+      // The scene was built without its faces (checked: false): no plugs, no loose ends marked.
+      const unchecked = {...hung, checked: false};
+      // c3 hangs from neither end: absent from the model.
+      const gone = {tubes: [hung.tubes[0], hung.tubes[1], {link: link('c3'), loose: ['from', 'to'], mesh: null}]};
+      for (const [k, s] of [['hung', scene(hung)], ['lost', scene(lost)], ['unchecked', scene(unchecked)], ['gone', scene(gone)], ['none', scene(null)], ['failed', scene({failed: true})]])
         out[k] = (await X.modelFile(s, r, 'glb')).notes;
       const usdz = await X.modelFile(scene(hung), r, 'usdz');
       out.usdz = {notes: usdz.notes, left: usdz.left, status: E.exportStatus(usdz)};
@@ -9038,6 +9042,12 @@ def check_rack_export_3d_cables(page, base):
             bad.append(f"3D export cables: an end the scene could not place is not noted ({want!r}): {got['lost']}")
     if len(got["lost"]) != 4:
         bad.append(f"3D export cables: a loose end the page already explains is noted twice: {got['lost']}")
+    unchecked_note = "Cable ends could not be checked, so loose ends are not marked."
+    if unchecked_note not in got["unchecked"] or any("is not connected" in n for n in got["unchecked"]):
+        bad.append(f"3D export cables: a scene built unchecked says {got['unchecked']}")
+    want = "Cable c3 is not drawn: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic)."
+    if want not in got["gone"] or loose in got["gone"]:
+        bad.append(f"3D export cables: a cable absent from the model does not say so: {got['gone']}")
     for k in ("none", "failed"):
         if got[k] != ["The cables could not be drawn in the 3D model."]:
             bad.append(f"3D export cables: a scene with no cables hung ({k}) says {got[k]}")
@@ -9084,6 +9094,32 @@ def check_rack_export_3d_cables(page, base):
         bad.append(f"3D export cables: {dl.suggested_filename!r} is not a USDZ")
     if status != "Downloaded. USDZ carries no notes; the GLB does.":
         bad.append(f"3D export cables: the USDZ's status reads {status!r}")
+    page.click('#rkMode [data-mode="2d"]')
+
+    # The scene's own read of the faces fails (the page's does not): 3D says so
+    # once, and the GLB's notes say the ends were not checked, with no
+    # "not connected" finding the model would contradict.
+    page.evaluate("() => window.__rack.failSceneFacts(true)")
+    page.click('#rkMode [data-mode="3d"]')
+    wait_fn(page, "3D export cables: the unchecked scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    wait_fn(page, "3D export cables: the 3D notice",
+            "() => (document.querySelector('.rk-side .rk-notice')?.textContent || '').includes('could not be checked')")
+    if page.evaluate("() => window.__rack.scene().rackCables.checked") is not False:
+        bad.append("3D export cables: a scene whose read failed is called checked")
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    doc = json.loads(glb[20:20 + int.from_bytes(glb[12:16], "little")].decode("utf-8"))
+    notes = doc["scenes"][0].get("extras", {}).get("portrayal", {}).get("notes", [])
+    if unchecked_note not in notes or any("is not connected" in n for n in notes):
+        bad.append(f"3D export cables: the GLB of an unchecked scene has notes {notes}")
+    # A second build is unchecked too, and does not say it again.
+    old = page.evaluate_handle("() => window.__rack.scene()")
+    page.evaluate("() => { const r = window.__rack.doc().racks[0]; window.__rack.replaceRack({...r, cables: r.cables.map((c, k) => (k ? c : {...c, media: 'om4'}))}); }")
+    page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }", arg=old, timeout=READY_3D_MS)
+    page.wait_for_timeout(600)
+    if page.query_selector(".rk-side .rk-notice"):
+        bad.append("3D export cables: the unchecked notice is shown again on a rebuild")
+    page.evaluate("() => window.__rack.failSceneFacts(false)")
     page.click('#rkMode [data-mode="2d"]')
     return bad
 

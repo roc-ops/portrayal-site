@@ -44,14 +44,14 @@ async function hangCables(scene, rack, facts) {
 // by the page just before it disposes the old scene, so a rebuild (a commit,
 // or a frame change) restores the orbit instead of snapping back to the
 // opening view.
-export async function mountRack3d(container, {rack, chassisOf, camera = null}) {
+export async function mountRack3d(container, {rack, chassisOf, camera = null, failFacts = false}) {
   const frame = rack.frame;
   // PLUGS ARE DERIVED, NEVER STORED: as in 2D, a cabled end is built with the
   // plug its port takes, laid over the item's own swaps for this scene only.
   // If the cables' faces cannot be read the rack is built without plugs, and
   // every end is tried as it is.
   const cabled = (rack.cables || []).length > 0;
-  const facts = !cabled ? UNCHECKED : await cableFacts(rack).catch(err => {
+  const facts = !cabled ? UNCHECKED : await (failFacts ? Promise.reject(new Error('probe: scene cableFacts fails')) : cableFacts(rack)).catch(err => {
     console.warn("[portrayal] 3D: could not read the cables' faces", err);
     return UNCHECKED;
   });

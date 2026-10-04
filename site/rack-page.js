@@ -76,7 +76,7 @@ async function rebuild3d() {
   const camera = S.camera3d;
   const forRack = rack();
   disposeScene3d();
-  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera});
+  const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera, failFacts: !!S.probeSceneFactsFail});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
   // An edit made while this was building that the scene does not read (a
   // cable's label, the rack's name) could not re-point a scene that did not
@@ -84,6 +84,11 @@ async function rebuild3d() {
   const now = rack();
   S.scene3d = built;
   S.scene3dRack = sameScene(now, forRack) ? now : forRack;
+  // A scene built without its cables' faces has no plugs and marks no loose
+  // end: 2D says so (render), and so does 3D, once until a build is checked.
+  if (built.rackCables && built.rackCables.checked === false) {
+    if (!S.unchecked3dSaid) { S.unchecked3dSaid = true; addNotice(UNCHECKED_TEXT, 'note'); render(); }
+  } else if (built.rackCables) S.unchecked3dSaid = false;
 }
 // WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
 // their ends and media (cable-rules.js sameCables3d). Two racks that agree on
@@ -1041,6 +1046,8 @@ if (new URLSearchParams(location.search).get('probe') === '1') {
     failExport: what => failExport(what),
     // Probe only: make reading the cables' faces fail, to see the page without it.
     failCableFacts: on => { S.probeFactsFail = !!on; },
+    // Probe only: the 3D scene's own read of the cables' faces fails.
+    failSceneFacts: on => { S.probeSceneFactsFail = !!on; },
     // The last redraw's cable facts, as plain data: the derived plug seats per
     // item, and each cabled end's loose-end reason (null when it lands).
     cableFacts: () => ({seats: S.cableFacts.seats,

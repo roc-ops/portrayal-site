@@ -276,7 +276,15 @@ export async function drawioFile(rack, chassisOf) {
 function modelCableNotes(rack, hung, facts) {
   if (!(rack.cables || []).length) return [];
   if (!hung || hung.failed) return ['The cables could not be drawn in the 3D model.'];
-  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []), ...cableNotes(rack, facts.ends)];
+  // The SCENE's own reading decides what the model shows: built without it
+  // (checked === false) it has no plugs and marks no loose end, so the notes
+  // may not assert findings the model contradicts. They say it was unchecked.
+  if (hung.checked === false) facts = UNCHECKED;
+  // A cable the scene did not draw at all says so, as draw.io's notes do.
+  const gone = new Set(hung.tubes.filter(t => !t.mesh).map(t => t.link.id));
+  const part = keep => ({...rack, cables: rack.cables.filter(c => keep === gone.has(c.id))});
+  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []), ...cableNotes(part(false), facts.ends),
+               ...cableNotes(part(true), facts.ends, {undrawn: true})];
   for (const t of hung.tubes) {
     const c = rack.cables.find(x => x.id === t.link.id);
     if (!c) continue;
