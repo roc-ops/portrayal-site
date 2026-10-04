@@ -249,3 +249,90 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
   if (dac) notes.push('A DAC is written as dac-passive. Change the type of one that is active.');
   return {columns: CABLE_IMPORT_COLUMNS[nautobot ? 'nautobot' : 'netbox'], rows, left, notes};
 }
+
+// ── README.txt (Phase 2c ruling 1) ──────────────────────────────────────
+// What to do with each file, in order; what must already exist; and
+// everything the kit could not carry. It replaces NOTES.txt and keeps its
+// content (`notes`).
+//   rows      how many rows each CSV holds: {rack, devices, modules, cables}
+//   typeFiles how many YAML files are under types/
+//   left      a sentence for each device, module and cable the files leave out
+//   notes     what the types and the written rows need said (a best-guess type,
+//             a length that was rounded)
+//   script    whether import_cables.py is in the zip (Nautobot)
+// Returns {text, notes}: `notes` are the lines the file carries beyond its
+// instructions, which is what the page's status line counts.
+export const KIT_FILES = {
+  netbox: {rack: '1-rack.csv', devices: '2-devices.csv', modules: '3-modules.csv', cables: '4-cables.csv'},
+  nautobot: {devices: '1-devices.csv', modules: '2-modules.csv', cables: '3-cables.csv'}};
+export const KIT_SCRIPT = 'import_cables.py';
+const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const rowsText = n => (n ? `${n} ${n === 1 ? 'row' : 'rows'}` : 'no rows: it holds its header only, so skip it');
+
+export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles = 0, manufacturers = [], rows = {},
+                           left = [], notes = [], script = true}) {
+  const nautobot = target === 'nautobot', T = TARGET_NAME[nautobot ? 'nautobot' : 'netbox'];
+  const F = KIT_FILES[nautobot ? 'nautobot' : 'netbox'];
+  const site = String(dcim?.site ?? '').trim(), role = String(dcim?.role ?? '').trim();
+  const place = nautobot ? 'location' : 'site', cols = nautobot ? ['location__name', 'role__name'] : ['site', 'role'];
+  const blank = [!site && cols[0], !role && cols[1]].filter(Boolean);
+  const warning = blank.length
+    ? `${F.devices} WILL BE REFUSED as it is: its ${blank.join(' and ')} ${blank.length === 1 ? 'column is' : 'columns are'} blank, and ` +
+      `${T} requires ${blank.length === 1 ? 'it' : 'both'}.${!nautobot && !site ? ` ${F.rack}'s site column is blank too.` : ''} ` +
+      `Set the ${[!site && place, !role && 'device role'].filter(Boolean).join(' and the ')} under Export, DCIM import settings, ` +
+      `and export again; or fill ${blank.length === 1 ? 'that column' : 'those columns'} in by hand.`
+    : '';
+  const numbered = rack.frame.numbering === 'top-down' ? 'numbered from the top' : 'numbered from the bottom';
+  const out = [`${T} import kit for ${rack.name}, from the Portrayal Rack Builder, ${isoDay(date)}.`, ''];
+  if (warning) out.push(warning, '');
+
+  out.push(`BEFORE YOU IMPORT, ${T} must already have:`);
+  out.push(site ? `- the ${place} "${site}"${nautobot ? ', of a location type that allows devices and racks' : ''}`
+                : `- a ${place}${nautobot ? ', of a location type that allows devices and racks' : ''} (none is set in this kit)`);
+  out.push(role ? `- the ${nautobot ? 'role' : 'device role'} "${role}"${nautobot ? ', for devices' : ''}`
+                : `- a ${nautobot ? 'role for devices' : 'device role'} (none is set in this kit)`);
+  if (nautobot) out.push('- a status named Planned, for devices, modules and cables');
+  if (manufacturers.length) out.push(`- these manufacturers: ${manufacturers.join(', ')}`);
+  if (nautobot)
+    out.push(`- the rack "${rack.name}" in that location: ${rack.frame.heightRU}U, ${numbered}` +
+             `${rack.frame.numbering === 'top-down' ? ' (descending units)' : ''}. This kit has no rack file for Nautobot.`);
+  out.push('');
+
+  const types = `types/device-types/, then types/module-types/ (${typeFiles} ${typeFiles === 1 ? 'file' : 'files'})`;
+  if (nautobot) {
+    out.push('IMPORT IN THIS ORDER. Nautobot takes each CSV file whole or not at all.',
+      typeFiles ? `1. ${types}: Device Types > Import and Module Types > Import, one YAML file per import. This step is written ` +
+                  'from Nautobot\'s source and was NOT verified against Nautobot 3.2.'
+                : '1. types/: no files, so there is nothing to import.',
+      `2. ${F.devices} (${rowsText(rows.devices)}): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.`,
+      `3. ${F.modules} (${rowsText(rows.modules)}): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. ` +
+        "This creates each card's ports, so it comes before the cables.",
+      `4. ${F.cables} (${rowsText(rows.cables)}), with ${KIT_SCRIPT}. DO NOT give ${F.cables} to Nautobot's own importer: ` +
+        'Nautobot takes a cable\'s ends by id only, and from a file that names them it creates cables with no ends.');
+    if (script)
+      out.push('     export NAUTOBOT_URL=https://nautobot.example.com',
+        '     export NAUTOBOT_TOKEN=...     (an API token; the script never prints it)',
+        `     python3 ${KIT_SCRIPT} ${F.cables}             (a dry run: what it would create, and what it cannot find)`,
+        `     python3 ${KIT_SCRIPT} ${F.cables} --apply     (creates the cables)`,
+        "   Python 3, standard library only. It talks to that URL's host and no other.");
+    out.push("   A cable's purpose is not carried: a Nautobot cable has no description.", '');
+  } else {
+    out.push('IMPORT IN THIS ORDER. NetBox takes each CSV file whole or not at all: one refused row refuses the file.',
+      typeFiles ? `1. ${types}: Device Types > Import and Module Types > Import, format YAML, one file at a time. ` +
+                  'The module types must be in before step 4.'
+                : '1. types/: no files, so there is nothing to import.',
+      `2. ${F.rack} (${rowsText(rows.rack)}): Racks > Import. Creates the rack "${rack.name}", ${rack.frame.heightRU}U, ${numbered}.`,
+      `3. ${F.devices} (${rowsText(rows.devices)}): Devices > Import. Every device is planned.`,
+      `4. ${F.modules} (${rowsText(rows.modules)}): Modules > Import. This creates each card's ports, so it comes before the cables.`,
+      `5. ${F.cables} (${rowsText(rows.cables)}): Cables > Import.`,
+      '   NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it ' +
+      'already has twice is refused as not unique.', '');
+  }
+
+  const missing = nautobot && !script
+    ? [`${KIT_SCRIPT} could not be fetched, so it is not in this zip. It is at https://portrayal.dev/site/rack/nautobot/${KIT_SCRIPT}.`] : [];
+  const gone = [...missing, ...left];
+  out.push('NOT IN THIS KIT:', ...(gone.length ? gone.map(n => `- ${n}`) : ['- Nothing: every device, card and cable in this rack is in the files.']), '');
+  if (notes.length) out.push('NOTES:', ...notes.map(n => `- ${n}`), '');
+  return {text: `${out.join('\n').trimEnd()}\n`, notes: [...(warning ? [warning] : []), ...gone, ...notes]};
+}
