@@ -16,7 +16,7 @@ import {el, svgY} from './rack/dom.js';
 import {loadZoom, saveZoom, zoomLabel, applyZoom, stepZoom, wheelZoom, factorForFit} from './rack/zoom.js';
 import {createDragController} from './rack/drag.js';
 import {mountRack3d} from './rack/scene3d.js';
-import {sheetSvg, sheetPng, drawioFile, modelFile, dcimTypesZip, deviceImportCsv, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
+import {sheetSvg, sheetPng, drawioFile, modelFile, dcimKit, bomCsv, cableScheduleCsv, failExport} from './rack/exports.js';
 import {save} from './svg-export.js';
 import {exportStatus, UNCHECKED_NOTE} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
@@ -502,10 +502,8 @@ const BUILD = {
   'rear-svg': () => sheetSvg(rack(), chassisOf, {faces: ['rear']}),
   'sheet-png': () => sheetPng(rack(), chassisOf),
   drawio: () => drawioFile(rack(), chassisOf),
-  'netbox-types': () => dcimTypesZip(rack(), chassisOf, 'netbox'),
-  'nautobot-types': () => dcimTypesZip(rack(), chassisOf, 'nautobot'),
-  'netbox-devices': () => deviceImportCsv(rack(), chassisOf, 'netbox'),
-  'nautobot-devices': () => deviceImportCsv(rack(), chassisOf, 'nautobot'),
+  'netbox-import': () => dcimKit(rack(), chassisOf, 'netbox'),
+  'nautobot-import': () => dcimKit(rack(), chassisOf, 'nautobot'),
   bom: () => bomCsv(rack(), chassisOf),
   cables: () => cableScheduleCsv(rack(), chassisOf),
   glb: () => modelExport('glb'),
@@ -561,10 +559,10 @@ function renderExports() {
              'GLB and USDZ export the 3D view, which 2D does not build')]),
     el('hr'),
     act('dcim-settings', 'DCIM import settings', 'The site or location and the device role the NetBox and Nautobot files name'),
-    act('netbox-types', 'NetBox device types (.zip)'),
-    act('nautobot-types', 'Nautobot device types (.zip)'),
-    act('netbox-devices', 'NetBox device import (.csv)', 'Fill in role and site before importing'),
-    act('nautobot-devices', 'Nautobot device import (.csv)', 'Fill in role and location before importing'),
+    act('netbox-import', 'NetBox import (.zip)',
+        'Device and module types, the rack, devices, modules and cables, numbered in import order, with a README'),
+    act('nautobot-import', 'Nautobot import (.zip)',
+        'Device and module types, devices, modules and cables, a script that creates the cables, and a README'),
     act('bom', 'Bill of materials (.csv)'),
     act('cables', 'Cable schedule (.csv)'),
     el('hr'),

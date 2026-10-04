@@ -3469,38 +3469,55 @@ def export_file(page, kind, timeout=READY_MS):
     return dl.value
 
 
-@extra("rack.html: Export - NetBox and Nautobot device types zip every device and part, with NOTES.txt")
+def export_kit(page, target):
+    """An import kit as the Export menu downloads it: the download, and what
+    kit_rows and readme_lists read - {"names": entries in order, "zip": {entry: text}}."""
+    dl = export_file(page, f"{target}-import")
+    with zipfile.ZipFile(dl.path()) as z:
+        names = z.namelist()
+        return dl, {"names": names, "zip": {n: z.read(n).decode("utf-8") for n in names}}
+
+
+DEVICES_FILE = {"netbox": "2-devices.csv", "nautobot": "1-devices.csv"}
+
+
+@extra("rack.html: Export - one import kit per target in the menu, with every device and part's type under types/ and a README")
 def check_rack_export_dcim_types(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     open_fixture(page, base)
-    want = {"device-types/Cisco/ASR-9006-AC-V2.yaml", "device-types/Edgecore/7726-32X-O-AC-F.yaml",
-            "device-types/Telco Systems/TM-280.yaml", "module-types/Cisco/A9K-16X100GE-TR.yaml",
-            "module-types/Cisco/A9K-3KW-AC.yaml", "module-types/Cisco/ASR-9006-FAN.yaml",
-            "module-types/Cisco/A9K Slot Cover.yaml", "NOTES.txt"}
+    page.click("#exportMenu > summary")
+    wait_sel(page, "menu: the import kits", '#exportItems [data-export="nautobot-import"]')
+    kinds = page.evaluate("() => [...document.querySelectorAll('#exportItems [data-export]')].map(b => [b.dataset.export, b.textContent])")
+    page.click("#exportMenu > summary")
+    dcim = [k for k in kinds if "netbox" in k[0] or "nautobot" in k[0] or "dcim" in k[0]]
+    if dcim != [["dcim-settings", "DCIM import settings"], ["netbox-import", "NetBox import (.zip)"],
+                ["nautobot-import", "Nautobot import (.zip)"]]:
+        bad.append(f"menu: the DCIM entries are {dcim}")
+    want = {"types/device-types/Cisco/ASR-9006-AC-V2.yaml", "types/device-types/Edgecore/7726-32X-O-AC-F.yaml",
+            "types/device-types/Telco Systems/TM-280.yaml", "types/module-types/Cisco/A9K-16X100GE-TR.yaml",
+            "types/module-types/Cisco/A9K-3KW-AC.yaml", "types/module-types/Cisco/ASR-9006-FAN.yaml",
+            "types/module-types/Cisco/A9K Slot Cover.yaml"}
     for target, T in (("netbox", "NetBox"), ("nautobot", "Nautobot")):
-        dl = export_file(page, f"{target}-types")
-        if dl.suggested_filename != f"Export-test-{target}-types.zip":
-            bad.append(f"{T} types: named {dl.suggested_filename!r}")
-        with zipfile.ZipFile(dl.path()) as z:
-            listing = z.namelist()
-            names = set(listing)
-            notes = z.read("NOTES.txt").decode() if "NOTES.txt" in names else ""
-            head = z.read("device-types/Edgecore/7726-32X-O-AC-F.yaml").decode() \
-                if "device-types/Edgecore/7726-32X-O-AC-F.yaml" in names else ""
-        if names != want:
-            bad.append(f"{T} types: entries differ - missing {sorted(want - names)}, extra {sorted(names - want)}")
-        if len(listing) != len(want):
-            bad.append(f"{T} types: {len(listing)} entries, expected {len(want)} (a duplicate?)")
-        devices = sorted(n for n in names if n.startswith("device-types/"))
-        if len(devices) != 3:
-            bad.append(f"{T} types: {len(devices)} device types, expected 3 (two TM-280s share one): {devices}")
-        if "ASR-9006-AC-V2 is a best guess" not in notes:
-            bad.append(f"{T} types: NOTES.txt does not flag the ASR-9006's guessed type")
-        if "generic/qsfp-lc@2" not in notes or f"no {T} module type" not in notes:
-            bad.append(f"{T} types: NOTES.txt does not list the optic with no module type")
-        if "model: 7726-32X-O-AC-F" not in head:
-            bad.append(f"{T} types: the Edgecore YAML is not the exported file")
+        dl, kit = export_kit(page, target)
+        status = export_status(page)
+        if dl.suggested_filename != f"Export-test-{target}-import.zip":
+            bad.append(f"{T} kit: named {dl.suggested_filename!r}")
+        types = [n for n in kit["names"] if n.startswith("types/")]
+        if set(types) != want or len(types) != len(want):
+            bad.append(f"{T} kit: types differ - missing {sorted(want - set(types))}, extra {sorted(set(types) - want)}, {len(types)} entries")
+        if len(kit["names"]) != len(set(kit["names"])) or kit["names"][-1] != "README.txt" or "NOTES.txt" in kit["names"]:
+            bad.append(f"{T} kit: entries {kit['names']}")
+        left, notes = readme_lists(kit["zip"]["README.txt"])
+        if not any("ASR-9006-AC-V2 is a best guess" in n for n in notes):
+            bad.append(f"{T} kit: the README does not flag the ASR-9006's guessed type")
+        if not any("generic/qsfp-lc@2" in n and f"no {T} module type" in n for n in notes):
+            bad.append(f"{T} kit: the README does not list the optic with no module type")
+        if "model: 7726-32X-O-AC-F" not in kit["zip"].get("types/device-types/Edgecore/7726-32X-O-AC-F.yaml", ""):
+            bad.append(f"{T} kit: the Edgecore YAML is not the exported file")
+        # The status counts the README's own lines: the blank-settings warning, what is left out, the notes.
+        if status != notes_status(1 + len(left) + len(notes)):
+            bad.append(f"{T} kit: the README carries {1 + len(left) + len(notes)} notes, but the status reads {status!r}")
     return bad
 
 
@@ -3516,72 +3533,66 @@ def device_rows(page, target="nautobot"):
     """The device import's rows for one target, as exported from the page. Nautobot's
     file is the default because it holds every device with a type: NetBox's leaves
     out a device NetBox would refuse (two full-depth devices sharing a U)."""
-    return read_csv(export_file(page, f"{target}-devices"))[1]
+    return list(csv.DictReader(io.StringIO(export_kit(page, target)[1]["zip"][DEVICES_FILE[target]], newline="")))
 
 
-@extra("rack.html: Export - device import CSVs name each device's type, position and face as NetBox and Nautobot read them")
+@extra("rack.html: Export - the kits' devices files name each device's type, position and face as NetBox and Nautobot read them")
 def check_rack_export_device_csv(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
     open_fixture(page, base)
-    dl = export_file(page, "netbox-devices")
-    if dl.suggested_filename != "Export-test-netbox-devices.csv":
-        bad.append(f"NetBox CSV: named {dl.suggested_filename!r}")
-    cols, rows, _ = read_csv(dl)
-    if cols != ["name", "role", "manufacturer", "device_type", "status", "site", "rack", "position", "face", "comments"]:
-        bad.append(f"NetBox CSV: columns {cols}")
+    _, kit = export_kit(page, "netbox")
+    rows = kit_rows(kit, "2-devices.csv")
+    if list(rows[0].keys()) != ["name", "role", "manufacturer", "device_type", "status", "site", "rack", "position", "face", "comments"]:
+        bad.append(f"NetBox devices: columns {list(rows[0].keys())}")
     by = {r["name"]: r for r in rows}
     want = {"core-1": ("Cisco", "ASR-9006-AC-V2", "2", "front"), "leaf-1": ("Edgecore", "7726-32X-O-AC-F", "14", "front"),
             "demarc-i4": ("Telco Systems", "TM-280", "20", "rear")}
     for name, (man, dt, pos, face) in want.items():
         r = by.get(name)
         if not r or (r["manufacturer"], r["device_type"], r["position"], r["face"]) != (man, dt, pos, face):
-            bad.append(f"NetBox CSV: {name} is {r and (r['manufacturer'], r['device_type'], r['position'], r['face'])}")
+            bad.append(f"NetBox devices: {name} is {r and (r['manufacturer'], r['device_type'], r['position'], r['face'])}")
     # demarc-i3 shares U14 with leaf-1 and both types are full depth: NetBox would refuse the whole file for it.
-    status = export_status(page)
-    if set(by) != set(want) or "demarc-i3 is not in the devices file: it shares U14 with leaf-1 on the front" not in status:
-        bad.append(f"NetBox CSV: rows {sorted(by)}; the status reads {status!r}")
+    left = readme_lists(kit["zip"]["README.txt"])[0]
+    if set(by) != set(want) or not any(l.startswith("demarc-i3 is not in the devices file: it shares U14 with leaf-1 on the front") for l in left):
+        bad.append(f"NetBox devices: rows {sorted(by)}; the README lists {left}")
     if not all(r["status"] == "planned" and r["rack"] == "Export test" for r in rows):
-        bad.append("NetBox CSV: status or rack column wrong")
+        bad.append("NetBox devices: status or rack column wrong")
     if "best guess" not in by.get("core-1", {}).get("comments", ""):
-        bad.append("NetBox CSV: core-1's guessed type is not said in comments")
+        bad.append("NetBox devices: core-1's guessed type is not said in comments")
 
-    dl = export_file(page, "nautobot-devices")
-    cols, rows, _ = read_csv(dl)
-    if dl.suggested_filename != "Export-test-nautobot-devices.csv" or "device_type__model" not in (cols or []):
-        bad.append(f"Nautobot CSV: {dl.suggested_filename!r} with columns {cols}")
+    rows = device_rows(page, "nautobot")
     leaf = next((r for r in rows if r["name"] == "leaf-1"), {})
     if (leaf.get("device_type__model"), leaf.get("status__name")) != ("7726-32X-O-AC-F", "Planned"):
-        bad.append(f"Nautobot CSV: leaf-1 is {leaf}")
+        bad.append(f"Nautobot devices: leaf-1 is {leaf}")
     # Nautobot accepts the pair at U14, so its file keeps both, and calls neither refused.
     if sorted(r["name"] for r in rows) != ["core-1", "demarc-i3", "demarc-i4", "leaf-1"] or any("refuses" in r["comments"] for r in rows):
-        bad.append(f"Nautobot CSV: rows {[(r['name'], r['comments']) for r in rows]}")
+        bad.append(f"Nautobot devices: rows {[(r['name'], r['comments']) for r in rows]}")
 
     # A DCIM CSV is imported as is: a label that opens like a formula stays verbatim (only the BOM guards it).
     eq = page.evaluate("""async () => {
       const X = await import('/site/rack/exports.js');
       const r = window.__rack.doc().racks[0];
       const rack = {...r, items: r.items.filter(i => i.id === 'i2').map(i => ({...i, label: '=leaf'}))};
-      return (await X.deviceImportCsv(rack, () => ({manufacturer: 'Edgecore'}), 'netbox')).data;
+      return (await X.dcimKit(rack, () => ({manufacturer: 'Edgecore'}), 'netbox')).files['2-devices.csv'];
     }""")
     if not eq.split("\r\n")[1].startswith("=leaf,"):
-        bad.append(f"NetBox CSV: a label starting with '=' is not verbatim: {eq[:200]!r}")
+        bad.append(f"NetBox devices: a label starting with '=' is not verbatim: {eq[:200]!r}")
 
     # Positions follow the frame's numbering.
     page.click("#frameBtn")
     page.select_option("#fNumbering", "top-down")
     page.wait_for_function("() => window.__rack.doc().racks[0].frame.numbering === 'top-down'", timeout=READY_MS)
-    _, rows, _ = read_csv(export_file(page, "netbox-devices"))
-    got = {r["name"]: r["position"] for r in rows}
+    got = {r["name"]: r["position"] for r in device_rows(page, "netbox")}
     if got != {"core-1": "14", "leaf-1": "11", "demarc-i4": "5"}:
-        bad.append(f"NetBox CSV: top-down positions {got}")
+        bad.append(f"NetBox devices: top-down positions {got}")
     got = {r["name"]: r["position"] for r in device_rows(page, "nautobot")}
     if got != {"core-1": "14", "leaf-1": "11", "demarc-i3": "11", "demarc-i4": "5"}:
-        bad.append(f"Nautobot CSV: top-down positions {got}")
+        bad.append(f"Nautobot devices: top-down positions {got}")
     return bad
 
 
-@extra("rack.html: Export - a device type from another vendor's file is said so in the notes, the CSV and the zip's NOTES")
+@extra("rack.html: Export - a device type from another vendor's file is said so in the notes, the devices file and the kit's README")
 def check_rack_export_other_vendor(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -3594,11 +3605,9 @@ def check_rack_export_other_vendor(page, base):
       const rack = {...r, items: r.items.filter(i => i.id === 'i1')};
       const stub = () => ({manufacturer: 'Nobody Inc'});
       const ctx = await X.dcimContext(rack, stub, 'netbox', {modules: false});
-      const csv = await X.deviceImportCsv(rack, stub, 'netbox');
-      const zip = await X.dcimTypesZip(rack, stub, 'netbox');
-      const buf = zip.data instanceof Blob ? await zip.data.arrayBuffer() : zip.data;
+      const kit = await X.dcimKit(rack, stub, 'netbox');
       return {note: ctx.notes.find(n => n.includes('core-1')) || '', flag: ctx.types.get('i1')?.otherVendor,
-              csv: csv.data, zipBytes: Array.from(new Uint8Array(buf.buffer ?? buf))};
+              csv: kit.files['2-devices.csv'], readme: kit.files['README.txt']};
     }""")
     if got["flag"] is not True:
         bad.append(f"other vendor: otherVendor is {got['flag']!r}, expected true")
@@ -3608,10 +3617,8 @@ def check_rack_export_other_vendor(page, base):
     comments = rows[0]["comments"] if rows else ""
     if "another vendor's (Cisco) file" not in comments:
         bad.append(f"other vendor: the CSV comment is {comments!r}")
-    with zipfile.ZipFile(io.BytesIO(bytes(got["zipBytes"]))) as z:
-        zipNotes = z.read("NOTES.txt").decode() if "NOTES.txt" in z.namelist() else ""
-    if "another vendor's (Cisco) file" not in zipNotes:
-        bad.append(f"other vendor: the zip's NOTES.txt is {zipNotes!r}")
+    if "another vendor's (Cisco) file" not in got["readme"]:
+        bad.append(f"other vendor: the kit's README is {got['readme']!r}")
     return bad
 
 
@@ -3770,9 +3777,9 @@ def check_rack_mount_flag(page, base):
     dev = next((r for r in rows if r["ref"] == "hlx-tgv"), None)
     if not dev:
         bad.append("BOM: the desktop device is not listed")
-    _, crows, _ = read_csv(export_file(page, "netbox-devices"))
+    crows = device_rows(page, "netbox")
     if not any("needs a shelf" in r["comments"] for r in crows):
-        bad.append(f"device CSV: no mount comment {[r['comments'] for r in crows]}")
+        bad.append(f"devices file: no mount comment {[r['comments'] for r in crows]}")
     return bad
 
 
@@ -3806,15 +3813,13 @@ def check_rack_mount_flag_3d_exports(page, base):
     xml = pathlib.Path(dl.path()).read_bytes().decode("utf-8")
     if din not in xml or desk not in xml:
         bad.append("draw.io: the mount notes are not in the file")
-    for target, T in (("netbox", "NetBox"),):
-        with zipfile.ZipFile(export_file(page, f"{target}-types").path()) as z:
-            notes = z.read("NOTES.txt").decode()
-        if din not in notes or desk not in notes:
-            bad.append(f"{T} types: NOTES.txt lacks the mount notes: {notes[:400]!r}")
-    _, crows, _ = read_csv(export_file(page, "netbox-devices"))
-    comments = " ".join(r["comments"] for r in crows)
+    _, kit = export_kit(page, "netbox")
+    notes = kit["zip"]["README.txt"]
+    if din not in notes or desk not in notes:
+        bad.append(f"NetBox kit: the README lacks the mount notes: {notes[:400]!r}")
+    comments = " ".join(r["comments"] for r in kit_rows(kit, "2-devices.csv"))
     if "A DIN-rail device, so it needs a shelf or DIN-rail bracket." not in comments:
-        bad.append(f"device CSV: no DIN-rail comment: {comments[:300]!r}")
+        bad.append(f"devices file: no DIN-rail comment: {comments[:300]!r}")
 
     page.click("#exportMenu > summary")
     page.click('#exportItems [data-export="to-3d"]')
@@ -3901,7 +3906,7 @@ def check_rack_export_overtaken(page, base):
     return bad
 
 
-@extra("rack.html: Export - a swap that failed is in the BOM's and the zip's notes; the status counts only what the file carries")
+@extra("rack.html: Export - a swap that failed is in the BOM's and the kits' notes; the status counts only what the file carries")
 def check_rack_export_notes_truthful(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -3937,23 +3942,23 @@ def check_rack_export_notes_truthful(page, base):
         bad.append("status: its title is not its full text")
 
     for target in ("netbox", "nautobot"):
-        with zipfile.ZipFile(export_file(page, f"{target}-types").path()) as z:
-            zip_notes = z.read("NOTES.txt").decode()
-        if failed not in zip_notes:
-            bad.append(f"{target} types: a swap that could not be loaded is not in NOTES.txt: {zip_notes!r}")
+        _, kit = export_kit(page, target)
+        status = export_status(page)
+        left, notes = readme_lists(kit["zip"]["README.txt"])
+        if failed not in notes:
+            bad.append(f"{target} kit: a swap that could not be loaded is not in the README's notes: {notes!r}")
+        # The kit's notes are its README's: the blank-settings warning, what is left out, and the notes.
+        if status != notes_status(1 + len(left) + len(notes)):
+            bad.append(f"{target} kit: the README carries {1 + len(left) + len(notes)} notes, but the status reads {status!r}")
 
-    # The device CSV carries its rows' comments and nothing else.
-    rows = device_rows(page)
-    status = page.inner_text("#exportStatus")
-    carried = len([r for r in rows if r["comments"]])
-    if not carried or status != notes_status(carried):
-        bad.append(f"device CSV: {carried} rows have comments, but the status reads {status!r}")
     got = page.evaluate("""async () => {
       const X = await import('/site/rack/exports.js'), E = await import('/site/rack/export-data.js');
       const r = window.__rack.doc().racks[0];
       const lookup = () => ({manufacturer: 'Edgecore', ru: 1});
-      const wired = {...r, items: r.items.filter(i => i.id === 'i2'), cables: [{}], zeroU: [{}, {}]};
-      const csv = await X.deviceImportCsv(wired, lookup, 'netbox');
+      const wired = {...r, items: r.items.filter(i => i.id === 'i2'), zeroU: [{}, {}],
+        cables: [{id: 'c1', a: {item: 'i2', path: 'port-1', view: 'front'}, b: {item: 'i2', path: 'port-2', view: 'front'},
+                  media: 'os2', purpose: '', label: '', route: []}]};
+      const kit = await X.dcimKit(wired, lookup, 'netbox');
       // A model's notes, with a scene that exports nothing: only the notes are under test.
       const scene = {running: () => false, complete: async () => {}, three: {scene: {userData: {}}},
                      toGLB: async () => new Uint8Array(4), toUSDZ: async () => new Uint8Array(4)};
@@ -3962,15 +3967,15 @@ def check_rack_export_notes_truthful(page, base):
       const glb = await X.modelFile(scene, ghost, 'glb');
       const extras = [...scene.three.scene.userData.portrayal.notes];
       const usdz = await X.modelFile(scene, ghost, 'usdz');
-      return {csvStatus: E.exportStatus(csv), csvData: csv.data, glbNotes: glb.notes, extras,
+      return {kitStatus: E.exportStatus(kit), kitNotes: kit.notes, readme: kit.files['README.txt'], glbNotes: glb.notes, extras,
               glbStatus: E.exportStatus(glb), usdzStatus: E.exportStatus(usdz), usdzNotes: usdz.notes};
     }""")
-    want = ("Downloaded, with 1 note in the file. Not in the file: 2 zero-U items are not in this export yet. "
-            "1 cable is not in this export yet.")
-    if got["csvStatus"] != want:
-        bad.append(f"device CSV with cables: the status reads {got['csvStatus']!r}")
-    if "not in this export yet" in got["csvData"]:
-        bad.append("device CSV with cables: a rack-level note is in the file after all; the status is wrong")
+    # A kit carries the cables, so it never says they are left out; what it does leave out (zero-U items) is in its README.
+    left, notes = readme_lists(got["readme"])
+    if "2 zero-U items are not in this export yet." not in notes or any("cable is not in this export yet" in n for n in left + notes):
+        bad.append(f"kit with cables and zero-U items: the README's notes are {notes}")
+    if got["kitStatus"] != notes_status(len(got["kitNotes"])) or len(got["kitNotes"]) != 1 + len(left) + len(notes):
+        bad.append(f"kit with cables and zero-U items: {len(got['kitNotes'])} notes, README {1 + len(left) + len(notes)}, status {got['kitStatus']!r}")
     for note in ("mystery at U22: no front drawing, so the front shows an outline.",
                  "mystery at U22: no rear drawing, so the rear shows an outline."):
         if note not in got["glbNotes"] or note not in got["extras"]:
@@ -4033,22 +4038,22 @@ def check_rack_export_empty(page, base):
     except ET.ParseError as e:
         bad.append(f"empty rack drawio: not well-formed XML ({e})")
 
-    for target, T in (("netbox", "NetBox"), ("nautobot", "Nautobot")):
-        dl = export_file(page, f"{target}-types")
-        ok_status(f"{target}-types")
-        with zipfile.ZipFile(dl.path()) as z:
-            names = z.namelist()
-            notes = z.read("NOTES.txt").decode() if "NOTES.txt" in names else ""
-        if names != ["NOTES.txt"]:
-            bad.append(f"empty rack {T} types: entries {names}")
-        if f"This rack has no devices, so there are no {T} types in this zip." not in notes or "Every device" in notes:
-            bad.append(f"empty rack {T} types: NOTES.txt reads {notes!r}")
-        dl = export_file(page, f"{target}-devices")
-        cols, rows, text = read_csv(dl)
-        if rows or not cols or cols[0] != "name" or text.count("\r\n") != 1:
-            bad.append(f"empty rack {T} devices: not a header alone: {text!r}")
-        if page.inner_text("#exportStatus") != "Downloaded.":
-            bad.append(f"empty rack {T} devices: the status reads {page.inner_text('#exportStatus')!r}")
+    for target, T, files in (("netbox", "NetBox", ["1-rack.csv", "2-devices.csv", "3-modules.csv", "4-cables.csv"]),
+                             ("nautobot", "Nautobot", ["1-devices.csv", "2-modules.csv", "3-cables.csv", "import_cables.py"])):
+        _, kit = export_kit(page, target)
+        ok_status(f"{target}-import")
+        if kit["names"] != files + ["README.txt"]:
+            bad.append(f"empty rack {T} kit: entries {kit['names']}")
+        # Every CSV is there with its header alone - except the NetBox rack file, which is the rack itself.
+        for name in files:
+            text = kit["zip"].get(name, "")
+            if name.endswith(".csv") and text.count("\r\n") != (2 if name == "1-rack.csv" else 1):
+                bad.append(f"empty rack {T} kit: {name} is not a header alone: {text!r}")
+        readme = kit["zip"]["README.txt"]
+        if "This rack has no devices, so there is nothing to import." not in readme_lists(readme)[1] or \
+                "1. types/: no files, so there is nothing to import." not in readme or \
+                "(no rows: it holds its header only, so skip it)" not in readme:
+            bad.append(f"empty rack {T} kit: the README reads {readme!r}")
 
     cols, rows, text = read_csv(export_file(page, "bom"))
     ok_status("bom")
@@ -8393,7 +8398,7 @@ def check_rack_export_cable_failures(page, base):
           const of = C.chassisLookup(await C.loadChassis());
           const r = window.__rack.doc().racks[0];
           const rack = {...r, frame: {...r.frame, numbering}};
-          return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.deviceImportCsv(rack, of, 'nautobot')).data};
+          return {sched: (await X.cableScheduleCsv(rack, of)).data, dev: (await X.dcimKit(rack, of, 'nautobot')).files['1-devices.csv']};
         }""", numbering)
         sched = list(csv.DictReader(io.StringIO(got["sched"].partition("\r\n\r\nNotes")[0])))
         dev = {r["name"]: r["position"] for r in csv.DictReader(io.StringIO(got["dev"]))}

@@ -97,16 +97,6 @@ test('a device with no type is left out of the file, and said; no configuration 
     /there is no Nautobot device type for mystery \(dc\)\./);
 });
 
-test('a rack with no devices does not claim every device matched', () => {
-  assert.equal(X.dcimNotesText({rackName: 'Empty', target: 'netbox', date: DAY, notes: [], devices: 0}),
-    'NetBox types for Empty, from the Portrayal Rack Builder, 2026-09-27.\n\n' +
-    'This rack has no devices, so there are no NetBox types in this zip.\n');
-  assert.equal(X.dcimNotesText({rackName: 'Empty', target: 'nautobot', date: DAY, notes: ['a'], devices: 0}),
-    'Nautobot types for Empty, from the Portrayal Rack Builder, 2026-09-27.\n\n' +
-    'This rack has no devices, so there are no Nautobot types in this zip.\n- a\n');
-  assert.match(X.dcimNotesText({rackName: 'R', target: 'netbox', date: DAY, notes: [], devices: 2}), /Every device and part/);
-});
-
 const TYPES = new Map([
   ['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: true, guess: true}],
   ['i2', {manufacturer: 'Edgecore', model: '7726-32X-O-AC-F', isFullDepth: true, guess: true}],
@@ -184,15 +174,7 @@ test('Nautobot rows use natural-key columns, keep two devices that share a U, an
     'core-1 is not in the devices file: there is no Nautobot device type for asr-9006 (base). Add the type and the device by hand.'}]);
 });
 
-test('NOTES.txt heads its list, or says everything matched', () => {
-  assert.equal(X.dcimNotesText({rackName: 'Export test', target: 'netbox', date: DAY, notes: []}),
-    'NetBox types for Export test, from the Portrayal Rack Builder, 2026-09-27.\n\n' +
-    'Every device and part in this rack matched a NetBox type.\n');
-  assert.equal(X.dcimNotesText({rackName: 'R', target: 'nautobot', date: DAY, notes: ['a', 'b']}),
-    'Nautobot types for R, from the Portrayal Rack Builder, 2026-09-27.\n\n- a\n- b\n');
-});
-
-test('a type from another vendor says so in the row\'s comments, as NOTES.txt does', () => {
+test('a type from another vendor says so in the row\'s comments, as the README does', () => {
   const types = new Map([['i1', {manufacturer: 'Cisco', model: 'ASR-9006-AC-V2', isFullDepth: false, guess: true,
     otherVendor: true, chassisManufacturer: 'Nobody Inc', path: nb('Cisco', 'ASR-9006-AC-V2')}]]);
   const item = {id: 'i1', ref: 'asr-9006', cfg: 'base', label: 'core-1', ru: 2, u: 4, face: 'front', turned: false};

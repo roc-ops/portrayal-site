@@ -4,11 +4,10 @@
 // resolves to {name, data, type, notes}: `notes` lists what could not be
 // resolved (a face never drawn, a part that would not seat, a device with
 // no DCIM type), and the file carries the same list - a notes block on the
-// sheet, a comment in the draw.io file, NOTES.txt in a zip, a comments
-// column or a notes section in a CSV - rather than dropping it. A file with
-// no place for a note (a USDZ, a device CSV's rack-level notes) returns it
-// as `left` instead, with `leftText` when one sentence says it better, and
-// the status line says so (exportStatus).
+// sheet, a comment in the draw.io file, README.txt in an import kit, a notes
+// section in a CSV - rather than dropping it. A file with no place for a
+// note (a USDZ) returns it as `left` instead, with `leftText` when one
+// sentence says it better, and the status line says so (exportStatus).
 //
 // The rules (names, CSV, matching, counting) are export-data.js's, which
 // has no DOM and is tested with node --test.
@@ -24,7 +23,7 @@ import {rasterize} from '../raster.js';
 import {rackDiagram} from '../../vendor/drawio.js';
 import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, threeDNotes, mountNotes, isRackMount,
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
-        stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
+        stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
@@ -416,16 +415,16 @@ async function seatedPartsOf(rack, items) {
 
 // WHAT A RACK IS IN A DCIM: each item's device type (the matched file, its
 // identity lines and its own name lists), and - with `modules` - every seated
-// part with its module type. `cables: false` is for a file that carries the
-// cables, and so does not say they are left out. A type file that cannot be
-// read costs that one type, never the export: the device or the part is then
-// one with no type, and a note says which file it was.
-export async function dcimContext(rack, chassisOf, target, {modules = true, cables = true} = {}) {
+// part with its module type. The import kits carry the cables, so no note
+// here says they are left out. A type file that cannot be read costs that one
+// type, never the export: the device or the part is then one with no type,
+// and a note says which file it was.
+export async function dcimContext(rack, chassisOf, target, {modules = true} = {}) {
   const T = TARGET_NAME[target];
   const [index, files, comps] = await Promise.all([
     fetchJson(`${EXPORTS_BASE}index.json`), fetchJson(`${EXPORTS_BASE}files.json`), components()]);
   const items = itemsWithU(rack, chassisOf);
-  const notes = [...rackNotes(rack, {cables}), ...mountNotes(items, chassisOf, rack.frame)];
+  const notes = [...rackNotes(rack, {cables: false}), ...mountNotes(items, chassisOf, rack.frame)];
   const types = new Map();
   const readType = path => (probeFail.type && path.includes(probeFail.type)
     ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
@@ -483,34 +482,7 @@ export async function dcimContext(rack, chassisOf, target, {modules = true, cabl
   return out;
 }
 
-export async function dcimTypesZip(rack, chassisOf, target, {date = new Date()} = {}) {
-  const ctx = await dcimContext(rack, chassisOf, target);
-  const enc = new TextEncoder();
-  const paths = uniq([...ctx.types.values()].filter(Boolean).map(t => t.path)
-    .concat(ctx.modules.map(m => m.path).filter(Boolean))).sort();
-  const entries = [];
-  for (const p of paths) {
-    try { entries.push({name: p.split('/').slice(1).join('/'), bytes: enc.encode(await fetchText(exportUrl(p)))}); }
-    catch { ctx.notes.push(`${p} couldn't be fetched, so it is not in this zip.`); }
-  }
-  entries.push({name: 'NOTES.txt', bytes: enc.encode(dcimNotesText({rackName: rack.name, target, date, notes: ctx.notes,
-                                                                    devices: ctx.items.length}))});
-  return {name: `${fileStem(rack.name)}-${target}-types.zip`, data: await makeZip(entries, date),
-          type: 'application/zip', notes: ctx.notes};
-}
 
-// The device import (spec §8): one row per rail item the target will take.
-// Pure CSV so it imports as is; each row's notes are in its own comments
-// column, and those are the notes the file carries. A rack-level note (zero-U
-// items, cables) and a device left out of the file (export-data.js
-// deviceImportRows) have no row to sit in, so they come back as `left`.
-export async function deviceImportCsv(rack, chassisOf, target) {
-  const ctx = await dcimContext(rack, chassisOf, target, {modules: false});
-  const {columns, rows, left} = deviceImportRows({rack, items: ctx.items, types: ctx.types, target});
-  return {name: `${fileStem(rack.name)}-${target}-devices.csv`, data: toCsv(columns, rows),
-          type: 'text/csv', notes: rows.map(r => r.comments).filter(Boolean),
-          left: [...rackNotes(rack), ...left.map(l => l.reason)]};
-}
 
 // The console ports each cabled device's drawing has, by item id: a console
 // port is named in a type file by its own list, not by its path (dcim-rules.js
@@ -553,7 +525,7 @@ const SCRIPT_URL = `site/rack/nautobot/${KIT_SCRIPT}`;
 // unzipping; `notes` are the README's own, which is what the status counts.
 export async function dcimKit(rack, chassisOf, target, {date = new Date()} = {}) {
   const nautobot = target === 'nautobot', F = KIT_FILES[nautobot ? 'nautobot' : 'netbox'];
-  const ctx = await dcimContext(rack, chassisOf, target, {cables: false});
+  const ctx = await dcimContext(rack, chassisOf, target);
   const dcim = dcimOf(rack), enc = new TextEncoder();
   const entries = [], files = {}, left = [];
   const add = (name, text) => { files[name] = text; entries.push({name, bytes: enc.encode(text)}); };

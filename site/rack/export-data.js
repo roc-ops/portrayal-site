@@ -112,9 +112,9 @@ export function exportStatus({notes = [], left = [], leftText = ''} = {}) {
   return left.length ? `${head} ${leftText || `Not in the file: ${left.join(' ')}`}` : head;
 }
 // What a rack holds that an export leaves out. An export that carries the
-// cables (the sheet, draw.io, the 3D model, the BOM, the cable schedule)
-// passes {cables: false}; one that does not (the DCIM types and the device
-// import) keeps the line.
+// cables passes {cables: false}, and since Phase 2c every export does: the
+// sheet, draw.io, the 3D model, the BOM, the cable schedule and both DCIM
+// import kits. The line is kept for an export that one day does not.
 export function rackNotes(rack, {cables = true} = {}) {
   const out = [];
   const z = rack.zeroU?.length || 0, c = rack.cables?.length || 0;
@@ -536,8 +536,8 @@ export const NAUTOBOT_COLUMNS = ['name', 'role__name', 'device_type__manufacture
   'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments'];
 export const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
 
-// The one wording for "this type is another vendor's file", shared by
-// NOTES.txt and the device CSV's comments column.
+// The one wording for "this type is another vendor's file", shared by a
+// kit's README and its devices file's comments column.
 export const otherVendorNote = ({label, ref, T, manufacturer, path}) =>
   `${label} (${ref}): no ${T} device type from ${manufacturer || 'its manufacturer'}, so ` +
   `${stemOf(path)} is another vendor's (${vendorOf(path)}) file, a best guess.`;
@@ -614,15 +614,6 @@ export const NETBOX_RACK_COLUMNS = ['site', 'name', 'status', 'width', 'u_height
 export function rackImportRows({rack, dcim = {}}) {
   return {columns: NETBOX_RACK_COLUMNS, rows: [{site: String(dcim?.site ?? '').trim(), name: rack.name, status: 'planned',
     width: 19, u_height: rack.frame.heightRU, desc_units: rack.frame.numbering === 'top-down' ? 'true' : 'false'}]};
-}
-
-// `devices` is how many the rack has: with none, nothing matched anything.
-export function dcimNotesText({rackName, target, date, notes, devices}) {
-  const T = TARGET_NAME[target] || 'NetBox';
-  const list = notes.map(n => `- ${n}`);
-  const body = (devices === 0 ? [`This rack has no devices, so there are no ${T} types in this zip.`, ...list]
-    : list.length ? list : [`Every device and part in this rack matched a ${T} type.`]).join('\n');
-  return `${T} types for ${rackName}, from the Portrayal Rack Builder, ${isoDate(date)}.\n\n${body}\n`;
 }
 
 // ── THE BILL OF MATERIALS (spec §8) ─────────────────────────────────────
