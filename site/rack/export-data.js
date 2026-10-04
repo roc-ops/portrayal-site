@@ -5,6 +5,7 @@
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
 import {uLabel} from './model.js';
+import {endKey, endName, cableName, mismatch, MEDIA_LABELS} from './cable-rules.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -109,12 +110,84 @@ export function exportStatus({notes = [], left = [], leftText = ''} = {}) {
   const head = notes.length ? `Downloaded, with ${count(notes.length, 'note', 'notes')} in the file.` : 'Downloaded.';
   return left.length ? `${head} ${leftText || `Not in the file: ${left.join(' ')}`}` : head;
 }
-export function rackNotes(rack) {
+// What a rack holds that an export leaves out. An export that carries the
+// cables (the sheet, draw.io, the 3D model, the BOM, the cable schedule)
+// passes {cables: false}; one that does not (the DCIM types and the device
+// import) keeps the line.
+export function rackNotes(rack, {cables = true} = {}) {
   const out = [];
   const z = rack.zeroU?.length || 0, c = rack.cables?.length || 0;
   if (z) out.push(`${count(z, 'zero-U item is', 'zero-U items are')} not in this export yet.`);
-  if (c) out.push(`${count(c, 'cable is', 'cables are')} not in this export yet.`);
+  if (cables && c) out.push(`${count(c, 'cable is', 'cables are')} not in this export yet.`);
   return out;
+}
+
+// ── CABLES IN THE EXPORTS (spec §9.4) ───────────────────────────────────
+// Every export that carries cables reads them through these, so a loose end
+// or a mismatch is worded once. `ends` is cable-plugs.js cableFacts(rack).ends:
+// Map(endKey -> {info, reason}), reason null when the end lands. A cable
+// whose ends are not in the map was not checked (reading the faces failed).
+export const UNCHECKED_NOTE = 'Cable ends could not be checked, so loose ends are not marked.';
+export function cableFindings(rack, ends = new Map()) {
+  return (rack.cables || []).map(cable => {
+    const got = s => ends.get(endKey(cable[s]));
+    const loose = [['A', 'a'], ['B', 'b']].filter(([, s]) => got(s)?.reason != null)
+      .map(([side, s]) => ({side, end: cable[s], reason: got(s).reason}));
+    return {cable, name: cableName(cable), loose, checked: !!got('a') && !!got('b'),
+            warnings: mismatch(cable.media, got('a')?.info, got('b')?.info)};
+  });
+}
+// The notes a drawn export carries: each loose end with its reason, each
+// media mismatch. `undrawn` is for a file that leaves a cable with a loose
+// end out altogether (draw.io) where the others draw its unplugged lead.
+export function cableNotes(rack, ends = new Map(), {undrawn = false} = {}) {
+  const out = [];
+  for (const f of cableFindings(rack, ends)) {
+    if (f.loose.length) {
+      const why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end)}, is not connected (${l.reason})`);
+      out.push(`Cable ${f.name}${undrawn ? ' is not drawn' : ''}: ${why.join('; ')}.`);
+    }
+    for (const w of f.warnings) out.push(`Cable ${f.name}: ${w}`);
+  }
+  return out;
+}
+
+// Own keys only: a hand-edited media named like something every object has
+// (toString) is its own name, not a label.
+const mediaLabel = m => (Object.hasOwn(MEDIA_LABELS, m) ? MEDIA_LABELS[m] : String(m ?? ''));
+const asWritten = v => (typeof v === 'string' ? v : JSON.stringify(v));
+
+// THE CABLE SCHEDULE: one row per cable, in the rack's own order. A device is
+// named as the device import names it (uniqueNames over the same items), so
+// the two files agree. A length the page could not use (model.js
+// lengthAsWritten) is quoted in the notes, never put in the numeric column.
+export const CABLE_COLUMNS = ['cable', 'a_device', 'a_u', 'a_port', 'b_device', 'b_u', 'b_port', 'media', 'purpose',
+  'length', 'length_unit', 'status', 'notes'];
+export function cableScheduleRows(rack, ends = new Map()) {
+  const names = uniqueNames(rack.items);
+  const byId = new Map(rack.items.map(i => [i.id, i]));
+  const named = new Set();
+  const side = e => {
+    const it = byId.get(e.item);
+    if (!it) return ['', '', e.path];
+    if (names.get(it.id).renamed) named.add(names.get(it.id).name);
+    return [names.get(it.id).name, uLabel(rack.frame, it.ru), e.path];
+  };
+  const findings = cableFindings(rack, ends);
+  const rows = findings.map(f => {
+    const c = f.cable, [aDev, aU, aPort] = side(c.a), [bDev, bU, bPort] = side(c.b);
+    const notes = [...f.loose.map(l => `End ${l.side} is not connected: ${l.reason}.`), ...f.warnings];
+    if (c.lengthAsWritten != null) notes.push(`Length as written in the file: ${asWritten(c.lengthAsWritten)}.`);
+    return {cable: f.name, a_device: aDev, a_u: aU, a_port: aPort, b_device: bDev, b_u: bU, b_port: bPort,
+            media: mediaLabel(c.media), purpose: c.purpose, length: c.length ? c.length.value : '',
+            length_unit: c.length ? c.length.unit : '',
+            status: !f.checked ? 'not checked' : f.loose.length ? 'loose end' : 'connected', notes: notes.join(' ')};
+  });
+  const notes = [];
+  if (!rows.length) notes.push('This rack has no cables, so there is nothing to list.');
+  if (findings.some(f => !f.checked)) notes.push(UNCHECKED_NOTE);
+  if (named.size) notes.push(`Devices that share a label are named as the device import names them: ${[...named].join(', ')}.`);
+  return {columns: CABLE_COLUMNS, rows, notes};
 }
 
 // NOT RACK-MOUNT. The chassis index states `mount` only when it is not
