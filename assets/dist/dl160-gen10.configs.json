@@ -307,7 +307,8 @@
   "rear": [
    {
     "accepts": [
-     "hpe/riser-primary-dl160@1"
+     "hpe/riser-primary-dl160@1",
+     "hpe/riser-flom-dl160@1"
     ],
     "at": [
      0.0,
@@ -1018,6 +1019,31 @@
   {
    "airflow": null,
    "bays": {
+    "riser-primary": "hpe/riser-flom-dl160@1",
+    "riser-primary/flom": "hpe/flom-817749-b21@1",
+    "riser-primary/slot-2": "nvidia/mcx4121a-lp@1"
+   },
+   "description": "The 4 LFF server with the FlexibleLOM riser in place of the standard primary riser: the 10/25Gb 640FLR-SFP28 adapter where slot 1 was and a low-profile card in slot 2 (one of the library's ConnectX cards, to show the window - not an HPE-qualified build).",
+   "files": {
+    "bottom": "dl160-gen10.lff4.bottom.svg",
+    "front": "dl160-gen10.lff4-options.front.svg",
+    "left": "dl160-gen10.lff4.left.svg",
+    "rear": "dl160-gen10.lff4-flom.rear.svg",
+    "right": "dl160-gen10.lff4.right.svg",
+    "top": "dl160-gen10.lff4.top.svg"
+   },
+   "kind": "example",
+   "name": "lff4-flom",
+   "occupants": {},
+   "part-numbers": {},
+   "power": [
+    "ac"
+   ],
+   "views": {}
+  },
+  {
+   "airflow": null,
+   "bays": {
     "media-module": "hpe/media-module-866464-b21@1",
     "psu-2": "hpe/psu-865408-b21@1",
     "riser-primary/slot-1": "nvidia/mcx515a-fh@1",
@@ -1155,11 +1181,11 @@
    "because": "needs-photo",
    "blocks": [],
    "kind": "declared",
-   "note": "no image held shows a card in any of the three PCIe slots; which way up each bracket lies follows from where the riser connectors are, which HPE's PartSurfer photograph shows for the primary riser and only the User Guide's board figure for the secondary (see the riser parts). Not drawn: the FlexibleLOM riser (primary riser board x8/FlexibleLOM, 878539-001, kit 875748-B21) and the FlexibleLOM adapters it carries - PartSurfer photographs the cage at an angle, labelled 'Slot 2 PCIe x8 / Slot 1 ALOM x8', which shows what it is and not the size of its rear opening - and the primary riser BLANK (878532-001) a server ordered with no riser carries, which PartSurfer photographs straight on. The three Media Module adapters are drawn from PartSurfer's photographs, each centred in the opening because no image shows one fitted.",
+   "note": "no image held shows a card in any of the three PCIe slots; which way up each bracket lies follows from where the riser connectors are, which HPE's PartSurfer photograph shows for the primary riser and only the User Guide's board figure for the secondary (see the riser parts). The FlexibleLOM riser (hpe/riser-flom- dl160@1) and five of the six FlexibleLOM adapters the QuickSpecs lists are drawn, the adapters from sellers' photographs and the cage's opening for them from two isometric User Guide figures - no image held shows that cage's rear straight on, with or without an adapter, so where the adapter sits on the rear is estimated. Not drawn: the sixth adapter, 817709-B21 (631FLR-SFP28), of which only a photograph from above is held, and the primary riser BLANK (878532-001) a server ordered with no riser carries, which PartSurfer photographs straight on. The three Media Module adapters are drawn from PartSurfer's photographs, each centred in the opening because no image shows one fitted.",
    "scope": [
     "rear"
    ],
-   "wanted": "a straight-on rear image of a server with the FlexibleLOM riser and an adapter fitted, and of one with a card in each slot and a Media Module adapter fitted",
+   "wanted": "a straight-on rear image of a server with the FlexibleLOM riser and an adapter fitted, of the 631FLR-SFP28's faceplate, and of a server with a card in each slot and a Media Module adapter fitted",
    "what": "expansion-options-unseen"
   },
   {
@@ -1206,7 +1232,7 @@
   {
    "because": "L29",
    "blocks": [],
-   "count": 10,
+   "count": 11,
    "kind": "derived",
    "wanted": "a `power-draw-max-w` on each module this chassis accepts, from the vendor's own per-card table - Cisco publishes one per ambient, most vendors publish none, and until they land a module total is a floor",
    "what": "module-power"
