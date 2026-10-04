@@ -26,7 +26,11 @@ concurrency:
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 40, not 20: the browser pass had grown to 20 min 2 s on main (3921fcd6) and
+    # #105's fifteen more checks ran into the old limit, which GitHub reports as
+    # "cancelled", not as a failure. This is headroom until the pass is split
+    # across parallel jobs.
+    timeout-minutes: 40
     steps:
       # depth 1 deliberately: assets/dist is ~286 MB of committed build output
       # and none of these checks reads a second commit.
