@@ -8490,6 +8490,85 @@ def check_rack_export_sheet_cables(page, base):
     return bad
 
 
+@extra("rack.html: Export - draw.io draws each landed cable as an edge between port cells, across the two cabinets, in the page's colors; a loose end is a note")
+def check_rack_export_drawio_cables(page, base):
+    from collections import Counter
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"draw.io cables: {e}"]
+    dl = export_file(page, "drawio")
+    status = export_status(page)
+    text = pathlib.Path(dl.path()).read_text(encoding="utf-8")
+    try:
+        d = drawio_page(text)
+    except ET.ParseError as e:
+        return bad + [f"draw.io cables: not well-formed XML ({e})"]
+    if d["names"] != ["Cable test"] or sorted(d["cabinets"]) != ["g0r0-front", "g0r1-front"]:
+        return bad + [f"draw.io cables: pages {d['names']}, cabinets {sorted(d['cabinets'])}"]
+    dup = [i for i, c in Counter(d["ids"]).items() if c > 1]
+    if dup:
+        bad.append(f"draw.io cables: duplicate cell ids {dup[:5]}")
+    colors = page.evaluate("async () => (await import('/site/rack/cables.js')).COLORS")
+    style = "edgeStyle=orthogonalEdgeStyle;rounded=1;endArrow=none;startArrow=none;strokeWidth=2;fontSize=8;" \
+            "labelBackgroundColor=#FFFFFF;strokeColor={};"
+    got = {o.get("id"): {"label": o.get("label"), "cable": o.get("portrayal-cable"), "media": o.get("portrayal-media"),
+                         "purpose": o.get("portrayal-purpose"), "length": o.get("portrayal-length"),
+                         "source": o.find("mxCell").get("source"), "target": o.find("mxCell").get("target"),
+                         "style": o.find("mxCell").get("style")} for o in d["edges"]}
+    want = {
+        # Both ends in the front cabinet: a seated card's port is a cell like any other.
+        "cable-c1": {"label": "A1 · 2 m", "cable": "c1", "media": "os2", "purpose": "uplink", "length": "2 m",
+                     "source": "i2-g0r0-front-port-1", "target": "i1-g0r0-front-slot-2--module--p0",
+                     "style": style.format(colors["os2"])},
+        # Front cabinet to rear cabinet, one edge: the demarc's front panel is what the rear shows.
+        "cable-c2": {"label": "", "cable": "c2", "media": "cat6a", "purpose": "management", "length": None,
+                     "source": "i2-g0r0-front-mgmt-eth", "target": "i3-rear-g0r1-front-port-2-1",
+                     "style": style.format(colors["cat6a"])}}
+    if got != want:
+        bad.append(f"draw.io cables: the edges are {got}")
+    for e in got.values():
+        for end in (e["source"], e["target"]):
+            if end not in d["ids"]:
+                bad.append(f"draw.io cables: an edge ends at {end!r}, which is no cell in the file")
+    notes = text.partition("-->")[0]
+    for note in ("Cable c3 is not drawn: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic).",
+                 "Cable c3: OS2 single-mode fiber does not suit end B, which is copper."):
+        if note not in notes:
+            bad.append(f"draw.io cables: the notes lack {note!r}")
+    for bit in ("not in this export yet", "@rear", "names no mounted device", "is not a port in"):
+        if bit in notes:
+            bad.append(f"draw.io cables: the notes a person reads carry {bit!r}")
+    n = len([l for l in notes.splitlines() if l.startswith("- ")])
+    if n != 4 or status != notes_status(n):
+        bad.append(f"draw.io cables: {n} notes in the file, and the status reads {status!r}")
+
+    # An end whose device is hidden in the cabinet that would show it: leaf-1
+    # turned shows its ports to the rear, where the demarc at U14 covers it.
+    # And a cable with no media takes the neutral color.
+    odd = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+      const of = C.chassisLookup(await C.loadChassis());
+      const r = window.__rack.doc().racks[0];
+      const hidden = await X.drawioFile({...r, items: r.items.map(i => (i.id === 'i2' ? {...i, turned: true} : i))}, of);
+      const plain = await X.drawioFile({...r, cables: [{...r.cables[1], media: '', label: '<b>&"'}]}, of);
+      const edge = new DOMParser().parseFromString(plain.data, 'application/xml').querySelector('object[portrayal-cable]');
+      return {hidden: hidden.notes, hiddenEdges: (hidden.data.match(/portrayal-cable=/g) || []).length,
+              style: edge?.querySelector('mxCell').getAttribute('style') || '', label: edge?.getAttribute('label'),
+              media: edge?.getAttribute('portrayal-media')};
+    }""")
+    if "Cable A1 is not drawn: end A, leaf-1 (U14) port-1, has no port drawn in the rear cabinet." not in odd["hidden"] \
+            or odd["hiddenEdges"] != 0:
+        bad.append(f"draw.io cables: a cable to a hidden device: {odd['hiddenEdges']} edges, notes {odd['hidden']}")
+    if not odd["style"].endswith(f"strokeColor={colors['unset']};") or odd["media"] is not None:
+        bad.append(f"draw.io cables: a cable with no media is styled {odd['style'][-30:]!r}, media {odd['media']!r}")
+    if odd["label"] != '<b>&"':
+        bad.append(f"draw.io cables: a cable's label is not its own text: {odd['label']!r}")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

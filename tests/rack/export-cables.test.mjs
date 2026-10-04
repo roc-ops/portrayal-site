@@ -161,3 +161,44 @@ test("draw.io: the second cabinet's label is changed by one exact replace, escap
   assert.throws(() => X.rearCabinetLabel(file(cab('g0r0-front', 'x · front'), ''), 'x'), /rear cabinet/);
   assert.throws(() => X.rearCabinetLabel(file(cab('g0r0-front', 'x · front'), cab('g0r1-front', 'y · front')), 'x'), /rear cabinet/);
 });
+
+test('draw.io: an edge is filed under the media that colors it', () => {
+  assert.equal(X.drawioMedia({media: 'os2', purpose: 'uplink'}), 'os2');
+  assert.equal(X.drawioMedia({media: '', purpose: 'x'}), '');
+  assert.equal(X.drawioMedia({purpose: 'x'}), '');
+  assert.equal(X.drawioMedia({media: 'copper', purpose: 'management'}), 'copper-management');
+  assert.equal(X.drawioMedia({media: 'copper', purpose: ''}), 'copper-server');
+});
+
+test('draw.io: each end names the cabinet that shows its panel; a loose end or an undrawn port is a note, not an edge', () => {
+  const idOf = (id, pane) => X.drawioId(id, pane, '@rear');
+  const all = () => true;
+  const got = X.drawioCables(RACK, {ends: ENDS, idOf, drawn: all});
+  assert.deepEqual(got.cables, [
+    {id: 'c1', a: {item: 'i2', path: 'port-1'}, b: {item: 'i1', path: 'slot-2/module/p0'}, media: 'os2',
+     purpose: 'uplink', label: 'A1', length: {value: 2, unit: 'm', source: 'entered'}},
+    // leaf-1's front panel is in the front cabinet; the rear-mounted demarc's front panel is in the rear one.
+    {id: 'c2', a: {item: 'i2', path: 'mgmt-eth'}, b: {item: 'i3@rear', path: 'port-2-1'}, media: 'cat6a',
+     purpose: 'management', label: ''}]);
+  assert.deepEqual(got.notes, [
+    'Cable c3 is not drawn: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic).',
+    'Cable c3: OS2 single-mode fiber does not suit end B, which is copper.']);
+  // A turned device shows its front panel on the other side.
+  const turned = {...RACK, items: RACK.items.map(i => (i.id === 'i2' ? {...i, turned: true} : i))};
+  assert.equal(X.drawioCables(turned, {ends: ENDS, idOf, drawn: all}).cables[0].a.item, 'i2@rear');
+  // A port its cabinet does not draw: the device is hidden there, or the port is not in the drawing.
+  const asked = [];
+  const hidden = X.drawioCables(RACK, {ends: ENDS, idOf, drawn: (id, pane, path) => { asked.push([id, pane, path]); return id !== 'i3'; }});
+  assert.deepEqual(asked, [['i2', 'front', 'port-1'], ['i1', 'front', 'slot-2/module/p0'],
+                           ['i2', 'front', 'mgmt-eth'], ['i3', 'rear', 'port-2-1']]);
+  assert.deepEqual(hidden.cables.map(c => c.id), ['c1']);
+  assert.equal(hidden.notes.at(-1),
+    'Cable c2 is not drawn: end B, demarc (U14) port-2-1, has no port drawn in the rear cabinet.');
+  // Not checked, and a device gone: the cable is still not an edge to nothing, and no cabinet id is in a note.
+  const gone = {...RACK, items: RACK.items.filter(i => i.id !== 'i3')};
+  const un = X.drawioCables(gone, {idOf, drawn: all});
+  assert.deepEqual(un.cables.map(c => c.id), ['c1', 'c3']);
+  assert.deepEqual(un.notes, ["Cable c2 is not drawn: end B, a removed device's port-2-1, names a device that is not in the rack."]);
+  assert.ok(![...got.notes, ...hidden.notes, ...un.notes].some(n => n.includes('@rear')));
+  assert.deepEqual(X.drawioCables({...RACK, cables: []}, {idOf, drawn: all}), {cables: [], notes: []});
+});

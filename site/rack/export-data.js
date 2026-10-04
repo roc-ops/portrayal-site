@@ -5,7 +5,7 @@
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
 import {uLabel} from './model.js';
-import {endKey, endName, cableName, mismatch, lengthText, MEDIA_LABELS} from './cable-rules.js';
+import {endKey, endName, cableName, paneOf, mismatch, lengthText, MEDIA_LABELS} from './cable-rules.js';
 
 export const uniq = list => [...new Set(list)];
 
@@ -278,6 +278,46 @@ export function rearCabinetLabel(xml, label) {
   const at = xml.indexOf(was, Math.max(0, xml.indexOf('<diagram')));
   if (at < 0) throw new Error("draw.io: the rear cabinet's label cell was not found");
   return xml.slice(0, at) + cellOf('rear') + xml.slice(at + was.length);
+}
+
+// DRAW.IO CABLES (Phase 2b ruling 2). The vendor colors an edge by looking
+// its cable's `media` up in a table, so the media handed to it is the key the
+// color is filed under: the cable's own media, except the showcase's
+// 'copper', which is colored by purpose and so is keyed with it.
+export const drawioMedia = l => (l.media === 'copper' ? `copper-${l.purpose || 'server'}` : String(l.media || ''));
+
+// The rack's cables as vendor/drawio.js rackDiagram takes them, and the notes
+// for the ones it is not given. An end names the mounted entry of the CABINET
+// that shows its panel (paneOf), by that cabinet's id for the item (`idOf`),
+// and carries no `view`: every drawing is filed under one face key.
+//   - A cable with a loose end is not an edge: an empty cage is still a port
+//     cell, and an edge to it would say "connected". cableNotes says why.
+//   - A cable whose port has no cell in its cabinet (`drawn(itemId, pane,
+//     path)` is false: the device is hidden behind another there, or the port
+//     is not in the drawing) is not an edge either, and is noted here, in
+//     words - the vendor's own note would print the cabinet ids.
+export function drawioCables(rack, {ends = new Map(), idOf, drawn}) {
+  const byId = new Map(rack.items.map(i => [i.id, i]));
+  const cables = [], notes = cableNotes(rack, ends, {undrawn: true});
+  for (const f of cableFindings(rack, ends)) {
+    if (f.loose.length) continue;
+    const c = f.cable;
+    const sides = [['A', c.a], ['B', c.b]].map(([side, end]) => {
+      const it = byId.get(end.item) || null, pane = it ? paneOf(it, end.view) : null;
+      return {side, end, it, pane, ok: !!it && drawn(it.id, pane, end.path)};
+    });
+    const missing = sides.filter(s => !s.ok);
+    if (missing.length) {
+      const why = missing.map(s => `end ${s.side}, ${endName(rack, s.end)}, ` +
+        (s.it ? `has no port drawn in the ${s.pane} cabinet` : 'names a device that is not in the rack'));
+      notes.push(`Cable ${f.name} is not drawn: ${why.join('; ')}.`);
+      continue;
+    }
+    const [a, b] = sides.map(s => ({item: idOf(s.it.id, s.pane), path: s.end.path}));
+    cables.push({id: c.id, a, b, media: drawioMedia(c), purpose: c.purpose, label: c.label,
+                 ...(c.length ? {length: c.length} : {})});
+  }
+  return {cables, notes};
 }
 
 // ── DCIM (spec §8) ─────────────────────────────────────────────────────

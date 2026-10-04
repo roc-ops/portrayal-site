@@ -27,10 +27,12 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel} from './export-data.js';
+        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel,
+        drawioCables, drawioMedia} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats} from './cable-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
+import {COLORS, colorOf} from './cables.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FACE_W = OPENING + RAIL_W * 2 + 12;     // drawElevation's own viewBox width
@@ -200,39 +202,57 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   }
 }
 
-// DRAW.IO (spec §8, Phase 2b ruling 1): ONE page, a cabinet per face. Each
-// cabinet holds what is mounted on that side and the far panel of whatever
-// nothing mounted there covers (perFaceItems); a device hidden behind another
-// is listed in the notes. Each face is the configured face that side shows
-// (panelFor), so a seated card's ports are connection points carrying
-// portrayal-path. The two cabinets are two racks of one group (export-data.js
-// says why), and the second one's label is put right afterwards.
+// DRAW.IO (spec §8, Phase 2b rulings 1 and 2): ONE page, a cabinet per face,
+// and the cables as edges between port cells. Each cabinet holds what is
+// mounted on that side and the far panel of whatever nothing mounted there
+// covers (perFaceItems); a device hidden behind another is listed in the
+// notes. Each face is the configured face that side shows (panelFor), drawn
+// with the plugs its cables seat, so a seated card's ports are connection
+// points carrying portrayal-path. The two cabinets are two racks of one group
+// (export-data.js says why), and the second one's label is put right
+// afterwards.
+//
+// A cable is handed to the vendor only when both its ends land and both have
+// a port cell (export-data.js drawioCables); the rest are notes, written here
+// in the page's words. Edge colors are cables.js's, by media, as on the page.
 export async function drawioFile(rack, chassisOf) {
-  const items = itemsWithU(rack, chassisOf);
+  const base = itemsWithU(rack, chassisOf);
+  const {cabled, facts, items} = await cabledItems(rack, base);
   const H = rack.frame.heightRU;
   const lists = perFaceItems(items);
-  const notes = await faceNotesFor(rack, items, ['front', 'rear'], chassisOf);
+  const notes = await faceNotesFor(rack, base, ['front', 'rear'], chassisOf, {cables: false});
   for (const h of lists.hidden)
     notes.push(`${h.pane === 'front' ? 'Front' : 'Rear'} cabinet: ${h.item.label} is behind ${h.by.label} and is not drawn there.`);
   const numDisp = rack.frame.numbering === 'top-down' ? 'ascend' : 'descend';
   const suffix = rearSuffix(items);
   const label = htmlText(rack.name);
-  const racks = [];
+  const racks = [], ports = new Set();
   for (const pane of ['front', 'rear']) {
     const mounted = await Promise.all(lists[pane].map(async it => {
       const f = await faceOf(it, panelFor(it, pane));
+      // The port cells this cabinet will hold, as the vendor picks them (cls 'port', by path).
+      for (const p of f?.ports || []) if (p.cls === 'port') ports.add(`${it.id}|${pane}|${p.path || p.id}`);
       // Filed under 'front' in both cabinets: it is the group's one face key, not the side shown.
       return {id: drawioId(it.id, pane, suffix), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
               faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
     }));
     racks.push({label, units: H, numDisp, mounted});
   }
+  const wires = drawioCables(rack, {ends: facts.ends, idOf: (id, pane) => drawioId(id, pane, suffix),
+                                    drawn: (id, pane, path) => ports.has(`${id}|${pane}|${path}`)});
+  if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
+  notes.push(...wires.notes);
+  // The vendor looks a cable's color up by its media, lower-cased; the table is the page's own colors.
+  const cableStyle = {default: COLORS.unset};
+  for (const c of rack.cables || [])
+    cableStyle[drawioMedia(c).toLowerCase()] = colorOf({media: c.media || 'unset', purpose: c.purpose});
   const all = uniq(notes);
   // rackDiagram writes the notes as a comment INSIDE <mxfile>: draw.io reads
   // its <diagram> children and skips a comment there. Names and labels are
   // HTML-escaped above because its label cells are html=1; the page's name is
-  // an attribute, which the vendor escapes itself.
-  const xml = rackDiagram([{label: rack.name || 'Rack', faces: ['front'], racks}], {labels: true, notes: all});
+  // an attribute, and a cable's label is plain text, which the vendor escapes.
+  const xml = rackDiagram([{label: rack.name || 'Rack', faces: ['front'], racks}],
+                          {labels: true, notes: all, cables: wires.cables, cableStyle});
   return {name: `${fileStem(rack.name)}.drawio`, data: rearCabinetLabel(xml, label), type: 'application/xml', notes: all};
 }
 
