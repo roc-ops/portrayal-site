@@ -9448,6 +9448,214 @@ def check_rack_dcim_settings(page, base):
     return bad
 
 
+# One import kit, built by exports.js dcimKit from the rack on the page (with
+# `patch` applied: {numbering, dcim, cables: 'none'}), while `fail` is what the
+# probe makes fail. Returns its name, its README notes, the status line the
+# page would show, and the zip, read: the entry names in order, each text file.
+KIT_JS = """async ([target, patch, fail]) => {
+  const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js'),
+        E = await import('/site/rack/export-data.js');
+  const of = C.chassisLookup(await C.loadChassis());
+  const r = window.__rack.doc().racks[0];
+  const rack = {...r, ...(patch.numbering ? {frame: {...r.frame, numbering: patch.numbering}} : {}),
+                ...(patch.dcim ? {dcim: patch.dcim} : {}), ...(patch.cables === 'none' ? {cables: []} : {})};
+  window.__rack.failExport(fail);
+  try {
+    const k = await X.dcimKit(rack, of, target, {date: new Date(2026, 9, 4)});
+    return {name: k.name, type: k.type, notes: k.notes, files: k.files, status: E.exportStatus(k),
+            zip: Array.from(new Uint8Array(await k.data.arrayBuffer()))};
+  } finally { window.__rack.failExport(null); }
+}"""
+
+
+def built_kit(page, target, patch=None, fail=None):
+    got = page.evaluate(KIT_JS, [target, patch or {}, fail])
+    with zipfile.ZipFile(io.BytesIO(bytes(got.pop("zip")))) as z:
+        got["names"] = z.namelist()
+        got["zip"] = {n: z.read(n).decode("utf-8") for n in got["names"]}
+    return got
+
+
+def kit_rows(kit, name):
+    return list(csv.DictReader(io.StringIO(kit["zip"][name], newline="")))
+
+
+def readme_lists(text):
+    """The README's two lists: what is not in the kit (none, when it says "Nothing"), and the notes."""
+    part = lambda head: [l[2:] for l in text.partition(head + "\n")[2].partition("\n\n")[0].split("\n")
+                         if l.startswith("- ") and not l.startswith("- Nothing: every device, card and cable")]
+    return part("NOT IN THIS KIT:"), part("NOTES:")
+
+
+KIT_TYPES = ["types/device-types/Cisco/ASR-9006-AC-V2.yaml", "types/device-types/Edgecore/7726-32X-O-AC-F.yaml",
+             "types/device-types/Telco Systems/TM-280.yaml", "types/module-types/Cisco/A9K Slot Cover.yaml",
+             "types/module-types/Cisco/A9K-16X100GE-TR.yaml", "types/module-types/Cisco/A9K-3KW-AC.yaml",
+             "types/module-types/Cisco/ASR-9006-FAN.yaml"]
+
+
+@extra("rack.html: the NetBox import kit - types, rack, devices, modules and cables in import order, only rows NetBox takes, and a README for the rest")
+def check_rack_dcim_kit_netbox(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"NetBox kit: {e}"]
+    kit = built_kit(page, "netbox")
+    if (kit["name"], kit["type"]) != ("Cable-test-netbox-import.zip", "application/zip"):
+        bad.append(f"NetBox kit: named {kit['name']!r}, type {kit['type']!r}")
+    want = KIT_TYPES + ["1-rack.csv", "2-devices.csv", "3-modules.csv", "4-cables.csv", "README.txt"]
+    if kit["names"] != want:
+        bad.append(f"NetBox kit: entries {kit['names']}")
+    if any(kit["zip"].get(n) != t for n, t in kit["files"].items()):
+        bad.append("NetBox kit: a file in the zip is not the text the builder reports")
+    if "model: 7726-32X-O-AC-F" not in kit["zip"].get(KIT_TYPES[1], ""):
+        bad.append("NetBox kit: the Edgecore YAML is not the exported file")
+
+    # The fixture has never been given a site or a role: the files leave them blank, and the README's first lines say so.
+    if kit["zip"]["1-rack.csv"] != "site,name,status,width,u_height,desc_units\r\n,Cable test,planned,19,24,false\r\n":
+        bad.append(f"NetBox kit: the rack file reads {kit['zip']['1-rack.csv']!r}")
+    readme = kit["zip"]["README.txt"]
+    lines = readme.split("\n")
+    if lines[0] != "NetBox import kit for Cable test, from the Portrayal Rack Builder, 2026-10-04." or \
+            not lines[2].startswith("2-devices.csv WILL BE REFUSED as it is: its site and role columns are blank"):
+        bad.append(f"NetBox kit: the README opens {lines[:3]}")
+
+    # Devices: demarc-i3 shares U14 with leaf-1, both full depth. NetBox refused that file whole; the row is left out and said.
+    devices = kit_rows(kit, "2-devices.csv")
+    got = [(r["name"], r["manufacturer"], r["device_type"], r["status"], r["rack"], r["position"], r["face"]) for r in devices]
+    if got != [("demarc-i4", "Telco Systems", "TM-280", "planned", "Cable test", "20", "rear"),
+               ("leaf-1", "Edgecore", "7726-32X-O-AC-F", "planned", "Cable test", "14", "front"),
+               ("core-1", "Cisco", "ASR-9006-AC-V2", "planned", "Cable test", "2", "front")]:
+        bad.append(f"NetBox kit: the devices file holds {got}")
+    left, notes = readme_lists(readme)
+    if left != ["demarc-i3 is not in the devices file: it shares U14 with leaf-1 on the front, and NetBox refuses two devices in "
+                "one U, front and rear, while either type is full depth. One refused row refuses the whole file. Import demarc-i3 "
+                "by hand after changing the type's depth, or place it elsewhere.",
+                "Cable c2 is not in the cables file: end B is on demarc-i3, which is not in the devices file.",
+                "Cable c3 is not in the cables file: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic)."]:
+        bad.append(f"NetBox kit: the README's NOT IN THIS KIT list is {left}")
+    if not any("ASR-9006-AC-V2 is a best guess" in n for n in notes) or not any("generic/qsfp-lc@2: no NetBox module type" in n for n in notes):
+        bad.append(f"NetBox kit: the README's notes lost the types' notes: {notes}")
+
+    # Modules: every card in a bay, by the bay's name. The card in slot-2 is what gives core-1 its ports.
+    modules = kit_rows(kit, "3-modules.csv")
+    if list(modules[0].keys()) != ["device", "module_bay", "module_type", "status"] or len(modules) != 11 or \
+            {"device": "core-1", "module_bay": "slot-2", "module_type": "A9K-16X100GE-TR", "status": "planned"} not in modules or \
+            any(r["device"] != "core-1" or r["status"] != "planned" for r in modules):
+        bad.append(f"NetBox kit: the modules file holds {modules}")
+    # Cables: the one cable NetBox would take, as the real instance imported it (result.json, cables_good).
+    cables = kit["zip"]["4-cables.csv"].split("\r\n")
+    if cables != ["side_a_device,side_a_type,side_a_name,side_b_device,side_b_type,side_b_name,type,status,label,color,length,length_unit,description",
+                  "leaf-1,dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,smf-os2,planned,A1,,2,m,uplink", ""]:
+        bad.append(f"NetBox kit: the cables file reads {cables}")
+    # The status counts what the README carries: its warning, what is left out, and its notes.
+    n = 1 + len(left) + len(notes)
+    if len(kit["notes"]) != n or kit["status"] != notes_status(n):
+        bad.append(f"NetBox kit: the README carries {n} notes; the builder reports {len(kit['notes'])} and the status reads {kit['status']!r}")
+    if any("not in this export yet" in t for t in kit["zip"].values()):
+        bad.append("NetBox kit: a file still says cables are not in this export")
+
+    # With the settings: every device row and the rack row carry them, and the warning is gone.
+    kit = built_kit(page, "netbox", {"dcim": {"site": "Lab 1", "role": "Router"}, "numbering": "top-down"})
+    if kit["zip"]["1-rack.csv"].split("\r\n")[1] != "Lab 1,Cable test,planned,19,24,true":
+        bad.append(f"NetBox kit with settings, top-down: the rack row reads {kit['zip']['1-rack.csv']!r}")
+    rows = kit_rows(kit, "2-devices.csv")
+    if any((r["site"], r["role"]) != ("Lab 1", "Router") for r in rows) or {r["name"]: r["position"] for r in rows} != \
+            {"demarc-i4": "5", "leaf-1": "11", "core-1": "14"}:
+        bad.append(f"NetBox kit with settings, top-down: the devices are {[(r['name'], r['site'], r['role'], r['position']) for r in rows]}")
+    readme = kit["zip"]["README.txt"]
+    if "WILL BE REFUSED" in readme or '- the site "Lab 1"\n- the device role "Router"\n' not in readme or \
+            "it shares U11 with leaf-1" not in readme or "numbered from the top." not in readme:
+        bad.append(f"NetBox kit with settings: the README reads {readme[:600]!r}")
+
+    # A rack with no cables still exports a correct kit: the cables file is its header, and the README says it is empty.
+    kit = built_kit(page, "netbox", {"cables": "none"})
+    if kit["names"] != want or kit["zip"]["4-cables.csv"].count("\r\n") != 1 or len(kit_rows(kit, "3-modules.csv")) != 11 or \
+            "5. 4-cables.csv (no rows: it holds its header only, so skip it): Cables > Import." not in kit["zip"]["README.txt"]:
+        bad.append(f"NetBox kit with no cables: {kit['names']}, cables {kit['zip']['4-cables.csv']!r}")
+    if readme_lists(kit["zip"]["README.txt"])[0] != [left[0]]:
+        bad.append(f"NetBox kit with no cables: NOT IN THIS KIT is {readme_lists(kit['zip']['README.txt'])[0]}")
+
+    # A type file that cannot be read costs that type, not the export: the kit says which file, and what it leaves out for it.
+    kit = built_kit(page, "netbox", fail={"type": "TM-280"})
+    left, notes = readme_lists(kit["zip"]["README.txt"])
+    if [r["name"] for r in kit_rows(kit, "2-devices.csv")] != ["leaf-1", "core-1"] or \
+            "types/device-types/Telco Systems/TM-280.yaml" in kit["names"]:
+        bad.append(f"NetBox kit, a type file failing: devices {[r['name'] for r in kit_rows(kit, '2-devices.csv')]}, entries {kit['names']}")
+    for want_note in ("demarc (tm-280): its NetBox device type, netbox/device-types/Telco Systems/TM-280.yaml, couldn't be read, so it has none here.",):
+        if want_note not in notes:
+            bad.append(f"NetBox kit, a type file failing: the notes do not say so: {notes}")
+    if not any(l.startswith("demarc-i4 is not in the devices file: there is no NetBox device type for tm-280 (base).") for l in left):
+        bad.append(f"NetBox kit, a type file failing: the device is not listed as left out: {left}")
+    return bad
+
+
+@extra("rack.html: the Nautobot import kit - devices, modules, a cables file for import_cables.py and the script itself; never a file for Nautobot's own cable import")
+def check_rack_dcim_kit_nautobot(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"Nautobot kit: {e}"]
+    kit = built_kit(page, "nautobot", {"dcim": {"site": "Lab 1", "role": "Router"}})
+    want = KIT_TYPES + ["1-devices.csv", "2-modules.csv", "3-cables.csv", "import_cables.py", "README.txt"]
+    if kit["name"] != "Cable-test-nautobot-import.zip" or kit["names"] != want:
+        bad.append(f"Nautobot kit: {kit['name']!r} with entries {kit['names']}")
+    # The script in the zip is the repository's file, byte for byte.
+    served = page.evaluate("async () => (await fetch('/site/rack/nautobot/import_cables.py')).text()")
+    if kit["zip"].get("import_cables.py") != served or "NAUTOBOT_TOKEN" not in served:
+        bad.append("Nautobot kit: import_cables.py is not the file the site serves")
+
+    # Nautobot accepted two devices at U14, front and rear: its file keeps all four.
+    devices = kit_rows(kit, "1-devices.csv")
+    if [(r["name"], r["role__name"], r["location__name"], r["status__name"], r["position"], r["face"]) for r in devices] != [
+            ("demarc-i4", "Router", "Lab 1", "Planned", "20", "rear"), ("leaf-1", "Router", "Lab 1", "Planned", "14", "front"),
+            ("demarc-i3", "Router", "Lab 1", "Planned", "14", "rear"), ("core-1", "Router", "Lab 1", "Planned", "2", "front")]:
+        bad.append(f"Nautobot kit: the devices file holds {devices}")
+    modules = kit_rows(kit, "2-modules.csv")
+    if len(modules) != 11 or {"module_type__manufacturer__name": "Cisco", "module_type__model": "A9K-16X100GE-TR",
+                             "parent_module_bay__parent_device__name": "core-1", "parent_module_bay__name": "slot-2",
+                             "status__name": "Planned"} not in modules:
+        bad.append(f"Nautobot kit: the modules file holds {modules}")
+    cables = kit["zip"]["3-cables.csv"].split("\r\n")
+    if cables != ["a_device,a_type,a_name,b_device,b_type,b_name,type,status,label,color,length,length_unit",
+                  "leaf-1,dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,smf-os2,Planned,A1,,2,m",
+                  "leaf-1,dcim.interface,mgmt-eth,demarc-i3,dcim.interface,port-2-1,cat6a,Planned,c2,,,", ""]:
+        bad.append(f"Nautobot kit: the cables file reads {cables}")
+    # No file in the kit can be fed to Nautobot's own cable importer: none has its id columns.
+    if any("termination_a" in t for n, t in kit["zip"].items() if n.endswith(".csv")):
+        bad.append("Nautobot kit: a CSV has Nautobot's own cable columns")
+    readme = kit["zip"]["README.txt"]
+    left, notes = readme_lists(readme)
+    if left != ["Cable c3 is not in the cables file: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic)."]:
+        bad.append(f"Nautobot kit: NOT IN THIS KIT is {left}")
+    for line in ("4. 3-cables.csv (2 rows), with import_cables.py. DO NOT give 3-cables.csv to Nautobot's own importer: Nautobot "
+                 "takes a cable's ends by id only, and from a file that names them it creates cables with no ends.",
+                 "     python3 import_cables.py 3-cables.csv --apply     (creates the cables)",
+                 '- the rack "Cable test" in that location: 24U, numbered from the bottom. This kit has no rack file for Nautobot.',
+                 "This step is written from Nautobot's source and was NOT verified against Nautobot 3.2."):
+        if line not in readme:
+            bad.append(f"Nautobot kit: the README lacks {line[:70]!r}")
+    if "WILL BE REFUSED" in readme or len(kit["notes"]) != len(left) + len(notes) or kit["status"] != notes_status(len(left) + len(notes)):
+        bad.append(f"Nautobot kit: {len(left) + len(notes)} README notes; the builder reports {len(kit['notes'])}, status {kit['status']!r}")
+
+    # The script cannot be fetched: the kit still comes, without it, and says where it is.
+    kit = built_kit(page, "nautobot", fail={"script": True})
+    if "import_cables.py" in kit["names"] or readme_lists(kit["zip"]["README.txt"])[0][0] != \
+            "import_cables.py could not be fetched, so it is not in this zip. It is at https://portrayal.dev/site/rack/nautobot/import_cables.py.":
+        bad.append(f"Nautobot kit without the script: entries {kit['names']}, {readme_lists(kit['zip']['README.txt'])[0][:1]}")
+    # The cabled ends cannot be read: no cable is written (a loose end might be among them), and each is listed.
+    kit = built_kit(page, "nautobot", fail={"facts": True})
+    left = readme_lists(kit["zip"]["README.txt"])[0]
+    if kit["zip"]["3-cables.csv"].count("\r\n") != 1 or left != [f"Cable {c} is not in the cables file: its ends could not be checked." for c in ("A1", "c2", "c3")]:
+        bad.append(f"Nautobot kit, ends unchecked: cables {kit['zip']['3-cables.csv']!r}, left {left}")
+    if len(kit_rows(kit, "1-devices.csv")) != 4:
+        bad.append("Nautobot kit, ends unchecked: the devices file lost rows")
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

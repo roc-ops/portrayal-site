@@ -27,9 +27,11 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, sheetCableNotes, cableNames, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
-        drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing} from './export-data.js';
+        drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing, uniqueNames, rackImportRows} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {mergeSeats, endKey, endName} from './cable-rules.js';
+import {mergeSeats, endKey, endName, portPathOf} from './cable-rules.js';
+import {dcimOf} from './model.js';
+import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, KIT_FILES, KIT_SCRIPT} from './dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
 
@@ -412,24 +414,40 @@ async function seatedPartsOf(rack, items) {
   return {parts, notes: uniq(notes)};
 }
 
-export async function dcimContext(rack, chassisOf, target, {modules = true} = {}) {
+// WHAT A RACK IS IN A DCIM: each item's device type (the matched file, its
+// identity lines and its own name lists), and - with `modules` - every seated
+// part with its module type. `cables: false` is for a file that carries the
+// cables, and so does not say they are left out. A type file that cannot be
+// read costs that one type, never the export: the device or the part is then
+// one with no type, and a note says which file it was.
+export async function dcimContext(rack, chassisOf, target, {modules = true, cables = true} = {}) {
   const T = TARGET_NAME[target];
   const [index, files, comps] = await Promise.all([
     fetchJson(`${EXPORTS_BASE}index.json`), fetchJson(`${EXPORTS_BASE}files.json`), components()]);
   const items = itemsWithU(rack, chassisOf);
-  const notes = [...rackNotes(rack), ...mountNotes(items, chassisOf, rack.frame)];
+  const notes = [...rackNotes(rack, {cables}), ...mountNotes(items, chassisOf, rack.frame)];
   const types = new Map();
+  const readType = path => (probeFail.type && path.includes(probeFail.type)
+    ? Promise.reject(new Error('probe: this type file cannot be read')) : fetchText(exportUrl(path)));
   for (const it of items) {
     const manufacturer = chassisOf(it.ref)?.manufacturer;
     const m = matchDeviceType({cfg: it.cfg, manufacturer, paths: index[it.ref]?.[target] || []});
     if (!m) { types.set(it.id, null); notes.push(`${it.label} (${it.ref}): no ${T} device type.`); continue; }
-    const head = yamlHead(await fetchText(exportUrl(m.path)));
+    let text;
+    try { text = await readType(m.path); }
+    catch (err) {
+      console.warn('[portrayal] export: a device type file', m.path, err);
+      types.set(it.id, null);
+      notes.push(`${it.label} (${it.ref}): its ${T} device type, ${m.path}, couldn't be read, so it has none here.`);
+      continue;
+    }
+    const head = yamlHead(text);
     // matchDeviceType falls back past the manufacturer filter when no file is in
     // the chassis's own folder; that shows as a file from another vendor's.
     const otherVendor = vendorOf(m.path) !== manufacturer;
     // chassisManufacturer is the chassis catalog's value; `manufacturer` below is the YAML's.
     types.set(it.id, {...m, otherVendor, chassisManufacturer: manufacturer, manufacturer: head.manufacturer ?? '', model: head.model ?? '',
-                      isFullDepth: head.isFullDepth});
+                      isFullDepth: head.isFullDepth, lists: typeLists(text)});
     if (otherVendor)
       notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer, path: m.path}));
     else if (m.guess)
@@ -445,9 +463,19 @@ export async function dcimContext(rack, chassisOf, target, {modules = true} = {}
     for (const [ref, labels] of users) {
       const comp = findComp(comps, ref);
       const model = partNumber(comp);
-      const path = moduleTypePath(files[target] || [], model);
-      out.modules.push({ref, comp, model, path});
-      if (!path) notes.push(`${ref}${model ? ` (${model})` : ''}: no ${T} module type; seated in ${uniq(labels).join(', ')}.`);
+      let path = moduleTypePath(files[target] || [], model), type = null;
+      if (path) {
+        // The module type's own identity and name lists: what a module row names, and what a card's port is called.
+        try {
+          const lists = typeLists(await readType(path));
+          type = {manufacturer: lists.manufacturer ?? '', model: lists.model ?? '', lists};
+        } catch (err) {
+          console.warn('[portrayal] export: a module type file', path, err);
+          notes.push(`${ref}${model ? ` (${model})` : ''}: its ${T} module type, ${path}, couldn't be read, so it has none here; seated in ${uniq(labels).join(', ')}.`);
+          path = null;
+        }
+      } else notes.push(`${ref}${model ? ` (${model})` : ''}: no ${T} module type; seated in ${uniq(labels).join(', ')}.`);
+      out.modules.push({ref, comp, model, path, type});
     }
     out.parts = parts;
   }
@@ -482,6 +510,109 @@ export async function deviceImportCsv(rack, chassisOf, target) {
   return {name: `${fileStem(rack.name)}-${target}-devices.csv`, data: toCsv(columns, rows),
           type: 'text/csv', notes: rows.map(r => r.comments).filter(Boolean),
           left: [...rackNotes(rack), ...left.map(l => l.reason)]};
+}
+
+// The console ports each cabled device's drawing has, by item id: a console
+// port is named in a type file by its own list, not by its path (dcim-rules.js
+// resolveEnd), and the drawing says which ports those are (data-role). Only
+// devices with a cabled end are read. A panel with no drawing has none: its
+// ends are loose already.
+async function consolePorts(rack, items) {
+  const cabled = new Set((rack.cables || []).flatMap(c => [c.a.item, c.b.item]));
+  const out = new Map();
+  for (const it of items) {
+    if (!cabled.has(it.id)) continue;
+    const paths = [];
+    for (const view of ['front', 'rear']) {
+      const f = await faceOf(it, view);
+      if (!f) continue;
+      const doc = new DOMParser().parseFromString(f.text, 'image/svg+xml');
+      for (const n of doc.querySelectorAll('[data-class="port"][data-role="console"][data-path]'))
+        paths.push(portPathOf(n.getAttribute('data-path')));
+    }
+    out.set(it.id, uniq(paths));
+  }
+  return out;
+}
+
+// The Nautobot kit's script: a real file of the site, fetched as any other.
+const SCRIPT_URL = `site/rack/nautobot/${KIT_SCRIPT}`;
+
+// THE IMPORT KIT (Phase 2c ruling 1): ONE zip per target, its files numbered
+// in the order they are imported, with a README.txt that says what to do with
+// each, what must already exist, and everything the kit could not carry.
+//   NetBox:   types/…, 1-rack.csv, 2-devices.csv, 3-modules.csv, 4-cables.csv
+//   Nautobot: types/…, 1-devices.csv, 2-modules.csv, 3-cables.csv and
+//             import_cables.py, which creates the cables from that file
+// Every CSV is written verbatim (no formula guard: an importer reads it
+// literally) and is in the zip even with no rows. A device's name is
+// uniqueNames' and its U is positionOf, the same in every file. A row the
+// target would refuse is left out and listed in the README (dcim-rules.js,
+// export-data.js deviceImportRows): NetBox takes a file whole or not at all.
+// `files` is each text file by name, for a caller that wants one without
+// unzipping; `notes` are the README's own, which is what the status counts.
+export async function dcimKit(rack, chassisOf, target, {date = new Date()} = {}) {
+  const nautobot = target === 'nautobot', F = KIT_FILES[nautobot ? 'nautobot' : 'netbox'];
+  const ctx = await dcimContext(rack, chassisOf, target, {cables: false});
+  const dcim = dcimOf(rack), enc = new TextEncoder();
+  const entries = [], files = {}, left = [];
+  const add = (name, text) => { files[name] = text; entries.push({name, bytes: enc.encode(text)}); };
+
+  const paths = uniq([...ctx.types.values()].filter(Boolean).map(t => t.path)
+    .concat(ctx.modules.map(m => m.path).filter(Boolean))).sort();
+  let typeFiles = 0;
+  for (const p of paths) {
+    try { entries.push({name: `types/${p.split('/').slice(1).join('/')}`, bytes: enc.encode(await fetchText(exportUrl(p)))}); typeFiles++; }
+    catch { left.push(`${p} couldn't be fetched, so it is not in this zip.`); }
+  }
+  const manufacturers = uniq([...[...ctx.types.values()].filter(Boolean).map(t => t.manufacturer),
+                              ...ctx.modules.filter(m => m.type).map(m => m.type.manufacturer)].filter(Boolean)).sort();
+
+  const names = uniqueNames(ctx.items);
+  const dev = deviceImportRows({rack, items: ctx.items, types: ctx.types, target, dcim});
+  const out = new Set(dev.left.map(l => l.id));
+  const kept = new Set(ctx.items.filter(i => !out.has(i.id)).map(i => i.id));
+  const deviceOf = id => ctx.types.get(id)?.lists ?? null;
+  const moduleOf = ref => ctx.modules.find(m => m.ref === ref)?.type ?? null;
+  const mod = moduleImportRows({target, parts: ctx.parts, names, kept, deviceOf, moduleOf});
+
+  // The cabled ends, as the page reads them; with no cables nothing is read.
+  const cabled = (rack.cables || []).length > 0;
+  const facts = cabled ? await cableEnds(rack) : UNCHECKED;
+  const consoles = cabled ? await consolePorts(rack, ctx.items) : new Map();
+  const seated = new Map(ctx.parts.filter(p => p.path.endsWith('/module'))
+    .map(p => [`${p.itemId}|${p.path.slice(0, -'/module'.length)}`, moduleOf(p.ref)?.lists ?? null]));
+  const resolve = end => resolveEnd({path: portPathOf(end.path), device: deviceOf(end.item),
+    consoles: consoles.get(end.item) || [], moduleAt: bay => seated.get(`${end.item}|${bay}`) ?? null});
+  const cab = cableImportRows({rack, target, names, kept, resolve, ends: facts.ends,
+                               unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
+
+  const rows = {devices: dev.rows.length, modules: mod.rows.length, cables: cab.rows.length};
+  if (!nautobot) {
+    const r = rackImportRows({rack, dcim});
+    rows.rack = r.rows.length;
+    add(F.rack, toCsv(r.columns, r.rows));
+  }
+  add(F.devices, toCsv(dev.columns, dev.rows));
+  add(F.modules, toCsv(mod.columns, mod.rows));
+  add(F.cables, toCsv(cab.columns, cab.rows));
+  let script = false;
+  if (nautobot) {
+    // The script is a real file of the site (site/rack/nautobot/), fetched into
+    // the zip. If it cannot be, the kit still comes, and says where the script is.
+    try {
+      if (probeFail.script) throw new Error('probe: the script cannot be fetched');
+      entries.push({name: KIT_SCRIPT, bytes: enc.encode(await fetchText(SCRIPT_URL))});
+      script = true;
+    } catch (err) { console.warn(`[portrayal] export: ${KIT_SCRIPT}`, err); }
+  }
+  const notes = [...ctx.notes, ...cab.notes];
+  if (!ctx.items.length) notes.unshift('This rack has no devices, so there is nothing to import.');
+  const readme = kitReadme({target, rack, date, dcim, typeFiles, manufacturers, rows, script,
+                            left: [...left, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes)});
+  add('README.txt', readme.text);
+  return {name: `${fileStem(rack.name)}-${nautobot ? 'nautobot' : 'netbox'}-import.zip`, data: await makeZip(entries, date),
+          type: 'application/zip', notes: readme.notes, files};
 }
 
 // THE BILL OF MATERIALS (spec §8): each device by configuration, each
@@ -540,7 +671,9 @@ export async function bomCsv(rack, chassisOf) {
 // so (export-data.js UNCHECKED_NOTE) rather than calling every end connected.
 // Probe only (rack-page.js, ?probe=1 window.__rack.failExport): make the
 // exports' own reading fail ({facts: true}), or one sheet pane's cables fail
-// to draw ({pane: 'front'}), to see each export without it. Anything that is
+// to draw ({pane: 'front'}), or a DCIM type file whose path holds a text fail
+// to be read ({type: 'TM-280'}), or the Nautobot kit's script fail to be
+// fetched ({script: true}), to see each export without it. Anything that is
 // not such an object - nothing, null - is "nothing fails": it never makes an
 // export throw.
 let probeFail = {};
