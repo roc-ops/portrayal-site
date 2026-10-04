@@ -7555,10 +7555,10 @@ def check_rack_cable_facts_fallback(page, base):
     return bad
 
 
-CABLES_2D = "Cables are drawn in 2D for now. Switch to 2D to see them or to add one."
+CABLES_3D = "Cables are added in 2D. Switch to 2D to add one."
 
 
-@extra("rack.html: in 3D, Cable mode is off with a sentence saying why; the list still selects, edits and deletes; no export carries cables yet")
+@extra("rack.html: in 3D the cables are drawn and Cable mode is off with a sentence saying where cables are added; the list still selects, edits and deletes; an edit to a cable's ends or media rebuilds the scene, an edit to its label does not")
 def check_rack_cables_3d(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -7585,18 +7585,37 @@ def check_rack_cables_3d(page, base):
             "() => document.getElementById('cableBtn').getAttribute('aria-pressed') === 'true'")
     page.click('#rkMode [data-mode="3d"]')
     btn = page.eval_on_selector("#cableBtn", "b => ({disabled: b.disabled, pressed: b.getAttribute('aria-pressed'), title: b.title})")
-    if btn != {"disabled": True, "pressed": "false", "title": CABLES_2D}:
+    if btn != {"disabled": True, "pressed": "false", "title": CABLES_3D}:
         bad.append(f"cables 3D: in 3D the Cable button is {btn}")
     try:
         wait_sel(page, "cables 3D: the sentence", "#cable3dNote")
     except RuntimeError as e:
         return bad + [str(e)]
-    if (page.text_content("#cable3dNote") or "") != CABLES_2D:
+    if (page.text_content("#cable3dNote") or "") != CABLES_3D:
         bad.append(f"cables 3D: the note reads {page.text_content('#cable3dNote')!r}")
 
     # The list still works: select, edit, delete.
     pressed = lambda cid: (f"""() => document.querySelector('#cableList [data-cable-row="{cid}"]')"""
                            f"""?.getAttribute('aria-pressed') === 'true'""")
+    groups = lambda: page.evaluate(
+        "() => (window.__rack.scene().three.scene.getObjectByName('patch-cables')?.children || []).map(g => g.name)")
+
+    def rebuilt(label, old):
+        # A new scene object, built: the old one was disposed by the rebuild.
+        try:
+            page.wait_for_function("s => { const n = window.__rack.scene(); return !!n && n !== s; }",
+                                   arg=old, timeout=READY_3D_MS)
+        except Exception as e:
+            raise RuntimeError(f"{label}: {str(e).splitlines()[0]}") from e
+        old.dispose()
+        return page.evaluate_handle("() => window.__rack.scene()")
+
+    scene = None
+    if not no_webgl:
+        wait_fn(page, "cables 3D: the scene", "() => !!window.__rack.scene()", timeout=READY_3D_MS)
+        scene = page.evaluate_handle("() => window.__rack.scene()")
+        if groups() != ["cable-c1", "cable-c2", "cable-c3"]:
+            bad.append(f"cables 3D: the scene's cables are {groups()}")
     page.click('#cableList [data-cable-row="c1"]')
     wait_fn(page, "cables 3D: a row selects", pressed("c1"))
     page.click("#cableEdit")
@@ -7604,33 +7623,48 @@ def check_rack_cables_3d(page, base):
     page.fill("#cLabel", "B9")
     page.click("#cSave")
     wait_fn(page, "cables 3D: the edit saved", "() => window.__rack.doc().racks[0].cables[0].label === 'B9'")
-
-    # A cable edit changes nothing the 3D view shows, so it does not rebuild the scene.
-    scene = None
-    if not no_webgl:
-        wait_fn(page, "cables 3D: the scene", "() => !!window.__rack.scene()", timeout=READY_3D_MS)
-        scene = page.evaluate_handle("() => window.__rack.scene()")
-    page.click('#cableList [data-cable-row="c3"]')
-    wait_fn(page, "cables 3D: row c3 selects", pressed("c3"))
-    page.click("#cableDelete")
-    wait_fn(page, "cables 3D: the delete", "() => window.__rack.doc().racks[0].cables.length === 2")
-    if scene:
-        page.wait_for_timeout(800)          # past the 300 ms a rebuild would wait
-        if not page.evaluate("s => window.__rack.scene() === s", scene):
-            bad.append("cables 3D: deleting a cable rebuilt the 3D scene")
-        # The kept scene is still good for an export: the guard compares it
-        # with the rack as it is now, and a cables-only commit re-pointed it.
-        try:
+    try:
+        if scene:
+            # A label is nothing the scene draws: the scene is kept, and is still good for an export.
+            page.wait_for_timeout(800)          # past the 300 ms a rebuild would wait
+            if not page.evaluate("s => window.__rack.scene() === s", scene):
+                bad.append("cables 3D: editing a cable's label rebuilt the 3D scene")
             glb = export_file(page, "glb", timeout=READY_3D_MS)
-            if pathlib.Path(glb.path()).stat().st_size < 100:
-                bad.append("cables 3D: the GLB exported after a cable delete is empty")
-        except Exception as e:
-            bad.append(f"cables 3D: no GLB after a cable delete ({str(e).splitlines()[0]})")
-        if not page.evaluate("s => window.__rack.scene() === s", scene):
-            bad.append("cables 3D: exporting after a cable delete rebuilt the 3D scene")
-        scene.dispose()
-    else:
-        print("[check_rack_cables_3d] WebGL unavailable - the no-rebuild step was not exercised")
+            if not export_status(page).startswith("Downloaded") or pathlib.Path(glb.path()).stat().st_size < 100:
+                bad.append("cables 3D: no GLB after a label edit")
+            if not page.evaluate("s => window.__rack.scene() === s", scene):
+                bad.append("cables 3D: exporting after a label edit rebuilt the 3D scene")
+
+            # A cable's media is its color: the scene is rebuilt.
+            colors = page.evaluate("async () => (await import('/site/rack/cables.js')).COLORS")
+            page.click('#cableList [data-cable-row="c2"]')
+            wait_fn(page, "cables 3D: row c2 selects", pressed("c2"))
+            page.click("#cableEdit")
+            wait_sel(page, "cables 3D: c2's edit form", "#cableForm")
+            page.select_option("#cMedia", "dac")
+            page.click("#cSave")
+            scene = rebuilt("cables 3D: the rebuild after a media change", scene)
+            got = {t["id"]: t["color"] for t in page.evaluate(CABLES_3D_JS)["tubes"]}
+            if got.get("c2") != colors["dac"]:
+                bad.append(f"cables 3D: after its media changed to DAC, c2 is {got.get('c2')}, expected {colors['dac']}")
+
+        page.click('#cableList [data-cable-row="c3"]')
+        wait_fn(page, "cables 3D: row c3 selects", pressed("c3"))
+        page.click("#cableDelete")
+        wait_fn(page, "cables 3D: the delete", "() => window.__rack.doc().racks[0].cables.length === 2")
+        if scene:
+            # A cable fewer is a tube fewer: the scene is rebuilt, and the GLB follows it.
+            scene = rebuilt("cables 3D: the rebuild after a delete", scene)
+            if groups() != ["cable-c1", "cable-c2"]:
+                bad.append(f"cables 3D: after deleting c3 the scene's cables are {groups()}")
+            glb = pathlib.Path(export_file(page, "glb", timeout=READY_3D_MS).path()).read_bytes()
+            if b'"cable-c1"' not in glb or b'"cable-c3"' in glb:
+                bad.append("cables 3D: the GLB exported after a cable delete does not match the rack")
+            scene.dispose()
+        else:
+            print("[check_rack_cables_3d] WebGL unavailable - the rebuild steps were not exercised")
+    except RuntimeError as e:
+        return bad + [str(e)]
 
     # Back in 2D: the button works again and what is left is drawn.
     page.click('#rkMode [data-mode="2d"]')
@@ -8009,7 +8043,7 @@ def check_rack_stale_handlers(page, base):
     return bad
 
 
-@extra("rack.html: in 3D, a device edit then a cable edit inside the rebuild's wait - the GLB exported next carries the new device")
+@extra("rack.html: in 3D, a device edit then a cable's label edit inside the rebuild's wait - the GLB exported next carries the new device")
 def check_rack_export_after_cable_edit(page, base):
     bad = []
     page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
@@ -8024,9 +8058,10 @@ def check_rack_export_after_cable_edit(page, base):
     page.wait_for_function("() => window.__rack.scene() != null", timeout=READY_3D_MS)
     page.click("#exportMenu > summary")
     page.wait_for_selector('#exportItems [data-export="glb"]', timeout=READY_MS)
-    # One page task: a device is added (its rebuild waits 300 ms), a cable is
-    # deleted (a cables-only commit, which re-points a CURRENT scene and must
-    # leave this stale one stale), and the export is asked for.
+    # One page task: a device is added (its rebuild waits 300 ms), a cable's
+    # label is changed (a commit the scene reads nothing of, which re-points a
+    # CURRENT scene and must leave this stale one stale), and the export is
+    # asked for.
     downloads = []
     page.on("download", lambda d: downloads.append(d))
     page.evaluate("""() => {
@@ -8034,7 +8069,7 @@ def check_rack_export_after_cable_edit(page, base):
       window.__rack.replaceRack({...r, items: [...r.items, {id: 'i5', ref: 'tm-280', cfg: 'base', label: 'late',
         ru: 22, face: 'front', turned: false, swaps: {}, fields: {}}]});
       const r2 = window.__rack.doc().racks[0];
-      window.__rack.replaceRack({...r2, cables: r2.cables.slice(1)});
+      window.__rack.replaceRack({...r2, cables: r2.cables.map((c, k) => (k ? c : {...c, label: 'renamed'}))});
       document.querySelector('#exportItems [data-export="glb"]').click(); }""")
     # The status settles whether or not a file comes, so a refused export is
     # reported at once and not by waiting out a download that never starts.

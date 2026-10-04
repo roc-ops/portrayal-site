@@ -361,3 +361,30 @@ test('cablePlan3d hands the 3D scene each end as [item id, path, the device\'s o
   assert.deepEqual(C.cablePlan3d(M.newRack()).links, []);
   assert.deepEqual(C.cablePlan3d({items: []}).links, []);
 });
+
+test('sameCables3d: the scene reads which cables there are, their ends and their media, and nothing else', () => {
+  let r = rack();
+  r = C.withCable(r, {a: end('i2', 'port-1'), b: end('i1', 'slot-2/module/p0'), media: 'os2', purpose: 'uplink'}).rack;
+  r = C.withCable(r, {a: end('i2', 'mgmt-eth'), b: end('i3', 'port-2-1'), media: 'cat6a'}).rack;
+  const same = next => C.sameCables3d(r, next);
+  assert.equal(same(r), true);
+  assert.equal(same({...r, name: 'other'}), true);
+  // What the scene does not draw: a label, a purpose, a length, a route.
+  assert.equal(same(C.updateCable(r, 'c1', {label: 'A1'})), true);
+  assert.equal(same(C.updateCable(r, 'c1', {purpose: 'core'})), true);
+  assert.equal(same(C.updateCable(r, 'c1', {length: {value: 2, unit: 'm', source: 'entered'}})), true);
+  assert.equal(same(C.updateCable(r, 'c1', {route: [{item: 'i4'}]})), true);
+  // What it does: the media (the color), an end (the tube and its plugs), a cable more or fewer, their order.
+  assert.equal(same(C.updateCable(r, 'c1', {media: 'om4'})), false);
+  assert.equal(same(C.updateCable(r, 'c1', {a: end('i2', 'port-3')})), false);
+  assert.equal(same(C.updateCable(r, 'c2', {b: end('i4', 'port-2-1')})), false);
+  assert.equal(same(C.updateCable(r, 'c2', {b: end('i3', 'port-2-1', 'rear')})), false);
+  assert.equal(same(C.withoutCable(r, 'c2')), false);
+  assert.equal(same(C.withCable(r, {a: end('i4', 'port-2-1'), b: end('i2', 'port-4')}).rack), false);
+  assert.equal(same({...r, cables: [r.cables[1], r.cables[0]]}), false);
+  assert.equal(same({...r, cables: [{...r.cables[0], id: 'c9'}, r.cables[1]]}), false);
+  // The showcase's 'copper' is colored by its purpose.
+  const cu = C.updateCable(r, 'c2', {media: 'copper', purpose: 'server'});
+  assert.equal(C.sameCables3d(cu, C.updateCable(cu, 'c2', {purpose: 'management'})), false);
+  assert.equal(C.sameCables3d({items: []}, {items: [], cables: []}), true);
+});

@@ -20,7 +20,7 @@ import {save} from './svg-export.js';
 import {exportStatus} from './rack/export-data.js';
 import {cableFacts, UNCHECKED} from './rack/cable-plugs.js';
 import {mergeSeats, endKey, sameEnd, paneOf, portFree, canCable, withCable, updateCable, withoutCable,
-        cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy} from './rack/cable-rules.js';
+        cablesOf, withoutCablesOf, cableName, endName, proposeMedia, countsBy, sameCables3d} from './rack/cable-rules.js';
 import {widenForCables, drawRackCables, roomForCables, portAt, markPort, paintCables} from './rack/cable-view.js';
 import {cableForm, cableList, removePanel} from './rack/cable-panel.js';
 
@@ -29,7 +29,7 @@ const LAST = 'portrayal.rack.last';
 const MODE_KEY = 'portrayal.rack.mode';
 const CANT_OPEN = "This rack couldn't be opened. Reload to try again.";
 const CANT_DRAW = "This rack couldn't be drawn. Reload to try again.";
-const CABLES_2D = 'Cables are drawn in 2D for now. Switch to 2D to see them or to add one.';
+const CABLES_3D = 'Cables are added in 2D. Switch to 2D to add one.';
 function loadMode() {
   try { return localStorage.getItem(MODE_KEY) === '3d' ? '3d' : '2d'; }
   catch { return '2d'; }
@@ -78,13 +78,19 @@ async function rebuild3d() {
   disposeScene3d();
   const built = await mountRack3d($('stage3d'), {rack: forRack, chassisOf, camera});
   if (mine !== stage3dEpoch || S.mode !== '3d') { built?.dispose?.(); return; }
-  // Cables edited while this was building left the items and the frame as
-  // they were (commit() could not re-point a scene that did not exist yet):
-  // the scene is current for the rack as it is now.
+  // An edit made while this was building that the scene does not read (a
+  // cable's label, the rack's name) could not re-point a scene that did not
+  // exist yet: the scene is current for the rack as it is now.
   const now = rack();
   S.scene3d = built;
-  S.scene3dRack = now.items === forRack.items && now.frame === forRack.frame ? now : forRack;
+  S.scene3dRack = sameScene(now, forRack) ? now : forRack;
 }
+// WHAT THE 3D SCENE READS OF A RACK: its items, its frame, and of its cables
+// their ends and media (cable-rules.js sameCables3d). Two racks that agree on
+// those build the same scene. A rack-level field the scene comes to read later
+// (zeroU) must be added here, or an edit to it will leave the scene, and a GLB
+// exported from it, showing the rack as it was.
+const sameScene = (a, b) => a.items === b.items && a.frame === b.frame && sameCables3d(a, b);
 let rebuild3dTimer = null;
 function scheduleRebuild3d() {
   if (S.mode !== '3d') return;
@@ -112,7 +118,7 @@ function showMode() {
   $('rkZoom').inert = is3d;
   // Cable mode needs the panes (Phase 2 ruling 7): in 3D the button is off, and says why.
   $('cableBtn').disabled = is3d;
-  $('cableBtn').title = is3d ? CABLES_2D : '';
+  $('cableBtn').title = is3d ? CABLES_3D : '';
   $('stage3d').hidden = !is3d;
   $('stage3d').style.display = is3d ? '' : 'none';
 }
@@ -212,28 +218,24 @@ async function explore(id) {
 // was is kept whole in S.undo and the notice says what happened. Any other
 // change retires it, so only one Undo is ever pending.
 function commit(nextRack, undoable = null) {
-  // A cable edit (cable-rules.js returns {...rack, cables}) leaves the items
-  // array and the frame the very same objects, as a rename does. The 3D view
-  // draws neither cables nor the name, so such a commit has nothing to
-  // rebuild there. The scene is kept and re-pointed at the new rack, but only
-  // if it was current: one that a device edit already made stale (its rebuild
-  // still pending) stays stale, so an export still rebuilds it first. An
-  // export already running holds the old rack and is discarded by
-  // modelExport's guard, as for any commit.
-  //
-  // THIS TEST KNOWS WHAT THE 3D SCENE READS: `items` and `frame`, nothing
-  // else. A rack-level field the scene comes to read later (cables in 2b,
-  // zeroU) must be added to it, or an edit to that field will leave the scene,
-  // and a GLB exported from it, showing the rack as it was.
+  // The 3D view draws the cables: a commit that adds or removes one, or
+  // changes a cable's ends or media, changes the tubes and the plugs seated
+  // for them, and goes the same debounced rebuild a device edit does. A commit
+  // the scene reads nothing of (a cable's label, purpose or length, the rack's
+  // name) has nothing to rebuild there: the scene is kept and re-pointed at
+  // the new rack, but only if it was current. One that an earlier edit already
+  // made stale (its rebuild still pending) stays stale, so an export still
+  // rebuilds it first. An export already running holds the old rack and is
+  // discarded by modelExport's guard, as for any commit.
   const prev = rack();
-  const sameScene = nextRack.items === prev.items && nextRack.frame === prev.frame;
+  const kept = sameScene(prev, nextRack);
   S.undo = undoable ? prev : null;
   S.undoText = undoable ? undoable.text : '';
   if (undoable) addNotice(undoable.text, 'note');
   S.doc = {...S.doc, racks: [nextRack]};
   S.save.saveSoon(S.doc);
   render();
-  if (!sameScene) scheduleRebuild3d();
+  if (!kept) scheduleRebuild3d();
   else if (S.scene3d && S.scene3dRack === prev) S.scene3dRack = nextRack;
 }
 function select(sel) { S.sel = sel; render(); }
@@ -382,8 +384,9 @@ function cableListPanel() {
 // the summary (or Cable mode's help), then the cable list.
 const homePanel = () => el('div', {}, [
   S.cable.on ? cableModePanel() : summary(),
-  // In 3D the list still selects, edits and deletes; nothing is drawn or lit.
-  S.mode === '3d' ? el('p', {id: 'cable3dNote', class: 'rk-muted', role: 'status', text: CABLES_2D}) : null,
+  // In 3D the cables are drawn and the list still selects, edits and deletes;
+  // a selected cable is not lit in the scene, and a cable is added in 2D.
+  S.mode === '3d' ? el('p', {id: 'cable3dNote', class: 'rk-muted', role: 'status', text: CABLES_3D}) : null,
   cableListPanel()].filter(Boolean));
 
 // A frame change goes through commit() as usual, unless the height drops and

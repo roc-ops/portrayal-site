@@ -117,6 +117,19 @@ export function cablePlan3d(rack) {
     ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', from: end(c.a), to: end(c.b)}))};
 }
 
+// WHAT THE 3D SCENE READS OF THE CABLES: which cables there are, in order,
+// where each one's two ends are, and its media (its color; the showcase's
+// 'copper' is colored by purpose, so there the purpose counts too). Two racks
+// that agree on those draw the same tubes and seat the same plugs. A label, a
+// length, a route, or the purpose of any other media changes nothing in the
+// scene, so an edit to one of those need not rebuild it.
+export function sameCables3d(a, b) {
+  const ca = a.cables || [], cb = b.cables || [];
+  if (ca === cb) return true;
+  const key = c => JSON.stringify([c.id, endKey(c.a), endKey(c.b), c.media || '', c.media === 'copper' ? c.purpose || '' : '']);
+  return ca.length === cb.length && ca.every((c, i) => key(c) === key(cb[i]));
+}
+
 // ── media ───────────────────────────────────────────────────────────────
 export const MEDIA = ['os2', 'om3', 'om4', 'om5', 'cat6', 'cat6a', 'dac', 'aoc'];
 export const MEDIA_LABELS = {
