@@ -8974,6 +8974,97 @@ def check_rack_cables_3d_scene(page, base):
     return bad
 
 
+@extra("rack.html: Export - the GLB and USDZ carry the cables the scene holds, each named for its cable; the GLB's notes list loose ends and mismatches")
+def check_rack_export_3d_cables(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"3D export cables: {e}"]
+
+    # The notes, with scenes that export nothing: only what modelFile says is under test.
+    got = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), E = await import('/site/rack/export-data.js');
+      const r = window.__rack.doc().racks[0];
+      const scene = hung => ({running: () => false, complete: async () => {}, three: {scene: {userData: {}}},
+                              toGLB: async () => new Uint8Array(4), toUSDZ: async () => new Uint8Array(4), rackCables: hung});
+      const link = id => ({id});
+      // As the scene hangs this rack: c1 and c2 land, c3 dangles from its B end.
+      const hung = {tubes: [{link: link('c1'), loose: [], mesh: {}}, {link: link('c2'), loose: [], mesh: {}},
+                            {link: link('c3'), loose: ['from'], mesh: {}}]};
+      // The scene could not place c1's B end, and neither end of c2.
+      const lost = {tubes: [{link: link('c1'), loose: ['to'], mesh: {}}, {link: link('c2'), loose: ['from', 'to'], mesh: null},
+                            {link: link('c3'), loose: ['from'], mesh: {}}]};
+      const out = {};
+      for (const [k, s] of [['hung', scene(hung)], ['lost', scene(lost)], ['none', scene(null)], ['failed', scene({failed: true})]])
+        out[k] = (await X.modelFile(s, r, 'glb')).notes;
+      const usdz = await X.modelFile(scene(hung), r, 'usdz');
+      out.usdz = {notes: usdz.notes, left: usdz.left, status: E.exportStatus(usdz)};
+      out.plain = (await X.modelFile(scene(null), {...r, cables: []}, 'glb')).notes;
+      return out;
+    }""")
+    loose = "Cable c3: end A, leaf-1 (U14) port-2, is not connected (port-2 holds no optic)."
+    mism = "Cable c3: OS2 single-mode fiber does not suit end B, which is copper."
+    if got["hung"] != [loose, mism]:
+        bad.append(f"3D export cables: the notes are {got['hung']}")
+    for want in ("Cable A1: end B, core-1 (U2) slot-2/module/p0, could not be placed in the 3D model, so the cable hangs loose there.",
+                 "Cable c2: end A, leaf-1 (U14) mgmt-eth, and end B, demarc (U14) port-2-1, could not be placed in the 3D model, "
+                 "so the cable is not drawn there."):
+        if want not in got["lost"]:
+            bad.append(f"3D export cables: an end the scene could not place is not noted ({want!r}): {got['lost']}")
+    if len(got["lost"]) != 4:
+        bad.append(f"3D export cables: a loose end the page already explains is noted twice: {got['lost']}")
+    for k in ("none", "failed"):
+        if got[k] != ["The cables could not be drawn in the 3D model."]:
+            bad.append(f"3D export cables: a scene with no cables hung ({k}) says {got[k]}")
+    if got["plain"]:
+        bad.append(f"3D export cables: a rack with no cables has notes {got['plain']}")
+    if got["usdz"]["notes"] or got["usdz"]["left"] != [loose, mism] or \
+            got["usdz"]["status"] != "Downloaded. USDZ carries no notes; the GLB does.":
+        bad.append(f"3D export cables: the USDZ's notes are {got['usdz']}")
+    if any("not in this export yet" in n for k in ("hung", "lost", "none", "failed") for n in got[k]):
+        bad.append("3D export cables: the model still says cables are not in it")
+
+    if webgl_trouble(page):
+        print("[check_rack_export_3d_cables] WebGL unavailable - the files were not exercised")
+        return bad
+    page.click('#rkMode [data-mode="3d"]')
+    wait_fn(page, "3D export cables: the scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    dl = export_file(page, "glb", timeout=READY_3D_MS)
+    status = export_status(page)
+    glb = pathlib.Path(dl.path()).read_bytes()
+    if dl.suggested_filename != "Cable-test.glb" or glb[:4] != b"glTF":
+        return bad + [f"3D export cables: {dl.suggested_filename!r} is not a GLB"]
+    # A GLB is a JSON chunk, then a binary one: the node names and the scene's extras are in the JSON.
+    doc = json.loads(glb[20:20 + int.from_bytes(glb[12:16], "little")].decode("utf-8"))
+    names = [n.get("name") for n in doc["nodes"]]
+    for want in ("patch-cables", "cable-c1", "cable-c2", "cable-c3", "device-i1", "device-i4"):
+        if names.count(want) != 1:
+            bad.append(f"3D export cables: the GLB has {names.count(want)} nodes named {want!r}")
+    notes = doc["scenes"][0].get("extras", {}).get("portrayal", {}).get("notes", [])
+    if notes != [loose, mism]:
+        bad.append(f"3D export cables: the GLB's notes are {notes}")
+    if status != notes_status(2):
+        bad.append(f"3D export cables: the GLB's status reads {status!r}")
+    # The cables are geometry in the GLB: each cable group has mesh children.
+    by_name = {n.get("name"): n for n in doc["nodes"]}
+    for cid in ("c1", "c2", "c3"):
+        kids = by_name.get(f"cable-{cid}", {}).get("children", [])
+        if not kids or any("mesh" not in doc["nodes"][k] for k in kids):
+            bad.append(f"3D export cables: cable-{cid} has no tube in the GLB")
+
+    dl = export_file(page, "usdz", timeout=READY_3D_MS)
+    status = export_status(page)
+    usdz = pathlib.Path(dl.path()).read_bytes()
+    if dl.suggested_filename != "Cable-test.usdz" or usdz[:2] != b"PK":
+        bad.append(f"3D export cables: {dl.suggested_filename!r} is not a USDZ")
+    if status != "Downloaded. USDZ carries no notes; the GLB does.":
+        bad.append(f"3D export cables: the USDZ's status reads {status!r}")
+    page.click('#rkMode [data-mode="2d"]')
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")

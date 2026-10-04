@@ -30,7 +30,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
-import {mergeSeats} from './cable-rules.js';
+import {mergeSeats, endKey, endName, cableName} from './cable-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
 
@@ -266,10 +266,35 @@ export async function drawioFile(rack, chassisOf) {
   return {name: `${fileStem(rack.name)}.drawio`, data: rearNoDrawing(rearCabinetLabel(xml, label)), type: 'application/xml', notes: all};
 }
 
+// What the 3D model carries of the cables, as notes. `hung` is what the scene
+// holds (scene3d.js: built.rackCables): drawCables3d's tubes, or {failed}.
+//   - nothing hung at all: the model has no cables, and says so;
+//   - a loose end, a mismatch: as the sheet says them (cableNotes);
+//   - an end the page calls connected that the scene could not place (no
+//     drawing of that panel in 3D): the cable hangs loose there, and the
+//     model says which end.
+function modelCableNotes(rack, hung, facts) {
+  if (!(rack.cables || []).length) return [];
+  if (!hung || hung.failed) return ['The cables could not be drawn in the 3D model.'];
+  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []), ...cableNotes(rack, facts.ends)];
+  for (const t of hung.tubes) {
+    const c = rack.cables.find(x => x.id === t.link.id);
+    if (!c) continue;
+    const lost = t.loose.map(k => (k === 'from' ? ['A', c.a] : ['B', c.b]))
+      .filter(([, e]) => facts.ends.get(endKey(e))?.reason == null);
+    if (lost.length)
+      out.push(`Cable ${cableName(c)}: ${lost.map(([s, e]) => `end ${s}, ${endName(rack, e)},`).join(' and ')} `
+        + `could not be placed in the 3D model, so the cable ${t.mesh ? 'hangs loose' : 'is not drawn'} there.`);
+  }
+  return out;
+}
+
 // GLB / USDZ (spec §8), from the scene the page built - after complete(), so
-// the deferred relief pass (optics, plugs) has landed. The notes ride in the
-// scene's userData, which GLTFExporter writes as the scene's `extras`. A USDZ
-// has no such place, so its notes come back as `left`, not `notes`.
+// the deferred relief pass (optics, plugs) has landed. The scene holds the
+// rack's cables as tubes (group `patch-cables`, each `cable-<id>`), so both
+// files carry them. The notes ride in the scene's userData, which
+// GLTFExporter writes as the scene's `extras`. A USDZ has no such place, so
+// its notes come back as `left`, not `notes`.
 export async function modelFile(scene, rack, kind, chassisOf = () => null) {
   // The render loop runs on the same thread as the exporters, and both encode
   // each texture with canvas.toBlob(), one await at a time. Each await then
@@ -292,7 +317,9 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
           missing.push(...faceNotes({label: it.label, u: uLabel(rack.frame, it.ru), pane, panel, face: null}));
       }
     }
-    const notes = uniq([...rackNotes(rack), ...mountNotes(rack.items, chassisOf, rack.frame), ...threeDNotes(rack), ...missing]);
+    const facts = (rack.cables || []).length ? await cableEnds(rack) : UNCHECKED;
+    const notes = uniq([...rackNotes(rack, {cables: false}), ...mountNotes(rack.items, chassisOf, rack.frame),
+                        ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts)]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
