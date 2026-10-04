@@ -247,3 +247,70 @@ test('BOM: a panel with no drawing is noted once per device panel, not once per 
   assert.deepEqual(X.cableBomNotes(RACK, ENDS), []);
   assert.deepEqual(X.cableBomNotes({...RACK, cables: []}, ends), []);
 });
+
+// ── fix round: draw.io and the sheet ───────────────────────────────────
+import {rackDiagram} from '../../vendor/drawio.js';
+
+test('draw.io: the mirrored slug equals the vendor\'s on hostile ids', () => {
+  const hostile = ['a b', 'a-b', 'a?', 'a', '??', '-x-', '--', '', 'é', 'a/b\\c', 'a b  c', '<b>&"', 'x.y_z', '__proto__', 'a\nb', '0'];
+  for (const id of hostile) {
+    const xml = rackDiagram([{label: 'g', faces: ['front'], racks: [{label: 'r', units: 4, mounted: [
+      {id, name: 'n', u: 1, ru: 1, faces: {front: {svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"/>', vb: [0, 0, 10, 10], ports: []}}}]}]}], {labels: true});
+    assert.ok(xml.includes(`id="${X.vendorSlug(id)}-g0r0-front"`), `${JSON.stringify(id)} -> ${X.vendorSlug(id)}`);
+  }
+});
+
+test('draw.io: entries whose ids slug alike get an alias that slugs uniquely, per cabinet', () => {
+  const e = (pane, id) => ({pane, id});
+  const got = X.uniqueEntryIds([e('front', 'a b'), e('front', 'a-b'), e('front', 'a-b-2'), e('rear', 'a-b'), e('front', 'a?'), e('front', 'a')]);
+  assert.equal(got[0], 'a b');
+  const slugs = got.slice(0, 3).map(X.vendorSlug);
+  assert.equal(new Set(slugs).size, 3);
+  assert.equal(got[2], 'a-b-2');
+  assert.notEqual(got[1], 'a-b');          // the later of two alike is the one aliased
+  assert.equal(got[3], 'a-b');             // the other cabinet has its own cells
+  assert.equal(new Set([got[4], got[5]].map(X.vendorSlug)).size, 2);
+  assert.equal(new Set(got).size, got.length);   // an alias never repeats a raw id
+  assert.deepEqual(X.uniqueEntryIds([e('front', 'x'), e('front', 'y')]), ['x', 'y']);
+});
+
+test('draw.io: only the rear cabinet\'s dashed box is reworded', () => {
+  const c = (id, value, parent) => `<mxCell id="${id}" value="${value}" style="s" vertex="1" parent="${parent}"></mxCell>`;
+  const xml = `<mxfile host="portrayal"><!--\nNotes:\n- no front drawing\n--><diagram name="x">` +
+    c('a-g0r0-front-none', 'no front drawing', 'g0r0-front') + c('b-g0r1-front-none', 'no front drawing', 'g0r1-front') +
+    c('no-g0r1-front', 'no front drawing', 'g0r1-front') + `</diagram></mxfile>`;
+  const out = X.rearNoDrawing(xml);
+  assert.equal(out, xml.replace('id="b-g0r1-front-none" value="no front drawing"', 'id="b-g0r1-front-none" value="no rear drawing"'));
+  assert.equal(X.rearNoDrawing('<mxfile/>'), '<mxfile/>');
+});
+
+test('draw.io: the rear label is found after the notes, even when a note holds <diagram name=', () => {
+  const cab = (id, value) => `<mxCell id="${id}" value="${value}" style="s" vertex="1" parent="1"></mxCell>`;
+  const fake = cab('g0r1-front', 'x · front');
+  const file = (inner) => `<mxfile host="portrayal"><!--\nNotes:\n- seen <diagram name="x">${inner}\n-->` +
+    `<diagram name="x">${cab('g0r0-front', 'x · front')}${cab('g0r1-front', 'x · front')}</diagram></mxfile>`;
+  const out = X.rearCabinetLabel(file(fake), 'x');
+  assert.ok(out.endsWith(`${cab('g0r0-front', 'x · front')}${cab('g0r1-front', 'x · rear')}</diagram></mxfile>`));
+  assert.ok(out.includes(fake), 'the note is untouched');
+});
+
+test('draw.io: a media that is not safe as a table key falls back to the neutral color', () => {
+  for (const m of ['__proto__', 'constructor', 'default', 'Default', 'a b', 'x;y']) assert.equal(X.drawioMediaKey({media: m}), '', m);
+  assert.equal(X.drawioMediaKey({media: 'OS2'}), 'os2');
+  assert.equal(X.drawioMediaKey({media: 'copper', purpose: 'management'}), 'copper-management');
+  assert.equal(X.drawioMediaKey({media: 'tostring'}), 'tostring');
+  const rack = {...RACK, cables: [{...RACK.cables[0], media: '__proto__'}]};
+  const got = X.drawioCables(rack, {ends: ENDS, idOf: id => id, drawn: () => true});
+  assert.equal(got.cables[0].media, '');
+});
+
+test('draw.io: a cable to a device hidden in its cabinet says what hides it', () => {
+  const idOf = (id, pane) => X.drawioId(id, pane, '@rear');
+  const got = X.drawioCables(RACK, {ends: ENDS, idOf, drawn: (id) => id !== 'i3',
+    hiddenBy: (id, pane) => (id === 'i3' ? 'leaf-1' : null)});
+  assert.equal(got.notes.at(-1), 'Cable c2 is not drawn: end B, demarc (U14) port-2-1, is hidden behind leaf-1 in the rear cabinet.');
+  const un = X.drawioCables(RACK, {ends: new Map(), idOf, drawn: () => true, unchecked: true});
+  assert.deepEqual(un, {cables: [], notes: ['3 cables are not drawn because their ends could not be checked.']});
+  assert.deepEqual(X.drawioCables({...RACK, cables: [RACK.cables[0]]}, {idOf, drawn: () => true, unchecked: true}).notes,
+    ['1 cable is not drawn because its ends could not be checked.']);
+});

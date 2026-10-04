@@ -28,7 +28,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
         cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel,
-        drawioCables, drawioMedia, cableBomNotes} from './export-data.js';
+        drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats} from './cable-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
@@ -86,6 +86,9 @@ const MONO = 'IBM Plex Mono, ui-monospace, monospace';
 // is not connected. So the layer stops being screen UI, and each pill gets
 // fixed ink of its own: no class, no tabindex, no role, no theme token.
 function paperTags(pane) {
+  // pointer-events is a screen concern; the title (hover text) stays as accessible text.
+  for (const n of pane.querySelectorAll('[data-cables][pointer-events], [data-cables] [pointer-events], [data-cable-tags] [pointer-events]'))
+    n.removeAttribute('pointer-events');
   const set = (node, attrs) => { for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v); };
   for (const layer of pane.querySelectorAll(':scope > [data-cable-tags]')) {
     layer.removeAttribute('data-pt-ui');
@@ -160,7 +163,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
           console.warn(`[portrayal] sheet: the ${pane.dataset.pane} face's cables`, err);
           pane.querySelectorAll(':scope > [data-cables], :scope > [data-cable-tags]').forEach(n => n.remove());
-          notes.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet.`);
+          notes.push(`The cables could not be drawn on the ${pane.dataset.pane} face of this sheet; tags on the other face may point at runs that are not drawn.`);
         }
       }
       roomForCables(panes);
@@ -229,6 +232,9 @@ export async function drawioFile(rack, chassisOf) {
   const numDisp = rack.frame.numbering === 'top-down' ? 'ascend' : 'descend';
   const suffix = rearSuffix(items);
   const label = htmlText(rack.name);
+  // A cell id the vendor writes is a slug of the entry's id: two that slug alike get an alias (export-data.js).
+  const entries = ['front', 'rear'].flatMap(pane => lists[pane].map(it => ({pane, it, id: drawioId(it.id, pane, suffix)})));
+  const finals = uniqueEntryIds(entries), idFor = new Map(entries.map((e, i) => [`${e.it.id}|${e.pane}`, finals[i]]));
   const racks = [], ports = new Set();
   for (const pane of ['front', 'rear']) {
     const mounted = await Promise.all(lists[pane].map(async it => {
@@ -236,19 +242,20 @@ export async function drawioFile(rack, chassisOf) {
       // The port cells this cabinet will hold, as the vendor picks them (cls 'port', by path).
       for (const p of f?.ports || []) if (p.cls === 'port') ports.add(`${it.id}|${pane}|${p.path || p.id}`);
       // Filed under 'front' in both cabinets: it is the group's one face key, not the side shown.
-      return {id: drawioId(it.id, pane, suffix), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
+      return {id: idFor.get(`${it.id}|${pane}`), name: htmlText(it.label), u: drawioU(H, it.ru, it.u), ru: it.u,
               faces: f ? {front: {svg: f.text, vb: f.vb, ports: f.ports}} : {}};
     }));
     racks.push({label, units: H, numDisp, mounted});
   }
-  const wires = drawioCables(rack, {ends: facts.ends, idOf: (id, pane) => drawioId(id, pane, suffix),
-                                    drawn: (id, pane, path) => ports.has(`${id}|${pane}|${path}`)});
-  if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
+  const wires = drawioCables(rack, {ends: facts.ends, idOf: (id, pane) => idFor.get(`${id}|${pane}`) ?? drawioId(id, pane, suffix),
+                                    drawn: (id, pane, path) => ports.has(`${id}|${pane}|${path}`),
+                                    hiddenBy: (id, pane) => lists.hidden.find(h => h.item.id === id && h.pane === pane)?.by.label ?? null,
+                                    unchecked: cabled && !!facts.unchecked});
   notes.push(...wires.notes);
   // The vendor looks a cable's color up by its media, lower-cased; the table is the page's own colors.
   const cableStyle = {default: COLORS.unset};
   for (const c of rack.cables || [])
-    cableStyle[drawioMedia(c).toLowerCase()] = colorOf({media: c.media || 'unset', purpose: c.purpose});
+    cableStyle[drawioMediaKey(c)] = drawioMediaKey(c) ? colorOf({media: c.media || 'unset', purpose: c.purpose}) : COLORS.unset;
   const all = uniq(notes);
   // rackDiagram writes the notes as a comment INSIDE <mxfile>: draw.io reads
   // its <diagram> children and skips a comment there. Names and labels are
@@ -256,7 +263,7 @@ export async function drawioFile(rack, chassisOf) {
   // an attribute, and a cable's label is plain text, which the vendor escapes.
   const xml = rackDiagram([{label: rack.name || 'Rack', faces: ['front'], racks}],
                           {labels: true, notes: all, cables: wires.cables, cableStyle});
-  return {name: `${fileStem(rack.name)}.drawio`, data: rearCabinetLabel(xml, label), type: 'application/xml', notes: all};
+  return {name: `${fileStem(rack.name)}.drawio`, data: rearNoDrawing(rearCabinetLabel(xml, label)), type: 'application/xml', notes: all};
 }
 
 // GLB / USDZ (spec §8), from the scene the page built - after complete(), so

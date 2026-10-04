@@ -277,10 +277,54 @@ const xmlAttr = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').repl
 export function rearCabinetLabel(xml, label) {
   const cellOf = face => `id="g0r1-front" value="${xmlAttr(label ? `${label} · ${face}` : face)}"`;
   const was = cellOf('front');
-  // Past the notes comment: inside a <diagram> every attribute value is escaped, so this text is the cell's own.
-  const at = xml.indexOf(was, Math.max(0, xml.indexOf('<diagram')));
+  // Past the notes comment (a note can hold any text, but never "-->": the vendor
+  // writes "--" as "-"): inside a <diagram> every attribute value is escaped,
+  // so this text is the cell's own.
+  const from = afterNotes(xml);
+  const at = xml.indexOf(was, from);
   if (at < 0) throw new Error("draw.io: the rear cabinet's label cell was not found");
   return xml.slice(0, at) + cellOf('rear') + xml.slice(at + was.length);
+}
+const afterNotes = xml => { const end = xml.indexOf('-->'); return end < 0 ? 0 : end + 3; };
+
+// The vendor writes a dashed box "no <face> drawing" for a device with nothing
+// drawn on a side, and every entry is filed under the face 'front'. In the
+// rear cabinet (cells whose parent is g0r1-front, ids ending -none) the box is
+// reworded, tag by tag: nothing else in the file is touched.
+export function rearNoDrawing(xml) {
+  const text = 'value="no front drawing"';
+  let out = '', pos = afterNotes(xml), at;
+  out = xml.slice(0, pos);
+  while ((at = xml.indexOf(text, pos)) >= 0) {
+    const open = xml.lastIndexOf('<mxCell ', at), close = xml.indexOf('>', at);
+    const tag = xml.slice(open, close + 1);
+    const mine = open >= pos && /^<mxCell id="[^"]*-none" /.test(tag) && tag.endsWith(' parent="g0r1-front">');
+    out += xml.slice(pos, at) + (mine ? 'value="no rear drawing"' : text);
+    pos = at + text.length;
+  }
+  return out + xml.slice(pos);
+}
+
+// THE VENDOR'S CELL IDS. vendor/drawio.js slugs each entry's id into its cell
+// ids, and a cell id that repeats is silently dropped by draw.io, so two ids
+// that slug alike would put two devices' cables on one cell. vendorSlug is a
+// copy of its rule (a test builds a diagram and compares them, so a vendor
+// refresh that changes it fails); uniqueEntryIds gives the later of two alike
+// in a cabinet an alias that slugs to something no entry in it has.
+export const vendorSlug = s => String(s).replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-|-$/g, '');
+export function uniqueEntryIds(entries) {
+  const natural = {front: new Set(entries.filter(e => e.pane === 'front').map(e => vendorSlug(e.id))),
+                   rear: new Set(entries.filter(e => e.pane === 'rear').map(e => vendorSlug(e.id)))};
+  const raw = new Set(entries.map(e => e.id)), seen = {front: new Set(), rear: new Set()};
+  return entries.map(({pane, id}) => {
+    const s = vendorSlug(id);
+    if (!seen[pane].has(s)) { seen[pane].add(s); return id; }
+    let n = 2, alias;
+    do alias = `${s || 'item'}-${n++}`;
+    while (natural[pane].has(vendorSlug(alias)) || seen[pane].has(vendorSlug(alias)) || raw.has(alias));
+    seen[pane].add(vendorSlug(alias)); raw.add(alias);
+    return alias;
+  });
 }
 
 // DRAW.IO CABLES (Phase 2b ruling 2). The vendor colors an edge by looking
@@ -299,8 +343,20 @@ export const drawioMedia = l => (l.media === 'copper' ? `copper-${l.purpose || '
 //     path)` is false: the device is hidden behind another there, or the port
 //     is not in the drawing) is not an edge either, and is noted here, in
 //     words - the vendor's own note would print the cabinet ids.
-export function drawioCables(rack, {ends = new Map(), idOf, drawn}) {
+// The key as the vendor's color table can take it: its lookup is a plain
+// object, so a hand-edited media called __proto__, constructor or default would
+// read another entry (or the whole table). Such a media takes the neutral color.
+export function drawioMediaKey(l) {
+  const k = drawioMedia(l).toLowerCase();
+  return /^[a-z0-9][a-z0-9-]*$/.test(k) && !(k in {}) && k !== 'default' ? k : '';
+}
+
+export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false}) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
+  // Ends that could not be checked: an edge may run to an empty cage, which
+  // says "connected" where nothing is. None is drawn, and the file says so.
+  const n = (rack.cables || []).length;
+  if (unchecked && n) return {cables: [], notes: [`${count(n, 'cable is', 'cables are')} not drawn because ${n === 1 ? 'its' : 'their'} ends could not be checked.`]};
   const cables = [], notes = cableNotes(rack, ends, {undrawn: true});
   for (const f of cableFindings(rack, ends)) {
     if (f.loose.length) continue;
@@ -312,12 +368,14 @@ export function drawioCables(rack, {ends = new Map(), idOf, drawn}) {
     const missing = sides.filter(s => !s.ok);
     if (missing.length) {
       const why = missing.map(s => `end ${s.side}, ${endName(rack, s.end)}, ` +
-        (s.it ? `has no port drawn in the ${s.pane} cabinet` : 'names a device that is not in the rack'));
+        (s.it ? (hiddenBy(s.it.id, s.pane) ? `is hidden behind ${hiddenBy(s.it.id, s.pane)} in the ${s.pane} cabinet`
+                                           : `has no port drawn in the ${s.pane} cabinet`)
+              : 'names a device that is not in the rack'));
       notes.push(`Cable ${f.name} is not drawn: ${why.join('; ')}.`);
       continue;
     }
     const [a, b] = sides.map(s => ({item: idOf(s.it.id, s.pane), path: s.end.path}));
-    cables.push({id: c.id, a, b, media: drawioMedia(c), purpose: c.purpose, label: c.label,
+    cables.push({id: c.id, a, b, media: drawioMediaKey(c), purpose: c.purpose, label: c.label,
                  ...(c.length ? {length: c.length} : {})});
   }
   return {cables, notes};

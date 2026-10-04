@@ -8264,25 +8264,106 @@ def check_rack_export_cable_failures(page, base):
     if "Cable ends could not be read, so the cable lines do not state their connectors." not in text \
             or [r["section"] for r in rows].count("Cables") == 0 or "didn't work" in status:
         bad.append(f"BOM, facts failing: status {status!r}, notes {text.partition(chr(13) + chr(10) + 'Notes')[2]!r}")
-    for kind in ("sheet-svg", "drawio"):
+    for kind, note in (("sheet-svg", "Cable ends could not be checked, so loose ends are not marked."),
+                       ("drawio", "3 cables are not drawn because their ends could not be checked.")):
         text = pathlib.Path(export_file(page, kind).path()).read_text(encoding="utf-8")
         status = export_status(page)
         try:
-            ET.fromstring(text.encode("utf-8"))
+            root = ET.fromstring(text.encode("utf-8"))
         except ET.ParseError as e:
             bad.append(f"{kind}, facts failing: not well-formed ({e})")
-        if "Cable ends could not be checked, so loose ends are not marked." not in text or "didn't work" in status:
+            continue
+        if note not in text or "didn't work" in status:
             bad.append(f"{kind}, facts failing: no unchecked note, or status {status!r}")
+        # An edge that may run to an empty cage is a false statement: with the ends unchecked, none is drawn.
+        if kind == "drawio" and (drawio_page(text)["edges"] or len(drawio_page(text)["cabinets"]) != 2):
+            bad.append("drawio, facts failing: an edge is drawn, or a cabinet is missing")
     page.evaluate("window.__rack.failExport({})")
 
-    # One pane's cables fail to draw: the sheet comes without them, and says so.
+    # One pane's cables fail to draw: the sheet comes without them, the other face keeps its own, and it says so.
+    export_file(page, "sheet-svg")
+    n0 = int(re.search(r"with (\d+) note", export_status(page)).group(1))
     page.evaluate("window.__rack.failExport({pane: 'front'})")
     text = pathlib.Path(export_file(page, "sheet-svg").path()).read_text(encoding="utf-8")
     status = export_status(page)
-    if "The cables could not be drawn on the front face of this sheet." not in text \
-            or "face of this sheet" in text.replace("The cables could not be drawn on the front face of this sheet.", "") or "didn't work" in status:
+    note = "The cables could not be drawn on the front face of this sheet; tags on the other face may point at runs that are not drawn."
+    if note not in text or "didn't work" in status or status != notes_status(n0 + 1):
         bad.append(f"sheet, front cables failing: status {status!r}")
+    try:
+        root = ET.fromstring(text.encode("utf-8"))
+    except ET.ParseError as e:
+        return bad + [f"sheet, front cables failing: not well-formed ({e})"]
+    ns = "{http://www.w3.org/2000/svg}"
+    panes = {p.get("data-pane"): p for p in root.iter(f"{ns}svg") if p.get("data-pane")}
+    layer = lambda p: len([g for g in p.iter(f"{ns}g") if g.get("data-cable-id")])
+    if layer(panes["front"]) or not layer(panes["rear"]):
+        bad.append(f"sheet, front cables failing: front has {layer(panes['front'])} cable groups, rear {layer(panes['rear'])}")
+    if "data-base-box" in text:
+        bad.append("sheet, front cables failing: a data-base-box is left in the file")
+    # A screen concern: the cable layers carry none in the file (the elevation's own, which the pin holds, stay).
+    pe = [g.get("data-cable-id") for lay in root.iter(f"{ns}g") if lay.get("data-cables") is not None or lay.get("data-cable-tags") is not None
+          for g in lay.iter() if g.get("pointer-events")]
+    if pe:
+        bad.append(f"sheet, front cables failing: pointer-events on cable groups {pe}")
     page.evaluate("window.__rack.failExport({})")
+    return bad
+
+
+@extra("rack.html: Export - draw.io gives devices whose ids slug alike cells of their own, and words a device with no drawing by the side it is on")
+def check_rack_export_drawio_ids(page, base):
+    from collections import Counter
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base)
+    except RuntimeError as e:
+        return bad + [f"draw.io ids: {e}"]
+    out = page.evaluate("""async () => {
+      const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+      const of = C.chassisLookup(await C.loadChassis());
+      const r = window.__rack.doc().racks[0];
+      const [leaf, , d3, d4] = [r.items[1], r.items[0], r.items[2], r.items[3]];
+      const end = (item, path) => ({item, path, view: 'front'});
+      const cab = (id, a, b) => ({id, a, b, media: 'cat6a', purpose: 'management', label: id, route: []});
+      // Two items whose ids slug alike, each cabled to its own demarc.
+      const alike = {...r, items: [{...leaf, id: 'a b', label: 'x1', ru: 8}, {...leaf, id: 'a-b', label: 'x2', ru: 10}, d3, d4],
+        cables: [cab('k1', end('a b', 'mgmt-eth'), end(d3.id, 'port-2-1')), cab('k2', end('a-b', 'mgmt-eth'), end(d4.id, 'port-2-1'))]};
+      // A device with no drawing at all (an unknown configuration): a dashed box on each side.
+      const bare = {...r, cables: [], items: [{...leaf, id: 'q', cfg: 'no-such-config', swaps: {}, ru: 5}]};
+      const hostile = {...alike, cables: alike.cables.map((c, i) => ({...c, media: ['__proto__', 'constructor'][i]}))};
+      return {hostile: (await X.drawioFile(hostile, of)).data, alike: (await X.drawioFile(alike, of)).data, bare: (await X.drawioFile(bare, of)).data};
+    }""")
+    try:
+        d = drawio_page(out["alike"])
+    except ET.ParseError as e:
+        return bad + [f"draw.io ids: not well-formed ({e})"]
+    dup = [i for i, c in Counter(d["ids"]).items() if c > 1]
+    if dup:
+        bad.append(f"draw.io ids: duplicate cell ids {dup[:5]}")
+    tree = ET.fromstring(out["alike"])
+    owner = {m.get("id"): m.get("value") for m in tree.iter("mxCell")}
+    parent = {o.get("id"): o.find("mxCell").get("parent") for o in tree.iter("object")}
+    ends = {e.get("portrayal-cable"): (e.find("mxCell").get("source"), e.find("mxCell").get("target")) for e in d["edges"]}
+    if sorted(ends) != ["k1", "k2"] or any(i not in parent for e in ends.values() for i in e):
+        bad.append(f"draw.io ids: edges {ends}")
+    elif [owner[parent[ends[k][0]]] for k in ("k1", "k2")] != ["x1", "x2"]:
+        # Each cable's port cell sits in its own device's group, whatever the ids slug to.
+        bad.append(f"draw.io ids: the two cables are not bound to their own devices' port cells: {ends}")
+    notes = out["alike"].partition("-->")[0] if "<!--" in out["alike"] else ""
+    if "a-b-2" in notes or "@rear" in notes or "a-b-3" in notes:
+        bad.append("draw.io ids: an alias is in the notes a person reads")
+
+    colors = page.evaluate("async () => (await import('/site/rack/cables.js')).COLORS")
+    strokes = [o.find("mxCell").get("style").rsplit("strokeColor=", 1)[1] for o in ET.fromstring(out["hostile"]).iter("object") if o.get("portrayal-cable")]
+    if strokes != [f"{colors['unset']};"] * 2 or "[object" in out["hostile"] or "function" in out["hostile"].lower().replace("functions", ""):
+        bad.append(f"draw.io ids: a media named __proto__ or constructor is styled {strokes}")
+
+    def nones(text):
+        return {(o.get("id"), o.get("value"), o.get("parent")) for o in ET.fromstring(text).iter("mxCell")
+                if (o.get("id") or "").endswith("-none")}
+    if nones(out["bare"]) != {("q-g0r0-front-none", "no front drawing", "g0r0-front"),
+                              ("q-rear-g0r1-front-none", "no rear drawing", "g0r1-front")}:
+        bad.append(f"draw.io ids: the dashed boxes read {nones(out['bare'])}")
     return bad
 
 
@@ -8427,6 +8508,10 @@ def check_rack_export_sheet_pinned(page, base):
     notes_fixture["racks"][0]["zeroU"] = [{"id": "z1"}]
     notes_fixture["racks"][0]["items"].append(
         {"id": "i5", "ref": "no-such-device", "cfg": "base", "label": "mystery", "ru": 22, "face": "front",
+         "turned": False, "swaps": {}, "fields": {}})
+    # A desktop device: the sheet's notes must say it is not rack-mount, and the pin must hold that line too.
+    notes_fixture["racks"][0]["items"].append(
+        {"id": "i6", "ref": "hlx-tgv", "cfg": "base", "label": "desk", "ru": 8, "face": "front",
          "turned": False, "swaps": {}, "fields": {}})
     for name, fixture in (("the export fixture", EXPORT_FIXTURE), ("a rack with notes", notes_fixture),
                           ("an empty rack", EMPTY_FIXTURE)):
@@ -8657,7 +8742,7 @@ def check_rack_export_drawio_cables(page, base):
               style: edge?.querySelector('mxCell').getAttribute('style') || '', label: edge?.getAttribute('label'),
               media: edge?.getAttribute('portrayal-media')};
     }""")
-    if "Cable A1 is not drawn: end A, leaf-1 (U14) port-1, has no port drawn in the rear cabinet." not in odd["hidden"] \
+    if "Cable A1 is not drawn: end A, leaf-1 (U14) port-1, is hidden behind demarc in the rear cabinet." not in odd["hidden"] \
             or odd["hiddenEdges"] != 0:
         bad.append(f"draw.io cables: a cable to a hidden device: {odd['hiddenEdges']} edges, notes {odd['hidden']}")
     if not odd["style"].endswith(f"strokeColor={colors['unset']};") or odd["media"] is not None:
