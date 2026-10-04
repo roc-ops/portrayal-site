@@ -374,11 +374,19 @@ function tubeEnds(THREE, mesh) {
 // from the landed end); with neither, mesh is null. `starts` are the drawn
 // ends of its tubes. Plus every connector anchored, and the chassis boxes
 // the run was kept out of. null when `live()` went false during an await.
-export async function drawCables3d(scene, plan, {live = () => true} = {}) {
+//
+// `anchor(dev, path, view)` finds an end's connector points, as
+// [{position, normal}, ...] or [] for an end that does not land; it defaults
+// to the scene's cableAnchor on the mount of the plan device's ref, which is
+// what the showcase needs. The Rack Builder passes its own (scene3d.js),
+// which finds a mount by item id. A link that carries an `id` names its group
+// `cable-<id>`; one without (the showcase's) keeps `cable-<index>`.
+export async function drawCables3d(scene, plan, {live = () => true, anchor = null} = {}) {
   const {THREE, scene: world} = scene.three;
   const rackW = scene.metrics().rackWidth;
   const boxes = scene.deviceBoxes();
   const refOf = id => (plan.devices || []).find(d => d.id === id)?.ref || id;
+  const find = anchor || ((dev, path, view) => scene.cableAnchor({ref: refOf(dev)}, path, {view}));
   const group = new THREE.Group(); group.name = 'patch-cables';
   const tubes = [], anchors = [];
   // Every end's connectors first: how far a lead reaches out depends on the
@@ -387,7 +395,7 @@ export async function drawCables3d(scene, plan, {live = () => true} = {}) {
   for (const [i, link] of plan.links.entries()) {
     const ends = [], loose = [];
     for (const [side, [dev, path, view]] of [['from', link.from], ['to', link.to]]) {
-      const got = await scene.cableAnchor({ref: refOf(dev)}, path, {view: view || 'front'});
+      const got = await find(dev, path, view || 'front');
       if (!live()) return null;
       const e = got.length ? {points: got.map(g => g.position), normal: got[0].normal,
                               key: `${dev}|${view || 'front'}`} : null;
@@ -405,7 +413,7 @@ export async function drawCables3d(scene, plan, {live = () => true} = {}) {
     const pts = clearOf(dangling ? danglePoints3d(THREE, landed[0])
                                  : hangPoints3d(THREE, ends[0], ends[1], rackW), boxes);
     const mat = new THREE.MeshStandardMaterial({color: colorOf(link), roughness: 0.6});
-    const g = new THREE.Group(); g.name = `cable-${i}`;
+    const g = new THREE.Group(); g.name = `cable-${link.id ?? i}`;
     const main = new THREE.Mesh(new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(pts, false, 'centripetal'), dangling ? 60 : 160, WIDTH / 2, 8, false), mat);
     g.add(main);

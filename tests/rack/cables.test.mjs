@@ -344,3 +344,20 @@ test('a unit that is not a non-blank string is not a unit: the length moves to l
   assert.equal(read({value: 3, unit: null}).length.unit, 'm', 'null states no unit');
   assert.equal(read({value: 3, unit: ' yd '}).length.unit, ' yd ', 'a non-blank string is kept exactly as written');
 });
+
+test('cablePlan3d hands the 3D scene each end as [item id, path, the device\'s own panel]', () => {
+  let r = rack();
+  // A turned device: its front panel is shown by the OTHER pane, and is still its front panel.
+  r = M.updateItem(r, 'i2', {turned: true});
+  r = C.withCable(r, {a: end('i2', 'port-1'), b: end('i1', 'slot-2/module/p0'), media: 'os2', purpose: 'uplink'}).rack;
+  r = C.withCable(r, {a: end('i2', 'mgmt-eth'), b: end('i3', 'port-2-1', 'rear')}).rack;
+  r = C.withCable(r, {a: end('i9', 'port-1'), b: end('i4', 'port-2-1')}).rack;
+  assert.deepEqual(C.cablePlan3d(r).links, [
+    {id: 'c1', media: 'os2', purpose: 'uplink', from: ['i2', 'port-1', 'front'], to: ['i1', 'slot-2/module/p0', 'front']},
+    {id: 'c2', media: 'unset', purpose: '', from: ['i2', 'mgmt-eth', 'front'], to: ['i3', 'port-2-1', 'rear']},
+    {id: 'c3', media: 'unset', purpose: '', from: ['i9', 'port-1', 'front'], to: ['i4', 'port-2-1', 'front']}]);
+  // The 2D plan names the pane for the same end.
+  assert.deepEqual(C.cablePlan(r).links[0].from, ['i2', 'port-1', 'rear']);
+  assert.deepEqual(C.cablePlan3d(M.newRack()).links, []);
+  assert.deepEqual(C.cablePlan3d({items: []}).links, []);
+});

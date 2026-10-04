@@ -106,6 +106,17 @@ export function cablePlan(rack) {
     ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', from: end(c.a), to: end(c.b)}))};
 }
 
+// The same cables for the 3D scene (cables.js drawCables3d): there an end is
+// [item id, path, the device's OWN PANEL]. The scene places a device by its
+// face and its turn itself, so it asks which of the device's panels a port is
+// on, not which pane shows it. An end whose device is gone names no mount,
+// and the scene hangs the other end as an unplugged lead.
+export function cablePlan3d(rack) {
+  const end = e => [e.item, e.path, e.view === 'rear' ? 'rear' : 'front'];
+  return {links: (rack.cables || []).map(c =>
+    ({id: c.id, media: c.media || 'unset', purpose: c.purpose || '', from: end(c.a), to: end(c.b)}))};
+}
+
 // ── media ───────────────────────────────────────────────────────────────
 export const MEDIA = ['os2', 'om3', 'om4', 'om5', 'cat6', 'cat6a', 'dac', 'aoc'];
 export const MEDIA_LABELS = {

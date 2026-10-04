@@ -764,7 +764,10 @@ export function createRackScene(container, opts = {}) {
   function findMounted(which) {
     if (which == null) return null;
     if (typeof which === 'object') {
+      // `id` is the mount's own (a Rack Builder item's id): two mounts of one
+      // model at any U are then told apart without naming a U.
       return mounted.find(m =>
+        (which.id == null || m.entry.id === which.id) &&
         (which.ru == null || m.entry.ru === which.ru) &&
         (which.ref == null || m.entry.ref === which.ref) &&
         (which.label == null || m.entry.label === which.label)) || null;

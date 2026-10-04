@@ -8843,6 +8843,102 @@ def check_rack_export_drawio_cables(page, base):
     return bad
 
 
+# What the 3D scene holds of the rack's cables: each tube's cable id, group
+# name, color, the sides that did not land, and which device (by its place in
+# rack.items) each drawn end is nearest - so two devices of one model are told
+# apart. Plus the cable groups in the scene graph and each mount's overrides.
+CABLES_3D_JS = """() => {
+  const s = window.__rack.scene(), rc = s.rackCables;
+  if (!rc || rc.failed) return {rc: rc ? 'failed' : null, groups: [], overrides: s.resolved().stack.map(e => e.overrides)};
+  const boxes = s.deviceBoxes();
+  const nearest = p => boxes.map((b, k) => [b.box.distanceToPoint(p), k]).sort((a, b) => a[0] - b[0])[0];
+  const group = s.three.scene.getObjectByName('patch-cables');
+  return {
+    rc: 'drawn', checked: rc.checked,
+    groups: group ? group.children.map(g => g.name) : [],
+    tubes: rc.tubes.map(t => ({
+      id: t.link.id, loose: t.loose, dangling: !!t.dangling, name: t.mesh ? t.mesh.name : null,
+      color: t.mesh ? '#' + t.mesh.children[0].material.color.getHexString() : null,
+      // An unplugged lead has one end on a device; its other end hangs free.
+      ends: (t.dangling ? t.points.slice(0, 1) : t.points.length ? [t.points[0], t.points.at(-1)] : [])
+        .map(p => { const [d, k] = nearest(p); return {item: k, mm: Math.round(d)}; })})),
+    anchors: rc.anchors.map(a => `${a.i}:${a.side}:${a.anchor.path}`),
+    overrides: s.resolved().stack.map(e => e.overrides)};
+}"""
+
+
+@extra("rack.html: 3D hangs the rack's cables as tubes between the right devices, with their plugs seated; a loose end dangles; a rack with no cables is untouched")
+def check_rack_cables_3d_scene(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    # The cable fixture, and a fourth cable to a port that takes no plug (the
+    # switch's USB port): in 2D it ends at the port's center, and so it must in 3D.
+    fixture = cable_fixture("doc-cable-3d", "Cable 3D", lambda r: r["cables"].append(
+        {"id": "c4", "a": {"item": "i2", "path": "usb", "view": "front"},
+         "b": {"item": "i3", "path": "port-2-2", "view": "front"}, "media": "", "purpose": "", "label": "", "route": []}))
+    try:
+        open_cabled(page, base, fixture)
+    except RuntimeError as e:
+        return bad + [f"3D cables: {e}"]
+    if webgl_trouble(page):
+        print("[check_rack_cables_3d_scene] WebGL unavailable - not exercised")
+        return bad
+    page.click('#rkMode [data-mode="3d"]')
+    wait_fn(page, "3D cables: the scene", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    got = page.evaluate(CABLES_3D_JS)
+    if got["rc"] != "drawn" or not got.get("checked"):
+        return bad + [f"3D cables: the scene's cables are {got['rc']!r}"]
+    colors = page.evaluate("async () => (await import('/site/rack/cables.js')).COLORS")
+    if got["groups"] != ["cable-c1", "cable-c2", "cable-c3", "cable-c4"]:
+        bad.append(f"3D cables: the scene's cable groups are {got['groups']}")
+    tubes = {t["id"]: t for t in got["tubes"]}
+    # rack.items order: 0 core-1, 1 leaf-1, 2 demarc at U14, 3 demarc at U20.
+    want = {"c1": ([], False, colors["os2"], [1, 0]),          # leaf-1 to core-1
+            "c2": ([], False, colors["cat6a"], [1, 2]),        # leaf-1 to the demarc at U14, not its twin
+            "c3": (["from"], True, colors["os2"], [3]),        # the empty cage is loose: a lead hangs from the demarc at U20
+            "c4": ([], False, colors["unset"], [1, 2])}        # no plug at the USB port, and it still lands
+    for cid, (loose, dangling, color, items) in want.items():
+        t = tubes.get(cid)
+        if not t:
+            bad.append(f"3D cables: no tube for {cid}")
+            continue
+        if (t["loose"], t["dangling"], t["color"], t["name"]) != (loose, dangling, color, f"cable-{cid}"):
+            bad.append(f"3D cables: {cid} is {t}")
+        if [e["item"] for e in t["ends"]] != items or any(e["mm"] > 120 for e in t["ends"]):
+            bad.append(f"3D cables: {cid} runs between items {t['ends']}, expected {items}")
+    # Each landed end is on a seated connector: an LC plug in each bore of an optic, an RJ45 plug in a jack.
+    # An end with no connector seated is anchored on the port itself.
+    for a in ("0:from:port-1-occupant/tx-occupant", "0:to:slot-2/module/p0-occupant/rx-occupant",
+              "1:from:mgmt-eth-occupant", "1:to:port-2-1-occupant", "2:to:port-2-1-occupant",
+              "3:from:usb", "3:to:port-2-2-occupant"):
+        if a not in got["anchors"]:
+            bad.append(f"3D cables: no anchor {a} among {got['anchors']}")
+    if any(a.startswith("2:from:") for a in got["anchors"]):
+        bad.append("3D cables: the empty cage's end was anchored")
+    # The plugs are in the scene's overrides, over the items' own swaps, and not in the document.
+    if got["overrides"][2] != {"port-2-1": "generic/rj45-plug@1", "port-2-2": "generic/rj45-plug@1"} or \
+            got["overrides"][1].get("port-1") != "generic/qsfp-lc@2" or \
+            got["overrides"][1].get("port-1-occupant/tx") != "generic/lc-plug@2":
+        bad.append(f"3D cables: the mounts' overrides are {got['overrides']}")
+    swaps = page.evaluate("() => window.__rack.doc().racks[0].items.map(i => i.swaps)")
+    if swaps != [i["swaps"] for i in CABLE_FIXTURE["racks"][0]["items"]]:
+        bad.append(f"3D cables: plugs were written into item.swaps: {swaps}")
+
+    # No cables: nothing is added to the scene, and the mounts' overrides are the items' swaps.
+    page.click('#rkMode [data-mode="2d"]')
+    open_fixture(page, base)
+    page.click('#rkMode [data-mode="3d"]')
+    wait_fn(page, "3D cables: the scene of a rack with no cables", "() => window.__rack.scene() != null", timeout=READY_3D_MS)
+    got = page.evaluate(CABLES_3D_JS)
+    if got["rc"] is not None or got["groups"] or \
+            got["overrides"] != [i["swaps"] for i in EXPORT_FIXTURE["racks"][0]["items"]]:
+        bad.append(f"3D cables: a rack with no cables has {got}")
+    if page.evaluate("() => !!window.__rack.scene().three.scene.getObjectByName('patch-cables')"):
+        bad.append("3D cables: a rack with no cables has a cable group in its scene")
+    page.click('#rkMode [data-mode="2d"]')
+    return bad
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", help="a server already running; otherwise one is started")
