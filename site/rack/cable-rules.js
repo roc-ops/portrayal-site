@@ -6,7 +6,7 @@
 // {item, path, view}: the item's id, the port's data-path, and the device's
 // OWN panel ('front' or 'rear') the port is on - not the pane that shows it.
 
-import {nextId, uLabel} from './model.js';
+import {nextId, positionOf} from './model.js';
 
 // ── ends ────────────────────────────────────────────────────────────────
 export const endKey = end => `${end.item}|${end.view}|${end.path}`;
@@ -26,10 +26,15 @@ export const paneOf = (item, view) => (((view === 'front') !== !!item.turned) ? 
 export const portPathOf = path => String(path).split('-occupant')[0];
 
 const itemOf = (rack, end) => rack.items.find(i => i.id === end.item) || null;
-// An end as a person reads it. Labels repeat (two "demarc"), so the U is in it.
-export function endName(rack, end) {
+// An end as a person reads it. Labels repeat (two "demarc"), so the U is in it:
+// the device's POSITION (model.js positionOf), the U every export gives it.
+// That needs the device's height, which the rack does not store: `uOf(item)`
+// answers it in U. Without one, an item that carries its height (`u`, as
+// fit.js itemsWithU's do) is read as it is, and any other counts as 1U.
+export const carriedU = item => item.u ?? 1;
+export function endName(rack, end, uOf = carriedU) {
   const it = itemOf(rack, end);
-  return it ? `${it.label} (U${uLabel(rack.frame, it.ru)}) ${end.path}` : `a removed device's ${end.path}`;
+  return it ? `${it.label} (U${positionOf(rack.frame, it.ru, uOf(it) ?? 1)}) ${end.path}` : `a removed device's ${end.path}`;
 }
 export const cableName = c => c.label || c.id;
 const clip = (s, n) => { const cs = Array.from(s); return cs.length > n ? `${cs.slice(0, n - 1).join('')}…` : s; };
@@ -40,10 +45,11 @@ export function tagText(rack, end) {
 }
 
 // ── one cable per port (spec §9.3) ──────────────────────────────────────
-export function portFree(rack, end, {ignoreId = null} = {}) {
+// `uOf` is endName's: how tall a device is, for the U in the refusal.
+export function portFree(rack, end, {ignoreId = null, uOf} = {}) {
   const k = portKey(end);
   const other = (rack.cables || []).find(c => c.id !== ignoreId && (portKey(c.a) === k || portKey(c.b) === k));
-  return other ? {ok: false, reason: `${endName(rack, end)} already has a cable (${cableName(other)}).`} : {ok: true};
+  return other ? {ok: false, reason: `${endName(rack, end, uOf)} already has a cable (${cableName(other)}).`} : {ok: true};
 }
 export function canCable(rack, a, b, opts = {}) {
   if (sameEnd(a, b)) return {ok: false, reason: 'A cable needs two different ports.'};

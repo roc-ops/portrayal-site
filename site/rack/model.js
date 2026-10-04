@@ -85,6 +85,11 @@ export const renamed = (rack, name) => ({...rack, name: String(name)});
 
 // U numbers are stored bottom-up always; this is only what a label says.
 export const uLabel = (frame, u) => (frame.numbering === 'top-down' ? frame.heightRU - u + 1 : u);
+// A DEVICE'S U, wherever it is named with one: its POSITION, the lowest-numbered
+// U it covers, counted the way this frame counts - what a DCIM calls a device's
+// position. `ru` is its bottom U as stored and `u` its height; on a bottom-up
+// frame that is the bottom U's own label, on a top-down one the top U's.
+export const positionOf = (frame, ru, u = 1) => Math.min(uLabel(frame, ru), uLabel(frame, ru + Math.max(1, u) - 1));
 
 function readItem(i, n) {
   if (!i || typeof i.ref !== 'string' || !i.ref || !Number.isInteger(i.ru))

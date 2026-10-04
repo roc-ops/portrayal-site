@@ -64,10 +64,13 @@ export function availableDepth(rack, item, chassisOf) {
 // Every item with the U height its chassis entry gives it (or 1, unknown or
 // not) - what the elevation, the 3D view and any export (Phase 1b) all need
 // beside the item's own fields, so each draws the same rack.
+// heightOf(chassisOf) is that height as a lookup by item: what names a device
+// with its U (cable-rules.js endName) asks it.
+export const heightOf = chassisOf => item => Math.max(1, chassisOf(item.ref)?.ru ?? 1);
 export const itemsWithU = (rack, chassisOf) =>
   rack.items.map(i => {
     const mount = chassisOf(i.ref)?.mount;      // stated only when it is not a rack's
-    return {...i, u: Math.max(1, chassisOf(i.ref)?.ru ?? 1), ...(isRackMount({mount}) ? {} : {mount})};
+    return {...i, u: heightOf(chassisOf)(i), ...(isRackMount({mount}) ? {} : {mount})};
   });
 
 export const attachPoints = kind => (kind === 'four-post'

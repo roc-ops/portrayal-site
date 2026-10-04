@@ -388,3 +388,26 @@ test('sameCables3d: the scene reads which cables there are, their ends and their
   assert.equal(C.sameCables3d(cu, C.updateCable(cu, 'c2', {purpose: 'management'})), false);
   assert.equal(C.sameCables3d({items: []}, {items: [], cables: []}), true);
 });
+
+// ── final fix wave: one U per device ───────────────────────────────────
+test('endName names a device by its position: the lowest-numbered U it covers, whichever way the frame counts', () => {
+  const heights = {i1: 10, i2: 2};
+  const uOf = it => heights[it.id] ?? 1;
+  const mk = numbering => ({frame: M.normalizeFrame({heightRU: 24, numbering}), cables: [], items: [
+    {id: 'i1', label: 'core-1', ru: 2}, {id: 'i2', label: 'leaf-1', ru: 14}, {id: 'i3', label: 'demarc', ru: 20}]});
+  const top = mk('top-down'), up = mk('bottom-up');
+  for (const [r, want] of [[top, {i1: 14, i2: 10, i3: 5}], [up, {i1: 2, i2: 14, i3: 20}]])
+    for (const it of r.items) {
+      assert.equal(C.endName(r, end(it.id, 'p'), uOf), `${it.label} (U${want[it.id]}) p`);
+      assert.equal(M.positionOf(r.frame, it.ru, uOf(it)), want[it.id]);
+    }
+  // Items that already carry their height (fit.js itemsWithU) need no lookup.
+  const carried = {...top, items: top.items.map(it => ({...it, u: uOf(it)}))};
+  assert.equal(C.endName(carried, end('i1', 'p')), 'core-1 (U14) p');
+  // No height known: 1U, the bottom U's own label.
+  assert.equal(C.endName(top, end('i1', 'p')), 'core-1 (U23) p');
+  // The refusal that names an end names it the same way.
+  const taken = {...top, cables: [{id: 'c1', label: '', a: end('i1', 'p'), b: end('i2', 'p')}]};
+  assert.equal(C.portFree(taken, end('i1', 'p'), {uOf}).reason, 'core-1 (U14) p already has a cable (c1).');
+  assert.equal(C.canCable(taken, end('i3', 'p'), end('i2', 'p'), {uOf}).reason, 'leaf-1 (U10) p already has a cable (c1).');
+});

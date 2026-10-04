@@ -30,6 +30,7 @@ Run it locally the same way CI does:
 import argparse
 import contextlib
 import csv
+import html
 import io
 import json
 import math
@@ -9121,6 +9122,85 @@ def check_rack_export_3d_cables(page, base):
         bad.append("3D export cables: the unchecked notice is shown again on a rebuild")
     page.evaluate("() => window.__rack.failSceneFacts(false)")
     page.click('#rkMode [data-mode="2d"]')
+    return bad
+
+
+# A TOP-DOWN RACK WITH A TALL DEVICE: core-1 is 10U from stored U2, so on a
+# 24U frame counted from the top it covers U14-U23. Its position - the U every
+# file and the page name it with - is 14. c4 runs from an empty cage on its
+# card to an empty cage on leaf-1, so every drawn export has a note naming it.
+def one_u_fixture():
+    def edit(rack):
+        rack["frame"]["numbering"] = "top-down"
+        rack["cables"].append({"id": "c4", "a": {"item": "i1", "path": "slot-2/module/p1", "view": "front"},
+                               "b": {"item": "i2", "path": "port-3", "view": "front"},
+                               "media": "os2", "purpose": "uplink", "label": "", "route": []})
+    return cable_fixture("doc-one-u", "One U", edit)
+
+
+# modelFile's notes for a rack, from a scene that exports nothing: every cable hung, none lost.
+STUB_GLB_NOTES_JS = """async () => {
+  const X = await import('/site/rack/exports.js'), C = await import('/site/rack/chassis.js');
+  const of = C.chassisLookup(await C.loadChassis());
+  const r = window.__rack.doc().racks[0];
+  const scene = {running: () => false, complete: async () => {}, three: {scene: {userData: {}}},
+                 toGLB: async () => new Uint8Array(4), toUSDZ: async () => new Uint8Array(4),
+                 rackCables: {tubes: r.cables.map(c => ({link: {id: c.id}, loose: [], mesh: {}}))}};
+  return (await X.modelFile(scene, r, 'glb', of)).notes;
+}"""
+
+
+@extra("rack.html: one U per device - on a top-down frame a tall device has the same U in the sheet, draw.io, the GLB's notes, the schedule, the device import and the page")
+def check_rack_one_u(page, base):
+    bad = []
+    page.on("pageerror", lambda e: bad.append(f"uncaught: {e}"))
+    try:
+        open_cabled(page, base, one_u_fixture())
+    except RuntimeError as e:
+        return bad + [f"one U: {e}"]
+    # The device import's position is the reference: NetBox's own word for it.
+    _, drows, _ = read_csv(export_file(page, "netbox-devices"))
+    pos = {r["name"]: r["position"] for r in drows}
+    if pos.get("core-1") != "14" or pos.get("leaf-1") != "11":
+        return bad + [f"one U: the device import's positions are {pos}"]
+    end = "core-1 (U14) slot-2/module/p1"
+    old = "core-1 (U23)"
+
+    _, rows, _ = read_csv(export_file(page, "cables"))
+    us = {(r[f"{s}_device"], r[f"{s}_u"]) for r in rows for s in ("a", "b") if r[f"{s}_device"]}
+    wrong = sorted((d, u) for d, u in us if pos.get(d) != u)
+    if wrong or ("core-1", "14") not in us:
+        bad.append(f"one U: the schedule's a_u/b_u differ from the device import's positions: {wrong or sorted(us)}")
+
+    for kind in ("sheet-svg", "drawio"):
+        text = html.unescape(pathlib.Path(export_file(page, kind).path()).read_text(encoding="utf-8"))
+        if end not in text or old in text:
+            bad.append(f"one U: the {kind} notes do not name core-1 at U14 ({'U23 is in the file' if old in text else 'no such note'})")
+        if kind == "sheet-svg" and "leaf-1 (U11) port-1 → core-1 (U14) slot-2/module/p0" not in text:
+            bad.append("one U: the sheet's title for c1 does not name both ends by position")
+    notes = page.evaluate(STUB_GLB_NOTES_JS)
+    if not any(end in n for n in notes) or any(old in n for n in notes):
+        bad.append(f"one U: the GLB's notes are {notes}")
+
+    # The page: the cable list's rows, the cable form's ends, a refusal, the inspector.
+    row = page.inner_text("#cableRow-c4")
+    if not row.startswith(f"{end} → leaf-1 (U11) port-3"):
+        bad.append(f"one U: the cable list's row for c4 reads {row!r}")
+    row = page.inner_text("#cableRow-c1")
+    if row != "leaf-1 (U11) port-1 → core-1 (U14) slot-2/module/p0":
+        bad.append(f"one U: the cable list's row for c1 reads {row!r}")
+    page.click("#cableRow-c4")
+    wait_sel(page, "one U: the selected row's Edit", "#cableEdit")
+    page.click("#cableEdit")
+    wait_fn(page, "one U: the cable form", "() => !!document.querySelector('#side form, #cableForm')")
+    form = page.inner_text("#side")
+    if end not in form or old in form:
+        bad.append(f"one U: the cable form names its ends {form[:200]!r}")
+    page.keyboard.press("Escape")
+    select_item(page, "front", "i1")
+    line = page.inner_text(".rk-inspector .rk-muted")
+    if "· U14, front" not in line:
+        bad.append(f"one U: the inspector reads {line!r}")
     return bad
 
 

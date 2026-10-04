@@ -109,7 +109,8 @@ export function pillText(text) {
   return cs.length > MAX_CHARS ? `${cs.slice(0, MAX_CHARS - 1).join('')}…` : String(text);
 }
 
-export function drawRackCables(svg, rack, reasons) {
+// `uOf` is endName's (how tall a device is), for the U in a cable's title.
+export function drawRackCables(svg, rack, reasons, uOf) {
   const pane = svg.dataset.pane, rear = pane === 'rear';
   const base = svg.dataset.baseBox.split(' ').map(Number);
   const edgeX = rear ? base[0] - 8 : base[0] + base[2] + 8;
@@ -169,7 +170,7 @@ export function drawRackCables(svg, rack, reasons) {
       rec.g.removeAttribute('data-pt-ui');
     }
     const title = rec.g?.querySelector('title');
-    if (title) title.textContent = `${endName(rack, c.a)} → ${endName(rack, c.b)}${c.media ? ` · ${c.media}` : ''}`;
+    if (title) title.textContent = `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}${c.media ? ` · ${c.media}` : ''}`;
   }
   return recs;
 }

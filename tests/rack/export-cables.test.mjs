@@ -314,3 +314,39 @@ test('draw.io: a cable to a device hidden in its cabinet says what hides it', ()
   assert.deepEqual(X.drawioCables({...RACK, cables: [RACK.cables[0]]}, {idOf, drawn: () => true, unchecked: true}).notes,
     ['1 cable is not drawn because its ends could not be checked.']);
 });
+
+// ── final fix wave ─────────────────────────────────────────────────────
+// F1: one U per device. A 2U and a 10U device, on a frame counted each way.
+const TALL = numbering => {
+  const frame = M.normalizeFrame({heightRU: 24, numbering});
+  const items = [{id: 'a', ref: 'two', label: 'two', ru: 10, u: 2, face: 'front', turned: false},
+                 {id: 'b', ref: 'ten', label: 'ten', ru: 3, u: 10, face: 'front', turned: false}];
+  const cables = [{id: 'c', label: '', media: 'os2', purpose: '', route: [],
+                   a: {item: 'a', path: 'p', view: 'front'}, b: {item: 'b', path: 'q', view: 'front'}}];
+  return {name: 'r', frame, items, zeroU: [], cables};
+};
+test('every note that names a device with a U names its position, as the schedule and the device import do', () => {
+  const loose = new Map([['a|front|p', {info: NONE, reason: 'p holds no optic'}], ['b|front|q', {info: NONE, reason: 'q holds no optic'}]]);
+  const landed = new Map([['a|front|p', {info: NONE, reason: null}], ['b|front|q', {info: NONE, reason: null}]]);
+  for (const [numbering, want] of [['top-down', {a: 14, b: 13}], ['bottom-up', {a: 10, b: 3}]]) {
+    const rack = TALL(numbering), pos = id => X.positionOf(rack.frame, ...rack.items.filter(i => i.id === id).map(i => [i.ru, i.u])[0]);
+    assert.deepEqual([pos('a'), pos('b')], [want.a, want.b], numbering);
+    const row = X.cableScheduleRows(rack, loose, rack.items).rows[0];
+    assert.deepEqual([row.a_u, row.b_u], [want.a, want.b]);
+    assert.deepEqual(X.cableNotes(rack, loose), [
+      `Cable c: end A, two (U${want.a}) p, is not connected (p holds no optic); end B, ten (U${want.b}) q, is not connected (q holds no optic).`]);
+    assert.equal(X.drawioCables(rack, {ends: landed, idOf: id => id, drawn: id => id !== 'b'}).notes[0],
+      `Cable c is not drawn: end B, ten (U${want.b}) q, has no port drawn in the front cabinet.`);
+    // The heights from a lookup, when the items do not carry them.
+    const bare = {...rack, items: rack.items.map(({u, ...it}) => it)};
+    const uOf = it => ({two: 2, ten: 10})[it.ref];
+    assert.deepEqual(X.cableNotes(bare, loose, {uOf}), X.cableNotes(rack, loose));
+    const chassis = {two: {ru: 2, mount: 'desktop'}, ten: {ru: 10, mount: 'wall'}};
+    for (const items of [rack.items, bare.items])
+      assert.deepEqual(X.mountNotes(items, ref => chassis[ref], rack.frame), [
+        `two at U${want.a}: a desktop device, so it needs a shelf.`,
+        `ten at U${want.b}: a wall-mount device, so it needs a shelf or bracket.`]);
+    assert.equal(X.uOfItem(rack.frame, rack.items[1]), want.b);
+    assert.equal(X.uOfItem(rack.frame, bare.items[1], ref => chassis[ref]), want.b);
+  }
+});

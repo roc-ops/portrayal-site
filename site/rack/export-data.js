@@ -4,7 +4,8 @@
 // and (below, Tasks 4-5) DCIM matching and the bill of materials.
 // site/rack/exports.js does the fetching and drawing, and asks here.
 
-import {uLabel} from './model.js';
+import {positionOf} from './model.js';
+export {positionOf};
 import {endKey, endName, cableName, paneOf, mismatch, lengthText, lengthParts, MEDIA_LABELS} from './cable-rules.js';
 
 export const uniq = list => [...new Set(list)];
@@ -94,8 +95,8 @@ function seatNotesAs(tail, {label, u, face}) {
 }
 export const seatNotes = arg => seatNotesAs(SEAT_TAIL.listed, arg);
 
-// What one pane could not show of one item. `u` is the U label as the frame
-// numbers it; `panel` is the device's own panel facing `pane`.
+// What one pane could not show of one item. `u` is the device's position
+// (uOfItem); `panel` is the device's own panel facing `pane`.
 export function faceNotes({label, u, pane, panel, face}) {
   if (!face) return [`${label} at U${u}: no ${panel} drawing, so the ${pane} shows an outline.`];
   return seatNotesAs(SEAT_TAIL.drawn, {label, u, face});
@@ -140,11 +141,13 @@ export function cableFindings(rack, ends = new Map()) {
 // The notes a drawn export carries: each loose end with its reason, each
 // media mismatch. `undrawn` is for a file that leaves a cable with a loose
 // end out altogether (draw.io) where the others draw its unplugged lead.
-export function cableNotes(rack, ends = new Map(), {undrawn = false} = {}) {
+// `uOf` is endName's (how tall a device is), for a rack whose items do not
+// carry their height.
+export function cableNotes(rack, ends = new Map(), {undrawn = false, uOf} = {}) {
   const out = [];
   for (const f of cableFindings(rack, ends)) {
     if (f.loose.length) {
-      const why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end)}, is not connected (${l.reason})`);
+      const why = f.loose.map(l => `end ${l.side}, ${endName(rack, l.end, uOf)}, is not connected (${l.reason})`);
       out.push(`Cable ${f.name}${undrawn ? ' is not drawn' : ''}: ${why.join('; ')}.`);
     }
     for (const w of f.warnings) out.push(`Cable ${f.name}: ${w}`);
@@ -174,7 +177,7 @@ export function cableScheduleRows(rack, ends = new Map(), items = rack.items) {
     const it = byId.get(e.item);
     if (!it) return ['', '', e.path];
     if (names.get(it.id).renamed) named.add(names.get(it.id).name);
-    return [names.get(it.id).name, positionOf(rack.frame, it.ru, it.u ?? 1), e.path];
+    return [names.get(it.id).name, uOfItem(rack.frame, it), e.path];
   };
   const findings = cableFindings(rack, ends);
   const rows = findings.map(f => {
@@ -213,7 +216,7 @@ export function mountNotes(items, chassisOf, frame) {
   const out = [];
   for (const it of items) {
     const t = mountText(chassisOf(it.ref)?.mount);
-    if (t) out.push(`${it.label} at U${frame ? uLabel(frame, it.ru) : it.ru}: ${t}.`);
+    if (t) out.push(`${it.label} at U${frame ? uOfItem(frame, it, chassisOf) : it.ru}: ${t}.`);
   }
   return out;
 }
@@ -224,9 +227,12 @@ export function threeDNotes(rack) {
   return withFields.length ? [`Optic labels and colors are not in the 3D model yet: ${withFields.join(', ')}.`] : [];
 }
 
-// The U a DCIM calls a device's position: the lowest-numbered U it covers,
-// counted the way this frame counts.
-export const positionOf = (frame, ru, u) => Math.min(uLabel(frame, ru), uLabel(frame, ru + u - 1));
+// THE U A DEVICE IS NAMED WITH, in every note, row and column: its position
+// (model.js positionOf - the lowest-numbered U it covers, counted the way this
+// frame counts; what a DCIM calls a device's position). The height is the
+// item's own `u` when it carries one (fit.js itemsWithU), else its chassis's.
+export const uOfItem = (frame, item, chassisOf = () => null) =>
+  positionOf(frame, item.ru, item.u ?? Math.max(1, chassisOf(item.ref)?.ru ?? 1));
 
 // draw.io's cabinet counts from 1 at the TOP, and its `u` is the device's top U.
 export const drawioU = (heightRU, ru, u) => heightRU - (ru + u - 1) + 1;
@@ -351,13 +357,13 @@ export function drawioMediaKey(l) {
   return /^[a-z0-9][a-z0-9-]*$/.test(k) && !(k in {}) && k !== 'default' ? k : '';
 }
 
-export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false}) {
+export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = () => null, unchecked = false, uOf}) {
   const byId = new Map(rack.items.map(i => [i.id, i]));
   // Ends that could not be checked: an edge may run to an empty cage, which
   // says "connected" where nothing is. None is drawn, and the file says so.
   const n = (rack.cables || []).length;
   if (unchecked && n) return {cables: [], notes: [`${count(n, 'cable is', 'cables are')} not drawn because ${n === 1 ? 'its' : 'their'} ends could not be checked.`]};
-  const cables = [], notes = cableNotes(rack, ends, {undrawn: true});
+  const cables = [], notes = cableNotes(rack, ends, {undrawn: true, uOf});
   for (const f of cableFindings(rack, ends)) {
     if (f.loose.length) continue;
     const c = f.cable;
@@ -367,7 +373,7 @@ export function drawioCables(rack, {ends = new Map(), idOf, drawn, hiddenBy = ()
     });
     const missing = sides.filter(s => !s.ok);
     if (missing.length) {
-      const why = missing.map(s => `end ${s.side}, ${endName(rack, s.end)}, ` +
+      const why = missing.map(s => `end ${s.side}, ${endName(rack, s.end, uOf)}, ` +
         (s.it ? (hiddenBy(s.it.id, s.pane) ? `is hidden behind ${hiddenBy(s.it.id, s.pane)} in the ${s.pane} cabinet`
                                            : `has no port drawn in the ${s.pane} cabinet`)
               : 'names a device that is not in the rack'));

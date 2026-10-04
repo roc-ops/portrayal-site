@@ -17,8 +17,7 @@ import {RU, RAIL_W, OPENING} from './rails.js';
 import {drawElevation, panelFor} from './elevation.js';
 import {makeZip} from '../bundle.js';
 import {configuredFace, components, findComp} from './face.js';
-import {itemsWithU} from './fit.js';
-import {uLabel} from './model.js';
+import {itemsWithU, heightOf} from './fit.js';
 import {el, svgEl} from './dom.js';
 import {standalone} from '../svg-export.js';
 import {rasterize} from '../raster.js';
@@ -27,7 +26,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
         htmlText, perFaceItems, drawioU, matchDeviceType, yamlHead, moduleTypePath, partNumber,
         stemOf, vendorOf, otherVendorNote, deviceImportRows, toCsv, dcimNotesText, isSeatedPath, TARGET_NAME,
         bomRows, BOM_COLUMNS, bomCell, hardwareNotes, partManufacturer, firstSentence,
-        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, rearSuffix, drawioId, rearCabinetLabel,
+        cableScheduleRows, cableBomRows, cableNotes, UNCHECKED_NOTE, uOfItem, rearSuffix, drawioId, rearCabinetLabel,
         drawioCables, drawioMediaKey, cableBomNotes, uniqueEntryIds, rearNoDrawing} from './export-data.js';
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, endKey, endName, cableName} from './cable-rules.js';
@@ -51,7 +50,7 @@ export async function faceNotesFor(rack, items, panes, chassisOf = () => null, {
   for (const it of items) {
     for (const pane of panes) {
       const panel = panelFor(it, pane);
-      notes.push(...faceNotes({label: it.label, u: uLabel(rack.frame, it.ru), pane, panel,
+      notes.push(...faceNotes({label: it.label, u: uOfItem(rack.frame, it, chassisOf), pane, panel,
                                face: await faceOf(it, panel)}));
     }
   }
@@ -127,7 +126,8 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
   // nobody chose is never "the part chosen".
   const notes = await faceNotesFor(rack, base, faces, chassisOf, {cables: false});
   if (cabled && facts.unchecked) notes.push(UNCHECKED_NOTE);
-  if (cabled) notes.push(...cableNotes(rack, facts.ends));
+  const uOf = heightOf(chassisOf);
+  if (cabled) notes.push(...cableNotes(rack, facts.ends, {uOf}));
   const panes = await Promise.all(faces.map(view =>
     drawElevation({items, frame: rack.frame, view, ears: true, metal: true, paper: true})));
 
@@ -157,7 +157,7 @@ export async function sheetSvg(rack, chassisOf, {faces = ['front', 'rear'], date
       for (const pane of panes) {
         try {
           if (probeFail.pane === pane.dataset.pane) throw new Error('probe: this pane cannot draw its cables');
-          drawRackCables(pane, rack, reasons);
+          drawRackCables(pane, rack, reasons, uOf);
         }
         catch (err) {
           // One face's cables failing must not cost the sheet: it comes without them, and says so.
@@ -250,7 +250,7 @@ export async function drawioFile(rack, chassisOf) {
   const wires = drawioCables(rack, {ends: facts.ends, idOf: (id, pane) => idFor.get(`${id}|${pane}`) ?? drawioId(id, pane, suffix),
                                     drawn: (id, pane, path) => ports.has(`${id}|${pane}|${path}`),
                                     hiddenBy: (id, pane) => lists.hidden.find(h => h.item.id === id && h.pane === pane)?.by.label ?? null,
-                                    unchecked: cabled && !!facts.unchecked});
+                                    unchecked: cabled && !!facts.unchecked, uOf: heightOf(chassisOf)});
   notes.push(...wires.notes);
   // The vendor looks a cable's color up by its media, lower-cased; the table is the page's own colors.
   const cableStyle = {default: COLORS.unset};
@@ -273,7 +273,7 @@ export async function drawioFile(rack, chassisOf) {
 //   - an end the page calls connected that the scene could not place (no
 //     drawing of that panel in 3D): the cable hangs loose there, and the
 //     model says which end.
-function modelCableNotes(rack, hung, facts) {
+function modelCableNotes(rack, hung, facts, uOf) {
   if (!(rack.cables || []).length) return [];
   if (!hung || hung.failed) return ['The cables could not be drawn in the 3D model.'];
   // The SCENE's own reading decides what the model shows: built without it
@@ -283,15 +283,15 @@ function modelCableNotes(rack, hung, facts) {
   // A cable the scene did not draw at all says so, as draw.io's notes do.
   const gone = new Set(hung.tubes.filter(t => !t.mesh).map(t => t.link.id));
   const part = keep => ({...rack, cables: rack.cables.filter(c => keep === gone.has(c.id))});
-  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []), ...cableNotes(part(false), facts.ends),
-               ...cableNotes(part(true), facts.ends, {undrawn: true})];
+  const out = [...(facts.unchecked ? [UNCHECKED_NOTE] : []), ...cableNotes(part(false), facts.ends, {uOf}),
+               ...cableNotes(part(true), facts.ends, {undrawn: true, uOf})];
   for (const t of hung.tubes) {
     const c = rack.cables.find(x => x.id === t.link.id);
     if (!c) continue;
     const lost = t.loose.map(k => (k === 'from' ? ['A', c.a] : ['B', c.b]))
       .filter(([, e]) => facts.ends.get(endKey(e))?.reason == null);
     if (lost.length)
-      out.push(`Cable ${cableName(c)}: ${lost.map(([s, e]) => `end ${s}, ${endName(rack, e)},`).join(' and ')} `
+      out.push(`Cable ${cableName(c)}: ${lost.map(([s, e]) => `end ${s}, ${endName(rack, e, uOf)},`).join(' and ')} `
         + `could not be placed in the 3D model, so the cable ${t.mesh ? 'hangs loose' : 'is not drawn'} there.`);
   }
   return out;
@@ -315,19 +315,19 @@ export async function modelFile(scene, rack, kind, chassisOf = () => null) {
   if (wasRunning) scene.pause();
   try {
     await scene.complete();
-    // A device nobody drew, as the sheet says it (only ru, face and turned
-    // are read, so the rack's own items do).
+    // A device nobody drew, as the sheet says it (ru, face and turned are the
+    // rack's own items'; the height its U is named by is the chassis's).
     const missing = [];
     for (const it of rack.items) {
       for (const pane of ['front', 'rear']) {
         const panel = panelFor(it, pane);
         if (!await faceOf(it, panel))
-          missing.push(...faceNotes({label: it.label, u: uLabel(rack.frame, it.ru), pane, panel, face: null}));
+          missing.push(...faceNotes({label: it.label, u: uOfItem(rack.frame, it, chassisOf), pane, panel, face: null}));
       }
     }
     const facts = (rack.cables || []).length ? await cableEnds(rack) : UNCHECKED;
     const notes = uniq([...rackNotes(rack, {cables: false}), ...mountNotes(rack.items, chassisOf, rack.frame),
-                        ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts)]);
+                        ...threeDNotes(rack), ...missing, ...modelCableNotes(rack, scene.rackCables, facts, heightOf(chassisOf))]);
     scene.three.scene.userData.portrayal = {rack: rack.name, notes};
     const usdz = kind === 'usdz';
     return {name: `${fileStem(rack.name)}.${usdz ? 'usdz' : 'glb'}`,
@@ -391,7 +391,7 @@ async function seatedPartsOf(rack, items) {
     for (const view of ['front', 'rear']) {
       const f = await faceOf(it, view);
       if (!f) { notes.push(`${it.label}: no ${view} drawing, so parts seen only from the ${view} are not listed.`); continue; }
-      notes.push(...seatNotes({label: it.label, u: uLabel(rack.frame, it.ru), face: f}));
+      notes.push(...seatNotes({label: it.label, u: uOfItem(rack.frame, it), face: f}));
       for (const p of seatedParts(f.text)) {
         if (seen.has(p.path)) continue;
         seen.add(p.path);

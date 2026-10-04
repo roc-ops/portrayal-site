@@ -97,8 +97,9 @@ export function cableForm({title, endA, endB, cable, infoA = null, infoB = null,
 // an axis that is not narrowing. A row names both ends, then says what is
 // known and what is wrong: a loose end with its reason (spec §9.3), a media
 // mismatch as a warning. A row the filter leaves out is hidden; the count
-// line says how many match.
-export function cableList({rack, ends, on, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete}) {
+// line says how many match. `uOf` is endName's: how tall a device is, for
+// the U a row names it with.
+export function cableList({rack, ends, on, uOf, selectedId = null, mode3d = false, onFilter, onSelect, onEdit, onDelete}) {
   const cables = rack.cables;
   const info = e => ends.get(endKey(e))?.info || null;
   const why = e => ends.get(endKey(e))?.reason || null;
@@ -122,7 +123,7 @@ export function cableList({rack, ends, on, selectedId = null, mode3d = false, on
   const rows = cables.map(c => {
     const picked = c.id === selectedId;
     const row = el('button', {type: 'button', id: `cableRow-${c.id}`, 'data-cable-row': c.id,
-      'aria-pressed': String(picked), text: `${endName(rack, c.a)} → ${endName(rack, c.b)}`});
+      'aria-pressed': String(picked), text: `${endName(rack, c.a, uOf)} → ${endName(rack, c.b, uOf)}`});
     row.addEventListener('click', () => onSelect(c.id));
     const kids = [row];
     const meta = [c.label, MEDIA_LABELS[c.media] || c.media, c.purpose, lengthText(c.length)].filter(Boolean).join(' · ');

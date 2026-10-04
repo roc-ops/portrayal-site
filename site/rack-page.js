@@ -2,10 +2,10 @@
 // goes through commit(), which autosaves and redraws. What the side panel
 // shows follows S.sel.
 
-import {newDoc, nextRackName, withFrame, renamed, uLabel, withItem, updateItem, withoutItem} from './rack/model.js';
+import {newDoc, nextRackName, withFrame, renamed, positionOf, withItem, updateItem, withoutItem} from './rack/model.js';
 import {openLibrary, autosaver, downloadDoc, readDocFile} from './rack/library.js';
 import {drawElevation, uAtY, panelFor} from './rack/elevation.js';
-import {fits, reaches, availableDepth, itemsWithU, shrinkRack} from './rack/fit.js';
+import {fits, reaches, availableDepth, itemsWithU, heightOf, shrinkRack} from './rack/fit.js';
 import {loadChassis, chassisLookup, catalogEntries} from './rack/chassis.js';
 import {frameForm} from './rack/frame-form.js';
 import {catalogPanel} from './rack/picker.js';
@@ -45,6 +45,9 @@ const S = {doc: null, sel: null, lib: null, save: null, devices: {}, draws: 0, n
   cableFilter: {purpose: null, media: null},
   pick: {query: '', vendor: 'all', fitsOnly: true, device: null, cfgByRef: {}}};
 let chassisOf = () => null;
+// How tall a device is, in U: a device is named with its position (model.js
+// positionOf), and that needs its height. Reads chassisOf as it is when asked.
+const uOf = item => heightOf(chassisOf)(item);
 let drag = null; // the drag controller, wired in bootInner; onPaneClick asks it about a trailing click
 
 // ── 3D ──────────────────────────────────────────────────────────────────
@@ -283,7 +286,7 @@ function addNotice(text, kind = 'error') {
 }
 function pruneCable() {
   const r = rack(), a = S.cable.a;
-  if (a && (!itemById(a.item) || !portFree(r, a).ok)) S.cable.a = null;
+  if (a && (!itemById(a.item) || !portFree(r, a, {uOf}).ok)) S.cable.a = null;
   const s = S.sel;
   if (s?.kind === 'cable-form' && !s.id && !(itemById(s.a.item) && itemById(s.b.item))) {
     S.sel = null;
@@ -299,11 +302,11 @@ function onCableClick(ev) {
   // The end's view is the device's own panel, not the pane it was clicked in.
   const end = {item: item.id, path, view: panelFor(item, group.closest('svg').dataset.pane)};
   if (S.cable.a && sameEnd(S.cable.a, end)) { S.cable.a = null; render(); return; }   // the same port again: unpick it
-  const free = portFree(rack(), end);
+  const free = portFree(rack(), end, {uOf});
   if (!free.ok) { S.notice = {text: free.reason, kind: 'error'}; render(); return; }
   if (!S.cable.a) { S.cable.a = end; render(); return; }
   // The A end is checked again now: the rack may have changed since it was picked.
-  if (!itemById(S.cable.a.item) || !portFree(rack(), S.cable.a).ok) { S.cable.a = null; render(); return; }
+  if (!itemById(S.cable.a.item) || !portFree(rack(), S.cable.a, {uOf}).ok) { S.cable.a = null; render(); return; }
   S.sel = {kind: 'cable-form', id: null, a: S.cable.a, b: end};
   S.cable.a = null;
   render();
@@ -313,7 +316,7 @@ function cableModePanel() {
   return el('div', {id: 'cableHelp'}, [
     el('h3', {text: 'Cable'}),
     el('p', {id: 'cableStep', class: 'rk-muted', role: 'status', text: a
-      ? `From ${endName(rack(), a)}. Click the port at the other end, on either face. Esc starts over.`
+      ? `From ${endName(rack(), a, uOf)}. Click the port at the other end, on either face. Esc starts over.`
       : 'Click the port at one end, on either face. Esc leaves Cable mode.'})]);
 }
 // The form for a new cable (sel.a and sel.b, picked on the drawing) or for
@@ -326,7 +329,7 @@ function cableFormPanel(sel) {
   const a = cable ? cable.a : sel.a, b = cable ? cable.b : sel.b;
   const info = e => S.cableFacts.ends.get(endKey(e))?.info || null;
   return cableForm({
-    title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a), endB: endName(r, b),
+    title: cable ? 'Edit cable' : 'New cable', endA: endName(r, a, uOf), endB: endName(r, b, uOf),
     cable: cable || {media: proposeMedia(info(a), info(b)), purpose: '', label: '', length: null},
     infoA: info(a), infoB: info(b),
     purposes: [...countsBy(r.cables, 'purpose').keys()].filter(Boolean),
@@ -342,7 +345,7 @@ function cableFormPanel(sel) {
         return;
       }
       if (!itemById(a.item) || !itemById(b.item)) { S.sel = null; addNotice(NOT_ADDED); render(); return; }
-      const ok = canCable(now, a, b);
+      const ok = canCable(now, a, b, {uOf});
       if (!ok.ok) { S.sel = null; S.notice = {text: ok.reason, kind: 'error'}; render(); return; }
       const made = withCable(now, {a, b, ...fields});
       S.sel = {kind: 'cable', id: made.cable.id};
@@ -368,7 +371,7 @@ function cableListPanel() {
   const r = rack();
   pruneFilter();
   const on = S.cableFilter;
-  return cableList({rack: r, ends: S.cableFacts.ends, on, selectedId: selectedCable(), mode3d: S.mode === '3d',
+  return cableList({rack: r, ends: S.cableFacts.ends, on, uOf, selectedId: selectedCable(), mode3d: S.mode === '3d',
     onFilter: next => {
       S.cableFilter = next;
       renderSide();
@@ -617,7 +620,7 @@ async function render() {
     // drawn only while the panes show; setMode() redraws on the way back from 3D.
     if (cabled) {
       const reasons = new Map([...facts.ends].map(([k, v]) => [k, v.reason]));
-      for (const svg of S.svgs) drawRackCables(svg, r, reasons);
+      for (const svg of S.svgs) drawRackCables(svg, r, reasons, uOf);
       // A long cable's loop and a low lead's tag reach below the rack: both
       // panes grow downward by what the lowest one needs, and the zoom is
       // applied again to the taller boxes.
@@ -653,7 +656,7 @@ function summary() {
   return el('div', {}, [
     el('h3', {text: r.name}),
     el('p', {class: 'rk-muted', text: `${r.items.length} devices · ${used}U used on the rails.`}),
-    ...warnings.map(({i, f}) => el('p', {class: 'rk-error', text: `${i.label} at U${uLabel(r.frame, i.ru)}: ${f.reason}`})),
+    ...warnings.map(({i, f}) => el('p', {class: 'rk-error', text: `${i.label} at U${positionOf(r.frame, i.ru, uOf(i))}: ${f.reason}`})),
     el('p', {class: 'rk-muted', text: 'Click an empty U on either face to place a device there.'}),
   ]);
 }
