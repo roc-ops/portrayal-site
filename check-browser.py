@@ -5327,10 +5327,12 @@ def check_rack_dev_note(page, base):
     body = page.text_content("#devNote .rk-devnote-body") or ""
     for want in ("still being built", "You can cable ports in 2D",
                  "Cables are in 3D and in the exports: the sheet, draw.io, the 3D model, the bill of materials and a cable schedule.",
-                 "Coming next: cable import for NetBox and Nautobot."):
+                 "Export has an import kit for NetBox and one for Nautobot: types, devices, modules and cables, in import order, with a README.",
+                 "Set the site and the device role they name under Export, DCIM import settings."):
         if want not in body:
             bad.append(f"dev note: the note doesn't mention {want!r}")
-    for gone in ("Coming next: cabling.", "Coming next: cables in the exports and in 3D."):
+    for gone in ("Coming next: cabling.", "Coming next: cables in the exports and in 3D.",
+                 "Coming next: cable import for NetBox and Nautobot."):
         if gone in body:
             bad.append(f"dev note: it still says {gone!r}, and that has shipped")
     box = page.evaluate("""() => { const r = document.querySelector('#devNote .rk-devnote-body').getBoundingClientRect();
