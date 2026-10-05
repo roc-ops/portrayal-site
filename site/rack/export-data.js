@@ -561,8 +561,11 @@ export const cutTo = (s, n) => Array.from(String(s)).slice(0, n).join('');
 
 export const NETBOX_COLUMNS = ['name', 'role', 'manufacturer', 'device_type', 'status', 'site', 'rack',
   'position', 'face', 'comments'];
+// rack__location__name pins the rack to the device's own location: rack__name
+// alone matches a rack of that name in ANY location, and rack names repeat
+// from one location to the next (final fix wave, I5).
 export const NAUTOBOT_COLUMNS = ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model',
-  'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments'];
+  'status__name', 'location__name', 'rack__name', 'rack__location__name', 'position', 'face', 'comments'];
 export const TARGET_NAME = {netbox: 'NetBox', nautobot: 'Nautobot'};
 
 // The one wording for "this type is another vendor's file", shared by a
@@ -636,7 +639,7 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
     return target === 'nautobot'
       ? {name: n.name, role__name: role, device_type__manufacturer__name: t.manufacturer ?? '',
          device_type__model: t.model ?? '', status__name: 'Planned', location__name: site,
-         rack__name: rack.name, position, face: it.face, comments}
+         rack__name: rack.name, rack__location__name: site, position, face: it.face, comments}
       : {name: n.name, role, manufacturer: t.manufacturer ?? '', device_type: t.model ?? '',
          status: 'planned', site, rack: rack.name, position, face: it.face, comments};
   });

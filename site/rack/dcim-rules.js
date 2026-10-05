@@ -8,6 +8,45 @@ import {endName, lengthParts} from './cable-rules.js';
 import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate} from './export-data.js';
 export {DCIM_LIMITS};
 
+// ── names a kit can write (final fix wave, M2) ──────────────────────────
+// A rack file is anyone's JSON: a name in it may hold a line break or another
+// control character, which a text field on the page never gives. In a README
+// such a name would start a line of its own ("Step 6: run this"), and in a CSV
+// it would be a cell an importer may read as two rows. So a run of control
+// characters (C0, DEL, C1, and the Unicode line and paragraph separators) is
+// written as ONE space, in every name a kit writes.
+const CONTROLS = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g;
+export const flat = s => String(s ?? '').replace(CONTROLS, ' ');
+// A name as it was, with what could not be shown spelled out ("R1\nStep 6").
+const escaped = s => JSON.stringify(String(s)).replace(/[\u007f-\u009f\u2028\u2029]/g,
+  c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+
+// THE RACK AS A KIT NAMES IT: the rack's name, each device's label, each
+// cable's label and the import settings, with flat() applied. Everything a kit
+// writes is built from this rack, so the README, every CSV cell and the zip's
+// own name agree. `notes` has one line for each name that changed, naming the
+// original (escaped) and what is written; a rack with nothing to change comes
+// back as it is, with no notes. (A cable with no label is named by its id,
+// which cableImportRows cleans where it writes it; kitReadme flattens every
+// paragraph it is handed, whatever is in it.)
+export function kitNames(rack) {
+  const notes = [];
+  const fix = (what, v) => {
+    if (typeof v !== 'string' || flat(v) === v) return v;
+    notes.push(`${what} ${escaped(v)} is written as "${flat(v)}": a line break or another control character in a name is written as a space.`);
+    return flat(v);
+  };
+  const same = (a, b, keys) => keys.every(k => a[k] === b[k]);
+  const name = fix("The rack's name", rack.name);
+  const had = rack.dcim && typeof rack.dcim === 'object' && !Array.isArray(rack.dcim) ? rack.dcim : null;
+  const dcim = had && {...had, site: fix('The site or location', had.site), role: fix('The device role', had.role)};
+  const items = (rack.items || []).map(i => { const label = fix('The device label', i.label); return label === i.label ? i : {...i, label}; });
+  const cables = (rack.cables || []).map(c => { const label = fix('The cable label', c.label); return label === c.label ? c : {...c, label}; });
+  if (!notes.length) return {rack, notes};
+  return {rack: {...rack, name, ...(had ? {dcim: same(dcim, had, ['site', 'role']) ? had : dcim} : {}),
+                 ...(rack.items ? {items} : {}), ...(rack.cables ? {cables} : {})}, notes};
+}
+
 // ── a type file's own names ─────────────────────────────────────────────
 // The sections of a device-type or module-type YAML that hold cable ends, in
 // the order a name is looked up, with the type a DCIM gives an end found there.
@@ -259,7 +298,7 @@ export function cableImportRows({rack, target = 'netbox', names, kept, resolve, 
     const len = importLength(c, target);
     if (len.note) notes.push(`Cable ${f.name}: ${len.note}.`);
     // A label or a description over the field's length is cut to it, not the cable dropped.
-    let label = c.label || c.id, description = c.purpose || '';
+    let label = flat(c.label || c.id), description = c.purpose || '';
     if (charCount(label) > DCIM_LIMITS.cableLabel) {
       notes.push(`Cable ${f.name}: its label is ${charCount(label)} characters and ${T} takes ${DCIM_LIMITS.cableLabel}, so the label is shortened to that.`);
       label = cutTo(label, DCIM_LIMITS.cableLabel);
@@ -330,7 +369,8 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
     : '';
   const numbered = rack.frame.numbering === 'top-down' ? 'numbered from the top' : 'numbered from the bottom';
   const out = [];
-  const para = (text, first = '', hang = '  ') => out.push(...wrap(text, first, hang, width));
+  // No paragraph holds a line break of its own, whatever it was handed (kitNames, above).
+  const para = (text, first = '', hang = '  ') => out.push(...wrap(flat(text), first, hang, width));
   para(`${T} import kit for ${rack.name}, from the Portrayal Rack Builder, ${isoDate(date)}.`);
   out.push('');
   const item = text => para(text, '- ', '  ');
@@ -383,10 +423,25 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
     step(3, `${F.devices} (${rowsText(rows.devices)}): Devices > Import. Every device is planned.`);
     step(4, `${F.modules} (${rowsText(rows.modules)}): Modules > Import. This creates each card's ports, so it comes before the cables.`);
     step(5, `${F.cables} (${rowsText(rows.cables)}): Cables > Import.`);
-    sub('NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it ' +
-        'already has twice is refused as not unique.');
     out.push('');
   }
+  // What a kit made for an empty instance meets on one that is not: a rack that is already there, and names
+  // the instance has more than once. For NetBox the second covers the modules step and the cables step alike.
+  out.push(`If ${T} is not empty:`);
+  if (nautobot) {
+    item(`A rack named "${rack.name}" in another location is not used: ${F.devices} finds the rack by its name and its location ` +
+         `together (rack__name, rack__location__name), so the rack must be the one in the location ${site ? `"${site}"` : 'the devices are in'}.`);
+    item(rows.cables
+      ? `Step 3 and ${KIT_SCRIPT} find a device by its name in every location: a device name Nautobot already has twice is refused, ` +
+        'and the script says so for each row that names it.'
+      : 'Step 3 finds a device by its name in every location: a device name Nautobot already has twice is refused.');
+  } else {
+    item(`The rack "${rack.name}" is already in ${site ? 'that' : 'its'} site: skip step 2, and check that it is ${rack.frame.heightRU}U, ` +
+         `${numbered}. Step 3 puts the devices in it.`);
+    item('Steps 4 and 5 find a device by its name in every site, and step 4 finds a module type by its model in every manufacturer: ' +
+         'a name NetBox already has twice is refused as not unique.');
+  }
+  out.push('');
 
   const missing = nautobot && !script
     ? [`${KIT_SCRIPT} could not be fetched, so it is not in this zip. It is at ${scriptUrl || `https://portrayal.dev/site/rack/nautobot/${KIT_SCRIPT}`}.`] : [];

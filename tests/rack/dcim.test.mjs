@@ -162,11 +162,16 @@ test('positions follow a top-down frame', () => {
 
 test('Nautobot rows use natural-key columns, keep two devices that share a U, and leave out a device with no type', () => {
   const types = new Map([...TYPES, ['i1', null]]);
-  const {columns, rows, left} = X.deviceImportRows({rack: RACK, items: ITEMS, types, target: 'nautobot'});
+  const {columns, rows, left} = X.deviceImportRows({rack: RACK, items: ITEMS, types, target: 'nautobot', dcim: {site: ' Lab 1 ', role: 'R'}});
   assert.deepEqual(columns, ['name', 'role__name', 'device_type__manufacturer__name', 'device_type__model',
-    'status__name', 'location__name', 'rack__name', 'position', 'face', 'comments']);
+    'status__name', 'location__name', 'rack__name', 'rack__location__name', 'position', 'face', 'comments']);
   assert.deepEqual([rows[1].device_type__manufacturer__name, rows[1].device_type__model, rows[1].status__name,
                     rows[1].rack__name], ['Edgecore', '7726-32X-O-AC-F', 'Planned', 'Export test']);
+  // The rack is found by its name AND its location: rack names repeat from one location to the next. The
+  // column holds the device's own location, on every row.
+  assert.ok(rows.every(r => r.location__name === 'Lab 1' && r.rack__location__name === 'Lab 1'));
+  assert.ok(X.deviceImportRows({rack: RACK, items: ITEMS, types, target: 'nautobot'}).rows.every(r => r.rack__location__name === ''));
+  assert.ok(!X.deviceImportRows({rack: RACK, items: ITEMS, types}).columns.some(c => c.includes('location')), 'NetBox has no such column');
   // Nautobot 3.2.6 accepted leaf-1 and demarc-i3 at U14, front and rear: both rows stay, and neither is called refused.
   assert.deepEqual(rows.map(r => r.name), ['demarc-i4', 'leaf-1', 'demarc-i3']);
   assert.ok(rows.every(r => !/refuses/.test(r.comments)));

