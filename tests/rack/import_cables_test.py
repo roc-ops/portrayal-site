@@ -21,6 +21,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import unittest.mock
 import urllib.parse
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -60,6 +61,27 @@ class Mock:
         self.pad = 0                 # characters before the echo, to put the token across a cut
         self.refuse = False          # a POST is refused
         self.fail_lists = False      # a GET of a list fails, with the echo
+        self.ignore_filter_on = ()   # lists whose device filter is ignored (the interface probe still answers rightly)
+        self.probe_status = None     # what the no-such-device probe is answered with, when not as a real Nautobot does
+        self.no_owner = False        # ports are listed without the device or the module they are on
+        self.bay_by_id = False       # a module's bay comes back as its id alone, to be fetched
+
+    def device_id(self, name):
+        return 'dev:%s:%d' % (name, self.devices.index(name))
+
+    def module_id(self, device, port):
+        return 'mod:%s:%s' % (device, port.split('/')[0])
+
+    def port(self, lst, device, name):
+        """A port as Nautobot lists one at depth 0. A fixed port names its device; a card's port
+        (slot-2/p0) names no device, only its module, as Nautobot 3.2 does."""
+        pid = self.port_id(lst, device, name)
+        row = {'id': pid, 'name': name, 'cable': {'id': self.cabled[pid]} if pid in self.cabled else None}
+        if not self.no_owner:
+            card = '/' in name
+            row['device'] = None if card else {'id': self.device_id(device), 'object_type': 'dcim.device'}
+            row['module'] = {'id': self.module_id(device, name), 'object_type': 'dcim.module'} if card else None
+        return row
 
     def port_id(self, lst, device, name):
         return '%s:%s:%s' % (lst, device, name)
@@ -126,7 +148,15 @@ def handler(mock):
                 return self.send(404, {'detail': 'not found'})
             if mock.fail_lists and len(parts) == 3 and 'portrayal-no-such-device' not in self.path:
                 return self.echoed(500)
+            if mock.probe_status and 'portrayal-no-such-device' in self.path:
+                return self.send(mock.probe_status, {'detail': 'the probe is answered oddly'})
             lst = parts[2]
+            if len(parts) == 4 and lst in ('modules', 'module-bays'):  # a module, with its bay; or the bay alone
+                device = parts[3].split(':')[-2]
+                bay = {'id': 'bay:' + parts[3], 'parent_device': {'id': mock.device_id(device)}, 'parent_module': None}
+                if lst == 'module-bays':
+                    return self.send(200, bay)
+                return self.send(200, {'id': parts[3], 'parent_module_bay': {'id': bay['id']} if mock.bay_by_id else bay})
             if len(parts) == 4:                                     # /api/dcim/<list>/<id>/
                 if lst == 'cables':
                     cable = mock.cables.get(parts[3])
@@ -143,12 +173,14 @@ def handler(mock):
                 rows = [{'id': 'dev:%s:%d' % (d, k), 'name': d} for k, d in enumerate(mock.devices) if d == q.get('name')]
             else:
                 device = q.get('device')
-                if device not in mock.devices and not mock.ignore_device_filter:
+                ignored = mock.ignore_device_filter or (lst in mock.ignore_filter_on and 'portrayal-no-such-device' not in self.path)
+                # Nautobot's device filter takes a name or an id: a value that is some device's id means that device.
+                by_id = [d for d in mock.devices if mock.device_id(d) == device]
+                device = by_id[0] if by_id else device
+                if device not in mock.devices and not ignored:
                     return self.send(400, {'device': ['Select a valid choice. %s is not one of the available choices.' % device]})
-                rows = [{'id': mock.port_id(l, d, n), 'name': n,
-                         'cable': {'id': mock.cabled[mock.port_id(l, d, n)]} if mock.port_id(l, d, n) in mock.cabled else None}
-                        for (l, d), names in mock.ports.items() for n in names
-                        if l == lst and (mock.ignore_device_filter or d == device)]
+                rows = [mock.port(l, d, n) for (l, d), names in mock.ports.items() for n in names
+                        if l == lst and (ignored or d == device)]
             offset = int(q.get('offset', 0))
             page, more = rows[offset:offset + mock.page_size], offset + mock.page_size < len(rows)
             nxt = None
@@ -495,7 +527,7 @@ class ImportCables(unittest.TestCase):
         self.assertEqual(self.run_script(HEADER)[1].strip().split('\n')[-1], '0 rows: 0 would be created, 0 already connected, 0 failed. Nothing was created.')
         with contextlib.redirect_stderr(io.StringIO()) as err:
             self.assertEqual(import_cables.main(['import_cables.py', 'a.csv', '--delete'], {}, io.StringIO()), 2)
-        self.assertEqual(err.getvalue().strip(), 'usage: python3 import_cables.py [3-cables.csv] [--apply]')
+        self.assertEqual(err.getvalue().strip(), 'usage: python3 import_cables.py [3-cables.csv] [--apply]   (--help says more)')
 
     def test_a_file_that_cannot_be_read_or_a_server_that_breaks_the_protocol_is_a_sentence_not_a_traceback(self):
         code, _, err = self.run_script(raw=b'a_device,a_type\n\xff\xfe,x\n')
@@ -555,6 +587,207 @@ class ImportCables(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertNotIn('length_unit', self.posts()[0][3])
         self.assertIn('line 2 u: connected leaf-1 port-1 to core-1 slot-2/p0 (smf-os2, Planned).', out)
+
+    # ── the token never comes out, whatever it holds and whatever goes wrong ──
+    def fragments(self, token, text, what):
+        """No six characters of the token in a row, and no traceback."""
+        self.assertNotIn('Traceback', text, what)
+        for k in range(len(token) - 5):
+            self.assertNotIn(token[k:k + 6], text, '%s: a piece of the token' % what)
+
+    def test_a_token_with_a_line_break_after_it_is_used_without_it_and_never_printed(self):
+        # export NAUTOBOT_TOKEN="$(cat token.txt)" on a file with a CR LF: http.client refuses the header
+        # with a ValueError that quotes it. The space around a token is dropped at the door instead.
+        for tail in ('\r', '\n', '\r\n', ' ', '\t', ' \r\n'):
+            for flags in ((), ('--apply',)):
+                self.mock.__init__()
+                code, out, err = self.run_script(GOOD, *flags, env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': TOKEN + tail})
+                self.fragments(TOKEN, out + err, repr(tail))
+                self.assertEqual((code, err), (0, ''), repr(tail))
+                self.assertTrue(all(h.get('Authorization') == 'Token ' + TOKEN for _, _, h, _ in self.mock.requests), repr(tail))
+        # As a program, the way a user runs it: nothing on stderr, no traceback, exit 0.
+        r = subprocess.run([sys.executable, '-I', str(SCRIPT), self.csv(GOOD)], capture_output=True, text=True,
+                           env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': TOKEN + '\r\n', 'PATH': os.environ.get('PATH', '')})
+        self.assertEqual((r.returncode, r.stderr), (0, ''))
+        self.fragments(TOKEN, r.stdout + r.stderr, 'as a program')
+
+    def test_a_token_that_cannot_be_one_is_refused_at_the_door_without_being_shown(self):
+        for token in (TOKEN[:12] + ' ' + TOKEN[12:], TOKEN[:12] + '\r' + TOKEN[12:], TOKEN[:12] + '\n' + TOKEN[12:],
+                      TOKEN[:12] + '\x1b' + TOKEN[12:], TOKEN[:12] + 'é' + TOKEN[12:], TOKEN + ' x', 'т' * 30):
+            self.mock.requests.clear()
+            code, out, err = self.run_script(GOOD, '--apply', env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': token})
+            self.assertEqual((code, out, self.mock.requests), (2, '', []), ascii(token))
+            self.fragments(token, err, ascii(token))
+            self.assertEqual(err.strip(), 'NAUTOBOT_TOKEN holds a space, a control character or a character that is not ASCII, '
+                                          'so it is not an API token. Set it again, to the token alone. It is not shown here.')
+        for blank in ('', ' ', '\r\n'):
+            self.assertEqual(self.run_script(env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': blank})[2].strip(), 'NAUTOBOT_TOKEN is not set.')
+        # As a program: one line on stderr, exit 2, and the same for a token no terminal encoding carries.
+        for token in (TOKEN[:12] + ' ' + TOKEN[12:], TOKEN + 'é'):
+            r = subprocess.run([sys.executable, '-I', str(SCRIPT), self.csv(GOOD)], capture_output=True, text=True,
+                               env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': token, 'PATH': os.environ.get('PATH', ''),
+                                    'PYTHONIOENCODING': 'utf-8'})
+            self.assertEqual((r.returncode, r.stdout, len(r.stderr.strip().split('\n'))), (2, '', 1), r.stderr)
+            self.fragments(token, r.stderr, 'as a program')
+
+    def test_an_error_nobody_expected_is_one_line_that_names_its_kind_and_never_its_text(self):
+        # A token that a str repr and a bytes repr each spell another way (a backslash, both quotes).
+        odd = 'ab\\cd\'ef"gh-0123456789-zyxwvu'
+        for token in (TOKEN, odd):
+            header = ('Token ' + token + '\r').encode()
+            # http.client's own words for a header it refuses, a bare repr, and the token as it is.
+            for exc in (ValueError('Invalid header value %r' % header), RuntimeError(repr('Token ' + token)),
+                        UnicodeEncodeError('latin-1', token, 0, 1, 'ordinal not in range'), KeyError(token), Exception(token)):
+                with unittest.mock.patch.object(http.client.HTTPConnection, 'putheader', side_effect=exc):
+                    code, out, err = self.run_script(GOOD, '--apply', env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': token})
+                what = '%s with %s' % (type(exc).__name__, ascii(token))
+                self.assertEqual(code, 2, what)
+                self.fragments(token, out + err, what)
+                self.assertEqual(err.strip().split('\n'), [
+                    'Stopped: an error this script did not expect (%s). Its details are not shown, so that the token can '
+                    'never be printed. A cable already created stays; run the script again to go on.' % type(exc).__name__], what)
+            # An error the script does put into words (it could not connect) is cleaned of every spelling of the token.
+            for exc in (OSError('refused %r' % header), OSError(repr(token)), http.client.HTTPException(ascii(token)),
+                        OSError(urllib.parse.quote(token, safe='')), OSError(json.dumps(token))):
+                with unittest.mock.patch.object(http.client.HTTPConnection, 'putheader', side_effect=exc):
+                    code, out, err = self.run_script(GOOD, env={'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': token})
+                self.assertEqual(code, 2)
+                self.assertIn('Could not reach Nautobot', err)
+                self.fragments(token, out + err, 'a connection error with %s' % ascii(token))
+        # Deeper still: an error out of the row loop, after a cable was made.
+        calls = []
+        real = import_cables.Api.request
+
+        def breaks(api, method, *a, **k):
+            calls.append(method)
+            if calls.count('POST') == 2:
+                raise ValueError("Invalid header value b'Token %s\\r'" % TOKEN)
+            return real(api, method, *a, **k)
+        with unittest.mock.patch.object(import_cables.Api, 'request', breaks):
+            code, out, err = self.run_script(GOOD, '--apply')
+        self.assertEqual((code, len(self.posts())), (2, 1))
+        self.assertIn('line 2 A1: connected', out)
+        self.fragments(TOKEN, out + err, 'in the row loop')
+        self.assertIn('(ValueError)', err)
+
+    def test_an_interrupt_is_one_line_and_exit_130(self):
+        with unittest.mock.patch.object(import_cables.Api, 'request', side_effect=KeyboardInterrupt):
+            code, out, err = self.run_script(GOOD, '--apply')
+        self.assertEqual((code, err.strip()), (130, 'Stopped: interrupted. A cable already created stays; run the script again to go on.'))
+
+    # ── a port is tied to its device by id ──
+    def test_a_port_is_used_only_when_nautobot_says_it_is_on_that_device(self):
+        # The probe is of /interfaces/ alone. Here the console-port list ignores its filter: asked for leaf-1's,
+        # it lists demarc-i3's "Console" too, and leaf-1 has none of its own.
+        self.mock.ignore_filter_on = ('console-ports', 'console-server-ports')
+        self.mock.ports[('console-server-ports', 'core-1')] = ['con-1']
+        text = HEADER + 'leaf-1,dcim.consoleport,Console,core-1,dcim.consoleserverport,con-1,,Planned,stolen,,,\n'
+        code, out, _ = self.run_script(text, '--apply')
+        self.assertEqual((code, self.posts()), (1, []), out)
+        self.assertIn('line 2 stolen: cannot connect leaf-1 Console to core-1 con-1 (Planned): Nautobot does not say that the '
+                      'console port named Console it listed for leaf-1 is on that device, so it is not used.', out)
+        # The device's own port is still found in such a list: the right device, by id.
+        text = HEADER + 'demarc-i3,dcim.consoleport,Console,core-1,dcim.consoleserverport,con-1,,Planned,own,,,\n'
+        code, out, _ = self.run_script(text, '--apply')
+        self.assertEqual((code, len(self.posts())), (0, 1), out)
+        self.assertIn('console-ports:demarc-i3:Console', self.posts()[0][3])
+
+    def test_a_device_named_like_another_devices_id_does_not_get_that_devices_ports(self):
+        # Nautobot's device filter takes a name or an id. A device whose NAME is leaf-1's id lists leaf-1's ports.
+        twin = self.mock.device_id('leaf-1')
+        self.mock.devices.append(twin)
+        self.mock.ports[('interfaces', twin)] = []
+        text = HEADER + '"%s",dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,,Planned,by-id,,,\n' % twin
+        code, out, _ = self.run_script(text, '--apply')
+        self.assertEqual((code, self.posts()), (1, []), out)
+        self.assertIn('Nautobot does not say that the interface named port-1 it listed for %s is on that device' % twin, out)
+
+    def test_a_card_port_is_tied_to_its_device_through_its_module_and_a_port_with_no_owner_is_not_used(self):
+        # slot-2/p0 names no device, only its module (Nautobot 3.2): the module's bay names the device.
+        for by_id in (False, True):
+            self.mock.__init__()
+            self.mock.bay_by_id = by_id
+            code, out, err = self.run_script(GOOD, '--apply')
+            self.assertEqual(code, 0, out + err)
+            gets = [p for m, p, *_ in self.mock.requests if m == 'GET']
+            self.assertEqual([p for p in gets if '/modules/' in p], ['/api/dcim/modules/mod%3Acore-1%3Aslot-2/?depth=1'])   # asked once, kept
+            self.assertEqual(len([p for p in gets if '/module-bays/' in p]), 1 if by_id else 0)
+        # A card of another device: its module's bay is that device's.
+        self.mock.__init__()
+        self.mock.ignore_filter_on = ('interfaces',)
+        text = HEADER + 'leaf-1,dcim.interface,slot-2/p0,demarc-i3,dcim.interface,port-2-1,,Planned,card,,,\n'
+        code, out, _ = self.run_script(text, '--apply')
+        self.assertEqual((code, self.posts()), (1, []), out)
+        self.assertIn('the interface named slot-2/p0 it listed for leaf-1 is on that device, so it is not used', out)
+        # A list that says nothing of where a port is: nothing is taken from it.
+        self.mock.__init__()
+        self.mock.no_owner = True
+        code, out, _ = self.run_script(GOOD, '--apply')
+        self.assertEqual((code, self.posts()), (1, []), out)
+        self.assertTrue(out.strip().endswith('2 rows: 0 created, 0 already connected, 2 failed.'), out)
+
+    def test_a_probe_of_the_device_filter_that_fails_stops_the_run_and_says_why(self):
+        self.mock.probe_status = 500
+        code, out, err = self.run_script(GOOD, '--apply')
+        self.assertEqual((code, self.posts()), (2, []))
+        self.assertIn('Could not check that this Nautobot keeps a list of ports to one device (HTTP 500: ', err)
+        self.assertIn('Nothing was looked up or created.', err)
+        # A real Nautobot refuses a name no device has (HTTP 400), or lists nothing: both are a filter that is kept.
+        self.mock.probe_status = None
+        self.assertEqual(self.run_script(GOOD)[0], 0)
+
+    # ── hardening ──
+    def test_a_cell_with_any_control_character_is_quoted(self):
+        row = {'a_type': 'dcim.interface', 'b_type': 'dcim.interface', 'status': 'Planned'}
+        for label in ('a\x0cb', 'a\x0bb', 'a\x1cb', 'a\x85b', 'a b', 'a\tb', 'a\x00b', 'a\x7fb', 'a,b', 'a"b', 'a\rb', 'a\nb'):
+            body = import_cables.cable_csv(dict(row, label=label), {'id': 'x'}, {'id': 'y'})
+            self.assertIn('"%s"' % label.replace('"', '""'), body, ascii(label))
+            self.assertEqual(csv_rows(body)['label'], label, ascii(label))
+        self.assertEqual(import_cables.cable_csv(dict(row, label='plain label'), {'id': 'x'}, {'id': 'y'}),
+                         'termination_a_type,termination_a_id,termination_b_type,termination_b_id,status__name,label\n'
+                         'dcim.interface,x,dcim.interface,y,Planned,plain label\n')
+
+    def test_a_base_url_with_a_query_or_a_fragment_is_refused(self):
+        for bad in (self.url + '/?x=1', self.url + '?', self.url + '/#top', self.url + '/nautobot?api=1#x'):
+            code, out, err = self.run_script(env={'NAUTOBOT_URL': bad, 'NAUTOBOT_TOKEN': TOKEN})
+            self.assertEqual((code, self.mock.requests), (2, []), bad)
+            self.assertIn('NAUTOBOT_URL must not carry a query or a fragment', err)
+
+    def test_help_states_the_variables_the_dry_run_default_and_the_exit_codes_and_needs_nothing_set(self):
+        for flag in ('--help', '-h'):
+            out = io.StringIO()
+            with contextlib.redirect_stderr(io.StringIO()) as err:
+                code = import_cables.main(['import_cables.py', flag], {}, out)
+            self.assertEqual((code, err.getvalue(), self.mock.requests), (0, '', []))
+            text = ' '.join(out.getvalue().split())
+            for said in ('NAUTOBOT_URL', 'NAUTOBOT_TOKEN', '--apply', 'Without --apply nothing is created: that is the default.',
+                         'It exits 0 when no row failed', '1 when a row could not be done', '2 when it could not start or had to stop',
+                         '130 when it was interrupted', 'It never prints a traceback'):
+                self.assertIn(said, text)
+        r = subprocess.run([sys.executable, '-I', str(SCRIPT), '--help'], capture_output=True, text=True, env={'PATH': os.environ.get('PATH', '')})
+        self.assertEqual((r.returncode, r.stderr), (0, ''))
+        self.assertIn('python3 import_cables.py 3-cables.csv --apply', r.stdout)
+
+    def test_a_file_with_more_rows_than_any_rack_has_is_refused_with_a_sentence(self):
+        row = 'leaf-1,dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,,Planned,x,,,\n'
+        was, import_cables.MAX_ROWS = import_cables.MAX_ROWS, 3
+        try:
+            self.assertEqual(was, 20000)
+            self.assertEqual(self.run_script(HEADER + row * 3)[0], 1)          # at the limit it runs (and the rows collide)
+            self.mock.requests.clear()
+            code, out, err = self.run_script(HEADER + row * 4, '--apply')
+        finally:
+            import_cables.MAX_ROWS = was
+        self.assertEqual((code, out, self.mock.requests), (2, '', []))
+        self.assertIn('has 4 rows, and this script takes at most 3 in one file. Split the file, keeping its first line in each part.', err)
+
+    def test_marks_that_change_the_direction_of_text_never_reach_the_terminal(self):
+        marks = '‪‫‬‭‮⁦⁧⁨⁩‎‏؜  '
+        self.assertEqual(import_cables.plain('a' + marks + 'b'), 'a' + '?' * len(marks) + 'b')
+        text = HEADER + 'leaf-1,dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,,Planned,"ok‮)detcennoc( deliaf",,,\n'
+        code, out, err = self.run_script(text)
+        self.assertFalse(any(m in out + err for m in marks))
+        self.assertIn('line 2 ok?)detcennoc( deliaf: would connect', out)
 
     def test_it_runs_as_a_program_with_the_standard_library_alone(self):
         r = subprocess.run([sys.executable, '-I', str(SCRIPT), self.csv(GOOD)], capture_output=True, text=True,

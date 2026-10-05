@@ -114,6 +114,9 @@ def handler(st):
             if u.path.startswith('/api/dcim/cables/') and lst != 'cables':      # one cable by id: the script re-fetches what it made
                 one = next((r for r in st.cables if r.get('id') == lst), None)
                 return self.send(200, one) if one else self.send(404, {'detail': 'Not found.'})
+            if u.path.startswith('/api/dcim/modules/') and lst != 'modules':    # one module: the script ties a card's port to its device
+                dev = urllib.parse.unquote(lst).split(':')[1]
+                return self.send(200, {'id': lst, 'parent_module_bay': {'id': 'bay', 'parent_device': {'id': 'dev:' + dev}, 'parent_module': None}})
             if lst == 'devices' and 'name__isw' in q:                 # the preflight and devices_compared; Nautobot's asks with depth
                 names = st.nautobot_devices if 'depth' in q else st.netbox_devices
                 return self.send(200, {'results': [{'id': 'dev:' + n, 'name': n} for n in names if n != st.lose_device], 'next': None})
@@ -124,7 +127,10 @@ def handler(st):
                     return self.send(400, {'device': ['Select a valid choice.']})
                 def on(port):                                          # the cable a created cable's end puts on this port
                     return next((r['id'] for r in st.cables if port in (r.get('termination_a_id'), r.get('termination_b_id'))), None)
+                # As Nautobot 3.2 lists a port at depth 0: a fixed port names its device, a card's port only its module.
                 rows = [{'id': '%s:%s' % (q['device'], n), 'name': n,
+                         'device': None if '/' in n else {'id': 'dev:' + q['device']},
+                         'module': {'id': 'mod:%s:%s' % (q['device'], n.split('/')[0])} if '/' in n else None,
                          'cable': None if st.hide_cables or not on('%s:%s' % (q['device'], n)) else {'id': on('%s:%s' % (q['device'], n))}}
                         for n in st.ports[q['device']]]
             elif lst == 'cables':
