@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="54.5mm" height="40.25mm" viewBox="0 0 54.5 40.25">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='supermicro/psu-pws-804p-1r@'] .state-fault { --led-color: #f59e0b; }
+    g[data-ref^='supermicro/psu-pws-804p-1r@'] .state-ok { --led-color: #22c55e; }</style>
+  <g id="psu-pws-804p-1r" data-path="psu-pws-804p-1r" data-class="psu" data-behaviour="fills" data-ref="supermicro/psu-pws-804p-1r@1:1.0.0" data-body-depth="220.0" data-wall="#3a4045" data-efficiency="platinum" data-inlet="c14" data-input="100-240 VAC" data-model="PWS-804P-1R" data-power-output-w="800" transform="translate(0,0)">
+    <title>psu-pws-804p-1r</title>
+    <g id="psu-pws-804p-1r--inlet" data-path="psu-pws-804p-1r/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(25.3,7.6) rotate(270 14.0 10.0)">
+      <title>psu-pws-804p-1r--inlet</title>
+      <rect id="psu-pws-804p-1r--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-pws-804p-1r/inlet/opening" data-class="cutout" />
+      <path id="psu-pws-804p-1r--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+      <rect id="psu-pws-804p-1r--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-pws-804p-1r--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <rect id="psu-pws-804p-1r--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+      <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+    </g>
+    <path id="psu-pws-804p-1r--body" fill-rule="evenodd" d="M0.2 0.6 a0.4 0.4 0 0 1 0.4 -0.4 h53.3 a0.4 0.4 0 0 1 0.4 0.4 v39.05 a0.4 0.4 0 0 1 -0.4 0.4 h-53.3 a0.4 0.4 0 0 1 -0.4 -0.4 Z M29.3 3.6 h20 v28 h-20 Z" fill="#c8ccd0" stroke="#8f969d" stroke-width="0.3" />
+    <g id="psu-pws-804p-1r--vents" data-path="psu-pws-804p-1r/vents" data-class="vent">
+      <rect x="2.9" y="3.6" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="2.9" y="12.3" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="2.9" y="21" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="2.9" y="29.7" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="11.2" y="3.6" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="11.2" y="12.3" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="11.2" y="21" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="11.2" y="29.7" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="19.5" y="3.6" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="19.5" y="12.3" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="19.5" y="21" width="7" height="7.4" rx="0.5" fill="#16181a" />
+      <rect x="19.5" y="29.7" width="7" height="7.4" rx="0.5" fill="#16181a" />
+    </g>
+    <path id="psu-pws-804p-1r--inlet-bezel" fill-rule="evenodd" d="M27.3 2.6 h24 v30 h-24 Z M29.3 3.6 h20 v28 h-20 Z" fill="#2a2d30" stroke="#17191b" stroke-width="0.3" data-path="psu-pws-804p-1r/inlet-bezel" data-class="inlet" />
+    <circle cx="28.5" cy="36.0" r="1.9" fill="#b4b9be" stroke="#8f969d" stroke-width="0.3" />
+    <circle id="psu-pws-804p-1r--lamp" cx="28.5" cy="36.0" r="1.1" fill="var(--led-color, #6b5a4c)" stroke="#17191b" stroke-width="0.2" data-path="psu-pws-804p-1r/lamp" data-class="led" data-states="off ok fault" data-description="Power supply status. Off - no power input; amber - power supply is off or failed; green - on and operating." />
+    <circle cx="35.3" cy="36.0" r="1.5" fill="#17191b" />
+    <rect id="psu-pws-804p-1r--release" x="38.4" y="35.6" width="11.6" height="4.4" rx="0.9" fill="#b0434d" stroke="#7a2c33" stroke-width="0.3" data-path="psu-pws-804p-1r/release" data-class="latch" data-z-out="4.0" data-z-color="#b0434d" />
+    <path id="psu-pws-804p-1r--handle" d="M15.4 4.2 h4.6 a6 6 0 0 1 6 6 v1.2 h-3.2 v-1.2 a2.8 2.8 0 0 0 -2.8 -2.8 v29.6 h-4.6 Z" fill="#6c7278" stroke="#474c51" stroke-width="0.3" data-path="psu-pws-804p-1r/handle" data-class="handle" data-z-uhandle="14.0" data-z-color="#6c7278" />
+  </g>
+</svg>

@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="437.0mm" height="43.0mm" viewBox="0 0 437.0 43.0" data-device="sys-111e-fwtr" data-view="rear" data-ru="1" data-weight-kg="4.54" data-weight-gross-kg="6.8" data-power-input="100-240 VAC, 50-60 Hz, per supply (the 800 W supply also 230-240 VDC)" data-psu-redundancy="1+1" data-fans="six 40 x 40 x 56 mm counter-rotating fans" data-operating-temp-c="0 to 40" data-storage-temp-c="-40 to 60" data-operating-humidity="8 to 90% non-condensing" data-storage-humidity="5 to 95% non-condensing" data-cpu="one 4th or 5th generation Intel Xeon Scalable processor, socket E (LGA-4677), 85 to 350 W TDP (over 205 W only under specific conditions)" data-memory="8 DDR5 DIMM slots, up to 2 TB of 5600 MT/s ECC RDIMM" data-chipset="Intel C741" data-motherboard="X13SEW-TF" data-storage="two internal fixed 2.5 inch SATA bays; one M.2 PCIe 3.0 x2 NVMe slot" data-network="two 10GbE RJ45 (Intel X550-AT2)" data-bmc="dedicated 1GbE BMC LAN port" data-regulatory="FCC, ICES, CE, UKCA, VCCI, RCM, NRTL, CB" data-eol="none-announced" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+</style>
+  <metadata>{"device":"Supermicro SuperServer SYS-111E-FWTR","device-version":"1.0.0","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{},"source-sha256":"b855be7bce1fd43edc3dde618d6178b5c207d57c78a19343266aed26b30b1c88","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="SuperServer SYS-111E-FWTR" data-sku="SYS-111E-FWTR" data-part-number="SYS-111E-FWTR" x="0" y="0" width="437" height="43" rx="1.2" fill="#c8ccd0" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="437" height="43" rx="0.6" fill="#c8ccd0" />
+    <rect id="plate-1" data-kind="plate" x="7.1" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-2" data-kind="plate" x="13.29" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-3" data-kind="plate" x="19.48" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-4" data-kind="plate" x="25.67" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-5" data-kind="plate" x="31.86" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-6" data-kind="plate" x="38.05" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-7" data-kind="plate" x="44.24" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-8" data-kind="plate" x="50.43" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-9" data-kind="plate" x="56.62" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-10" data-kind="plate" x="62.81" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-11" data-kind="plate" x="69" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-12" data-kind="plate" x="75.19" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-13" data-kind="plate" x="81.38" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-14" data-kind="plate" x="87.57" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-15" data-kind="plate" x="93.76" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-16" data-kind="plate" x="99.95" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-17" data-kind="plate" x="106.14" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-18" data-kind="plate" x="112.33" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-19" data-kind="plate" x="118.52" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-20" data-kind="plate" x="124.71" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-21" data-kind="plate" x="130.9" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-22" data-kind="plate" x="137.09" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-23" data-kind="plate" x="143.28" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-24" data-kind="plate" x="149.47" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-25" data-kind="plate" x="155.66" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-26" data-kind="plate" x="161.85" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-27" data-kind="plate" x="168.04" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-28" data-kind="plate" x="174.23" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-29" data-kind="plate" x="180.42" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-30" data-kind="plate" x="186.61" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-31" data-kind="plate" x="192.8" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-32" data-kind="plate" x="198.99" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-33" data-kind="plate" x="205.18" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-34" data-kind="plate" x="211.37" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-35" data-kind="plate" x="217.56" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-36" data-kind="plate" x="223.75" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-37" data-kind="plate" x="229.94" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-38" data-kind="plate" x="236.13" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-39" data-kind="plate" x="242.32" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-40" data-kind="plate" x="248.51" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-41" data-kind="plate" x="254.7" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-42" data-kind="plate" x="260.89" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-43" data-kind="plate" x="267.08" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-44" data-kind="plate" x="273.27" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-45" data-kind="plate" x="279.46" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-46" data-kind="plate" x="285.65" y="4.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-47" data-kind="plate" x="7.1" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-48" data-kind="plate" x="13.29" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-49" data-kind="plate" x="19.48" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-50" data-kind="plate" x="25.67" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-51" data-kind="plate" x="31.86" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-52" data-kind="plate" x="38.05" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-53" data-kind="plate" x="44.24" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-54" data-kind="plate" x="50.43" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-55" data-kind="plate" x="56.62" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-56" data-kind="plate" x="62.81" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-57" data-kind="plate" x="69" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-58" data-kind="plate" x="75.19" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-59" data-kind="plate" x="81.38" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-60" data-kind="plate" x="87.57" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-61" data-kind="plate" x="93.76" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-62" data-kind="plate" x="99.95" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-63" data-kind="plate" x="106.14" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-64" data-kind="plate" x="112.33" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-65" data-kind="plate" x="118.52" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-66" data-kind="plate" x="124.71" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-67" data-kind="plate" x="130.9" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-68" data-kind="plate" x="137.09" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-69" data-kind="plate" x="143.28" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-70" data-kind="plate" x="149.47" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-71" data-kind="plate" x="155.66" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-72" data-kind="plate" x="161.85" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-73" data-kind="plate" x="168.04" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-74" data-kind="plate" x="174.23" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-75" data-kind="plate" x="180.42" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-76" data-kind="plate" x="186.61" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-77" data-kind="plate" x="192.8" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-78" data-kind="plate" x="198.99" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-79" data-kind="plate" x="205.18" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-80" data-kind="plate" x="211.37" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-81" data-kind="plate" x="217.56" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-82" data-kind="plate" x="223.75" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-83" data-kind="plate" x="229.94" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-84" data-kind="plate" x="236.13" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-85" data-kind="plate" x="242.32" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-86" data-kind="plate" x="248.51" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-87" data-kind="plate" x="254.7" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-88" data-kind="plate" x="260.89" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-89" data-kind="plate" x="267.08" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-90" data-kind="plate" x="273.27" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-91" data-kind="plate" x="279.46" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-92" data-kind="plate" x="285.65" y="10.25" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-93" data-kind="plate" x="7.1" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-94" data-kind="plate" x="13.29" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-95" data-kind="plate" x="19.48" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-96" data-kind="plate" x="25.67" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-97" data-kind="plate" x="31.86" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-98" data-kind="plate" x="38.05" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-99" data-kind="plate" x="44.24" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-100" data-kind="plate" x="50.43" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-101" data-kind="plate" x="56.62" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-102" data-kind="plate" x="62.81" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-103" data-kind="plate" x="69" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-104" data-kind="plate" x="75.19" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-105" data-kind="plate" x="81.38" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-106" data-kind="plate" x="87.57" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-107" data-kind="plate" x="93.76" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-108" data-kind="plate" x="99.95" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-109" data-kind="plate" x="106.14" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-110" data-kind="plate" x="112.33" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-111" data-kind="plate" x="118.52" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-112" data-kind="plate" x="124.71" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-113" data-kind="plate" x="130.9" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-114" data-kind="plate" x="137.09" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-115" data-kind="plate" x="143.28" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-116" data-kind="plate" x="149.47" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-117" data-kind="plate" x="155.66" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-118" data-kind="plate" x="161.85" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-119" data-kind="plate" x="168.04" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-120" data-kind="plate" x="174.23" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-121" data-kind="plate" x="180.42" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-122" data-kind="plate" x="186.61" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-123" data-kind="plate" x="192.8" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-124" data-kind="plate" x="198.99" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-125" data-kind="plate" x="205.18" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-126" data-kind="plate" x="211.37" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-127" data-kind="plate" x="217.56" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-128" data-kind="plate" x="223.75" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-129" data-kind="plate" x="229.94" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-130" data-kind="plate" x="236.13" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-131" data-kind="plate" x="242.32" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-132" data-kind="plate" x="248.51" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-133" data-kind="plate" x="254.7" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-134" data-kind="plate" x="260.89" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-135" data-kind="plate" x="267.08" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-136" data-kind="plate" x="273.27" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-137" data-kind="plate" x="279.46" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-138" data-kind="plate" x="285.65" y="16.45" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-139" data-kind="plate" x="7.1" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-140" data-kind="plate" x="13.29" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-141" data-kind="plate" x="19.48" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-142" data-kind="plate" x="25.67" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-143" data-kind="plate" x="31.86" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-144" data-kind="plate" x="38.05" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-145" data-kind="plate" x="44.24" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-146" data-kind="plate" x="50.43" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-147" data-kind="plate" x="56.62" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-148" data-kind="plate" x="62.81" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-149" data-kind="plate" x="69" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-150" data-kind="plate" x="75.19" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-151" data-kind="plate" x="81.38" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-152" data-kind="plate" x="87.57" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-153" data-kind="plate" x="93.76" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-154" data-kind="plate" x="99.95" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-155" data-kind="plate" x="106.14" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-156" data-kind="plate" x="112.33" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-157" data-kind="plate" x="118.52" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-158" data-kind="plate" x="124.71" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-159" data-kind="plate" x="130.9" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-160" data-kind="plate" x="137.09" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-161" data-kind="plate" x="143.28" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-162" data-kind="plate" x="149.47" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-163" data-kind="plate" x="155.66" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-164" data-kind="plate" x="161.85" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-165" data-kind="plate" x="168.04" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-166" data-kind="plate" x="174.23" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-167" data-kind="plate" x="180.42" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-168" data-kind="plate" x="186.61" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-169" data-kind="plate" x="192.8" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-170" data-kind="plate" x="198.99" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-171" data-kind="plate" x="205.18" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-172" data-kind="plate" x="211.37" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-173" data-kind="plate" x="217.56" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-174" data-kind="plate" x="223.75" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-175" data-kind="plate" x="229.94" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-176" data-kind="plate" x="236.13" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-177" data-kind="plate" x="242.32" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-178" data-kind="plate" x="248.51" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-179" data-kind="plate" x="254.7" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-180" data-kind="plate" x="260.89" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-181" data-kind="plate" x="267.08" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-182" data-kind="plate" x="273.27" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-183" data-kind="plate" x="279.46" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-184" data-kind="plate" x="285.65" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-185" data-kind="plate" x="7.1" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-186" data-kind="plate" x="13.29" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-187" data-kind="plate" x="19.48" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-188" data-kind="plate" x="25.67" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-189" data-kind="plate" x="31.86" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-190" data-kind="plate" x="38.05" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-191" data-kind="plate" x="44.24" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-192" data-kind="plate" x="50.43" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-193" data-kind="plate" x="56.62" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-194" data-kind="plate" x="62.81" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-195" data-kind="plate" x="69" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-196" data-kind="plate" x="75.19" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-197" data-kind="plate" x="81.38" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-198" data-kind="plate" x="87.57" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-199" data-kind="plate" x="93.76" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-200" data-kind="plate" x="99.95" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-201" data-kind="plate" x="106.14" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-202" data-kind="plate" x="112.33" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-203" data-kind="plate" x="118.52" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-204" data-kind="plate" x="124.71" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-205" data-kind="plate" x="130.9" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-206" data-kind="plate" x="137.09" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-207" data-kind="plate" x="143.28" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-208" data-kind="plate" x="149.47" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-209" data-kind="plate" x="155.66" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-210" data-kind="plate" x="161.85" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-211" data-kind="plate" x="168.04" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-212" data-kind="plate" x="174.23" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-213" data-kind="plate" x="180.42" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-214" data-kind="plate" x="186.61" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-215" data-kind="plate" x="192.8" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-216" data-kind="plate" x="198.99" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-217" data-kind="plate" x="205.18" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-218" data-kind="plate" x="211.37" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-219" data-kind="plate" x="217.56" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-220" data-kind="plate" x="223.75" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-221" data-kind="plate" x="229.94" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-222" data-kind="plate" x="236.13" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-223" data-kind="plate" x="242.32" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-224" data-kind="plate" x="248.51" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-225" data-kind="plate" x="254.7" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-226" data-kind="plate" x="260.89" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-227" data-kind="plate" x="267.08" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-228" data-kind="plate" x="273.27" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-229" data-kind="plate" x="279.46" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-230" data-kind="plate" x="285.65" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-231" data-kind="plate" x="7.1" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-232" data-kind="plate" x="13.29" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-233" data-kind="plate" x="19.48" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-234" data-kind="plate" x="25.67" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-235" data-kind="plate" x="31.86" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-236" data-kind="plate" x="38.05" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-237" data-kind="plate" x="44.24" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-238" data-kind="plate" x="50.43" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-239" data-kind="plate" x="56.62" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-240" data-kind="plate" x="62.81" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-241" data-kind="plate" x="69" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-242" data-kind="plate" x="75.19" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-243" data-kind="plate" x="81.38" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-244" data-kind="plate" x="87.57" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-245" data-kind="plate" x="93.76" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-246" data-kind="plate" x="99.95" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-247" data-kind="plate" x="106.14" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-248" data-kind="plate" x="112.33" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-249" data-kind="plate" x="118.52" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-250" data-kind="plate" x="124.71" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-251" data-kind="plate" x="130.9" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-252" data-kind="plate" x="137.09" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-253" data-kind="plate" x="143.28" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-254" data-kind="plate" x="149.47" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-255" data-kind="plate" x="155.66" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-256" data-kind="plate" x="161.85" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-257" data-kind="plate" x="168.04" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-258" data-kind="plate" x="174.23" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-259" data-kind="plate" x="180.42" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-260" data-kind="plate" x="186.61" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-261" data-kind="plate" x="192.8" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-262" data-kind="plate" x="198.99" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-263" data-kind="plate" x="205.18" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-264" data-kind="plate" x="211.37" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-265" data-kind="plate" x="217.56" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-266" data-kind="plate" x="223.75" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-267" data-kind="plate" x="229.94" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-268" data-kind="plate" x="236.13" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-269" data-kind="plate" x="242.32" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-270" data-kind="plate" x="248.51" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-271" data-kind="plate" x="254.7" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-272" data-kind="plate" x="260.89" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-273" data-kind="plate" x="267.08" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-274" data-kind="plate" x="273.27" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-275" data-kind="plate" x="279.46" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-276" data-kind="plate" x="285.65" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-277" data-kind="plate" x="291.84" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-278" data-kind="plate" x="298.03" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-279" data-kind="plate" x="304.22" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-280" data-kind="plate" x="310.41" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-281" data-kind="plate" x="316.6" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-282" data-kind="plate" x="322.79" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-283" data-kind="plate" x="328.98" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-284" data-kind="plate" x="335.17" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-285" data-kind="plate" x="341.36" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-286" data-kind="plate" x="347.55" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-287" data-kind="plate" x="353.74" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-288" data-kind="plate" x="359.93" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-289" data-kind="plate" x="366.12" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-290" data-kind="plate" x="372.31" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-291" data-kind="plate" x="378.5" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-292" data-kind="plate" x="384.69" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-293" data-kind="plate" x="390.88" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-294" data-kind="plate" x="397.07" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-295" data-kind="plate" x="403.26" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-296" data-kind="plate" x="409.45" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-297" data-kind="plate" x="415.64" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-298" data-kind="plate" x="421.83" y="22.65" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-299" data-kind="plate" x="291.84" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-300" data-kind="plate" x="298.03" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-301" data-kind="plate" x="304.22" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-302" data-kind="plate" x="310.41" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-303" data-kind="plate" x="316.6" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-304" data-kind="plate" x="322.79" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-305" data-kind="plate" x="328.98" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-306" data-kind="plate" x="335.17" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-307" data-kind="plate" x="341.36" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-308" data-kind="plate" x="347.55" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-309" data-kind="plate" x="353.74" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-310" data-kind="plate" x="359.93" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-311" data-kind="plate" x="366.12" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-312" data-kind="plate" x="372.31" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-313" data-kind="plate" x="378.5" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-314" data-kind="plate" x="384.69" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-315" data-kind="plate" x="390.88" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-316" data-kind="plate" x="397.07" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-317" data-kind="plate" x="403.26" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-318" data-kind="plate" x="409.45" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-319" data-kind="plate" x="415.64" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-320" data-kind="plate" x="421.83" y="28.85" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-321" data-kind="plate" x="291.84" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-322" data-kind="plate" x="298.03" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-323" data-kind="plate" x="304.22" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-324" data-kind="plate" x="310.41" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-325" data-kind="plate" x="316.6" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-326" data-kind="plate" x="322.79" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-327" data-kind="plate" x="328.98" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-328" data-kind="plate" x="335.17" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-329" data-kind="plate" x="341.36" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-330" data-kind="plate" x="347.55" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-331" data-kind="plate" x="353.74" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-332" data-kind="plate" x="359.93" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-333" data-kind="plate" x="366.12" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-334" data-kind="plate" x="372.31" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-335" data-kind="plate" x="378.5" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-336" data-kind="plate" x="384.69" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-337" data-kind="plate" x="390.88" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-338" data-kind="plate" x="397.07" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-339" data-kind="plate" x="403.26" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-340" data-kind="plate" x="409.45" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-341" data-kind="plate" x="415.64" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+    <rect id="plate-342" data-kind="plate" x="421.83" y="35.05" width="4.8" height="4.8" rx="0.6" fill="#16181a" />
+  </g>
+</svg>

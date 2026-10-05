@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="434.6mm" height="42.9mm" viewBox="0 0 434.6 42.9" data-device="dl160-gen10" data-view="rear" data-ru="1" data-weight-min-kg="10.97" data-weight-max-kg="15.74" data-power-input="100-240 VAC per Flex Slot supply (the 865434-B21 supply -48 VDC, the 865428-B21 HVAC/HVDC)" data-psu-redundancy="1+1 with the redundant power supply enablement kit 866442-B21" data-fans="three single-rotor hot-plug fans with one processor, six with two; one more with the redundant fan kit 866438-B21" data-operating-temp-c="10 to 35" data-operating-temp-extended-c="5 to 10 and 35 to 45, approved configurations only" data-storage-temp-c="-30 to 60" data-operating-humidity="8 to 90% non-condensing, 28 C maximum wet bulb" data-altitude-operating-m="3050" data-acoustic-lwad="4.5 B idle, 5.1 B operating" data-cpu="up to two Intel Xeon Scalable processors, first or second generation" data-memory="16 DDR4 DIMM slots, up to 1.0 TB with 64 GB DIMMs" data-storage-controller="HPE Smart Array S100i embedded (SATA only); Smart Array modular and PCIe controllers optional" data-network="embedded 2-port 1GbE" data-bmc="HPE iLO 5" data-eol="announced" data-eol-announcement="https://support.hpe.com/hpesc/public/docDisplay?docId=a00021860enw" data-power="ac">
+  <style>
+    [data-path] { cursor: pointer; }
+    .state-on    { --led-color: #22c55e; }
+    .state-up    { --led-color: #22c55e; }
+    /* link and up are the same fact on an Ethernet lamp; see docs/rj45-family-design.md */
+    .state-link  { --led-color: #22c55e; }
+    .state-activity { --led-color: #86efac; }
+    .state-ok    { --led-color: #22c55e; }
+    .state-fault { --led-color: #ef4444; }
+    .state-fail  { --led-color: #ef4444; }
+    .state-locate { --led-color: #3b82f6; }
+    .state-absent { opacity: 0.35; }
+    /* A state is a colour AND a behaviour. Solid and blinking of the same colour
+       are different facts on real hardware: on the S9510-28DC a solid green PWR
+       is "system power good" and a blinking green PWR is "power good but BMC
+       power fail". A blinking state that renders solid is the same failure as a
+       state class nothing paints - it looks modelled and is not.
+       blink animates opacity rather than fill, because each skin carries its own
+       unlit colour in the fill fallback and a keyframe cannot name it. alternate
+       animates fill, because two colours is the whole point, and takes its first
+       value from the element's own fill. */
+    @keyframes portrayal-blink {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes portrayal-alternate {
+      0%, 49.9% { fill: var(--led-color, #3a3f44); }
+      50%, 100% { fill: var(--led-color-alt, #3a3f44); }
+    }
+    .portrayal-highlight { filter: drop-shadow(0 0 1.2px #f59e0b) drop-shadow(0 0 0.5px #f59e0b); }
+    .portrayal-dim { opacity: 0.25; }
+    [data-class='region'].portrayal-highlight { stroke: #f59e0b; stroke-width: 0.7; filter: none; }
+    .state-fail[data-class='psu'], .state-fail[data-class='fan'] { filter: drop-shadow(0 0 1.4px #ef4444); }
+
+    g[data-ref^='common/led-sq@'] .state-amber-flashing { --led-color: #f59e0b; }
+    g[data-ref^='common/led-sq@'] .state-amber-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-blue { --led-color: #3b82f6; }
+    g[data-ref^='common/led-sq@'] .state-blue-flashing { --led-color: #3b82f6; }
+    g[data-ref^='common/led-sq@'] .state-blue-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-green { --led-color: #22c55e; }
+    g[data-ref^='common/led-sq@'] .state-green-flashing { --led-color: #22c55e; }
+    g[data-ref^='common/led-sq@'] .state-green-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='common/led-sq@'] .state-red-flashing { --led-color: #ef4444; }
+    g[data-ref^='common/led-sq@'] .state-red-flashing { animation: portrayal-blink 1s linear infinite; }
+    g[data-ref^='hpe/psu-865408-b21@'] .state-ok { --led-color: #22c55e; }
+</style>
+  <metadata>{"device":"HPE ProLiant DL160 Gen10","device-version":"1.2.1","generator":{"tool":"portrayal-render","version":"0.1.0"},"resolved-components":{"common/led-sq@1":"1.0.0","common/rj45-eth@1":"1.2.0","common/vga-receptacle@1":"1.1.0","hpe/expansion-slot-blank-lp@1":"1.0.0","hpe/media-module-blank@1":"1.0.0","hpe/psu-865408-b21@1":"1.0.0","hpe/psu-blank-flex-slot@1":"1.0.0","hpe/riser-blank-primary-dl160@1":"1.0.0","hpe/riser-secondary-dl160@1":"1.0.0","hpe/serial-port-blank@1":"1.0.0","std/c14-inlet@1":"1.3.0","std/rj45@2":"2.1.0","std/usb-a@1":"1.3.0","std/vga@1":"1.1.0"},"source-sha256":"48d4b61d65bea233a4494b24c67799a420602034ae2715ff0f20448dfa59c913","view":"rear"}</metadata>
+  <rect id="chassis-faceplate" data-path="chassis" data-class="chassis" data-model="ProLiant DL160 Gen10" x="0" y="0" width="434.6" height="42.9" rx="1.2" fill="#26292d" stroke="#22262a" stroke-width="0.5" />
+  <g id="--decor" data-class="decor">
+    <rect id="plate-0" data-kind="plate" x="0" y="0" width="434.6" height="42.9" rx="0.6" fill="#c3c8cd" />
+    <rect id="plate-1" data-kind="plate" x="7.4" y="30.2" width="2.4" height="2.4" rx="0.6" fill="#1d2023" />
+    <rect id="plate-2" data-kind="plate" x="7.4" y="36.4" width="2.4" height="2.4" rx="0.6" fill="#1d2023" />
+    <rect id="plate-3" data-kind="plate" x="59" y="26.1" width="20" height="16.5" rx="0.6" fill="#1d2023" />
+    <rect id="plate-4" data-kind="plate" x="80" y="27.8" width="2.2" height="2.4" rx="0.6" fill="#1d2023" />
+    <rect id="plate-5" data-kind="plate" x="80" y="31.3" width="2.2" height="2.4" rx="0.6" fill="#1d2023" />
+    <rect id="plate-6" data-kind="plate" x="80" y="34.8" width="2.2" height="2.4" rx="0.6" fill="#1d2023" />
+    <rect id="plate-7" data-kind="plate" x="80" y="38.3" width="2.2" height="2.4" rx="0.6" fill="#1d2023" />
+    <rect id="plate-8" data-kind="plate" x="103.8" y="26.1" width="33.1" height="15.7" rx="0.6" fill="#1f63c9" />
+    <rect id="plate-9" data-kind="plate" x="138.6" y="27.2" width="35.2" height="11.8" rx="0.6" fill="#ded6c3" />
+    <rect id="plate-10" data-kind="plate" x="176.8" y="28.1" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-11" data-kind="plate" x="176.8" y="31.15" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-12" data-kind="plate" x="176.8" y="34.2" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-13" data-kind="plate" x="176.8" y="37.25" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-14" data-kind="plate" x="180.1" y="28.1" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-15" data-kind="plate" x="180.1" y="31.15" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-16" data-kind="plate" x="180.1" y="34.2" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-17" data-kind="plate" x="180.1" y="37.25" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-18" data-kind="plate" x="183.4" y="28.1" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-19" data-kind="plate" x="183.4" y="31.15" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-20" data-kind="plate" x="183.4" y="34.2" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-21" data-kind="plate" x="183.4" y="37.25" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-22" data-kind="plate" x="186.7" y="28.1" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-23" data-kind="plate" x="186.7" y="31.15" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-24" data-kind="plate" x="186.7" y="34.2" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-25" data-kind="plate" x="186.7" y="37.25" width="2.4" height="2.1" rx="0.6" fill="#1d2023" />
+    <rect id="plate-26" data-kind="plate" x="202.7" y="33" width="2.2" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-27" data-kind="plate" x="208" y="28" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-28" data-kind="plate" x="208" y="31.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-29" data-kind="plate" x="208" y="34.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-30" data-kind="plate" x="208" y="38.2" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-31" data-kind="plate" x="211.6" y="28" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-32" data-kind="plate" x="211.6" y="31.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-33" data-kind="plate" x="211.6" y="34.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-34" data-kind="plate" x="211.6" y="38.2" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-35" data-kind="plate" x="254" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-36" data-kind="plate" x="254" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-37" data-kind="plate" x="254" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-38" data-kind="plate" x="254" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-39" data-kind="plate" x="257.4" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-40" data-kind="plate" x="257.4" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-41" data-kind="plate" x="257.4" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-42" data-kind="plate" x="257.4" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-43" data-kind="plate" x="260.8" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-44" data-kind="plate" x="260.8" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-45" data-kind="plate" x="260.8" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-46" data-kind="plate" x="260.8" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-47" data-kind="plate" x="264.2" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-48" data-kind="plate" x="264.2" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-49" data-kind="plate" x="264.2" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-50" data-kind="plate" x="264.2" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-51" data-kind="plate" x="267.6" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-52" data-kind="plate" x="267.6" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-53" data-kind="plate" x="267.6" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-54" data-kind="plate" x="267.6" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-55" data-kind="plate" x="271" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-56" data-kind="plate" x="271" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-57" data-kind="plate" x="271" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-58" data-kind="plate" x="271" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-59" data-kind="plate" x="274.4" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-60" data-kind="plate" x="274.4" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-61" data-kind="plate" x="274.4" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-62" data-kind="plate" x="274.4" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-63" data-kind="plate" x="277.8" y="26.4" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-64" data-kind="plate" x="277.8" y="29.6" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-65" data-kind="plate" x="277.8" y="32.8" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-66" data-kind="plate" x="277.8" y="36" width="2.4" height="2.2" rx="0.6" fill="#1d2023" />
+    <rect id="plate-67" data-kind="plate" x="355.3" y="0.4" width="6.8" height="42.1" rx="0.6" fill="#d6dade" />
+    <rect id="plate-68" data-kind="plate" x="431.6" y="0.4" width="2.6" height="42.1" rx="0.6" fill="#b3b9bf" />
+  </g>
+  <g id="--silkscreen" data-class="silkscreen">
+    <path d="M 1.1 0 H 1.9 V 0.6 H 1.1 Z M 1.5 0.6 V 1.0 M 0.4 1.0 H 2.6 M 0.4 1.0 V 1.4 M 2.6 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.2 1.4 H 3.0 V 2.0 H 2.2 Z" fill="none" stroke="#2b2f33" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" transform="translate(20.9 39.8)" data-path="silk:0" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="media-module" />
+    <text x="25.1" y="42.1" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2f33" data-path="silk:1" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="media-module">3</text>
+    <path d="M 1.1 0 H 1.9 V 0.6 H 1.1 Z M 1.5 0.6 V 1.0 M 0.4 1.0 H 2.6 M 0.4 1.0 V 1.4 M 2.6 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.2 1.4 H 3.0 V 2.0 H 2.2 Z" fill="none" stroke="#2b2f33" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" transform="translate(44.3 39.8)" data-path="silk:2" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="media-module" />
+    <text x="48.5" y="42.1" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2f33" data-path="silk:3" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="media-module">4</text>
+    <path d="M 1.1 0 H 1.9 V 0.6 H 1.1 Z M 1.5 0.6 V 1.0 M 0.4 1.0 H 2.6 M 0.4 1.0 V 1.4 M 2.6 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.2 1.4 H 3.0 V 2.0 H 2.2 Z" fill="none" stroke="#2b2f33" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" transform="translate(144 39.8)" data-path="silk:4" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nic-1" />
+    <text x="147.8" y="42.1" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2f33" data-path="silk:5" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nic-1">1</text>
+    <path d="M 1.1 0 H 1.9 V 0.6 H 1.1 Z M 1.5 0.6 V 1.0 M 0.4 1.0 H 2.6 M 0.4 1.0 V 1.4 M 2.6 1.0 V 1.4 M 0 1.4 H 0.8 V 2.0 H 0 Z M 2.2 1.4 H 3.0 V 2.0 H 2.2 Z" fill="none" stroke="#2b2f33" stroke-width="0.22" stroke-linecap="round" stroke-linejoin="round" transform="translate(160.9 39.8)" data-path="silk:6" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nic-2" />
+    <text x="165" y="42.1" font-family="sans-serif" font-size="2" text-anchor="middle" fill="#2b2f33" data-path="silk:7" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="nic-2">2</text>
+    <text x="61.4" y="31.63" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e7ebee" data-path="silk:8" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-rear-1">SS</text>
+    <text x="61.4" y="38.43" font-family="sans-serif" font-size="1.4" text-anchor="middle" fill="#e7ebee" data-path="silk:9" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="usb-rear-2">SS</text>
+    <text x="83.9" y="34.5" font-family="sans-serif" font-size="1.8" text-anchor="middle" fill="#2b2f33" transform="rotate(-90 83.9 34.5)" data-path="silk:10" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="ilo">iLO</text>
+    <path d="M 0 0 H 2.6 V 1.1 H 0 Z M 0.8 1.1 V 1.4 M 1.8 1.1 V 1.4 M 0.5 1.4 H 2.1" fill="none" stroke="#f1f3f5" stroke-width="0.25" stroke-linecap="round" stroke-linejoin="round" transform="translate(133.3 25.7)" data-path="silk:11" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="vga" />
+    <text x="195.9" y="40" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2f33" data-path="silk:12" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="uid-rear">UID</text>
+    <text x="235.5" y="24.9" font-family="sans-serif" font-size="2.4" text-anchor="middle" fill="#2b2f33" data-path="silk:13" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="serial">IOIOI</text>
+    <text x="358.7" y="6.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2f33" data-path="silk:14" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">PS</text>
+    <text x="358.7" y="9" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2f33" data-path="silk:15" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1">1</text>
+    <path d="M 0 0 L 1.4 0.8 L 0 1.6 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(358 10.4)" data-path="silk:16" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-1" />
+    <text x="358.7" y="28.2" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2f33" data-path="silk:17" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">PS</text>
+    <text x="358.7" y="30.6" font-family="sans-serif" font-size="1.6" text-anchor="middle" fill="#2b2f33" data-path="silk:18" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2">2</text>
+    <path d="M 1.4 0 L 0 0.8 L 1.4 1.6 Z" fill="#2b2f33" stroke="none" stroke-linejoin="round" transform="translate(358 32)" data-path="silk:19" data-class="silkscreen" data-group="silkscreen" data-group-role="marking" data-for="psu-2" />
+  </g>
+  <g id="usb-rear-1" data-path="usb-rear-1" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.0" data-rel-pos="3" transform="translate(65.0,28.95)" data-group="usb" data-group-role="management" data-description="the USB Type-A ports front and rear, the front iLO service port among them">
+    <title>usb-rear-1</title>
+    <rect id="usb-rear-1--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-rear-1/opening" data-class="cutout" />
+    <rect id="usb-rear-1--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="usb-rear-2" data-path="usb-rear-2" data-class="port" data-ref="std/usb-a@1:1.3.0" data-depth="13.7" data-wall="#a7adb4" data-media="usb-a" data-usb="3.0" data-rel-pos="4" transform="translate(65.0,35.75)" data-group="usb" data-group-role="management" data-description="the USB Type-A ports front and rear, the front iLO service port among them">
+    <title>usb-rear-2</title>
+    <rect id="usb-rear-2--opening" x="0" y="0" width="12" height="4.5" fill="#17191c" data-path="usb-rear-2/opening" data-class="cutout" />
+    <rect id="usb-rear-2--tongue" x="0.9" y="0.8" width="10.2" height="1.5" rx="0.2" fill="#2b6cb0" data-z-top="12.1" />
+    <g data-cp="mate" data-cp-at="6 2.25" data-cp-dir="front" />
+  </g>
+  <g id="ilo" data-path="ilo" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-role="mgmt" data-speed="1g" data-rel-pos="1" transform="translate(85.9,27.9) rotate(180 7.9 6.6)" data-group="mgmt" data-group-role="management">
+    <title>ilo</title>
+    <g id="ilo--jack" data-path="ilo/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>ilo--jack</title>
+      <path id="ilo--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ilo--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="ilo--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="ilo/jack/opening" data-class="cutout" />
+      <g id="ilo--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="ilo--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="ilo--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ilo/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="ilo--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="ilo/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="vga" data-path="vga" data-class="port" data-ref="common/vga-receptacle@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" data-rel-pos="1" transform="translate(104.9,27.85)" data-group="video" data-group-role="management">
+    <title>vga</title>
+    <g id="vga--bore-floor">
+      <circle cx="2.905" cy="6.25" r="1.15" fill="#4a4f55" />
+      <circle cx="27.895" cy="6.25" r="1.15" fill="#4a4f55" />
+    </g>
+    <path id="vga--standoffs" fill-rule="evenodd" d="M4.9 7.4 L2.91 8.55 L0.91 7.4 L0.91 5.1 L2.91 3.95 L4.9 5.1 Z M29.89 7.4 L27.89 8.55 L25.9 7.4 L25.9 5.1 L27.89 3.95 L29.89 5.1 Z M1.755 6.250 A1.150 1.150 0 1 0 4.055 6.250 A1.150 1.150 0 1 0 1.755 6.250 Z M26.745 6.250 A1.150 1.150 0 1 0 29.045 6.250 A1.150 1.150 0 1 0 26.745 6.250 Z" fill="#9aa1a8" stroke="#6d7379" stroke-width="0.25" data-z-out="6.73" data-z-color="#9aa1a8" data-z-shape="1" />
+    <g id="vga--shell" data-path="vga/shell" data-class="port" data-inner="1" data-ref="std/vga@1:1.1.0" data-depth="6.73" data-wall="#3a3e43" data-media="vga" transform="translate(5.165,0.55)">
+      <title>vga--shell</title>
+      <path id="vga--shell--opening" fill-rule="evenodd" d="M0.818 4.382 A3.350 3.350 0 0 1 4.117 0.450 L16.353 0.450 A3.350 3.350 0 0 1 19.652 4.382 L18.982 8.182 A3.350 3.350 0 0 1 15.683 10.950 L4.787 10.950 A3.350 3.350 0 0 1 1.488 8.182 Z M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z" fill="#5c6268" stroke="#9aa0a6" stroke-width="0.35" data-path="vga/shell/opening" data-class="cutout" data-z-out="6.73" data-z-color="#5c6268" data-z-shape="1" />
+      <g id="vga--shell--socket-floor">
+        <circle cx="5.66" cy="3.49" r="0.42" fill="#0b1526" />
+        <circle cx="7.93" cy="3.49" r="0.42" fill="#0b1526" />
+        <circle cx="10.2" cy="3.49" r="0.42" fill="#0b1526" />
+        <circle cx="12.47" cy="3.49" r="0.42" fill="#0b1526" />
+        <circle cx="14.74" cy="3.49" r="0.42" fill="#0b1526" />
+        <circle cx="6.25" cy="7.91" r="0.42" fill="#0b1526" />
+        <circle cx="8.32" cy="7.91" r="0.42" fill="#0b1526" />
+        <circle cx="10.4" cy="7.91" r="0.42" fill="#0b1526" />
+        <circle cx="12.47" cy="7.91" r="0.42" fill="#0b1526" />
+        <circle cx="14.55" cy="7.91" r="0.42" fill="#0b1526" />
+        <circle cx="7.04" cy="5.7" r="0.42" fill="#0b1526" />
+        <circle cx="9.21" cy="5.7" r="0.42" fill="#0b1526" />
+        <circle cx="11.39" cy="5.7" r="0.42" fill="#0b1526" />
+        <circle cx="13.56" cy="5.7" r="0.42" fill="#0b1526" />
+        <circle cx="15.73" cy="5.7" r="0.42" fill="#0b1526" />
+      </g>
+      <path id="vga--shell--insert" fill-rule="evenodd" d="M1.546 4.225 A2.450 2.450 0 0 1 3.959 1.350 L16.511 1.350 A2.450 2.450 0 0 1 18.924 4.225 L18.254 8.025 A2.450 2.450 0 0 1 15.841 10.050 L4.629 10.050 A2.450 2.450 0 0 1 2.216 8.025 Z M5.240 3.490 A0.420 0.420 0 1 0 6.080 3.490 A0.420 0.420 0 1 0 5.240 3.490 Z M7.510 3.490 A0.420 0.420 0 1 0 8.350 3.490 A0.420 0.420 0 1 0 7.510 3.490 Z M9.780 3.490 A0.420 0.420 0 1 0 10.620 3.490 A0.420 0.420 0 1 0 9.780 3.490 Z M12.050 3.490 A0.420 0.420 0 1 0 12.890 3.490 A0.420 0.420 0 1 0 12.050 3.490 Z M14.320 3.490 A0.420 0.420 0 1 0 15.160 3.490 A0.420 0.420 0 1 0 14.320 3.490 Z M5.830 7.910 A0.420 0.420 0 1 0 6.670 7.910 A0.420 0.420 0 1 0 5.830 7.910 Z M7.900 7.910 A0.420 0.420 0 1 0 8.740 7.910 A0.420 0.420 0 1 0 7.900 7.910 Z M9.980 7.910 A0.420 0.420 0 1 0 10.820 7.910 A0.420 0.420 0 1 0 9.980 7.910 Z M12.050 7.910 A0.420 0.420 0 1 0 12.890 7.910 A0.420 0.420 0 1 0 12.050 7.910 Z M14.130 7.910 A0.420 0.420 0 1 0 14.970 7.910 A0.420 0.420 0 1 0 14.130 7.910 Z M6.620 5.700 A0.420 0.420 0 1 0 7.460 5.700 A0.420 0.420 0 1 0 6.620 5.700 Z M8.790 5.700 A0.420 0.420 0 1 0 9.630 5.700 A0.420 0.420 0 1 0 8.790 5.700 Z M10.970 5.700 A0.420 0.420 0 1 0 11.810 5.700 A0.420 0.420 0 1 0 10.970 5.700 Z M13.140 5.700 A0.420 0.420 0 1 0 13.980 5.700 A0.420 0.420 0 1 0 13.140 5.700 Z M15.310 5.700 A0.420 0.420 0 1 0 16.150 5.700 A0.420 0.420 0 1 0 15.310 5.700 Z" fill="#1f4f9e" stroke="#16376e" stroke-width="0.2" data-z-out="6.73" data-z-color="#1f4f9e" data-z-shape="1" />
+      <g data-cp="mate" data-cp-at="10.235 5.7" data-cp-dir="front" />
+    </g>
+    <g data-cp="mate" data-cp-at="15.4 6.25" data-cp-dir="front" />
+  </g>
+  <g id="nic-1" data-path="nic-1" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="1" transform="translate(139.9,26.5) rotate(180 7.9 6.6)" data-group="nics" data-group-role="traffic">
+    <title>nic-1</title>
+    <g id="nic-1--jack" data-path="nic-1/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>nic-1--jack</title>
+      <path id="nic-1--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="nic-1--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="nic-1--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="nic-1/jack/opening" data-class="cutout" />
+      <g id="nic-1--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="nic-1--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="nic-1--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="nic-1/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="nic-1--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="nic-1/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="nic-2" data-path="nic-2" data-class="port" data-ref="common/rj45-eth@1:1.2.0" data-depth="18.6" data-media="rj45" data-speed="1g" data-rel-pos="2" transform="translate(157.1,26.5) rotate(180 7.9 6.6)" data-group="nics" data-group-role="traffic">
+    <title>nic-2</title>
+    <g id="nic-2--jack" data-path="nic-2/jack" data-class="port" data-inner="1" data-ref="std/rj45@2:2.1.0" data-depth="18.6" data-wall="#3a3f45" data-cavity="cavity" data-media="rj45" transform="translate(0.0,0.0)">
+      <title>nic-2--jack</title>
+      <path id="nic-2--jack--housing" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" stroke="#1c1f23" stroke-width="0.15" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="nic-2--jack--cavity" fill="#0a0c0e" d="     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+      <path id="nic-2--jack--opening" fill="none" d="M 1.945 2.0 h 11.91 v 11.2 h -11.91 z" data-path="nic-2/jack/opening" data-class="cutout" />
+      <g id="nic-2--jack--pins" fill="#a8873c">
+        <rect x="4.10" y="2.6" width="0.46" height="2.3" />
+        <rect x="5.12" y="2.6" width="0.46" height="2.3" />
+        <rect x="6.14" y="2.6" width="0.46" height="2.3" />
+        <rect x="7.16" y="2.6" width="0.46" height="2.3" />
+        <rect x="8.18" y="2.6" width="0.46" height="2.3" />
+        <rect x="9.20" y="2.6" width="0.46" height="2.3" />
+        <rect x="10.22" y="2.6" width="0.46" height="2.3" />
+        <rect x="11.24" y="2.6" width="0.46" height="2.3" />
+      </g>
+      <g data-cp="mate" data-cp-at="7.9 6.6" data-cp-dir="front" />
+    </g>
+    <path id="nic-2--face" fill-rule="evenodd" fill="#b0b5bb" data-fill-from="finish" d="     M 0.4 0 h 15.0 a 0.4 0.4 0 0 1 0.4 0.4 v 12.4 a 0.4 0.4 0 0 1 -0.4 0.4 h -15.0 a 0.4 0.4 0 0 1 -0.4 -0.4 v -12.4 a 0.4 0.4 0 0 1 0.4 -0.4 z     M 1.945 2.0 h 11.91 v 6.83 h -2.805 v 1.69 h -1.12 v 2.68 h -4.06 v -2.68 h -1.12 v -1.69 h -2.805 z" />
+    <rect id="nic-2--led-a" x="1.2" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="nic-2/led-a" data-class="led" data-states="off link" data-z-out="0.3" data-z-color="#0d0f11" />
+    <rect id="nic-2--led-b" x="12.6" y="11.83" width="2.0" height="1.1" rx="0.2" fill="var(--led-color, #3a3f44)" data-path="nic-2/led-b" data-class="led" data-states="off activity" data-z-out="0.3" data-z-color="#0d0f11" />
+    <g data-cp="net" data-cp-at="7.9 6.6" data-cp-dir="front" />
+  </g>
+  <g id="uid-rear" data-path="uid-rear" data-class="led" data-ref="common/led-sq@1:1.0.0" data-rel-pos="3" transform="translate(194.4,34.0)" data-group="leds" data-group-role="indicator" data-for="chassis">
+    <title>uid-rear</title>
+    <rect x="0.05" y="0.05" width="2.9" height="2.9" rx="0.3" fill="#3a3f44" stroke="#15181b" stroke-width="0.15" />
+    <rect id="uid-rear--lamp" x="0.3" y="0.3" width="2.4" height="2.4" rx="0.25" fill="var(--led-color, #7d838a)" data-path="uid-rear/lamp" data-class="led" data-states="off green green-flashing amber-flashing red-flashing blue blue-flashing" />
+  </g>
+  <g id="riser-primary" data-path="riser-primary" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="1">
+    <title>riser-primary</title>
+    <rect id="riser-primary--opening" x="0" y="0.4" width="203" height="24.2" fill="#101214" />
+    <g id="riser-primary--module" data-path="riser-primary/module" data-class="blank" data-behaviour="fills" data-ref="hpe/riser-blank-primary-dl160@1:1.0.0" data-spare-part="878532-001" transform="translate(101.5,12.5) translate(-101.5,-12.1)">
+      <title>riser-primary--module</title>
+      <path id="riser-primary--module--plate" d="M0.2 0.2 H202.8 V24 H0.2 Z" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.25" />
+      <g id="riser-primary--module--block-left">
+        <rect x="0.4" y="0.4" width="13.7" height="23.4" rx="0.4" fill="#b3b9bf" />
+        <rect x="3.4" y="4.1" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <rect x="7.6" y="4.1" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <rect x="3.4" y="18" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <rect x="7.6" y="18" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <circle cx="7.0" cy="11.5" r="2.2" fill="#1d2023" />
+      </g>
+      <g id="riser-primary--module--block-right">
+        <rect x="191.7" y="0.4" width="10.9" height="23.4" rx="0.4" fill="#b3b9bf" />
+        <rect x="193.4" y="3.8" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <rect x="197.6" y="3.8" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <rect x="193.4" y="19.4" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <rect x="197.6" y="19.4" width="2.6" height="2" rx="0.3" fill="#1d2023" />
+        <circle cx="196.8" cy="12.0" r="2.4" fill="#1d2023" />
+      </g>
+      <g id="riser-primary--module--vents" data-path="riser-primary/module/vents" data-class="vent">
+        <rect x="16.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="16.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="16.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="16.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="16.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="22" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="22" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="22" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="22" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="22" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="27.6" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="27.6" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="27.6" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="27.6" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="27.6" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="33.2" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="33.2" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="33.2" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="33.2" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="33.2" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="38.8" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="38.8" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="38.8" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="38.8" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="38.8" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="44.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="44.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="44.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="44.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="44.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="50" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="50" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="50" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="50" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="50" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="55.6" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="55.6" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="55.6" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="55.6" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="55.6" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="61.2" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="61.2" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="61.2" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="61.2" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="61.2" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="66.8" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="66.8" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="66.8" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="66.8" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="66.8" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="72.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="72.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="72.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="72.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="72.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="78" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="78" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="78" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="78" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="78" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="83.6" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="83.6" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="83.6" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="83.6" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="83.6" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="89.2" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="89.2" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="89.2" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="89.2" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="89.2" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="94.8" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="94.8" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="94.8" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="94.8" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="94.8" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="100.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="100.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="100.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="100.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="100.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="106" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="106" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="106" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="106" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="106" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="111.6" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="111.6" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="111.6" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="111.6" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="111.6" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="117.2" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="117.2" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="117.2" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="117.2" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="117.2" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="122.8" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="122.8" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="122.8" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="122.8" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="122.8" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="128.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="128.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="128.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="128.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="128.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="134" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="134" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="134" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="134" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="134" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="139.6" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="139.6" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="139.6" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="139.6" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="139.6" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="145.2" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="145.2" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="145.2" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="145.2" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="145.2" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="150.8" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="150.8" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="150.8" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="150.8" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="150.8" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="156.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="156.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="156.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="156.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="156.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="162" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="162" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="162" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="162" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="162" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="167.6" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="167.6" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="167.6" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="167.6" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="167.6" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="173.2" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="173.2" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="173.2" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="173.2" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="173.2" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="178.8" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="178.8" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="178.8" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="178.8" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="178.8" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="184.4" y="3.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="184.4" y="7.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="184.4" y="10.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="184.4" y="14.1" width="4" height="2.5" rx="0.4" fill="#15181b" />
+        <rect x="184.4" y="17.6" width="4" height="2.5" rx="0.4" fill="#15181b" />
+      </g>
+    </g>
+  </g>
+  <g id="riser-secondary" data-path="riser-secondary" data-class="bay" data-group="risers" data-group-role="service" data-rel-pos="2">
+    <title>riser-secondary</title>
+    <rect id="riser-secondary--opening" x="203" y="0.4" width="82.5" height="21" fill="#101214" />
+    <g id="riser-secondary--module" data-path="riser-secondary/module" data-class="riser" data-behaviour="fills" data-ref="hpe/riser-secondary-dl160@1:1.0.0" data-body-depth="150.0" data-riser-board="878540-001" transform="translate(244.25,10.9) translate(-41.25,-10.5)">
+      <title>riser-secondary--module</title>
+      <g id="riser-secondary--module--slot-3" data-path="riser-secondary/module/slot-3" data-class="bay">
+        <rect id="riser-secondary--module--slot-3--opening" x="3.3" y="1.5" width="79.20" height="18.42" fill="none" stroke="none" />
+        <g id="riser-secondary--module--slot-3--module" data-path="riser-secondary/module/slot-3/module" data-class="blank" data-behaviour="fills" data-ref="hpe/expansion-slot-blank-lp@1:1.0.0" transform="translate(3.3,1.5) rotate(180 39.6 9.21)">
+          <title>riser-secondary--module--slot-3--module</title>
+          <path id="riser-secondary--module--slot-3--module--plate" d="M7.74 0.15 H78.45 Q79.05 0.15 79.05 0.75 V17.67 Q79.05 18.27 78.45 18.27 H7.74 Z" fill="#d3d7db" stroke="#9aa1a8" stroke-width="0.25" />
+          <g id="riser-secondary--module--slot-3--module--vents" data-path="riser-secondary/module/slot-3/module/vents" data-class="vent">
+            <rect x="13.6" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="13.6" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="13.6" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="19.3" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="19.3" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="19.3" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="25" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="25" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="25" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="30.7" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="30.7" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="30.7" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="36.4" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="36.4" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="36.4" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="42.1" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="42.1" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="42.1" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="47.8" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="47.8" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="47.8" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="53.5" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="53.5" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="53.5" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="59.2" y="4.6" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="59.2" y="8.05" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+            <rect x="59.2" y="11.5" width="4.2" height="2.4" rx="0.4" fill="#15181b" />
+          </g>
+        </g>
+      </g>
+      <g id="riser-secondary--module--plate" data-path="riser-secondary/module/plate" data-class="bezel">
+        <path fill-rule="evenodd" d="M0.2 0.2 H82.3 V20.8 H0.2 Z M8.5 1.6 H73.5 V19.8 H8.5 Z" fill="#c9cdd1" stroke="#9aa1a8" stroke-width="0.25" />
+        <g id="riser-secondary--module--latch" data-z-out="12.0" data-z-color="#b3b9bf">
+          <rect x="0.3" y="0.4" width="7.9" height="20.2" rx="0.4" fill="#b3b9bf" />
+          <rect x="3.2" y="5.0" width="1.6" height="11.0" rx="0.8" fill="none" stroke="#8a9199" stroke-width="0.3" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="media-module" data-path="media-module" data-class="bay" data-group="media-module" data-group-role="service" data-rel-pos="1">
+    <title>media-module</title>
+    <rect id="media-module--opening" x="13.6" y="26.3" width="45" height="13.4" fill="#101214" />
+    <g id="media-module--module" data-path="media-module/module" data-class="blank" data-behaviour="fills" data-ref="hpe/media-module-blank@1:1.0.0" transform="translate(36.1,33) translate(-22.5,-6.7)">
+      <title>media-module--module</title>
+      <path id="media-module--module--plate" d="M0.6 1.45 H10.95 L12.45 2.9 H31.45 L32.95 1.45 H44.4 V12.95 H0.6 Z" fill="#d3d7db" stroke="#9aa1a8" stroke-width="0.3" />
+      <g id="media-module--module--vents" data-path="media-module/module/vents" data-class="vent">
+        <rect x="3.55" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="3.55" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="3.55" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="7.05" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="7.05" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="7.05" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="10.55" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="10.55" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="10.55" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="14.05" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="14.05" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="14.05" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="17.55" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="17.55" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="17.55" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="21.05" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="21.05" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="21.05" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="24.55" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="24.55" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="24.55" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="28.05" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="28.05" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="28.05" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="31.55" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="31.55" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="31.55" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="35.05" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="35.05" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="35.05" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="38.55" y="4.1" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="38.55" y="7.25" width="2.5" height="2" rx="0.4" fill="#15181b" />
+        <rect x="38.55" y="10.4" width="2.5" height="2" rx="0.4" fill="#15181b" />
+      </g>
+    </g>
+  </g>
+  <g id="serial" data-path="serial" data-class="bay" data-group="serial" data-group-role="management" data-rel-pos="1">
+    <title>serial</title>
+    <rect id="serial--opening" x="219.3" y="26" width="32.8" height="12.5" fill="#101214" />
+    <g id="serial--module" data-path="serial/module" data-class="blank" data-behaviour="fills" data-ref="hpe/serial-port-blank@1:1.0.0" transform="translate(235.7,32.25) translate(-16.4,-6.25)">
+      <title>serial--module</title>
+      <rect id="serial--module--plate" x="0.15" y="0.75" width="32.5" height="10.9" rx="1.2" fill="#dfe2e5" stroke="#a0a7ae" stroke-width="0.3" />
+      <circle cx="3.8" cy="5.5" r="1.2" fill="#2a2e32" />
+      <circle cx="28.6" cy="5.5" r="1.2" fill="#2a2e32" />
+      <g id="serial--module--vents" data-path="serial/module/vents" data-class="vent">
+        <rect x="7.9" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="7.9" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="10.5" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="10.5" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="13.1" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="13.1" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="15.7" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="15.7" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="18.3" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="18.3" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="20.9" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="20.9" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="23.5" y="3.2" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+        <rect x="23.5" y="7.4" width="1.4" height="2.6" rx="0.3" fill="#1d2023" />
+      </g>
+    </g>
+  </g>
+  <g id="psu-2" data-path="psu-2" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="2">
+    <title>psu-2</title>
+    <rect id="psu-2--opening" x="287" y="0.8" width="68" height="40.4" fill="#101214" />
+    <g id="psu-2--module" data-path="psu-2/module" data-class="blank" data-behaviour="fills" data-ref="hpe/psu-blank-flex-slot@1:1.0.0" transform="translate(321,21) translate(-34,-20.2)">
+      <title>psu-2--module</title>
+      <rect id="psu-2--module--body" x="0.2" y="0.2" width="67.6" height="40.0" rx="0.7" fill="#c6cbd0" stroke="#868d94" stroke-width="0.35" />
+      <circle id="psu-2--module--opening-1" cx="19.7" cy="19.9" r="10.0" fill="#121417" stroke="#e4e7ea" stroke-width="0.6" data-path="psu-2/module/opening-1" data-class="vent" />
+      <circle id="psu-2--module--opening-2" cx="47.9" cy="19.9" r="10.0" fill="#121417" stroke="#e4e7ea" stroke-width="0.6" data-path="psu-2/module/opening-2" data-class="vent" />
+      <g id="psu-2--module--silkscreen">
+        <text x="20.0" y="6.3" font-family="sans-serif" font-size="4.6" fill="none" stroke="#f1f3f5" stroke-width="0.35" text-anchor="middle">TOP</text>
+      </g>
+      <path d="M32.0 6.3 L35.0 2.4 L38.0 6.3 Z" fill="none" stroke="#f1f3f5" stroke-width="0.4" />
+    </g>
+  </g>
+  <g id="psu-1" data-path="psu-1" data-class="bay" data-group="psus" data-group-role="service" data-rel-pos="1">
+    <title>psu-1</title>
+    <rect id="psu-1--opening" x="362.5" y="0.8" width="68" height="40.4" fill="#101214" />
+    <g id="psu-1--module" data-path="psu-1/module" data-class="psu" data-behaviour="fills" data-ref="hpe/psu-865408-b21@1:1.0.0" data-body-depth="225.3" data-wall="#3a4045" data-efficiency="platinum" data-form-factor="flex-slot" data-inlet="c14" data-input="100-240 VAC" data-power-output-w="500" transform="translate(396.5,21) translate(-34,-20.2)">
+      <title>psu-1--module</title>
+      <g id="psu-1--module--inlet" data-path="psu-1/module/inlet" data-class="inlet" data-ref="std/c14-inlet@1:1.3.0" data-depth="13.0" data-wall="#141619" data-cavity="inlet-face" data-input="ac" data-media="ac" transform="translate(41.6,15.8) rotate(90 14.0 10.0)">
+        <title>psu-1--module--inlet</title>
+        <rect id="psu-1--module--inlet--opening" x="0" y="0" width="28" height="20" rx="3" fill="#17191c" data-path="psu-1/module/inlet/opening" data-class="cutout" />
+        <path id="psu-1--module--inlet--inlet-face" d="M 1.5 6 l 4.5 -4.5 h 16 l 4.5 4.5 v 12.5 h -25 z" fill="#0d0f11" />
+        <rect id="psu-1--module--inlet--pin-earth" x="12.8" y="5.0" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-line" x="6.6" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <rect id="psu-1--module--inlet--pin-neutral" x="19.0" y="9.6" width="2.4" height="4.8" rx="0.3" fill="#7a8087" data-z-top="12.2" data-z-color="#c0c5cb" />
+        <g data-cp="mate" data-cp-at="14 10" data-cp-dir="front" />
+      </g>
+      <path id="psu-1--module--body" fill-rule="evenodd" d="M0.2 0.9 a0.7 0.7 0 0 1 0.7 -0.7 h66.2 a0.7 0.7 0 0 1 0.7 0.7 v38.6 a0.7 0.7 0 0 1 -0.7 0.7 h-66.2 a0.7 0.7 0 0 1 -0.7 -0.7 Z M45.6 11.8 h20.0 v28.0 h-20.0 Z" fill="#c3c8cd" stroke="#7d848b" stroke-width="0.35" />
+      <g id="psu-1--module--grille" data-path="psu-1/module/grille" data-class="vent">
+        <circle cx="20" cy="20.4" r="18" fill="#141619" />
+        <line x1="20" y1="20.4" x2="36.91" y2="26.56" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="25.86" y2="37.42" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="10.46" y2="35.66" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="2.13" y2="22.59" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="7.05" y2="7.9" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="21.57" y2="2.47" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="34.92" y2="10.33" stroke="#3a3f44" stroke-width="1.6" />
+        <line x1="20" y1="20.4" x2="37.21" y2="25.66" stroke="#3a3f44" stroke-width="1.6" />
+      </g>
+      <circle cx="5.5" cy="5.2" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+      <path d="M4.4 5.2 H6.6 M5.5 4.1 V6.3" stroke="#6b7178" stroke-width="0.4" />
+      <circle cx="37.2" cy="5.2" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+      <path d="M36.1 5.2 H38.3 M37.2 4.1 V6.3" stroke="#6b7178" stroke-width="0.4" />
+      <circle cx="4.8" cy="36.9" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+      <path d="M3.7 36.9 H5.9 M4.8 35.8 V38" stroke="#6b7178" stroke-width="0.4" />
+      <circle cx="37.2" cy="36.9" r="2.1" fill="#c9ced3" stroke="#7d848b" stroke-width="0.3" />
+      <path d="M36.1 36.9 H38.3 M37.2 35.8 V38" stroke="#6b7178" stroke-width="0.4" />
+      <circle id="psu-1--module--hub" cx="20" cy="20.4" r="8.6" fill="#d9dcdf" stroke="#2a2e32" stroke-width="0.3" data-path="psu-1/module/hub" data-class="sticker" />
+      <g id="psu-1--module--silkscreen" font-family="sans-serif" text-anchor="middle" fill="#22262a">
+        <text data-from="watts" x="20" y="17.8" font-size="4.4" font-weight="bold">500W</text>
+        <text x="20" y="27" font-size="3.4" font-weight="bold">94%</text>
+      </g>
+      <circle id="psu-1--module--lamp" cx="48.3" cy="5.6" r="1.1" fill="var(--led-color, #3f5a43)" stroke="#2a2e32" stroke-width="0.2" data-path="psu-1/module/lamp" data-class="led" data-states="off ok" data-description="Power supply. Solid green - normal; off - power unavailable, failure, standby, or error." />
+      <path id="psu-1--module--inlet-bezel" fill-rule="evenodd" d="M43.1 11.1 h24.9 v29.3 h-24.9 Z M45.6 11.8 h20.0 v28.0 h-20.0 Z" fill="#202326" stroke="#16191c" stroke-width="0.3" data-path="psu-1/module/inlet-bezel" data-class="inlet" />
+      <rect id="psu-1--module--latch" x="53.1" y="4.5" width="9" height="6.6" rx="0.6" fill="#853e44" stroke="#5a262b" stroke-width="0.3" data-path="psu-1/module/latch" data-class="latch" data-z-out="3.0" data-z-color="#853e44" />
+      <path id="psu-1--module--handle" d="M0.6 18.0 H44.6 V22.8 H0.6 Z" fill="#17191c" stroke="#0c0e10" stroke-width="0.3" data-path="psu-1/module/handle" data-class="latch" data-z-uhandle="14.0" data-z-color="#17191c" />
+    </g>
+  </g>
+</svg>
