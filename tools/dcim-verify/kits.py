@@ -510,8 +510,8 @@ def run_nautobot(run, kit):
 
 # ── plan (offline) and main ────────────────────────────────────────────────
 def plan(target):
+    host = V.host_of(target) or '<%s not set>' % V.ENV[target][0]      # refuses a URL that carries credentials, unshown
     kit = Kit(target)
-    host = urllib.parse.urlsplit(os.environ.get(V.ENV[target][0], '')).netloc or '<%s not set>' % V.ENV[target][0]
     V.say('\n== %s, at %s: %s ==' % (target, host, kit.path))
     V.say('   credentials: ' + ', '.join('%s %s' % (n, 'set' if os.environ.get(n) else 'not set') for n in V.ENV[target][1:]))
     bad = kit.problems()
@@ -540,7 +540,7 @@ def write_result(runs, started):
     out = {'kit': 'portrayal dcim-verify kits 1', 'prefix': P, 'started': started,
            'finished': datetime.datetime.now().isoformat(timespec='seconds'), 'targets': {}}
     for r in runs:
-        out['targets'][r.target] = {'host': urllib.parse.urlsplit(os.environ.get(V.ENV[r.target][0], '')).netloc,
+        out['targets'][r.target] = {'host': V.safe_host(r.target),
                                     'info': r.info, 'steps': r.steps}
 
     def clean(v):

@@ -5,8 +5,8 @@
 // files and the faces, and asks here.
 
 import {endName, lengthParts} from './cable-rules.js';
-import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate} from './export-data.js';
-export {DCIM_LIMITS};
+import {cableFindings, TARGET_NAME, DCIM_LIMITS, charCount, cutTo, isoDate, flat} from './export-data.js';
+export {DCIM_LIMITS, flat};
 
 // ── names a kit can write (final fix wave, M2) ──────────────────────────
 // A rack file is anyone's JSON: a name in it may hold a line break or another
@@ -14,9 +14,8 @@ export {DCIM_LIMITS};
 // such a name would start a line of its own ("Step 6: run this"), and in a CSV
 // it would be a cell an importer may read as two rows. So a run of control
 // characters (C0, DEL, C1, and the Unicode line and paragraph separators) is
-// written as ONE space, in every name a kit writes.
-const CONTROLS = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g;
-export const flat = s => String(s ?? '').replace(CONTROLS, ' ');
+// written as ONE space, in every name a kit writes (flat, export-data.js, which
+// uniqueNames applies to a device's name too: its label and its id suffix).
 // A name as it was, with what could not be shown spelled out ("R1\nStep 6").
 const escaped = s => JSON.stringify(String(s)).replace(/[\u007f-\u009f\u2028\u2029]/g,
   c => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
@@ -429,14 +428,14 @@ export function kitReadme({target = 'netbox', rack, date, dcim = {}, typeFiles =
   // the instance has more than once. For NetBox the second covers the modules step and the cables step alike.
   out.push(`If ${T} is not empty:`);
   if (nautobot) {
-    item(`A rack named "${rack.name}" in another location is not used: ${F.devices} finds the rack by its name and its location ` +
+    item(`If a rack named "${rack.name}" is in another location too, that one is not used: ${F.devices} finds the rack by its name and its location ` +
          `together (rack__name, rack__location__name), so the rack must be the one in the location ${site ? `"${site}"` : 'the devices are in'}.`);
     item(rows.cables
       ? `Step 3 and ${KIT_SCRIPT} find a device by its name in every location: a device name Nautobot already has twice is refused, ` +
         'and the script says so for each row that names it.'
       : 'Step 3 finds a device by its name in every location: a device name Nautobot already has twice is refused.');
   } else {
-    item(`The rack "${rack.name}" is already in ${site ? 'that' : 'its'} site: skip step 2, and check that it is ${rack.frame.heightRU}U, ` +
+    item(`If the rack "${rack.name}" is already in ${site ? 'that' : 'its'} site, skip step 2 and check that it is ${rack.frame.heightRU}U, ` +
          `${numbered}. Step 3 puts the devices in it.`);
     item('Steps 4 and 5 find a device by its name in every site, and step 4 finds a module type by its model in every manufacturer: ' +
          'a name NetBox already has twice is refused as not unique.');

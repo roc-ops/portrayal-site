@@ -9919,7 +9919,7 @@ def check_rack_dcim_kit_netbox(page, base):
     flat = flat_readme(readme).split("\n")
     at = flat.index("If NetBox is not empty:") if "If NetBox is not empty:" in flat else -1
     if at < 0 or flat[at + 1:at + 3] != [
-            '- The rack "Cable test" is already in that site: skip step 2, and check that it is 24U, numbered from the top. Step 3 puts the devices in it.',
+            '- If the rack "Cable test" is already in that site, skip step 2 and check that it is 24U, numbered from the top. Step 3 puts the devices in it.',
             "- Steps 4 and 5 find a device by its name in every site, and step 4 finds a module type by its model in every manufacturer: "
             "a name NetBox already has twice is refused as not unique."] or at < max(i for i, l in enumerate(flat) if l.startswith("Step 5: ")):
         bad.append(f"NetBox kit with settings: the README's lines for a NetBox that is not empty read {flat[at:at + 3] if at >= 0 else 'nothing'}")
@@ -10018,7 +10018,7 @@ def check_rack_dcim_kit_nautobot(page, base):
                  "        python3 import_cables.py 3-cables.csv --apply     (creates the cables)",
                  '- the rack "Cable test" in that location: 24U, numbered from the bottom. This kit has no rack file for Nautobot.',
                  "If Nautobot is not empty:",
-                 '- A rack named "Cable test" in another location is not used: 1-devices.csv finds the rack by its name and its location '
+                 '- If a rack named "Cable test" is in another location too, that one is not used: 1-devices.csv finds the rack by its name and its location '
                  'together (rack__name, rack__location__name), so the rack must be the one in the location "Lab 1".',
                  "- Step 3 and import_cables.py find a device by its name in every location: a device name Nautobot already has twice is "
                  "refused, and the script says so for each row that names it.",

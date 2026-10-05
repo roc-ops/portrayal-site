@@ -527,7 +527,7 @@ class ImportCables(unittest.TestCase):
         self.assertEqual(self.run_script(HEADER)[1].strip().split('\n')[-1], '0 rows: 0 would be created, 0 already connected, 0 failed. Nothing was created.')
         with contextlib.redirect_stderr(io.StringIO()) as err:
             self.assertEqual(import_cables.main(['import_cables.py', 'a.csv', '--delete'], {}, io.StringIO()), 2)
-        self.assertEqual(err.getvalue().strip(), 'usage: python3 import_cables.py [3-cables.csv] [--apply]   (--help says more)')
+        self.assertEqual(err.getvalue().strip(), 'usage: python3 import_cables.py [--apply] [--] [3-cables.csv]   (--help says more)')
 
     def test_a_file_that_cannot_be_read_or_a_server_that_breaks_the_protocol_is_a_sentence_not_a_traceback(self):
         code, _, err = self.run_script(raw=b'a_device,a_type\n\xff\xfe,x\n')
@@ -643,9 +643,10 @@ class ImportCables(unittest.TestCase):
                 what = '%s with %s' % (type(exc).__name__, ascii(token))
                 self.assertEqual(code, 2, what)
                 self.fragments(token, out + err, what)
-                self.assertEqual(err.strip().split('\n'), [
-                    'Stopped: an error this script did not expect (%s). Its details are not shown, so that the token can '
-                    'never be printed. A cable already created stays; run the script again to go on.' % type(exc).__name__], what)
+                # One line: the kind of error and WHERE (the innermost function and its line, which hold no values), never its text.
+                self.assertRegex(err, r'\AStopped: an error this script did not expect \(%s in [A-Za-z_][\w.]*\(\) at line \d+ of [\w.-]+\)\. '
+                                      r'Its details are not shown, so that the token can never be printed\. A cable already created stays; '
+                                      r'run the script again to go on\.\n\Z' % type(exc).__name__, what)
             # An error the script does put into words (it could not connect) is cleaned of every spelling of the token.
             for exc in (OSError('refused %r' % header), OSError(repr(token)), http.client.HTTPException(ascii(token)),
                         OSError(urllib.parse.quote(token, safe='')), OSError(json.dumps(token))):
@@ -668,7 +669,15 @@ class ImportCables(unittest.TestCase):
         self.assertEqual((code, len(self.posts())), (2, 1))
         self.assertIn('line 2 A1: connected', out)
         self.fragments(TOKEN, out + err, 'in the row loop')
-        self.assertIn('(ValueError)', err)
+        self.assertRegex(err, r'\(ValueError in breaks\(\) at line \d+ of import_cables_test\.py\)')
+        # An error of the script's own making is placed in the script.
+        with unittest.mock.patch.object(import_cables, 'problems_of', lambda row: [][1]):
+            code, out, err = self.run_script(GOOD)
+        self.assertEqual(code, 2)
+        self.assertRegex(err, r'\(IndexError in <lambda>\(\) at line \d+ of import_cables_test\.py\)')
+        with unittest.mock.patch.object(import_cables, 'WHOLE', None):
+            code, out, err = self.run_script(GOOD.replace(',,2,m', ',,2,m'))
+        self.assertRegex(err, r'\(AttributeError in problems_of\(\) at line \d+ of import_cables\.py\)')
 
     def test_an_interrupt_is_one_line_and_exit_130(self):
         with unittest.mock.patch.object(import_cables.Api, 'request', side_effect=KeyboardInterrupt):
@@ -767,6 +776,35 @@ class ImportCables(unittest.TestCase):
         r = subprocess.run([sys.executable, '-I', str(SCRIPT), '--help'], capture_output=True, text=True, env={'PATH': os.environ.get('PATH', '')})
         self.assertEqual((r.returncode, r.stderr), (0, ''))
         self.assertIn('python3 import_cables.py 3-cables.csv --apply', r.stdout)
+
+    def test_two_dashes_end_the_options_so_a_file_whose_name_starts_with_a_dash_can_be_given(self):
+        path = os.path.join(self.dir.name, '-x.csv')
+        with open(path, 'w', encoding='utf-8', newline='') as f:
+            f.write(GOOD)
+        here = os.getcwd()
+        os.chdir(self.dir.name)
+        try:
+            out, err = io.StringIO(), io.StringIO()
+            env = {'NAUTOBOT_URL': self.url, 'NAUTOBOT_TOKEN': TOKEN}
+            with contextlib.redirect_stderr(err):
+                # Without the two dashes it is taken for an option, as before, and the usage line says how.
+                self.assertEqual(import_cables.main(['import_cables.py', '-x.csv'], env, out), 2)
+                self.assertEqual(err.getvalue().strip(), 'usage: python3 import_cables.py [--apply] [--] [3-cables.csv]   (--help says more)')
+                self.assertEqual(self.mock.requests, [])
+                self.assertEqual(import_cables.main(['import_cables.py', '--', '-x.csv'], env, out), 0)
+                self.assertIn('2 rows: 2 would be created', out.getvalue())
+                # An option still counts before the two dashes, and after them nothing is one.
+                self.assertEqual(import_cables.main(['import_cables.py', '--apply', '--', '-x.csv'], env, out), 0)
+                self.assertEqual(len(self.posts()), 2)
+                self.assertEqual(import_cables.main(['import_cables.py', '--', '--apply'], env, io.StringIO()), 2)
+                self.assertIn('Could not read --apply', err.getvalue())
+                self.assertEqual(import_cables.main(['import_cables.py', '--', '-x.csv', 'more.csv'], env, io.StringIO()), 2)
+                self.assertEqual(import_cables.main(['import_cables.py', '--'], {}, io.StringIO()), 2)       # no file named: 3-cables.csv, and no URL here
+            help_text = io.StringIO()
+            self.assertEqual(import_cables.main(['import_cables.py', '--help'], {}, help_text), 0)
+            self.assertIn('python3 import_cables.py -- -odd-name.csv', help_text.getvalue())
+        finally:
+            os.chdir(here)
 
     def test_a_file_with_more_rows_than_any_rack_has_is_refused_with_a_sentence(self):
         row = 'leaf-1,dcim.interface,port-1,core-1,dcim.interface,slot-2/p0,,Planned,x,,,\n'

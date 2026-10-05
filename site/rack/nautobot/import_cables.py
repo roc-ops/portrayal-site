@@ -12,6 +12,7 @@ through Nautobot's REST API and creates the cable by id.
     python3 import_cables.py 3-cables.csv            # a dry run: nothing is created
     python3 import_cables.py 3-cables.csv --apply    # create the cables
     python3 import_cables.py --help                  # this text
+    python3 import_cables.py -- -odd-name.csv        # after --, nothing is an option
 
 NAUTOBOT_URL is the address Nautobot answers at (with its path, if it has one;
 no query, no user name). NAUTOBOT_TOKEN is an API token of a user who may add
@@ -29,8 +30,9 @@ is reported as "already connected" and left alone. It exits 0 when no row
 failed (each was, or in a dry run would be, created, or was already connected),
 1 when a row could not be done, 2 when it could not start or had to stop, and
 130 when it was interrupted. It never prints a traceback: an error it did not
-expect is one line that names the kind of error and nothing else, so that no
-part of the token can come out with it.
+expect is one line that names the kind of error and where it arose (a
+function and a line number), never the error's own text, so that no part of
+the token can come out with it.
 """
 import csv
 import http.client
@@ -64,7 +66,7 @@ MAX_ROWS = 20000                             # far more cables than a rack has; 
 CONTROL = re.compile('[\\x00-\\x1f\\x7f-\\x9f\\u2028\\u2029\\u061c\\u200e\\u200f\\u202a-\\u202e\\u2066-\\u2069]')
 TOKEN_OK = re.compile(r'[\x21-\x7e]+')       # printable ASCII with no space: what an HTTP header can carry
 NEEDS_QUOTES = re.compile('[,"\\x00-\\x1f\\x7f-\\x9f\\u2028\\u2029]')
-USAGE = 'usage: python3 import_cables.py [3-cables.csv] [--apply]   (--help says more)'
+USAGE = 'usage: python3 import_cables.py [--apply] [--] [3-cables.csv]   (--help says more)'
 WHOLE = re.compile(r'[0-9]+')                # not str.isdigit: it accepts '²' and other digits int() refuses
 
 
@@ -103,6 +105,19 @@ def hide(text, secret):
     for s in spellings(secret):
         text = text.replace(s, '***')
     return text
+
+
+def where(e):
+    """Where an exception arose: the innermost function, its line and its file's
+    name. These are the program's own text and hold no values, so they can be
+    printed when the exception's message cannot."""
+    tb = getattr(e, '__traceback__', None)
+    if tb is None:
+        return ''
+    while tb.tb_next is not None:
+        tb = tb.tb_next
+    code = tb.tb_frame.f_code
+    return ' in %s() at line %d of %s' % (code.co_name, tb.tb_lineno, os.path.basename(code.co_filename))
 
 
 def token_of(env):
@@ -410,8 +425,13 @@ def problems_of(row):
 
 def run(argv, env, out, err=None):
     err = err or sys.stderr
-    args = [a for a in argv[1:] if not a.startswith('-')]
-    flags = [a for a in argv[1:] if a.startswith('-')]
+    # An argument that starts with "-" is an option, until "--": after it everything is the file's name.
+    rest, args, flags = list(argv[1:]), [], []
+    for k, a in enumerate(rest):
+        if a == '--':
+            args += rest[k + 1:]
+            break
+        (flags if a.startswith('-') else args).append(a)
     if any(f in ('--help', '-h') for f in flags):
         print((__doc__ or USAGE).strip(), file=out, flush=True)
         return 0
@@ -522,8 +542,8 @@ def main(argv=None, env=None, out=None):
         tell('Stopped: interrupted. A cable already created stays; run the script again to go on.')
         return 130
     except Exception as e:                               # noqa: BLE001 - its text is never printed
-        tell('Stopped: an error this script did not expect (%s). Its details are not shown, so that the token can '
-             'never be printed. A cable already created stays; run the script again to go on.' % type(e).__name__)
+        tell('Stopped: an error this script did not expect (%s%s). Its details are not shown, so that the token can '
+             'never be printed. A cable already created stays; run the script again to go on.' % (type(e).__name__, where(e)))
         return 2
 
 

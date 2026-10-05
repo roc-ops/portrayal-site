@@ -258,7 +258,8 @@ class NoCredentialComesOut(TokenRequestsNeverCarryTheSession):
                 run = V.Run('nautobot')
                 code, text = self.said(lambda: V.nt_post_json(V.Client('nautobot'), run, 'x', 'a step', '/api/dcim/manufacturers/', {'name': 'pt-verify-x'}))
                 self.assertFalse(run.steps[0]['accepted'])
-                self.assertRegex(run.steps[0]['messages'][0], r'^(%s|URLError): ' % what)      # urllib wraps an OSError
+                # The kind of error, where (a function and a line: no values), then its text through the redactor.
+                self.assertRegex(run.steps[0]['messages'][0], r'^(%s|URLError) in [A-Za-z_][\w.]*\(\) at line \d+ of [\w.-]+: ' % what)   # urllib wraps an OSError
                 V.write_result([run], 'now')
                 stored = read(V.RESULT)
                 for argv in (['verify.py', 'run', 'nautobot'], ['verify.py', 'cleanup', 'nautobot']):
@@ -271,11 +272,33 @@ class NoCredentialComesOut(TokenRequestsNeverCarryTheSession):
         def boom(argv):
             raise ValueError('Invalid header value %r' % header)
         code, text = self.said(lambda: V.guarded(boom, []))
-        self.assertEqual((code, text), (2, 'Stopped: ValueError: Invalid header value b\'Token ***\\r\'\n'))
+        self.assertEqual(code, 2)
+        self.assertRegex(text, r"\AStopped: ValueError in boom\(\) at line \d+ of test_client\.py: Invalid header value b'Token \*\*\*\\r'\n\Z")
+        self.assertEqual(V.problem(ValueError('never raised')), 'ValueError: never raised')        # no traceback, no place
         def stop(argv):
             raise KeyboardInterrupt
         code, text = self.said(lambda: V.guarded(stop, []))
         self.assertEqual((code, text.count('\n'), 'Traceback' in text), (130, 1, False))
+
+    def test_a_url_that_carries_credentials_is_refused_by_plan_too_and_never_echoed(self):
+        import kits as K
+        secret = 'dummy-url-pass-phrase-42'
+        for var, target in (('NETBOX_URL', 'netbox'), ('NAUTOBOT_URL', 'nautobot')):
+            for url in ('http://admin:%s@127.0.0.1:1' % secret, 'http://%s@127.0.0.1:1/x' % secret, 'http://admin:%s@' % secret):
+                os.environ.update({'NETBOX_URL': 'http://127.0.0.1:1', 'NAUTOBOT_URL': 'http://127.0.0.1:1', 'NAUTOBOT_TOKEN': TOKEN, var: url})
+                for main, argv in ((V.main, ['verify.py', 'plan', target]), (K.main, ['kits.py', 'plan', target]), (V.main, ['verify.py', 'plan']),
+                                   (V.main, ['verify.py', 'run', target]), (V.main, ['verify.py', 'cleanup', target, '--dry-run'])):
+                    code, text = self.said(lambda: V.guarded(main, argv))
+                    stored = read(V.RESULT) if argv[1] == 'run' else ''
+                    what = '%s with %s set to a URL with credentials' % (' '.join(argv), var)
+                    fragments(self, secret, text + stored, what)
+                    self.assertNotIn('admin', text + stored, what)
+                    self.assertIn('%s must not carry credentials.' % var, text, what)
+                    if argv[1] != 'run':
+                        self.assertEqual(code, 1, what)
+                    if argv[1] == 'plan':
+                        self.assertNotIn('POST ', text.partition('== %s' % target)[2].partition('\n==')[0], 'the refused target\'s plan was printed')
+        self.assertEqual(Handler.log, [])
 
     def test_a_saved_page_and_a_result_hold_no_csrf_value_and_no_cookie_value(self):
         c = V.Client('nautobot')

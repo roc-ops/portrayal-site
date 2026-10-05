@@ -112,10 +112,46 @@ def redact(text):
     return s
 
 
+def where(e):
+    """Where an exception arose: the innermost function, its line and its file's
+    name. The program's own text: it holds no values."""
+    tb = getattr(e, '__traceback__', None)
+    if tb is None:
+        return ''
+    while tb.tb_next is not None:
+        tb = tb.tb_next
+    code = tb.tb_frame.f_code
+    return ' in %s() at line %d of %s' % (code.co_name, tb.tb_lineno, os.path.basename(code.co_filename))
+
+
 def problem(e):
-    """An exception in words fit to print or to store: its kind, and its text
-    through the redactor. Never the text as it is: it may quote what was sent."""
-    return '%s: %s' % (type(e).__name__, redact(e))
+    """An exception in words fit to print or to store: its kind, where it arose,
+    and its text through the redactor. Never the text as it is: it may quote
+    what was sent."""
+    return '%s%s: %s' % (type(e).__name__, where(e), redact(e))
+
+
+def host_of(target):
+    """The host in a target's URL, for a heading or a result. A URL that carries
+    a user name or a password is refused here as Client refuses it, and never
+    shown: `plan` prints this, and it must not print a credential."""
+    var = ENV[target][0]
+    base = os.environ.get(var, '').strip()
+    try:
+        u = urllib.parse.urlsplit(base)
+        bad = bool(u.username or u.password) or '@' in base
+    except ValueError:
+        raise Refused('%s is not a URL.' % var)
+    if bad:
+        raise Refused('%s must not carry credentials.' % var)
+    return u.netloc
+
+
+def safe_host(target):
+    try:
+        return host_of(target)
+    except Refused:
+        return '(refused)'
 
 
 def say(*a):
@@ -191,7 +227,7 @@ class Client:
         u = urllib.parse.urlsplit(base)
         if u.scheme not in ('http', 'https') or not u.netloc:
             raise Refused('%s must be an http(s) URL.' % url_var)
-        if u.username or u.password or '@' in u.netloc:
+        if u.username or u.password or '@' in base:
             raise Refused('%s must not carry credentials.' % url_var)
         if '?' in base or '#' in base:
             raise Refused('%s must not carry a query or a fragment.' % url_var)
@@ -1147,7 +1183,7 @@ def cleanup(target, dry):
 
 # ── plan (offline) ─────────────────────────────────────────────────────────
 def plan(target):
-    host = urllib.parse.urlsplit(os.environ.get(ENV[target][0], '')).netloc or '<%s not set>' % ENV[target][0]
+    host = host_of(target) or '<%s not set>' % ENV[target][0]
     say('\n== %s, at %s ==' % (target, host))
     say('   credentials: ' + ', '.join('%s %s' % (n, 'set' if os.environ.get(n) else 'not set') for n in ENV[target][1:]))
     say('   every object is named %s…; nothing else is created, changed or deleted.' % PREFIX)
@@ -1216,7 +1252,7 @@ def write_result(runs, started):
            'finished': datetime.datetime.now().isoformat(timespec='seconds'), 'targets': {}}
     for r in runs:
         out['targets'][r.target] = {
-            'host': urllib.parse.urlsplit(os.environ.get(ENV[r.target][0], '')).netloc, 'info': r.info,
+            'host': safe_host(r.target), 'info': r.info,
             'steps': r.steps, 'inventory': r.inventory}
     def clean(v):                                   # values only: a key is never instance text
         if isinstance(v, str):
@@ -1234,10 +1270,15 @@ def write_result(runs, started):
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else ''
     if cmd == 'plan':
+        rc = 0
         for t in targets(argv[2:]):
-            plan(t)
+            try:
+                plan(t)
+            except Refused as e:
+                say('  [%s] %s' % (t, e))
+                rc = 1
         say('\nNothing was sent. "verify.py run" does this; "verify.py cleanup" removes it.')
-        return 0
+        return rc
     if cmd == 'cleanup':
         rc = 0
         for t in targets(argv[2:]):

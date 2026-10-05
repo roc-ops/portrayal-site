@@ -480,7 +480,7 @@ test("the NetBox kit's README: what must exist, each file in import order with i
     'Step 5: 4-cables.csv (1 row): Cables > Import.',
     '',
     'If NetBox is not empty:',
-    '- The rack "Cable test" is already in that site: skip step 2, and check that it is 24U, numbered from the bottom. Step 3 puts the devices in it.',
+    '- If the rack "Cable test" is already in that site, skip step 2 and check that it is 24U, numbered from the bottom. Step 3 puts the devices in it.',
     '- Steps 4 and 5 find a device by its name in every site, and step 4 finds a module type by its model in every manufacturer: a name NetBox already has twice is refused as not unique.',
     '',
     'Not in this kit:',
@@ -548,7 +548,7 @@ test("the Nautobot kit's README: the rack and the Planned status must exist, the
     '- these manufacturers: Cisco',
     '- the rack "Cable test" in that location: 24U, numbered from the top (descending units). This kit has no rack file for Nautobot.',
     'If Nautobot is not empty:',
-    '- A rack named "Cable test" in another location is not used: 1-devices.csv finds the rack by its name and its location together (rack__name, rack__location__name), so the rack must be the one in the location "Lab 1".',
+    '- If a rack named "Cable test" is in another location too, that one is not used: 1-devices.csv finds the rack by its name and its location together (rack__name, rack__location__name), so the rack must be the one in the location "Lab 1".',
     '- Step 3 and import_cables.py find a device by its name in every location: a device name Nautobot already has twice is refused, and the script says so for each row that names it.',
     "Step 1: types/device-types/, then types/module-types/ (2 files): Device Types > Import and Module Types > Import, one YAML file per import.",
     'Step 2: 1-devices.csv (4 rows): Devices > Import, or POST it to /api/dcim/devices/ as text/csv. Every device is planned.',
@@ -574,10 +574,12 @@ test('the "not empty" lines come after the steps, cover the modules step too, an
   const nb = D.kitReadme({target: 'netbox', rack: README_RACK, date: DAY, dcim: {}, rows: {rack: 1, devices: 1, modules: 0, cables: 0}, ...WHOLE}).text.split('\n');
   const at = nb.indexOf('If NetBox is not empty:');
   assert.ok(at > nb.findIndex(l => l.startsWith('Step 5: ')) && at < nb.indexOf('Not in this kit:'));
-  assert.equal(nb[at + 1], '- The rack "Cable test" is already in its site: skip step 2, and check that it is 24U, numbered from the bottom. Step 3 puts the devices in it.');
+  assert.equal(nb[at + 1], '- If the rack "Cable test" is already in its site, skip step 2 and check that it is 24U, numbered from the bottom. Step 3 puts the devices in it.');
   assert.ok(!nb.some(l => l.startsWith('        NetBox finds a device')), 'the sentence is no longer under step 5 alone');
   const nt = D.kitReadme({target: 'nautobot', rack: README_RACK, date: DAY, dcim: {}, rows: {devices: 1, modules: 0, cables: 0}, ...WHOLE}).text.split('\n');
-  assert.ok(nt.includes('- A rack named "Cable test" in another location is not used: 1-devices.csv finds the rack by its name and its location together (rack__name, rack__location__name), so the rack must be the one in the location the devices are in.'));
+  assert.ok(nt.includes('- If a rack named "Cable test" is in another location too, that one is not used: 1-devices.csv finds the rack by its name and its location together (rack__name, rack__location__name), so the rack must be the one in the location the devices are in.'));
+  // Under "If ... is not empty:", every line that is a condition reads as one, never as a fact about the instance.
+  for (const text of [nb, nt]) assert.ok(!text.some(l => /^- (The|A) rack\b/.test(l)));
   // With no cable rows there is no script to speak of.
   assert.ok(nt.includes('- Step 3 finds a device by its name in every location: a device name Nautobot already has twice is refused.'));
 });
@@ -610,6 +612,54 @@ test('a control character in a name is written as a space, and one line says so 
   for (const c of ['\u0000', '\u0009', '\u000a', '\u000b', '\u000c', '\u000d', '\u001b', '\u001f', '\u007f', '\u0085', '\u009f', '\u2028', '\u2029'])
     assert.equal(D.flat(`a${c}${c}b`), 'a b', `U+${c.charCodeAt(0).toString(16)}`);
   assert.equal(D.flat('a b\u00e9 \u{1F600}'), 'a b\u00e9 \u{1F600}');
+});
+
+test('a device name is clean whatever its label and its id hold, in every file and in the cable schedule', () => {
+  // A hand-edited file: two devices with one label, and ids with a line break in them. The id is what tells twins apart.
+  const items = [{id: 'i\n1', ref: 'tm-280', cfg: 'base', label: 'twin', ru: 2, u: 1, face: 'front', turned: false},
+                 {id: 'i\r\n\t2', ref: 'tm-280', cfg: 'base', label: 'twin', ru: 4, u: 1, face: 'front', turned: false},
+                 {id: 'i3', ref: 'tm-280', cfg: 'base', label: 'lone\u0007one', ru: 6, u: 1, face: 'front', turned: false},
+                 {id: 'i\u20284', ref: 'tm-280', cfg: 'base', label: '\n\t', ru: 8, u: 1, face: 'front', turned: false},
+                 {id: 'i5', ref: 'tm\n280', cfg: 'base', label: '', ru: 10, u: 1, face: 'front', turned: false}];
+  const names = X.uniqueNames(items);
+  assert.deepEqual([...names.values()].map(v => v.name), ['twin-i 1', 'twin-i 2', 'lone one', 'i 4', 'tm 280']);
+  assert.deepEqual([...names.keys()], items.map(i => i.id), 'the map is still keyed by the id as written');
+  assert.ok([...names.values()].every(v => v.name && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(v.name)));
+  // A label of control characters alone is not an empty name, and not a twin of another such label by accident.
+  assert.deepEqual([...X.uniqueNames([{id: 'a', ref: 'r', label: '\n'}, {id: 'b', ref: 'r', label: '\t\t'}]).values()].map(v => v.name), ['a', 'b']);
+  // Two labels that are one name once cleaned are twins.
+  assert.deepEqual([...X.uniqueNames([{id: 'a', ref: 'r', label: 'x\ny'}, {id: 'b', ref: 'r', label: 'x y'}]).values()].map(v => v.name), ['x y-a', 'x y-b']);
+  // Ordinary labels and ids: exactly as before.
+  assert.deepEqual([...X.uniqueNames(ITEMS).values()].map(v => v.name), ['core-1', 'leaf-1', 'demarc-i3', 'demarc-i4']);
+  assert.deepEqual([...X.uniqueNames([{id: 'i1', ref: 'r', label: ' Leaf '}, {id: 'i2', ref: 'r', label: 'leaf'}, {id: 'i3', ref: 'r', label: ''},
+                                      {id: 'i4', ref: 'r', label: 'tab\u00a0 two  spaces'}]).values()].map(v => v.name),
+    ['Leaf-i1', 'leaf-i2', 'r', 'tab\u00a0 two  spaces']);
+  // Through the kit's own cleaning (kitNames leaves ids alone) and into the cells: name, comments, modules, cables.
+  const rack = D.kitNames({name: 'R', frame: FRAME, items, cables: [
+    {id: 'c1', a: end('i\n1', 'port-1-1'), b: end('i\r\n\t2', 'port-2-1'), media: 'cat6', purpose: '', label: 'L', route: []}]}).rack;
+  const types = new Map(rack.items.map(i => [i.id, {manufacturer: 'Telco Systems', model: 'TM-280', isFullDepth: false, guess: false}]));
+  const csv = (columns, rows) => X.toCsv(columns, rows);
+  const oneLineEach = (text, n) => assert.equal(text.trimEnd().split(/\r\n|[\n\u000b\u000c\r\u0085\u2028\u2029]/).length, n + 1, text);
+  for (const target of ['netbox', 'nautobot']) {
+    const dev = X.deviceImportRows({rack, items: rack.items, types, target, dcim: {site: 'S', role: 'R'}});
+    assert.deepEqual(dev.rows.map(r => r.name).sort(), ['i 4', 'lone one', 'tm 280', 'twin-i 1', 'twin-i 2']);
+    assert.ok(dev.rows.some(r => r.comments === 'Named twin-i 1 because another device here is also twin.'));
+    oneLineEach(csv(dev.columns, dev.rows), 5);
+    const nm = X.uniqueNames(rack.items);
+    const mod = D.moduleImportRows({target, parts: [{itemId: 'i\n1', path: 'slot-1/module', ref: 'c'}], names: nm, kept: new Set(rack.items.map(i => i.id)),
+      deviceOf: () => D.typeLists('model: X\nmodule-bays:\n  - name: Slot 1\n    position: slot-1\n'), moduleOf: () => ({manufacturer: 'M', model: 'CARD'})});
+    assert.equal(mod.rows[0][target === 'nautobot' ? 'parent_module_bay__parent_device__name' : 'device'], 'twin-i 1');
+    oneLineEach(csv(mod.columns, mod.rows), 1);
+    const cab = D.cableImportRows({rack, target, names: nm, kept: new Set(rack.items.map(i => i.id)), ends: landed(rack.cables),
+      resolve: e => ({ok: true, name: e.path, type: 'dcim.interface'})});
+    assert.deepEqual([cab.rows[0][target === 'nautobot' ? 'a_device' : 'side_a_device'], cab.rows[0][target === 'nautobot' ? 'b_device' : 'side_b_device']],
+      ['twin-i 1', 'twin-i 2']);
+    oneLineEach(csv(cab.columns, cab.rows), 1);
+  }
+  // The cable schedule names its devices the same way.
+  const sched = X.cableScheduleRows(rack, landed(rack.cables));
+  assert.deepEqual([sched.rows[0].a_device, sched.rows[0].b_device], ['twin-i 1', 'twin-i 2']);
+  assert.deepEqual(sched.notes, ['Devices that share a label are named as the device import names them: twin-i 1, twin-i 2.']);
 });
 
 test('a rack name cannot forge a step of the README, and no line of a list can either', () => {

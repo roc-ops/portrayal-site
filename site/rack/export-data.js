@@ -520,16 +520,26 @@ export const partNumber = comp => comp?.attrs?.model ?? comp?.attrs?.part ?? com
 // item's own label (in any case), or one already generated here. This is the
 // ONE place device names are decided: the devices, modules and cables files,
 // the cable schedule and every note use these names.
+//
+// A NAME IS CLEAN HERE, whoever asks (the kits, the cable schedule): a rack
+// file is anyone's JSON, so a label, a ref or an id may hold a line break or
+// another control character, and the id is what tells twins apart. Each run of
+// them is one space (flat), in the label and in the id suffix alike; a label
+// of nothing else is not an empty name but the item's id. Ordinary labels and
+// ids give exactly the names they always did.
+const CONTROLS = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g;
+export const flat = s => String(s ?? '').replace(CONTROLS, ' ');
 export function uniqueNames(items) {
-  const base = i => String(i.label || i.ref).trim();
+  const idOf = i => flat(i.id).trim();
+  const base = i => flat(i.label || i.ref).trim() || idOf(i);
   const key = i => base(i).toLowerCase();
   const seen = new Map();
   for (const i of items) seen.set(key(i), (seen.get(key(i)) || 0) + 1);
   const taken = new Set(seen.keys());
   return new Map(items.map(i => {
     if (seen.get(key(i)) === 1) return [i.id, {name: base(i), renamed: false}];
-    let name = `${base(i)}-${i.id}`;
-    for (let k = 2; taken.has(name.toLowerCase()); k++) name = `${base(i)}-${i.id}-${k}`;
+    let name = `${base(i)}-${flat(i.id)}`;
+    for (let k = 2; taken.has(name.toLowerCase()); k++) name = `${base(i)}-${flat(i.id)}-${k}`;
     taken.add(name.toLowerCase());
     return [i.id, {name, renamed: true}];
   }));
@@ -630,7 +640,7 @@ export function deviceImportRows({rack, items, types, target = 'netbox', dcim = 
     if (t.otherVendor)
       notes.push(otherVendorNote({label: it.label, ref: it.ref, T, manufacturer: t.chassisManufacturer, path: t.path}));
     else if (t.guess) notes.push(`Device type ${t.model} is a best guess for configuration ${it.cfg}.`);
-    if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${String(it.label || it.ref).trim()}.`);
+    if (n.renamed) notes.push(`Named ${n.name} because another device here is also ${flat(it.label || it.ref).trim()}.`);
     const mt = mountText(it.mount);
     if (mt) notes.push(`${mt[0].toUpperCase()}${mt.slice(1)}.`);
     if (it.turned) notes.push('Mounted turned: its rear panel faces out.');
