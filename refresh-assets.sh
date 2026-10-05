@@ -290,8 +290,22 @@ root, lib = sys.argv[1], sys.argv[2]
 # What the export produced, keyed by device, so the page offers what exists
 # rather than predicting filenames.
 index = {}
+# A DEVICE THE EXPORTER DECLINES IS NAMED, NOT JUST ABSENT. dcim_export.py
+# writes no type for a device with no console port, interface or module bay -
+# "nothing but a header: not worth a file" - and prints `skip <device>: nothing
+# to export`. Until the Nokia outdoor ONT enclosure 3FE54221AH (Portrayal
+# #768), a box with a door and no ports, no device did that, so a device
+# missing from index.json could only mean the export had failed and
+# check-contract.py says so. Keep the exporter's own word for it in
+# skipped.json, so the contract can tell a device with nothing to export from
+# an export that did not run; index.json keeps its shape and gains no empty
+# entries.
+skipped = []
 for line in open(os.path.join(root, '.paths')):
     dev, _, rest = line.partition('\t')
+    if rest.strip() == 'skip %s: nothing to export' % dev:
+        skipped.append(dev)
+        continue
     # NOT \S+ : "Casa Systems" has a space in it, so a non-whitespace run stops
     # at the manufacturer and never reaches .yaml.
     m = re.match(r'(.+\.yaml)', rest.strip())
@@ -362,6 +376,8 @@ for dev, targets in index.items():
 
 json.dump(index, open(os.path.join(root, 'index.json'), 'w'), indent=1, sort_keys=True)
 json.dump(files, open(os.path.join(root, 'files.json'), 'w'), indent=1)
+json.dump({'nothing-to-export': sorted(skipped)},
+          open(os.path.join(root, 'skipped.json'), 'w'), indent=1)
 json.dump(enrichment, open(os.path.join(root, 'enrichment.json'), 'w'), indent=1, sort_keys=True)
 n = sum(len(v) for v in files.values())
 # The fibre maps are counted OUT LOUD rather than folded into the total. They
@@ -369,9 +385,10 @@ n = sum(len(v) for v in files.values())
 # name, so the day upstream stops writing them the number goes to 0 in front of
 # whoever ran the refresh, instead of the total shrinking by five.
 print("exports: %d files, %d devices, %d bay constraints, %d platform hints, "
-      "%d fibre maps"
+      "%d fibre maps, %d with nothing to export%s"
       % (n, len(index), len(enrichment['module-bays']),
-         len(enrichment['device-types']), len(files.get('fibre-maps', []))))
+         len(enrichment['device-types']), len(files.get('fibre-maps', [])),
+         len(skipped), skipped and ' (%s)' % ', '.join(sorted(skipped)) or ''))
 PYEOF
   rm -f "$EXPORTS/.paths"
 else

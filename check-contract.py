@@ -1095,9 +1095,23 @@ check(bool(_digest) and _srcf.is_file() and _hl.sha256(_srcf.read_bytes()).hexdi
 # manifest after #669 and index.json came out empty - with no failure anywhere.
 _ex = HERE / "assets" / "exports" / "index.json"
 _exi = json.loads(_ex.read_text()) if _ex.exists() else {}
-_nexp = [d for d in _devs if d not in _exi]
-check(not _nexp, "the DCIM exports index has an entry for every device in devices.json",
+# A device with no console port, interface or module bay exports nothing, on
+# purpose: the exporter prints `skip <device>: nothing to export` and
+# refresh-assets.sh keeps those names in skipped.json (the first was the Nokia
+# outdoor ONT enclosure, Portrayal #768). Such a device has no index entry. It
+# is the only excuse: a device in neither file is an export that failed, and a
+# skipped list that is more than a twentieth of the library is the #561
+# failure again under another name.
+_skf = HERE / "assets" / "exports" / "skipped.json"
+_skip = set(json.loads(_skf.read_text()).get("nothing-to-export") or []) if _skf.exists() else set()
+_nexp = [d for d in _devs if d not in _exi and d not in _skip]
+check(not _nexp, "the DCIM exports index has an entry for every device in devices.json "
+      "that the exporter did not skip as having nothing to export",
       f"{len(_nexp)} of {len(_devs)} missing, e.g. {_nexp[:3]}")
+_both = sorted(_skip & set(_exi)); _stray = sorted(_skip - set(_devs))
+check(not _both and not _stray and len(_skip) * 20 <= len(_devs),
+      "skipped.json names only devices with no export, and few of them",
+      f"{len(_skip)} skipped of {len(_devs)}; also exported: {_both[:3]}; not in devices.json: {_stray[:3]}")
 
 # ONE PLACE NAMES A FACE FILE (Portrayal #670). A drawing is written once and
 # shared by every configuration that draws it identically, named after the
